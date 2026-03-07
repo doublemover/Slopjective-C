@@ -263,7 +263,7 @@ IR_CPP_SNIPPETS: tuple[SnippetCheck, ...] = (
 DRIVER_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M251-A001-DRV-01",
-        "M251-A001 freeze: the frontend emits runtime metadata ownership evidence",
+        "if (!artifacts.manifest_json.empty()) {",
     ),
     SnippetCheck("M251-A001-DRV-02", "WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);"),
 )

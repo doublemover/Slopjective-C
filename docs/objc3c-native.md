@@ -109,6 +109,29 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-A002/runtime_metadata_source_record_extraction_contract_summary.json`
 
+## Runtime record manifest handoff normalization (M251-A003)
+
+- Frontend emit intent is now explicit through:
+  - `emit_manifest`
+  - `emit_ir`
+  - `emit_object`
+- Runtime-record manifest projection is built before later lowering/object
+  fail-closed diagnostics are surfaced.
+- `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object` now
+  succeeds for the A002 runtime-record fixtures, writes a manifest path, and
+  marks the emit stage skipped.
+- `objc3c-native` full compile still fails closed while later runtime/lowering
+  work is incomplete, but preserves `module.manifest.json` so runtime metadata
+  handoff consumers can use the projected record set without reparsing.
+- Manifest projection continues to carry:
+  - `interfaces`
+  - `implementations`
+  - `protocols`
+  - `categories`
+  - `runtime_metadata_source_records`
+- Validation/evidence path:
+  `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

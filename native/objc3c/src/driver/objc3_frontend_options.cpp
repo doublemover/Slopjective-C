@@ -7,6 +7,9 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
                                    ? Objc3FrontendCompatibilityMode::kLegacy
                                    : Objc3FrontendCompatibilityMode::kCanonical;
   options.migration_assist = cli_options.migration_assist;
+  options.emit_manifest = true;
+  options.emit_ir = true;
+  options.emit_object = true;
   options.lowering.max_message_send_args = cli_options.max_message_send_args;
   options.lowering.runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol;
   return options;

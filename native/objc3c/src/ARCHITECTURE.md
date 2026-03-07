@@ -8089,3 +8089,17 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   deterministic and frontend C API runner fixture probes fail closed if
   parse/sema acceptance regresses or runtime record projection drifts before
   `M251-A003` manifest-only emission work lands.
+
+- M251 lane-A A003 runtime record manifest handoff normalization anchors explicit
+  lane-A manifest-handoff artifacts in
+  `docs/contracts/m251_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_core_feature_expansion_a003_expectations.md`,
+  `spec/planning/compiler/m251/m251_a003_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_core_feature_expansion_packet.md`,
+  `pipeline/objc3_frontend_types.h`, `pipeline/objc3_frontend_artifacts.cpp`,
+  `libobjc3c_frontend/frontend_anchor.cpp`,
+  `driver/objc3_objc3_path.cpp`,
+  `scripts/check_m251_a003_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_contract.py`,
+  `tests/tooling/test_check_m251_a003_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_contract.py`,
+  and `package.json` so manifest-only frontend handoff remains deterministic,
+  full CLI fail-closed runs preserve the manifest handoff artifact, and emit
+  stage summaries do not regress before later runtime metadata section work
+  begins.

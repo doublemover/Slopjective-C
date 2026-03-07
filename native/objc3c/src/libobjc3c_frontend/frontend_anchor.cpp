@@ -379,6 +379,9 @@ static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_o
           ? Objc3FrontendCompatibilityMode::kLegacy
           : Objc3FrontendCompatibilityMode::kCanonical;
   frontend_options.migration_assist = options.migration_assist != 0;
+  frontend_options.emit_manifest = options.emit_manifest != 0;
+  frontend_options.emit_ir = options.emit_ir != 0;
+  frontend_options.emit_object = options.emit_object != 0;
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }
@@ -440,7 +443,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     result->success = 1;
   }
 
-  if (result->status == OBJC3C_FRONTEND_STATUS_OK && options->emit_manifest != 0 && has_out_dir) {
+  if (options->emit_manifest != 0 && has_out_dir && !product.artifact_bundle.manifest_json.empty()) {
     const std::filesystem::path manifest_out = out_dir / (emit_prefix + ".manifest.json");
     std::string io_error;
     if (!WriteTextFile(manifest_out, product.artifact_bundle.manifest_json, io_error)) {
@@ -609,7 +612,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     objc3c_frontend_set_error(context, "");
   }
 
-  const bool emit_attempted = lower_attempted;
+  const bool wants_emit_stage = options->emit_ir != 0 || options->emit_object != 0;
+  const bool emit_attempted = lower_attempted && wants_emit_stage;
   const bool emit_skipped = !emit_attempted;
   result->semantic_skipped = product.pipeline_result.integration_surface.built ? 0u : 1u;
 

@@ -5401,3 +5401,19 @@ shall preserve:
 
 Runtime metadata source-record extraction and manifest projection continuity
 must remain deterministic before native metadata section/object emission begins.
+
+## M251 runtime record manifest handoff normalization metadata anchors (A003)
+
+Deterministic lane-A runtime record manifest handoff for `M251-A003` shall
+preserve:
+
+- runtime-record manifest projection even when later LLVM IR/object emit work
+  remains fail-closed,
+- non-empty manifest paths for manifest-only frontend runs,
+- emit-stage summary state showing `attempted=false` and `skipped=true` when
+  IR/object emission was not requested,
+- preserved runtime-record manifest artifacts for fail-closed CLI/native full
+  compile runs.
+
+Runtime-record manifest handoff continuity must remain deterministic before
+native metadata section/object emission and runtime registration work begins.

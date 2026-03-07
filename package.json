@@ -3672,6 +3672,9 @@
     "check:objc3c:m251-a002-class-protocol-category-property-ivar-source-record-extraction-contract": "python scripts/check_m251_a002_class_protocol_category_property_ivar_source_record_extraction_contract.py",
     "test:tooling:m251-a002-class-protocol-category-property-ivar-source-record-extraction-contract": "python -m pytest tests/tooling/test_check_m251_a002_class_protocol_category_property_ivar_source_record_extraction_contract.py -q",
     "check:objc3c:m251-a002-lane-a-readiness": "npm run check:objc3c:m251-a001-lane-a-readiness && npm run build:objc3c-native && npm run check:objc3c:m251-a002-class-protocol-category-property-ivar-source-record-extraction-contract && npm run test:tooling:m251-a002-class-protocol-category-property-ivar-source-record-extraction-contract",
+    "check:objc3c:m251-a003-frontend-handoff-normalization-and-manifest-projection-for-runtime-records-contract": "python scripts/check_m251_a003_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_contract.py",
+    "test:tooling:m251-a003-frontend-handoff-normalization-and-manifest-projection-for-runtime-records-contract": "python -m pytest tests/tooling/test_check_m251_a003_frontend_handoff_normalization_and_manifest_projection_for_runtime_records_contract.py -q",
+    "check:objc3c:m251-a003-lane-a-readiness": "npm run check:objc3c:m251-a002-lane-a-readiness && npm run build:objc3c-native && npm run check:objc3c:m251-a003-frontend-handoff-normalization-and-manifest-projection-for-runtime-records-contract && npm run test:tooling:m251-a003-frontend-handoff-normalization-and-manifest-projection-for-runtime-records-contract",
     "check:objc3c:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract": "python scripts/check_m249_a002_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_contract.py",
     "test:tooling:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m249_a002_feature_packaging_surface_and_compatibility_contracts_modular_split_scaffolding_contract.py -q",
     "check:objc3c:m249-a002-lane-a-readiness": "npm run check:objc3c:m249-a001-lane-a-readiness && npm run check:objc3c:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract && npm run test:tooling:m249-a002-feature-packaging-surface-compatibility-modular-split-scaffolding-contract",
@@ -6735,7 +6738,6 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py"
   }
 }
-
 
 
 

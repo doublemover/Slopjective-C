@@ -25,14 +25,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                               cli_options.emit_prefix,
                               artifacts.stage_diagnostics,
                               artifacts.post_pipeline_diagnostics);
+    if (!artifacts.manifest_json.empty()) {
+      WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
+    }
     if (!artifacts.diagnostics.empty()) {
       return 1;
     }
 
-    // M251-A001 freeze: the frontend emits runtime metadata ownership evidence
-    // into manifest/IR before object emission; native runtime linking remains a
-    // later milestone.
-    WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
+    // M251-A003 expands the handoff so manifest projection survives fail-closed
+    // later lowering/object gates; native runtime linking remains a later
+    // milestone.
 
     const fs::path ir_out = cli_options.out_dir / (cli_options.emit_prefix + ".ll");
     WriteText(ir_out, artifacts.ir_text);

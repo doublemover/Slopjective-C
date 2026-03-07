@@ -4131,3 +4131,18 @@ runtime-owned declaration packets.
 Current emit-only downstream `O3L300` remains acceptable during `M251-A002`
 because `M251-A003` is responsible for carrying runtime record projection
 through manifest-oriented lowering/emit boundaries.
+
+## M251 runtime record manifest handoff normalization (A003)
+
+Lane-A manifest projection shall preserve runtime-record handoff availability
+before later LLVM IR/object fail-closed diagnostics are surfaced.
+
+`M251-A003` requires:
+
+- explicit frontend emit intent for manifest, IR, and object outputs,
+- deterministic runtime-record manifest projection to remain available when
+  later lowering/runtime readiness is still incomplete,
+- manifest-only frontend runs to succeed without reporting downstream emit
+  failure,
+- full compile/emit workflows to remain fail-closed while still preserving the
+  manifest handoff artifact for downstream consumers.

@@ -24,6 +24,9 @@ struct Objc3FrontendOptions {
   std::uint8_t language_version = kObjc3DefaultLanguageVersion;
   Objc3FrontendCompatibilityMode compatibility_mode = Objc3FrontendCompatibilityMode::kCanonical;
   bool migration_assist = false;
+  bool emit_manifest = true;
+  bool emit_ir = true;
+  bool emit_object = true;
   Objc3LoweringContract lowering;
 };
 

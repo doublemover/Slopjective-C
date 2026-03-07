@@ -1388,31 +1388,29 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  std::string post_pipeline_failure_code;
+  std::string post_pipeline_failure_message;
+  const auto record_post_pipeline_failure = [&](const char *code, std::string message) {
+    if (!post_pipeline_failure_code.empty()) {
+      return;
+    }
+    post_pipeline_failure_code = code == nullptr ? "" : code;
+    post_pipeline_failure_message = std::move(message);
+  };
+
   std::string parse_lowering_readiness_error;
   if (!IsObjc3ParseLoweringReadinessSurfaceReady(bundle.parse_lowering_readiness_surface,
                                                  parse_lowering_readiness_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
-            parse_lowering_readiness_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
+            parse_lowering_readiness_error);
   }
 
   std::string diagnostics_surfacing_scaffold_error;
   if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingScaffoldReady(
           pipeline_result.lowering_runtime_diagnostics_surfacing_scaffold,
           diagnostics_surfacing_scaffold_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L301",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing scaffold check failed: " +
-            diagnostics_surfacing_scaffold_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L301",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing scaffold check failed: " +
+            diagnostics_surfacing_scaffold_error);
   }
 
   std::string diagnostics_surfacing_core_feature_error;
@@ -1420,14 +1418,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_core_feature_implementation_surface,
           diagnostics_surfacing_core_feature_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L321",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing core feature check failed: " +
-            diagnostics_surfacing_core_feature_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L321",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing core feature check failed: " +
+            diagnostics_surfacing_core_feature_error);
   }
 
   std::string diagnostics_surfacing_core_feature_expansion_error;
@@ -1435,14 +1427,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_core_feature_expansion_surface,
           diagnostics_surfacing_core_feature_expansion_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L322",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing core feature expansion check failed: " +
-            diagnostics_surfacing_core_feature_expansion_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L322",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing core feature expansion check failed: " +
+            diagnostics_surfacing_core_feature_expansion_error);
   }
 
   std::string diagnostics_surfacing_edge_case_compatibility_error;
@@ -1450,14 +1436,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface,
           diagnostics_surfacing_edge_case_compatibility_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L323",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing edge-case compatibility check failed: " +
-            diagnostics_surfacing_edge_case_compatibility_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L323",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing edge-case compatibility check failed: " +
+            diagnostics_surfacing_edge_case_compatibility_error);
   }
 
   std::string diagnostics_surfacing_edge_case_robustness_error;
@@ -1465,14 +1445,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_edge_case_expansion_and_robustness_surface,
           diagnostics_surfacing_edge_case_robustness_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L324",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing edge-case expansion and robustness check failed: " +
-            diagnostics_surfacing_edge_case_robustness_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L324",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing edge-case expansion and robustness check failed: " +
+            diagnostics_surfacing_edge_case_robustness_error);
   }
 
   std::string diagnostics_surfacing_diagnostics_hardening_error;
@@ -1480,14 +1454,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_diagnostics_hardening_surface,
           diagnostics_surfacing_diagnostics_hardening_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L325",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing diagnostics hardening check failed: " +
-            diagnostics_surfacing_diagnostics_hardening_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L325",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing diagnostics hardening check failed: " +
+            diagnostics_surfacing_diagnostics_hardening_error);
   }
 
   std::string diagnostics_surfacing_recovery_determinism_error;
@@ -1495,14 +1463,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_recovery_determinism_hardening_surface,
           diagnostics_surfacing_recovery_determinism_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L326",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing recovery/determinism hardening check failed: " +
-            diagnostics_surfacing_recovery_determinism_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L326",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing recovery/determinism hardening check failed: " +
+            diagnostics_surfacing_recovery_determinism_error);
   }
 
   std::string diagnostics_surfacing_conformance_matrix_error;
@@ -1510,28 +1472,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           pipeline_result
               .lowering_runtime_diagnostics_surfacing_conformance_matrix_implementation_surface,
           diagnostics_surfacing_conformance_matrix_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L327",
-        "LLVM IR emission failed: lowering/runtime diagnostics surfacing conformance matrix check failed: " +
-            diagnostics_surfacing_conformance_matrix_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L327",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing conformance matrix check failed: " +
+            diagnostics_surfacing_conformance_matrix_error);
   }
 
   std::string lowering_pass_graph_error;
   if (!IsObjc3LoweringPipelinePassGraphScaffoldReady(
           pipeline_result.lowering_pipeline_pass_graph_scaffold,
           lowering_pass_graph_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L301",
-        "LLVM IR emission failed: lowering pipeline pass-graph scaffold check failed: " +
-            lowering_pass_graph_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L301",         "LLVM IR emission failed: lowering pipeline pass-graph scaffold check failed: " +
+            lowering_pass_graph_error);
   }
 
   std::string lowering_pass_graph_core_feature_error;
@@ -1540,14 +1490,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   if (!IsObjc3IREmissionCompletenessCoreFeatureReady(
           pipeline_result.ir_emission_completeness_scaffold,
           lowering_pass_graph_core_feature_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L302",
-        "LLVM IR emission failed: lowering pipeline pass-graph core feature check failed: " +
-            lowering_pass_graph_core_feature_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L302",         "LLVM IR emission failed: lowering pipeline pass-graph core feature check failed: " +
+            lowering_pass_graph_core_feature_error);
   }
 
   std::string lowering_pass_graph_expansion_error;
@@ -1556,125 +1500,71 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   if (!IsObjc3IREmissionCompletenessExpansionReady(
           pipeline_result.ir_emission_completeness_scaffold,
           lowering_pass_graph_expansion_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L303",
-        "LLVM IR emission failed: lowering pipeline pass-graph core feature expansion check failed: " +
-            lowering_pass_graph_expansion_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L303",         "LLVM IR emission failed: lowering pipeline pass-graph core feature expansion check failed: " +
+            lowering_pass_graph_expansion_error);
   }
 
   std::string lowering_pass_graph_lane_a_edge_case_compatibility_error;
   if (!IsObjc3LoweringPipelinePassGraphEdgeCaseCompatibilityReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_edge_case_compatibility_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L305",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case compatibility check failed: " +
-            lowering_pass_graph_lane_a_edge_case_compatibility_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L305",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case compatibility check failed: " +
+            lowering_pass_graph_lane_a_edge_case_compatibility_error);
   }
 
   std::string lowering_pass_graph_lane_a_edge_case_robustness_error;
   if (!IsObjc3LoweringPipelinePassGraphEdgeCaseRobustnessReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_edge_case_robustness_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L307",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case robustness check failed: " +
-            lowering_pass_graph_lane_a_edge_case_robustness_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L307",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A edge-case robustness check failed: " +
+            lowering_pass_graph_lane_a_edge_case_robustness_error);
   }
 
   std::string lowering_pass_graph_lane_a_diagnostics_hardening_error;
   if (!IsObjc3LoweringPipelinePassGraphDiagnosticsHardeningReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_diagnostics_hardening_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L308",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A diagnostics hardening check failed: " +
-            lowering_pass_graph_lane_a_diagnostics_hardening_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L308",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A diagnostics hardening check failed: " +
+            lowering_pass_graph_lane_a_diagnostics_hardening_error);
   }
 
   std::string lowering_pass_graph_lane_a_recovery_determinism_error;
   if (!IsObjc3LoweringPipelinePassGraphRecoveryDeterminismReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_recovery_determinism_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L309",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A recovery determinism check failed: " +
-            lowering_pass_graph_lane_a_recovery_determinism_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L309",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A recovery determinism check failed: " +
+            lowering_pass_graph_lane_a_recovery_determinism_error);
   }
 
   std::string lowering_pass_graph_lane_a_conformance_matrix_error;
   if (!IsObjc3LoweringPipelinePassGraphConformanceMatrixReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_conformance_matrix_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L311",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A conformance matrix check failed: " +
-            lowering_pass_graph_lane_a_conformance_matrix_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L311",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A conformance matrix check failed: " +
+            lowering_pass_graph_lane_a_conformance_matrix_error);
   }
 
   std::string lowering_pass_graph_lane_a_conformance_corpus_error;
   if (!IsObjc3LoweringPipelinePassGraphConformanceCorpusReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_conformance_corpus_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L313",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A conformance corpus check failed: " +
-            lowering_pass_graph_lane_a_conformance_corpus_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L313",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A conformance corpus check failed: " +
+            lowering_pass_graph_lane_a_conformance_corpus_error);
   }
   std::string lowering_pass_graph_lane_a_performance_quality_guardrails_error;
   if (!IsObjc3LoweringPipelinePassGraphPerformanceQualityGuardrailsReady(
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface,
           lowering_pass_graph_lane_a_performance_quality_guardrails_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L315",
-        "LLVM IR emission failed: lowering pipeline pass-graph lane-A performance quality guardrails check failed: " +
-            lowering_pass_graph_lane_a_performance_quality_guardrails_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L315",         "LLVM IR emission failed: lowering pipeline pass-graph lane-A performance quality guardrails check failed: " +
+            lowering_pass_graph_lane_a_performance_quality_guardrails_error);
   }
 
   std::string lowering_pass_graph_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCompletenessEdgeCaseCompatibilityReady(
           pipeline_result.ir_emission_completeness_scaffold,
           lowering_pass_graph_edge_case_compatibility_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L304",
-        "LLVM IR emission failed: lowering pipeline pass-graph edge-case compatibility check failed: " +
-            lowering_pass_graph_edge_case_compatibility_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L304",         "LLVM IR emission failed: lowering pipeline pass-graph edge-case compatibility check failed: " +
+            lowering_pass_graph_edge_case_compatibility_error);
   }
 
   const Objc3IREmissionCoreFeatureImplementationSurface
@@ -1684,196 +1574,106 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   if (!IsObjc3IREmissionCoreFeatureImplementationReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_impl_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L306",
-        "LLVM IR emission failed: IR emission core feature implementation check failed: " +
-            ir_emission_core_feature_impl_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L306",         "LLVM IR emission failed: IR emission core feature implementation check failed: " +
+            ir_emission_core_feature_impl_error);
   }
   std::string ir_emission_core_feature_expansion_error;
   if (!IsObjc3IREmissionCoreFeatureExpansionReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_expansion_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L314",
-        "LLVM IR emission failed: IR emission core feature expansion check failed: " +
-            ir_emission_core_feature_expansion_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L314",         "LLVM IR emission failed: IR emission core feature expansion check failed: " +
+            ir_emission_core_feature_expansion_error);
   }
   std::string ir_emission_core_feature_edge_case_compatibility_error;
   if (!IsObjc3IREmissionCoreFeatureEdgeCaseCompatibilityReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_edge_case_compatibility_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L316",
-        "LLVM IR emission failed: IR emission core feature edge-case compatibility check failed: " +
-            ir_emission_core_feature_edge_case_compatibility_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L316",         "LLVM IR emission failed: IR emission core feature edge-case compatibility check failed: " +
+            ir_emission_core_feature_edge_case_compatibility_error);
   }
   std::string ir_emission_core_feature_edge_case_robustness_error;
   if (!IsObjc3IREmissionCoreFeatureEdgeCaseRobustnessReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_edge_case_robustness_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L317",
-        "LLVM IR emission failed: IR emission core feature edge-case robustness check failed: " +
-            ir_emission_core_feature_edge_case_robustness_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L317",         "LLVM IR emission failed: IR emission core feature edge-case robustness check failed: " +
+            ir_emission_core_feature_edge_case_robustness_error);
   }
   std::string ir_emission_core_feature_diagnostics_hardening_error;
   if (!IsObjc3IREmissionCoreFeatureDiagnosticsHardeningReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_diagnostics_hardening_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L318",
-        "LLVM IR emission failed: IR emission core feature diagnostics hardening check failed: " +
-            ir_emission_core_feature_diagnostics_hardening_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L318",         "LLVM IR emission failed: IR emission core feature diagnostics hardening check failed: " +
+            ir_emission_core_feature_diagnostics_hardening_error);
   }
   std::string ir_emission_core_feature_recovery_determinism_hardening_error;
   if (!IsObjc3IREmissionCoreFeatureRecoveryDeterminismHardeningReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_recovery_determinism_hardening_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L319",
-        "LLVM IR emission failed: IR emission core feature recovery determinism hardening check failed: " +
-            ir_emission_core_feature_recovery_determinism_hardening_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L319",         "LLVM IR emission failed: IR emission core feature recovery determinism hardening check failed: " +
+            ir_emission_core_feature_recovery_determinism_hardening_error);
   }
   std::string ir_emission_core_feature_conformance_matrix_error;
   if (!IsObjc3IREmissionCoreFeatureConformanceMatrixReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_conformance_matrix_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L320",
-        "LLVM IR emission failed: IR emission core feature conformance matrix check failed: " +
-            ir_emission_core_feature_conformance_matrix_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L320",         "LLVM IR emission failed: IR emission core feature conformance matrix check failed: " +
+            ir_emission_core_feature_conformance_matrix_error);
   }
   std::string ir_emission_core_feature_conformance_corpus_error;
   if (!IsObjc3IREmissionCoreFeatureConformanceCorpusReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_conformance_corpus_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L330",
-        "LLVM IR emission failed: IR emission core feature conformance corpus check failed: " +
-            ir_emission_core_feature_conformance_corpus_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L330",         "LLVM IR emission failed: IR emission core feature conformance corpus check failed: " +
+            ir_emission_core_feature_conformance_corpus_error);
   }
   std::string ir_emission_core_feature_performance_quality_guardrails_error;
   if (!IsObjc3IREmissionCoreFeaturePerformanceQualityGuardrailsReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_performance_quality_guardrails_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L331",
-        "LLVM IR emission failed: IR emission core feature performance quality guardrails check failed: " +
-            ir_emission_core_feature_performance_quality_guardrails_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L331",         "LLVM IR emission failed: IR emission core feature performance quality guardrails check failed: " +
+            ir_emission_core_feature_performance_quality_guardrails_error);
   }
   std::string ir_emission_core_feature_cross_lane_integration_sync_error;
   if (!IsObjc3IREmissionCoreFeatureCrossLaneIntegrationSyncReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_cross_lane_integration_sync_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L332",
-        "LLVM IR emission failed: IR emission core feature cross-lane integration sync check failed: " +
-            ir_emission_core_feature_cross_lane_integration_sync_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L332",         "LLVM IR emission failed: IR emission core feature cross-lane integration sync check failed: " +
+            ir_emission_core_feature_cross_lane_integration_sync_error);
   }
   std::string ir_emission_core_feature_advanced_core_shard1_error;
   if (!IsObjc3IREmissionCoreFeatureAdvancedCoreShard1Ready(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_advanced_core_shard1_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L333",
-        "LLVM IR emission failed: IR emission core feature advanced core shard 1 check failed: " +
-            ir_emission_core_feature_advanced_core_shard1_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L333",         "LLVM IR emission failed: IR emission core feature advanced core shard 1 check failed: " +
+            ir_emission_core_feature_advanced_core_shard1_error);
   }
   std::string ir_emission_core_feature_advanced_edge_compatibility_shard1_error;
   if (!IsObjc3IREmissionCoreFeatureAdvancedEdgeCompatibilityShard1Ready(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_advanced_edge_compatibility_shard1_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L334",
-        "LLVM IR emission failed: IR emission core feature advanced edge compatibility shard 1 check failed: " +
-            ir_emission_core_feature_advanced_edge_compatibility_shard1_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L334",         "LLVM IR emission failed: IR emission core feature advanced edge compatibility shard 1 check failed: " +
+            ir_emission_core_feature_advanced_edge_compatibility_shard1_error);
   }
   std::string ir_emission_core_feature_advanced_diagnostics_shard1_error;
   if (!IsObjc3IREmissionCoreFeatureAdvancedDiagnosticsShard1Ready(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_advanced_diagnostics_shard1_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L335",
-        "LLVM IR emission failed: IR emission core feature advanced diagnostics shard 1 check failed: " +
-            ir_emission_core_feature_advanced_diagnostics_shard1_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L335",         "LLVM IR emission failed: IR emission core feature advanced diagnostics shard 1 check failed: " +
+            ir_emission_core_feature_advanced_diagnostics_shard1_error);
   }
   std::string ir_emission_core_feature_advanced_conformance_shard1_error;
   if (!IsObjc3IREmissionCoreFeatureAdvancedConformanceShard1Ready(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_advanced_conformance_shard1_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L336",
-        "LLVM IR emission failed: IR emission core feature advanced conformance shard 1 check failed: " +
-            ir_emission_core_feature_advanced_conformance_shard1_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L336",         "LLVM IR emission failed: IR emission core feature advanced conformance shard 1 check failed: " +
+            ir_emission_core_feature_advanced_conformance_shard1_error);
   }
   std::string ir_emission_core_feature_advanced_integration_shard1_error;
   if (!IsObjc3IREmissionCoreFeatureAdvancedIntegrationShard1Ready(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_advanced_integration_shard1_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L337",
-        "LLVM IR emission failed: IR emission core feature advanced integration shard 1 check failed: " +
-            ir_emission_core_feature_advanced_integration_shard1_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L337",         "LLVM IR emission failed: IR emission core feature advanced integration shard 1 check failed: " +
+            ir_emission_core_feature_advanced_integration_shard1_error);
   }
   std::vector<const FunctionDecl *> manifest_functions;
   manifest_functions.reserve(program.functions.size());
@@ -1981,78 +1781,42 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid property synthesis/ivar binding lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid property synthesis/ivar binding lowering contract");
   }
   const std::string property_synthesis_ivar_binding_replay_key =
       Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
   const Objc3IdClassSelObjectPointerTypecheckContract id_class_sel_object_pointer_typecheck_contract =
       BuildIdClassSelObjectPointerTypecheckContract(program);
   if (!IsValidObjc3IdClassSelObjectPointerTypecheckContract(id_class_sel_object_pointer_typecheck_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid id/Class/SEL/object-pointer typecheck lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid id/Class/SEL/object-pointer typecheck lowering contract");
   }
   const std::string id_class_sel_object_pointer_typecheck_replay_key =
       Objc3IdClassSelObjectPointerTypecheckReplayKey(id_class_sel_object_pointer_typecheck_contract);
   const Objc3MessageSendSelectorLoweringContract message_send_selector_lowering_contract =
       BuildMessageSendSelectorLoweringContract(program);
   if (!IsValidObjc3MessageSendSelectorLoweringContract(message_send_selector_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid message-send selector lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid message-send selector lowering contract");
   }
   const std::string message_send_selector_lowering_replay_key =
       Objc3MessageSendSelectorLoweringReplayKey(message_send_selector_lowering_contract);
   const Objc3DispatchAbiMarshallingContract dispatch_abi_marshalling_contract =
       BuildDispatchAbiMarshallingContract(program, options.lowering.max_message_send_args);
   if (!IsValidObjc3DispatchAbiMarshallingContract(dispatch_abi_marshalling_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid dispatch ABI marshalling contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid dispatch ABI marshalling contract");
   }
   const std::string dispatch_abi_marshalling_replay_key =
       Objc3DispatchAbiMarshallingReplayKey(dispatch_abi_marshalling_contract);
   const Objc3NilReceiverSemanticsFoldabilityContract nil_receiver_semantics_foldability_contract =
       BuildNilReceiverSemanticsFoldabilityContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3NilReceiverSemanticsFoldabilityContract(nil_receiver_semantics_foldability_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid nil-receiver semantics/foldability contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid nil-receiver semantics/foldability contract");
   }
   const std::string nil_receiver_semantics_foldability_replay_key =
       Objc3NilReceiverSemanticsFoldabilityReplayKey(nil_receiver_semantics_foldability_contract);
   const Objc3SuperDispatchMethodFamilyContract super_dispatch_method_family_contract =
       BuildSuperDispatchMethodFamilyContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3SuperDispatchMethodFamilyContract(super_dispatch_method_family_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid super-dispatch/method-family contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid super-dispatch/method-family contract");
   }
   const std::string super_dispatch_method_family_replay_key =
       Objc3SuperDispatchMethodFamilyReplayKey(super_dispatch_method_family_contract);
@@ -2062,78 +1826,42 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           nil_receiver_semantics_foldability_contract,
           options);
   if (!IsValidObjc3RuntimeShimHostLinkContract(runtime_shim_host_link_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid runtime shim/host-link contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid runtime shim/host-link contract");
   }
   const std::string runtime_shim_host_link_replay_key =
       Objc3RuntimeShimHostLinkReplayKey(runtime_shim_host_link_contract);
   const Objc3OwnershipQualifierLoweringContract ownership_qualifier_lowering_contract =
       BuildOwnershipQualifierLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid ownership-qualifier lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid ownership-qualifier lowering contract");
   }
   const std::string ownership_qualifier_lowering_replay_key =
       Objc3OwnershipQualifierLoweringReplayKey(ownership_qualifier_lowering_contract);
   const Objc3RetainReleaseOperationLoweringContract retain_release_operation_lowering_contract =
       BuildRetainReleaseOperationLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3RetainReleaseOperationLoweringContract(retain_release_operation_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid retain-release operation lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid retain-release operation lowering contract");
   }
   const std::string retain_release_operation_lowering_replay_key =
       Objc3RetainReleaseOperationLoweringReplayKey(retain_release_operation_lowering_contract);
   const Objc3AutoreleasePoolScopeLoweringContract autoreleasepool_scope_lowering_contract =
       BuildAutoreleasePoolScopeLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3AutoreleasePoolScopeLoweringContract(autoreleasepool_scope_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid autoreleasepool scope lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid autoreleasepool scope lowering contract");
   }
   const std::string autoreleasepool_scope_lowering_replay_key =
       Objc3AutoreleasePoolScopeLoweringReplayKey(autoreleasepool_scope_lowering_contract);
   const Objc3WeakUnownedSemanticsLoweringContract weak_unowned_semantics_lowering_contract =
       BuildWeakUnownedSemanticsLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3WeakUnownedSemanticsLoweringContract(weak_unowned_semantics_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid weak-unowned semantics lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid weak-unowned semantics lowering contract");
   }
   const std::string weak_unowned_semantics_lowering_replay_key =
       Objc3WeakUnownedSemanticsLoweringReplayKey(weak_unowned_semantics_lowering_contract);
   const Objc3ArcDiagnosticsFixitLoweringContract arc_diagnostics_fixit_lowering_contract =
       BuildArcDiagnosticsFixitLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3ArcDiagnosticsFixitLoweringContract(arc_diagnostics_fixit_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid ARC diagnostics/fix-it lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid ARC diagnostics/fix-it lowering contract");
   }
   const std::string arc_diagnostics_fixit_lowering_replay_key =
       Objc3ArcDiagnosticsFixitLoweringReplayKey(arc_diagnostics_fixit_lowering_contract);
@@ -2196,116 +1924,62 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L305",
-        "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
-            ownership_aware_lowering_behavior_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L305",         "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
+            ownership_aware_lowering_behavior_error);
   }
   std::string ownership_aware_lowering_behavior_expansion_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_expansion_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L310",
-        "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
-            ownership_aware_lowering_behavior_expansion_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L310",         "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
+            ownership_aware_lowering_behavior_expansion_error);
   }
   std::string ownership_aware_lowering_behavior_edge_case_compatibility_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_edge_case_compatibility_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L312",
-        "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
-            ownership_aware_lowering_behavior_edge_case_compatibility_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L312",         "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
+            ownership_aware_lowering_behavior_edge_case_compatibility_error);
   }
   std::string ownership_aware_lowering_behavior_recovery_determinism_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_recovery_determinism_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L318",
-        "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
-            ownership_aware_lowering_behavior_recovery_determinism_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L318",         "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
+            ownership_aware_lowering_behavior_recovery_determinism_error);
   }
   std::string ownership_aware_lowering_behavior_conformance_matrix_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_conformance_matrix_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L319",
-        "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
-            ownership_aware_lowering_behavior_conformance_matrix_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L319",         "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
+            ownership_aware_lowering_behavior_conformance_matrix_error);
   }
   std::string ownership_aware_lowering_behavior_conformance_corpus_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_conformance_corpus_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L320",
-        "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
-            ownership_aware_lowering_behavior_conformance_corpus_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L320",         "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
+            ownership_aware_lowering_behavior_conformance_corpus_error);
   }
   std::string ownership_aware_lowering_behavior_performance_quality_guardrails_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_performance_quality_guardrails_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L328",
-        "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
-            ownership_aware_lowering_behavior_performance_quality_guardrails_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L328",         "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
+            ownership_aware_lowering_behavior_performance_quality_guardrails_error);
   }
   std::string ownership_aware_lowering_behavior_cross_lane_integration_error;
   if (!IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
           ownership_aware_lowering_behavior_scaffold,
           ownership_aware_lowering_behavior_cross_lane_integration_error)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L329",
-        "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
-            ownership_aware_lowering_behavior_cross_lane_integration_error)};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L329",         "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
+            ownership_aware_lowering_behavior_cross_lane_integration_error);
   }
   const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
       BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockLiteralCaptureLoweringContract(block_literal_capture_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid block literal capture lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block literal capture lowering contract");
   }
   const std::string block_literal_capture_lowering_replay_key =
       Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
@@ -2313,13 +1987,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildBlockAbiInvokeTrampolineLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
           block_abi_invoke_trampoline_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid block ABI invoke-trampoline lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block ABI invoke-trampoline lowering contract");
   }
   const std::string block_abi_invoke_trampoline_lowering_replay_key =
       Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
@@ -2328,13 +1996,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildBlockStorageEscapeLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockStorageEscapeLoweringContract(
           block_storage_escape_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid block storage escape lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block storage escape lowering contract");
   }
   const std::string block_storage_escape_lowering_replay_key =
       Objc3BlockStorageEscapeLoweringReplayKey(block_storage_escape_lowering_contract);
@@ -2342,13 +2004,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildBlockCopyDisposeLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockCopyDisposeLoweringContract(
           block_copy_dispose_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid block copy-dispose lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block copy-dispose lowering contract");
   }
   const std::string block_copy_dispose_lowering_replay_key =
       Objc3BlockCopyDisposeLoweringReplayKey(block_copy_dispose_lowering_contract);
@@ -2356,13 +2012,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildBlockDeterminismPerfBaselineLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(
           block_determinism_perf_baseline_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid block determinism/perf baseline lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block determinism/perf baseline lowering contract");
   }
   const std::string block_determinism_perf_baseline_lowering_replay_key =
       Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
@@ -2371,13 +2021,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildLightweightGenericsConstraintLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
           lightweight_generic_constraint_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid lightweight generics constraint lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid lightweight generics constraint lowering contract");
   }
   const std::string lightweight_generic_constraint_lowering_replay_key =
       Objc3LightweightGenericsConstraintLoweringReplayKey(
@@ -2386,13 +2030,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildNullabilityFlowWarningPrecisionLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
           nullability_flow_warning_precision_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid nullability-flow warning-precision lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid nullability-flow warning-precision lowering contract");
   }
   const std::string nullability_flow_warning_precision_lowering_replay_key =
       Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
@@ -2404,14 +2042,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     const std::string protocol_contract_replay_key =
         Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
             protocol_qualified_object_type_lowering_contract);
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid protocol-qualified object type lowering contract (" +
-            protocol_contract_replay_key + ")")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid protocol-qualified object type lowering contract (" +
+            protocol_contract_replay_key + ")");
   }
   const std::string protocol_qualified_object_type_lowering_replay_key =
       Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
@@ -2420,13 +2052,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildVarianceBridgeCastLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3VarianceBridgeCastLoweringContract(
           variance_bridge_cast_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid variance/bridged-cast lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid variance/bridged-cast lowering contract");
   }
   const std::string variance_bridge_cast_lowering_replay_key =
       Objc3VarianceBridgeCastLoweringReplayKey(
@@ -2435,13 +2061,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildGenericMetadataAbiLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3GenericMetadataAbiLoweringContract(
           generic_metadata_abi_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid generic metadata ABI lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid generic metadata ABI lowering contract");
   }
   const std::string generic_metadata_abi_lowering_replay_key =
       Objc3GenericMetadataAbiLoweringReplayKey(
@@ -2450,13 +2070,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       BuildModuleImportGraphLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3ModuleImportGraphLoweringContract(
           module_import_graph_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {MakeDiag(
-        1,
-        1,
-        "O3L300",
-        "LLVM IR emission failed: invalid module import graph lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid module import graph lowering contract");
   }
   const std::string module_import_graph_lowering_replay_key =
       Objc3ModuleImportGraphLoweringReplayKey(
@@ -2467,14 +2081,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               pipeline_result.sema_parity_surface);
   if (!IsValidObjc3NamespaceCollisionShadowingLoweringContract(
           namespace_collision_shadowing_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1,
-                 1,
-                 "O3L300",
-                 "LLVM IR emission failed: invalid namespace collision "
-                 "shadowing lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid namespace collision "
+                 "shadowing lowering contract");
   }
   const std::string namespace_collision_shadowing_lowering_replay_key =
       Objc3NamespaceCollisionShadowingLoweringReplayKey(
@@ -2485,14 +2093,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PublicPrivateApiPartitionLoweringContract(
           public_private_api_partition_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1,
-                 1,
-                 "O3L300",
-                 "LLVM IR emission failed: invalid public-private API "
-                 "partition lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid public-private API "
+                 "partition lowering contract");
   }
   const std::string public_private_api_partition_lowering_replay_key =
       Objc3PublicPrivateApiPartitionLoweringReplayKey(
@@ -2503,15 +2105,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               pipeline_result.sema_parity_surface);
   if (!IsValidObjc3IncrementalModuleCacheInvalidationLoweringContract(
           incremental_module_cache_invalidation_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(
-            1,
-            1,
-            "O3L300",
-            "LLVM IR emission failed: invalid incremental module cache "
-            "invalidation lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid incremental module cache "
+            "invalidation lowering contract");
   }
   const std::string incremental_module_cache_invalidation_lowering_replay_key =
       Objc3IncrementalModuleCacheInvalidationLoweringReplayKey(
@@ -2522,14 +2117,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               pipeline_result.sema_parity_surface);
   if (!IsValidObjc3CrossModuleConformanceLoweringContract(
           cross_module_conformance_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1,
-                 1,
-                 "O3L300",
-                 "LLVM IR emission failed: invalid cross-module conformance "
-                 "lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid cross-module conformance "
+                 "lowering contract");
   }
   const std::string cross_module_conformance_lowering_replay_key =
       Objc3CrossModuleConformanceLoweringReplayKey(
@@ -2540,14 +2129,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               pipeline_result.sema_parity_surface);
   if (!IsValidObjc3ThrowsPropagationLoweringContract(
           throws_propagation_lowering_contract)) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1,
-                 1,
-                 "O3L300",
-                 "LLVM IR emission failed: invalid throws propagation "
-                 "lowering contract")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: invalid throws propagation "
+                 "lowering contract");
   }
   const std::string throws_propagation_lowering_replay_key =
       Objc3ThrowsPropagationLoweringReplayKey(
@@ -2582,10 +2165,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   std::vector<int> resolved_global_values;
   if (!ResolveGlobalInitializerValues(program.globals, resolved_global_values) ||
       resolved_global_values.size() != program.globals.size()) {
-    bundle.post_pipeline_diagnostics = {
-        MakeDiag(1, 1, "O3L300", "LLVM IR emission failed: global initializer failed const evaluation")};
-    bundle.diagnostics = bundle.post_pipeline_diagnostics;
-    return bundle;
+    record_post_pipeline_failure("O3L300", "LLVM IR emission failed: global initializer failed const evaluation");
   }
 
   std::ostringstream manifest;
@@ -5053,6 +4633,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  }\n";
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
+
+  if (!post_pipeline_failure_code.empty()) {
+    if (!options.emit_ir && !options.emit_object) {
+      return bundle;
+    }
+    bundle.post_pipeline_diagnostics = {
+        MakeDiag(1, 1, post_pipeline_failure_code, post_pipeline_failure_message)};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    return bundle;
+  }
+
+  if (!options.emit_ir && !options.emit_object) {
+    return bundle;
+  }
 
   Objc3IRFrontendMetadata ir_frontend_metadata;
   ir_frontend_metadata.language_version = options.language_version;
