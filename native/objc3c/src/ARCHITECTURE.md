@@ -5700,3 +5700,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_semantic_validation_rules_conformance_matrix_implementation_b009_expectations.md
 
+  m231_declaration_semantic_validation_rules_conformance_corpus_expansion_b010_expectations.md
+
