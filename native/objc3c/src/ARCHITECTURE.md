@@ -5734,3 +5734,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_lowering_contract_updates_recovery_and_determinism_hardening_c008_expectations.md
 
+  m231_declaration_lowering_contract_updates_conformance_matrix_implementation_c009_expectations.md
+
