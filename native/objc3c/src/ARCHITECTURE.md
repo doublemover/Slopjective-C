@@ -5620,3 +5620,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M230 lane-E A001 Program control and release readiness governance contract-freeze anchors
   m230_program_control_and_release_readiness_governance_contract_and_architecture_freeze_e001_expectations.md
 
+  m230_program_control_and_release_readiness_governance_modular_split_and_scaffolding_e002_expectations.md
+
