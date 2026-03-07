@@ -3734,3 +3734,8 @@ lane-B deterministic boundary anchors (`M242-B013`) and fail closed on contract-
 
 lane-B deterministic boundary anchors (`M242-B014`) and fail closed on contract-freeze evidence drift
 
+
+lowering/runtime diagnostics surfacing docs and operator runbook synchronization shall preserve
+
+lane-C dependency anchors (`M243-C012`)
+

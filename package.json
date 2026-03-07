@@ -5833,6 +5833,9 @@
     "check:objc3c:m243-c012-lowering-runtime-diagnostics-surfacing-cross-lane-integration-sync-contract": "python scripts/check_m243_c012_lowering_runtime_diagnostics_surfacing_cross_lane_integration_sync_contract.py",
     "test:tooling:m243-c012-lowering-runtime-diagnostics-surfacing-cross-lane-integration-sync-contract": "python -m pytest tests/tooling/test_check_m243_c012_lowering_runtime_diagnostics_surfacing_cross_lane_integration_sync_contract.py -q",
     "check:objc3c:m243-c012-lane-c-readiness": "npm run check:objc3c:m243-c011-lane-c-readiness && npm run check:objc3c:m243-c012-lowering-runtime-diagnostics-surfacing-cross-lane-integration-sync-contract && npm run test:tooling:m243-c012-lowering-runtime-diagnostics-surfacing-cross-lane-integration-sync-contract",
+    "check:objc3c:m243-c013-lowering-runtime-diagnostics-surfacing-docs-operator-runbook-synchronization-contract": "python scripts/check_m243_c013_lowering_runtime_diagnostics_surfacing_docs_operator_runbook_synchronization_contract.py",
+    "test:tooling:m243-c013-lowering-runtime-diagnostics-surfacing-docs-operator-runbook-synchronization-contract": "python -m pytest tests/tooling/test_check_m243_c013_lowering_runtime_diagnostics_surfacing_docs_operator_runbook_synchronization_contract.py -q",
+    "check:objc3c:m243-c013-lane-c-readiness": "npm run check:objc3c:m243-c012-lane-c-readiness && npm run check:objc3c:m243-c013-lowering-runtime-diagnostics-surfacing-docs-operator-runbook-synchronization-contract && npm run test:tooling:m243-c013-lowering-runtime-diagnostics-surfacing-docs-operator-runbook-synchronization-contract",
     "check:objc3c:m243-b002-semantic-diagnostic-taxonomy-and-fix-it-synthesis-modular-split-scaffolding-contract": "python scripts/check_m243_b002_semantic_diagnostic_taxonomy_and_fix_it_synthesis_modular_split_scaffolding_contract.py",
     "test:tooling:m243-b002-semantic-diagnostic-taxonomy-and-fix-it-synthesis-modular-split-scaffolding-contract": "python -m pytest tests/tooling/test_check_m243_b002_semantic_diagnostic_taxonomy_and_fix_it_synthesis_modular_split_scaffolding_contract.py -q",
     "check:objc3c:m243-b002-lane-b-readiness": "npm run check:objc3c:m243-b001-lane-b-readiness && npm run check:objc3c:m243-b002-semantic-diagnostic-taxonomy-and-fix-it-synthesis-modular-split-scaffolding-contract && npm run test:tooling:m243-b002-semantic-diagnostic-taxonomy-and-fix-it-synthesis-modular-split-scaffolding-contract",
@@ -6531,4 +6534,6 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py"
   }
 }
+
+
 
