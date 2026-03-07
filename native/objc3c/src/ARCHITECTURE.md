@@ -5768,3 +5768,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M231 lane-E A001 Declaration coverage gate and docs contract-freeze anchors
   m231_declaration_coverage_gate_and_docs_contract_and_architecture_freeze_e001_expectations.md
 
+  m231_declaration_coverage_gate_and_docs_modular_split_and_scaffolding_e002_expectations.md
+
