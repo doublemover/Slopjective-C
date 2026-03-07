@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-MODE = "m236-e001-ownership-gate-and-performance-evidence-contract-architecture-freeze-v1"
+MODE = "m236-e002-ownership-gate-and-performance-evidence-modular-split-and-scaffolding-v1"
 
 DEFAULT_EXPECTATIONS_DOC = (
     ROOT
@@ -107,9 +107,9 @@ EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     ),
     SnippetCheck(
         "M236-E002-DOC-EXP-02",
-        "Contract ID: `objc3c-ownership-gate-and-performance-evidence-contract-architecture-freeze/m236-e001-v1`",
+        "Contract ID: `objc3c-ownership-gate-and-performance-evidence-modular-split-and-scaffolding/m236-e002-v1`",
     ),
-    SnippetCheck("M236-E002-DOC-EXP-03", "Issue: `#5840`"),
+    SnippetCheck("M236-E002-DOC-EXP-03", "Issue: `#5942`"),
     SnippetCheck(
         "M236-E002-DOC-EXP-04",
         "Dependencies: `M236-A001`, `M236-B001`, `M236-C001`",
@@ -141,7 +141,7 @@ PACKET_SNIPPETS: tuple[SnippetCheck, ...] = (
         "# M236-E002 Ownership Gate and Performance Evidence Modular Split and Scaffolding Packet",
     ),
     SnippetCheck("M236-E002-DOC-PKT-02", "Packet: `M236-E002`"),
-    SnippetCheck("M236-E002-DOC-PKT-03", "Issue: `#5840`"),
+    SnippetCheck("M236-E002-DOC-PKT-03", "Issue: `#5942`"),
     SnippetCheck(
         "M236-E002-DOC-PKT-04",
         "Dependencies: `M236-A001`, `M236-B001`, `M236-C001`",
@@ -304,6 +304,7 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
 
 
 

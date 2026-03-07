@@ -3,7 +3,7 @@
 Packet: `M236-E001`
 Milestone: `M236`
 Lane: `E`
-Issue: `#5840`
+Issue: `#5941`
 Freeze date: `2026-03-05`
 Dependencies: `M236-A001`, `M236-B001`, `M236-C001`
 
@@ -43,5 +43,6 @@ currently-closed early lane steps.
 ## Evidence Output
 
 - `tmp/reports/m236/M236-E001/local_check_summary.json`
+
 
 

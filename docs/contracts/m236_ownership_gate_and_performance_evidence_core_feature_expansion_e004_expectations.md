@@ -1,8 +1,8 @@
 # M236 Ownership Gate and Performance Evidence Core Feature Expansion Expectations (E001)
 
-Contract ID: `objc3c-ownership-gate-and-performance-evidence-contract-architecture-freeze/m236-e001-v1`
+Contract ID: `objc3c-ownership-gate-and-performance-evidence-core-feature-expansion/m236-e004-v1`
 Status: Accepted
-Issue: `#5840`
+Issue: `#5944`
 Dependencies: `M236-A001`, `M236-B001`, `M236-C001`
 Scope: M236 lane-E ownership gate and performance evidence core feature expansion bound to currently-closed early lane steps.
 
@@ -39,6 +39,7 @@ lane steps before E002+ workpacks consume lane-E readiness.
 ## Evidence Path
 
 - `tmp/reports/m236/M236-E004/local_check_summary.json`
+
 
 
 

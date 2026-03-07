@@ -1,8 +1,8 @@
 # M236 Ownership Gate and Performance Evidence Edge-case and Compatibility Completion Expectations (E001)
 
-Contract ID: `objc3c-ownership-gate-and-performance-evidence-contract-architecture-freeze/m236-e001-v1`
+Contract ID: `objc3c-ownership-gate-and-performance-evidence-edge-case-and-compatibility-completion/m236-e005-v1`
 Status: Accepted
-Issue: `#5840`
+Issue: `#5945`
 Dependencies: `M236-A001`, `M236-B001`, `M236-C001`
 Scope: M236 lane-E ownership gate and performance evidence edge-case and compatibility completion bound to currently-closed early lane steps.
 
@@ -39,6 +39,7 @@ lane steps before E002+ workpacks consume lane-E readiness.
 ## Evidence Path
 
 - `tmp/reports/m236/M236-E005/local_check_summary.json`
+
 
 
 
