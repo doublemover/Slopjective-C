@@ -3626,3 +3626,8 @@ qualified type lowering and ABI representation diagnostics hardening governance 
 
 lane-C dependency anchors (`M235-C006`) and fail closed on diagnostics hardening evidence drift
 
+
+qualified type lowering and ABI representation recovery and determinism hardening governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C007`) and fail closed on recovery and determinism hardening evidence drift
+

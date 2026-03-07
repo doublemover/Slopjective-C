@@ -5869,3 +5869,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m235_qualified_type_lowering_and_abi_representation_diagnostics_hardening_c007_expectations.md
 
+
+- M235 lane-C C008 qualified type lowering and ABI representation recovery and determinism hardening anchors
+
+  docs/contracts/m235_qualified_type_lowering_and_abi_representation_recovery_and_determinism_hardening_c008_expectations.md
+

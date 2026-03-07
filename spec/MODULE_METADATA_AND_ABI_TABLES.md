@@ -3660,3 +3660,8 @@ deterministic lane-C qualified type lowering and ABI representation diagnostics 
 
 with explicit `M235-C006` dependency continuity so diagnostics hardening lowering and ABI drift fails closed.
 
+
+deterministic lane-C qualified type lowering and ABI representation recovery and determinism hardening metadata anchors for `M235-C008`
+
+with explicit `M235-C007` dependency continuity so recovery and determinism hardening lowering and ABI drift fails closed.
+
