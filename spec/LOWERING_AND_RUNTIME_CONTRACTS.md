@@ -3976,3 +3976,8 @@ runtime/link bridge-path release-candidate and replay dry-run governance shall p
 
 release-candidate and replay dry-run evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path advanced core workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D014`)
+
+advanced core workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+

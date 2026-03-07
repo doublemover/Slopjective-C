@@ -5283,3 +5283,8 @@ deterministic lane-D runtime/link bridge-path release-candidate and replay dry-r
 
 explicit `M244-D013` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path advanced core workpack (shard 1) metadata anchors for `M244-D015`
+
+explicit `M244-D014` dependency continuity and fail-closed evidence continuity
+
