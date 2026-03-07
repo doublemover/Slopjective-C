@@ -5971,3 +5971,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M236 lane-A A003 qualifier/generic grammar normalization anchors
   docs/contracts/m236_ownership_syntax_and_annotation_ingestion_core_feature_implementation_a003_expectations.md
 
+
+- M236 lane-A A004 qualifier/generic grammar normalization anchors
+  docs/contracts/m236_ownership_syntax_and_annotation_ingestion_core_feature_expansion_a004_expectations.md
+
