@@ -3896,3 +3896,8 @@ interop semantic/type mediation advanced conformance workpack (shard 1) governan
 
 lane-B dependency anchor (`M244-B017`)
 
+
+interop semantic/type mediation integration closeout and gate sign-off governance shall preserve explicit
+
+lane-B dependency anchor (`M244-B018`)
+
