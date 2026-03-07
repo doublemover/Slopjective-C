@@ -4945,3 +4945,7 @@ nullability/generics/qualifier semantic-inference evidence and parser replay-bud
 deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B002`
 nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
 
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
