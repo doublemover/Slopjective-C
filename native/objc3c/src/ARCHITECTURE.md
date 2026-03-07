@@ -6423,3 +6423,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M237 lane-B B018 qualifier/generic semantic inference anchors
   docs/contracts/m237_block_semantic_capture_and_lifetime_rules_integration_closeout_and_gate_sign_off_b018_expectations.md
 
+
+- M237 lane-C C001 qualified type lowering and ABI representation anchors explicit
+  docs/contracts/m237_block_lowering_and_invoke_emission_contract_and_architecture_freeze_c001_expectations.md
+
