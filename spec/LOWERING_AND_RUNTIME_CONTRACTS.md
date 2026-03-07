@@ -3971,3 +3971,8 @@ runtime/link bridge-path docs and operator runbook synchronization governance sh
 
 docs and operator runbook synchronization evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path release-candidate and replay dry-run governance shall preserve explicit lane-D dependency anchors (`M244-D013`)
+
+release-candidate and replay dry-run evidence drift before downstream runtime projection and metadata integration advances.
+

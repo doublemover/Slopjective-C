@@ -5278,3 +5278,8 @@ deterministic lane-D runtime/link bridge-path docs and operator runbook synchron
 
 explicit `M244-D012` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path release-candidate and replay dry-run metadata anchors for `M244-D014`
+
+explicit `M244-D013` dependency continuity and fail-closed evidence continuity
+

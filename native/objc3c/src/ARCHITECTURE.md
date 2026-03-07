@@ -8000,3 +8000,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D012` dependency drift.
 
+
+- M244 lane-D D014 runtime/link bridge-path release-candidate and replay dry-run anchors
+
+  docs/contracts/m244_runtime_link_bridge_path_release_candidate_and_replay_dry_run_d014_expectations.md
+
+  and fail-closed against `M244-D013` dependency drift.
+
