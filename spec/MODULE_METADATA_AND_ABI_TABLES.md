@@ -3581,3 +3581,7 @@ explicit lane-E contract-freeze metadata continuity so declaration grammar expan
 deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B001`
 property/ivar semantics evidence and parser replay-budget continuity
 
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B002`
+property/ivar semantics evidence and parser replay-budget continuity
+
