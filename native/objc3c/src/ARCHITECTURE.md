@@ -5574,3 +5574,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M230 lane-D A001 Developer CLI and diagnostics ergonomics contract-freeze anchors
   m230_developer_cli_and_diagnostics_ergonomics_contract_and_architecture_freeze_d001_expectations.md
 
+  m230_developer_cli_and_diagnostics_ergonomics_modular_split_and_scaffolding_d002_expectations.md
+
