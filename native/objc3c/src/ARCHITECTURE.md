@@ -5672,3 +5672,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m230_program_control_and_release_readiness_governance_advanced_core_workpack_shard_3_e027_expectations.md
 
+  m230_program_control_and_release_readiness_governance_advanced_edge_compatibility_workpack_shard_3_e028_expectations.md
+
