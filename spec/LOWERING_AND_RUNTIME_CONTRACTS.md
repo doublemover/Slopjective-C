@@ -3754,3 +3754,8 @@ lowering/runtime diagnostics surfacing advanced edge compatibility workpack (sha
 
 lane-C dependency anchors (`M243-C015`)
 
+
+lowering/runtime diagnostics surfacing integration closeout and gate sign-off shall preserve
+
+lane-C dependency anchors (`M243-C016`)
+
