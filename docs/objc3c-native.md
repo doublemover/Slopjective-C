@@ -55,6 +55,29 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `--objc3-route-backend-from-capabilities` derives `--objc3-ir-object-backend` from summary capabilities (uses `llvm-direct` only when `llc --filetype=obj` is available).
 - Capability probes are captured with `npm run check:objc3c:llvm-capabilities` into `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`.
 
+## Runtime metadata source ownership freeze (M251-A001)
+
+- Contract ID:
+  `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
+- Canonical source schema:
+  `objc3-runtime-metadata-source-boundary-v1`
+- The frontend now emits an explicit runtime metadata source ownership boundary
+  into manifest and LLVM IR metadata.
+- Source ownership is fail-closed and remains frontend-owned for:
+  - class records via `Objc3InterfaceDecl` / `Objc3ImplementationDecl`
+  - protocol records via `Objc3ProtocolDecl`
+  - category records via `has_category` interface/implementation declarations
+  - property records via `Objc3PropertyDecl`
+  - method records via `Objc3MethodDecl`
+  - ivar records via property synthesis / `ivar_binding_symbol` packets
+- Non-goals for A001:
+  - no native runtime library is present yet,
+  - no runtime metadata section emission exists yet,
+  - runtime metadata source records are not lowering-ready yet,
+  - the deterministic `objc3_msgsend_i32` shim remains test-only evidence.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-A001/runtime_metadata_source_ownership_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

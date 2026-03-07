@@ -194,6 +194,124 @@ std::size_t CountLinkedCategorySymbolsFromTypeMetadata(const Handoff &handoff) {
   return 0;
 }
 
+std::size_t CountCategoryInterfaceSourceRecords(const Objc3Program &program) {
+  return static_cast<std::size_t>(std::count_if(program.interfaces.begin(),
+                                                program.interfaces.end(),
+                                                [](const Objc3InterfaceDecl &decl) { return decl.has_category; }));
+}
+
+std::size_t CountCategoryImplementationSourceRecords(const Objc3Program &program) {
+  return static_cast<std::size_t>(std::count_if(program.implementations.begin(),
+                                                program.implementations.end(),
+                                                [](const Objc3ImplementationDecl &decl) { return decl.has_category; }));
+}
+
+std::size_t CountPropertySourceRecords(const Objc3Program &program) {
+  std::size_t total = 0;
+  for (const auto &protocol : program.protocols) {
+    total += protocol.properties.size();
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    total += interface_decl.properties.size();
+  }
+  for (const auto &implementation : program.implementations) {
+    total += implementation.properties.size();
+  }
+  return total;
+}
+
+std::size_t CountMethodSourceRecords(const Objc3Program &program) {
+  std::size_t total = 0;
+  for (const auto &protocol : program.protocols) {
+    total += protocol.methods.size();
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    total += interface_decl.methods.size();
+  }
+  for (const auto &implementation : program.implementations) {
+    total += implementation.methods.size();
+  }
+  return total;
+}
+
+std::size_t CountIvarSourceRecords(const Objc3Program &program) {
+  std::size_t total = 0;
+  const auto accumulate_properties = [&total](const auto &properties) {
+    for (const auto &property : properties) {
+      if (!property.ivar_binding_symbol.empty()) {
+        ++total;
+      }
+    }
+  };
+  for (const auto &interface_decl : program.interfaces) {
+    accumulate_properties(interface_decl.properties);
+  }
+  for (const auto &implementation : program.implementations) {
+    accumulate_properties(implementation.properties);
+  }
+  return total;
+}
+
+Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipBoundary(
+    const Objc3Program &program,
+    const Objc3SemanticTypeMetadataHandoff &type_metadata_handoff) {
+  Objc3RuntimeMetadataSourceOwnershipBoundary boundary;
+  const std::size_t ast_class_record_count =
+      program.interfaces.size() + program.implementations.size();
+  const std::size_t sema_class_record_count =
+      type_metadata_handoff.interfaces_lexicographic.size() +
+      type_metadata_handoff.implementations_lexicographic.size();
+  const bool sema_class_record_count_present =
+      sema_class_record_count > 0u ||
+      type_metadata_handoff.interface_implementation_summary.declared_interfaces > 0u ||
+      type_metadata_handoff.interface_implementation_summary.declared_implementations > 0u;
+
+  boundary.frontend_owns_runtime_metadata_source_records = true;
+  boundary.runtime_metadata_source_records_ready_for_lowering = false;
+  boundary.native_runtime_library_present = false;
+  boundary.runtime_shim_test_only = true;
+  boundary.class_record_count = ast_class_record_count;
+  boundary.protocol_record_count = program.protocols.size();
+  boundary.category_interface_record_count = CountCategoryInterfaceSourceRecords(program);
+  boundary.category_implementation_record_count =
+      CountCategoryImplementationSourceRecords(program);
+  boundary.property_record_count = CountPropertySourceRecords(program);
+  boundary.method_record_count = CountMethodSourceRecords(program);
+  boundary.ivar_record_count = CountIvarSourceRecords(program);
+
+  const bool class_alignment_consistent =
+      !sema_class_record_count_present || sema_class_record_count == ast_class_record_count;
+  boundary.deterministic_source_schema =
+      class_alignment_consistent &&
+      boundary.ivar_record_count <= boundary.property_record_count &&
+      !boundary.contract_id.empty() &&
+      !boundary.canonical_source_schema.empty() &&
+      !boundary.class_record_ast_anchor.empty() &&
+      !boundary.protocol_record_ast_anchor.empty() &&
+      !boundary.category_record_ast_anchor.empty() &&
+      !boundary.property_record_ast_anchor.empty() &&
+      !boundary.method_record_ast_anchor.empty() &&
+      !boundary.ivar_record_ast_anchor.empty() &&
+      !boundary.ivar_record_source_model.empty();
+  boundary.fail_closed =
+      boundary.frontend_owns_runtime_metadata_source_records &&
+      !boundary.runtime_metadata_source_records_ready_for_lowering &&
+      !boundary.native_runtime_library_present &&
+      boundary.runtime_shim_test_only;
+
+  if (!class_alignment_consistent) {
+    boundary.failure_reason = "AST/sema class metadata source counts diverged";
+  } else if (boundary.ivar_record_count > boundary.property_record_count) {
+    boundary.failure_reason = "ivar source records exceed property source records";
+  } else if (!boundary.deterministic_source_schema) {
+    boundary.failure_reason = "runtime metadata source schema anchors are incomplete";
+  } else if (!boundary.fail_closed) {
+    boundary.failure_reason = "runtime metadata source ownership boundary is not fail-closed";
+  }
+
+  return boundary;
+}
+
 Objc3FrontendProtocolCategorySummary BuildProtocolCategorySummary(
     const Objc3Program &program,
     const Objc3SemanticIntegrationSurface &integration_surface,
@@ -786,6 +904,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     }
   }
 
+  result.runtime_metadata_source_ownership_boundary =
+      BuildRuntimeMetadataSourceOwnershipBoundary(Objc3ParsedProgramAst(result.program),
+                                                 result.sema_type_metadata_handoff);
   result.typed_sema_to_lowering_contract_surface =
       BuildObjc3TypedSemaToLoweringContractSurface(result, options);
   result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =

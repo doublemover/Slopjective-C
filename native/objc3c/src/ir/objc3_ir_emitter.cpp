@@ -135,6 +135,10 @@ class Objc3IREmitter {
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
     }
+    if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {
+      out << "; runtime_metadata_source_ownership = "
+          << frontend_metadata_.runtime_metadata_source_ownership_contract_id << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1685,6 +1689,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_class_protocol_category_linking = !{!7}\n";
     out << "!objc3.objc_selector_normalization = !{!3}\n";
     out << "!objc3.objc_property_attribute = !{!4}\n";
+    out << "!objc3.objc_runtime_metadata_source_ownership = !{!45}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -1759,6 +1764,23 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(frontend_metadata_.property_getter_selector_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.property_setter_selector_entries) << ", i1 "
         << (frontend_metadata_.deterministic_property_attribute_handoff ? 1 : 0) << "}\n\n";
+    out << "!45 = !{!\"" << EscapeCStringLiteral(frontend_metadata_.runtime_metadata_source_ownership_contract_id)
+        << "\", !\"" << EscapeCStringLiteral(frontend_metadata_.runtime_metadata_source_schema) << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.runtime_metadata_ivar_source_model) << "\", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_class_record_count) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_protocol_record_count) << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_category_interface_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_category_implementation_record_count)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_property_record_count)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_method_record_count)
+        << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.runtime_metadata_ivar_record_count)
+        << ", i1 " << (frontend_metadata_.frontend_owns_runtime_metadata_source_records ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.runtime_metadata_source_records_ready_for_lowering ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.native_runtime_library_present ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.runtime_metadata_source_boundary_fail_closed ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.runtime_shim_test_only ? 1 : 0) << ", i1 "
+        << (frontend_metadata_.deterministic_runtime_metadata_source_schema ? 1 : 0) << "}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "

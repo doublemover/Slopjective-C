@@ -5363,3 +5363,17 @@ deterministic lane-E interop conformance gate and operations integration closeou
 
 `M244-E016`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
 
+## M251 runtime metadata source ownership metadata anchors (A001)
+
+Deterministic lane-A runtime metadata ownership metadata anchors for
+`M251-A001` shall preserve:
+
+- contract id `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
+- canonical source schema `objc3-runtime-metadata-source-boundary-v1`
+- record-count evidence for classes, protocols, category interfaces,
+  category implementations, properties, methods, and ivar source packets
+- explicit booleans for frontend ownership, fail-closed status, lowering
+  readiness, native runtime library presence, and test-shim-only topology
+
+Runtime metadata ownership evidence and parser/sema source-boundary continuity
+must remain deterministic before metadata section ABI work begins.

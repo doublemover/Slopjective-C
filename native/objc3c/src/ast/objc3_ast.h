@@ -318,6 +318,25 @@ struct FuncParam {
   unsigned column = 1;
 };
 
+inline constexpr const char *kObjc3RuntimeMetadataSourceOwnershipContractId =
+    "objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1";
+inline constexpr const char *kObjc3RuntimeMetadataCanonicalSourceSchema =
+    "objc3-runtime-metadata-source-boundary-v1";
+inline constexpr const char *kObjc3RuntimeMetadataClassAstAnchor =
+    "Objc3InterfaceDecl/Objc3ImplementationDecl";
+inline constexpr const char *kObjc3RuntimeMetadataProtocolAstAnchor =
+    "Objc3ProtocolDecl";
+inline constexpr const char *kObjc3RuntimeMetadataCategoryAstAnchor =
+    "Objc3InterfaceDecl.has_category/Objc3ImplementationDecl.has_category";
+inline constexpr const char *kObjc3RuntimeMetadataPropertyAstAnchor =
+    "Objc3PropertyDecl";
+inline constexpr const char *kObjc3RuntimeMetadataMethodAstAnchor =
+    "Objc3MethodDecl";
+inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =
+    "Objc3PropertyDecl.ivar_binding_symbol";
+inline constexpr const char *kObjc3RuntimeMetadataIvarSourceModel =
+    "property-synthesis-ivar-binding-symbols";
+
 struct Objc3MethodDecl {
   struct SelectorPiece {
     std::string keyword;

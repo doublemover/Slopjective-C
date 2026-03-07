@@ -8063,3 +8063,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   and fail-closed against `M244-D021` dependency drift.
 
+- M251 lane-A A001 runtime metadata source ownership freeze anchors explicit
+  lane-A contract-freeze artifacts in
+  `docs/contracts/m251_runtime_metadata_source_ownership_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m251/m251_a001_runtime_metadata_source_ownership_contract_and_architecture_freeze_packet.md`,
+  `ast/objc3_ast.h`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_pipeline.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
+  runtime metadata source ownership boundary remains deterministic and
+  fail-closed before `M251-A002` extraction work begins.

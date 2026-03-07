@@ -4088,3 +4088,26 @@ preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D i
 
 or lane-E integration closeout and gate sign-off readiness hooks drift.
 
+## M251 runtime metadata source ownership freeze (A001)
+
+Runtime metadata source ownership governance shall preserve deterministic
+lane-A boundary anchors and fail closed on runtime metadata source drift before
+native metadata section emission begins.
+
+The canonical freeze for `M251-A001` is:
+
+- contract id: `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
+- canonical source schema: `objc3-runtime-metadata-source-boundary-v1`
+- class records remain frontend-owned through
+  `Objc3InterfaceDecl` / `Objc3ImplementationDecl`
+- protocol records remain frontend-owned through `Objc3ProtocolDecl`
+- category records remain frontend-owned through category-bearing interface /
+  implementation declarations
+- property and method records remain frontend-owned through
+  `Objc3PropertyDecl` / `Objc3MethodDecl`
+- ivar records remain frontend-owned through property-synthesis ivar binding
+  symbols until native ivar declaration extraction exists
+
+For `M251-A001`, lowering/runtime must treat the emitted boundary as authoritative
+ownership evidence while runtime metadata source records remain not yet ready
+for lowering and the test shim topology remains explicitly non-production.

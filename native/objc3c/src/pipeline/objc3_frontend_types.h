@@ -1231,6 +1231,57 @@ struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   }
 };
 
+struct Objc3RuntimeMetadataSourceOwnershipBoundary {
+  std::string contract_id = kObjc3RuntimeMetadataSourceOwnershipContractId;
+  std::string canonical_source_schema = kObjc3RuntimeMetadataCanonicalSourceSchema;
+  std::string class_record_ast_anchor = kObjc3RuntimeMetadataClassAstAnchor;
+  std::string protocol_record_ast_anchor = kObjc3RuntimeMetadataProtocolAstAnchor;
+  std::string category_record_ast_anchor = kObjc3RuntimeMetadataCategoryAstAnchor;
+  std::string property_record_ast_anchor = kObjc3RuntimeMetadataPropertyAstAnchor;
+  std::string method_record_ast_anchor = kObjc3RuntimeMetadataMethodAstAnchor;
+  std::string ivar_record_ast_anchor = kObjc3RuntimeMetadataIvarAstAnchor;
+  std::string ivar_record_source_model = kObjc3RuntimeMetadataIvarSourceModel;
+  bool frontend_owns_runtime_metadata_source_records = false;
+  bool runtime_metadata_source_records_ready_for_lowering = false;
+  bool native_runtime_library_present = false;
+  bool runtime_shim_test_only = true;
+  bool deterministic_source_schema = false;
+  bool fail_closed = false;
+  std::size_t class_record_count = 0;
+  std::size_t protocol_record_count = 0;
+  std::size_t category_interface_record_count = 0;
+  std::size_t category_implementation_record_count = 0;
+  std::size_t property_record_count = 0;
+  std::size_t method_record_count = 0;
+  std::size_t ivar_record_count = 0;
+  std::string failure_reason;
+
+  std::size_t category_record_count() const {
+    return category_interface_record_count + category_implementation_record_count;
+  }
+};
+
+inline bool IsReadyObjc3RuntimeMetadataSourceOwnershipBoundary(
+    const Objc3RuntimeMetadataSourceOwnershipBoundary &boundary) {
+  return boundary.frontend_owns_runtime_metadata_source_records &&
+         !boundary.runtime_metadata_source_records_ready_for_lowering &&
+         !boundary.native_runtime_library_present &&
+         boundary.runtime_shim_test_only &&
+         boundary.deterministic_source_schema &&
+         boundary.fail_closed &&
+         !boundary.contract_id.empty() &&
+         !boundary.canonical_source_schema.empty() &&
+         !boundary.class_record_ast_anchor.empty() &&
+         !boundary.protocol_record_ast_anchor.empty() &&
+         !boundary.category_record_ast_anchor.empty() &&
+         !boundary.property_record_ast_anchor.empty() &&
+         !boundary.method_record_ast_anchor.empty() &&
+         !boundary.ivar_record_ast_anchor.empty() &&
+         !boundary.ivar_record_source_model.empty() &&
+         boundary.ivar_record_count <= boundary.property_record_count &&
+         boundary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;
@@ -1292,6 +1343,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
+  Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   std::array<std::size_t, 3> sema_diagnostics_after_pass = {0, 0, 0};
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;
