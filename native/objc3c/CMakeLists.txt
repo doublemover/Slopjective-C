@@ -10,6 +10,15 @@ option(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION
   ON
 )
 
+set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
+set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime)
+set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/objc3_runtime.h)
+set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
+set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
+# M251-D001 freeze: reserve the canonical in-tree native runtime library
+# target/header/source-root surface before M251-D002 lands the actual library
+# skeleton and M251-D003 wires the driver/link path to consume it.
+
 # M132-A002 target decomposition contract.
 # Current state: monolithic `src/main.cpp`.
 # Planned steady-state split:

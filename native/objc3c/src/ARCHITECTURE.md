@@ -8189,3 +8189,17 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
   `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
   canonical zero-descriptor object inspection matrix stays published through manifest/IR surfaces and backed by real llvm-readobj/llvm-objdump evidence on emitted objects before native runtime library wiring replaces the shim.
+
+- M251 lane-D D001 native runtime-library surface and build contract freeze
+  anchors explicit runtime-surface artifacts in
+  `docs/contracts/m251_native_runtime_library_surface_and_build_contract_d001_expectations.md`,
+  `spec/planning/compiler/m251/m251_d001_native_runtime_library_surface_and_build_contract_packet.md`,
+  `../CMakeLists.txt`, `runtime/README.md`, `ast/objc3_ast.h`,
+  `pipeline/objc3_frontend_types.h`, `pipeline/objc3_frontend_artifacts.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `driver/objc3_objc3_path.cpp`, `tests/tooling/runtime/README.md`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`, and `package.json` so the
+  canonical in-tree runtime-library target, header/source-root reservation,
+  exported registration/lookup/dispatch/reset entrypoints, ownership boundary,
+  and deferred driver-link mode remain fail-closed and published through
+  manifest/IR surfaces before `M251-D002` and `M251-D003` land.

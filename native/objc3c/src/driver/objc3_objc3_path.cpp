@@ -34,6 +34,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // M251-C003 object inspection harness: manifest emission also publishes
       // the llvm-readobj/llvm-objdump matrix so object inspection remains tied
       // to canonical emitted artifacts instead of ad hoc operator commands.
+      // M251-D001 freeze: manifest emission also publishes the reserved native
+      // runtime support-library surface (target/header/entrypoints/link mode)
+      // so D002/D003 must preserve one canonical runtime-library contract while
+      // the deterministic test shim remains non-canonical evidence only.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

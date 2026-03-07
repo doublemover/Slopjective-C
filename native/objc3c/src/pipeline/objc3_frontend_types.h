@@ -1631,6 +1631,70 @@ inline bool IsReadyObjc3RuntimeMetadataObjectInspectionHarnessSummary(
          summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeSupportLibraryContractSummary {
+  std::string contract_id = kObjc3RuntimeSupportLibraryContractId;
+  std::string metadata_scaffold_contract_id =
+      kObjc3RuntimeMetadataSectionScaffoldContractId;
+  bool boundary_frozen = false;
+  bool fail_closed = false;
+  bool target_name_frozen = false;
+  bool exported_entrypoints_frozen = false;
+  bool ownership_boundaries_frozen = false;
+  bool build_constraints_frozen = false;
+  bool shim_remains_test_only = false;
+  bool native_runtime_library_present = false;
+  bool driver_link_wiring_pending = true;
+  bool ready_for_runtime_library_skeleton = false;
+  std::string cmake_target_name = kObjc3RuntimeSupportLibraryTargetName;
+  std::string public_header_path = kObjc3RuntimeSupportLibraryPublicHeaderPath;
+  std::string source_root = kObjc3RuntimeSupportLibrarySourceRoot;
+  std::string library_kind = kObjc3RuntimeSupportLibraryKind;
+  std::string archive_basename = kObjc3RuntimeSupportLibraryArchiveBasename;
+  std::string register_image_symbol =
+      kObjc3RuntimeSupportLibraryRegisterImageSymbol;
+  std::string lookup_selector_symbol =
+      kObjc3RuntimeSupportLibraryLookupSelectorSymbol;
+  std::string dispatch_i32_symbol =
+      kObjc3RuntimeSupportLibraryDispatchI32Symbol;
+  std::string reset_for_testing_symbol =
+      kObjc3RuntimeSupportLibraryResetForTestingSymbol;
+  std::string driver_link_mode = kObjc3RuntimeSupportLibraryDriverLinkMode;
+  std::string compiler_ownership_boundary =
+      kObjc3RuntimeSupportLibraryCompilerOwnershipBoundary;
+  std::string runtime_ownership_boundary =
+      kObjc3RuntimeSupportLibraryRuntimeOwnershipBoundary;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeSupportLibraryContractSummary(
+    const Objc3RuntimeSupportLibraryContractSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.metadata_scaffold_contract_id.empty() &&
+         summary.boundary_frozen &&
+         summary.fail_closed &&
+         summary.target_name_frozen &&
+         summary.exported_entrypoints_frozen &&
+         summary.ownership_boundaries_frozen &&
+         summary.build_constraints_frozen &&
+         summary.shim_remains_test_only &&
+         !summary.native_runtime_library_present &&
+         summary.driver_link_wiring_pending &&
+         summary.ready_for_runtime_library_skeleton &&
+         !summary.cmake_target_name.empty() &&
+         !summary.public_header_path.empty() &&
+         !summary.source_root.empty() &&
+         !summary.library_kind.empty() &&
+         !summary.archive_basename.empty() &&
+         !summary.register_image_symbol.empty() &&
+         !summary.lookup_selector_symbol.empty() &&
+         !summary.dispatch_i32_symbol.empty() &&
+         !summary.reset_for_testing_symbol.empty() &&
+         !summary.driver_link_mode.empty() &&
+         !summary.compiler_ownership_boundary.empty() &&
+         !summary.runtime_ownership_boundary.empty() &&
+         summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

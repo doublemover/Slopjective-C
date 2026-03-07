@@ -4271,6 +4271,35 @@ runtime metadata scaffold objects.
 - the inspection harness to remain fail-closed until the `M251-C002` scaffold
   packet is ready.
 
+## M251 native runtime-library surface and build contract (D001)
+
+Lane-D shall freeze the canonical in-tree native runtime-library surface before
+the library skeleton and driver link wiring land.
+
+`M251-D001` requires:
+
+- `Objc3RuntimeSupportLibraryContractSummary` to remain the single lane-D
+  freeze packet for native runtime-library surface and build integration
+  constraints,
+- manifest JSON and LLVM IR metadata to publish the same runtime-library
+  contract through `runtime_support_library_contract_id` and
+  `!objc3.objc_runtime_support_library`,
+- the in-tree runtime-library surface to remain frozen as target
+  `objc3_runtime`, source root `native/objc3c/src/runtime`, public header
+  `native/objc3c/src/runtime/objc3_runtime.h`, and static archive basename
+  `objc3_runtime`,
+- the exported entrypoint family to remain frozen as
+  `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
+  `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
+- compiler ownership to remain limited to emitted metadata while runtime
+  ownership remains limited to registration, lookup, and dispatch state,
+- the driver link mode to remain fail-closed as `not-linked-until-m251-d003`
+  until the runtime library is actually wired in.
+
+Runtime-library surface governance must therefore remain deterministic and fail
+closed before `M251-D002` lands the library skeleton and `M251-D003` rewires
+the driver to consume it.
+
 Runtime metadata object inspection governance must therefore remain
 deterministic and fail closed before runtime registration, live lookup, and
 executable object-model payload lowering land.

@@ -265,6 +265,33 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
 
+## Native runtime-library surface and build contract (M251-D001)
+
+- Lane-D now freezes a canonical runtime-library contract packet:
+  `Objc3RuntimeSupportLibraryContractSummary`.
+- Manifest JSON and emitted LLVM IR now publish the same contract through
+  `runtime_support_library_contract_id` and
+  `!objc3.objc_runtime_support_library`.
+- The reserved in-tree runtime-library surface is:
+  - `objc3_runtime`
+  - `native/objc3c/src/runtime`
+  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `static`
+  - `objc3_runtime`
+- The frozen exported entrypoints are:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_reset_for_testing`
+- Ownership is frozen as:
+  - compiler emits runtime metadata and does not hand source-record ownership to
+    the runtime
+  - runtime owns registration, selector lookup, and dispatch state
+- Driver link mode remains `not-linked-until-m251-d003`, and the deterministic
+  `objc3_msgsend_i32` shim remains explicit non-canonical evidence only.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-D001/runtime_support_library_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

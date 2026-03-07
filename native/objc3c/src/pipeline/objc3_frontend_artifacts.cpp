@@ -229,6 +229,22 @@ BuildRuntimeMetadataObjectInspectionHarnessSummary(
   return summary;
 }
 
+Objc3RuntimeSupportLibraryContractSummary
+BuildRuntimeSupportLibraryContractSummary() {
+  Objc3RuntimeSupportLibraryContractSummary summary;
+  summary.boundary_frozen = true;
+  summary.fail_closed = true;
+  summary.target_name_frozen = true;
+  summary.exported_entrypoints_frozen = true;
+  summary.ownership_boundaries_frozen = true;
+  summary.build_constraints_frozen = true;
+  summary.shim_remains_test_only = true;
+  summary.native_runtime_library_present = false;
+  summary.driver_link_wiring_pending = true;
+  summary.ready_for_runtime_library_skeleton = true;
+  return summary;
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -1886,6 +1902,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeMetadataObjectInspectionHarnessSummary(
               runtime_metadata_section_abi,
               runtime_metadata_section_scaffold);
+  const Objc3RuntimeSupportLibraryContractSummary runtime_support_library =
+      BuildRuntimeSupportLibraryContractSummary();
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -3167,6 +3185,64 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_metadata_object_inspection.symbol_inventory_command
            << "\",\"runtime_metadata_object_inspection_failure_reason\":\""
            << runtime_metadata_object_inspection.failure_reason
+           << "\",\"runtime_support_library_contract_id\":\""
+           << runtime_support_library.contract_id
+           << "\",\"runtime_support_library_metadata_scaffold_contract_id\":\""
+           << runtime_support_library.metadata_scaffold_contract_id
+           << "\",\"runtime_support_library_boundary_frozen\":"
+           << (runtime_support_library.boundary_frozen ? "true" : "false")
+           << ",\"runtime_support_library_fail_closed\":"
+           << (runtime_support_library.fail_closed ? "true" : "false")
+           << ",\"runtime_support_library_target_name_frozen\":"
+           << (runtime_support_library.target_name_frozen ? "true" : "false")
+           << ",\"runtime_support_library_exported_entrypoints_frozen\":"
+           << (runtime_support_library.exported_entrypoints_frozen ? "true"
+                                                                   : "false")
+           << ",\"runtime_support_library_ownership_boundaries_frozen\":"
+           << (runtime_support_library.ownership_boundaries_frozen ? "true"
+                                                                   : "false")
+           << ",\"runtime_support_library_build_constraints_frozen\":"
+           << (runtime_support_library.build_constraints_frozen ? "true"
+                                                                : "false")
+           << ",\"runtime_support_library_shim_remains_test_only\":"
+           << (runtime_support_library.shim_remains_test_only ? "true"
+                                                              : "false")
+           << ",\"runtime_support_library_native_library_present\":"
+           << (runtime_support_library.native_runtime_library_present ? "true"
+                                                                      : "false")
+           << ",\"runtime_support_library_driver_link_wiring_pending\":"
+           << (runtime_support_library.driver_link_wiring_pending ? "true"
+                                                                  : "false")
+           << ",\"runtime_support_library_ready_for_skeleton\":"
+           << (runtime_support_library.ready_for_runtime_library_skeleton
+                   ? "true"
+                   : "false")
+           << ",\"runtime_support_library_target_name\":\""
+           << runtime_support_library.cmake_target_name
+           << "\",\"runtime_support_library_public_header_path\":\""
+           << runtime_support_library.public_header_path
+           << "\",\"runtime_support_library_source_root\":\""
+           << runtime_support_library.source_root
+           << "\",\"runtime_support_library_library_kind\":\""
+           << runtime_support_library.library_kind
+           << "\",\"runtime_support_library_archive_basename\":\""
+           << runtime_support_library.archive_basename
+           << "\",\"runtime_support_library_register_image_symbol\":\""
+           << runtime_support_library.register_image_symbol
+           << "\",\"runtime_support_library_lookup_selector_symbol\":\""
+           << runtime_support_library.lookup_selector_symbol
+           << "\",\"runtime_support_library_dispatch_i32_symbol\":\""
+           << runtime_support_library.dispatch_i32_symbol
+           << "\",\"runtime_support_library_reset_for_testing_symbol\":\""
+           << runtime_support_library.reset_for_testing_symbol
+           << "\",\"runtime_support_library_driver_link_mode\":\""
+           << runtime_support_library.driver_link_mode
+           << "\",\"runtime_support_library_compiler_ownership_boundary\":\""
+           << runtime_support_library.compiler_ownership_boundary
+           << "\",\"runtime_support_library_runtime_ownership_boundary\":\""
+           << runtime_support_library.runtime_ownership_boundary
+           << "\",\"runtime_support_library_failure_reason\":\""
+           << runtime_support_library.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
@@ -5836,6 +5912,54 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_object_inspection.symbol_inventory_row_key;
   ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_command =
       runtime_metadata_object_inspection.symbol_inventory_command;
+  ir_frontend_metadata.runtime_support_library_contract_id =
+      runtime_support_library.contract_id;
+  ir_frontend_metadata.runtime_support_library_metadata_scaffold_contract_id =
+      runtime_support_library.metadata_scaffold_contract_id;
+  ir_frontend_metadata.runtime_support_library_boundary_frozen =
+      runtime_support_library.boundary_frozen;
+  ir_frontend_metadata.runtime_support_library_fail_closed =
+      runtime_support_library.fail_closed;
+  ir_frontend_metadata.runtime_support_library_target_name_frozen =
+      runtime_support_library.target_name_frozen;
+  ir_frontend_metadata.runtime_support_library_exported_entrypoints_frozen =
+      runtime_support_library.exported_entrypoints_frozen;
+  ir_frontend_metadata.runtime_support_library_ownership_boundaries_frozen =
+      runtime_support_library.ownership_boundaries_frozen;
+  ir_frontend_metadata.runtime_support_library_build_constraints_frozen =
+      runtime_support_library.build_constraints_frozen;
+  ir_frontend_metadata.runtime_support_library_shim_remains_test_only =
+      runtime_support_library.shim_remains_test_only;
+  ir_frontend_metadata.runtime_support_library_native_library_present =
+      runtime_support_library.native_runtime_library_present;
+  ir_frontend_metadata.runtime_support_library_driver_link_wiring_pending =
+      runtime_support_library.driver_link_wiring_pending;
+  ir_frontend_metadata.runtime_support_library_ready_for_skeleton =
+      runtime_support_library.ready_for_runtime_library_skeleton;
+  ir_frontend_metadata.runtime_support_library_target_name =
+      runtime_support_library.cmake_target_name;
+  ir_frontend_metadata.runtime_support_library_public_header_path =
+      runtime_support_library.public_header_path;
+  ir_frontend_metadata.runtime_support_library_source_root =
+      runtime_support_library.source_root;
+  ir_frontend_metadata.runtime_support_library_library_kind =
+      runtime_support_library.library_kind;
+  ir_frontend_metadata.runtime_support_library_archive_basename =
+      runtime_support_library.archive_basename;
+  ir_frontend_metadata.runtime_support_library_register_image_symbol =
+      runtime_support_library.register_image_symbol;
+  ir_frontend_metadata.runtime_support_library_lookup_selector_symbol =
+      runtime_support_library.lookup_selector_symbol;
+  ir_frontend_metadata.runtime_support_library_dispatch_i32_symbol =
+      runtime_support_library.dispatch_i32_symbol;
+  ir_frontend_metadata.runtime_support_library_reset_for_testing_symbol =
+      runtime_support_library.reset_for_testing_symbol;
+  ir_frontend_metadata.runtime_support_library_driver_link_mode =
+      runtime_support_library.driver_link_mode;
+  ir_frontend_metadata.runtime_support_library_compiler_ownership_boundary =
+      runtime_support_library.compiler_ownership_boundary;
+  ir_frontend_metadata.runtime_support_library_runtime_ownership_boundary =
+      runtime_support_library.runtime_ownership_boundary;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =

@@ -12,6 +12,10 @@ M251-C002 scaffold: the native driver now emits retained metadata placeholder
 globals, but this shim still is not the runtime registration, lookup, or executable object-model implementation.
 M251-C003 object inspection harness: emitted objects are now inspected with
 llvm-readobj/llvm-objdump evidence, but that harness still validates compiler layout and retention rather than pretending the shim is a native runtime.
+M251-D001 freeze: the canonical native runtime-library surface is reserved for
+`objc3_runtime` / `objc3_runtime_register_image` / `objc3_runtime_lookup_selector` /
+`objc3_runtime_dispatch_i32` / `objc3_runtime_reset_for_testing`; this shim remains
+separate test-only evidence until M251-D002 and M251-D003 land.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

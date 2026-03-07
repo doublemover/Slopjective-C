@@ -165,6 +165,10 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_object_inspection_contract_id
           << "\n";
     }
+    if (!frontend_metadata_.runtime_support_library_contract_id.empty()) {
+      out << "; runtime_support_library = "
+          << frontend_metadata_.runtime_support_library_contract_id << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1721,6 +1725,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
+    out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -2070,6 +2075,86 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_object_inspection_symbol_inventory_command)
+        << "\"}\n";
+    out << "!51 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_metadata_scaffold_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_support_library_boundary_frozen ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_fail_closed ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_target_name_frozen ? 1
+                                                                          : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_exported_entrypoints_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_ownership_boundaries_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_build_constraints_frozen
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_shim_remains_test_only
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_native_library_present
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_driver_link_wiring_pending
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_ready_for_skeleton ? 1
+                                                                          : 0)
+        << ", !\""
+        << EscapeCStringLiteral(frontend_metadata_.runtime_support_library_target_name)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_public_header_path)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.runtime_support_library_source_root)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.runtime_support_library_library_kind)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_archive_basename)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_register_image_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_lookup_selector_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_dispatch_i32_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_reset_for_testing_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_driver_link_mode)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_compiler_ownership_boundary)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_runtime_ownership_boundary)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

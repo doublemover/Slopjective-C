@@ -5513,6 +5513,29 @@ Runtime metadata object inspection anchors must remain deterministic and fail
 closed before runtime registration, live lookup, and executable object-model
 payload lowering land.
 
+## M251 native runtime-library surface and build contract metadata anchors (D001)
+
+Deterministic lane-D native runtime-library surface anchors for `M251-D001`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1`,
+- scaffold dependency contract id
+  `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- target name `objc3_runtime`,
+- source root `native/objc3c/src/runtime`,
+- public header `native/objc3c/src/runtime/objc3_runtime.h`,
+- library kind `static` and archive basename `objc3_runtime`,
+- exported entrypoints `objc3_runtime_register_image`,
+  `objc3_runtime_lookup_selector`, `objc3_runtime_dispatch_i32`, and
+  `objc3_runtime_reset_for_testing`,
+- driver link mode `not-linked-until-m251-d003`,
+- named LLVM IR metadata `!objc3.objc_runtime_support_library`.
+
+Native runtime-library surface anchors must remain deterministic and fail
+closed before the library skeleton, bootstrap registrar, and live dispatch
+runtime land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
