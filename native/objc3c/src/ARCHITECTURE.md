@@ -6103,3 +6103,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M236 lane-B B021 qualifier/generic semantic inference anchors
   docs/contracts/m236_ownership_semantic_modeling_and_checks_integration_closeout_and_gate_sign_off_b021_expectations.md
 
+
+- M236 lane-C C001 qualified type lowering and ABI representation anchors explicit
+  docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_contract_and_architecture_freeze_c001_expectations.md
+
