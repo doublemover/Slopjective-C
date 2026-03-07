@@ -3646,3 +3646,8 @@ qualified type lowering and ABI representation performance and quality guardrail
 
 lane-C dependency anchors (`M235-C010`) and fail closed on performance and quality guardrails evidence drift
 
+
+qualified type lowering and ABI representation cross-lane integration sync governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C011`) and fail closed on cross-lane integration sync evidence drift
+
