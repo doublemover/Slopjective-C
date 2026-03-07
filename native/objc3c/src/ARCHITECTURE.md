@@ -5894,3 +5894,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m235_qualified_type_lowering_and_abi_representation_cross_lane_integration_sync_c012_expectations.md
 
+
+- M235 lane-C C013 qualified type lowering and ABI representation docs and operator runbook synchronization anchors
+
+  docs/contracts/m235_qualified_type_lowering_and_abi_representation_docs_and_operator_runbook_synchronization_c013_expectations.md
+

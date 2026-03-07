@@ -3685,3 +3685,8 @@ deterministic lane-C qualified type lowering and ABI representation cross-lane i
 
 with explicit `M235-C011` dependency continuity so cross-lane integration sync lowering and ABI drift fails closed.
 
+
+deterministic lane-C qualified type lowering and ABI representation docs and operator runbook synchronization metadata anchors for `M235-C013`
+
+with explicit `M235-C012` dependency continuity so docs and operator runbook synchronization lowering and ABI drift fails closed.
+

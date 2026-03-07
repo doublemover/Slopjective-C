@@ -3651,3 +3651,8 @@ qualified type lowering and ABI representation cross-lane integration sync gover
 
 lane-C dependency anchors (`M235-C011`) and fail closed on cross-lane integration sync evidence drift
 
+
+qualified type lowering and ABI representation docs and operator runbook synchronization governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C012`) and fail closed on docs and operator runbook synchronization evidence drift
+
