@@ -5093,3 +5093,8 @@ deterministic lane-D CLI/reporting output docs/operator runbook synchronization 
 
 deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D022`
 
+
+deterministic lane-E diagnostics quality gate and replay policy docs and operator runbook synchronization dependency anchors for
+
+`M243-E012`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+

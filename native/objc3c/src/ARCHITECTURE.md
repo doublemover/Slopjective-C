@@ -7862,3 +7862,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 - M243 lane-D D022 integration closeout and gate sign-off anchors CLI/reporting output contract integration
 
+  (`M243-E012`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`)
+

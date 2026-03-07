@@ -5989,6 +5989,9 @@
     "check:objc3c:m243-e012-lane-e-diagnostics-quality-gate-replay-policy-cross-lane-integration-sync-contract": "python scripts/check_m243_e012_lane_e_diagnostics_quality_gate_and_replay_policy_cross_lane_integration_sync_contract.py",
     "test:tooling:m243-e012-lane-e-diagnostics-quality-gate-replay-policy-cross-lane-integration-sync-contract": "python -m pytest tests/tooling/test_check_m243_e012_lane_e_diagnostics_quality_gate_and_replay_policy_cross_lane_integration_sync_contract.py -q",
     "check:objc3c:m243-e012-lane-e-readiness": "npm run check:objc3c:m243-e011-lane-e-readiness && npm run check:objc3c:m243-a012-lane-a-readiness && npm run check:objc3c:m243-b012-lane-b-readiness && npm run check:objc3c:m243-c011-lane-c-readiness && npm run check:objc3c:m243-d012-lane-d-readiness && npm run check:objc3c:m243-e012-lane-e-diagnostics-quality-gate-replay-policy-cross-lane-integration-sync-contract && npm run test:tooling:m243-e012-lane-e-diagnostics-quality-gate-replay-policy-cross-lane-integration-sync-contract",
+    "check:objc3c:m243-e013-lane-e-diagnostics-quality-gate-replay-policy-docs-operator-runbook-synchronization-contract": "python scripts/check_m243_e013_lane_e_diagnostics_quality_gate_and_replay_policy_docs_operator_runbook_synchronization_contract.py",
+    "test:tooling:m243-e013-lane-e-diagnostics-quality-gate-replay-policy-docs-operator-runbook-synchronization-contract": "python -m pytest tests/tooling/test_check_m243_e013_lane_e_diagnostics_quality_gate_and_replay_policy_docs_operator_runbook_synchronization_contract.py -q",
+    "check:objc3c:m243-e012-lane-e-readiness": "npm run check:objc3c:m243-e011-lane-e-readiness && npm run check:objc3c:m243-a012-lane-a-readiness && npm run check:objc3c:m243-b012-lane-b-readiness && npm run check:objc3c:m243-c011-lane-c-readiness && npm run check:objc3c:m243-d012-lane-d-readiness && npm run check:objc3c:m243-e013-lane-e-diagnostics-quality-gate-replay-policy-docs-operator-runbook-synchronization-contract && npm run test:tooling:m243-e013-lane-e-diagnostics-quality-gate-replay-policy-docs-operator-runbook-synchronization-contract",
     "check:objc3c:m244-a001-interop-surface-syntax-declaration-forms-contract": "python scripts/check_m244_a001_interop_surface_syntax_and_declaration_forms_contract.py",
     "test:tooling:m244-a001-interop-surface-syntax-declaration-forms-contract": "python -m pytest tests/tooling/test_check_m244_a001_interop_surface_syntax_and_declaration_forms_contract.py -q",
     "check:objc3c:m244-a001-lane-a-readiness": "npm run check:objc3c:m244-a001-interop-surface-syntax-declaration-forms-contract && npm run test:tooling:m244-a001-interop-surface-syntax-declaration-forms-contract",
@@ -6573,6 +6576,7 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py"
   }
 }
+
 
 
 
