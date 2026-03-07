@@ -130,6 +130,16 @@ add_library(objc3c_io STATIC
 target_include_directories(objc3c_io PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+add_library(objc3_runtime STATIC
+  src/runtime/objc3_runtime.cpp
+  src/runtime/objc3_runtime.h
+)
+target_include_directories(objc3_runtime PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+set_target_properties(objc3_runtime PROPERTIES
+  OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}
+)
 add_library(objc3c_runtime_abi STATIC
   src/io/objc3_process.cpp
 )

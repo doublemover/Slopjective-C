@@ -22,4 +22,11 @@ Ownership boundary:
   are ingested
 
 `M251-D001` does not land the actual library skeleton or driver/link wiring.
-`M251-D002` and `M251-D003` must preserve this frozen surface.
+
+`M251-D002` now instantiates that reserved surface and lands:
+
+- `native/objc3c/src/runtime/objc3_runtime.h`
+- `native/objc3c/src/runtime/objc3_runtime.cpp`
+- `artifacts/lib/objc3_runtime.lib` via `npm run build:objc3c-native`
+
+`M251-D003` must preserve this surface while wiring the native driver/link path.

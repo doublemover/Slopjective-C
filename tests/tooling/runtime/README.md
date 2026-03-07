@@ -22,3 +22,14 @@ The implementation normalizes negative modulo results into `[0, M-1]`.
 - `objc3_runtime_reset_for_testing`
 
 This shim is not that runtime library and remains test-only evidence.
+
+`M251-D002` now instantiates the in-tree native runtime library skeleton:
+
+- `native/objc3c/src/runtime/objc3_runtime.cpp`
+- `artifacts/lib/objc3_runtime.lib`
+- `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`
+
+The current native library intentionally preserves the deterministic
+`objc3_msgsend_i32` arithmetic formula for `objc3_runtime_dispatch_i32` so the
+driver can migrate from shim-backed execution to native-library linkage in
+`M251-D003` without semantic drift.

@@ -38,6 +38,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // runtime support-library surface (target/header/entrypoints/link mode)
       // so D002/D003 must preserve one canonical runtime-library contract while
       // the deterministic test shim remains non-canonical evidence only.
+      // M251-D002 core feature: manifest emission also publishes the live
+      // native runtime-library skeleton/build contract so the real in-tree
+      // archive/header/source/probe surface stays synchronized with emitted IR
+      // evidence while driver link wiring remains deferred to M251-D003.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
     if (!artifacts.diagnostics.empty()) {

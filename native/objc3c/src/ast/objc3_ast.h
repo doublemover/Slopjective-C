@@ -344,6 +344,8 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
     "objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
+inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
+    "objc3c-runtime-support-library-core-feature/m251-d002-v1";
 inline constexpr const char *kObjc3RuntimeMetadataLogicalImageInfoSection =
     "objc3.runtime.image_info";
 inline constexpr const char *kObjc3RuntimeMetadataLogicalClassDescriptorSection =
@@ -403,6 +405,12 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryPublicHeaderPath =
 inline constexpr const char *kObjc3RuntimeSupportLibraryKind = "static";
 inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveBasename =
     "objc3_runtime";
+inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveRelativePath =
+    "artifacts/lib/objc3_runtime.lib";
+inline constexpr const char *kObjc3RuntimeSupportLibraryImplementationSourcePath =
+    "native/objc3c/src/runtime/objc3_runtime.cpp";
+inline constexpr const char *kObjc3RuntimeSupportLibraryProbeSourcePath =
+    "tests/tooling/runtime/m251_d002_runtime_library_probe.cpp";
 inline constexpr const char *kObjc3RuntimeSupportLibraryRegisterImageSymbol =
     "objc3_runtime_register_image";
 inline constexpr const char *kObjc3RuntimeSupportLibraryLookupSelectorSymbol =

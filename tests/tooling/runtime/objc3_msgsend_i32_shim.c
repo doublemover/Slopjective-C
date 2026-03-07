@@ -16,6 +16,10 @@ M251-D001 freeze: the canonical native runtime-library surface is reserved for
 `objc3_runtime` / `objc3_runtime_register_image` / `objc3_runtime_lookup_selector` /
 `objc3_runtime_dispatch_i32` / `objc3_runtime_reset_for_testing`; this shim remains
 separate test-only evidence until M251-D002 and M251-D003 land.
+M251-D002 core feature: the in-tree native runtime library now exists and the
+native `objc3_runtime_dispatch_i32` entrypoint intentionally mirrors this
+deterministic formula, but the driver/link path still targets this shim until
+M251-D003 wires the real library into executable builds.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

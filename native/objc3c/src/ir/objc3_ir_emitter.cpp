@@ -169,6 +169,12 @@ class Objc3IREmitter {
       out << "; runtime_support_library = "
           << frontend_metadata_.runtime_support_library_contract_id << "\n";
     }
+    if (!frontend_metadata_.runtime_support_library_core_feature_contract_id
+             .empty()) {
+      out << "; runtime_support_library_core_feature = "
+          << frontend_metadata_.runtime_support_library_core_feature_contract_id
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key.empty()) {
       out << "; id_class_sel_object_pointer_typecheck_lowering = "
           << frontend_metadata_.lowering_id_class_sel_object_pointer_typecheck_replay_key << "\n";
@@ -1726,6 +1732,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
+    out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -2155,6 +2162,119 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_.runtime_support_library_runtime_ownership_boundary)
+        << "\"}\n";
+    out << "!52 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_core_feature_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_support_library_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_metadata_scaffold_contract_id)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_support_library_core_feature_fail_closed
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_core_feature_sources_present
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_support_library_core_feature_header_present
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_archive_build_enabled
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_entrypoints_implemented
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_selector_lookup_stateful
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_dispatch_formula_matches_test_shim
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_reset_for_testing_supported
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_shim_remains_test_only
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_driver_link_wiring_pending
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_support_library_core_feature_ready_for_driver_link_wiring
+                ? 1
+                : 0)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_core_feature_target_name)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_public_header_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_core_feature_source_root)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_implementation_source_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_support_library_core_feature_library_kind)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_archive_basename)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_archive_relative_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_probe_source_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_register_image_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_lookup_selector_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_dispatch_i32_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_reset_for_testing_symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_support_library_core_feature_driver_link_mode)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

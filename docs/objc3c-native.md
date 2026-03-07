@@ -292,6 +292,31 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-D001/runtime_support_library_contract_summary.json`
 
+## Native runtime-library core feature (M251-D002)
+
+- Lane-D now publishes a real implementation packet:
+  `Objc3RuntimeSupportLibraryCoreFeatureSummary`.
+- Manifest JSON and emitted LLVM IR publish the same D002 contract through
+  `runtime_support_library_core_feature_contract_id` and
+  `!objc3.objc_runtime_support_library_core_feature`.
+- `npm run build:objc3c-native` now emits:
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+- The in-tree runtime library implementation is:
+  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- The runtime probe is:
+  - `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`
+- `objc3_runtime_dispatch_i32` intentionally mirrors the deterministic
+  `objc3_msgsend_i32` arithmetic formula so D003 can swap driver linkage
+  without semantic drift.
+- Driver link mode still remains `not-linked-until-m251-d003`, so D002 proves
+  the real library archive and entrypoints exist without claiming driver-link
+  integration has landed yet.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-D002/runtime_support_library_core_feature_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

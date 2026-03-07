@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
 $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
+$llvmLibTool = Join-Path $llvmRoot "bin\llvm-lib.exe"
 
 if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
   $clangCommand = Get-Command clang++ -ErrorAction SilentlyContinue
@@ -10,6 +11,14 @@ if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
     $clangxx = $clangCommand.Source
     $clangBinDir = Split-Path -Parent $clangxx
     $llvmRoot = Split-Path -Parent $clangBinDir
+    $llvmLibTool = Join-Path $llvmRoot "bin\llvm-lib.exe"
+  }
+}
+
+if (!(Test-Path -LiteralPath $llvmLibTool -PathType Leaf)) {
+  $llvmLibCommand = Get-Command llvm-lib -ErrorAction SilentlyContinue
+  if ($null -ne $llvmLibCommand -and (Test-Path -LiteralPath $llvmLibCommand.Source -PathType Leaf)) {
+    $llvmLibTool = $llvmLibCommand.Source
   }
 }
 
@@ -31,6 +40,9 @@ $nativeSourceRoot = Join-Path $repoRoot "native/objc3c/src"
 if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
   throw ("clang++ not found. set LLVM_ROOT or ensure clang++ is on PATH (attempted: " + $clangxx + ")")
 }
+if (!(Test-Path -LiteralPath $llvmLibTool -PathType Leaf)) {
+  throw ("llvm-lib not found. set LLVM_ROOT or ensure llvm-lib is on PATH (attempted: " + $llvmLibTool + ")")
+}
 if ($null -eq $libclang) {
   $attempted = [string]::Join(", ", $libclangCandidates)
   throw ("LLVM import library not found. set LLVM_ROOT to a full LLVM install (attempted: " + $attempted + ")")
@@ -40,13 +52,18 @@ if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "na
 
 $outDir = Join-Path $repoRoot "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+$outLibDir = Join-Path $repoRoot "artifacts/lib"
+New-Item -ItemType Directory -Force -Path $outLibDir | Out-Null
 $outExe = Join-Path $outDir "objc3c-native.exe"
 $outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
+$outRuntimeLib = Join-Path $outLibDir "objc3_runtime.lib"
 $tmpOutDir = Join-Path $repoRoot "tmp/build-objc3c-native"
 New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
+$stagedRuntimeObj = Join-Path $tmpOutDir ("objc3_runtime.{0}.obj" -f $runSuffix)
+$stagedRuntimeLib = Join-Path $tmpOutDir ("objc3_runtime.{0}.lib" -f $runSuffix)
 
 function Write-BuildStep {
   param([Parameter(Mandatory = $true)][string]$Message)
@@ -86,7 +103,11 @@ function Get-RepoRelativePath {
   )
 
   $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path.TrimEnd('\', '/')
-  $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  if (Test-Path -LiteralPath $TargetPath) {
+    $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  } else {
+    $resolvedTarget = [System.IO.Path]::GetFullPath($TargetPath)
+  }
   $rootUri = [System.Uri]::new(($resolvedRoot + '\'))
   $targetUri = [System.Uri]::new($resolvedTarget)
   $relative = [System.Uri]::UnescapeDataString($rootUri.MakeRelativeUri($targetUri).ToString())
@@ -1033,6 +1054,8 @@ $frontendModules = @(
   }
 )
 $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
+$runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
+$runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.h"
 $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
@@ -1059,10 +1082,16 @@ foreach ($sourcePath in @($nativeSourcePaths + $capiRunnerSourcePaths)) {
     throw "native source file missing: $sourcePath"
   }
 }
+foreach ($runtimePath in @($runtimeLibrarySourcePath, $runtimeLibraryHeaderPath)) {
+  if (!(Test-Path -LiteralPath $runtimePath -PathType Leaf)) {
+    throw "runtime library file missing: $runtimePath"
+  }
+}
 
 Write-BuildStep ("repo_root=" + $repoRoot)
 Write-BuildStep ("llvm_root=" + $llvmRoot)
 Write-BuildStep ("clangxx=" + $clangxx)
+Write-BuildStep ("llvm_lib=" + $llvmLibTool)
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("compile_start=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 
@@ -1098,6 +1127,30 @@ Write-BuildStep ("compile_start=objc3c-frontend-c-api-runner -> " + (Get-RepoRel
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
 Write-BuildStep ("compile_done=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+Write-BuildStep ("compile_start=objc3_runtime.obj -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $stagedRuntimeObj))
+
+& $clangxx `
+  -std=c++20 `
+  -Wall `
+  -Wextra `
+  -pedantic `
+  "-I$nativeSourceRoot" `
+  -c `
+  $runtimeLibrarySourcePath `
+  -o $stagedRuntimeObj
+
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Write-BuildStep ("compile_done=objc3_runtime.obj -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $stagedRuntimeObj))
+Write-BuildStep ("archive_start=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+
+& $llvmLibTool `
+  /NOLOGO `
+  "/OUT:$stagedRuntimeLib" `
+  $stagedRuntimeObj
+
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+Publish-ArtifactWithRetry -StagedPath $stagedRuntimeLib -FinalPath $outRuntimeLib
+Write-BuildStep ("archive_done=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
 Write-BuildStep "artifact_generation_start=frontend_contract_packets"
 Write-FrontendModuleScaffoldArtifact `
   -RepoRoot $repoRoot `
@@ -1154,6 +1207,7 @@ Write-FrontendIntegrationCloseoutArtifact `
 Write-BuildStep "artifact_generation_done=frontend_contract_packets"
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
 Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
 Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
 Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))

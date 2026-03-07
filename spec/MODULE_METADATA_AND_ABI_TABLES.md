@@ -5536,6 +5536,31 @@ Native runtime-library surface anchors must remain deterministic and fail
 closed before the library skeleton, bootstrap registrar, and live dispatch
 runtime land.
 
+## M251 native runtime-library core feature metadata anchors (D002)
+
+Deterministic lane-D native runtime-library core feature anchors for
+`M251-D002` shall preserve:
+
+- contract id `objc3c-runtime-support-library-core-feature/m251-d002-v1`,
+- dependency ids
+  `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1` and
+  `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- implementation source
+  `native/objc3c/src/runtime/objc3_runtime.cpp`,
+- archive output `artifacts/lib/objc3_runtime.lib`,
+- runtime probe source
+  `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`,
+- exported entrypoints `objc3_runtime_register_image`,
+  `objc3_runtime_lookup_selector`, `objc3_runtime_dispatch_i32`, and
+  `objc3_runtime_reset_for_testing`,
+- driver link mode `not-linked-until-m251-d003`,
+- named LLVM IR metadata
+  `!objc3.objc_runtime_support_library_core_feature`.
+
+Native runtime-library core feature anchors must remain deterministic and fail
+closed while the real archive exists but before driver-link integration claims
+are made.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

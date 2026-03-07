@@ -8203,3 +8203,19 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   exported registration/lookup/dispatch/reset entrypoints, ownership boundary,
   and deferred driver-link mode remain fail-closed and published through
   manifest/IR surfaces before `M251-D002` and `M251-D003` land.
+
+- M251 lane-D D002 native runtime-library core feature implementation anchors
+  explicit runtime-library implementation artifacts in
+  `docs/contracts/m251_native_runtime_library_core_feature_d002_expectations.md`,
+  `spec/planning/compiler/m251/m251_d002_native_runtime_library_skeleton_and_exported_entrypoints_packet.md`,
+  `runtime/objc3_runtime.h`, `runtime/objc3_runtime.cpp`, `../CMakeLists.txt`,
+  `../../scripts/build_objc3c_native.ps1`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `ir/objc3_ir_emitter.h`,
+  `ir/objc3_ir_emitter.cpp`, `driver/objc3_objc3_path.cpp`,
+  `tests/tooling/runtime/README.md`,
+  `tests/tooling/runtime/objc3_msgsend_i32_shim.c`,
+  `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`, and
+  `package.json` so the real in-tree runtime archive, exported
+  registration/lookup/dispatch/reset entrypoints, and deterministic probe
+  coverage remain synchronized with manifest/IR publication while D003
+  preserves deferred driver-link wiring.

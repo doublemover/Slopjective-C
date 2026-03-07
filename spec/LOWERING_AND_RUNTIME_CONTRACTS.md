@@ -4303,3 +4303,30 @@ the driver to consume it.
 Runtime metadata object inspection governance must therefore remain
 deterministic and fail closed before runtime registration, live lookup, and
 executable object-model payload lowering land.
+
+## M251 native runtime-library core feature (D002)
+
+Lane-D shall instantiate the frozen D001 surface as a real in-tree native
+runtime library artifact before D003 links the driver against it.
+
+`M251-D002` requires:
+
+- `Objc3RuntimeSupportLibraryCoreFeatureSummary` to publish the real native
+  runtime-library skeleton independently from the frozen D001 packet,
+- manifest JSON and LLVM IR metadata to publish the same D002 contract through
+  `runtime_support_library_core_feature_contract_id` and
+  `!objc3.objc_runtime_support_library_core_feature`,
+- `native/objc3c/src/runtime/objc3_runtime.cpp` to implement
+  `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
+  `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
+- `npm run build:objc3c-native` to emit `artifacts/lib/objc3_runtime.lib`,
+- `objc3_runtime_dispatch_i32` to preserve the deterministic
+  `objc3_msgsend_i32` arithmetic formula while driver link mode remains
+  `not-linked-until-m251-d003`,
+- `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp` to link against
+  the real archive and prove registration, selector lookup, dispatch, and
+  reset-for-testing on the happy path.
+
+D002 therefore proves the native runtime library exists as an executable
+artifact without claiming driver-link integration or full object-model runtime
+registration have landed yet.
