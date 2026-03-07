@@ -6303,3 +6303,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_integration_closeout_and_gate_sign_off_c001_expectations.md
 
+
+- M237 lane-A A001 qualifier/generic grammar normalization anchors
+  docs/contracts/m237_block_syntax_and_capture_declarations_contract_and_architecture_freeze_a001_expectations.md
+
