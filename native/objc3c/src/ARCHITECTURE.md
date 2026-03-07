@@ -6019,3 +6019,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M236 lane-A A015 qualifier/generic grammar normalization anchors
   docs/contracts/m236_ownership_syntax_and_annotation_ingestion_integration_closeout_and_gate_sign_off_a015_expectations.md
 
+
+- M236 lane-B B001 qualifier/generic semantic inference anchors
+  docs/contracts/m236_ownership_semantic_modeling_and_checks_contract_and_architecture_freeze_b001_expectations.md
+
