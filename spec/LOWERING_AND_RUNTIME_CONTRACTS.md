@@ -3744,3 +3744,8 @@ lowering/runtime diagnostics surfacing release-candidate and replay dry-run shal
 
 lane-C dependency anchors (`M243-C013`)
 
+
+lowering/runtime diagnostics surfacing advanced core workpack (shard 1) shall preserve
+
+lane-C dependency anchors (`M243-C014`)
+

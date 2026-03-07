@@ -5051,3 +5051,8 @@ deterministic lane-C lowering/runtime diagnostics surfacing release-candidate an
 
 `M243-C013` dependency continuity
 
+
+deterministic lane-C lowering/runtime diagnostics surfacing advanced core workpack (shard 1) metadata anchors for `M243-C015` with explicit
+
+`M243-C014` dependency continuity
+
