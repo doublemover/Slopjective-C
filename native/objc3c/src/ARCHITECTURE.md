@@ -7790,3 +7790,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m242_expanded_source_lowering_traceability_edge_case_expansion_and_robustness_c001_expectations.md
 
+  docs/contracts/m242_expanded_source_lowering_traceability_diagnostics_hardening_c001_expectations.md
+
