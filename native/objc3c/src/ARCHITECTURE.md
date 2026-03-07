@@ -6909,3 +6909,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M239 lane-A A011 qualifier/generic grammar normalization anchors
   docs/contracts/m239_frontend_normalization_hints_for_cfg_quality_performance_and_quality_guardrails_a011_expectations.md
 
+
+- M239 lane-A A012 qualifier/generic grammar normalization anchors
+  docs/contracts/m239_frontend_normalization_hints_for_cfg_quality_cross_lane_integration_sync_a012_expectations.md
+
