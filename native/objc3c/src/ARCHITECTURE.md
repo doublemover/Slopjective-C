@@ -6147,3 +6147,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_conformance_matrix_implementation_c009_expectations.md
 
+
+- M236 lane-C C010 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m236_arc_style_lowering_insertion_and_cleanup_conformance_corpus_expansion_c010_expectations.md
+
