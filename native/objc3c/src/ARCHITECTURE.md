@@ -6592,3 +6592,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m237_block_lowering_and_invoke_emission_performance_and_quality_guardrails_c001_expectations.md
 
+  docs/contracts/m237_block_lowering_and_invoke_emission_integration_closeout_and_gate_sign_off_c001_expectations.md
+
