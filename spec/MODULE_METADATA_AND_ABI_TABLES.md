@@ -4989,3 +4989,7 @@ explicit lane-B contract-freeze metadata continuity so preprocessor semantic mod
 deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B014`
 explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
 
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+

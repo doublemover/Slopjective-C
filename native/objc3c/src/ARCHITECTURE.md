@@ -7696,3 +7696,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M242 lane-B B014 preprocessor semantic model and expansion rules contract-freeze anchors
   m242_preprocessor_semantic_model_and_expansion_rules_integration_closeout_and_gate_sign_off_b014_expectations.md
 
+
+- M242 lane-C C001 qualified type lowering and ABI representation anchors explicit
+  docs/contracts/m242_expanded_source_lowering_traceability_contract_and_architecture_freeze_c001_expectations.md
+
