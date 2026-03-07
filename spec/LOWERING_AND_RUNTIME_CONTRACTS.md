@@ -3706,3 +3706,8 @@ interop behavior for qualified generic APIs diagnostics hardening governance sha
 
 lane-D dependency anchors (`M235-D006`) and fail closed on diagnostics hardening interop evidence drift
 
+
+interop behavior for qualified generic APIs recovery and determinism hardening governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D007`) and fail closed on recovery and determinism hardening interop evidence drift
+

@@ -3740,3 +3740,8 @@ deterministic lane-D interop behavior for qualified generic APIs diagnostics har
 
 with explicit `M235-D006` dependency continuity so diagnostics hardening interop drift fails closed.
 
+
+deterministic lane-D interop behavior for qualified generic APIs recovery and determinism hardening metadata anchors for `M235-D008`
+
+with explicit `M235-D007` dependency continuity so recovery and determinism hardening interop drift fails closed.
+
