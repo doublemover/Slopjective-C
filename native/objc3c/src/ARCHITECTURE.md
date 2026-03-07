@@ -7705,3 +7705,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m242_expanded_source_lowering_traceability_modular_split_and_scaffolding_c002_expectations.md
 
+
+- M242 lane-C C003 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m242_expanded_source_lowering_traceability_core_feature_implementation_c003_expectations.md
+
