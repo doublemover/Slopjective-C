@@ -3836,3 +3836,8 @@ diagnostics quality gate and replay policy advanced edge compatibility workpack 
 
 lane-E dependency anchors (`M243-E021`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
+
+diagnostics quality gate and replay policy advanced diagnostics workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E022`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
