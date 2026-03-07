@@ -8234,3 +8234,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   emitted-object runtime consumers link against `artifacts/lib/objc3_runtime.lib`
   via manifest-published archive data while the shim remains explicit test-only
   evidence.
+
+- M251 lane-E E001 runnable-runtime foundation gate anchors explicit aggregate
+  evidence artifacts in
+  `docs/contracts/m251_runnable_runtime_foundation_gate_and_evidence_contract_e001_expectations.md`,
+  `spec/planning/compiler/m251/m251_e001_runnable_runtime_foundation_gate_and_evidence_contract_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so the completed
+  `M251-A003`, `M251-B003`, `M251-C003`, and `M251-D003` proof surfaces remain
+  synchronized with the D003 execution-smoke summary and the canonical runtime
+  archive path `artifacts/lib/objc3_runtime.lib` before `M252` registration and
+  metadata-closure work begins.

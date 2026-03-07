@@ -4358,3 +4358,30 @@ packet.
 D003 therefore proves emitted objects can consume the real runtime archive in
 deterministic smoke/checker paths without yet claiming metadata registration,
 class realization, or property/category runtime execution are complete.
+
+## M251 runnable-runtime foundation gate and evidence contract (E001)
+
+Lane-E shall freeze one aggregate foundation gate over the completed M251
+runtime-foundation tranche.
+
+`M251-E001` requires:
+
+- the canonical upstream evidence set to remain explicit:
+  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
+- `M251-A003` to remain the canonical manifest/runtime-record handoff proof,
+- `M251-B003` to remain the canonical fail-closed runtime-export diagnostic
+  proof,
+- `M251-C003` to remain the canonical object-file inspection proof for runtime
+  metadata sections and retained symbols,
+- `M251-D003` to remain the canonical emitted-object runtime-link proof,
+- the D003 smoke summary to remain `PASS` while reporting
+  `runtime_library = artifacts/lib/objc3_runtime.lib`,
+- `artifacts/lib/objc3_runtime.lib` to exist when the gate runs.
+
+E001 therefore freezes the aggregate foundation proof that `M252+` must
+preserve without claiming startup registration, class realization, property
+execution, blocks, ARC, or cross-module runtime support are complete.

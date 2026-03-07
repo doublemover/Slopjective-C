@@ -338,6 +338,29 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
 
+## Runnable-runtime foundation gate and evidence contract (M251-E001)
+
+- Lane-E freezes the aggregate foundation gate for the completed M251
+  runtime-foundation tranche.
+- The gate treats the following upstream evidence as mandatory and fail closed:
+  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
+- The D003 smoke summary must remain `PASS` and must continue to report
+  `runtime_library = artifacts/lib/objc3_runtime.lib` for runtime-linked
+  positive execution fixtures.
+- The gate remains fail closed unless:
+  - manifest/runtime-record publication remains preserved by `M251-A003`
+  - runtime-export diagnostics remain preserved by `M251-B003`
+  - object-file inspection evidence remains preserved by `M251-C003`
+  - emitted-object runtime-link wiring remains preserved by `M251-D003`
+- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
+  evidence and must not be reframed as the canonical runtime library.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-E001/runnable_runtime_foundation_gate_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

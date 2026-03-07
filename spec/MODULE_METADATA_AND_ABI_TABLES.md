@@ -5581,6 +5581,27 @@ Deterministic lane-D native runtime-library link wiring anchors for
 Native runtime-library link wiring anchors must remain deterministic and fail
 closed before metadata registration/startup claims are made.
 
+## M251 runnable-runtime foundation gate metadata anchors (E001)
+
+Deterministic lane-E runnable-runtime foundation gate anchors for `M251-E001`
+shall preserve:
+
+- contract id `objc3c-runnable-runtime-foundation-gate-evidence-contract/m251-e001-v1`,
+- upstream evidence paths:
+  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
+- canonical runtime archive path `artifacts/lib/objc3_runtime.lib`,
+- upstream issue anchors `M251-A003`, `M251-B003`, `M251-C003`, and
+  `M251-D003`,
+- fail-closed aggregate proof that the runtime archive, metadata handoff,
+  diagnostics, and object inspection evidence remain synchronized.
+
+Runnable-runtime foundation gate anchors must remain deterministic and fail
+closed before M252 metadata semantic-closure work begins.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
