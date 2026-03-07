@@ -3745,3 +3745,8 @@ deterministic lane-D interop behavior for qualified generic APIs recovery and de
 
 with explicit `M235-D007` dependency continuity so recovery and determinism hardening interop drift fails closed.
 
+
+deterministic lane-D interop behavior for qualified generic APIs integration closeout and gate sign-off metadata anchors for `M235-D009`
+
+with explicit `M235-D008` dependency continuity so integration closeout and gate sign-off interop drift fails closed.
+
