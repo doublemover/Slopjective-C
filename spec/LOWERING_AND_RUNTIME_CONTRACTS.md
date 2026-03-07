@@ -3765,3 +3765,6 @@ CLI/reporting and output release-candidate and replay dry-run governance shall p
 
 CLI/reporting and output advanced core workpack (shard 1) governance shall preserve
 
+
+CLI/reporting and output advanced edge compatibility workpack (shard 1) governance shall preserve
+
