@@ -5704,3 +5704,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_semantic_validation_rules_performance_and_quality_guardrails_b011_expectations.md
 
+  m231_declaration_semantic_validation_rules_cross_lane_integration_sync_b012_expectations.md
+
