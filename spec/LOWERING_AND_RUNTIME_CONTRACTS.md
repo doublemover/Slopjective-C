@@ -3791,3 +3791,8 @@ diagnostics quality gate and replay policy docs and operator runbook synchroniza
 
 lane-E dependency anchors (`M243-E012`, `M243-A012`, `M243-B012`, `M243-C011`, and
 
+
+diagnostics quality gate and replay policy release-candidate and replay dry-run wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E013`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
