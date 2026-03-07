@@ -7319,3 +7319,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m240_metadata_lowering_and_section_emission_edge_case_and_compatibility_completion_c001_expectations.md
 
+  docs/contracts/m240_metadata_lowering_and_section_emission_edge_case_expansion_and_robustness_c001_expectations.md
+
