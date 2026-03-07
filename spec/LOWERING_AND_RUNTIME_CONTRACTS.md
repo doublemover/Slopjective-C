@@ -4052,3 +4052,12 @@ preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D d
 
 or lane-E docs and operator runbook synchronization readiness hooks drift.
 
+
+interop conformance gate and operations release-candidate and replay dry-run wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E013`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D release-candidate and replay dry-run readiness hooks
+
+or lane-E release-candidate and replay dry-run readiness hooks drift.
+
