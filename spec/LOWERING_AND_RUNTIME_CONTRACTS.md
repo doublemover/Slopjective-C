@@ -3759,3 +3759,6 @@ lowering/runtime diagnostics surfacing integration closeout and gate sign-off sh
 
 lane-C dependency anchors (`M243-C016`)
 
+
+CLI/reporting and output release-candidate and replay dry-run governance shall preserve
+
