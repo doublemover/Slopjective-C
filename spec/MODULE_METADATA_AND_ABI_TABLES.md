@@ -5273,3 +5273,8 @@ deterministic lane-D runtime/link bridge-path cross-lane integration sync metada
 
 explicit `M244-D011` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path docs and operator runbook synchronization metadata anchors for `M244-D013`
+
+explicit `M244-D012` dependency continuity and fail-closed evidence continuity
+

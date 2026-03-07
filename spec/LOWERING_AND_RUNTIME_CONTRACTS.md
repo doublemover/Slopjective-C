@@ -3966,3 +3966,8 @@ runtime/link bridge-path cross-lane integration sync governance shall preserve e
 
 cross-lane integration sync evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path docs and operator runbook synchronization governance shall preserve explicit lane-D dependency anchors (`M244-D012`)
+
+docs and operator runbook synchronization evidence drift before downstream runtime projection and metadata integration advances.
+
