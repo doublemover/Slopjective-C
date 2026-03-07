@@ -7644,3 +7644,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M242 lane-A A011 qualifier/generic grammar normalization anchors
   docs/contracts/m242_directive_parsing_and_token_stream_integration_integration_closeout_and_gate_sign_off_a011_expectations.md
 
+
+- M242 lane-B B001 qualifier/generic semantic inference anchors
+  docs/contracts/m242_preprocessor_semantic_model_and_expansion_rules_contract_and_architecture_freeze_b001_expectations.md
+
