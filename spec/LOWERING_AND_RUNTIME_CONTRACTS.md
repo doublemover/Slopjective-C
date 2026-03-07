@@ -3926,3 +3926,8 @@ interop lowering and ABI conformance advanced integration workpack (shard 1) gov
 
 lane-C dependency anchor (`M244-C018`)
 
+
+interop lowering and ABI conformance advanced performance workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C019`)
+
