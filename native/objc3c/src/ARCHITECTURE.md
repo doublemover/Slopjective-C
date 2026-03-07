@@ -7271,3 +7271,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m240_metadata_lowering_and_section_emission_cross_lane_integration_sync_c012_expectations.md
 
+
+- M240 lane-C C013 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m240_metadata_lowering_and_section_emission_docs_and_operator_runbook_synchronization_c013_expectations.md
+
