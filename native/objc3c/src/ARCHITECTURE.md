@@ -5606,3 +5606,5 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m230_developer_cli_and_diagnostics_ergonomics_advanced_diagnostics_workpack_shard_1_d017_expectations.md
 
+  m230_developer_cli_and_diagnostics_ergonomics_advanced_conformance_workpack_shard_1_d018_expectations.md
+
