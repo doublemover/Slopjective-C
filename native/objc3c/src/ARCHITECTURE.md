@@ -7148,3 +7148,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M240 lane-A A010 qualifier/generic grammar normalization anchors
   docs/contracts/m240_metadata_declaration_source_modeling_integration_closeout_and_gate_sign_off_a010_expectations.md
 
+
+- M240 lane-B B001 qualifier/generic semantic inference anchors
+  docs/contracts/m240_metadata_semantic_consistency_and_validation_contract_and_architecture_freeze_b001_expectations.md
+
