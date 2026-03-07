@@ -3589,3 +3589,7 @@ property/ivar semantics evidence and parser replay-budget continuity
 deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B003`
 property/ivar semantics evidence and parser replay-budget continuity
 
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B004`
+property/ivar semantics evidence and parser replay-budget continuity
+
