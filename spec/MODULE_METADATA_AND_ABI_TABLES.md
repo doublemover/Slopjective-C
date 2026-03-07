@@ -3577,3 +3577,7 @@ explicit lane-E contract-freeze metadata continuity so declaration grammar expan
 deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E011`
 explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
 
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B001`
+property/ivar semantics evidence and parser replay-budget continuity
+

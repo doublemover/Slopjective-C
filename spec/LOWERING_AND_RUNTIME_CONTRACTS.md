@@ -3607,3 +3607,7 @@ lane-E deterministic boundary anchors (`M231-E010`) and fail closed on contract-
 
 lane-E deterministic boundary anchors (`M231-E011`) and fail closed on contract-freeze evidence drift
 
+
+property semantic rules and synthesis analysis governance shall preserve
+deterministic lane-B boundary anchors and fail closed on property/ivar semantics drift
+
