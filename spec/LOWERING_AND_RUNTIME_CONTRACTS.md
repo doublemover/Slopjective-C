@@ -3631,3 +3631,8 @@ qualified type lowering and ABI representation recovery and determinism hardenin
 
 lane-C dependency anchors (`M235-C007`) and fail closed on recovery and determinism hardening evidence drift
 
+
+qualified type lowering and ABI representation conformance matrix implementation governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C008`) and fail closed on conformance matrix implementation evidence drift
+
