@@ -6755,3 +6755,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_conformance_corpus_expansion_c010_expectations.md
 
+
+- M238 lane-C C011 qualified type lowering and ABI representation anchors explicit
+
+  docs/contracts/m238_cleanup_lowering_and_unwind_control_flow_performance_and_quality_guardrails_c011_expectations.md
+
