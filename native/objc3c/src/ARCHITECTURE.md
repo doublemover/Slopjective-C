@@ -7467,3 +7467,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M241 lane-B B015 qualifier/generic semantic inference anchors
   docs/contracts/m241_module_semantic_resolution_and_caching_integration_closeout_and_gate_sign_off_b015_expectations.md
 
+
+- M241 lane-C C001 qualified type lowering and ABI representation anchors explicit
+  docs/contracts/m241_incremental_lowering_and_artifact_reuse_contract_and_architecture_freeze_c001_expectations.md
+

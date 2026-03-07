@@ -4838,3 +4838,7 @@ nullability/generics/qualifier semantic-inference evidence and parser replay-bud
 deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B015`
 nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
 
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
