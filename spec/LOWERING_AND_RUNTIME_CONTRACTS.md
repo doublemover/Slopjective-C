@@ -4006,3 +4006,8 @@ runtime/link bridge-path advanced performance workpack (shard 1) governance shal
 
 advanced performance workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path advanced core workpack (shard 2) governance shall preserve explicit lane-D dependency anchors (`M244-D020`)
+
+advanced core workpack (shard 2) evidence drift before downstream runtime projection and metadata integration advances.
+
