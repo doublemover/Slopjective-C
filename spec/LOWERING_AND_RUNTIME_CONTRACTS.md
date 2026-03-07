@@ -3961,3 +3961,8 @@ runtime/link bridge-path performance and quality guardrails governance shall pre
 
 performance and quality guardrails evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path cross-lane integration sync governance shall preserve explicit lane-D dependency anchors (`M244-D011`)
+
+cross-lane integration sync evidence drift before downstream runtime projection and metadata integration advances.
+
