@@ -3901,3 +3901,8 @@ interop semantic/type mediation integration closeout and gate sign-off governanc
 
 lane-B dependency anchor (`M244-B018`)
 
+
+interop lowering and ABI conformance advanced core workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C014`)
+
