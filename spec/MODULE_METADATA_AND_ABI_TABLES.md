@@ -5163,3 +5163,8 @@ deterministic lane-E diagnostics quality gate and replay policy advanced perform
 
 `M243-E025`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
 
+
+deterministic lane-E diagnostics quality gate and replay policy advanced core workpack (shard 3) dependency anchors for
+
+`M243-E026`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
