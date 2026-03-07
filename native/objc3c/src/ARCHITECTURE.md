@@ -5919,3 +5919,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   docs/contracts/m235_qualified_type_lowering_and_abi_representation_advanced_diagnostics_workpack_shard_1_c017_expectations.md
 
+
+- M235 lane-C C018 qualified type lowering and ABI representation advanced conformance workpack (shard 1) anchors
+
+  docs/contracts/m235_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_c018_expectations.md
+

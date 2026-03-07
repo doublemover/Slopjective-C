@@ -3710,3 +3710,8 @@ deterministic lane-C qualified type lowering and ABI representation advanced dia
 
 with explicit `M235-C016` dependency continuity so advanced diagnostics workpack (shard 1) lowering and ABI drift fails closed.
 
+
+deterministic lane-C qualified type lowering and ABI representation advanced conformance workpack (shard 1) metadata anchors for `M235-C018`
+
+with explicit `M235-C017` dependency continuity so advanced conformance workpack (shard 1) lowering and ABI drift fails closed.
+

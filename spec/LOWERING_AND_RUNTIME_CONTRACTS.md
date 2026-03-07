@@ -3676,3 +3676,8 @@ qualified type lowering and ABI representation advanced diagnostics workpack (sh
 
 lane-C dependency anchors (`M235-C016`) and fail closed on advanced diagnostics workpack (shard 1) evidence drift
 
+
+qualified type lowering and ABI representation advanced conformance workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C017`) and fail closed on advanced conformance workpack (shard 1) evidence drift
+

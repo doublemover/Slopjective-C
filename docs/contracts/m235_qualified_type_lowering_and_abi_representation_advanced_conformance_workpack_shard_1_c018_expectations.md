@@ -1,0 +1,77 @@
+# M235 Qualified Type Lowering and ABI Representation Advanced Conformance Workpack (shard 1) Expectations (C018)
+
+Contract ID: `objc3c-qualified-type-lowering-and-abi-representation-advanced-conformance-workpack-shard-1/m235-c018-v1`
+Status: Accepted
+Dependencies: `M235-C017`
+Scope: M235 lane-C qualified type lowering and ABI representation advanced conformance workpack (shard 1) continuity for deterministic dependency-chain governance.
+
+## Objective
+
+Fail closed unless lane-C qualified type lowering and ABI representation
+advanced conformance workpack (shard 1) anchors remain explicit, deterministic, and traceable
+across dependency-chain surfaces. Code/spec anchors and milestone
+optimization improvements are mandatory scope inputs.
+
+## Dependency Scope
+
+- Issue `#5828` defines canonical lane-C advanced conformance workpack (shard 1) scope.
+- Dependencies: `M235-C017`
+- M235-C017 advanced diagnostics workpack (shard 1) anchors remain mandatory prerequisites:
+  - `docs/contracts/m235_qualified_type_lowering_and_abi_representation_advanced_diagnostics_workpack_shard_1_c017_expectations.md`
+  - `spec/planning/compiler/m235/m235_c017_qualified_type_lowering_and_abi_representation_advanced_diagnostics_workpack_shard_1_packet.md`
+  - `scripts/check_m235_c017_qualified_type_lowering_and_abi_representation_advanced_diagnostics_workpack_shard_1_contract.py`
+  - `tests/tooling/test_check_m235_c017_qualified_type_lowering_and_abi_representation_advanced_diagnostics_workpack_shard_1_contract.py`
+- Packet/checker/test assets for C018 remain mandatory:
+  - `spec/planning/compiler/m235/m235_c018_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_packet.md`
+  - `scripts/check_m235_c018_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_contract.py`
+  - `tests/tooling/test_check_m235_c018_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_contract.py`
+
+## Architecture and Spec Anchors
+
+- `native/objc3c/src/ARCHITECTURE.md` preserves explicit M235 lane-C C017
+  qualified type lowering and ABI representation advanced conformance workpack (shard 1) anchors.
+- `spec/LOWERING_AND_RUNTIME_CONTRACTS.md` preserves lane-C qualified type
+  lowering and ABI representation advanced conformance workpack (shard 1) fail-closed dependency wording.
+- `spec/MODULE_METADATA_AND_ABI_TABLES.md` preserves deterministic lane-C
+  qualified type lowering and ABI representation advanced conformance workpack (shard 1) metadata wording.
+
+## Build and Readiness Integration
+
+- `package.json` includes `check:objc3c:m235-c017-lane-c-readiness`.
+- `package.json` includes
+  `check:objc3c:m235-c018-qualified-type-lowering-and-abi-representation-advanced-conformance-workpack-shard-1-contract`.
+- `package.json` includes
+  `test:tooling:m235-c018-qualified-type-lowering-and-abi-representation-advanced-conformance-workpack-shard-1-contract`.
+- `package.json` includes `check:objc3c:m235-c018-lane-c-readiness`.
+- Readiness dependency chain order: `C017 readiness -> C018 checker -> C018 pytest`.
+
+## Milestone Optimization Inputs
+
+- `package.json` includes `compile:objc3c`.
+- `package.json` includes `proof:objc3c`.
+- `package.json` includes `test:objc3c:execution-replay-proof`.
+- `package.json` includes `test:objc3c:perf-budget`.
+
+## Validation
+
+- `python scripts/check_m235_c018_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_contract.py`
+- `python -m pytest tests/tooling/test_check_m235_c018_qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_contract.py -q`
+- `npm run check:objc3c:m235-c018-lane-c-readiness`
+
+## Evidence Path
+
+- `tmp/reports/m235/M235-C018/qualified_type_lowering_and_abi_representation_advanced_conformance_workpack_shard_1_contract_summary.json`
+
+
+
+
+
+
+
+
+
+
+
+
+
+
