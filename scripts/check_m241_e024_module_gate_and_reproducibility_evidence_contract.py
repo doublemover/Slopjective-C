@@ -103,11 +103,11 @@ PREREQUISITE_ASSETS: tuple[AssetCheck, ...] = (
 EXPECTATIONS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M241-E024-DOC-EXP-01",
-        "# M241 Module gate and reproducibility evidence Advanced Conformance Workpack (shard 2) Expectations (E023)",
+        "# M241 Module gate and reproducibility evidence Advanced Conformance Workpack (shard 2) Expectations (E024)",
     ),
     SnippetCheck(
         "M241-E024-DOC-EXP-02",
-        "Contract ID: `objc3c-module-gate-and-reproducibility-evidence-advanced-diagnostics-workpack-shard-2/m241-e023-v1`",
+        "Contract ID: `objc3c-module-gate-and-reproducibility-evidence-advanced-conformance-workpack-shard-2/m241-e024-v1`",
     ),
     SnippetCheck("M241-E024-DOC-EXP-03", "Issue: `#6321`"),
     SnippetCheck(
@@ -304,6 +304,7 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
 
 
 
