@@ -7847,3 +7847,6 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
 - M243 lane-D D017 advanced diagnostics workpack (shard 1) anchors CLI/reporting output contract integration
 
+
+- M243 lane-D D018 advanced conformance workpack (shard 1) anchors CLI/reporting output contract integration
+
