@@ -7463,3 +7463,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 - M241 lane-B B014 qualifier/generic semantic inference anchors
   docs/contracts/m241_module_semantic_resolution_and_caching_release_candidate_and_replay_dry_run_b014_expectations.md
 
+
+- M241 lane-B B015 qualifier/generic semantic inference anchors
+  docs/contracts/m241_module_semantic_resolution_and_caching_integration_closeout_and_gate_sign_off_b015_expectations.md
+
