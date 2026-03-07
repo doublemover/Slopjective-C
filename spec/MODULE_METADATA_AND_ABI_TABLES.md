@@ -5298,3 +5298,8 @@ deterministic lane-D runtime/link bridge-path advanced diagnostics workpack (sha
 
 explicit `M244-D016` dependency continuity and fail-closed evidence continuity
 
+
+deterministic lane-D runtime/link bridge-path advanced conformance workpack (shard 1) metadata anchors for `M244-D018`
+
+explicit `M244-D017` dependency continuity and fail-closed evidence continuity
+

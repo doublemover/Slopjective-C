@@ -3991,3 +3991,8 @@ runtime/link bridge-path advanced diagnostics workpack (shard 1) governance shal
 
 advanced diagnostics workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
 
+
+runtime/link bridge-path advanced conformance workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D017`)
+
+advanced conformance workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
