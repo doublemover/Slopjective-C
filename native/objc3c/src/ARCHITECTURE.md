@@ -5746,3 +5746,7 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
 
   m231_declaration_lowering_contract_updates_integration_closeout_and_gate_sign_off_c014_expectations.md
 
+
+- M231 lane-D A001 Frontend/runtime declaration metadata linkage contract-freeze anchors
+  m231_frontend_runtime_declaration_metadata_linkage_contract_and_architecture_freeze_d001_expectations.md
+

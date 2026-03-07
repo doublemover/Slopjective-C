@@ -3548,3 +3548,7 @@ lane-C deterministic boundary anchors (`M231-C013`) and fail closed on contract-
 
 lane-C deterministic boundary anchors (`M231-C014`) and fail closed on contract-freeze evidence drift
 
+
+Frontend/runtime declaration metadata linkage contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M231-D001`) and fail closed on contract-freeze evidence drift
+
