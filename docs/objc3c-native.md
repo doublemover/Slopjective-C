@@ -653,6 +653,27 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-D002/artifact_packaging_and_binary_boundary_for_metadata_payloads_summary.json`
 
+## Metadata semantic-closure gate (M252-E001)
+
+- Lane-E now freezes the aggregate semantic-closure gate:
+  `Objc3ExecutableMetadataSemanticClosureGateSummary`.
+- Contract id:
+  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`.
+- The aggregate gate remains explicitly synchronized over:
+  - `M252-A003` graph completeness,
+  - `M252-B004` property/ivar export legality and deterministic `O3S206`
+    diagnostics,
+  - `M252-C003` manifest/IR debug projection and replay anchors,
+  - `M252-D002` runtime-facing `module.runtime-metadata.bin` packaging.
+- The next implementation issue `M253-A001` must preserve this boundary while
+  landing real metadata section emission.
+- The gate remains evidence-only in `M252-E001`:
+  - no object-file section emission yet,
+  - no startup registration yet,
+  - no runtime loader bootstrap yet.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

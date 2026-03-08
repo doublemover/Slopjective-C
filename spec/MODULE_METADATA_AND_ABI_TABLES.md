@@ -5868,6 +5868,21 @@ preserve:
 - evidence path
   `tmp/reports/m252/M252-D002/artifact_packaging_and_binary_boundary_for_metadata_payloads_summary.json`.
 
+## M252 metadata semantic-closure gate metadata anchors (E001)
+
+Deterministic lane-E aggregate semantic-closure anchors for `M252-E001` shall
+preserve:
+
+- contract id
+  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`,
+- upstream proof set
+  `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002`,
+- evidence that graph completeness, legality diagnostics, debug projection,
+  and runtime-facing binary packaging remain synchronized before
+  `M253-A001` begins,
+- evidence path
+  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

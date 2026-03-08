@@ -4985,6 +4985,9 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
 // M252-D002 binary-boundary anchor: lane-D packages this exact sema-owned
 // property/ivar summary into the runtime metadata envelope so later binary
 // consumers stay aligned with lowering admission and replay keys.
+// M252-E001 semantic-closure gate anchor: lane-E treats this sema-owned
+// property/ivar summary as one required section-emission prerequisite beside
+// A003 graph closure, C003 replay projection, and D002 packaging.
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   Objc3PropertySynthesisIvarBindingSummary summary;

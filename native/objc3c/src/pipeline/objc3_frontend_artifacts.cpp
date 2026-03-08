@@ -5599,6 +5599,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // runtime-facing binary envelope over the frozen D001/C002/C003
            // packets so later section-emission/bootstrap work consumes one
            // deterministic artifact boundary instead of reparsing manifest JSON.
+           // M252-E001 semantic-closure gate anchor: lane-E freezes the
+           // aggregate A003/B004/C003/D002 boundary here so M253-A001 section
+           // emission consumes one synchronized metadata closure proof.
            << ",\"objc_executable_metadata_runtime_ingest_binary_boundary\":"
            << BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
                   executable_metadata_runtime_ingest_binary_boundary)

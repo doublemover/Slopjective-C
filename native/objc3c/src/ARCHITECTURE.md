@@ -8383,3 +8383,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   deterministic `module.runtime-metadata.bin` envelope remains emitted and
   replay-stable over the D001/C002/C003 packets before object-file section
   emission and startup registration land.
+- M252 lane-E E001 metadata semantic-closure gate anchors explicit aggregate
+  contract artifacts in
+  `docs/contracts/m252_metadata_semantic_closure_gate_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m252/m252_e001_metadata_semantic_closure_gate_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `parse/objc3_parser.cpp`, `sema/objc3_sema_contract.h`,
+  `sema/objc3_semantic_passes.cpp`, and `pipeline/objc3_frontend_artifacts.cpp`
+  so `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002` remain one
+  synchronized semantic-closure proof before `M253-A001` section emission
+  begins.

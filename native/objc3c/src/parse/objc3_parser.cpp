@@ -5055,6 +5055,9 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // parser-owned owner identity surface through one manifest transport
   // contract, so later runtime ingest never reconstructs owner identity from
   // raw syntax.
+  // M252-E001 semantic-closure gate anchor: lane-E freezes this parser-owned
+  // owner identity surface together with B004 legality, C003 debug
+  // projection, and D002 packaging before M253-A001 section emission begins.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

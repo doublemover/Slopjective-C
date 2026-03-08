@@ -520,6 +520,9 @@ struct Objc3PropertySynthesisIvarBindingSummary {
   // M252-B004 export-legality anchor: these counts are the canonical sema
   // preconditions for property/ivar runtime export and must not degrade into
   // generic property-declaration totals.
+  // M252-E001 semantic-closure gate anchor: lane-E consumes this property/ivar
+  // legality summary together with the A003 graph, C003 projection, and D002
+  // packaging proofs before M253-A001 section emission begins.
   std::size_t property_synthesis_sites = 0;
   std::size_t property_synthesis_explicit_ivar_bindings = 0;
   std::size_t property_synthesis_default_ivar_bindings = 0;

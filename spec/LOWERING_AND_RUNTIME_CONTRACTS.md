@@ -4695,3 +4695,26 @@ The packet must preserve:
 `M252-D002` still stops short of object-file section emission and startup
 registration. It lands the standalone runtime-facing binary artifact that those
 later milestones must consume.
+
+## M252 metadata semantic-closure gate (E001)
+
+`M252-E001` freezes the aggregate lane-E metadata semantic-closure gate:
+`Objc3ExecutableMetadataSemanticClosureGateSummary`.
+
+The gate must preserve:
+
+- contract id
+  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`,
+- upstream closure proofs
+  `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002`,
+- evidence that the executable metadata source graph is complete while
+  property/ivar export legality, debug/replay projection, and runtime-facing
+  binary packaging all remain deterministic and fail closed,
+- the stable evidence path
+  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`,
+- the requirement that the aggregate boundary remains synchronized before
+  `M253-A001` section emission begins.
+
+`M252-E001` still does not implement object-file section emission, startup
+registration, or runtime metadata loader bootstrap. It freezes the aggregate
+pre-section-emission proof that the next implementation issue must preserve.
