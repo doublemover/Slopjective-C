@@ -8602,3 +8602,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   same class/category/message-send native objects satisfy `M253-A002`,
   `M253-B003`, `M253-C006`, `M253-D003`, and `M253-E001` before `M254`
   startup-registration work begins.
+- M254 lane-A A001 translation-unit registration freeze anchors the
+  preregistration manifest surface in `driver/objc3_objc3_path.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `io/objc3_process.cpp`, and
+  `tests/tooling/runtime/README.md` so later startup-constructor work extends
+  one explicit boundary over the runtime-metadata binary, linker-retention
+  sidecars, constructor-root reservation, and runtime-owned registration
+  entrypoint instead of re-deriving the handoff ad hoc.

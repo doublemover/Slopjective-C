@@ -513,6 +513,39 @@ inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryDebugPro
     "debug_projection";
 inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeVersion = 1u;
 inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeChunkCount = 3u;
+inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationContractId =
+    "objc3c-translation-unit-registration-surface-freeze/m254-a001-v1";
+inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract";
+inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationPayloadModel =
+    "runtime-metadata-binary-plus-linker-retention-sidecars-v1";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationPayloadArtifactRelativePath =
+        kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactRelativePath;
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationLinkerResponseArtifactRelativePath =
+        "module.runtime-metadata-linker-options.rsp";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationDiscoveryArtifactRelativePath =
+        "module.runtime-metadata-discovery.json";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol =
+        "__objc3_runtime_register_image_ctor";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationConstructorRootOwnershipModel =
+        "compiler-emits-constructor-root-runtime-owns-registration-state";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationConstructorEmissionMode =
+        "reserved-not-emitted-yet";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationConstructorPriorityPolicy =
+        "deferred-until-m254-a002";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol =
+        "objc3_runtime_register_image";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel =
+        "input-path-plus-parse-and-lowering-replay";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

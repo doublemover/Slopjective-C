@@ -1248,6 +1248,34 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-E002/cross_lane_object_emission_gate_and_closeout_summary.json`
 
+## Translation-unit registration surface freeze (M254-A001)
+
+`M254-A001` freezes the preregistration translation-unit contract at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`.
+
+The canonical handoff is:
+
+- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
+- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
+- runtime-owned payload inventory:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- reserved constructor root `__objc3_runtime_register_image_ctor`
+- constructor-root ownership model
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- runtime-owned registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+Non-goals remain explicit in `M254-A001`:
+
+- no constructor-root emission yet
+- no startup registration yet
+- no runtime bootstrap yet
+
+`M254-A002` must preserve this surface while materializing the first real
+registration manifest and constructor-root ownership path.
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

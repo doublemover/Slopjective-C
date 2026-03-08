@@ -1584,6 +1584,177 @@ BuildRuntimeSupportLibraryLinkWiringSummary(
   return summary;
 }
 
+std::string BuildRuntimeTranslationUnitRegistrationContractReplayKey(
+    const Objc3RuntimeTranslationUnitRegistrationContractSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";binary_boundary_contract_id=" << summary.binary_boundary_contract_id
+      << ";archive_static_link_contract_id="
+      << summary.archive_static_link_contract_id
+      << ";object_emission_closeout_contract_id="
+      << summary.object_emission_closeout_contract_id
+      << ";runtime_support_library_link_wiring_contract_id="
+      << summary.runtime_support_library_link_wiring_contract_id
+      << ";registration_surface_path=" << summary.registration_surface_path
+      << ";registration_payload_model="
+      << summary.registration_payload_model
+      << ";constructor_root_symbol=" << summary.constructor_root_symbol
+      << ";constructor_root_ownership_model="
+      << summary.constructor_root_ownership_model
+      << ";constructor_emission_mode=" << summary.constructor_emission_mode
+      << ";constructor_priority_policy="
+      << summary.constructor_priority_policy
+      << ";registration_entrypoint_symbol="
+      << summary.registration_entrypoint_symbol
+      << ";translation_unit_identity_model="
+      << summary.translation_unit_identity_model
+      << ";binary_boundary_replay_key=" << summary.binary_boundary_replay_key;
+  for (std::size_t index = 0; index < summary.runtime_owned_payload_artifacts.size();
+       ++index) {
+    out << ";runtime_owned_payload_artifacts[" << index
+        << "]=" << summary.runtime_owned_payload_artifacts[index];
+  }
+  return out.str();
+}
+
+Objc3RuntimeTranslationUnitRegistrationContractSummary
+BuildRuntimeTranslationUnitRegistrationContractSummary(
+    const Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary
+        &runtime_ingest_binary_boundary,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary
+        &runtime_support_library_link_wiring) {
+  Objc3RuntimeTranslationUnitRegistrationContractSummary summary;
+  summary.fail_closed = true;
+  summary.boundary_frozen = true;
+  summary.binary_boundary_ready =
+      IsReadyObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary(
+          runtime_ingest_binary_boundary);
+  summary.runtime_support_library_link_wiring_ready =
+      IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
+          runtime_support_library_link_wiring);
+  const std::string archive_static_link_summary =
+      Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
+  summary.archive_static_link_surface_ready =
+      archive_static_link_summary.find(
+          std::string("contract=") +
+          kObjc3RuntimeArchiveStaticLinkDiscoveryContractId) !=
+          std::string::npos &&
+      archive_static_link_summary.find(
+          std::string("translation_unit_identity_model=") +
+          summary.translation_unit_identity_model) != std::string::npos;
+  const std::string object_emission_closeout_summary =
+      Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
+  summary.object_emission_closeout_surface_ready =
+      object_emission_closeout_summary.find(
+          std::string("contract=") +
+          kObjc3RuntimeMetadataObjectEmissionCloseoutContractId) !=
+          std::string::npos &&
+      object_emission_closeout_summary.find(
+          "non_goals=no-startup-registration-or-runtime-bootstrap") !=
+          std::string::npos;
+  summary.runtime_owned_payload_inventory_published = true;
+  summary.constructor_root_reserved_not_emitted = true;
+  summary.startup_registration_not_yet_landed = true;
+  summary.runtime_bootstrap_not_yet_landed = true;
+  summary.explicit_non_goals_published = true;
+  summary.runtime_owned_payload_artifact_count =
+      summary.runtime_owned_payload_artifacts.size();
+  if (summary.binary_boundary_ready) {
+    summary.binary_boundary_replay_key = runtime_ingest_binary_boundary.replay_key;
+  }
+  summary.ready_for_registration_manifest_implementation =
+      summary.binary_boundary_ready &&
+      summary.archive_static_link_surface_ready &&
+      summary.object_emission_closeout_surface_ready &&
+      summary.runtime_support_library_link_wiring_ready;
+  if (summary.ready_for_registration_manifest_implementation) {
+    summary.replay_key =
+        BuildRuntimeTranslationUnitRegistrationContractReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeTranslationUnitRegistrationContractSummary(summary)) {
+    summary.failure_reason =
+        "translation-unit registration surface contract is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeTranslationUnitRegistrationContractSummaryJson(
+    const Objc3RuntimeTranslationUnitRegistrationContractSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"binary_boundary_contract_id\":\""
+      << EscapeJsonString(summary.binary_boundary_contract_id)
+      << "\",\"archive_static_link_contract_id\":\""
+      << EscapeJsonString(summary.archive_static_link_contract_id)
+      << "\",\"object_emission_closeout_contract_id\":\""
+      << EscapeJsonString(summary.object_emission_closeout_contract_id)
+      << "\",\"runtime_support_library_link_wiring_contract_id\":\""
+      << EscapeJsonString(summary.runtime_support_library_link_wiring_contract_id)
+      << "\",\"registration_surface_path\":\""
+      << EscapeJsonString(summary.registration_surface_path)
+      << "\",\"registration_payload_model\":\""
+      << EscapeJsonString(summary.registration_payload_model)
+      << "\",\"ready\":"
+      << (IsReadyObjc3RuntimeTranslationUnitRegistrationContractSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"boundary_frozen\":"
+      << (summary.boundary_frozen ? "true" : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"binary_boundary_ready\":"
+      << (summary.binary_boundary_ready ? "true" : "false")
+      << ",\"archive_static_link_surface_ready\":"
+      << (summary.archive_static_link_surface_ready ? "true" : "false")
+      << ",\"object_emission_closeout_surface_ready\":"
+      << (summary.object_emission_closeout_surface_ready ? "true" : "false")
+      << ",\"runtime_support_library_link_wiring_ready\":"
+      << (summary.runtime_support_library_link_wiring_ready ? "true" : "false")
+      << ",\"runtime_owned_payload_inventory_published\":"
+      << (summary.runtime_owned_payload_inventory_published ? "true" : "false")
+      << ",\"constructor_root_reserved_not_emitted\":"
+      << (summary.constructor_root_reserved_not_emitted ? "true" : "false")
+      << ",\"startup_registration_not_yet_landed\":"
+      << (summary.startup_registration_not_yet_landed ? "true" : "false")
+      << ",\"runtime_bootstrap_not_yet_landed\":"
+      << (summary.runtime_bootstrap_not_yet_landed ? "true" : "false")
+      << ",\"explicit_non_goals_published\":"
+      << (summary.explicit_non_goals_published ? "true" : "false")
+      << ",\"ready_for_registration_manifest_implementation\":"
+      << (summary.ready_for_registration_manifest_implementation ? "true"
+                                                                : "false")
+      << ",\"runtime_owned_payload_artifact_count\":"
+      << summary.runtime_owned_payload_artifact_count
+      << ",\"runtime_owned_payload_artifacts\":[";
+  for (std::size_t index = 0; index < summary.runtime_owned_payload_artifacts.size();
+       ++index) {
+    if (index != 0u) {
+      out << ",";
+    }
+    out << "\""
+        << EscapeJsonString(summary.runtime_owned_payload_artifacts[index])
+        << "\"";
+  }
+  out << "],\"constructor_root_symbol\":\""
+      << EscapeJsonString(summary.constructor_root_symbol)
+      << "\",\"constructor_root_ownership_model\":\""
+      << EscapeJsonString(summary.constructor_root_ownership_model)
+      << "\",\"constructor_emission_mode\":\""
+      << EscapeJsonString(summary.constructor_emission_mode)
+      << "\",\"constructor_priority_policy\":\""
+      << EscapeJsonString(summary.constructor_priority_policy)
+      << "\",\"registration_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.registration_entrypoint_symbol)
+      << "\",\"translation_unit_identity_model\":\""
+      << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"binary_boundary_replay_key\":\""
+      << EscapeJsonString(summary.binary_boundary_replay_key)
+      << "\",\"replay_key\":\""
+      << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -3374,6 +3545,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_support_library_link_wiring =
           BuildRuntimeSupportLibraryLinkWiringSummary(
               runtime_support_library_core_feature);
+  const Objc3RuntimeTranslationUnitRegistrationContractSummary
+      runtime_translation_unit_registration_contract =
+          BuildRuntimeTranslationUnitRegistrationContractSummary(
+              executable_metadata_runtime_ingest_binary_boundary,
+              runtime_support_library_link_wiring);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -5112,6 +5288,120 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_support_library_link_wiring.failure_reason
            << "\",\"runtime_support_library_core_feature_failure_reason\":\""
            << runtime_support_library_core_feature.failure_reason
+           << "\",\"runtime_translation_unit_registration_contract_id\":\""
+           << runtime_translation_unit_registration_contract.contract_id
+           << "\",\"runtime_translation_unit_registration_binary_boundary_contract_id\":\""
+           << runtime_translation_unit_registration_contract
+                  .binary_boundary_contract_id
+           << "\",\"runtime_translation_unit_registration_archive_static_link_contract_id\":\""
+           << runtime_translation_unit_registration_contract
+                  .archive_static_link_contract_id
+           << "\",\"runtime_translation_unit_registration_object_emission_closeout_contract_id\":\""
+           << runtime_translation_unit_registration_contract
+                  .object_emission_closeout_contract_id
+           << "\",\"runtime_translation_unit_registration_runtime_support_library_link_wiring_contract_id\":\""
+           << runtime_translation_unit_registration_contract
+                  .runtime_support_library_link_wiring_contract_id
+           << "\",\"runtime_translation_unit_registration_payload_model\":\""
+           << runtime_translation_unit_registration_contract
+                  .registration_payload_model
+           << "\",\"runtime_translation_unit_registration_runtime_owned_payload_artifact_count\":"
+           << runtime_translation_unit_registration_contract
+                  .runtime_owned_payload_artifact_count
+           << ",\"runtime_translation_unit_registration_payload_artifact_relative_path\":\""
+           << runtime_translation_unit_registration_contract
+                  .runtime_owned_payload_artifacts[0]
+           << "\",\"runtime_translation_unit_registration_linker_response_artifact_relative_path\":\""
+           << runtime_translation_unit_registration_contract
+                  .runtime_owned_payload_artifacts[1]
+           << "\",\"runtime_translation_unit_registration_discovery_artifact_relative_path\":\""
+           << runtime_translation_unit_registration_contract
+                  .runtime_owned_payload_artifacts[2]
+           << "\",\"runtime_translation_unit_registration_constructor_root_symbol\":\""
+           << runtime_translation_unit_registration_contract
+                  .constructor_root_symbol
+           << "\",\"runtime_translation_unit_registration_constructor_root_ownership_model\":\""
+           << runtime_translation_unit_registration_contract
+                  .constructor_root_ownership_model
+           << "\",\"runtime_translation_unit_registration_constructor_emission_mode\":\""
+           << runtime_translation_unit_registration_contract
+                  .constructor_emission_mode
+           << "\",\"runtime_translation_unit_registration_constructor_priority_policy\":\""
+           << runtime_translation_unit_registration_contract
+                  .constructor_priority_policy
+           << "\",\"runtime_translation_unit_registration_entrypoint_symbol\":\""
+           << runtime_translation_unit_registration_contract
+                  .registration_entrypoint_symbol
+           << "\",\"runtime_translation_unit_registration_translation_unit_identity_model\":\""
+           << runtime_translation_unit_registration_contract
+                  .translation_unit_identity_model
+           << "\",\"runtime_translation_unit_registration_boundary_frozen\":"
+           << (runtime_translation_unit_registration_contract.boundary_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_fail_closed\":"
+           << (runtime_translation_unit_registration_contract.fail_closed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_binary_boundary_ready\":"
+           << (runtime_translation_unit_registration_contract.binary_boundary_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_archive_static_link_surface_ready\":"
+           << (runtime_translation_unit_registration_contract
+                       .archive_static_link_surface_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_object_emission_closeout_surface_ready\":"
+           << (runtime_translation_unit_registration_contract
+                       .object_emission_closeout_surface_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_runtime_support_library_link_wiring_ready\":"
+           << (runtime_translation_unit_registration_contract
+                       .runtime_support_library_link_wiring_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_runtime_owned_payload_inventory_published\":"
+           << (runtime_translation_unit_registration_contract
+                       .runtime_owned_payload_inventory_published
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_constructor_root_reserved_not_emitted\":"
+           << (runtime_translation_unit_registration_contract
+                       .constructor_root_reserved_not_emitted
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_startup_registration_not_yet_landed\":"
+           << (runtime_translation_unit_registration_contract
+                       .startup_registration_not_yet_landed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_runtime_bootstrap_not_yet_landed\":"
+           << (runtime_translation_unit_registration_contract
+                       .runtime_bootstrap_not_yet_landed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_explicit_non_goals_published\":"
+           << (runtime_translation_unit_registration_contract
+                       .explicit_non_goals_published
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_ready_for_manifest_implementation\":"
+           << (runtime_translation_unit_registration_contract
+                       .ready_for_registration_manifest_implementation
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_binary_boundary_replay_key\":\""
+           << EscapeJsonString(
+                  runtime_translation_unit_registration_contract
+                      .binary_boundary_replay_key)
+           << "\",\"runtime_translation_unit_registration_replay_key\":\""
+           << EscapeJsonString(
+                  runtime_translation_unit_registration_contract.replay_key)
+           << "\",\"runtime_translation_unit_registration_failure_reason\":\""
+           << EscapeJsonString(
+                  runtime_translation_unit_registration_contract.failure_reason)
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
@@ -5955,6 +6245,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_runtime_ingest_binary_boundary\":"
            << BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
                   executable_metadata_runtime_ingest_binary_boundary)
+           // M254-A001 translation-unit registration surface anchor: lane-A
+           // freezes one manifest-published preregistration contract over the
+           // runtime metadata binary, linker-retention sidecars, constructor
+           // root reservation, and runtime-owned entrypoint boundary before
+           // A002 emits any real startup constructor or bootstrap calls.
+           << ",\"objc_runtime_translation_unit_registration_contract\":"
+           << BuildRuntimeTranslationUnitRegistrationContractSummaryJson(
+                  runtime_translation_unit_registration_contract)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

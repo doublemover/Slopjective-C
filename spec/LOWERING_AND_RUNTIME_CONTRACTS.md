@@ -5229,3 +5229,31 @@ work begins.
 
 `M253-E002` is a closeout gate only; it adds no runtime startup registration,
 class registration, or new metadata section families.
+
+## M254 translation-unit registration surface freeze (A001)
+
+`M254-A001` freezes one manifest-published preregistration boundary over the
+already-emitted metadata/object artifacts.
+
+- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`
+- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
+- canonical runtime-owned payload inventory:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor-root ownership model
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- reserved constructor root `__objc3_runtime_register_image_ctor`
+- runtime-owned registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+Non-goals:
+
+- no constructor-root emission yet
+- no startup registration yet
+- no runtime bootstrap yet
+
+`M254-A002` must preserve this contract while materializing registration
+manifests and constructor-root ownership.

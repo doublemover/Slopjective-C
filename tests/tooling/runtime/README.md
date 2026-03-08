@@ -47,3 +47,16 @@ driver can migrate from shim-backed execution to native-library linkage in
 
 `M251-E003` publishes the canonical operator runbook for this runtime-foundation
 slice at `docs/runbooks/m251_runtime_foundation_developer_runbook.md`.
+
+`M254-A001` freezes the next startup-registration handoff without emitting it
+yet:
+
+- translation-unit preregistration inventory is the emitted
+  `module.runtime-metadata.bin` payload plus
+  `module.runtime-metadata-linker-options.rsp` and
+  `module.runtime-metadata-discovery.json`
+- the reserved constructor-root ownership model is
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- the runtime-owned entrypoint remains `objc3_runtime_register_image`
+- no startup constructor/root emission or bootstrap execution lands in
+  `M254-A001`

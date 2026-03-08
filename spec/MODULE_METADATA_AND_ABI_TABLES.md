@@ -6346,3 +6346,22 @@ Deterministic lane-E cross-lane object-emission closeout behavior for
 
 `M253-E002` closes emitted-object trust for the current tranche only; it does
 not claim runtime startup registration or executable class registration.
+
+## M254 translation-unit registration metadata anchors (A001)
+
+`M254-A001` publishes the preregistration translation-unit surface at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`.
+
+Frozen metadata/runtime anchors:
+
+- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
+- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
+- runtime-owned payload artifacts:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor root `__objc3_runtime_register_image_ctor`
+- registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+This freeze does not emit the constructor root or execute bootstrap logic yet.

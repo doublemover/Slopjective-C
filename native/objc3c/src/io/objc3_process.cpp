@@ -410,6 +410,10 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
   // response/discovery artifacts are now replayed on integrated native class,
   // category, and message-send object probes, so this path must stay stable
   // enough for later startup-registration work to trust the produced objects.
+  // M254-A001 translation-unit registration surface freeze: startup
+  // registration must consume the linker-response/discovery sidecars derived
+  // here without re-deriving translation-unit identity or renaming the public
+  // discovery/linker-anchor boundary emitted by the M253 path.
   linker_response_file_payload.clear();
   discovery_json.clear();
   error.clear();

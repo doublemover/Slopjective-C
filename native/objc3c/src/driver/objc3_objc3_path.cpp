@@ -121,6 +121,12 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         compile_status = 125;
         std::cerr << linker_retention_error << "\n";
       } else {
+        // M254-A001 translation-unit registration surface freeze: the native
+        // driver's preregistration payload inventory for one translation unit
+        // is the runtime-metadata binary plus the linker-response/discovery
+        // sidecars written here. Later startup-registration work may reserve a
+        // constructor root, but it must preserve these artifact boundaries and
+        // keep runtime ownership centered on objc3_runtime_register_image.
         WriteRuntimeMetadataLinkerResponseArtifact(
             cli_options.out_dir,
             cli_options.emit_prefix,
