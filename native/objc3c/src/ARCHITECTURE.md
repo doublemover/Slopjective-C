@@ -8630,3 +8630,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `module.runtime-registration-manifest.json` so the emitted artifact carries
   the same duplicate/order/failure/status-code contract that the native probe
   validates before constructor-root automation lands.
+- M254 lane-C C001 bootstrap-lowering freeze publishes one lowering-owned
+  packet in `lower/objc3_lowering_contract.h`,
+  `lower/objc3_lowering_contract.cpp`, `ir/objc3_ir_emitter.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `driver/objc3_objc3_path.cpp`, and
+  `io/objc3_process.cpp` so later ctor-root/init-stub/registration-table
+  materialization extends one explicit manifest-driven boundary instead of
+  inventing bootstrap globals independently in the driver or artifact writers.

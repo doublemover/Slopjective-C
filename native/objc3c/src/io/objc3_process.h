@@ -53,6 +53,13 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string registration_result_model;
   std::string registration_order_ordinal_model;
   std::string runtime_state_snapshot_symbol;
+  std::string bootstrap_lowering_contract_id;
+  std::string bootstrap_lowering_boundary_model;
+  std::string bootstrap_global_ctor_list_model;
+  std::string bootstrap_constructor_root_emission_state;
+  std::string bootstrap_init_stub_emission_state;
+  std::string bootstrap_registration_table_emission_state;
+  std::string bootstrap_registration_table_symbol_prefix;
   int success_status_code = 0;
   int invalid_descriptor_status_code = 0;
   int duplicate_registration_status_code = 0;

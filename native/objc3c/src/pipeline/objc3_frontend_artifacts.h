@@ -16,6 +16,7 @@ struct Objc3FrontendArtifactBundle {
   Objc3RuntimeTranslationUnitRegistrationManifestSummary
       runtime_translation_unit_registration_manifest_summary;
   Objc3RuntimeBootstrapSemanticsSummary runtime_bootstrap_semantics_summary;
+  Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering_summary;
   std::string ir_text;
 };
 

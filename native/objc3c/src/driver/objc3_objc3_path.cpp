@@ -145,6 +145,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               artifacts.runtime_translation_unit_registration_manifest_summary;
           const auto &runtime_bootstrap_semantics_summary =
               artifacts.runtime_bootstrap_semantics_summary;
+          const auto &runtime_bootstrap_lowering_summary =
+              artifacts.runtime_bootstrap_lowering_summary;
           manifest_inputs.contract_id = registration_manifest_summary.contract_id;
           manifest_inputs.translation_unit_registration_contract_id =
               registration_manifest_summary
@@ -206,6 +208,28 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   .registration_order_ordinal_model;
           manifest_inputs.runtime_state_snapshot_symbol =
               runtime_bootstrap_semantics_summary.runtime_state_snapshot_symbol;
+          // M254-C001 bootstrap-lowering anchor: driver-side artifact
+          // materialization remains limited to the registration manifest. The
+          // actual ctor-root/init-stub/registration-table IR globals stay
+          // owned by lowering and must be derived from the canonical lowering
+          // packet rather than reconstructed ad hoc here.
+          manifest_inputs.bootstrap_lowering_contract_id =
+              runtime_bootstrap_lowering_summary.contract_id;
+          manifest_inputs.bootstrap_lowering_boundary_model =
+              runtime_bootstrap_lowering_summary.lowering_boundary_model;
+          manifest_inputs.bootstrap_global_ctor_list_model =
+              runtime_bootstrap_lowering_summary.global_ctor_list_model;
+          manifest_inputs.bootstrap_constructor_root_emission_state =
+              runtime_bootstrap_lowering_summary
+                  .constructor_root_emission_state;
+          manifest_inputs.bootstrap_init_stub_emission_state =
+              runtime_bootstrap_lowering_summary.init_stub_emission_state;
+          manifest_inputs.bootstrap_registration_table_emission_state =
+              runtime_bootstrap_lowering_summary
+                  .registration_table_emission_state;
+          manifest_inputs.bootstrap_registration_table_symbol_prefix =
+              runtime_bootstrap_lowering_summary
+                  .registration_table_symbol_prefix;
           manifest_inputs.success_status_code =
               runtime_bootstrap_semantics_summary.success_status_code;
           manifest_inputs.invalid_descriptor_status_code =

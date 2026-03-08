@@ -98,3 +98,18 @@ manifest:
 - emitted `module.runtime-registration-manifest.json` payloads now carry the
   same duplicate/order/failure/status-code surface consumed by the runtime
   probe
+
+`M254-C001` freezes the lowering-owned startup materialization boundary without
+emitting it yet:
+
+- the canonical lowering contract is
+  `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- the preserved constructor root remains `__objc3_runtime_register_image_ctor`
+- the preserved init-stub prefix remains
+  `__objc3_runtime_register_image_init_stub_`
+- the reserved registration-table prefix is
+  `__objc3_runtime_registration_table_`
+- the future ctor list model is
+  `llvm.global_ctors-single-root-priority-65535`
+- emitted IR must stay explicit that no ctor root, no init stub, and no
+  registration table are materialized yet

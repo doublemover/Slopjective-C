@@ -6441,3 +6441,26 @@ Canonical metadata/runtime anchors:
 The emitted `module.runtime-registration-manifest.json` payload now carries
 this same runtime-facing policy and status-code surface so runtime probes can
 detect drift between emitted metadata and realized behavior.
+
+## M254 bootstrap lowering metadata anchors (C001)
+
+`M254-C001` publishes the lowering freeze packet at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- boundary model
+  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
+- constructor root symbol `__objc3_runtime_register_image_ctor`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- registration-table symbol prefix `__objc3_runtime_registration_table_`
+- future global-ctor list model `llvm.global_ctors-single-root-priority-65535`
+- constructor-root emission state `deferred-until-m254-c002`
+- init-stub emission state `deferred-until-m254-c002`
+- registration-table emission state `deferred-until-m254-c002`
+
+The emitted `module.runtime-registration-manifest.json` payload now also
+carries this lowering contract so later ctor-root materialization consumes one
+authoritative manifest packet instead of reconstructing bootstrap anchors from
+loosely related sidecars.

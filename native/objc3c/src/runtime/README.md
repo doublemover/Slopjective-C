@@ -50,3 +50,13 @@ semantics while preserving the canonical archive/header path:
 - non-monotonic registration ordinals fail closed with status `-3`
 - `objc3_runtime_copy_registration_state_for_testing` exposes committed state
   to the native runtime probe so partial commits are detectable
+
+`M254-C001` does not extend the runtime library API. It freezes the lowering
+boundary that will eventually materialize startup ctor roots, init stubs, and
+registration tables from the emitted manifest:
+
+- lowering contract `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- preserved ctor root `__objc3_runtime_register_image_ctor`
+- preserved init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- reserved registration-table prefix `__objc3_runtime_registration_table_`
+- no runtime API additions land in the freeze

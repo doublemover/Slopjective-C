@@ -2224,6 +2224,124 @@ std::string BuildRuntimeBootstrapSemanticsSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeBootstrapLoweringReplayKey(
+    const Objc3RuntimeBootstrapLoweringSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";registration_manifest_contract_id="
+      << summary.registration_manifest_contract_id
+      << ";bootstrap_semantics_contract_id="
+      << summary.bootstrap_semantics_contract_id
+      << ";bootstrap_surface_path=" << summary.bootstrap_surface_path
+      << ";lowering_boundary_model=" << summary.lowering_boundary_model
+      << ";constructor_root_symbol=" << summary.constructor_root_symbol
+      << ";constructor_init_stub_symbol_prefix="
+      << summary.constructor_init_stub_symbol_prefix
+      << ";registration_table_symbol_prefix="
+      << summary.registration_table_symbol_prefix
+      << ";registration_entrypoint_symbol="
+      << summary.registration_entrypoint_symbol
+      << ";global_ctor_list_model=" << summary.global_ctor_list_model
+      << ";constructor_root_emission_state="
+      << summary.constructor_root_emission_state
+      << ";init_stub_emission_state=" << summary.init_stub_emission_state
+      << ";registration_table_emission_state="
+      << summary.registration_table_emission_state
+      << ";registration_manifest_replay_key="
+      << summary.registration_manifest_replay_key
+      << ";bootstrap_semantics_replay_key="
+      << summary.bootstrap_semantics_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeBootstrapLoweringSummary BuildRuntimeBootstrapLoweringSummary(
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &registration_manifest,
+    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics) {
+  Objc3RuntimeBootstrapLoweringSummary summary;
+  summary.fail_closed = true;
+  summary.registration_manifest_contract_ready =
+      IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+          registration_manifest);
+  summary.bootstrap_semantics_contract_ready =
+      IsReadyObjc3RuntimeBootstrapSemanticsSummary(bootstrap_semantics);
+  summary.lowering_contract_published = true;
+  summary.manifest_authority_preserved =
+      summary.registration_manifest_contract_ready &&
+      registration_manifest.constructor_root_manifest_authoritative;
+  summary.no_bootstrap_ir_materialization_yet = true;
+  summary.ready_for_bootstrap_materialization =
+      summary.registration_manifest_contract_ready &&
+      summary.bootstrap_semantics_contract_ready;
+  if (summary.registration_manifest_contract_ready) {
+    summary.registration_manifest_replay_key = registration_manifest.replay_key;
+  }
+  if (summary.bootstrap_semantics_contract_ready) {
+    summary.bootstrap_semantics_replay_key = bootstrap_semantics.replay_key;
+  }
+  if (summary.ready_for_bootstrap_materialization) {
+    summary.replay_key = BuildRuntimeBootstrapLoweringReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeBootstrapLoweringSummary(summary)) {
+    summary.failure_reason = "runtime bootstrap lowering summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeBootstrapLoweringSummaryJson(
+    const Objc3RuntimeBootstrapLoweringSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"registration_manifest_contract_id\":\""
+      << EscapeJsonString(summary.registration_manifest_contract_id)
+      << "\",\"bootstrap_semantics_contract_id\":\""
+      << EscapeJsonString(summary.bootstrap_semantics_contract_id)
+      << "\",\"bootstrap_surface_path\":\""
+      << EscapeJsonString(summary.bootstrap_surface_path)
+      << "\",\"lowering_boundary_model\":\""
+      << EscapeJsonString(summary.lowering_boundary_model)
+      << "\",\"constructor_root_symbol\":\""
+      << EscapeJsonString(summary.constructor_root_symbol)
+      << "\",\"constructor_init_stub_symbol_prefix\":\""
+      << EscapeJsonString(summary.constructor_init_stub_symbol_prefix)
+      << "\",\"registration_table_symbol_prefix\":\""
+      << EscapeJsonString(summary.registration_table_symbol_prefix)
+      << "\",\"registration_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.registration_entrypoint_symbol)
+      << "\",\"global_ctor_list_model\":\""
+      << EscapeJsonString(summary.global_ctor_list_model)
+      << "\",\"constructor_root_emission_state\":\""
+      << EscapeJsonString(summary.constructor_root_emission_state)
+      << "\",\"init_stub_emission_state\":\""
+      << EscapeJsonString(summary.init_stub_emission_state)
+      << "\",\"registration_table_emission_state\":\""
+      << EscapeJsonString(summary.registration_table_emission_state)
+      << "\",\"ready\":"
+      << (IsReadyObjc3RuntimeBootstrapLoweringSummary(summary) ? "true"
+                                                               : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"registration_manifest_contract_ready\":"
+      << (summary.registration_manifest_contract_ready ? "true" : "false")
+      << ",\"bootstrap_semantics_contract_ready\":"
+      << (summary.bootstrap_semantics_contract_ready ? "true" : "false")
+      << ",\"lowering_contract_published\":"
+      << (summary.lowering_contract_published ? "true" : "false")
+      << ",\"manifest_authority_preserved\":"
+      << (summary.manifest_authority_preserved ? "true" : "false")
+      << ",\"no_bootstrap_ir_materialization_yet\":"
+      << (summary.no_bootstrap_ir_materialization_yet ? "true" : "false")
+      << ",\"ready_for_bootstrap_materialization\":"
+      << (summary.ready_for_bootstrap_materialization ? "true" : "false")
+      << ",\"registration_manifest_replay_key\":\""
+      << EscapeJsonString(summary.registration_manifest_replay_key)
+      << "\",\"bootstrap_semantics_replay_key\":\""
+      << EscapeJsonString(summary.bootstrap_semantics_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -4033,6 +4151,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_bootstrap_semantics = BuildRuntimeBootstrapSemanticsSummary(
           runtime_startup_bootstrap_invariants,
           runtime_translation_unit_registration_manifest);
+  const Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering =
+      BuildRuntimeBootstrapLoweringSummary(
+          runtime_translation_unit_registration_manifest,
+          runtime_bootstrap_semantics);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -6048,6 +6170,45 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_bootstrap_semantics_failure_reason\":\""
            << EscapeJsonString(runtime_bootstrap_semantics.failure_reason)
            << "\""
+           << ",\"runtime_bootstrap_lowering_contract_id\":\""
+           << runtime_bootstrap_lowering.contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_manifest_contract_id\":\""
+           << runtime_bootstrap_lowering.registration_manifest_contract_id
+           << "\",\"runtime_bootstrap_lowering_bootstrap_semantics_contract_id\":\""
+           << runtime_bootstrap_lowering.bootstrap_semantics_contract_id
+           << "\",\"runtime_bootstrap_lowering_boundary_model\":\""
+           << runtime_bootstrap_lowering.lowering_boundary_model
+           << "\",\"runtime_bootstrap_lowering_constructor_root_symbol\":\""
+           << runtime_bootstrap_lowering.constructor_root_symbol
+           << "\",\"runtime_bootstrap_lowering_init_stub_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.constructor_init_stub_symbol_prefix
+           << "\",\"runtime_bootstrap_lowering_registration_table_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.registration_table_symbol_prefix
+           << "\",\"runtime_bootstrap_lowering_registration_entrypoint_symbol\":\""
+           << runtime_bootstrap_lowering.registration_entrypoint_symbol
+           << "\",\"runtime_bootstrap_lowering_global_ctor_list_model\":\""
+           << runtime_bootstrap_lowering.global_ctor_list_model
+           << "\",\"runtime_bootstrap_lowering_constructor_root_emission_state\":\""
+           << runtime_bootstrap_lowering.constructor_root_emission_state
+           << "\",\"runtime_bootstrap_lowering_init_stub_emission_state\":\""
+           << runtime_bootstrap_lowering.init_stub_emission_state
+           << "\",\"runtime_bootstrap_lowering_registration_table_emission_state\":\""
+           << runtime_bootstrap_lowering.registration_table_emission_state
+           << "\",\"runtime_bootstrap_lowering_fail_closed\":"
+           << (runtime_bootstrap_lowering.fail_closed ? "true" : "false")
+           << ",\"runtime_bootstrap_lowering_no_bootstrap_ir_materialization_yet\":"
+           << (runtime_bootstrap_lowering.no_bootstrap_ir_materialization_yet
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_lowering_ready_for_bootstrap_materialization\":"
+           << (runtime_bootstrap_lowering.ready_for_bootstrap_materialization
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_lowering_replay_key\":\""
+           << EscapeJsonString(runtime_bootstrap_lowering.replay_key)
+           << "\",\"runtime_bootstrap_lowering_failure_reason\":\""
+           << EscapeJsonString(runtime_bootstrap_lowering.failure_reason)
+           << "\""
            << ",\"runtime_startup_bootstrap_invariant_contract_id\":\""
            << runtime_startup_bootstrap_invariants.contract_id
            << "\",\"runtime_startup_bootstrap_invariant_duplicate_registration_policy\":\""
@@ -7013,6 +7174,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_startup_bootstrap_semantics\":"
            << BuildRuntimeBootstrapSemanticsSummaryJson(
                   runtime_bootstrap_semantics)
+           // M254-C001 bootstrap-lowering anchor: lane-C now freezes one
+           // manifest-driven lowering packet that owns future ctor-root,
+           // init-stub, and registration-table materialization without
+           // claiming that the current emitted IR already contains those
+           // globals.
+           << ",\"objc_runtime_bootstrap_lowering_contract\":"
+           << BuildRuntimeBootstrapLoweringSummaryJson(
+                  runtime_bootstrap_lowering)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"
@@ -8018,6 +8187,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
+  bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
 
   if (!post_pipeline_failure_code.empty()) {
     if (!options.emit_ir && !options.emit_object) {

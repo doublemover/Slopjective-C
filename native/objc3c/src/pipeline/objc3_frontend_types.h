@@ -2862,6 +2862,72 @@ inline bool IsReadyObjc3RuntimeBootstrapSemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeBootstrapLoweringSummary {
+  std::string contract_id = kObjc3RuntimeBootstrapLoweringContractId;
+  std::string registration_manifest_contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string bootstrap_semantics_contract_id =
+      kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string bootstrap_surface_path =
+      "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract";
+  std::string lowering_boundary_model =
+      kObjc3RuntimeBootstrapLoweringBoundaryModel;
+  std::string constructor_root_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol;
+  std::string constructor_init_stub_symbol_prefix =
+      kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix;
+  std::string registration_table_symbol_prefix =
+      kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix;
+  std::string registration_entrypoint_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
+  std::string global_ctor_list_model =
+      kObjc3RuntimeBootstrapGlobalCtorListModel;
+  std::string constructor_root_emission_state =
+      kObjc3RuntimeBootstrapConstructorRootEmissionState;
+  std::string init_stub_emission_state =
+      kObjc3RuntimeBootstrapInitStubEmissionState;
+  std::string registration_table_emission_state =
+      kObjc3RuntimeBootstrapRegistrationTableEmissionState;
+  bool fail_closed = false;
+  bool registration_manifest_contract_ready = false;
+  bool bootstrap_semantics_contract_ready = false;
+  bool lowering_contract_published = false;
+  bool manifest_authority_preserved = false;
+  bool no_bootstrap_ir_materialization_yet = false;
+  bool ready_for_bootstrap_materialization = false;
+  std::string registration_manifest_replay_key;
+  std::string bootstrap_semantics_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
+    const Objc3RuntimeBootstrapLoweringSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.registration_manifest_contract_id.empty() &&
+         !summary.bootstrap_semantics_contract_id.empty() &&
+         !summary.bootstrap_surface_path.empty() &&
+         !summary.lowering_boundary_model.empty() &&
+         !summary.constructor_root_symbol.empty() &&
+         !summary.constructor_init_stub_symbol_prefix.empty() &&
+         !summary.registration_table_symbol_prefix.empty() &&
+         !summary.registration_entrypoint_symbol.empty() &&
+         !summary.global_ctor_list_model.empty() &&
+         !summary.constructor_root_emission_state.empty() &&
+         !summary.init_stub_emission_state.empty() &&
+         !summary.registration_table_emission_state.empty() &&
+         summary.fail_closed &&
+         summary.registration_manifest_contract_ready &&
+         summary.bootstrap_semantics_contract_ready &&
+         summary.lowering_contract_published &&
+         summary.manifest_authority_preserved &&
+         summary.no_bootstrap_ir_materialization_yet &&
+         summary.ready_for_bootstrap_materialization &&
+         !summary.registration_manifest_replay_key.empty() &&
+         !summary.bootstrap_semantics_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

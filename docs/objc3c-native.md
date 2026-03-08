@@ -1363,6 +1363,42 @@ status-code model the native runtime probe executes against.
 Validation/evidence path:
 `tmp/reports/m254/M254-B002/bootstrap_semantics_summary.json`
 
+## Bootstrap lowering freeze (M254-C001)
+
+`M254-C001` freezes the lowering-owned boundary for startup bootstrap
+materialization without emitting the constructor root, init stub, or
+registration table yet.
+
+- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- boundary model
+  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
+- preserved constructor root symbol `__objc3_runtime_register_image_ctor`
+- preserved init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- reserved registration-table symbol prefix
+  `__objc3_runtime_registration_table_`
+- future global-ctor list model
+  `llvm.global_ctors-single-root-priority-65535`
+- current constructor-root emission state `deferred-until-m254-c002`
+- current init-stub emission state `deferred-until-m254-c002`
+- current registration-table emission state `deferred-until-m254-c002`
+
+`M254-C001` also expands `module.runtime-registration-manifest.json` so the
+manifest carries the same lowering contract that the future ctor-root
+materialization issue must consume directly.
+
+Non-goals:
+
+- no emitted `@llvm.global_ctors` yet
+- no emitted constructor-root global yet
+- no emitted init-stub globals yet
+- no emitted registration-table globals yet
+
+Evidence:
+
+`tmp/reports/m254/M254-C001/bootstrap_lowering_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

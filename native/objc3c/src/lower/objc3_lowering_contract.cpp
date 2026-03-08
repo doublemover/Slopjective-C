@@ -1,5 +1,7 @@
 #include "lower/objc3_lowering_contract.h"
 
+#include "ast/objc3_ast.h"
+
 #include <cctype>
 #include <sstream>
 #include <string>
@@ -587,6 +589,35 @@ std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
       << ";merged_discovery_artifact_suffix="
       << kObjc3RuntimeMergedDiscoveryArtifactSuffix
       << ";non_goals=no-runtime-registration-or-startup-bootstrap";
+  return out.str();
+}
+
+std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
+  std::ostringstream out;
+  // M254-C001 bootstrap lowering freeze anchor: lane-C freezes the exact
+  // lowering boundary that later constructor-root materialization must extend.
+  // The lowering side is authoritative for ctor-root/global_ctors/init-stub/
+  // registration-table naming and ordering, but this issue remains explicit
+  // that no such IR globals are emitted yet.
+  out << "contract=" << kObjc3RuntimeBootstrapLoweringContractId
+      << ";boundary_model=" << kObjc3RuntimeBootstrapLoweringBoundaryModel
+      << ";constructor_root_symbol="
+      << kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol
+      << ";init_stub_symbol_prefix="
+      << kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix
+      << ";registration_table_symbol_prefix="
+      << kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix
+      << ";registration_entrypoint_symbol="
+      << kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol
+      << ";global_ctor_list_model="
+      << kObjc3RuntimeBootstrapGlobalCtorListModel
+      << ";constructor_root_emission_state="
+      << kObjc3RuntimeBootstrapConstructorRootEmissionState
+      << ";init_stub_emission_state="
+      << kObjc3RuntimeBootstrapInitStubEmissionState
+      << ";registration_table_emission_state="
+      << kObjc3RuntimeBootstrapRegistrationTableEmissionState
+      << ";non_goals=no-ctor-root-no-init-stub-no-registration-table-materialized-yet";
   return out.str();
 }
 

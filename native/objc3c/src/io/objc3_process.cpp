@@ -581,6 +581,13 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.registration_result_model.empty() ||
       inputs.registration_order_ordinal_model.empty() ||
       inputs.runtime_state_snapshot_symbol.empty() ||
+      inputs.bootstrap_lowering_contract_id.empty() ||
+      inputs.bootstrap_lowering_boundary_model.empty() ||
+      inputs.bootstrap_global_ctor_list_model.empty() ||
+      inputs.bootstrap_constructor_root_emission_state.empty() ||
+      inputs.bootstrap_init_stub_emission_state.empty() ||
+      inputs.bootstrap_registration_table_emission_state.empty() ||
+      inputs.bootstrap_registration_table_symbol_prefix.empty() ||
       inputs.translation_unit_registration_order_ordinal == 0 ||
       inputs.object_artifact_relative_path.empty() ||
       inputs.backend_artifact_relative_path.empty()) {
@@ -618,6 +625,11 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // and runtime-status-code contract consumed by the real runtime library and
   // probe harness. Drift between the emitted manifest and runtime behavior must
   // fail closed before later constructor-root automation lands.
+  // M254-C001 bootstrap-lowering anchor: the emitted registration manifest now
+  // also freezes the lowering-owned ctor-root/init-stub/registration-table
+  // materialization boundary. This artifact may publish the canonical names
+  // and non-goal states, but it may not synthesize bootstrap globals on its
+  // own ahead of the later lowering implementation issue.
 
   std::ostringstream out;
   out << "{\n"
@@ -697,6 +709,27 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.registration_order_ordinal_model) << "\",\n"
       << "  \"runtime_state_snapshot_symbol\": \""
       << EscapeJsonString(inputs.runtime_state_snapshot_symbol) << "\",\n"
+      << "  \"bootstrap_lowering_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"
+      << "  \"bootstrap_lowering_boundary_model\": \""
+      << EscapeJsonString(inputs.bootstrap_lowering_boundary_model)
+      << "\",\n"
+      << "  \"bootstrap_global_ctor_list_model\": \""
+      << EscapeJsonString(inputs.bootstrap_global_ctor_list_model)
+      << "\",\n"
+      << "  \"bootstrap_constructor_root_emission_state\": \""
+      << EscapeJsonString(inputs.bootstrap_constructor_root_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_init_stub_emission_state\": \""
+      << EscapeJsonString(inputs.bootstrap_init_stub_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_registration_table_emission_state\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registration_table_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_registration_table_symbol_prefix\": \""
+      << EscapeJsonString(inputs.bootstrap_registration_table_symbol_prefix)
+      << "\",\n"
       << "  \"success_status_code\": " << inputs.success_status_code << ",\n"
       << "  \"invalid_descriptor_status_code\": "
       << inputs.invalid_descriptor_status_code << ",\n"
@@ -725,6 +758,7 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "\"\n"
       << "  ],\n"
       << "  \"ready_for_lowering_init_stub_emission\": true,\n"
+      << "  \"ready_for_bootstrap_lowering_materialization\": true,\n"
       << "  \"ready_for_runtime_bootstrap_enforcement\": true\n"
       << "}\n";
   manifest_json = out.str();

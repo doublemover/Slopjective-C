@@ -5349,3 +5349,29 @@ Required behavior:
 - failed registrations do not partially commit runtime-owned state
 - emitted `module.runtime-registration-manifest.json` payloads carry the same
   status-code and policy surface consumed by the native runtime probe
+
+## M254 bootstrap lowering freeze (C001)
+
+`M254-C001` freezes the lowering boundary that later startup materialization
+must implement from the emitted registration manifest plus the live
+`M254-B002` bootstrap semantics packet.
+
+- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- boundary model
+  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
+- constructor root symbol `__objc3_runtime_register_image_ctor`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- registration-table symbol prefix `__objc3_runtime_registration_table_`
+- future global-ctor list model `llvm.global_ctors-single-root-priority-65535`
+- constructor-root emission state `deferred-until-m254-c002`
+- init-stub emission state `deferred-until-m254-c002`
+- registration-table emission state `deferred-until-m254-c002`
+
+Non-goals:
+
+- no emitted `@llvm.global_ctors` yet
+- no emitted constructor-root global yet
+- no emitted init-stub global yet
+- no emitted registration-table global yet

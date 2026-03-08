@@ -213,6 +213,26 @@ inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
     ".merged.runtime-metadata-linker-options.rsp";
 inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
     ".merged.runtime-metadata-discovery.json";
+// M254-C001 bootstrap lowering freeze anchor: lane-C now freezes the lowering
+// boundary that will eventually materialize one constructor root, one derived
+// init stub, and one registration table per translation unit from the emitted
+// registration manifest plus the live bootstrap semantics contract. The
+// current boundary is explicit that those IR globals are not materialized yet.
+inline constexpr const char *kObjc3RuntimeBootstrapLoweringContractId =
+    "objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapLoweringBoundaryModel =
+    "registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering";
+inline constexpr const char *kObjc3RuntimeBootstrapConstructorRootEmissionState =
+    "deferred-until-m254-c002";
+inline constexpr const char *kObjc3RuntimeBootstrapInitStubEmissionState =
+    "deferred-until-m254-c002";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationTableEmissionState =
+        "deferred-until-m254-c002";
+inline constexpr const char *kObjc3RuntimeBootstrapGlobalCtorListModel =
+    "llvm.global_ctors-single-root-priority-65535";
+inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix =
+    "__objc3_runtime_registration_table_";
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
 // object-emission evidence contract over A002/B003/C006/D003 so later closeout
 // work must fail closed if the source-to-section matrix, object-format policy,
@@ -937,6 +957,7 @@ std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
+std::string Objc3RuntimeBootstrapLoweringBoundarySummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(

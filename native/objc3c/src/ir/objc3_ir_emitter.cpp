@@ -4683,6 +4683,8 @@ class Objc3IREmitter {
         << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
     out << "; runtime_metadata_section_emission_boundary = "
         << Objc3RuntimeMetadataSectionEmissionBoundarySummary() << "\n";
+    out << "; runtime_bootstrap_lowering_boundary = "
+        << Objc3RuntimeBootstrapLoweringBoundarySummary() << "\n";
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
         frontend_metadata_.runtime_metadata_class_metaclass_emission_fail_closed &&
