@@ -4471,3 +4471,24 @@ packet with:
 
 `M252-A002` does not complete protocol/category/property/ivar graph closure,
 semantic ambiguity diagnostics, or lowering/runtime ingest readiness.
+
+## M252 executable metadata export graph completion (A003)
+
+`M252-A003` extends the executable metadata graph closure with:
+
+- explicit `protocol_node_entries`,
+- explicit `category_node_entries`,
+- explicit `property_node_entries`,
+- explicit `method_node_entries`,
+- explicit `ivar_node_entries`,
+- canonical category node owners on `category:Class(Category)`,
+- declaration-owner versus export-owner separation for member nodes,
+- deterministic protocol-inheritance, category-attachment, property/method
+  ownership, and ivar/property binding edges,
+- fail-closed `source_graph_complete == true`,
+  `ready_for_semantic_closure == true`, and
+  `ready_for_lowering == false` on class/protocol/property/ivar and
+  category/protocol/property happy-path fixtures.
+
+`M252-A003` still does not claim semantic ambiguity diagnostics, lowering
+readiness, runtime ingest packaging, or startup registration are complete.

@@ -273,6 +273,41 @@ std::string BuildRuntimeMetaclassOwnerIdentity(const std::string &class_name) {
   return "metaclass:" + class_name;
 }
 
+std::string BuildRuntimeCategoryOwnerIdentity(const std::string &class_name,
+                                              const std::string &category_name) {
+  return "category:" + class_name + "(" + category_name + ")";
+}
+
+std::string BuildPropertyNodeOwnerIdentity(
+    const std::string &declaration_owner_identity,
+    const Objc3PropertyDecl &property) {
+  return property.scope_path_symbol.empty()
+             ? declaration_owner_identity + "::property:" + property.name
+             : property.scope_path_symbol;
+}
+
+std::string BuildMethodNodeOwnerIdentity(
+    const std::string &declaration_owner_identity,
+    const Objc3MethodDecl &method) {
+  return method.scope_path_symbol.empty()
+             ? declaration_owner_identity + "::" +
+                   (method.is_class_method ? "class_method:" : "instance_method:") +
+                   method.selector
+             : method.scope_path_symbol;
+}
+
+std::string BuildIvarNodeOwnerIdentity(
+    const std::string &declaration_owner_identity,
+    const Objc3PropertyDecl &property) {
+  if (!property.ivar_binding_symbol.empty()) {
+    if (property.ivar_binding_symbol.find("::") != std::string::npos) {
+      return property.ivar_binding_symbol;
+    }
+    return declaration_owner_identity + "::" + property.ivar_binding_symbol;
+  }
+  return declaration_owner_identity + "::ivar:" + property.name;
+}
+
 std::size_t CountClassMethods(const std::vector<Objc3MethodDecl> &methods) {
   return static_cast<std::size_t>(
       std::count_if(methods.begin(), methods.end(), [](const Objc3MethodDecl &method) {
@@ -306,6 +341,51 @@ bool IsExecutableMetadataMetaclassNodeLess(
     const Objc3ExecutableMetadataMetaclassGraphNode &rhs) {
   return std::tie(lhs.class_name, lhs.owner_identity, lhs.line, lhs.column) <
          std::tie(rhs.class_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataProtocolNodeLess(
+    const Objc3ExecutableMetadataProtocolGraphNode &lhs,
+    const Objc3ExecutableMetadataProtocolGraphNode &rhs) {
+  return std::tie(lhs.protocol_name, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.protocol_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataCategoryNodeLess(
+    const Objc3ExecutableMetadataCategoryGraphNode &lhs,
+    const Objc3ExecutableMetadataCategoryGraphNode &rhs) {
+  return std::tie(lhs.class_name, lhs.category_name, lhs.owner_identity, lhs.line,
+                  lhs.column) <
+         std::tie(rhs.class_name, rhs.category_name, rhs.owner_identity, rhs.line,
+                  rhs.column);
+}
+
+bool IsExecutableMetadataPropertyNodeLess(
+    const Objc3ExecutableMetadataPropertyGraphNode &lhs,
+    const Objc3ExecutableMetadataPropertyGraphNode &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.property_name,
+                  lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name,
+                  rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataMethodNodeLess(
+    const Objc3ExecutableMetadataMethodGraphNode &lhs,
+    const Objc3ExecutableMetadataMethodGraphNode &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.selector,
+                  lhs.is_class_method, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.selector,
+                  rhs.is_class_method, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataIvarNodeLess(
+    const Objc3ExecutableMetadataIvarGraphNode &lhs,
+    const Objc3ExecutableMetadataIvarGraphNode &rhs) {
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.property_name,
+                  lhs.ivar_binding_symbol, lhs.owner_identity, lhs.line,
+                  lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name,
+                  rhs.ivar_binding_symbol, rhs.owner_identity, rhs.line,
+                  rhs.column);
 }
 
 bool IsExecutableMetadataGraphEdgeLess(
@@ -488,7 +568,7 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
 
 Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     const Objc3Program &program,
-    const Objc3InterfaceImplementationSummary &interface_implementation_summary) {
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
   Objc3ExecutableMetadataSourceGraph graph;
 
   struct AggregatedClassSurface {
@@ -507,8 +587,27 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     unsigned column = 1;
   };
 
+  struct AggregatedCategorySurface {
+    bool has_interface = false;
+    bool has_implementation = false;
+    std::string interface_owner_identity;
+    std::string implementation_owner_identity;
+    std::string class_owner_identity;
+    std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
+    std::size_t interface_property_count = 0;
+    std::size_t implementation_property_count = 0;
+    std::size_t interface_method_count = 0;
+    std::size_t implementation_method_count = 0;
+    std::size_t interface_class_method_count = 0;
+    std::size_t implementation_class_method_count = 0;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
   std::unordered_map<std::string, AggregatedClassSurface> aggregated_classes;
   aggregated_classes.reserve(program.interfaces.size() + program.implementations.size());
+  std::unordered_map<std::string, AggregatedCategorySurface> aggregated_categories;
+  aggregated_categories.reserve(program.interfaces.size() + program.implementations.size());
 
   auto &owner_edges = graph.owner_edges_lexicographic;
   const auto add_owner_edge = [&owner_edges](const std::string &edge_kind,
@@ -528,8 +627,140 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     owner_edges.push_back(std::move(edge));
   };
 
+  struct MethodEdgeRecord {
+    std::string owner_identity;
+    std::string export_owner_identity;
+    std::string selector;
+    bool is_class_method = false;
+  };
+  std::vector<MethodEdgeRecord> method_edge_records;
+
+  const auto add_property_nodes =
+      [&graph, &add_owner_edge](const auto &properties,
+                                const std::string &owner_kind,
+                                const std::string &owner_name,
+                                const std::string &declaration_owner_identity,
+                                const std::string &export_owner_identity) {
+        for (const auto &property : properties) {
+          Objc3ExecutableMetadataPropertyGraphNode node;
+          node.owner_kind = owner_kind;
+          node.owner_name = owner_name;
+          node.declaration_owner_identity = declaration_owner_identity;
+          node.export_owner_identity = export_owner_identity;
+          node.owner_identity =
+              BuildPropertyNodeOwnerIdentity(declaration_owner_identity, property);
+          node.property_name = property.name;
+          node.type_name = RuntimeMetadataTypeName(property.type);
+          node.has_getter = property.has_getter;
+          node.getter_selector = property.getter_selector;
+          node.has_setter = property.has_setter;
+          node.setter_selector = property.setter_selector;
+          node.ivar_binding_symbol = property.ivar_binding_symbol;
+          node.line = property.line;
+          node.column = property.column;
+          graph.property_nodes_lexicographic.push_back(node);
+
+          add_owner_edge("property-to-declaration-owner", node.owner_identity,
+                         declaration_owner_identity, node.line, node.column);
+          add_owner_edge("property-to-export-owner", node.owner_identity,
+                         export_owner_identity, node.line, node.column);
+
+          if (!property.ivar_binding_symbol.empty()) {
+            Objc3ExecutableMetadataIvarGraphNode ivar_node;
+            ivar_node.owner_kind = owner_kind;
+            ivar_node.owner_name = owner_name;
+            ivar_node.declaration_owner_identity = declaration_owner_identity;
+            ivar_node.export_owner_identity = export_owner_identity;
+            ivar_node.property_owner_identity = node.owner_identity;
+            ivar_node.owner_identity =
+                BuildIvarNodeOwnerIdentity(declaration_owner_identity, property);
+            ivar_node.property_name = property.name;
+            ivar_node.ivar_binding_symbol = property.ivar_binding_symbol;
+            ivar_node.line = property.line;
+            ivar_node.column = property.column;
+            graph.ivar_nodes_lexicographic.push_back(ivar_node);
+
+            add_owner_edge("ivar-to-declaration-owner", ivar_node.owner_identity,
+                           declaration_owner_identity, ivar_node.line,
+                           ivar_node.column);
+            add_owner_edge("ivar-to-export-owner", ivar_node.owner_identity,
+                           export_owner_identity, ivar_node.line, ivar_node.column);
+            add_owner_edge("ivar-to-property", ivar_node.owner_identity,
+                           node.owner_identity, ivar_node.line, ivar_node.column);
+            add_owner_edge("property-to-ivar", node.owner_identity,
+                           ivar_node.owner_identity, node.line, node.column);
+          }
+        }
+      };
+
+  const auto add_method_nodes =
+      [&graph, &add_owner_edge, &method_edge_records](const auto &methods,
+                                                      const std::string &owner_kind,
+                                                      const std::string &owner_name,
+                                                      const std::string &declaration_owner_identity,
+                                                      const std::string &instance_export_owner_identity,
+                                                      const std::string &class_export_owner_identity) {
+        for (const auto &method : methods) {
+          Objc3ExecutableMetadataMethodGraphNode node;
+          node.owner_kind = owner_kind;
+          node.owner_name = owner_name;
+          node.declaration_owner_identity = declaration_owner_identity;
+          node.export_owner_identity =
+              method.is_class_method ? class_export_owner_identity
+                                     : instance_export_owner_identity;
+          node.owner_identity =
+              BuildMethodNodeOwnerIdentity(declaration_owner_identity, method);
+          node.selector = method.selector;
+          node.is_class_method = method.is_class_method;
+          node.has_body = method.has_body;
+          node.parameter_count = method.params.size();
+          node.return_type_name = RuntimeMetadataTypeName(method.return_type);
+          node.line = method.line;
+          node.column = method.column;
+          graph.method_nodes_lexicographic.push_back(node);
+
+          add_owner_edge("method-to-declaration-owner", node.owner_identity,
+                         declaration_owner_identity, node.line, node.column);
+          add_owner_edge("method-to-export-owner", node.owner_identity,
+                         node.export_owner_identity, node.line, node.column);
+
+          method_edge_records.push_back(
+              {node.owner_identity, node.export_owner_identity, node.selector,
+               node.is_class_method});
+        }
+      };
+
   for (const auto &interface_decl : program.interfaces) {
     if (interface_decl.has_category) {
+      const std::string category_owner_name =
+          BuildCategoryOwnerName(interface_decl.name, interface_decl.category_name);
+      AggregatedCategorySurface &aggregate =
+          aggregated_categories[category_owner_name];
+      if (!aggregate.has_interface && !aggregate.has_implementation) {
+        aggregate.line = interface_decl.line;
+        aggregate.column = interface_decl.column;
+      }
+      aggregate.has_interface = true;
+      aggregate.interface_owner_identity = interface_decl.semantic_link_symbol;
+      aggregate.class_owner_identity =
+          BuildRuntimeClassOwnerIdentity(interface_decl.name);
+      aggregate.adopted_protocol_owner_identities_lexicographic =
+          interface_decl.adopted_protocols_lexicographic;
+      aggregate.interface_property_count = interface_decl.properties.size();
+      aggregate.interface_method_count = interface_decl.methods.size();
+      aggregate.interface_class_method_count =
+          CountClassMethods(interface_decl.methods);
+
+      add_property_nodes(interface_decl.properties, "category-interface",
+                         category_owner_name, interface_decl.semantic_link_symbol,
+                         BuildRuntimeCategoryOwnerIdentity(
+                             interface_decl.name, interface_decl.category_name));
+      add_method_nodes(interface_decl.methods, "category-interface",
+                       category_owner_name, interface_decl.semantic_link_symbol,
+                       BuildRuntimeCategoryOwnerIdentity(
+                           interface_decl.name, interface_decl.category_name),
+                       BuildRuntimeCategoryOwnerIdentity(
+                           interface_decl.name, interface_decl.category_name));
       continue;
     }
 
@@ -568,10 +799,49 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                    node.class_owner_identity, node.line, node.column);
     add_owner_edge("class-to-superclass", node.class_owner_identity,
                    node.super_class_owner_identity, node.line, node.column);
+
+    add_property_nodes(interface_decl.properties, "class-interface",
+                       interface_decl.name, interface_decl.semantic_link_symbol,
+                       node.class_owner_identity);
+    add_method_nodes(interface_decl.methods, "class-interface", interface_decl.name,
+                     interface_decl.semantic_link_symbol, node.class_owner_identity,
+                     node.metaclass_owner_identity);
   }
 
   for (const auto &implementation_decl : program.implementations) {
     if (implementation_decl.has_category) {
+      const std::string category_owner_name =
+          BuildCategoryOwnerName(implementation_decl.name,
+                                 implementation_decl.category_name);
+      AggregatedCategorySurface &aggregate =
+          aggregated_categories[category_owner_name];
+      if (!aggregate.has_interface && !aggregate.has_implementation) {
+        aggregate.line = implementation_decl.line;
+        aggregate.column = implementation_decl.column;
+      }
+      aggregate.has_implementation = true;
+      aggregate.implementation_owner_identity =
+          implementation_decl.semantic_link_symbol;
+      aggregate.class_owner_identity =
+          BuildRuntimeClassOwnerIdentity(implementation_decl.name);
+      aggregate.implementation_property_count =
+          implementation_decl.properties.size();
+      aggregate.implementation_method_count = implementation_decl.methods.size();
+      aggregate.implementation_class_method_count =
+          CountClassMethods(implementation_decl.methods);
+
+      add_property_nodes(
+          implementation_decl.properties, "category-implementation",
+          category_owner_name, implementation_decl.semantic_link_symbol,
+          BuildRuntimeCategoryOwnerIdentity(implementation_decl.name,
+                                            implementation_decl.category_name));
+      add_method_nodes(
+          implementation_decl.methods, "category-implementation",
+          category_owner_name, implementation_decl.semantic_link_symbol,
+          BuildRuntimeCategoryOwnerIdentity(implementation_decl.name,
+                                            implementation_decl.category_name),
+          BuildRuntimeCategoryOwnerIdentity(implementation_decl.name,
+                                            implementation_decl.category_name));
       continue;
     }
 
@@ -608,6 +878,48 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                    node.class_owner_identity, node.line, node.column);
     add_owner_edge("implementation-to-interface", node.owner_identity,
                    node.interface_owner_identity, node.line, node.column);
+
+    add_property_nodes(implementation_decl.properties, "class-implementation",
+                       implementation_decl.name,
+                       implementation_decl.semantic_link_symbol,
+                       node.class_owner_identity);
+    add_method_nodes(implementation_decl.methods, "class-implementation",
+                     implementation_decl.name,
+                     implementation_decl.semantic_link_symbol,
+                     node.class_owner_identity, node.metaclass_owner_identity);
+  }
+
+  for (const auto &protocol_decl : program.protocols) {
+    Objc3ExecutableMetadataProtocolGraphNode node;
+    node.protocol_name = protocol_decl.name;
+    node.owner_identity = protocol_decl.semantic_link_symbol;
+    node.inherited_protocol_owner_identities_lexicographic =
+        protocol_decl.inherited_protocols_lexicographic;
+    node.property_count = protocol_decl.properties.size();
+    node.method_count = protocol_decl.methods.size();
+    node.is_forward_declaration = protocol_decl.is_forward_declaration;
+    node.line = protocol_decl.line;
+    node.column = protocol_decl.column;
+    std::sort(node.inherited_protocol_owner_identities_lexicographic.begin(),
+              node.inherited_protocol_owner_identities_lexicographic.end());
+    node.inherited_protocol_owner_identities_lexicographic.erase(
+        std::unique(node.inherited_protocol_owner_identities_lexicographic.begin(),
+                    node.inherited_protocol_owner_identities_lexicographic.end()),
+        node.inherited_protocol_owner_identities_lexicographic.end());
+    graph.protocol_nodes_lexicographic.push_back(node);
+
+    for (const auto &target : node.inherited_protocol_owner_identities_lexicographic) {
+      add_owner_edge("protocol-to-inherited-protocol", node.owner_identity,
+                     target, node.line, node.column);
+    }
+
+    add_property_nodes(protocol_decl.properties, "protocol", protocol_decl.name,
+                       protocol_decl.semantic_link_symbol,
+                       protocol_decl.semantic_link_symbol);
+    add_method_nodes(protocol_decl.methods, "protocol", protocol_decl.name,
+                     protocol_decl.semantic_link_symbol,
+                     protocol_decl.semantic_link_symbol,
+                     protocol_decl.semantic_link_symbol);
   }
 
   std::vector<std::string> class_names;
@@ -688,6 +1000,95 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     }
   }
 
+  std::vector<std::string> category_names;
+  category_names.reserve(aggregated_categories.size());
+  for (const auto &entry : aggregated_categories) {
+    category_names.push_back(entry.first);
+  }
+  std::sort(category_names.begin(), category_names.end());
+
+  graph.category_nodes_lexicographic.reserve(category_names.size());
+  for (const std::string &category_owner_name : category_names) {
+    const AggregatedCategorySurface &aggregate =
+        aggregated_categories.at(category_owner_name);
+    const std::size_t open_paren = category_owner_name.find('(');
+    const std::string class_name =
+        open_paren == std::string::npos
+            ? category_owner_name
+            : category_owner_name.substr(0u, open_paren);
+    const std::string category_name =
+        open_paren == std::string::npos
+            ? std::string{}
+            : category_owner_name.substr(open_paren + 1u,
+                                         category_owner_name.size() - open_paren - 2u);
+
+    Objc3ExecutableMetadataCategoryGraphNode node;
+    node.class_name = class_name;
+    node.category_name = category_name;
+    node.owner_identity =
+        BuildRuntimeCategoryOwnerIdentity(class_name, category_name);
+    node.interface_owner_identity = aggregate.interface_owner_identity;
+    node.implementation_owner_identity = aggregate.implementation_owner_identity;
+    node.class_owner_identity = aggregate.class_owner_identity;
+    node.adopted_protocol_owner_identities_lexicographic =
+        aggregate.adopted_protocol_owner_identities_lexicographic;
+    node.has_interface = aggregate.has_interface;
+    node.has_implementation = aggregate.has_implementation;
+    node.interface_property_count = aggregate.interface_property_count;
+    node.implementation_property_count = aggregate.implementation_property_count;
+    node.interface_method_count = aggregate.interface_method_count;
+    node.implementation_method_count = aggregate.implementation_method_count;
+    node.interface_class_method_count = aggregate.interface_class_method_count;
+    node.implementation_class_method_count =
+        aggregate.implementation_class_method_count;
+    node.line = aggregate.line;
+    node.column = aggregate.column;
+    std::sort(node.adopted_protocol_owner_identities_lexicographic.begin(),
+              node.adopted_protocol_owner_identities_lexicographic.end());
+    node.adopted_protocol_owner_identities_lexicographic.erase(
+        std::unique(node.adopted_protocol_owner_identities_lexicographic.begin(),
+                    node.adopted_protocol_owner_identities_lexicographic.end()),
+        node.adopted_protocol_owner_identities_lexicographic.end());
+    graph.category_nodes_lexicographic.push_back(node);
+
+    add_owner_edge("category-to-class", node.owner_identity,
+                   node.class_owner_identity, node.line, node.column);
+    add_owner_edge("category-to-interface", node.owner_identity,
+                   node.interface_owner_identity, node.line, node.column);
+    add_owner_edge("category-to-implementation", node.owner_identity,
+                   node.implementation_owner_identity, node.line, node.column);
+    for (const auto &target : node.adopted_protocol_owner_identities_lexicographic) {
+      add_owner_edge("category-to-protocol", node.owner_identity, target,
+                     node.line, node.column);
+    }
+  }
+
+  for (const auto &property_node : graph.property_nodes_lexicographic) {
+    if (property_node.has_getter) {
+      for (const auto &method_record : method_edge_records) {
+        if (method_record.export_owner_identity == property_node.export_owner_identity &&
+            method_record.selector == property_node.getter_selector &&
+            !method_record.is_class_method) {
+          add_owner_edge("property-to-getter-method", property_node.owner_identity,
+                         method_record.owner_identity, property_node.line,
+                         property_node.column);
+        }
+      }
+    }
+
+    if (property_node.has_setter) {
+      for (const auto &method_record : method_edge_records) {
+        if (method_record.export_owner_identity == property_node.export_owner_identity &&
+            method_record.selector == property_node.setter_selector &&
+            !method_record.is_class_method) {
+          add_owner_edge("property-to-setter-method", property_node.owner_identity,
+                         method_record.owner_identity, property_node.line,
+                         property_node.column);
+        }
+      }
+    }
+  }
+
   std::sort(graph.interface_nodes_lexicographic.begin(),
             graph.interface_nodes_lexicographic.end(),
             IsExecutableMetadataInterfaceNodeLess);
@@ -700,16 +1101,40 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
   std::sort(graph.metaclass_nodes_lexicographic.begin(),
             graph.metaclass_nodes_lexicographic.end(),
             IsExecutableMetadataMetaclassNodeLess);
+  std::sort(graph.protocol_nodes_lexicographic.begin(),
+            graph.protocol_nodes_lexicographic.end(),
+            IsExecutableMetadataProtocolNodeLess);
+  std::sort(graph.category_nodes_lexicographic.begin(),
+            graph.category_nodes_lexicographic.end(),
+            IsExecutableMetadataCategoryNodeLess);
+  std::sort(graph.property_nodes_lexicographic.begin(),
+            graph.property_nodes_lexicographic.end(),
+            IsExecutableMetadataPropertyNodeLess);
+  std::sort(graph.method_nodes_lexicographic.begin(),
+            graph.method_nodes_lexicographic.end(),
+            IsExecutableMetadataMethodNodeLess);
+  std::sort(graph.ivar_nodes_lexicographic.begin(),
+            graph.ivar_nodes_lexicographic.end(),
+            IsExecutableMetadataIvarNodeLess);
   std::sort(graph.owner_edges_lexicographic.begin(),
             graph.owner_edges_lexicographic.end(),
             IsExecutableMetadataGraphEdgeLess);
 
+  const std::size_t expected_class_interface_count = static_cast<std::size_t>(
+      std::count_if(program.interfaces.begin(), program.interfaces.end(),
+                    [](const Objc3InterfaceDecl &decl) {
+                      return !decl.has_category;
+                    }));
+  const std::size_t expected_class_implementation_count = static_cast<std::size_t>(
+      std::count_if(program.implementations.begin(), program.implementations.end(),
+                    [](const Objc3ImplementationDecl &decl) {
+                      return !decl.has_category;
+                    }));
   const bool interface_count_aligned =
-      graph.interface_nodes_lexicographic.size() ==
-      interface_implementation_summary.declared_interfaces;
+      graph.interface_nodes_lexicographic.size() == expected_class_interface_count;
   const bool implementation_count_aligned =
       graph.implementation_nodes_lexicographic.size() ==
-      interface_implementation_summary.declared_implementations;
+      expected_class_implementation_count;
   const bool metaclass_count_aligned =
       graph.metaclass_nodes_lexicographic.size() ==
       graph.interface_nodes_lexicographic.size();
@@ -718,6 +1143,35 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
           graph.interface_nodes_lexicographic.size() &&
       graph.class_nodes_lexicographic.size() >=
           graph.implementation_nodes_lexicographic.size();
+  const bool protocol_count_aligned =
+      graph.protocol_nodes_lexicographic.size() ==
+      runtime_metadata_source_records.protocols_lexicographic.size();
+  const bool property_count_aligned =
+      graph.property_nodes_lexicographic.size() ==
+      runtime_metadata_source_records.properties_lexicographic.size();
+  const bool method_count_aligned =
+      graph.method_nodes_lexicographic.size() ==
+      runtime_metadata_source_records.methods_lexicographic.size();
+  const bool ivar_count_aligned =
+      graph.ivar_nodes_lexicographic.size() ==
+      runtime_metadata_source_records.ivars_lexicographic.size();
+  std::vector<std::string> category_record_owner_names;
+  category_record_owner_names.reserve(
+      runtime_metadata_source_records.categories_lexicographic.size());
+  for (const auto &record :
+       runtime_metadata_source_records.categories_lexicographic) {
+    category_record_owner_names.push_back(
+        BuildCategoryOwnerName(record.class_name, record.category_name));
+  }
+  std::sort(category_record_owner_names.begin(),
+            category_record_owner_names.end());
+  category_record_owner_names.erase(
+      std::unique(category_record_owner_names.begin(),
+                  category_record_owner_names.end()),
+      category_record_owner_names.end());
+  const bool category_count_aligned =
+      graph.category_nodes_lexicographic.size() ==
+      category_record_owner_names.size();
 
   graph.deterministic =
       std::is_sorted(graph.interface_nodes_lexicographic.begin(),
@@ -732,13 +1186,30 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
       std::is_sorted(graph.metaclass_nodes_lexicographic.begin(),
                      graph.metaclass_nodes_lexicographic.end(),
                      IsExecutableMetadataMetaclassNodeLess) &&
+      std::is_sorted(graph.protocol_nodes_lexicographic.begin(),
+                     graph.protocol_nodes_lexicographic.end(),
+                     IsExecutableMetadataProtocolNodeLess) &&
+      std::is_sorted(graph.category_nodes_lexicographic.begin(),
+                     graph.category_nodes_lexicographic.end(),
+                     IsExecutableMetadataCategoryNodeLess) &&
+      std::is_sorted(graph.property_nodes_lexicographic.begin(),
+                     graph.property_nodes_lexicographic.end(),
+                     IsExecutableMetadataPropertyNodeLess) &&
+      std::is_sorted(graph.method_nodes_lexicographic.begin(),
+                     graph.method_nodes_lexicographic.end(),
+                     IsExecutableMetadataMethodNodeLess) &&
+      std::is_sorted(graph.ivar_nodes_lexicographic.begin(),
+                     graph.ivar_nodes_lexicographic.end(),
+                     IsExecutableMetadataIvarNodeLess) &&
       std::is_sorted(graph.owner_edges_lexicographic.begin(),
                      graph.owner_edges_lexicographic.end(),
                      IsExecutableMetadataGraphEdgeLess);
   graph.source_graph_complete =
       graph.deterministic && interface_count_aligned &&
       implementation_count_aligned && metaclass_count_aligned &&
-      class_node_floor_satisfied;
+      class_node_floor_satisfied && protocol_count_aligned &&
+      category_count_aligned && property_count_aligned &&
+      method_count_aligned && ivar_count_aligned;
   graph.ready_for_semantic_closure = graph.source_graph_complete;
   graph.ready_for_lowering = false;
   return graph;
@@ -2001,7 +2472,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(
       Objc3ParsedProgramAst(result.program),
-      result.sema_type_metadata_handoff.interface_implementation_summary);
+      result.runtime_metadata_source_records);
   result.runtime_metadata_source_ownership_boundary =
       BuildRuntimeMetadataSourceOwnershipBoundary(result.runtime_metadata_source_records,
                                                   result.sema_type_metadata_handoff);

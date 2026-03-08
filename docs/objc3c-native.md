@@ -431,6 +431,34 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-A002/executable_metadata_graph_completeness_summary.json`
 
+## Protocol category property ivar graph completion (M252-A003)
+
+- Lane-A now extends the executable metadata source graph from class-only
+  closure to explicit protocol, category, property, method, and ivar node
+  packets.
+- Protocol nodes publish canonical `protocol:` owner identities plus inherited
+  protocol targets.
+- Category nodes publish canonical `category:Class(Category)` owner identities
+  alongside declaration owners (`interface:` / `implementation:`) and the
+  runtime class attach point.
+- Property, method, and ivar nodes now publish:
+  - declaration-owner identities,
+  - export-owner identities,
+  - deterministic node-owner identities,
+  - explicit owner edges for export closure.
+- The manifest now publishes explicit:
+  - `protocol_node_entries`,
+  - `category_node_entries`,
+  - `property_node_entries`,
+  - `method_node_entries`,
+  - `ivar_node_entries`.
+- `M252-A003` proves `source_graph_complete == true` and
+  `ready_for_semantic_closure == true` on both:
+  - the class/protocol/property/ivar fixture, and
+  - the category/protocol/property fixture.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-A003/executable_metadata_export_graph_completion_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

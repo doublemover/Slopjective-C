@@ -8842,6 +8842,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     // M252-A002 completeness anchor: sema preserves deterministic interface
     // super-name and implementation-pairing inputs for class/metaclass graph
     // materialization in the frontend pipeline.
+    // M252-A003 completion anchor: sema must preserve protocol/category/member
+    // declaration inventories without reordering so export graph closure stays
+    // deterministic for protocol/category/property/ivar packets.
     interface_info.super_name = interface_decl.super_name;
     for (const auto &property_decl : interface_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, interface_decl.name, "interface", diagnostics);

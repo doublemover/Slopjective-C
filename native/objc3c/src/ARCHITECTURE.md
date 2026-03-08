@@ -8284,3 +8284,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   first-class interface, implementation, class, and metaclass nodes plus
   deterministic owner edges stay fail-closed before `M252-A003` protocol/
   category/property/ivar expansion and lane-B semantic closure work land.
+- M252 lane-A A003 executable metadata export graph completion anchors explicit
+  contract artifacts in
+  `docs/contracts/m252_protocol_category_property_ivar_export_graph_completion_a003_expectations.md`,
+  `spec/planning/compiler/m252/m252_a003_protocol_category_property_ivar_export_graph_completion_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so explicit
+  protocol/category/property/method/ivar node packets and deterministic export
+  owner edges stay fail-closed before lane-B semantic ambiguity work,
+  lowering handoff, and runtime ingest packaging land.

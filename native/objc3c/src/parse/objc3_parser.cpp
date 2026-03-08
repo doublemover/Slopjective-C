@@ -5018,6 +5018,9 @@ static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string
 
 static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
     const std::vector<std::string> &protocol_names) {
+  // M252-A003 completion: protocol inheritance/adoption targets remain on the
+  // canonical protocol: owner surface so executable metadata graph edges stay
+  // deterministic across protocol and category export packets.
   std::vector<std::string> targets;
   targets.reserve(protocol_names.size());
   for (const auto &name : protocol_names) {
@@ -5033,6 +5036,9 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // M252-A002 completeness: interface/implementation semantic-link symbols stay
   // canonical declaration node identities while runtime class/metaclass graph
   // nodes derive a separate class:/metaclass: owner surface.
+  // M252-A003 completion: category export packets keep category:Class(Category)
+  // as the canonical category node owner identity while declaration/member
+  // nodes continue to reference interface:/implementation: semantic-link owners.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

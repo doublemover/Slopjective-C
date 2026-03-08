@@ -110,6 +110,9 @@ struct Objc3ProtocolCategoryCompositionSummary {
 struct Objc3ClassProtocolCategoryLinkingSummary {
   // M252-A002 completeness anchor: these deterministic counts validate the
   // first-class executable metadata graph packet.
+  // M252-A003 completion anchor: protocol/category composition counts stay
+  // stable so protocol/category/property/ivar export graph closure can fail
+  // closed on deterministic sema inputs.
   std::size_t declared_interfaces = 0;
   std::size_t resolved_interfaces = 0;
   std::size_t declared_implementations = 0;

@@ -5675,6 +5675,28 @@ The graph must remain deterministic and fail closed before `M252-A003`,
 lane-B semantic ambiguity work, lowering handoff, and runtime ingest packaging
 land.
 
+## M252 executable metadata export graph completion metadata anchors (A003)
+
+Deterministic lane-A executable metadata export graph completion for `M252-A003`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-export-graph-completion/m252-a003-v1`,
+- existing packet contract id
+  `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- manifest node `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`,
+- explicit `protocol_node_entries`,
+- explicit `category_node_entries`,
+- explicit `property_node_entries`,
+- explicit `method_node_entries`,
+- explicit `ivar_node_entries`,
+- explicit owner edges for protocol inheritance, category attachment, member
+  declaration/export ownership, and ivar/property bindings,
+- evidence path
+  `tmp/reports/m252/M252-A003/executable_metadata_export_graph_completion_summary.json`.
+
+The graph must remain deterministic and fail closed before lane-B semantic
+closure, lowering handoff, and runtime ingest packaging land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

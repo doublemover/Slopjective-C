@@ -1399,6 +1399,82 @@ struct Objc3ExecutableMetadataMetaclassGraphNode {
   unsigned column = 1;
 };
 
+struct Objc3ExecutableMetadataProtocolGraphNode {
+  std::string protocol_name;
+  std::string owner_identity;
+  std::vector<std::string> inherited_protocol_owner_identities_lexicographic;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  bool is_forward_declaration = false;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataCategoryGraphNode {
+  std::string class_name;
+  std::string category_name;
+  std::string owner_identity;
+  std::string interface_owner_identity;
+  std::string implementation_owner_identity;
+  std::string class_owner_identity;
+  std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
+  bool has_interface = false;
+  bool has_implementation = false;
+  std::size_t interface_property_count = 0;
+  std::size_t implementation_property_count = 0;
+  std::size_t interface_method_count = 0;
+  std::size_t implementation_method_count = 0;
+  std::size_t interface_class_method_count = 0;
+  std::size_t implementation_class_method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataPropertyGraphNode {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_identity;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string property_name;
+  std::string type_name;
+  bool has_getter = false;
+  std::string getter_selector;
+  bool has_setter = false;
+  std::string setter_selector;
+  std::string ivar_binding_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataMethodGraphNode {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_identity;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string selector;
+  bool is_class_method = false;
+  bool has_body = false;
+  std::size_t parameter_count = 0;
+  std::string return_type_name;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataIvarGraphNode {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_identity;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string property_owner_identity;
+  std::string property_name;
+  std::string ivar_binding_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct Objc3ExecutableMetadataGraphEdge {
   std::string edge_kind;
   std::string source_owner_identity;
@@ -1422,6 +1498,15 @@ struct Objc3ExecutableMetadataSourceGraph {
   std::vector<Objc3ExecutableMetadataClassGraphNode> class_nodes_lexicographic;
   std::vector<Objc3ExecutableMetadataMetaclassGraphNode>
       metaclass_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataProtocolGraphNode>
+      protocol_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataCategoryGraphNode>
+      category_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataPropertyGraphNode>
+      property_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataMethodGraphNode>
+      method_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataIvarGraphNode> ivar_nodes_lexicographic;
   std::vector<Objc3ExecutableMetadataGraphEdge> owner_edges_lexicographic;
   bool deterministic = false;
   bool source_graph_complete = false;
