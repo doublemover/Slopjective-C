@@ -43,6 +43,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
   uint64_t last_rejected_registration_order_ordinal;
 } objc3_runtime_registration_state_snapshot;
 
+// M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
+// function signatures are the canonical bootstrap runtime surface. Later image
+// walk, realization, and deterministic-reset issues must extend this boundary
+// without renaming or silently narrowing these entrypoints.
 int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image);
 const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
     const char *selector);

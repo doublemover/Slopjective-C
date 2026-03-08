@@ -53,6 +53,18 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string registration_result_model;
   std::string registration_order_ordinal_model;
   std::string runtime_state_snapshot_symbol;
+  std::string bootstrap_runtime_api_contract_id;
+  std::string bootstrap_runtime_api_public_header_path;
+  std::string bootstrap_runtime_api_archive_relative_path;
+  std::string bootstrap_runtime_api_registration_status_enum_type;
+  std::string bootstrap_runtime_api_image_descriptor_type;
+  std::string bootstrap_runtime_api_selector_handle_type;
+  std::string bootstrap_runtime_api_registration_snapshot_type;
+  std::string bootstrap_runtime_api_registration_entrypoint_symbol;
+  std::string bootstrap_runtime_api_selector_lookup_symbol;
+  std::string bootstrap_runtime_api_dispatch_entrypoint_symbol;
+  std::string bootstrap_runtime_api_state_snapshot_symbol;
+  std::string bootstrap_runtime_api_reset_for_testing_symbol;
   std::string bootstrap_lowering_contract_id;
   std::string bootstrap_lowering_boundary_model;
   std::string bootstrap_global_ctor_list_model;

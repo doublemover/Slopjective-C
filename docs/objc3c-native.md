@@ -1446,6 +1446,36 @@ Evidence:
 
 `tmp/reports/m254/M254-C003/registration_table_image_local_initialization_summary.json`
 
+## Runtime bootstrap API freeze (M254-D001)
+
+`M254-D001` freezes the runtime-owned bootstrap API surface that later
+registrar/image-walk and deterministic-reset issues must preserve.
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- public header path `native/objc3c/src/runtime/objc3_runtime.h`
+- archive path `artifacts/lib/objc3_runtime.lib`
+- registration status enum type `objc3_runtime_registration_status_code`
+- image descriptor type `objc3_runtime_image_descriptor`
+- selector handle type `objc3_runtime_selector_handle`
+- registration snapshot type `objc3_runtime_registration_state_snapshot`
+- preserved entrypoints:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- startup invocation model
+  `generated-init-stub-calls-runtime-register-image`
+- runtime locking model `process-global-mutex-serialized-runtime-state`
+- image walk remains deferred to `M254-D002`
+- deterministic reset expansion remains deferred to `M254-D003`
+
+Evidence:
+
+`tmp/reports/m254/M254-D001/runtime_bootstrap_api_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

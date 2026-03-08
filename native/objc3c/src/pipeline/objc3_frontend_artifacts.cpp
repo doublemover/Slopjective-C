@@ -2376,6 +2376,185 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeBootstrapApiReplayKey(
+    const Objc3RuntimeBootstrapApiSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";support_library_core_feature_contract_id="
+      << summary.support_library_core_feature_contract_id
+      << ";support_library_link_wiring_contract_id="
+      << summary.support_library_link_wiring_contract_id
+      << ";bootstrap_surface_path=" << summary.bootstrap_surface_path
+      << ";public_header_path=" << summary.public_header_path
+      << ";archive_relative_path=" << summary.archive_relative_path
+      << ";registration_status_enum_type="
+      << summary.registration_status_enum_type
+      << ";image_descriptor_type=" << summary.image_descriptor_type
+      << ";selector_handle_type=" << summary.selector_handle_type
+      << ";registration_snapshot_type="
+      << summary.registration_snapshot_type
+      << ";registration_entrypoint_symbol="
+      << summary.registration_entrypoint_symbol
+      << ";selector_lookup_symbol=" << summary.selector_lookup_symbol
+      << ";dispatch_entrypoint_symbol=" << summary.dispatch_entrypoint_symbol
+      << ";state_snapshot_symbol=" << summary.state_snapshot_symbol
+      << ";reset_for_testing_symbol=" << summary.reset_for_testing_symbol
+      << ";compatibility_dispatch_symbol="
+      << summary.compatibility_dispatch_symbol
+      << ";registration_result_model=" << summary.registration_result_model
+      << ";registration_order_ordinal_model="
+      << summary.registration_order_ordinal_model
+      << ";runtime_state_locking_model="
+      << summary.runtime_state_locking_model
+      << ";startup_invocation_model=" << summary.startup_invocation_model
+      << ";image_walk_lifecycle_model="
+      << summary.image_walk_lifecycle_model
+      << ";deterministic_reset_lifecycle_model="
+      << summary.deterministic_reset_lifecycle_model
+      << ";support_library_core_feature_replay_key="
+      << summary.support_library_core_feature_replay_key
+      << ";support_library_link_wiring_replay_key="
+      << summary.support_library_link_wiring_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeBootstrapApiSummary BuildRuntimeBootstrapApiSummary(
+    const Objc3RuntimeSupportLibraryCoreFeatureSummary &runtime_support_library,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary
+        &runtime_support_library_link_wiring) {
+  Objc3RuntimeBootstrapApiSummary summary;
+  summary.fail_closed = true;
+  summary.support_library_core_feature_contract_ready =
+      IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
+          runtime_support_library);
+  summary.support_library_link_wiring_contract_ready =
+      IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
+          runtime_support_library_link_wiring);
+  summary.api_surface_frozen = true;
+  summary.registration_entrypoint_frozen = true;
+  summary.selector_lookup_and_dispatch_frozen = true;
+  summary.reset_and_snapshot_hooks_frozen = true;
+  summary.runtime_probe_required = true;
+  summary.image_walk_not_yet_landed = true;
+  summary.deterministic_reset_expansion_not_yet_landed = true;
+  summary.ready_for_registrar_implementation =
+      summary.support_library_core_feature_contract_ready &&
+      summary.support_library_link_wiring_contract_ready;
+  if (summary.support_library_core_feature_contract_ready) {
+    summary.support_library_core_feature_replay_key =
+        runtime_support_library.contract_id + ";archive_relative_path=" +
+        runtime_support_library.archive_relative_path + ";public_header_path=" +
+        runtime_support_library.public_header_path + ";register_image_symbol=" +
+        runtime_support_library.register_image_symbol +
+        ";lookup_selector_symbol=" +
+        runtime_support_library.lookup_selector_symbol +
+        ";dispatch_i32_symbol=" + runtime_support_library.dispatch_i32_symbol +
+        ";reset_for_testing_symbol=" +
+        runtime_support_library.reset_for_testing_symbol;
+  }
+  if (summary.support_library_link_wiring_contract_ready) {
+    summary.support_library_link_wiring_replay_key =
+        runtime_support_library_link_wiring.contract_id +
+        ";archive_relative_path=" +
+        runtime_support_library_link_wiring.archive_relative_path +
+        ";compatibility_dispatch_symbol=" +
+        runtime_support_library_link_wiring.compatibility_dispatch_symbol +
+        ";runtime_dispatch_symbol=" +
+        runtime_support_library_link_wiring.runtime_dispatch_symbol +
+        ";driver_link_mode=" +
+        runtime_support_library_link_wiring.driver_link_mode;
+  }
+  if (summary.ready_for_registrar_implementation) {
+    summary.replay_key = BuildRuntimeBootstrapApiReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeBootstrapApiSummary(summary)) {
+    summary.failure_reason = "runtime bootstrap api summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeBootstrapApiSummaryJson(
+    const Objc3RuntimeBootstrapApiSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"support_library_core_feature_contract_id\":\""
+      << EscapeJsonString(summary.support_library_core_feature_contract_id)
+      << "\",\"support_library_link_wiring_contract_id\":\""
+      << EscapeJsonString(summary.support_library_link_wiring_contract_id)
+      << "\",\"bootstrap_surface_path\":\""
+      << EscapeJsonString(summary.bootstrap_surface_path)
+      << "\",\"public_header_path\":\""
+      << EscapeJsonString(summary.public_header_path)
+      << "\",\"archive_relative_path\":\""
+      << EscapeJsonString(summary.archive_relative_path)
+      << "\",\"registration_status_enum_type\":\""
+      << EscapeJsonString(summary.registration_status_enum_type)
+      << "\",\"image_descriptor_type\":\""
+      << EscapeJsonString(summary.image_descriptor_type)
+      << "\",\"selector_handle_type\":\""
+      << EscapeJsonString(summary.selector_handle_type)
+      << "\",\"registration_snapshot_type\":\""
+      << EscapeJsonString(summary.registration_snapshot_type)
+      << "\",\"registration_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.registration_entrypoint_symbol)
+      << "\",\"selector_lookup_symbol\":\""
+      << EscapeJsonString(summary.selector_lookup_symbol)
+      << "\",\"dispatch_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.dispatch_entrypoint_symbol)
+      << "\",\"state_snapshot_symbol\":\""
+      << EscapeJsonString(summary.state_snapshot_symbol)
+      << "\",\"reset_for_testing_symbol\":\""
+      << EscapeJsonString(summary.reset_for_testing_symbol)
+      << "\",\"compatibility_dispatch_symbol\":\""
+      << EscapeJsonString(summary.compatibility_dispatch_symbol)
+      << "\",\"registration_result_model\":\""
+      << EscapeJsonString(summary.registration_result_model)
+      << "\",\"registration_order_ordinal_model\":\""
+      << EscapeJsonString(summary.registration_order_ordinal_model)
+      << "\",\"runtime_state_locking_model\":\""
+      << EscapeJsonString(summary.runtime_state_locking_model)
+      << "\",\"startup_invocation_model\":\""
+      << EscapeJsonString(summary.startup_invocation_model)
+      << "\",\"image_walk_lifecycle_model\":\""
+      << EscapeJsonString(summary.image_walk_lifecycle_model)
+      << "\",\"deterministic_reset_lifecycle_model\":\""
+      << EscapeJsonString(summary.deterministic_reset_lifecycle_model)
+      << "\",\"ready\":"
+      << (IsReadyObjc3RuntimeBootstrapApiSummary(summary) ? "true" : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"support_library_core_feature_contract_ready\":"
+      << (summary.support_library_core_feature_contract_ready ? "true"
+                                                              : "false")
+      << ",\"support_library_link_wiring_contract_ready\":"
+      << (summary.support_library_link_wiring_contract_ready ? "true"
+                                                             : "false")
+      << ",\"api_surface_frozen\":"
+      << (summary.api_surface_frozen ? "true" : "false")
+      << ",\"registration_entrypoint_frozen\":"
+      << (summary.registration_entrypoint_frozen ? "true" : "false")
+      << ",\"selector_lookup_and_dispatch_frozen\":"
+      << (summary.selector_lookup_and_dispatch_frozen ? "true" : "false")
+      << ",\"reset_and_snapshot_hooks_frozen\":"
+      << (summary.reset_and_snapshot_hooks_frozen ? "true" : "false")
+      << ",\"runtime_probe_required\":"
+      << (summary.runtime_probe_required ? "true" : "false")
+      << ",\"image_walk_not_yet_landed\":"
+      << (summary.image_walk_not_yet_landed ? "true" : "false")
+      << ",\"deterministic_reset_expansion_not_yet_landed\":"
+      << (summary.deterministic_reset_expansion_not_yet_landed ? "true"
+                                                               : "false")
+      << ",\"ready_for_registrar_implementation\":"
+      << (summary.ready_for_registrar_implementation ? "true" : "false")
+      << ",\"support_library_core_feature_replay_key\":\""
+      << EscapeJsonString(summary.support_library_core_feature_replay_key)
+      << "\",\"support_library_link_wiring_replay_key\":\""
+      << EscapeJsonString(summary.support_library_link_wiring_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -4181,6 +4360,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_startup_bootstrap_invariants =
           BuildRuntimeStartupBootstrapInvariantSummary(
               runtime_translation_unit_registration_manifest);
+  const Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api =
+      BuildRuntimeBootstrapApiSummary(runtime_support_library_core_feature,
+                                      runtime_support_library_link_wiring);
   const Objc3RuntimeBootstrapSemanticsSummary
       runtime_bootstrap_semantics = BuildRuntimeBootstrapSemanticsSummary(
           runtime_startup_bootstrap_invariants,
@@ -6152,12 +6334,74 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_translation_unit_registration_manifest_replay_key\":\""
            << EscapeJsonString(
                   runtime_translation_unit_registration_manifest.replay_key)
-           << "\",\"runtime_translation_unit_registration_manifest_failure_reason\":\""
-           << EscapeJsonString(
-                  runtime_translation_unit_registration_manifest.failure_reason)
-           << "\""
-           << ",\"runtime_bootstrap_semantics_contract_id\":\""
-           << runtime_bootstrap_semantics.contract_id
+          << "\",\"runtime_translation_unit_registration_manifest_failure_reason\":\""
+          << EscapeJsonString(
+                 runtime_translation_unit_registration_manifest.failure_reason)
+          << "\""
+          << ",\"runtime_bootstrap_api_contract_id\":\""
+          << EscapeJsonString(runtime_bootstrap_api.contract_id)
+          << "\",\"runtime_bootstrap_api_public_header_path\":\""
+          << EscapeJsonString(runtime_bootstrap_api.public_header_path)
+          << "\",\"runtime_bootstrap_api_archive_relative_path\":\""
+          << EscapeJsonString(runtime_bootstrap_api.archive_relative_path)
+          << "\",\"runtime_bootstrap_api_registration_status_enum_type\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.registration_status_enum_type)
+          << "\",\"runtime_bootstrap_api_image_descriptor_type\":\""
+          << EscapeJsonString(runtime_bootstrap_api.image_descriptor_type)
+          << "\",\"runtime_bootstrap_api_selector_handle_type\":\""
+          << EscapeJsonString(runtime_bootstrap_api.selector_handle_type)
+          << "\",\"runtime_bootstrap_api_registration_snapshot_type\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.registration_snapshot_type)
+          << "\",\"runtime_bootstrap_api_registration_entrypoint_symbol\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.registration_entrypoint_symbol)
+          << "\",\"runtime_bootstrap_api_selector_lookup_symbol\":\""
+          << EscapeJsonString(runtime_bootstrap_api.selector_lookup_symbol)
+          << "\",\"runtime_bootstrap_api_dispatch_entrypoint_symbol\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.dispatch_entrypoint_symbol)
+          << "\",\"runtime_bootstrap_api_compatibility_dispatch_symbol\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.compatibility_dispatch_symbol)
+          << "\",\"runtime_bootstrap_api_state_snapshot_symbol\":\""
+          << EscapeJsonString(runtime_bootstrap_api.state_snapshot_symbol)
+          << "\",\"runtime_bootstrap_api_reset_for_testing_symbol\":\""
+          << EscapeJsonString(runtime_bootstrap_api.reset_for_testing_symbol)
+          << "\",\"runtime_bootstrap_api_registration_result_model\":\""
+          << EscapeJsonString(runtime_bootstrap_api.registration_result_model)
+          << "\",\"runtime_bootstrap_api_registration_order_ordinal_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.registration_order_ordinal_model)
+          << "\",\"runtime_bootstrap_api_runtime_state_locking_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.runtime_state_locking_model)
+          << "\",\"runtime_bootstrap_api_startup_invocation_model\":\""
+          << EscapeJsonString(runtime_bootstrap_api.startup_invocation_model)
+          << "\",\"runtime_bootstrap_api_image_walk_lifecycle_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.image_walk_lifecycle_model)
+          << "\",\"runtime_bootstrap_api_deterministic_reset_lifecycle_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.deterministic_reset_lifecycle_model)
+          << "\",\"runtime_bootstrap_api_ready_for_registrar_implementation\":"
+          << (runtime_bootstrap_api.ready_for_registrar_implementation ? "true"
+                                                                       : "false")
+          << ",\"runtime_bootstrap_api_support_library_core_feature_replay_key\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.support_library_core_feature_replay_key)
+          << "\",\"runtime_bootstrap_api_support_library_link_wiring_replay_key\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_api.support_library_link_wiring_replay_key)
+          << "\""
+          << ",\"runtime_bootstrap_api_replay_key\":\""
+          << EscapeJsonString(runtime_bootstrap_api.replay_key)
+          << "\",\"runtime_bootstrap_api_failure_reason\":\""
+          << EscapeJsonString(runtime_bootstrap_api.failure_reason)
+          << "\""
+          << ",\"runtime_bootstrap_semantics_contract_id\":\""
+          << runtime_bootstrap_semantics.contract_id
            << "\",\"runtime_bootstrap_semantics_bootstrap_invariant_contract_id\":\""
            << runtime_bootstrap_semantics.bootstrap_invariant_contract_id
            << "\",\"runtime_bootstrap_semantics_registration_manifest_contract_id\":\""
@@ -7193,6 +7437,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_translation_unit_registration_manifest\":"
            << BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
                   runtime_translation_unit_registration_manifest)
+           // M254-D001 runtime-bootstrap-api anchor: lane-D freezes the
+           // runtime-owned bootstrap header/archive/entrypoint/reset surface as
+           // one canonical packet that later image-walk and reset-expansion
+           // issues must preserve exactly.
+           << ",\"objc_runtime_bootstrap_api_contract\":"
+           << BuildRuntimeBootstrapApiSummaryJson(runtime_bootstrap_api)
            // M254-B001 bootstrap-invariant anchor: lane-B freezes duplicate
            // registration, realization order, failure mode, and image-local
            // initialization semantics against the live A002 registration
@@ -8220,6 +8470,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
+  bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;
 

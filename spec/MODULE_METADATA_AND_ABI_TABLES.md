@@ -6495,3 +6495,24 @@ registration-table layout for later runtime image walks.
 - registration-table pointer-field count `11`
 - emitted registration manifest field
   `bootstrap_image_local_init_state_symbol`
+
+## M254 runtime bootstrap API metadata anchors (D001)
+
+`M254-D001` freezes the runtime-owned bootstrap API contract and publishes it in
+both the emitted semantic surface and the runtime registration manifest.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- emitted registration manifest field `bootstrap_runtime_api_contract_id`
+- emitted registration manifest field `bootstrap_runtime_api_public_header_path`
+- emitted registration manifest field
+  `bootstrap_runtime_api_archive_relative_path`
+- emitted registration manifest field
+  `bootstrap_runtime_api_registration_entrypoint_symbol`
+- emitted registration manifest field
+  `bootstrap_runtime_api_state_snapshot_symbol`
+- emitted registration manifest field
+  `bootstrap_runtime_api_reset_for_testing_symbol`

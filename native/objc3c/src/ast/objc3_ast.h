@@ -620,6 +620,27 @@ inline constexpr int
 inline constexpr int kObjc3RuntimeBootstrapOutOfOrderStatusCode = -3;
 inline constexpr std::uint64_t
     kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal = 1u;
+inline constexpr const char *kObjc3RuntimeBootstrapApiContractId =
+    "objc3c-runtime-bootstrap-api-freeze/m254-d001-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapApiSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract";
+inline constexpr const char *kObjc3RuntimeBootstrapApiStatusEnumType =
+    "objc3_runtime_registration_status_code";
+inline constexpr const char *kObjc3RuntimeBootstrapApiImageDescriptorType =
+    "objc3_runtime_image_descriptor";
+inline constexpr const char *kObjc3RuntimeBootstrapApiSelectorHandleType =
+    "objc3_runtime_selector_handle";
+inline constexpr const char *kObjc3RuntimeBootstrapApiRegistrationSnapshotType =
+    "objc3_runtime_registration_state_snapshot";
+inline constexpr const char *kObjc3RuntimeBootstrapApiStateLockingModel =
+    "process-global-mutex-serialized-runtime-state";
+inline constexpr const char *kObjc3RuntimeBootstrapApiStartupInvocationModel =
+    "generated-init-stub-calls-runtime-register-image";
+inline constexpr const char *kObjc3RuntimeBootstrapApiImageWalkLifecycleModel =
+    "deferred-until-m254-d002";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapApiDeterministicResetLifecycleModel =
+        "deferred-until-m254-d003";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

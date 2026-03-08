@@ -60,3 +60,20 @@ registration tables from the emitted manifest:
 - preserved init-stub prefix `__objc3_runtime_register_image_init_stub_`
 - reserved registration-table prefix `__objc3_runtime_registration_table_`
 - no runtime API additions land in the freeze
+
+`M254-D001` freezes the runtime-owned bootstrap API surface that later
+registrar/image-walk and deterministic-reset issues must preserve:
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- public header `native/objc3c/src/runtime/objc3_runtime.h`
+- archive `artifacts/lib/objc3_runtime.lib`
+- preserved entrypoints:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- emitted startup invocation model
+  `generated-init-stub-calls-runtime-register-image`
+- image walk remains deferred to `M254-D002`
+- deterministic reset expansion remains deferred to `M254-D003`

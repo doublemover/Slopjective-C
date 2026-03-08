@@ -143,6 +143,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               manifest_inputs;
           const auto &registration_manifest_summary =
               artifacts.runtime_translation_unit_registration_manifest_summary;
+          const auto &runtime_bootstrap_api_summary =
+              artifacts.runtime_bootstrap_api_summary;
           const auto &runtime_bootstrap_semantics_summary =
               artifacts.runtime_bootstrap_semantics_summary;
           const auto &runtime_bootstrap_lowering_summary =
@@ -208,6 +210,34 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   .registration_order_ordinal_model;
           manifest_inputs.runtime_state_snapshot_symbol =
               runtime_bootstrap_semantics_summary.runtime_state_snapshot_symbol;
+          // M254-D001 runtime-bootstrap-api anchor: driver-side manifest
+          // publication must preserve the frozen runtime header/archive/API
+          // boundary rather than re-spelling bootstrap entrypoints or reset
+          // hooks ad hoc in later launch-path work.
+          manifest_inputs.bootstrap_runtime_api_contract_id =
+              runtime_bootstrap_api_summary.contract_id;
+          manifest_inputs.bootstrap_runtime_api_public_header_path =
+              runtime_bootstrap_api_summary.public_header_path;
+          manifest_inputs.bootstrap_runtime_api_archive_relative_path =
+              runtime_bootstrap_api_summary.archive_relative_path;
+          manifest_inputs.bootstrap_runtime_api_registration_status_enum_type =
+              runtime_bootstrap_api_summary.registration_status_enum_type;
+          manifest_inputs.bootstrap_runtime_api_image_descriptor_type =
+              runtime_bootstrap_api_summary.image_descriptor_type;
+          manifest_inputs.bootstrap_runtime_api_selector_handle_type =
+              runtime_bootstrap_api_summary.selector_handle_type;
+          manifest_inputs.bootstrap_runtime_api_registration_snapshot_type =
+              runtime_bootstrap_api_summary.registration_snapshot_type;
+          manifest_inputs.bootstrap_runtime_api_registration_entrypoint_symbol =
+              runtime_bootstrap_api_summary.registration_entrypoint_symbol;
+          manifest_inputs.bootstrap_runtime_api_selector_lookup_symbol =
+              runtime_bootstrap_api_summary.selector_lookup_symbol;
+          manifest_inputs.bootstrap_runtime_api_dispatch_entrypoint_symbol =
+              runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
+          manifest_inputs.bootstrap_runtime_api_state_snapshot_symbol =
+              runtime_bootstrap_api_summary.state_snapshot_symbol;
+          manifest_inputs.bootstrap_runtime_api_reset_for_testing_symbol =
+              runtime_bootstrap_api_summary.reset_for_testing_symbol;
           // M254-C001 bootstrap-lowering anchor: driver-side artifact
           // materialization remains limited to the registration manifest. The
           // actual ctor-root/init-stub/registration-table IR globals stay

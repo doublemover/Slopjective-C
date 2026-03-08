@@ -636,6 +636,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                   const auto &registration_manifest_summary =
                       product.artifact_bundle
                           .runtime_translation_unit_registration_manifest_summary;
+                  const auto &runtime_bootstrap_api_summary =
+                      product.artifact_bundle.runtime_bootstrap_api_summary;
                   const auto &runtime_bootstrap_semantics_summary =
                       product.artifact_bundle
                           .runtime_bootstrap_semantics_summary;
@@ -715,6 +717,37 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                   manifest_inputs.runtime_state_snapshot_symbol =
                       runtime_bootstrap_semantics_summary
                           .runtime_state_snapshot_symbol;
+                  manifest_inputs.bootstrap_runtime_api_contract_id =
+                      runtime_bootstrap_api_summary.contract_id;
+                  manifest_inputs.bootstrap_runtime_api_public_header_path =
+                      runtime_bootstrap_api_summary.public_header_path;
+                  manifest_inputs.bootstrap_runtime_api_archive_relative_path =
+                      runtime_bootstrap_api_summary.archive_relative_path;
+                  manifest_inputs
+                      .bootstrap_runtime_api_registration_status_enum_type =
+                      runtime_bootstrap_api_summary
+                          .registration_status_enum_type;
+                  manifest_inputs.bootstrap_runtime_api_image_descriptor_type =
+                      runtime_bootstrap_api_summary.image_descriptor_type;
+                  manifest_inputs.bootstrap_runtime_api_selector_handle_type =
+                      runtime_bootstrap_api_summary.selector_handle_type;
+                  manifest_inputs
+                      .bootstrap_runtime_api_registration_snapshot_type =
+                      runtime_bootstrap_api_summary
+                          .registration_snapshot_type;
+                  manifest_inputs
+                      .bootstrap_runtime_api_registration_entrypoint_symbol =
+                      runtime_bootstrap_api_summary
+                          .registration_entrypoint_symbol;
+                  manifest_inputs.bootstrap_runtime_api_selector_lookup_symbol =
+                      runtime_bootstrap_api_summary.selector_lookup_symbol;
+                  manifest_inputs
+                      .bootstrap_runtime_api_dispatch_entrypoint_symbol =
+                      runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
+                  manifest_inputs.bootstrap_runtime_api_state_snapshot_symbol =
+                      runtime_bootstrap_api_summary.state_snapshot_symbol;
+                  manifest_inputs.bootstrap_runtime_api_reset_for_testing_symbol =
+                      runtime_bootstrap_api_summary.reset_for_testing_symbol;
                   manifest_inputs.bootstrap_lowering_contract_id =
                       runtime_bootstrap_lowering_summary.contract_id;
                   manifest_inputs.bootstrap_lowering_boundary_model =

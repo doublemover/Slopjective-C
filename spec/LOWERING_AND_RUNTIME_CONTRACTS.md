@@ -5413,3 +5413,34 @@ walks consume one self-describing per-image registration boundary.
   runtime registration
 - emitted registration tables now include section-root and pool-root pointers
   for later runtime image-walk stages
+
+## M254 runtime bootstrap API freeze (D001)
+
+`M254-D001` freezes the runtime-owned bootstrap API surface that later
+registrar/image-walk and deterministic-reset work must preserve.
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- public header path `native/objc3c/src/runtime/objc3_runtime.h`
+- archive path `artifacts/lib/objc3_runtime.lib`
+- registration status enum type `objc3_runtime_registration_status_code`
+- image descriptor type `objc3_runtime_image_descriptor`
+- selector handle type `objc3_runtime_selector_handle`
+- registration snapshot type `objc3_runtime_registration_state_snapshot`
+- preserved entrypoints:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- startup invocation model
+  `generated-init-stub-calls-runtime-register-image`
+- runtime locking model `process-global-mutex-serialized-runtime-state`
+
+Non-goals:
+
+- no emitted-metadata image walk yet
+- no class/protocol/category realization graph yet
+- no expanded deterministic reset coverage beyond the current runtime-owned
+  testing hooks

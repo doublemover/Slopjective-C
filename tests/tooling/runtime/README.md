@@ -133,3 +133,20 @@ registration table and one image-local init-state cell per emitted image:
 - selector/string pool roots are carried directly in the table when present
 - the init stub now guards startup with the image-local init-state cell before
   calling `objc3_runtime_register_image`
+
+`M254-D001` freezes the runtime-owned bootstrap API surface that the startup
+path now targets:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- public header `native/objc3c/src/runtime/objc3_runtime.h`
+- archive `artifacts/lib/objc3_runtime.lib`
+- preserved runtime entrypoints:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- runtime-owned locking model `process-global-mutex-serialized-runtime-state`
+- image walk remains deferred to `M254-D002`
+- deterministic reset expansion remains deferred to `M254-D003`

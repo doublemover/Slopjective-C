@@ -8651,3 +8651,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   registration. The manifest side keeps publishing the exact derived state-cell
   symbol and layout contract so later runtime image-walk work consumes the same
   lowering-owned boundary rather than rediscovering it from object trivia.
+- M254 lane-D D001 freezes the runtime-owned bootstrap API surface in
+  `runtime/objc3_runtime.h`, `runtime/objc3_runtime.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `driver/objc3_objc3_path.cpp`, and
+  `io/objc3_process.cpp`. The emitted semantic surface and registration manifest
+  now publish one canonical header/archive/entrypoint/reset contract so later
+  registrar/image-walk and deterministic-reset work extends one runtime boundary
+  instead of inferring launch behavior from scattered implementation details.

@@ -625,6 +625,18 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.registration_result_model.empty() ||
       inputs.registration_order_ordinal_model.empty() ||
       inputs.runtime_state_snapshot_symbol.empty() ||
+      inputs.bootstrap_runtime_api_contract_id.empty() ||
+      inputs.bootstrap_runtime_api_public_header_path.empty() ||
+      inputs.bootstrap_runtime_api_archive_relative_path.empty() ||
+      inputs.bootstrap_runtime_api_registration_status_enum_type.empty() ||
+      inputs.bootstrap_runtime_api_image_descriptor_type.empty() ||
+      inputs.bootstrap_runtime_api_selector_handle_type.empty() ||
+      inputs.bootstrap_runtime_api_registration_snapshot_type.empty() ||
+      inputs.bootstrap_runtime_api_registration_entrypoint_symbol.empty() ||
+      inputs.bootstrap_runtime_api_selector_lookup_symbol.empty() ||
+      inputs.bootstrap_runtime_api_dispatch_entrypoint_symbol.empty() ||
+      inputs.bootstrap_runtime_api_state_snapshot_symbol.empty() ||
+      inputs.bootstrap_runtime_api_reset_for_testing_symbol.empty() ||
       inputs.bootstrap_lowering_contract_id.empty() ||
       inputs.bootstrap_lowering_boundary_model.empty() ||
       inputs.bootstrap_global_ctor_list_model.empty() ||
@@ -695,6 +707,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // expands that emitted boundary, the manifest must also publish the
   // self-describing registration-table layout contract and exact derived
   // image-local init-state symbol from the same translation-unit identity key.
+  // M254-D001 runtime-bootstrap-api anchor: the same manifest also freezes the
+  // runtime-owned bootstrap header/archive/entrypoint/reset surface so later
+  // registrar/image-walk work consumes one canonical API contract instead of
+  // re-deriving launch-path behavior from scattered runtime details.
 
   std::ostringstream out;
   out << "{\n"
@@ -774,6 +790,47 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.registration_order_ordinal_model) << "\",\n"
       << "  \"runtime_state_snapshot_symbol\": \""
       << EscapeJsonString(inputs.runtime_state_snapshot_symbol) << "\",\n"
+      << "  \"bootstrap_runtime_api_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_contract_id)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_public_header_path\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_public_header_path)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_archive_relative_path\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_archive_relative_path)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_registration_status_enum_type\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_runtime_api_registration_status_enum_type)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_image_descriptor_type\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_image_descriptor_type)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_selector_handle_type\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_selector_handle_type)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_registration_snapshot_type\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_runtime_api_registration_snapshot_type)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_registration_entrypoint_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_runtime_api_registration_entrypoint_symbol)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_selector_lookup_symbol\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_selector_lookup_symbol)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_dispatch_entrypoint_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_runtime_api_dispatch_entrypoint_symbol)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_state_snapshot_symbol\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_state_snapshot_symbol)
+      << "\",\n"
+      << "  \"bootstrap_runtime_api_reset_for_testing_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_runtime_api_reset_for_testing_symbol)
+      << "\",\n"
       << "  \"bootstrap_lowering_contract_id\": \""
       << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"
       << "  \"bootstrap_lowering_boundary_model\": \""
