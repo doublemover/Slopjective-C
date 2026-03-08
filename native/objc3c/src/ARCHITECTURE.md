@@ -8609,3 +8609,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   one explicit boundary over the runtime-metadata binary, linker-retention
   sidecars, constructor-root reservation, and runtime-owned registration
   entrypoint instead of re-deriving the handoff ad hoc.
+- M254 lane-A A002 registration-manifest implementation publishes one real
+  `module.runtime-registration-manifest.json` artifact from
+  `driver/objc3_objc3_path.cpp` and
+  `libobjc3c_frontend/frontend_anchor.cpp`, with
+  `pipeline/objc3_frontend_artifacts.cpp`, `io/objc3_manifest_artifacts.cpp`,
+  and `io/objc3_process.cpp` carrying the canonical manifest surface,
+  constructor-root authority model, init-stub ownership model, and
+  translation-unit-identity-derived init-stub symbol shape that `M254-C001`
+  must consume directly.

@@ -109,14 +109,13 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       WriteText(backend_out, backend_text);
       backend_output_recorded = true;
       backend_output_payload = backend_text;
-      std::string linker_response_payload;
-      std::string discovery_json;
+      Objc3RuntimeMetadataLinkerRetentionArtifacts
+          linker_retention_artifacts;
       std::string linker_retention_error;
       if (!TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
               ir_out,
               object_out,
-              linker_response_payload,
-              discovery_json,
+              linker_retention_artifacts,
               linker_retention_error)) {
         compile_status = 125;
         std::cerr << linker_retention_error << "\n";
@@ -130,10 +129,81 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         WriteRuntimeMetadataLinkerResponseArtifact(
             cli_options.out_dir,
             cli_options.emit_prefix,
-            linker_response_payload);
+            linker_retention_artifacts.linker_response_file_payload);
         WriteRuntimeMetadataDiscoveryArtifact(cli_options.out_dir,
                                              cli_options.emit_prefix,
-                                             discovery_json);
+                                             linker_retention_artifacts.discovery_json);
+        if (!IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+                artifacts
+                    .runtime_translation_unit_registration_manifest_summary)) {
+          compile_status = 125;
+          std::cerr << "translation-unit registration manifest template not ready\n";
+        } else {
+          Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs
+              manifest_inputs;
+          const auto &registration_manifest_summary =
+              artifacts.runtime_translation_unit_registration_manifest_summary;
+          manifest_inputs.contract_id = registration_manifest_summary.contract_id;
+          manifest_inputs.translation_unit_registration_contract_id =
+              registration_manifest_summary
+                  .translation_unit_registration_contract_id;
+          manifest_inputs.runtime_support_library_link_wiring_contract_id =
+              registration_manifest_summary
+                  .runtime_support_library_link_wiring_contract_id;
+          manifest_inputs.manifest_payload_model =
+              registration_manifest_summary.manifest_payload_model;
+          manifest_inputs.manifest_artifact_relative_path =
+              registration_manifest_summary.manifest_artifact_relative_path;
+          manifest_inputs.runtime_owned_payload_artifacts.assign(
+              registration_manifest_summary.runtime_owned_payload_artifacts.begin(),
+              registration_manifest_summary.runtime_owned_payload_artifacts.end());
+          manifest_inputs.runtime_support_library_archive_relative_path =
+              registration_manifest_summary
+                  .runtime_support_library_archive_relative_path;
+          manifest_inputs.constructor_root_symbol =
+              registration_manifest_summary.constructor_root_symbol;
+          manifest_inputs.constructor_root_ownership_model =
+              registration_manifest_summary.constructor_root_ownership_model;
+          manifest_inputs.manifest_authority_model =
+              registration_manifest_summary.manifest_authority_model;
+          manifest_inputs.constructor_init_stub_symbol_prefix =
+              registration_manifest_summary.constructor_init_stub_symbol_prefix;
+          manifest_inputs.constructor_init_stub_ownership_model =
+              registration_manifest_summary
+                  .constructor_init_stub_ownership_model;
+          manifest_inputs.constructor_priority_policy =
+              registration_manifest_summary.constructor_priority_policy;
+          manifest_inputs.registration_entrypoint_symbol =
+              registration_manifest_summary.registration_entrypoint_symbol;
+          manifest_inputs.translation_unit_identity_model =
+              registration_manifest_summary.translation_unit_identity_model;
+          manifest_inputs.object_artifact_relative_path =
+              object_out.filename().generic_string();
+          manifest_inputs.backend_artifact_relative_path =
+              backend_out.filename().generic_string();
+
+          std::string registration_manifest_json;
+          std::string registration_manifest_error;
+          if (!TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
+                  manifest_inputs,
+                  linker_retention_artifacts,
+                  artifacts.runtime_metadata_binary.size(),
+                  registration_manifest_json,
+                  registration_manifest_error)) {
+            compile_status = 125;
+            std::cerr << registration_manifest_error << "\n";
+          } else {
+            // M254-A002 registration-manifest anchor: the driver now writes one
+            // canonical startup-registration manifest per translation unit so
+            // later lowering/bootstrap lanes consume direct constructor-root
+            // ownership inputs instead of reconstructing them from ad hoc
+            // sidecar parsing rules.
+            WriteRuntimeRegistrationManifestArtifact(
+                cli_options.out_dir,
+                cli_options.emit_prefix,
+                registration_manifest_json);
+          }
+        }
       }
     }
 

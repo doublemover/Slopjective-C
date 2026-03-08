@@ -1276,6 +1276,36 @@ Non-goals remain explicit in `M254-A001`:
 `M254-A002` must preserve this surface while materializing the first real
 registration manifest and constructor-root ownership path.
 
+## Registration manifests and constructor-root ownership (M254-A002)
+
+`M254-A002` materializes the first real startup-registration artifact at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`.
+
+The canonical emitted handoff is:
+
+- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- payload model `translation-unit-registration-manifest-json-v1`
+- emitted registration-manifest artifact
+  `module.runtime-registration-manifest.json`
+- runtime-owned payload continuity:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- manifest authority model
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- init-stub ownership model
+  `lowering-emits-init-stub-from-registration-manifest`
+- constructor priority policy `deferred-until-m254-c001`
+- runtime archive path `artifacts/lib/objc3_runtime.lib`
+
+`M254-A002` still does not emit the init stub, constructor root, or startup
+bootstrap logic. It publishes the authoritative manifest that later lowering
+and bootstrap lanes must consume directly.
+
+Validation/evidence path:
+`tmp/reports/m254/M254-A002/registration_manifests_and_constructor_root_ownership_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

@@ -6365,3 +6365,28 @@ Frozen metadata/runtime anchors:
 - translation-unit identity model `input-path-plus-parse-and-lowering-replay`
 
 This freeze does not emit the constructor root or execute bootstrap logic yet.
+
+## M254 translation-unit registration manifest metadata anchors (A002)
+
+`M254-A002` publishes the first real translation-unit registration manifest at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- payload model `translation-unit-registration-manifest-json-v1`
+- emitted manifest artifact `module.runtime-registration-manifest.json`
+- runtime-owned payload artifacts:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor root `__objc3_runtime_register_image_ctor`
+- manifest authority model
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- runtime archive path `artifacts/lib/objc3_runtime.lib`
+- registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+This implementation still defers emitted init-stub and bootstrap behavior to
+later `M254` issues.

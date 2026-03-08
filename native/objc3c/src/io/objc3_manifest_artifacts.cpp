@@ -31,6 +31,14 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
   return out_dir / (emit_prefix + kObjc3RuntimeLinkerDiscoveryArtifactSuffix);
 }
 
+std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir /
+         (emit_prefix +
+          kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix);
+}
+
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
                            const std::string &manifest_json) {
@@ -58,4 +66,12 @@ void WriteRuntimeMetadataDiscoveryArtifact(
     const std::string &discovery_json) {
   WriteText(BuildRuntimeMetadataDiscoveryArtifactPath(out_dir, emit_prefix),
             discovery_json);
+}
+
+void WriteRuntimeRegistrationManifestArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &manifest_json) {
+  WriteText(BuildRuntimeRegistrationManifestArtifactPath(out_dir, emit_prefix),
+            manifest_json);
 }

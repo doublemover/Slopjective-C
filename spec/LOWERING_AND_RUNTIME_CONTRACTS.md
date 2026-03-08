@@ -5257,3 +5257,36 @@ Non-goals:
 
 `M254-A002` must preserve this contract while materializing registration
 manifests and constructor-root ownership.
+
+## M254 translation-unit registration manifest implementation (A002)
+
+`M254-A002` turns the frozen `M254-A001` preregistration boundary into one real
+emitted translation-unit registration manifest artifact.
+
+- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`
+- payload model `translation-unit-registration-manifest-json-v1`
+- emitted registration-manifest artifact
+  `module.runtime-registration-manifest.json`
+- preserved runtime-owned payload inventory:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor-root ownership model
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- manifest authority model
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- init-stub ownership model
+  `lowering-emits-init-stub-from-registration-manifest`
+- constructor priority policy `deferred-until-m254-c001`
+- runtime-owned registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+Non-goals:
+
+- no init-stub emission yet
+- no constructor-root emission yet
+- no automatic startup registration yet
+- no runtime bootstrap execution yet

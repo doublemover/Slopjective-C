@@ -546,6 +546,34 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel =
         "input-path-plus-parse-and-lowering-replay";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestContractId =
+        "objc3c-translation-unit-registration-manifest/m254-a002-v1";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_runtime_translation_unit_registration_manifest";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestPayloadModel =
+        "translation-unit-registration-manifest-json-v1";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix =
+        ".runtime-registration-manifest.json";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactRelativePath =
+        "module.runtime-registration-manifest.json";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix =
+        "__objc3_runtime_register_image_init_stub_";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationInitStubOwnershipModel =
+        "lowering-emits-init-stub-from-registration-manifest";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestAuthorityModel =
+        "registration-manifest-authoritative-for-constructor-root-shape";
+inline constexpr const char
+    *kObjc3RuntimeTranslationUnitRegistrationManifestPriorityPolicy =
+        "deferred-until-m254-c001";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

@@ -223,6 +223,23 @@ std::string EscapeJsonString(const std::string &text) {
   return out.str();
 }
 
+std::string MakeIdentifierSafeSuffix(const std::string &text) {
+  std::string suffix;
+  suffix.reserve(text.size());
+  for (unsigned char c : text) {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+        (c >= '0' && c <= '9') || c == '_') {
+      suffix.push_back(static_cast<char>(c));
+    } else {
+      suffix.push_back('_');
+    }
+  }
+  if (suffix.empty()) {
+    suffix = "translation_unit";
+  }
+  return suffix;
+}
+
 }  // namespace
 
 int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
@@ -399,8 +416,7 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
 bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     const std::filesystem::path &ir_path,
     const std::filesystem::path &object_out,
-    std::string &linker_response_file_payload,
-    std::string &discovery_json,
+    Objc3RuntimeMetadataLinkerRetentionArtifacts &artifacts,
     std::string &error) {
   // M253-E001 metadata-emission gate anchor: lane-E consumes the object-level
   // linker-retention/discovery artifacts published on this path together with
@@ -414,14 +430,14 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
   // registration must consume the linker-response/discovery sidecars derived
   // here without re-deriving translation-unit identity or renaming the public
   // discovery/linker-anchor boundary emitted by the M253 path.
-  linker_response_file_payload.clear();
-  discovery_json.clear();
+  artifacts = Objc3RuntimeMetadataLinkerRetentionArtifacts{};
   error.clear();
 
   const ProducedObjectFormat produced_format =
       DetectProducedObjectFormat(object_out);
-  const std::string object_format = ProducedObjectFormatName(produced_format);
-  if (object_format.empty()) {
+  artifacts.object_format = ProducedObjectFormatName(produced_format);
+  artifacts.object_artifact_relative_path = object_out.filename().generic_string();
+  if (artifacts.object_format.empty()) {
     error = "unable to determine produced object format for runtime metadata "
             "linker retention artifacts: " +
             object_out.string();
@@ -448,90 +464,212 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     return false;
   }
 
-  std::string linker_anchor_symbol;
-  std::string discovery_root_symbol;
-  std::string linker_anchor_logical_section;
-  std::string discovery_root_logical_section;
-  std::string linker_response_artifact_suffix;
-  std::string discovery_artifact_suffix;
-  std::string translation_unit_identity_key;
   if (!ExtractBoundaryTokenValue(boundary_line, "linker_anchor_symbol",
-                                 linker_anchor_symbol) ||
+                                 artifacts.linker_anchor_symbol) ||
       !ExtractBoundaryTokenValue(boundary_line, "discovery_root_symbol",
-                                 discovery_root_symbol) ||
+                                 artifacts.discovery_root_symbol) ||
       !ExtractBoundaryTokenValue(boundary_line,
                                  "linker_anchor_logical_section",
-                                 linker_anchor_logical_section) ||
+                                 artifacts.linker_anchor_logical_section) ||
       !ExtractBoundaryTokenValue(boundary_line,
                                  "discovery_root_logical_section",
-                                 discovery_root_logical_section) ||
+                                 artifacts.discovery_root_logical_section) ||
       !ExtractBoundaryTokenValue(boundary_line,
                                  "linker_response_artifact_suffix",
-                                 linker_response_artifact_suffix) ||
+                                 artifacts.linker_response_artifact_suffix) ||
       !ExtractBoundaryTokenValue(boundary_line,
                                  "translation_unit_identity_key",
-                                 translation_unit_identity_key) ||
+                                 artifacts.translation_unit_identity_key) ||
       !ExtractBoundaryTokenValue(boundary_line, "discovery_artifact_suffix",
-                                 discovery_artifact_suffix)) {
+                                 artifacts.discovery_artifact_suffix)) {
     error = "runtime metadata linker retention boundary line is missing one or "
             "more required tokens: " +
             ir_path.string();
     return false;
   }
 
-  const std::string linker_flag =
+  artifacts.driver_linker_flag =
       Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
-          object_format, linker_anchor_symbol);
-  if (linker_flag.empty()) {
+          artifacts.object_format, artifacts.linker_anchor_symbol);
+  if (artifacts.driver_linker_flag.empty()) {
     error = "no linker-retention driver flag available for produced object "
             "format " +
-            object_format;
+            artifacts.object_format;
     return false;
   }
-  linker_response_file_payload = linker_flag + "\n";
+  artifacts.linker_response_file_payload = artifacts.driver_linker_flag + "\n";
 
-  const std::string emitted_linker_anchor_section =
+  artifacts.linker_anchor_emitted_section =
       Objc3RuntimeMetadataSectionForObjectFormat(
-          object_format, linker_anchor_logical_section);
-  const std::string emitted_discovery_root_section =
+          artifacts.object_format, artifacts.linker_anchor_logical_section);
+  artifacts.discovery_root_emitted_section =
       Objc3RuntimeMetadataSectionForObjectFormat(
-          object_format, discovery_root_logical_section);
+          artifacts.object_format, artifacts.discovery_root_logical_section);
+  artifacts.translation_unit_identity_model =
+      kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel;
 
   std::ostringstream discovery;
   discovery << "{\n"
             << "  \"contract_id\": \""
             << EscapeJsonString(kObjc3RuntimeLinkerRetentionContractId)
             << "\",\n"
-            << "  \"object_format\": \"" << EscapeJsonString(object_format)
+            << "  \"object_format\": \"" << EscapeJsonString(artifacts.object_format)
             << "\",\n"
             << "  \"object_artifact\": \""
-            << EscapeJsonString(kObjc3RuntimeObjectPackagingRetentionArtifact)
+            << EscapeJsonString(artifacts.object_artifact_relative_path)
             << "\",\n"
             << "  \"linker_anchor_symbol\": \""
-            << EscapeJsonString(linker_anchor_symbol) << "\",\n"
+            << EscapeJsonString(artifacts.linker_anchor_symbol) << "\",\n"
             << "  \"discovery_root_symbol\": \""
-            << EscapeJsonString(discovery_root_symbol) << "\",\n"
+            << EscapeJsonString(artifacts.discovery_root_symbol) << "\",\n"
             << "  \"linker_anchor_logical_section\": \""
-            << EscapeJsonString(linker_anchor_logical_section) << "\",\n"
+            << EscapeJsonString(artifacts.linker_anchor_logical_section) << "\",\n"
             << "  \"discovery_root_logical_section\": \""
-            << EscapeJsonString(discovery_root_logical_section) << "\",\n"
+            << EscapeJsonString(artifacts.discovery_root_logical_section) << "\",\n"
             << "  \"linker_anchor_emitted_section\": \""
-            << EscapeJsonString(emitted_linker_anchor_section) << "\",\n"
+            << EscapeJsonString(artifacts.linker_anchor_emitted_section) << "\",\n"
             << "  \"discovery_root_emitted_section\": \""
-            << EscapeJsonString(emitted_discovery_root_section) << "\",\n"
+            << EscapeJsonString(artifacts.discovery_root_emitted_section) << "\",\n"
             << "  \"linker_response_artifact_suffix\": \""
-            << EscapeJsonString(linker_response_artifact_suffix) << "\",\n"
+            << EscapeJsonString(artifacts.linker_response_artifact_suffix) << "\",\n"
             << "  \"discovery_artifact_suffix\": \""
-            << EscapeJsonString(discovery_artifact_suffix) << "\",\n"
+            << EscapeJsonString(artifacts.discovery_artifact_suffix) << "\",\n"
             << "  \"translation_unit_identity_model\": \""
-            << EscapeJsonString(
-                   kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel)
+            << EscapeJsonString(artifacts.translation_unit_identity_model)
             << "\",\n"
             << "  \"translation_unit_identity_key\": \""
-            << EscapeJsonString(translation_unit_identity_key) << "\",\n"
-            << "  \"driver_linker_flags\": [\"" << EscapeJsonString(linker_flag)
+            << EscapeJsonString(artifacts.translation_unit_identity_key) << "\",\n"
+            << "  \"driver_linker_flags\": [\"" << EscapeJsonString(artifacts.driver_linker_flag)
             << "\"]\n"
             << "}\n";
-  discovery_json = discovery.str();
+  artifacts.discovery_json = discovery.str();
+  return true;
+}
+
+bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
+    const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
+    std::size_t runtime_metadata_binary_byte_count,
+    std::string &manifest_json,
+    std::string &error) {
+  manifest_json.clear();
+  error.clear();
+
+  if (inputs.contract_id.empty() ||
+      inputs.translation_unit_registration_contract_id.empty() ||
+      inputs.runtime_support_library_link_wiring_contract_id.empty() ||
+      inputs.manifest_payload_model.empty() ||
+      inputs.manifest_artifact_relative_path.empty() ||
+      inputs.runtime_owned_payload_artifacts.size() != 3u ||
+      inputs.runtime_support_library_archive_relative_path.empty() ||
+      inputs.constructor_root_symbol.empty() ||
+      inputs.constructor_root_ownership_model.empty() ||
+      inputs.manifest_authority_model.empty() ||
+      inputs.constructor_init_stub_symbol_prefix.empty() ||
+      inputs.constructor_init_stub_ownership_model.empty() ||
+      inputs.constructor_priority_policy.empty() ||
+      inputs.registration_entrypoint_symbol.empty() ||
+      inputs.translation_unit_identity_model.empty() ||
+      inputs.object_artifact_relative_path.empty() ||
+      inputs.backend_artifact_relative_path.empty()) {
+    error =
+        "translation-unit registration manifest inputs are incomplete";
+    return false;
+  }
+  if (linker_retention_artifacts.translation_unit_identity_key.empty() ||
+      linker_retention_artifacts.translation_unit_identity_model.empty() ||
+      linker_retention_artifacts.driver_linker_flag.empty() ||
+      linker_retention_artifacts.object_format.empty() ||
+      linker_retention_artifacts.linker_anchor_symbol.empty() ||
+      linker_retention_artifacts.discovery_root_symbol.empty()) {
+    error =
+        "translation-unit registration manifest requires populated linker-retention artifacts";
+    return false;
+  }
+  if (linker_retention_artifacts.translation_unit_identity_model !=
+      inputs.translation_unit_identity_model) {
+    error =
+        "translation-unit registration manifest identity model drifted from linker-retention artifacts";
+    return false;
+  }
+
+  const std::string constructor_init_stub_symbol =
+      inputs.constructor_init_stub_symbol_prefix +
+      MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key);
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
+      << "\",\n"
+      << "  \"translation_unit_registration_contract_id\": \""
+      << EscapeJsonString(inputs.translation_unit_registration_contract_id)
+      << "\",\n"
+      << "  \"runtime_support_library_link_wiring_contract_id\": \""
+      << EscapeJsonString(
+             inputs.runtime_support_library_link_wiring_contract_id)
+      << "\",\n"
+      << "  \"manifest_payload_model\": \""
+      << EscapeJsonString(inputs.manifest_payload_model) << "\",\n"
+      << "  \"manifest_artifact\": \""
+      << EscapeJsonString(inputs.manifest_artifact_relative_path) << "\",\n"
+      << "  \"object_artifact\": \""
+      << EscapeJsonString(inputs.object_artifact_relative_path) << "\",\n"
+      << "  \"backend_artifact\": \""
+      << EscapeJsonString(inputs.backend_artifact_relative_path) << "\",\n"
+      << "  \"runtime_owned_payload_artifacts\": [\n"
+      << "    \""
+      << EscapeJsonString(inputs.runtime_owned_payload_artifacts[0])
+      << "\",\n"
+      << "    \""
+      << EscapeJsonString(inputs.runtime_owned_payload_artifacts[1])
+      << "\",\n"
+      << "    \""
+      << EscapeJsonString(inputs.runtime_owned_payload_artifacts[2])
+      << "\"\n"
+      << "  ],\n"
+      << "  \"runtime_metadata_binary_byte_count\": "
+      << runtime_metadata_binary_byte_count << ",\n"
+      << "  \"runtime_support_library_archive_relative_path\": \""
+      << EscapeJsonString(inputs.runtime_support_library_archive_relative_path)
+      << "\",\n"
+      << "  \"registration_entrypoint_symbol\": \""
+      << EscapeJsonString(inputs.registration_entrypoint_symbol) << "\",\n"
+      << "  \"constructor_root_symbol\": \""
+      << EscapeJsonString(inputs.constructor_root_symbol) << "\",\n"
+      << "  \"constructor_root_ownership_model\": \""
+      << EscapeJsonString(inputs.constructor_root_ownership_model) << "\",\n"
+      << "  \"manifest_authority_model\": \""
+      << EscapeJsonString(inputs.manifest_authority_model) << "\",\n"
+      << "  \"constructor_init_stub_symbol\": \""
+      << EscapeJsonString(constructor_init_stub_symbol) << "\",\n"
+      << "  \"constructor_init_stub_ownership_model\": \""
+      << EscapeJsonString(inputs.constructor_init_stub_ownership_model)
+      << "\",\n"
+      << "  \"constructor_priority_policy\": \""
+      << EscapeJsonString(inputs.constructor_priority_policy) << "\",\n"
+      << "  \"translation_unit_identity_model\": \""
+      << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
+      << "  \"translation_unit_identity_key\": \""
+      << EscapeJsonString(
+             linker_retention_artifacts.translation_unit_identity_key)
+      << "\",\n"
+      << "  \"object_format\": \""
+      << EscapeJsonString(linker_retention_artifacts.object_format)
+      << "\",\n"
+      << "  \"linker_anchor_symbol\": \""
+      << EscapeJsonString(linker_retention_artifacts.linker_anchor_symbol)
+      << "\",\n"
+      << "  \"discovery_root_symbol\": \""
+      << EscapeJsonString(linker_retention_artifacts.discovery_root_symbol)
+      << "\",\n"
+      << "  \"driver_linker_flags\": [\n"
+      << "    \""
+      << EscapeJsonString(linker_retention_artifacts.driver_linker_flag)
+      << "\"\n"
+      << "  ],\n"
+      << "  \"ready_for_lowering_init_stub_emission\": true\n"
+      << "}\n";
+  manifest_json = out.str();
   return true;
 }

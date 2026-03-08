@@ -60,3 +60,16 @@ yet:
 - the runtime-owned entrypoint remains `objc3_runtime_register_image`
 - no startup constructor/root emission or bootstrap execution lands in
   `M254-A001`
+
+`M254-A002` now emits one real `module.runtime-registration-manifest.json`
+artifact on the native object-emission path:
+
+- the manifest is authoritative for constructor-root shape under
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub ownership remains
+  `lowering-emits-init-stub-from-registration-manifest`
+- the emitted manifest carries forward the same runtime-owned payload
+  inventory, runtime archive path `artifacts/lib/objc3_runtime.lib`, and
+  translation-unit identity key from linker-retention discovery
+- init-stub emission and runtime bootstrap execution are still deferred to
+  later `M254` issues

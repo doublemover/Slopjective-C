@@ -2605,6 +2605,88 @@ inline bool IsReadyObjc3RuntimeTranslationUnitRegistrationContractSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeTranslationUnitRegistrationManifestSummary {
+  std::string contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string translation_unit_registration_contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationContractId;
+  std::string runtime_support_library_link_wiring_contract_id =
+      kObjc3RuntimeSupportLibraryLinkWiringContractId;
+  std::string manifest_surface_path =
+      kObjc3RuntimeTranslationUnitRegistrationManifestSurfacePath;
+  std::string manifest_payload_model =
+      kObjc3RuntimeTranslationUnitRegistrationManifestPayloadModel;
+  std::string manifest_artifact_relative_path =
+      kObjc3RuntimeTranslationUnitRegistrationManifestArtifactRelativePath;
+  std::array<std::string, 3u> runtime_owned_payload_artifacts = {
+      kObjc3RuntimeTranslationUnitRegistrationPayloadArtifactRelativePath,
+      kObjc3RuntimeTranslationUnitRegistrationLinkerResponseArtifactRelativePath,
+      kObjc3RuntimeTranslationUnitRegistrationDiscoveryArtifactRelativePath};
+  std::string runtime_support_library_archive_relative_path =
+      kObjc3RuntimeSupportLibraryArchiveRelativePath;
+  std::string constructor_root_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol;
+  std::string constructor_root_ownership_model =
+      kObjc3RuntimeTranslationUnitRegistrationConstructorRootOwnershipModel;
+  std::string manifest_authority_model =
+      kObjc3RuntimeTranslationUnitRegistrationManifestAuthorityModel;
+  std::string constructor_init_stub_symbol_prefix =
+      kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix;
+  std::string constructor_init_stub_ownership_model =
+      kObjc3RuntimeTranslationUnitRegistrationInitStubOwnershipModel;
+  std::string constructor_priority_policy =
+      kObjc3RuntimeTranslationUnitRegistrationManifestPriorityPolicy;
+  std::string registration_entrypoint_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
+  std::string translation_unit_identity_model =
+      kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel;
+  bool fail_closed = false;
+  bool translation_unit_registration_contract_ready = false;
+  bool runtime_support_library_link_wiring_ready = false;
+  bool runtime_manifest_template_published = false;
+  bool constructor_root_manifest_authoritative = false;
+  bool constructor_root_reserved_for_lowering = false;
+  bool init_stub_emission_deferred_to_lowering = false;
+  bool runtime_registration_artifact_emitted_by_driver = false;
+  bool ready_for_lowering_init_stub_emission = false;
+  std::size_t runtime_owned_payload_artifact_count = 0;
+  std::string translation_unit_registration_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.translation_unit_registration_contract_id.empty() &&
+         !summary.runtime_support_library_link_wiring_contract_id.empty() &&
+         !summary.manifest_surface_path.empty() &&
+         !summary.manifest_payload_model.empty() &&
+         !summary.manifest_artifact_relative_path.empty() &&
+         summary.fail_closed &&
+         summary.translation_unit_registration_contract_ready &&
+         summary.runtime_support_library_link_wiring_ready &&
+         summary.runtime_manifest_template_published &&
+         summary.constructor_root_manifest_authoritative &&
+         summary.constructor_root_reserved_for_lowering &&
+         summary.init_stub_emission_deferred_to_lowering &&
+         summary.runtime_registration_artifact_emitted_by_driver &&
+         summary.ready_for_lowering_init_stub_emission &&
+         summary.runtime_owned_payload_artifact_count ==
+             summary.runtime_owned_payload_artifacts.size() &&
+         !summary.runtime_support_library_archive_relative_path.empty() &&
+         !summary.constructor_root_symbol.empty() &&
+         !summary.constructor_root_ownership_model.empty() &&
+         !summary.manifest_authority_model.empty() &&
+         !summary.constructor_init_stub_symbol_prefix.empty() &&
+         !summary.constructor_init_stub_ownership_model.empty() &&
+         !summary.constructor_priority_policy.empty() &&
+         !summary.registration_entrypoint_symbol.empty() &&
+         !summary.translation_unit_identity_model.empty() &&
+         !summary.translation_unit_registration_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;
