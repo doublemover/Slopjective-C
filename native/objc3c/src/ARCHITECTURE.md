@@ -8519,3 +8519,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   placeholders with adjacent owner-scoped method tables plus real property/ivar descriptor bytes while preserving llvm-direct section bytes and the frozen
   non-goal boundary before later issues add selector pools, registration, and
   runtime consumption.
+- M253 lane-C C005 selector/string pool emission anchors explicit
+  implementation artifacts in
+  `docs/contracts/m253_selector_and_string_pool_emission_core_feature_expansion_c005_expectations.md`,
+  `spec/planning/compiler/m253/m253_c005_selector_and_string_pool_emission_core_feature_expansion_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so canonical selector and string pool sections become real retained metadata families while
+  descriptor bundles remain shape-stable and message-send lowering stops using
+  the older selector-only global naming scheme.

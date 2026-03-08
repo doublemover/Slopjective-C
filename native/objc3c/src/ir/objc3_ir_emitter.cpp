@@ -58,7 +58,7 @@ class Objc3IREmitter {
       }
     }
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
-    CollectSelectorLiterals();
+    CollectCanonicalPoolLiterals();
     CollectMutableGlobalSymbols();
     CollectFunctionEffects();
   }
@@ -105,8 +105,6 @@ class Objc3IREmitter {
     }
 
     EmitRuntimeMetadataSectionScaffold(body);
-
-    EmitSelectorConstants(body);
 
     EmitPrototypeDeclarations(body);
 
@@ -1742,6 +1740,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_class_metaclass_emission = !{!56}\n";
     out << "!objc3.objc_runtime_protocol_category_emission = !{!57}\n";
     out << "!objc3.objc_runtime_member_table_emission = !{!58}\n";
+    out << "!objc3.objc_runtime_selector_string_pool_emission = !{!59}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2662,6 +2661,26 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_member_table_typed_handoff_replay_key)
+        << "\"}\n";
+    out << "!59 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeSelectorStringPoolEmissionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeSelectorPoolEmissionPayloadModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeStringPoolEmissionPayloadModel)
+        << "\", i64 "
+        << static_cast<unsigned long long>(selector_pool_globals_.size())
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_string_pool_globals_.size())
+        << ", !\""
+        << EscapeCStringLiteral(Objc3RuntimeMetadataHostSectionForLogicalName(
+               kObjc3RuntimeSelectorPoolLogicalSection))
+        << "\", !\""
+        << EscapeCStringLiteral(Objc3RuntimeMetadataHostSectionForLogicalName(
+               kObjc3RuntimeStringPoolLogicalSection))
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -3762,16 +3781,32 @@ class Objc3IREmitter {
   }
 
   void RegisterSelectorLiteral(const std::string &selector) {
-    if (selector.empty() || selector_globals_.find(selector) != selector_globals_.end()) {
+    if (selector.empty() ||
+        selector_pool_globals_.find(selector) != selector_pool_globals_.end()) {
       return;
     }
-    selector_globals_.emplace(selector, "");
+    selector_pool_globals_.emplace(selector, "");
   }
 
-  void AssignSelectorGlobalNames() {
+  void RegisterRuntimeStringLiteral(const std::string &value) {
+    if (value.empty() ||
+        runtime_string_pool_globals_.find(value) !=
+            runtime_string_pool_globals_.end()) {
+      return;
+    }
+    runtime_string_pool_globals_.emplace(value, "");
+  }
+
+  void AssignCanonicalPoolGlobalNames() {
     std::size_t index = 0;
-    for (auto &entry : selector_globals_) {
-      entry.second = "@.objc3.sel." + std::to_string(index++);
+    for (auto &entry : selector_pool_globals_) {
+      entry.second = "@__objc3_sel_pool_" +
+                     FormatRuntimeMetadataDescriptorOrdinal(index++);
+    }
+    index = 0;
+    for (auto &entry : runtime_string_pool_globals_) {
+      entry.second = "@__objc3_str_pool_" +
+                     FormatRuntimeMetadataDescriptorOrdinal(index++);
     }
   }
 
@@ -3898,7 +3933,65 @@ class Objc3IREmitter {
     }
   }
 
-  void CollectSelectorLiterals() {
+  void CollectRuntimeMetadataPoolLiterals() {
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_class_metaclass_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.class_name);
+      RegisterRuntimeStringLiteral(bundle.owner_identity);
+    }
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.protocol_name);
+      RegisterRuntimeStringLiteral(bundle.owner_identity);
+    }
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_category_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.class_name);
+      RegisterRuntimeStringLiteral(bundle.category_name);
+      RegisterRuntimeStringLiteral(bundle.owner_identity);
+      RegisterRuntimeStringLiteral(bundle.record_kind);
+      RegisterRuntimeStringLiteral(bundle.category_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.class_owner_identity);
+    }
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
+      for (const auto &entry : bundle.entries_lexicographic) {
+        RegisterSelectorLiteral(entry.selector);
+        RegisterRuntimeStringLiteral(entry.owner_identity);
+        RegisterRuntimeStringLiteral(entry.return_type_name);
+      }
+    }
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.property_name);
+      RegisterRuntimeStringLiteral(bundle.type_name);
+      RegisterRuntimeStringLiteral(bundle.owner_identity);
+      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
+      if (bundle.has_getter) {
+        RegisterSelectorLiteral(bundle.getter_selector);
+      }
+      if (bundle.has_setter) {
+        RegisterSelectorLiteral(bundle.setter_selector);
+      }
+      if (!bundle.ivar_binding_symbol.empty()) {
+        RegisterRuntimeStringLiteral(bundle.ivar_binding_symbol);
+      }
+    }
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic) {
+      RegisterRuntimeStringLiteral(bundle.owner_identity);
+      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.property_owner_identity);
+      RegisterRuntimeStringLiteral(bundle.property_name);
+      RegisterRuntimeStringLiteral(bundle.ivar_binding_symbol);
+    }
+  }
+
+  void CollectCanonicalPoolLiterals() {
     for (const auto &global : program_.globals) {
       CollectSelectorExpr(global.value.get());
     }
@@ -3907,7 +4000,8 @@ class Objc3IREmitter {
         CollectSelectorStmt(stmt.get());
       }
     }
-    AssignSelectorGlobalNames();
+    CollectRuntimeMetadataPoolLiterals();
+    AssignCanonicalPoolGlobalNames();
   }
 
   static bool IsNameBoundInScopes(const std::vector<std::unordered_set<std::string>> &scopes,
@@ -4541,6 +4635,19 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic.size()
           << ";typed_handoff_replay="
           << frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key
+          << "\n";
+    }
+    if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
+      out << "; runtime_metadata_selector_string_pool_emission = "
+          << Objc3RuntimeMetadataSelectorStringPoolEmissionSummary()
+          << ";selector_pool_count=" << selector_pool_globals_.size()
+          << ";string_pool_count=" << runtime_string_pool_globals_.size()
+          << ";selector_section="
+          << Objc3RuntimeMetadataHostSectionForLogicalName(
+                 kObjc3RuntimeSelectorPoolLogicalSection)
+          << ";string_section="
+          << Objc3RuntimeMetadataHostSectionForLogicalName(
+                 kObjc3RuntimeStringPoolLogicalSection)
           << "\n";
     }
     out << "; runtime metadata section scaffold globals\n";
@@ -5413,6 +5520,40 @@ class Objc3IREmitter {
           emit_retained(aggregate_symbol);
         };
 
+    const auto emit_canonical_pool_section =
+        [&](const std::map<std::string, std::string> &pool_globals,
+            const std::string &aggregate_symbol,
+            const std::string &logical_section) {
+          const std::string emitted_section_name =
+              Objc3RuntimeMetadataHostSectionForLogicalName(logical_section);
+          for (const auto &entry : pool_globals) {
+            const std::string &value = entry.first;
+            const std::string &symbol = entry.second;
+            out << symbol << " = private unnamed_addr constant ["
+                << (value.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(value) << "\\00\", section \""
+                << emitted_section_name << "\", align 1\n";
+          }
+          out << aggregate_symbol << " = internal global ";
+          if (pool_globals.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << pool_globals.size()
+                << " x ptr] } { i64 " << pool_globals.size() << ", ["
+                << pool_globals.size() << " x ptr] [";
+            std::size_t index = 0;
+            for (const auto &entry : pool_globals) {
+              if (index++ != 0) {
+                out << ", ";
+              }
+              out << "ptr " << entry.second;
+            }
+            out << "] }";
+          }
+          out << ", section \"" << emitted_section_name << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
     for (const auto &family : layout_policy.families) {
       if (emit_member_table_payloads &&
           (family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily ||
@@ -5442,6 +5583,17 @@ class Objc3IREmitter {
       }
     }
 
+    const bool emit_selector_string_pools =
+        !selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty();
+    if (emit_selector_string_pools) {
+      emit_canonical_pool_section(selector_pool_globals_,
+                                  "@__objc3_sec_selector_pool",
+                                  kObjc3RuntimeSelectorPoolLogicalSection);
+      emit_canonical_pool_section(runtime_string_pool_globals_,
+                                  "@__objc3_sec_string_pool",
+                                  kObjc3RuntimeStringPoolLogicalSection);
+    }
+
     out << "@llvm.used = appending global [" << retained_globals.size()
         << " x ptr] [";
     for (std::size_t i = 0; i < retained_globals.size(); ++i) {
@@ -5451,19 +5603,6 @@ class Objc3IREmitter {
       out << "ptr " << retained_globals[i];
     }
     out << "], section \"llvm.metadata\"\n\n";
-  }
-
-  void EmitSelectorConstants(std::ostringstream &out) const {
-    for (const auto &entry : selector_globals_) {
-      const std::string &selector = entry.first;
-      const std::string &global_name = entry.second;
-      const std::size_t storage_len = selector.size() + 1;
-      out << global_name << " = private unnamed_addr constant [" << storage_len << " x i8] c\""
-          << EscapeCStringLiteral(selector) << "\\00\", align 1\n";
-    }
-    if (!selector_globals_.empty()) {
-      out << "\n";
-    }
   }
 
   std::string NewTemp(FunctionContext &ctx) const { return "%t" + std::to_string(ctx.temp_counter++); }
@@ -6078,8 +6217,8 @@ class Objc3IREmitter {
       return "0";
     }
 
-    auto selector_it = selector_globals_.find(lowered.selector);
-    if (selector_it == selector_globals_.end()) {
+    auto selector_it = selector_pool_globals_.find(lowered.selector);
+    if (selector_it == selector_pool_globals_.end()) {
       return EmitUnsupportedI32Value("missing selector global for message send selector '" + lowered.selector + "'");
     }
 
@@ -6910,7 +7049,8 @@ class Objc3IREmitter {
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;
   std::map<std::string, LoweredFunctionSignature> function_signatures_;
-  std::map<std::string, std::string> selector_globals_;
+  std::map<std::string, std::string> selector_pool_globals_;
+  std::map<std::string, std::string> runtime_string_pool_globals_;
   std::size_t vector_signature_function_count_ = 0;
   mutable bool runtime_dispatch_call_emitted_ = false;
   mutable bool fail_open_fallback_triggered_ = false;

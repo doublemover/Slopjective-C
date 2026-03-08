@@ -474,6 +474,28 @@ std::string Objc3RuntimeMetadataMemberTableEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary() {
+  std::ostringstream out;
+  // M253-C005 selector/string pool expansion anchor: lane-C now emits
+  // canonical selector and string pool sections with stable ordinal aggregates
+  // so runtime-facing payload lookup no longer depends on selector-only globals
+  // being the only pooled surface. Existing descriptor bundles remain
+  // shape-stable and keep their current inline cstring payloads in this issue.
+  out << "contract=" << kObjc3RuntimeSelectorStringPoolEmissionContractId
+      << ";selector_pool_payload_model="
+      << kObjc3RuntimeSelectorPoolEmissionPayloadModel
+      << ";string_pool_payload_model="
+      << kObjc3RuntimeStringPoolEmissionPayloadModel
+      << ";non_goals=no-runtime-registration-or-descriptor-pool-rewiring";
+  return out.str();
+}
+
+std::string Objc3RuntimeMetadataHostSectionForLogicalName(
+    const std::string &logical_section) {
+  return MapRuntimeMetadataSectionForObjectFormat(HostRuntimeMetadataObjectFormat(),
+                                                  logical_section);
+}
+
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
   std::ostringstream out;
   out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";

@@ -6130,3 +6130,33 @@ preserve:
 Method/property/ivar payload emission anchors must remain deterministic and fail
 closed before later issues add selector pooling, runtime registration, or live
 runtime consumption of the emitted member tables.
+
+## M253 selector/string pool metadata anchors (C005)
+
+Deterministic lane-C selector/string pool anchors for `M253-C005` shall
+preserve:
+
+- contract id `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_selector_string_pool_emission`,
+- selector pool payload model
+  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`,
+- string pool payload model
+  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`,
+- emitted pool aggregate symbols:
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- emitted pool entry symbols:
+  - `__objc3_sel_pool_0000`
+  - `__objc3_str_pool_0000`
+- host object sections:
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+- validation fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
+- evidence path
+  `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`.
+
+Selector/string pool anchors must remain deterministic and fail closed before
+later issues add runtime registration, mutable runtime interning, or descriptor
+family rewiring to pooled pointers.

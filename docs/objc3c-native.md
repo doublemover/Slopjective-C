@@ -1015,6 +1015,41 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C004/method_property_and_ivar_list_emission_summary.json`
 
+## Selector and string pool emission (M253-C005)
+
+- Lane-C now emits canonical selector and runtime string pool sections through
+  `Objc3RuntimeMetadataSelectorStringPoolEmissionSummary`.
+- Contract id:
+  `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`.
+- The selector pool payload model is now
+  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`.
+- The string pool payload model is now
+  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`.
+- The metadata-rich proof fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
+- The message-send proof fixture is
+  `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`.
+- The emitted IR now carries:
+  - `!objc3.objc_runtime_selector_string_pool_emission`
+  - `@__objc3_sec_selector_pool`
+  - `@__objc3_sec_string_pool`
+  - canonical pool entries such as `@__objc3_sel_pool_0000` and
+    `@__objc3_str_pool_0000`
+  - no remaining `@.objc3.sel.` legacy selector-only globals on the happy path
+- The emitted object now proves:
+  - `objc3.runtime.selector_pool` is a real object section with payload bytes
+    and relocations,
+  - `objc3.runtime.string_pool` is a real object section with payload bytes and
+    relocations,
+  - message-send lowering consumes pooled selector cstrings directly from the
+    canonical selector pool.
+- `C005` remains deliberately bounded:
+  - descriptor families are not rewired to pooled string pointers yet,
+  - no runtime registration/bootstrap,
+  - no live runtime mutation of selector/string pool tables.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

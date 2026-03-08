@@ -5005,3 +5005,33 @@ protocol, and category descriptor shapes established in `M253-C002` and
 runtime consumption/dispatch over the emitted member tables. It advances the
 method/property/ivar families from scaffolds/placeholders to real payload
 records only.
+
+## M253 selector/string pool emission (C005)
+
+Lane-C shall replace the older selector-only global scheme with canonical
+selector and runtime string pool sections while preserving the frozen class,
+protocol, category, property, and ivar descriptor payload contracts from
+`M253-C002` through `M253-C004`.
+
+`M253-C005` requires:
+
+- contract id `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`,
+- selector pool payload model
+  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`,
+- string pool payload model
+  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`,
+- emitted IR publication through
+  `; runtime_metadata_selector_string_pool_emission = ...` and
+  `!objc3.objc_runtime_selector_string_pool_emission`,
+- deterministic lexicographic canonicalization of pooled selector cstrings and
+  pooled runtime strings,
+- retained aggregate globals `@__objc3_sec_selector_pool` and
+  `@__objc3_sec_string_pool`,
+- message-send lowering sourcing selector pointers from the canonical selector
+  pool instead of the older `@.objc3.sel.*` global family,
+- llvm-direct object emission preserving `objc3.runtime.selector_pool` and
+  `objc3.runtime.string_pool` verbatim.
+
+`M253-C005` does not rewire existing descriptor bundles to pooled string
+pointers, nor does it add runtime registration/bootstrap or mutable runtime
+interning tables. It introduces canonical selector/string pool families only.

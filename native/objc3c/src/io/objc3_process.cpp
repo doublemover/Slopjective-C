@@ -286,6 +286,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // must preserve method/property/ivar payloads verbatim, including adjacent
   // owner-scoped method-table globals plus real property/ivar descriptor bytes
   // exactly as emitted in IR. The
+  // M253-C005 selector/string pool expansion anchor extends that requirement to
+  // canonical selector and string pool sections, including their stable ordinal
+  // aggregates and pooled cstring payload bytes, without collapsing back to the
+  // older selector-only global scheme.
   // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});

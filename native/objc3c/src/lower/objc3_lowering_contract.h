@@ -128,6 +128,20 @@ inline constexpr const char *kObjc3RuntimePropertyDescriptorEmissionPayloadModel
     "property-descriptor-records-with-accessor-and-binding-strings";
 inline constexpr const char *kObjc3RuntimeIvarDescriptorEmissionPayloadModel =
     "ivar-descriptor-records-with-property-binding-strings";
+// M253-C005 selector/string pool expansion anchor: runtime-adjacent selector
+// globals now expand into canonical selector and string pool families with
+// stable ordinal aggregates, while existing descriptor bundles remain shape
+// stable and keep their current inline cstring payloads.
+inline constexpr const char *kObjc3RuntimeSelectorStringPoolEmissionContractId =
+    "objc3c-runtime-selector-string-pool-emission/m253-c005-v1";
+inline constexpr const char *kObjc3RuntimeSelectorPoolEmissionPayloadModel =
+    "canonical-selector-cstring-pool-with-stable-ordinal-aggregate";
+inline constexpr const char *kObjc3RuntimeStringPoolEmissionPayloadModel =
+    "canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate";
+inline constexpr const char *kObjc3RuntimeSelectorPoolLogicalSection =
+    "objc3.runtime.selector_pool";
+inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
+    "objc3.runtime.string_pool";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -827,6 +841,9 @@ std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary();
 std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
 std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
+std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
+std::string Objc3RuntimeMetadataHostSectionForLogicalName(
+    const std::string &logical_section);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
 const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);
