@@ -8591,3 +8591,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   fail-closed A002/B003/C006/D003 metadata emission boundary summary chain over
   `M253-A002`, `M253-B003`, `M253-C006`, and
   `M253-D003` before `M253-E002` cross-lane closeout begins.
+- M253 lane-E E002 cross-lane object-emission closeout anchors explicit
+  integrated native object probes in
+  `docs/contracts/m253_cross_lane_object_emission_gate_and_closeout_e002_expectations.md`,
+  `spec/planning/compiler/m253/m253_e002_cross_lane_object_emission_gate_and_closeout_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so lane-E proves the
+  same class/category/message-send native objects satisfy `M253-A002`,
+  `M253-B003`, `M253-C006`, `M253-D003`, and `M253-E001` before `M254`
+  startup-registration work begins.

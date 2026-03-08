@@ -604,6 +604,22 @@ std::string Objc3RuntimeMetadataEmissionGateSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary() {
+  std::ostringstream out;
+  // M253-E002 cross-lane object-emission closeout anchor: lane-E extends the
+  // E001 summary chain with fresh integrated native object probes so class,
+  // category, and message-send outputs all prove the same source graph,
+  // object-format policy, binary inspection, and linker/discovery continuity
+  // before later startup registration work begins.
+  out << "contract=" << kObjc3RuntimeMetadataObjectEmissionCloseoutContractId
+      << ";evidence_model="
+      << kObjc3RuntimeMetadataObjectEmissionCloseoutEvidenceModel
+      << ";failure_model="
+      << kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel
+      << ";non_goals=no-startup-registration-or-runtime-bootstrap";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);

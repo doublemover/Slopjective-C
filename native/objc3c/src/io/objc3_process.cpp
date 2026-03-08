@@ -406,6 +406,10 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
   // linker-retention/discovery artifacts published on this path together with
   // the C006 binary-inspection corpus and the D003 merged-discovery proof.
   // Any drift here must fail closed before later cross-lane closeout runs.
+  // M253-E002 cross-lane object-emission closeout anchor: the same emitted
+  // response/discovery artifacts are now replayed on integrated native class,
+  // category, and message-send object probes, so this path must stay stable
+  // enough for later startup-registration work to trust the produced objects.
   linker_response_file_payload.clear();
   discovery_json.clear();
   error.clear();

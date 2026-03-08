@@ -6320,3 +6320,29 @@ preserve:
 
 `M253-E001` is an aggregate gate only; it adds no new metadata section family
 and no runtime registration behavior.
+
+## M253 cross-lane object-emission closeout metadata anchors (E002)
+
+Deterministic lane-E cross-lane object-emission closeout behavior for
+`M253-E002` shall preserve:
+
+- contract id
+  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`,
+- emitted LLVM metadata
+  `!objc3.objc_runtime_metadata_object_emission_closeout`,
+- evidence model
+  `e001-summary-plus-integrated-native-object-emission-probes`,
+- failure model `fail-closed-on-summary-or-integrated-probe-drift`,
+- canonical dependency evidence path
+  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`,
+- integrated case ids:
+  - `class-protocol-property-ivar-object-closeout`
+  - `category-protocol-property-object-closeout`
+  - `message-send-object-closeout`
+  - `negative-missing-interface-property-closeout`
+  - `fanin-distinct-linker-discovery-closeout`, and
+- evidence path
+  `tmp/reports/m253/M253-E002/cross_lane_object_emission_gate_and_closeout_summary.json`.
+
+`M253-E002` closes emitted-object trust for the current tranche only; it does
+not claim runtime startup registration or executable class registration.

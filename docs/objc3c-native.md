@@ -1220,6 +1220,34 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`
 
+## Cross-lane object-emission gate and closeout (M253-E002)
+
+- Lane-E now freezes integrated object-emission closeout through
+  `Objc3RuntimeMetadataObjectEmissionCloseoutSummary`.
+- Contract id:
+  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`.
+- The evidence model is
+  `e001-summary-plus-integrated-native-object-emission-probes`.
+- The failure model is `fail-closed-on-summary-or-integrated-probe-drift`.
+- The emitted IR now also carries:
+  - `; runtime_metadata_object_emission_closeout = ...`
+  - `!objc3.objc_runtime_metadata_object_emission_closeout`
+- The closeout replays the real native object-emission path over:
+  - `class-protocol-property-ivar-object-closeout`
+  - `category-protocol-property-object-closeout`
+  - `message-send-object-closeout`
+  - `negative-missing-interface-property-closeout`
+  - `fanin-distinct-linker-discovery-closeout`
+- Positive cases must keep manifest graph closure, `llvm-direct` object
+  emission, binary-inspection section inventories, and linker-response /
+  discovery artifacts aligned on the same output directory.
+- Negative cases must fail closed before object emission and preserve
+  deterministic `O3S206` diagnostics without synthesizing object-side artifacts.
+- Validation/readiness runner:
+  `scripts/run_m253_e002_lane_e_readiness.py`
+- Validation/evidence path:
+  `tmp/reports/m253/M253-E002/cross_lane_object_emission_gate_and_closeout_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

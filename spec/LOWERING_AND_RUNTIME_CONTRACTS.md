@@ -5197,3 +5197,35 @@ begins.
 - an explicit handoff that `M253-E002` is the next closeout issue.
 
 `M253-E001` does not add new object-emission behavior or runtime registration.
+
+## M253 cross-lane object-emission gate and closeout (E002)
+
+Lane-E shall close the emitted-metadata tranche by replaying one integrated
+native object-emission gate over the canonical `M253-E001` summary plus fresh
+class/category/message-send object probes before `M254` startup registration
+work begins.
+
+`M253-E002` requires:
+
+- contract id
+  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`,
+- evidence model
+  `e001-summary-plus-integrated-native-object-emission-probes`,
+- failure model `fail-closed-on-summary-or-integrated-probe-drift`,
+- emitted IR publication through
+  `; runtime_metadata_object_emission_closeout = ...` and
+  `!objc3.objc_runtime_metadata_object_emission_closeout`,
+- direct validation of the canonical upstream summaries:
+  - `M253-A002`
+  - `M253-B003`
+  - `M253-C006`
+  - `M253-D003`
+  - `M253-E001`,
+- integrated native object probes over class, category, and message-send cases
+  that keep source graph closure, object-format policy, binary-inspection
+  inventories, and linker/discovery artifacts aligned on the same outputs, and
+- one fail-closed negative compile case that preserves `O3S206` diagnostics and
+  blocks object/discovery emission.
+
+`M253-E002` is a closeout gate only; it adds no runtime startup registration,
+class registration, or new metadata section families.

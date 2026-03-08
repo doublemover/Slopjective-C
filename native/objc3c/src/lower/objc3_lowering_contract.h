@@ -223,6 +223,16 @@ inline constexpr const char *kObjc3RuntimeMetadataEmissionGateEvidenceModel =
     "a002-b003-c006-d003-summary-chain";
 inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
     "fail-closed-on-upstream-summary-drift";
+// M253-E002 cross-lane object-emission closeout anchor: lane-E now freezes one
+// integrated closeout over the E001 summary chain plus fresh native object
+// probes so later startup-registration work can trust the same emitted objects
+// on the class/category/message-send paths.
+inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutContractId =
+    "objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1";
+inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutEvidenceModel =
+    "e001-summary-plus-integrated-native-object-emission-probes";
+inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel =
+    "fail-closed-on-summary-or-integrated-probe-drift";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -928,6 +938,7 @@ std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
+std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section);
 std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(

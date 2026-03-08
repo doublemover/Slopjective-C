@@ -1787,6 +1787,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_linker_retention = !{!62}\n";
     out << "!objc3.objc_runtime_archive_static_link_discovery = !{!63}\n";
     out << "!objc3.objc_runtime_metadata_emission_gate = !{!64}\n";
+    out << "!objc3.objc_runtime_metadata_object_emission_closeout = !{!65}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2814,6 +2815,16 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeMetadataEmissionGateEvidenceModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeMetadataEmissionGateFailureModel)
+        << "\"}\n";
+    out << "!65 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMetadataObjectEmissionCloseoutContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMetadataObjectEmissionCloseoutEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4831,6 +4842,13 @@ class Objc3IREmitter {
         << ";object_format_policy_issue=M253-B003"
         << ";binary_inspection_issue=M253-C006"
         << ";archive_static_link_issue=M253-D003"
+        << "\n";
+    out << "; runtime_metadata_object_emission_closeout = "
+        << Objc3RuntimeMetadataObjectEmissionCloseoutSummary()
+        << ";dependency_gate_issue=M253-E001"
+        << ";class_object_case_issue=M253-A002"
+        << ";binary_object_case_issue=M253-C006"
+        << ";linker_fanin_issue=M253-D003"
         << "\n";
     out << "; runtime metadata section scaffold globals\n";
 
