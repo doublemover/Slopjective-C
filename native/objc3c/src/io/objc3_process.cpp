@@ -19,6 +19,13 @@ namespace {
 extern char **environ;
 #endif
 
+enum class ProducedObjectFormat : std::uint8_t {
+  kUnknown = 0,
+  kCoff = 1,
+  kElf = 2,
+  kMachO = 3,
+};
+
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
     case 0x014c:  // IMAGE_FILE_MACHINE_I386
@@ -29,6 +36,70 @@ bool IsRecognizedCoffMachine(std::uint16_t machine) {
     default:
       return false;
   }
+}
+
+bool IsMachOMagic(std::uint32_t magic) {
+  switch (magic) {
+    case 0xfeedfaceu:
+    case 0xcefaedfeu:
+    case 0xfeedfacfu:
+    case 0xcffaedfeu:
+    case 0xcafebabeu:
+    case 0xbebafecau:
+      return true;
+    default:
+      return false;
+  }
+}
+
+ProducedObjectFormat DetectProducedObjectFormat(
+    const std::filesystem::path &object_out) {
+  std::error_code file_size_error;
+  const std::uintmax_t size =
+      std::filesystem::file_size(object_out, file_size_error);
+  if (file_size_error || size < 4) {
+    return ProducedObjectFormat::kUnknown;
+  }
+
+  std::ifstream file(object_out, std::ios::binary);
+  if (!file.is_open()) {
+    return ProducedObjectFormat::kUnknown;
+  }
+
+  std::array<unsigned char, 8> header{};
+  file.read(reinterpret_cast<char *>(header.data()),
+            static_cast<std::streamsize>(header.size()));
+  if (!file.good() && !file.eof()) {
+    return ProducedObjectFormat::kUnknown;
+  }
+  if (file.gcount() < 4) {
+    return ProducedObjectFormat::kUnknown;
+  }
+
+  if (header[0] == 0x7f && header[1] == 'E' && header[2] == 'L' &&
+      header[3] == 'F') {
+    return ProducedObjectFormat::kElf;
+  }
+
+  const std::uint32_t magic =
+      static_cast<std::uint32_t>(header[0]) |
+      (static_cast<std::uint32_t>(header[1]) << 8u) |
+      (static_cast<std::uint32_t>(header[2]) << 16u) |
+      (static_cast<std::uint32_t>(header[3]) << 24u);
+  if (IsMachOMagic(magic)) {
+    return ProducedObjectFormat::kMachO;
+  }
+
+  if (file.gcount() >= 2) {
+    const std::uint16_t machine =
+        static_cast<std::uint16_t>(header[0]) |
+        (static_cast<std::uint16_t>(header[1]) << 8u);
+    if (IsRecognizedCoffMachine(machine)) {
+      return ProducedObjectFormat::kCoff;
+    }
+  }
+
+  return ProducedObjectFormat::kUnknown;
 }
 
 void NormalizeCoffTimestamp(const std::filesystem::path &object_out) {
@@ -64,6 +135,19 @@ void NormalizeCoffTimestamp(const std::filesystem::path &object_out) {
     return;
   }
   file.write(zero_timestamp, 4);
+}
+
+void NormalizeObjectDeterminism(const std::filesystem::path &object_out) {
+  switch (DetectProducedObjectFormat(object_out)) {
+    case ProducedObjectFormat::kCoff:
+      NormalizeCoffTimestamp(object_out);
+      return;
+    case ProducedObjectFormat::kElf:
+    case ProducedObjectFormat::kMachO:
+    case ProducedObjectFormat::kUnknown:
+    default:
+      return;
+  }
 }
 
 }  // namespace
@@ -145,7 +229,7 @@ int RunObjectiveCCompile(const std::filesystem::path &clang_path,
   const int compile_status = RunProcess(clang_exe, {"-x", "objective-c", "-std=gnu11", "-c", input.string(), "-o",
                                                     object_out.string(), "-fno-color-diagnostics"});
   if (compile_status == 0) {
-    NormalizeCoffTimestamp(object_out);
+    NormalizeObjectDeterminism(object_out);
   }
   return compile_status;
 }
@@ -157,7 +241,7 @@ int RunIRCompile(const std::filesystem::path &clang_path,
   const int compile_status = RunProcess(clang_exe, {"-x", "ir", "-c", ir_path.string(), "-o", object_out.string(),
                                                     "-fno-color-diagnostics"});
   if (compile_status == 0) {
-    NormalizeCoffTimestamp(object_out);
+    NormalizeObjectDeterminism(object_out);
   }
   return compile_status;
 }
@@ -183,10 +267,13 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // consumes an IR surface that already encodes one normalized metadata layout replay key.
   // The backend may not reorder, relax, or reinterpret that
   // semantic finalization boundary.
+  // M253-B003 object-format policy expansion anchor: llvm-direct object
+  // emission now normalizes post-write determinism according to the produced
+  // object format instead of assuming COFF-only behavior.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {
-    NormalizeCoffTimestamp(object_out);
+    NormalizeObjectDeterminism(object_out);
     return 0;
   }
   if (llc_status == 127) {

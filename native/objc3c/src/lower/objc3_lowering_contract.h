@@ -40,6 +40,30 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionOrderingModel =
     "llvm.used-emission-order";
 inline constexpr const char *kObjc3RuntimeMetadataObjectFormatPolicyModel =
     "object-format-neutral-until-m253-b003";
+// M253-B003 object-format policy expansion anchor: B001/B002 keep the neutral
+// model frozen for historical replay, while lowering now also carries the
+// explicit COFF/ELF/Mach-O mapping surface for emitted section spellings and
+// retention-anchor behavior.
+inline constexpr const char
+    *kObjc3RuntimeMetadataObjectFormatSurfaceContractId =
+        "objc3c-runtime-metadata-object-format-policy/m253-b003-v1";
+inline constexpr const char *kObjc3RuntimeMetadataObjectFormatCoff = "coff";
+inline constexpr const char *kObjc3RuntimeMetadataObjectFormatElf = "elf";
+inline constexpr const char *kObjc3RuntimeMetadataObjectFormatMachO = "mach-o";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionSpellingModelCoff =
+        "coff-logical-section-spellings";
+inline constexpr const char *kObjc3RuntimeMetadataSectionSpellingModelElf =
+    "elf-logical-section-spellings";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionSpellingModelMachO =
+        "mach-o-data-segment-comma-section-spellings";
+inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelCoff =
+    "llvm.used-appending-global+coff-timestamp-normalization";
+inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelElf =
+    "llvm.used-appending-global+elf-stable-sections";
+inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelMachO =
+    "llvm.used-appending-global+mach-o-data-segment-sections";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -198,7 +222,8 @@ struct Objc3RuntimeMetadataLayoutPolicyInput {
 
 struct Objc3RuntimeMetadataLayoutPolicyFamily {
   std::string kind;
-  std::string section_name;
+  std::string logical_section_name;
+  std::string emitted_section_name;
   std::string aggregate_symbol_name;
   std::size_t descriptor_count = 0;
 };
@@ -220,8 +245,14 @@ struct Objc3RuntimeMetadataLayoutPolicy {
       kObjc3RuntimeMetadataRetentionOrderingModel;
   std::string object_format_policy_model =
       kObjc3RuntimeMetadataObjectFormatPolicyModel;
+  std::string object_format_surface_contract_id =
+      kObjc3RuntimeMetadataObjectFormatSurfaceContractId;
+  std::string object_format;
+  std::string section_spelling_model;
+  std::string retention_anchor_model;
   std::string image_info_symbol;
-  std::string image_info_section;
+  std::string logical_image_info_section;
+  std::string emitted_image_info_section;
   std::string descriptor_symbol_prefix;
   std::string descriptor_linkage;
   std::string aggregate_linkage;

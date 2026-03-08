@@ -49,6 +49,65 @@ std::string VectorTypeSpelling(const std::string &base_spelling, unsigned lane_c
 
 const char *BoolToken(bool value) { return value ? "true" : "false"; }
 
+// M253-B003 object-format policy expansion anchor: lowering selects one
+// supported host object format and derives emitted section spellings from the
+// logical metadata ABI surface before IR emission begins.
+const char *HostRuntimeMetadataObjectFormat() {
+#if defined(_WIN32)
+  return kObjc3RuntimeMetadataObjectFormatCoff;
+#elif defined(__APPLE__)
+  return kObjc3RuntimeMetadataObjectFormatMachO;
+#else
+  return kObjc3RuntimeMetadataObjectFormatElf;
+#endif
+}
+
+const char *HostRuntimeMetadataSectionSpellingModel() {
+#if defined(_WIN32)
+  return kObjc3RuntimeMetadataSectionSpellingModelCoff;
+#elif defined(__APPLE__)
+  return kObjc3RuntimeMetadataSectionSpellingModelMachO;
+#else
+  return kObjc3RuntimeMetadataSectionSpellingModelElf;
+#endif
+}
+
+const char *HostRuntimeMetadataRetentionAnchorModel() {
+#if defined(_WIN32)
+  return kObjc3RuntimeMetadataRetentionAnchorModelCoff;
+#elif defined(__APPLE__)
+  return kObjc3RuntimeMetadataRetentionAnchorModelMachO;
+#else
+  return kObjc3RuntimeMetadataRetentionAnchorModelElf;
+#endif
+}
+
+bool IsSupportedRuntimeMetadataObjectFormat(const std::string &object_format) {
+  return object_format == kObjc3RuntimeMetadataObjectFormatCoff ||
+         object_format == kObjc3RuntimeMetadataObjectFormatElf ||
+         object_format == kObjc3RuntimeMetadataObjectFormatMachO;
+}
+
+std::string MapRuntimeMetadataSectionForObjectFormat(
+    const std::string &object_format, const std::string &logical_section) {
+  if (logical_section.empty()) {
+    return "";
+  }
+  if (object_format == kObjc3RuntimeMetadataObjectFormatCoff ||
+      object_format == kObjc3RuntimeMetadataObjectFormatElf) {
+    return logical_section;
+  }
+  if (object_format == kObjc3RuntimeMetadataObjectFormatMachO) {
+    constexpr const char *kLogicalPrefix = "objc3.runtime.";
+    const std::string logical_prefix = kLogicalPrefix;
+    if (logical_section.rfind(logical_prefix, 0) != 0) {
+      return "";
+    }
+    return "__DATA,__objc3_" + logical_section.substr(logical_prefix.size());
+  }
+  return "";
+}
+
 std::size_t CountRuntimeMetadataLayoutDescriptors(
     const std::array<Objc3RuntimeMetadataLayoutPolicyFamily,
                      kObjc3RuntimeMetadataLayoutPolicyFamilyCount> &families) {
@@ -128,8 +187,13 @@ bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
   policy = Objc3RuntimeMetadataLayoutPolicy{};
   policy.abi_contract_id = input.abi_contract_id;
   policy.scaffold_contract_id = input.scaffold_contract_id;
+  policy.object_format = HostRuntimeMetadataObjectFormat();
+  policy.section_spelling_model = HostRuntimeMetadataSectionSpellingModel();
+  policy.retention_anchor_model = HostRuntimeMetadataRetentionAnchorModel();
   policy.image_info_symbol = input.image_info_symbol;
-  policy.image_info_section = input.image_info_section;
+  policy.logical_image_info_section = input.image_info_section;
+  policy.emitted_image_info_section = MapRuntimeMetadataSectionForObjectFormat(
+      policy.object_format, input.image_info_section);
   policy.descriptor_symbol_prefix = input.descriptor_symbol_prefix;
   policy.descriptor_linkage = input.descriptor_linkage;
   policy.aggregate_linkage = input.aggregate_linkage;
@@ -156,9 +220,18 @@ bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
     policy.failure_reason = error;
     return false;
   }
-  if (input.image_info_symbol.empty() || input.image_info_section.empty()) {
+  if (input.image_info_symbol.empty() || input.image_info_section.empty() ||
+      policy.emitted_image_info_section.empty()) {
     error =
         "runtime metadata layout policy requires image-info symbol and section";
+    policy.failure_reason = error;
+    return false;
+  }
+  if (!IsSupportedRuntimeMetadataObjectFormat(policy.object_format) ||
+      policy.section_spelling_model.empty() ||
+      policy.retention_anchor_model.empty()) {
+    error =
+        "runtime metadata layout policy requires a supported explicit object-format surface";
     policy.failure_reason = error;
     return false;
   }
@@ -194,7 +267,9 @@ bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
     const auto &family_input = input.families[i];
     auto &family = policy.families[i];
     family.kind = kCanonicalRuntimeMetadataFamilyOrder[i];
-    family.section_name = family_input.section_name;
+    family.logical_section_name = family_input.section_name;
+    family.emitted_section_name = MapRuntimeMetadataSectionForObjectFormat(
+        policy.object_format, family_input.section_name);
     family.aggregate_symbol_name = family_input.aggregate_symbol_name;
     family.descriptor_count = family_input.descriptor_count;
 
@@ -206,7 +281,9 @@ bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
       policy.failure_reason = error;
       return false;
     }
-    if (family.section_name.empty() || family.aggregate_symbol_name.empty()) {
+    if (family.logical_section_name.empty() ||
+        family.emitted_section_name.empty() ||
+        family.aggregate_symbol_name.empty()) {
       error =
           "runtime metadata layout policy requires non-empty family section and aggregate names";
       policy.failure_reason = error;
@@ -232,7 +309,12 @@ bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
     const Objc3RuntimeMetadataLayoutPolicy &policy) {
   if (!policy.ready || !policy.fail_closed || policy.contract_id.empty() ||
       policy.abi_contract_id.empty() || policy.scaffold_contract_id.empty() ||
-      policy.image_info_symbol.empty() || policy.image_info_section.empty() ||
+      policy.object_format_surface_contract_id.empty() ||
+      !IsSupportedRuntimeMetadataObjectFormat(policy.object_format) ||
+      policy.section_spelling_model.empty() ||
+      policy.retention_anchor_model.empty() || policy.image_info_symbol.empty() ||
+      policy.logical_image_info_section.empty() ||
+      policy.emitted_image_info_section.empty() ||
       policy.descriptor_symbol_prefix.empty() ||
       policy.descriptor_linkage != "private" ||
       policy.aggregate_linkage != "internal" ||
@@ -258,7 +340,9 @@ bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
   for (std::size_t i = 0; i < kCanonicalRuntimeMetadataFamilyOrder.size(); ++i) {
     const auto &family = policy.families[i];
     if (family.kind != kCanonicalRuntimeMetadataFamilyOrder[i] ||
-        family.section_name.empty() || family.aggregate_symbol_name.empty()) {
+        family.logical_section_name.empty() ||
+        family.emitted_section_name.empty() ||
+        family.aggregate_symbol_name.empty()) {
       return false;
     }
   }
@@ -273,9 +357,14 @@ std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
   // M253-B002 normalized layout policy anchor: replay proof now serializes the
   // canonical normalized metadata layout decision rather than relying on
   // emitter-local hardcoded family ordering or relocation semantics.
+  // M253-B003 object-format policy expansion anchor: replay proof now also
+  // serializes the explicit host-format surface, including emitted section
+  // spellings and retention-anchor behavior.
   out << "contract=" << policy.contract_id
       << ";abi_contract=" << policy.abi_contract_id
       << ";scaffold_contract=" << policy.scaffold_contract_id
+      << ";object_format_contract="
+      << policy.object_format_surface_contract_id
       << ";ready=" << BoolToken(policy.ready)
       << ";fail_closed=" << BoolToken(policy.fail_closed)
       << ";family_order=" << policy.family_ordering_model
@@ -284,17 +373,25 @@ std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
       << ";comdat=" << policy.comdat_policy
       << ";visibility_spelling=" << policy.visibility_spelling_policy
       << ";retention_order=" << policy.retention_ordering_model
-      << ";object_format=" << policy.object_format_policy_model
+      << ";object_format_model=" << policy.object_format_policy_model
+      << ";object_format=" << policy.object_format
+      << ";section_spelling_model=" << policy.section_spelling_model
+      << ";retention_anchor_model=" << policy.retention_anchor_model
       << ";image_info=" << policy.image_info_symbol << "@"
-      << policy.image_info_section
+      << policy.logical_image_info_section
+      << ";image_info_emitted=" << policy.image_info_symbol << "@"
+      << policy.emitted_image_info_section
       << ";descriptor_linkage=" << policy.descriptor_linkage
       << ";aggregate_linkage=" << policy.aggregate_linkage
       << ";metadata_visibility=" << policy.metadata_visibility
       << ";retention_root=" << policy.retention_root
       << ";total_retained_globals=" << policy.total_retained_global_count;
   for (const auto &family : policy.families) {
-    out << ";family=" << family.kind << "|" << family.section_name << "|"
-        << family.aggregate_symbol_name << "|" << family.descriptor_count;
+    out << ";family=" << family.kind << "|" << family.logical_section_name
+        << "|" << family.aggregate_symbol_name << "|" << family.descriptor_count
+        << ";family_emitted=" << family.kind << "|"
+        << family.emitted_section_name << "|" << family.aggregate_symbol_name
+        << "|" << family.descriptor_count;
   }
   if (!policy.failure_reason.empty()) {
     out << ";failure=" << policy.failure_reason;

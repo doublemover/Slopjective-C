@@ -8454,3 +8454,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   policy and publishes that semantic-finalization boundary through
   `!objc3.objc_runtime_metadata_layout_policy`, `!55`, and the replay comment
   `; runtime_metadata_layout_policy = ...`.
+- M253 lane-B B003 object-format metadata policy anchors explicit
+  host-format expansion artifacts in
+  `docs/contracts/m253_coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_b003_expectations.md`,
+  `spec/planning/compiler/m253/m253_b003_coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so lowering owns one
+  explicit COFF/ELF/Mach-O surface for host-format section spellings,
+  retention-anchor behavior, and produced-object determinism without changing
+  the logical metadata ABI.

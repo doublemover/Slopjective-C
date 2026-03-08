@@ -2470,6 +2470,17 @@ class Objc3IREmitter {
                runtime_metadata_layout_policy.object_format_policy_model)
         << "\", !\""
         << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.object_format_surface_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.object_format)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.section_spelling_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.retention_anchor_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
                runtime_metadata_layout_policy.descriptor_linkage)
         << "\", !\""
         << EscapeCStringLiteral(
@@ -4256,6 +4267,9 @@ class Objc3IREmitter {
     // happens before emission. This function consumes one normalized lowering
     // policy packet and materializes exactly that plan, rather than
     // re-hardcoding family order or relocation behavior locally.
+    // M253-B003 object-format policy expansion anchor: the lowering packet now
+    // also decides the emitted section spellings for the host object format.
+    // The emitter may not reinterpret that COFF/ELF/Mach-O mapping locally.
     out << "; runtime_metadata_layout_policy = "
         << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
     out << "; runtime metadata section scaffold globals\n";
@@ -4270,7 +4284,7 @@ class Objc3IREmitter {
     const std::string image_info_symbol = "@" + layout_policy.image_info_symbol;
     out << image_info_symbol << " = " << layout_policy.aggregate_linkage
         << " global { i32, i32 } zeroinitializer, section \""
-        << layout_policy.image_info_section << "\", align 4\n";
+        << layout_policy.emitted_image_info_section << "\", align 4\n";
     emit_retained(image_info_symbol);
 
     const auto emit_descriptor_section =
@@ -4313,7 +4327,7 @@ class Objc3IREmitter {
         };
 
     for (const auto &family : layout_policy.families) {
-      emit_descriptor_section(family.kind, family.section_name,
+      emit_descriptor_section(family.kind, family.emitted_section_name,
                               family.aggregate_symbol_name,
                               family.descriptor_count);
     }

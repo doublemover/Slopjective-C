@@ -5988,6 +5988,25 @@ preserve:
 - evidence path
   `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`.
 
+## M253 object-format metadata policy anchors (B003)
+
+Deterministic lane-B object-format anchors for `M253-B003` shall preserve:
+
+- contract id `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`,
+- explicit host-format tokens `coff`, `elf`, and `mach-o`,
+- explicit section-spelling models
+  `coff-logical-section-spellings`,
+  `elf-logical-section-spellings`, and
+  `mach-o-data-segment-comma-section-spellings`,
+- explicit retention-anchor models
+  `llvm.used-appending-global+coff-timestamp-normalization`,
+  `llvm.used-appending-global+elf-stable-sections`, and
+  `llvm.used-appending-global+mach-o-data-segment-sections`,
+- logical metadata ABI section names remaining the source-of-truth surface,
+- emitted section spellings being lowering-derived host-format materialization,
+- evidence path
+  `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

@@ -4855,3 +4855,28 @@ The implementation must preserve:
 
 `M253-B002` still does not add COFF/ELF/Mach-O policy variants; that remains
 `M253-B003`.
+
+## M253 COFF, ELF, and Mach-O metadata policy surface (B003)
+
+`M253-B003` expands the normalized `M253-B002` packet into one explicit
+host-format mapping surface while preserving the existing logical metadata ABI.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`,
+- explicit host-format mapping surface for `coff`, `elf`, and `mach-o`,
+- explicit section-spelling models
+  `coff-logical-section-spellings`,
+  `elf-logical-section-spellings`, and
+  `mach-o-data-segment-comma-section-spellings`,
+- explicit retention-anchor models
+  `llvm.used-appending-global+coff-timestamp-normalization`,
+  `llvm.used-appending-global+elf-stable-sections`, and
+  `llvm.used-appending-global+mach-o-data-segment-sections`,
+- layout-policy fields that carry logical and emitted section names,
+- emitter consumption of emitted section spellings rather than logical section
+  names directly,
+- process-level produced-object detection before post-write determinism.
+
+`M253-B003` does not add new metadata families, runtime registration, or
+bootstrap. It only expands the lowering-side emitted-format surface.

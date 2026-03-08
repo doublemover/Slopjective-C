@@ -836,6 +836,35 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`
 
+## COFF, ELF, and Mach-O metadata policy surface (M253-B003)
+
+- Lane-B now preserves the normalized `M253-B002` packet while expanding it
+  into one explicit host-format mapping surface for COFF, ELF, and Mach-O.
+- Contract id:
+  `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`.
+- The frontend ABI remains logical and format-neutral; lowering now owns:
+  - object-format token `coff`, `elf`, or `mach-o`,
+  - section-spelling model
+    `coff-logical-section-spellings`,
+    `elf-logical-section-spellings`, or
+    `mach-o-data-segment-comma-section-spellings`,
+  - retention-anchor model
+    `llvm.used-appending-global+coff-timestamp-normalization`,
+    `llvm.used-appending-global+elf-stable-sections`, or
+    `llvm.used-appending-global+mach-o-data-segment-sections`,
+  - emitted section spellings for image-info and descriptor families.
+- `lower/objc3_lowering_contract.cpp` now maps logical metadata sections into
+  host-format emitted section names fail-closed.
+- `ir/objc3_ir_emitter.cpp` now emits image-info and family globals from the
+  policy-owned emitted section names instead of reusing logical names directly.
+- `io/objc3_process.cpp` now detects produced object-file format before
+  applying post-write determinism, so COFF timestamp normalization is explicit
+  rather than assumed for all object files.
+- Readiness command:
+  `check:objc3c:m253-b003-lane-b-readiness`
+- Validation/evidence path:
+  `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
