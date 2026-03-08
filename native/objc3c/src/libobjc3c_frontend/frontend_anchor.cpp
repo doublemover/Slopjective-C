@@ -687,6 +687,24 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                   manifest_inputs.translation_unit_identity_model =
                       registration_manifest_summary
                           .translation_unit_identity_model;
+                  manifest_inputs.launch_integration_contract_id =
+                      registration_manifest_summary
+                          .launch_integration_contract_id;
+                  manifest_inputs.runtime_library_resolution_model =
+                      registration_manifest_summary
+                          .runtime_library_resolution_model;
+                  manifest_inputs.driver_linker_flag_consumption_model =
+                      registration_manifest_summary
+                          .driver_linker_flag_consumption_model;
+                  manifest_inputs.compile_wrapper_command_surface =
+                      registration_manifest_summary
+                          .compile_wrapper_command_surface;
+                  manifest_inputs.compile_proof_command_surface =
+                      registration_manifest_summary
+                          .compile_proof_command_surface;
+                  manifest_inputs.execution_smoke_command_surface =
+                      registration_manifest_summary
+                          .execution_smoke_command_surface;
                   manifest_inputs.class_descriptor_count =
                       registration_manifest_summary.class_descriptor_count;
                   manifest_inputs.protocol_descriptor_count =

@@ -614,6 +614,12 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.constructor_priority_policy.empty() ||
       inputs.registration_entrypoint_symbol.empty() ||
       inputs.translation_unit_identity_model.empty() ||
+      inputs.launch_integration_contract_id.empty() ||
+      inputs.runtime_library_resolution_model.empty() ||
+      inputs.driver_linker_flag_consumption_model.empty() ||
+      inputs.compile_wrapper_command_surface.empty() ||
+      inputs.compile_proof_command_surface.empty() ||
+      inputs.execution_smoke_command_surface.empty() ||
       inputs.total_descriptor_count !=
           inputs.class_descriptor_count + inputs.protocol_descriptor_count +
               inputs.category_descriptor_count +
@@ -719,11 +725,17 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // runtime-owned bootstrap header/archive/entrypoint/reset surface so later
   // registrar/image-walk work consumes one canonical API contract instead of
   // re-deriving launch-path behavior from scattered runtime details.
+  // M254-D004 launch-integration anchor: compile, proof, and execution-smoke
+  // command surfaces must all consume this emitted registration manifest as the
+  // authoritative runtime launch contract instead of guessing archive paths or
+  // linker flags from ad hoc fallback heuristics.
 
   std::ostringstream out;
   out << "{\n"
       << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
       << "\",\n"
+      << "  \"launch_integration_contract_id\": \""
+      << EscapeJsonString(inputs.launch_integration_contract_id) << "\",\n"
       << "  \"translation_unit_registration_contract_id\": \""
       << EscapeJsonString(inputs.translation_unit_registration_contract_id)
       << "\",\n"
@@ -772,6 +784,19 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.constructor_priority_policy) << "\",\n"
       << "  \"translation_unit_identity_model\": \""
       << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
+      << "  \"runtime_library_resolution_model\": \""
+      << EscapeJsonString(inputs.runtime_library_resolution_model) << "\",\n"
+      << "  \"driver_linker_flag_consumption_model\": \""
+      << EscapeJsonString(inputs.driver_linker_flag_consumption_model)
+      << "\",\n"
+      << "  \"compile_wrapper_command_surface\": \""
+      << EscapeJsonString(inputs.compile_wrapper_command_surface)
+      << "\",\n"
+      << "  \"compile_proof_command_surface\": \""
+      << EscapeJsonString(inputs.compile_proof_command_surface) << "\",\n"
+      << "  \"execution_smoke_command_surface\": \""
+      << EscapeJsonString(inputs.execution_smoke_command_surface)
+      << "\",\n"
       << "  \"class_descriptor_count\": " << inputs.class_descriptor_count
       << ",\n"
       << "  \"protocol_descriptor_count\": "
@@ -961,6 +986,7 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(linker_retention_artifacts.driver_linker_flag)
       << "\"\n"
       << "  ],\n"
+      << "  \"launch_integration_ready\": true,\n"
       << "  \"ready_for_lowering_init_stub_emission\": true,\n"
       << "  \"ready_for_bootstrap_lowering_materialization\": true,\n"
       << "  \"ready_for_runtime_bootstrap_enforcement\": true\n"

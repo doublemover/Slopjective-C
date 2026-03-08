@@ -6,6 +6,12 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $defaultOutDir = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native"
+$runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
+if (!(Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
+  Write-Error "runtime launch contract helper missing at $runtimeLaunchContractScript"
+  exit 2
+}
+. $runtimeLaunchContractScript
 
 function Show-UsageAndExit {
   Write-Error "usage: objc3c_native_compile.ps1 <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] [--use-cache]"
@@ -22,6 +28,7 @@ function Parse-WrapperArguments {
   $useCache = $false
   $compileArgs = New-Object System.Collections.Generic.List[string]
   $outDir = $null
+  $emitPrefix = "module"
   $wrapperFlagCounts = @{
     "--use-cache" = 0
     "--out-dir" = 0
@@ -96,6 +103,34 @@ function Parse-WrapperArguments {
       continue
     }
 
+    if ($token.StartsWith("--emit-prefix=", [System.StringComparison]::Ordinal)) {
+      $value = $token.Substring("--emit-prefix=".Length)
+      if ([string]::IsNullOrWhiteSpace($value)) {
+        Write-Error "empty value for --emit-prefix"
+        exit 2
+      }
+      $emitPrefix = $value
+      $compileArgs.Add($token)
+      continue
+    }
+
+    if ($token -eq "--emit-prefix") {
+      if (($i + 1) -ge $RawArgs.Count) {
+        Write-Error "missing value for --emit-prefix"
+        exit 2
+      }
+      $i++
+      $value = $RawArgs[$i]
+      if ([string]::IsNullOrWhiteSpace($value)) {
+        Write-Error "empty value for --emit-prefix"
+        exit 2
+      }
+      $emitPrefix = $value
+      $compileArgs.Add("--emit-prefix")
+      $compileArgs.Add($value)
+      continue
+    }
+
     $compileArgs.Add($token)
   }
 
@@ -113,6 +148,7 @@ function Parse-WrapperArguments {
     use_cache = $useCache
     compile_args = $compileArgs.ToArray()
     out_dir = $outDir
+    emit_prefix = $emitPrefix
   }
 }
 
@@ -666,6 +702,121 @@ function Resolve-FrontendIntegrationCloseoutPath {
   }
 
   return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend integration closeout"
+}
+
+function Get-NativeCompilerBuildInputPaths {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  return @(
+    (Join-Path $RepoRoot "native/objc3c/src/main.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/pipeline/objc3_frontend_types.h")
+    (Join-Path $RepoRoot "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/io/objc3_process.h")
+    (Join-Path $RepoRoot "native/objc3c/src/io/objc3_process.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/driver/objc3_objc3_path.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/runtime/objc3_runtime.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h")
+    (Join-Path $RepoRoot "scripts/build_objc3c_native.ps1")
+  )
+}
+
+function Test-AnyPathNewerThanTarget {
+  param(
+    [Parameter(Mandatory = $true)][string]$TargetPath,
+    [Parameter(Mandatory = $true)][string[]]$InputPaths
+  )
+
+  if (!(Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
+    return $true
+  }
+
+  $targetTimestamp = (Get-Item -LiteralPath $TargetPath).LastWriteTimeUtc
+  foreach ($inputPath in $InputPaths) {
+    if (!(Test-Path -LiteralPath $inputPath -PathType Leaf)) {
+      continue
+    }
+
+    $inputTimestamp = (Get-Item -LiteralPath $inputPath).LastWriteTimeUtc
+    if ($inputTimestamp -gt $targetTimestamp) {
+      return $true
+    }
+  }
+
+  return $false
+}
+
+function Test-NativeCompilerBuildArtifactsReady {
+  param(
+    [Parameter(Mandatory = $true)][string]$CompilerRepoRoot,
+    [object]$ExistingBuildResult
+  )
+
+  $exe = Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-native.exe"
+  $runtimeLibrary = Join-Path $CompilerRepoRoot "artifacts/lib/objc3_runtime.lib"
+  if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+    return $false
+  }
+  if (!(Test-Path -LiteralPath $runtimeLibrary -PathType Leaf)) {
+    return $false
+  }
+
+  $requiredArtifacts = @(
+    (Resolve-FrontendScaffoldPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendInvocationLockPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendEdgeCompatibilityPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendEdgeRobustnessPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendConformanceMatrixPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendConformanceCorpusPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+    (Resolve-FrontendIntegrationCloseoutPath -RepoRoot $CompilerRepoRoot -BuildResult $ExistingBuildResult)
+  )
+
+  foreach ($artifactPath in $requiredArtifacts) {
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      return $false
+    }
+  }
+
+  $buildInputPaths = Get-NativeCompilerBuildInputPaths -RepoRoot $CompilerRepoRoot
+  if (Test-AnyPathNewerThanTarget -TargetPath $exe -InputPaths $buildInputPaths) {
+    return $false
+  }
+  if (Test-AnyPathNewerThanTarget -TargetPath $runtimeLibrary -InputPaths $buildInputPaths) {
+    return $false
+  }
+
+  return $true
+}
+
+function Ensure-NativeCompilerAvailable {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [object]$BuildResult
+  )
+
+  if (Test-NativeCompilerBuildArtifactsReady -CompilerRepoRoot $RepoRoot -ExistingBuildResult $BuildResult) {
+    return $BuildResult
+  }
+
+  $nextBuildResult = Invoke-BuildNativeCompiler -RepoRoot $RepoRoot
+  foreach ($lineText in @($nextBuildResult.build_output_lines)) {
+    Write-Host $lineText
+  }
+  $buildExit = [int]$nextBuildResult.exit_code
+  if ($buildExit -ne 0) {
+    exit $buildExit
+  }
+
+  $exe = Join-Path $RepoRoot "artifacts/bin/objc3c-native.exe"
+  if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+    Write-Error "native compiler executable missing at $exe"
+    exit 2
+  }
+
+  return $nextBuildResult
 }
 
 function Assert-FrontendModuleScaffold {
@@ -2131,87 +2282,7 @@ function Assert-FrontendIntegrationCloseout {
 $parsed = Parse-WrapperArguments -RawArgs $args
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $buildResult = $null
-
-if (-not $parsed.use_cache) {
-  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
-  foreach ($lineText in @($buildResult.build_output_lines)) {
-    Write-Output $lineText
-  }
-  $buildExit = [int]$buildResult.exit_code
-  if ($buildExit -ne 0) { exit $buildExit }
-
-  if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-    Write-Error "native compiler executable missing at $exe"
-    exit 2
-  }
-
-  Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
-  Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
-  $coreFeatureGuard = Assert-FrontendCoreFeatureExpansion -RepoRoot $repoRoot -BuildResult $buildResult -ParsedArgs $parsed
-  $edgeCompatGuard = Assert-FrontendEdgeCompatibility `
-    -RepoRoot $repoRoot `
-    -BuildResult $buildResult `
-    -ParsedArgs $parsed `
-    -CoreFeatureGuard $coreFeatureGuard
-  Assert-FrontendEdgeRobustness -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
-  Assert-FrontendDiagnosticsHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
-  Assert-FrontendRecoveryDeterminismHardening -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
-  $effectiveCompileArgs = @($parsed.compile_args)
-  if ($null -ne $edgeCompatGuard -and $null -ne $edgeCompatGuard.normalized_compile_args) {
-    $effectiveCompileArgs = @($edgeCompatGuard.normalized_compile_args)
-  }
-  $matrixGuard = Assert-FrontendConformanceMatrix `
-    -RepoRoot $repoRoot `
-    -BuildResult $buildResult `
-    -ParsedArgs $parsed `
-    -EffectiveCompileArgs $effectiveCompileArgs
-  Assert-FrontendConformanceCorpus `
-    -RepoRoot $repoRoot `
-    -BuildResult $buildResult `
-    -InvocationProfileKey ([string]$matrixGuard.profile_key) | Out-Null
-  Assert-FrontendIntegrationCloseout -RepoRoot $repoRoot -BuildResult $buildResult | Out-Null
-  $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $parsed.compile_args
-  exit $compileExit
-}
-
-$needsBuild = -not (Test-Path -LiteralPath $exe -PathType Leaf)
-if (-not $needsBuild) {
-  $requiredArtifacts = @(
-    Resolve-FrontendScaffoldPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendInvocationLockPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendCoreFeatureExpansionPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendEdgeCompatibilityPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendEdgeRobustnessPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendDiagnosticsHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendRecoveryDeterminismHardeningPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendConformanceMatrixPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendConformanceCorpusPath -RepoRoot $repoRoot -BuildResult $buildResult,
-    Resolve-FrontendIntegrationCloseoutPath -RepoRoot $repoRoot -BuildResult $buildResult
-  )
-  foreach ($artifactPath in $requiredArtifacts) {
-    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
-      $needsBuild = $true
-      break
-    }
-  }
-}
-
-if ($needsBuild) {
-  $buildResult = Invoke-BuildNativeCompiler -RepoRoot $repoRoot
-  foreach ($lineText in @($buildResult.build_output_lines)) {
-    Write-Output $lineText
-  }
-  $buildExit = [int]$buildResult.exit_code
-  if ($buildExit -ne 0) {
-    Write-Output "cache_hit=false"
-    exit $buildExit
-  }
-}
-
-if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-  Write-Error "native compiler executable missing at $exe"
-  exit 2
-}
+$buildResult = Ensure-NativeCompilerAvailable -RepoRoot $repoRoot -BuildResult $buildResult
 
 Assert-FrontendModuleScaffold -RepoRoot $repoRoot -BuildResult $buildResult
 Assert-FrontendInvocationLock -RepoRoot $repoRoot -BuildResult $buildResult
@@ -2257,7 +2328,7 @@ $cacheKey = Get-CacheKey `
   -CompilerSourcePath $compilerSourcePath `
   -WrapperScriptPath $PSCommandPath
 
-if ($null -ne $cacheKey) {
+if ($parsed.use_cache -and $null -ne $cacheKey) {
   $entryDir = Join-Path $cacheRoot $cacheKey
   $filesDir = Join-Path $entryDir "files"
   $exitPath = Join-Path $entryDir "exit_code.txt"
@@ -2272,6 +2343,7 @@ if ($null -ne $cacheKey) {
     -CacheKey $cacheKey `
     -ExpectedEntryContractId $cacheEntryContractId
   if ($cacheRestore.restored) {
+    Assert-Objc3cRuntimeLaunchContract -CompileDir $parsed.out_dir -RepoRoot $repoRoot -EmitPrefix $parsed.emit_prefix
     Write-Output "cache_hit=true"
     exit ([int]$cacheRestore.exit_code)
   }
@@ -2279,7 +2351,11 @@ if ($null -ne $cacheKey) {
 
 $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileArgs
 
-if ($null -ne $cacheKey) {
+if ($compileExit -eq 0) {
+  Assert-Objc3cRuntimeLaunchContract -CompileDir $parsed.out_dir -RepoRoot $repoRoot -EmitPrefix $parsed.emit_prefix
+}
+
+if ($parsed.use_cache -and $null -ne $cacheKey) {
   try {
     New-Item -ItemType Directory -Force -Path $cacheRoot | Out-Null
     $stagingDir = Join-Path $cacheRoot ("_stage_" + [Guid]::NewGuid().ToString("N"))

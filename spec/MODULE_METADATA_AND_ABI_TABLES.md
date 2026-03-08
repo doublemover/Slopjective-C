@@ -6548,3 +6548,17 @@ bootstrap reset/replay handoff fields:
 - `bootstrap_reset_replay_order_model`
 - `bootstrap_reset_image_local_init_state_reset_model`
 - `bootstrap_reset_bootstrap_catalog_retention_model`
+
+## M254 launch integration metadata anchors (D004)
+
+`module.runtime-registration-manifest.json` and the flattened main manifest now
+carry the operator launch-contract fields consumed by compile, proof, and
+smoke:
+
+- `launch_integration_contract_id`
+- `runtime_library_resolution_model`
+- `driver_linker_flag_consumption_model`
+- `compile_wrapper_command_surface`
+- `compile_proof_command_surface`
+- `execution_smoke_command_surface`
+- `launch_integration_ready`

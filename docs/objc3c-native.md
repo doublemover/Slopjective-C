@@ -16634,3 +16634,26 @@ private same-process reset/replay hooks to the runtime bootstrap boundary:
   `replay-re-registers-retained-images-in-original-registration-order`
 - bootstrap catalog retention model
   `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
+
+## Driver, link, and runtime launch integration (M254-D004)
+
+`M254-D004` hardens the operator surfaces around that bootstrap path so the
+native compile wrapper, compile-proof script, and execution-smoke script all
+consume the same emitted runtime launch contract:
+
+- contract id `objc3c-runtime-launch-integration/m254-d004-v1`
+- emitted authority remains `module.runtime-registration-manifest.json`
+- runtime archive resolution model
+  `registration-manifest-runtime-archive-path-is-authoritative`
+- linker-flag consumption model
+  `registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands`
+- canonical command surfaces:
+  - `scripts/objc3c_native_compile.ps1`
+  - `scripts/run_objc3c_native_compile_proof.ps1`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+- emitted manifest fields:
+  - `launch_integration_contract_id`
+  - `compile_wrapper_command_surface`
+  - `compile_proof_command_surface`
+  - `execution_smoke_command_surface`
+  - `launch_integration_ready`

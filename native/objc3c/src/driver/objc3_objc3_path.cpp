@@ -184,6 +184,18 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.registration_entrypoint_symbol;
           manifest_inputs.translation_unit_identity_model =
               registration_manifest_summary.translation_unit_identity_model;
+          manifest_inputs.launch_integration_contract_id =
+              registration_manifest_summary.launch_integration_contract_id;
+          manifest_inputs.runtime_library_resolution_model =
+              registration_manifest_summary.runtime_library_resolution_model;
+          manifest_inputs.driver_linker_flag_consumption_model =
+              registration_manifest_summary.driver_linker_flag_consumption_model;
+          manifest_inputs.compile_wrapper_command_surface =
+              registration_manifest_summary.compile_wrapper_command_surface;
+          manifest_inputs.compile_proof_command_surface =
+              registration_manifest_summary.compile_proof_command_surface;
+          manifest_inputs.execution_smoke_command_surface =
+              registration_manifest_summary.execution_smoke_command_surface;
           manifest_inputs.class_descriptor_count =
               registration_manifest_summary.class_descriptor_count;
           manifest_inputs.protocol_descriptor_count =
@@ -360,6 +372,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // M254-B002 bootstrap-semantics anchor: the manifest now also
             // carries the live runtime duplicate/order/failure contract and
             // status-code model consumed by the runtime library probe.
+            // M254-D004 launch-integration anchor: compile/proof/smoke command
+            // surfaces consume this emitted registration manifest directly for
+            // runtime archive resolution and launch/link boundary validation.
             WriteRuntimeRegistrationManifestArtifact(
                 cli_options.out_dir,
                 cli_options.emit_prefix,

@@ -175,3 +175,14 @@ same-process reset/replay coverage:
 - the private reset/replay snapshot hook
   `objc3_runtime_copy_reset_replay_state_for_testing` proves reset/replay
   generation counts and cleared-init-state counts
+
+`M254-D004` then makes the operator launch surfaces consume the same emitted
+runtime launch contract:
+
+- compile wrapper `scripts/objc3c_native_compile.ps1`
+- compile proof `scripts/run_objc3c_native_compile_proof.ps1`
+- execution smoke `scripts/check_objc3c_native_execution_smoke.ps1`
+- authoritative manifest `module.runtime-registration-manifest.json`
+- contract id `objc3c-runtime-launch-integration/m254-d004-v1`
+- smoke/proof link commands consume emitted `driver_linker_flags` from that
+  manifest rather than heuristic runtime-library fallback logic

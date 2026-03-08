@@ -14,11 +14,12 @@ $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
+$compileWrapper = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
+$runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
 $defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
 $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
 $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
-$buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $configuredClangPath = $env:OBJC3C_NATIVE_EXECUTION_CLANG_PATH
 $clangCommand = if ([string]::IsNullOrWhiteSpace($configuredClangPath)) { "clang" } else { $configuredClangPath }
 $configuredLlcPath = $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH
@@ -42,6 +43,14 @@ if (-not [string]::IsNullOrWhiteSpace($llcCommand)) {
     }
   }
 }
+
+if (!(Test-Path -LiteralPath $compileWrapper -PathType Leaf)) {
+  throw "execution smoke FAIL: compile wrapper missing at $compileWrapper"
+}
+if (!(Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
+  throw "execution smoke FAIL: runtime launch contract helper missing at $runtimeLaunchContractScript"
+}
+. $runtimeLaunchContractScript
 
 function Get-RepoRelativePath {
   param(
@@ -325,54 +334,18 @@ function Resolve-NativeObjectPath {
   throw "execution smoke FAIL: missing native object artifact (.obj/.o) for $fixtureRel in $CompileDir"
 }
 
-function Resolve-RuntimeLibraryForLink {
+function Get-RuntimeLaunchLinkContract {
   param(
     [Parameter(Mandatory = $true)][string]$CompileDir,
     [Parameter(Mandatory = $true)][string]$RepoRoot,
-    [Parameter(Mandatory = $true)][string]$DefaultRuntimeLibrary
+    [string]$EmitPrefix = "module"
   )
 
-  $manifestPath = Join-Path $CompileDir "module.manifest.json"
-  $runtimeLibraryPath = $DefaultRuntimeLibrary
-  $runtimeLibrarySource = "default"
-  if (Test-Path -LiteralPath $manifestPath -PathType Leaf) {
-    $manifest = $null
-    try {
-      $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
-    }
-    catch {
-      throw "execution smoke FAIL: invalid manifest json in $manifestPath"
-    }
-
-    $archiveRelativePath = ""
-    if ($manifest.PSObject.Properties.Name -contains "runtime_support_library_link_wiring_archive_relative_path") {
-      $archiveRelativePath = "$($manifest.runtime_support_library_link_wiring_archive_relative_path)".Trim()
-      if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
-        $runtimeLibrarySource = "manifest.runtime_support_library_link_wiring_archive_relative_path"
-      }
-    }
-    if ([string]::IsNullOrWhiteSpace($archiveRelativePath) -and $manifest.PSObject.Properties.Name -contains "runtime_support_library_core_feature_archive_relative_path") {
-      $archiveRelativePath = "$($manifest.runtime_support_library_core_feature_archive_relative_path)".Trim()
-      if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
-        $runtimeLibrarySource = "manifest.runtime_support_library_core_feature_archive_relative_path"
-      }
-    }
-
-    if (-not [string]::IsNullOrWhiteSpace($archiveRelativePath)) {
-      $normalizedRelativePath = $archiveRelativePath.Replace('/', '\')
-      $runtimeLibraryPath = Join-Path $RepoRoot $normalizedRelativePath
-    }
-  }
-
-  if (!(Test-Path -LiteralPath $runtimeLibraryPath -PathType Leaf)) {
-    throw "execution smoke FAIL: runtime library missing at $runtimeLibraryPath"
-  }
-
-  return [pscustomobject]@{
-    path = $runtimeLibraryPath
-    relative_path = Get-RepoRelativePath -Path $runtimeLibraryPath -Root $RepoRoot
-    source = $runtimeLibrarySource
-  }
+  return Get-Objc3cRuntimeLaunchContract `
+    -CompileDir $CompileDir `
+    -RepoRoot $RepoRoot `
+    -EmitPrefix $EmitPrefix `
+    -DefaultRuntimeLibraryRelativePath "artifacts/lib/objc3_runtime.lib"
 }
 
 function Get-CanonicalLinkDiagnosticsText {
@@ -453,17 +426,6 @@ function Assert-RuntimeDispatchParityFromLl {
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
-  if (-not $nativeExeExplicit -and !(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
-    & $buildScript
-    if ($LASTEXITCODE -ne 0) {
-      throw "execution smoke FAIL: native compiler build failed with exit $LASTEXITCODE"
-    }
-  }
-
-  if (!(Test-Path -LiteralPath $nativeExe -PathType Leaf)) {
-    throw "execution smoke FAIL: native compiler executable missing at $nativeExe"
-  }
-
   $clangCheckExit = Invoke-LoggedCommand -Command $clangCommand -Arguments @("--version") -LogPath (Join-Path $runDir "clang-version.log")
   if ($clangCheckExit -ne 0) {
     throw "execution smoke FAIL: clang command is unavailable: $clangCommand"
@@ -493,7 +455,7 @@ try {
     if ($expectation.compile_args.Count -gt 0) {
       $nativeArgs += @($expectation.compile_args)
     }
-    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments $nativeArgs -LogPath $compileLog
+    $compileExit = Invoke-LoggedCommand -Command $compileWrapper -Arguments $nativeArgs -LogPath $compileLog
     if ($compileExit -ne 0) {
       throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)"
     }
@@ -509,12 +471,13 @@ try {
 
     $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
 
-    $linkArgs = @($objPath)
-    $runtimeLibrary = $null
-    if ($expectation.requires_runtime_shim) {
-      $runtimeLibrary = Resolve-RuntimeLibraryForLink -CompileDir $compileDir -RepoRoot $repoRoot -DefaultRuntimeLibrary $defaultRuntimeLibrary
-      $linkArgs += $runtimeLibrary.path
+    $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $repoRoot -EmitPrefix "module"
+    $runtimeLibrary = [pscustomobject]@{
+      path = $launchContract.runtime_library_path
+      relative_path = $launchContract.runtime_library_relative_path
+      source = $launchContract.runtime_library_source
     }
+    $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags)
     $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
     $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
     if ($linkExit -ne 0) {
@@ -541,8 +504,11 @@ try {
       requires_runtime_shim = $expectation.requires_runtime_shim
       requires_runtime_shim_explicit = $expectation.requires_runtime_shim_explicit
       runtime_dispatch_symbol = $expectation.runtime_dispatch_symbol
-      runtime_library = if ($null -ne $runtimeLibrary) { $runtimeLibrary.relative_path } else { "" }
-      runtime_library_source = if ($null -ne $runtimeLibrary) { $runtimeLibrary.source } else { "" }
+      launch_integration_contract_id = $launchContract.launch_integration_contract_id
+      registration_manifest = $launchContract.registration_manifest_relative_path
+      runtime_library = $runtimeLibrary.relative_path
+      runtime_library_source = $runtimeLibrary.source
+      driver_linker_flags = @($launchContract.driver_linker_flags)
       compile_exit = $compileExit
       link_exit = $linkExit
       run_exit = $runExit
@@ -569,7 +535,7 @@ try {
     $runLog = Join-Path $caseDir "run.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
+    $compileExit = Invoke-LoggedCommand -Command $compileWrapper -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
     $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
     $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
       Get-Content -LiteralPath $compileDiagPath -Raw
@@ -610,6 +576,13 @@ try {
       throw "execution smoke FAIL: compile failed for negative fixture $fixtureRel (exit=$compileExit)"
     }
 
+    $launchContract = Get-RuntimeLaunchLinkContract -CompileDir $compileDir -RepoRoot $repoRoot -EmitPrefix "module"
+    $runtimeLibrary = [pscustomobject]@{
+      path = $launchContract.runtime_library_path
+      relative_path = $launchContract.runtime_library_relative_path
+      source = $launchContract.runtime_library_source
+    }
+
     if ($spec.requires_runtime_shim_explicit) {
       $llPath = Join-Path $compileDir "module.ll"
       Assert-RuntimeDispatchParityFromLl `
@@ -644,6 +617,11 @@ try {
         stage = $spec.stage
         requires_runtime_shim = $spec.requires_runtime_shim
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
+        launch_integration_contract_id = $launchContract.launch_integration_contract_id
+        registration_manifest = $launchContract.registration_manifest_relative_path
+        runtime_library = $runtimeLibrary.relative_path
+        runtime_library_source = $runtimeLibrary.source
+        driver_linker_flags = @($launchContract.driver_linker_flags)
         compile_exit = $compileExit
         link_exit = $linkExit
         run_exit = -1
@@ -658,11 +636,7 @@ try {
     }
 
     if ($spec.stage -eq "run") {
-      $runtimeLibrary = $null
-      if ($spec.requires_runtime_shim) {
-        $runtimeLibrary = Resolve-RuntimeLibraryForLink -CompileDir $compileDir -RepoRoot $repoRoot -DefaultRuntimeLibrary $defaultRuntimeLibrary
-        $linkArgs = @($objPath, $runtimeLibrary.path, "-o", $exePath, "-fno-color-diagnostics")
-      }
+      $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags) + @("-o", $exePath, "-fno-color-diagnostics")
       $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
       if ($linkExit -ne 0) {
         throw "execution smoke FAIL: expected successful link for run-stage negative fixture $fixtureRel (exit=$linkExit)"
@@ -685,8 +659,11 @@ try {
         stage = $spec.stage
         requires_runtime_shim = $spec.requires_runtime_shim
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
-        runtime_library = if ($null -ne $runtimeLibrary) { $runtimeLibrary.relative_path } else { "" }
-        runtime_library_source = if ($null -ne $runtimeLibrary) { $runtimeLibrary.source } else { "" }
+        launch_integration_contract_id = $launchContract.launch_integration_contract_id
+        registration_manifest = $launchContract.registration_manifest_relative_path
+        runtime_library = $runtimeLibrary.relative_path
+        runtime_library_source = $runtimeLibrary.source
+        driver_linker_flags = @($launchContract.driver_linker_flags)
         compile_exit = $compileExit
         link_exit = $linkExit
         run_exit = $runExit
@@ -707,6 +684,8 @@ try {
   $failedCount = $total - $passedCount
   $summary = [ordered]@{
     run_dir = Get-RepoRelativePath -Path $runDir -Root $repoRoot
+    compile_wrapper = Get-RepoRelativePath -Path $compileWrapper -Root $repoRoot
+    runtime_launch_contract_script = Get-RepoRelativePath -Path $runtimeLaunchContractScript -Root $repoRoot
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_library = if (Test-Path -LiteralPath $defaultRuntimeLibrary -PathType Leaf) { Get-RepoRelativePath -Path $defaultRuntimeLibrary -Root $repoRoot } else { "" }
     runtime_shim = if (Test-Path -LiteralPath $runtimeShimSource -PathType Leaf) { Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot } else { "" }

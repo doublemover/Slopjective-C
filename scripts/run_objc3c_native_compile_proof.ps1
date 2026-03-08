@@ -6,8 +6,16 @@ $proofRoot = Join-Path $repoRoot "tmp/reports/objc3c-native/compile-proof"
 $proofDir = Join-Path $proofRoot (Get-Date -Format "yyyyMMdd_HHmmss_fff")
 $run1 = Join-Path $proofDir "run1"
 $run2 = Join-Path $proofDir "run2"
-$buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
-$exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$compileWrapper = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
+$runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
+
+if (-not (Test-Path -LiteralPath $compileWrapper -PathType Leaf)) {
+  throw "missing compile wrapper: $compileWrapper"
+}
+if (-not (Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
+  throw "missing runtime launch contract helper: $runtimeLaunchContractScript"
+}
+. $runtimeLaunchContractScript
 
 function Get-RepoRelativePathCompat {
   param(
@@ -41,36 +49,40 @@ function Get-RepoRelativePathCompat {
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
   throw "missing source fixture: $source"
 }
-if (-not (Test-Path -LiteralPath $buildScript -PathType Leaf)) {
-  throw "missing build script: $buildScript"
-}
 
 New-Item -ItemType Directory -Force -Path $run1 | Out-Null
 New-Item -ItemType Directory -Force -Path $run2 | Out-Null
 
-& $buildScript
+& $compileWrapper $source --out-dir $run1 --emit-prefix module
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
-if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
-  throw "missing native executable after build: $exe"
-}
-
-& $exe $source --out-dir $run1 --emit-prefix module
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $exe $source --out-dir $run2 --emit-prefix module
+& $compileWrapper $source --out-dir $run2 --emit-prefix module
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $m1 = Get-Content -LiteralPath (Join-Path $run1 "module.manifest.json") -Raw
 $m2 = Get-Content -LiteralPath (Join-Path $run2 "module.manifest.json") -Raw
+$r1 = Get-Content -LiteralPath (Join-Path $run1 "module.runtime-registration-manifest.json") -Raw
+$r2 = Get-Content -LiteralPath (Join-Path $run2 "module.runtime-registration-manifest.json") -Raw
 $d1 = Get-Content -LiteralPath (Join-Path $run1 "module.diagnostics.txt") -Raw
 $d2 = Get-Content -LiteralPath (Join-Path $run2 "module.diagnostics.txt") -Raw
 $ll1 = Get-Content -LiteralPath (Join-Path $run1 "module.ll") -Raw
 $ll2 = Get-Content -LiteralPath (Join-Path $run2 "module.ll") -Raw
+$launchContract1 = Get-Objc3cRuntimeLaunchContract -CompileDir $run1 -RepoRoot $repoRoot -EmitPrefix "module"
+$launchContract2 = Get-Objc3cRuntimeLaunchContract -CompileDir $run2 -RepoRoot $repoRoot -EmitPrefix "module"
 
 if ($m1 -ne $m2) { throw "manifest drift across deterministic replay" }
+if ($r1 -ne $r2) { throw "runtime registration manifest drift across deterministic replay" }
 if ($d1 -ne $d2) { throw "diagnostics drift across deterministic replay" }
 if ($ll1 -ne $ll2) { throw "llvm ir drift across deterministic replay" }
 if ($ll1 -notmatch "define i32 @objc3c_entry") { throw "emitted llvm ir missing objc3c_entry" }
+if ($launchContract1.launch_integration_contract_id -ne $launchContract2.launch_integration_contract_id) {
+  throw "launch integration contract drift across deterministic replay"
+}
+if ($launchContract1.runtime_library_relative_path -ne $launchContract2.runtime_library_relative_path) {
+  throw "runtime library drift across deterministic replay"
+}
+if ((ConvertTo-Json @($launchContract1.driver_linker_flags) -Compress) -ne (ConvertTo-Json @($launchContract2.driver_linker_flags) -Compress)) {
+  throw "driver linker flags drift across deterministic replay"
+}
 
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $bytes = [System.IO.File]::ReadAllBytes((Join-Path $run1 "module.obj"))
@@ -80,9 +92,15 @@ $digest = [ordered]@{
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   deterministic = [ordered]@{
     manifest = $true
+    runtime_registration_manifest = $true
     diagnostics = $true
     llvm_ir = $true
+    launch_contract = $true
+    driver_linker_flags = $true
   }
+  launch_integration_contract_id = $launchContract1.launch_integration_contract_id
+  runtime_library = $launchContract1.runtime_library_relative_path
+  driver_linker_flags = @($launchContract1.driver_linker_flags)
   object_sha256 = $objHash
   proof_dir = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $proofDir
 }

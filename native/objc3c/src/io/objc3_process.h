@@ -40,6 +40,12 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string constructor_priority_policy;
   std::string registration_entrypoint_symbol;
   std::string translation_unit_identity_model;
+  std::string launch_integration_contract_id;
+  std::string runtime_library_resolution_model;
+  std::string driver_linker_flag_consumption_model;
+  std::string compile_wrapper_command_surface;
+  std::string compile_proof_command_surface;
+  std::string execution_smoke_command_surface;
   std::size_t class_descriptor_count = 0;
   std::size_t protocol_descriptor_count = 0;
   std::size_t category_descriptor_count = 0;

@@ -5484,3 +5484,21 @@ the private bootstrap boundary with deterministic same-process reset/replay:
   `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
 - replay order model
   `replay-re-registers-retained-images-in-original-registration-order`
+
+## M254 driver, link, and runtime launch integration (D004)
+
+`M254-D004` keeps the emitted bootstrap/runtime registration surface unchanged
+while freezing the operator launch contract consumed by compile, proof, and
+smoke:
+
+- contract id `objc3c-runtime-launch-integration/m254-d004-v1`
+- emitted authority remains
+  `module.runtime-registration-manifest.json`
+- runtime archive resolution model
+  `registration-manifest-runtime-archive-path-is-authoritative`
+- linker-flag consumption model
+  `registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands`
+- compile wrapper script `scripts/objc3c_native_compile.ps1`
+- compile proof script `scripts/run_objc3c_native_compile_proof.ps1`
+- execution smoke script `scripts/check_objc3c_native_execution_smoke.ps1`
+- launch integration ready flag `launch_integration_ready`

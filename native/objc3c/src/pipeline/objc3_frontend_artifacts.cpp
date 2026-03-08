@@ -1843,6 +1843,8 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
   summary.ready_for_lowering_init_stub_emission =
       summary.translation_unit_registration_contract_ready &&
       summary.runtime_support_library_link_wiring_ready;
+  summary.launch_integration_ready =
+      summary.ready_for_lowering_init_stub_emission;
   if (summary.ready_for_lowering_init_stub_emission) {
     summary.replay_key =
         BuildRuntimeTranslationUnitRegistrationManifestReplayKey(summary);
@@ -1858,6 +1860,8 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary &summary) {
   std::ostringstream out;
   out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"launch_integration_contract_id\":\""
+      << EscapeJsonString(summary.launch_integration_contract_id)
       << "\",\"translation_unit_registration_contract_id\":\""
       << EscapeJsonString(summary.translation_unit_registration_contract_id)
       << "\",\"runtime_support_library_link_wiring_contract_id\":\""
@@ -1893,6 +1897,8 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
                                                                  : "false")
       << ",\"ready_for_lowering_init_stub_emission\":"
       << (summary.ready_for_lowering_init_stub_emission ? "true" : "false")
+      << ",\"launch_integration_ready\":"
+      << (summary.launch_integration_ready ? "true" : "false")
       << ",\"runtime_owned_payload_artifact_count\":"
       << summary.runtime_owned_payload_artifact_count
       << ",\"runtime_owned_payload_artifacts\":[";
@@ -1923,6 +1929,16 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
       << EscapeJsonString(summary.registration_entrypoint_symbol)
       << "\",\"translation_unit_identity_model\":\""
       << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"runtime_library_resolution_model\":\""
+      << EscapeJsonString(summary.runtime_library_resolution_model)
+      << "\",\"driver_linker_flag_consumption_model\":\""
+      << EscapeJsonString(summary.driver_linker_flag_consumption_model)
+      << "\",\"compile_wrapper_command_surface\":\""
+      << EscapeJsonString(summary.compile_wrapper_command_surface)
+      << "\",\"compile_proof_command_surface\":\""
+      << EscapeJsonString(summary.compile_proof_command_surface)
+      << "\",\"execution_smoke_command_surface\":\""
+      << EscapeJsonString(summary.execution_smoke_command_surface)
       << "\",\"class_descriptor_count\":"
       << summary.class_descriptor_count
       << ",\"protocol_descriptor_count\":"
@@ -6262,6 +6278,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_translation_unit_registration_manifest_translation_unit_identity_model\":\""
            << runtime_translation_unit_registration_manifest
                   .translation_unit_identity_model
+           << "\",\"runtime_translation_unit_registration_manifest_launch_integration_contract_id\":\""
+           << runtime_translation_unit_registration_manifest
+                  .launch_integration_contract_id
+           << "\",\"runtime_translation_unit_registration_manifest_runtime_library_resolution_model\":\""
+           << runtime_translation_unit_registration_manifest
+                  .runtime_library_resolution_model
+           << "\",\"runtime_translation_unit_registration_manifest_driver_linker_flag_consumption_model\":\""
+           << runtime_translation_unit_registration_manifest
+                  .driver_linker_flag_consumption_model
+           << "\",\"runtime_translation_unit_registration_manifest_compile_wrapper_command_surface\":\""
+           << runtime_translation_unit_registration_manifest
+                  .compile_wrapper_command_surface
+           << "\",\"runtime_translation_unit_registration_manifest_compile_proof_command_surface\":\""
+           << runtime_translation_unit_registration_manifest
+                  .compile_proof_command_surface
+           << "\",\"runtime_translation_unit_registration_manifest_execution_smoke_command_surface\":\""
+           << runtime_translation_unit_registration_manifest
+                  .execution_smoke_command_surface
            << "\",\"runtime_translation_unit_registration_manifest_class_descriptor_count\":"
            << runtime_translation_unit_registration_manifest
                   .class_descriptor_count
@@ -6325,6 +6359,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"runtime_translation_unit_registration_manifest_ready_for_lowering_init_stub_emission\":"
            << (runtime_translation_unit_registration_manifest
                        .ready_for_lowering_init_stub_emission
+                   ? "true"
+                   : "false")
+           << ",\"runtime_translation_unit_registration_manifest_launch_integration_ready\":"
+           << (runtime_translation_unit_registration_manifest
+                       .launch_integration_ready
                    ? "true"
                    : "false")
            << ",\"runtime_translation_unit_registration_manifest_translation_unit_registration_replay_key\":\""
