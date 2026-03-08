@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 
+#include "ast/objc3_ast.h"
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_file_io.h"
@@ -238,6 +239,22 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               runtime_bootstrap_api_summary.state_snapshot_symbol;
           manifest_inputs.bootstrap_runtime_api_reset_for_testing_symbol =
               runtime_bootstrap_api_summary.reset_for_testing_symbol;
+          manifest_inputs.bootstrap_registrar_contract_id =
+              kObjc3RuntimeBootstrapRegistrarContractId;
+          manifest_inputs.bootstrap_registrar_internal_header_path =
+              kObjc3RuntimeBootstrapInternalHeaderPath;
+          manifest_inputs.bootstrap_registrar_stage_registration_table_symbol =
+              kObjc3RuntimeBootstrapStageRegistrationTableSymbol;
+          manifest_inputs.bootstrap_registrar_image_walk_snapshot_symbol =
+              kObjc3RuntimeBootstrapImageWalkSnapshotSymbol;
+          manifest_inputs.bootstrap_registrar_image_walk_model =
+              kObjc3RuntimeBootstrapImageWalkModel;
+          manifest_inputs.bootstrap_registrar_discovery_root_validation_model =
+              kObjc3RuntimeBootstrapDiscoveryRootValidationModel;
+          manifest_inputs.bootstrap_registrar_selector_pool_interning_model =
+              kObjc3RuntimeBootstrapSelectorPoolInterningModel;
+          manifest_inputs.bootstrap_registrar_realization_staging_model =
+              kObjc3RuntimeBootstrapRealizationStagingModel;
           // M254-C001 bootstrap-lowering anchor: driver-side artifact
           // materialization remains limited to the registration manifest. The
           // actual ctor-root/init-stub/registration-table IR globals stay

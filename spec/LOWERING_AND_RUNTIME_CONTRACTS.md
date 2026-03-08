@@ -5442,5 +5442,29 @@ Non-goals:
 
 - no emitted-metadata image walk yet
 - no class/protocol/category realization graph yet
+
+## M254 registrar implementation and image walk (D002)
+
+`M254-D002` lands the private registrar/image-walk bridge that preserves the
+frozen D001 public runtime API while letting emitted startup code stage and walk
+the live registration table.
+
+- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
+- private bootstrap header
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- private stage-registration symbol
+  `objc3_runtime_stage_registration_table_for_bootstrap`
+- private image-walk snapshot symbol
+  `objc3_runtime_copy_image_walk_state_for_testing`
+- image-walk model
+  `registration-table-roots-validated-and-staged-before-realization`
+- discovery-root validation model
+  `linker-anchor-must-point-at-discovery-root`
+- selector-pool interning model
+  `canonical-selector-pool-preinterned-during-startup-image-walk`
+- realization staging model
+  `registration-table-roots-retained-for-later-realization`
 - no expanded deterministic reset coverage beyond the current runtime-owned
   testing hooks

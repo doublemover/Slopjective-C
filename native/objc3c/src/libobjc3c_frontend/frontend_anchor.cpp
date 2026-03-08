@@ -14,6 +14,7 @@
 #include <system_error>
 #include <vector>
 
+#include "ast/objc3_ast.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
@@ -748,6 +749,25 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                       runtime_bootstrap_api_summary.state_snapshot_symbol;
                   manifest_inputs.bootstrap_runtime_api_reset_for_testing_symbol =
                       runtime_bootstrap_api_summary.reset_for_testing_symbol;
+                  manifest_inputs.bootstrap_registrar_contract_id =
+                      kObjc3RuntimeBootstrapRegistrarContractId;
+                  manifest_inputs.bootstrap_registrar_internal_header_path =
+                      kObjc3RuntimeBootstrapInternalHeaderPath;
+                  manifest_inputs
+                      .bootstrap_registrar_stage_registration_table_symbol =
+                      kObjc3RuntimeBootstrapStageRegistrationTableSymbol;
+                  manifest_inputs.bootstrap_registrar_image_walk_snapshot_symbol =
+                      kObjc3RuntimeBootstrapImageWalkSnapshotSymbol;
+                  manifest_inputs.bootstrap_registrar_image_walk_model =
+                      kObjc3RuntimeBootstrapImageWalkModel;
+                  manifest_inputs
+                      .bootstrap_registrar_discovery_root_validation_model =
+                      kObjc3RuntimeBootstrapDiscoveryRootValidationModel;
+                  manifest_inputs
+                      .bootstrap_registrar_selector_pool_interning_model =
+                      kObjc3RuntimeBootstrapSelectorPoolInterningModel;
+                  manifest_inputs.bootstrap_registrar_realization_staging_model =
+                      kObjc3RuntimeBootstrapRealizationStagingModel;
                   manifest_inputs.bootstrap_lowering_contract_id =
                       runtime_bootstrap_lowering_summary.contract_id;
                   manifest_inputs.bootstrap_lowering_boundary_model =

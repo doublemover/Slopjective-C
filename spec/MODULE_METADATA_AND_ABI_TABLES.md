@@ -6516,3 +6516,22 @@ Canonical metadata/runtime anchors:
   `bootstrap_runtime_api_state_snapshot_symbol`
 - emitted registration manifest field
   `bootstrap_runtime_api_reset_for_testing_symbol`
+
+## M254 registrar/image-walk metadata anchors (D002)
+
+`M254-D002` publishes the private registrar/image-walk bridge in both the
+frontend semantic surface and the emitted runtime registration manifest.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
+- emitted registration manifest field `bootstrap_registrar_contract_id`
+- emitted registration manifest field
+  `bootstrap_registrar_internal_header_path`
+- emitted registration manifest field
+  `bootstrap_registrar_stage_registration_table_symbol`
+- emitted registration manifest field
+  `bootstrap_registrar_image_walk_snapshot_symbol`
+- emitted registration manifest field `bootstrap_registrar_image_walk_model`

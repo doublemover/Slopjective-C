@@ -77,3 +77,20 @@ registrar/image-walk and deterministic-reset issues must preserve:
   `generated-init-stub-calls-runtime-register-image`
 - image walk remains deferred to `M254-D002`
 - deterministic reset expansion remains deferred to `M254-D003`
+
+`M254-D002` lands the private registrar/image-walk bridge that keeps the public
+runtime surface frozen while allowing emitted startup code to stage and walk the
+registration table:
+
+- private bootstrap header
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- private staging hook
+  `objc3_runtime_stage_registration_table_for_bootstrap`
+- private image-walk snapshot hook
+  `objc3_runtime_copy_image_walk_state_for_testing`
+- image-walk model
+  `registration-table-roots-validated-and-staged-before-realization`
+- selector-pool interning model
+  `canonical-selector-pool-preinterned-during-startup-image-walk`
+- realization staging model
+  `registration-table-roots-retained-for-later-realization`

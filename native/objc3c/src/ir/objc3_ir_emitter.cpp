@@ -4845,6 +4845,18 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .runtime_bootstrap_lowering_image_local_initialization_model
           << ";happy_path=guarded-once-before-runtime-registration\n";
+      out << "; runtime_bootstrap_registrar_image_walk = "
+          << "contract=" << kObjc3RuntimeBootstrapRegistrarContractId
+          << ";stage_registration_table_symbol="
+          << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
+          << ";image_walk_snapshot_symbol="
+          << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol
+          << ";image_walk_model="
+          << kObjc3RuntimeBootstrapImageWalkModel
+          << ";selector_pool_interning_model="
+          << kObjc3RuntimeBootstrapSelectorPoolInterningModel
+          << ";realization_staging_model="
+          << kObjc3RuntimeBootstrapRealizationStagingModel << "\n";
     }
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
@@ -7351,6 +7363,8 @@ class Objc3IREmitter {
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
     bool emitted = false;
     if (ShouldEmitRuntimeBootstrapLowering()) {
+      out << "declare void @" << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
+          << "(ptr)\n";
       out << "declare i32 @"
           << frontend_metadata_
                  .runtime_bootstrap_lowering_registration_entrypoint_symbol
@@ -7405,6 +7419,8 @@ class Objc3IREmitter {
     out << "  %bootstrap_already_initialized = icmp ne i8 %bootstrap_state, 0\n";
     out << "  br i1 %bootstrap_already_initialized, label %bootstrap_success, label %bootstrap_register\n";
     out << "bootstrap_register:\n";
+    out << "  call void @" << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
+        << "(ptr " << registration_table_symbol << ")\n";
     out << "  %bootstrap_image_slot = getelementptr inbounds "
         << RuntimeBootstrapRegistrationTableType() << ", ptr "
         << registration_table_symbol << ", i32 0, i32 2\n";

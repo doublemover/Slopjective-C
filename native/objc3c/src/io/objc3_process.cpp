@@ -831,6 +831,35 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(
              inputs.bootstrap_runtime_api_reset_for_testing_symbol)
       << "\",\n"
+      << "  \"bootstrap_registrar_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_registrar_contract_id)
+      << "\",\n"
+      << "  \"bootstrap_registrar_internal_header_path\": \""
+      << EscapeJsonString(inputs.bootstrap_registrar_internal_header_path)
+      << "\",\n"
+      << "  \"bootstrap_registrar_stage_registration_table_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_stage_registration_table_symbol)
+      << "\",\n"
+      << "  \"bootstrap_registrar_image_walk_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_image_walk_snapshot_symbol)
+      << "\",\n"
+      << "  \"bootstrap_registrar_image_walk_model\": \""
+      << EscapeJsonString(inputs.bootstrap_registrar_image_walk_model)
+      << "\",\n"
+      << "  \"bootstrap_registrar_discovery_root_validation_model\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_discovery_root_validation_model)
+      << "\",\n"
+      << "  \"bootstrap_registrar_selector_pool_interning_model\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_selector_pool_interning_model)
+      << "\",\n"
+      << "  \"bootstrap_registrar_realization_staging_model\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_realization_staging_model)
+      << "\",\n"
       << "  \"bootstrap_lowering_contract_id\": \""
       << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"
       << "  \"bootstrap_lowering_boundary_model\": \""

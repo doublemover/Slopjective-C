@@ -6452,6 +6452,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_bootstrap_lowering.contract_id
            << "\",\"runtime_bootstrap_lowering_registration_manifest_contract_id\":\""
            << runtime_bootstrap_lowering.registration_manifest_contract_id
+           << "\",\"runtime_bootstrap_registrar_contract_id\":\""
+           << kObjc3RuntimeBootstrapRegistrarContractId
+           << "\",\"runtime_bootstrap_registrar_stage_registration_table_symbol\":\""
+           << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
+           << "\",\"runtime_bootstrap_registrar_image_walk_snapshot_symbol\":\""
+           << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol
+           << "\",\"runtime_bootstrap_registrar_image_walk_model\":\""
+           << kObjc3RuntimeBootstrapImageWalkModel
+           << "\",\"runtime_bootstrap_registrar_discovery_root_validation_model\":\""
+           << kObjc3RuntimeBootstrapDiscoveryRootValidationModel
+           << "\",\"runtime_bootstrap_registrar_selector_pool_interning_model\":\""
+           << kObjc3RuntimeBootstrapSelectorPoolInterningModel
+           << "\",\"runtime_bootstrap_registrar_realization_staging_model\":\""
+           << kObjc3RuntimeBootstrapRealizationStagingModel
            << "\",\"runtime_bootstrap_lowering_bootstrap_semantics_contract_id\":\""
            << runtime_bootstrap_lowering.bootstrap_semantics_contract_id
            << "\",\"runtime_bootstrap_lowering_boundary_model\":\""
@@ -7443,6 +7457,44 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // issues must preserve exactly.
            << ",\"objc_runtime_bootstrap_api_contract\":"
            << BuildRuntimeBootstrapApiSummaryJson(runtime_bootstrap_api)
+           // M254-D002 bootstrap-registrar anchor: the semantic surface now
+           // publishes the private staging hook and runtime image-walk policy
+           // that extend the emitted startup path without widening the frozen
+           // D001 public runtime API.
+           << ",\"objc_runtime_bootstrap_registrar_contract\":{"
+           << "\"contract_id\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarContractId)
+           << "\",\"surface_path\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarSurfacePath)
+           << "\",\"bootstrap_api_contract_id\":\""
+           << EscapeJsonString(runtime_bootstrap_api.contract_id)
+           << "\",\"bootstrap_lowering_contract_id\":\""
+           << EscapeJsonString(runtime_bootstrap_lowering.contract_id)
+           << "\",\"internal_header_path\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapInternalHeaderPath)
+           << "\",\"stage_registration_table_symbol\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapStageRegistrationTableSymbol)
+           << "\",\"image_walk_snapshot_symbol\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapImageWalkSnapshotSymbol)
+           << "\",\"image_walk_model\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapImageWalkModel)
+           << "\",\"discovery_root_validation_model\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapDiscoveryRootValidationModel)
+           << "\",\"selector_pool_interning_model\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapSelectorPoolInterningModel)
+           << "\",\"realization_staging_model\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapRealizationStagingModel)
+           << "\",\"fail_closed\":true"
+           << ",\"ready\":"
+           << ((IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api) &&
+                IsReadyObjc3RuntimeBootstrapLoweringSummary(
+                    runtime_bootstrap_lowering))
+                   ? "true"
+                   : "false")
+           << "}"
            // M254-B001 bootstrap-invariant anchor: lane-B freezes duplicate
            // registration, realization order, failure mode, and image-local
            // initialization semantics against the live A002 registration

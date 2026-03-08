@@ -641,6 +641,28 @@ inline constexpr const char *kObjc3RuntimeBootstrapApiImageWalkLifecycleModel =
 inline constexpr const char
     *kObjc3RuntimeBootstrapApiDeterministicResetLifecycleModel =
         "deferred-until-m254-d003";
+inline constexpr const char *kObjc3RuntimeBootstrapRegistrarContractId =
+    "objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapRegistrarSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract";
+inline constexpr const char *kObjc3RuntimeBootstrapInternalHeaderPath =
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapStageRegistrationTableSymbol =
+        "objc3_runtime_stage_registration_table_for_bootstrap";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapImageWalkSnapshotSymbol =
+        "objc3_runtime_copy_image_walk_state_for_testing";
+inline constexpr const char *kObjc3RuntimeBootstrapImageWalkModel =
+    "registration-table-roots-validated-and-staged-before-realization";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapDiscoveryRootValidationModel =
+        "linker-anchor-must-point-at-discovery-root";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapSelectorPoolInterningModel =
+        "canonical-selector-pool-preinterned-during-startup-image-walk";
+inline constexpr const char *kObjc3RuntimeBootstrapRealizationStagingModel =
+    "registration-table-roots-retained-for-later-realization";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

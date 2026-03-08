@@ -1476,6 +1476,38 @@ Evidence:
 
 `tmp/reports/m254/M254-D001/runtime_bootstrap_api_contract_summary.json`
 
+## Registrar implementation and image walk (M254-D002)
+
+`M254-D002` lands the private registrar/image-walk bridge that extends the
+emitted startup path without widening the frozen D001 public runtime API.
+
+- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
+- private bootstrap header
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- private staging hook symbol
+  `objc3_runtime_stage_registration_table_for_bootstrap`
+- private image-walk snapshot symbol
+  `objc3_runtime_copy_image_walk_state_for_testing`
+- image-walk model
+  `registration-table-roots-validated-and-staged-before-realization`
+- discovery-root validation model
+  `linker-anchor-must-point-at-discovery-root`
+- selector-pool interning model
+  `canonical-selector-pool-preinterned-during-startup-image-walk`
+- realization staging model
+  `registration-table-roots-retained-for-later-realization`
+
+The emitted init stub now stages the live registration table before calling the
+frozen D001 `objc3_runtime_register_image` entrypoint, and the runtime walks the
+emitted roots, validates the discovery/linker relationship, and preinterns the
+selector pool during startup.
+
+Evidence:
+
+`tmp/reports/m254/M254-D002/registrar_image_walk_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

@@ -1,4 +1,4 @@
-#include "runtime/objc3_runtime.h"
+#include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <cstdint>
 #include <deque>
@@ -15,6 +15,31 @@ struct SelectorSlot {
   objc3_runtime_selector_handle handle{};
 };
 
+struct RegisteredImageMetadata {
+  std::string module_name;
+  std::string translation_unit_identity_key;
+  std::uint64_t registration_order_ordinal = 0;
+  const objc3_runtime_registration_table *registration_table = nullptr;
+  const objc3_runtime_pointer_aggregate *discovery_root = nullptr;
+  const objc3_runtime_pointer_aggregate *class_descriptor_root = nullptr;
+  const objc3_runtime_pointer_aggregate *protocol_descriptor_root = nullptr;
+  const objc3_runtime_pointer_aggregate *category_descriptor_root = nullptr;
+  const objc3_runtime_pointer_aggregate *property_descriptor_root = nullptr;
+  const objc3_runtime_pointer_aggregate *ivar_descriptor_root = nullptr;
+  const objc3_runtime_pointer_aggregate *selector_pool_root = nullptr;
+  const objc3_runtime_pointer_aggregate *string_pool_root = nullptr;
+  std::uint64_t discovery_root_entry_count = 0;
+  std::uint64_t class_descriptor_count = 0;
+  std::uint64_t protocol_descriptor_count = 0;
+  std::uint64_t category_descriptor_count = 0;
+  std::uint64_t property_descriptor_count = 0;
+  std::uint64_t ivar_descriptor_count = 0;
+  std::uint64_t selector_pool_count = 0;
+  std::uint64_t string_pool_count = 0;
+  bool linker_anchor_matches_discovery_root = false;
+  bool used_staged_registration_table = false;
+};
+
 struct RuntimeState {
   std::mutex mutex;
   std::uint64_t registered_image_count = 0;
@@ -29,8 +54,24 @@ struct RuntimeState {
   std::uint64_t last_rejected_registration_order_ordinal = 0;
   std::unordered_map<std::string, std::uint64_t>
       registration_order_by_identity_key;
+  std::unordered_map<std::string, RegisteredImageMetadata>
+      registered_image_metadata_by_identity_key;
   std::unordered_map<std::string, std::size_t> selector_index_by_name;
   std::deque<SelectorSlot> selector_slots;
+  const objc3_runtime_registration_table *staged_registration_table = nullptr;
+  std::uint64_t walked_image_count = 0;
+  std::uint64_t last_discovery_root_entry_count = 0;
+  std::uint64_t last_walked_class_descriptor_count = 0;
+  std::uint64_t last_walked_protocol_descriptor_count = 0;
+  std::uint64_t last_walked_category_descriptor_count = 0;
+  std::uint64_t last_walked_property_descriptor_count = 0;
+  std::uint64_t last_walked_ivar_descriptor_count = 0;
+  std::uint64_t last_walked_selector_pool_count = 0;
+  std::uint64_t last_walked_string_pool_count = 0;
+  bool last_linker_anchor_matches_discovery_root = false;
+  bool last_registration_used_staged_table = false;
+  std::string last_walked_module_name;
+  std::string last_walked_translation_unit_identity_key;
 };
 
 RuntimeState &State() {
@@ -102,6 +143,59 @@ std::uint64_t DescriptorTotal(
          image->ivar_descriptor_count;
 }
 
+std::uint64_t AggregateCount(const objc3_runtime_pointer_aggregate *aggregate) {
+  return aggregate == nullptr ? 0 : aggregate->count;
+}
+
+const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
+                           std::uint64_t index) {
+  if (aggregate == nullptr || index >= aggregate->count) {
+    return nullptr;
+  }
+  return aggregate->entries[index];
+}
+
+bool AggregateContainsPointer(const objc3_runtime_pointer_aggregate *aggregate,
+                              const void *target) {
+  if (aggregate == nullptr || target == nullptr) {
+    return false;
+  }
+  for (std::uint64_t index = 0; index < aggregate->count; ++index) {
+    if (aggregate->entries[index] == target) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ImageDescriptorsMatch(const objc3_runtime_image_descriptor *lhs,
+                           const objc3_runtime_image_descriptor *rhs) {
+  if (lhs == nullptr || rhs == nullptr) {
+    return false;
+  }
+
+  const std::string lhs_module =
+      lhs->module_name != nullptr ? lhs->module_name : "";
+  const std::string rhs_module =
+      rhs->module_name != nullptr ? rhs->module_name : "";
+  const std::string lhs_identity =
+      lhs->translation_unit_identity_key != nullptr
+          ? lhs->translation_unit_identity_key
+          : "";
+  const std::string rhs_identity =
+      rhs->translation_unit_identity_key != nullptr
+          ? rhs->translation_unit_identity_key
+          : "";
+  return lhs_module == rhs_module &&
+         lhs_identity == rhs_identity &&
+         lhs->registration_order_ordinal == rhs->registration_order_ordinal &&
+         lhs->class_descriptor_count == rhs->class_descriptor_count &&
+         lhs->protocol_descriptor_count == rhs->protocol_descriptor_count &&
+         lhs->category_descriptor_count == rhs->category_descriptor_count &&
+         lhs->property_descriptor_count == rhs->property_descriptor_count &&
+         lhs->ivar_descriptor_count == rhs->ivar_descriptor_count;
+}
+
 const char *StableCString(const std::string &text) {
   return text.empty() ? nullptr : text.c_str();
 }
@@ -126,7 +220,167 @@ void ClearRejectedRegistrationUnlocked(RuntimeState &state) {
   state.last_rejected_registration_order_ordinal = 0;
 }
 
+void ClearImageWalkSnapshotUnlocked(RuntimeState &state) {
+  state.last_discovery_root_entry_count = 0;
+  state.last_walked_class_descriptor_count = 0;
+  state.last_walked_protocol_descriptor_count = 0;
+  state.last_walked_category_descriptor_count = 0;
+  state.last_walked_property_descriptor_count = 0;
+  state.last_walked_ivar_descriptor_count = 0;
+  state.last_walked_selector_pool_count = 0;
+  state.last_walked_string_pool_count = 0;
+  state.last_linker_anchor_matches_discovery_root = false;
+  state.last_registration_used_staged_table = false;
+  state.last_walked_module_name.clear();
+  state.last_walked_translation_unit_identity_key.clear();
+}
+
+void ApplyImageWalkRecordUnlocked(RuntimeState &state,
+                                  const RegisteredImageMetadata &record) {
+  state.walked_image_count = static_cast<std::uint64_t>(
+      state.registered_image_metadata_by_identity_key.size());
+  state.last_discovery_root_entry_count = record.discovery_root_entry_count;
+  state.last_walked_class_descriptor_count = record.class_descriptor_count;
+  state.last_walked_protocol_descriptor_count = record.protocol_descriptor_count;
+  state.last_walked_category_descriptor_count = record.category_descriptor_count;
+  state.last_walked_property_descriptor_count = record.property_descriptor_count;
+  state.last_walked_ivar_descriptor_count = record.ivar_descriptor_count;
+  state.last_walked_selector_pool_count = record.selector_pool_count;
+  state.last_walked_string_pool_count = record.string_pool_count;
+  state.last_linker_anchor_matches_discovery_root =
+      record.linker_anchor_matches_discovery_root;
+  state.last_registration_used_staged_table =
+      record.used_staged_registration_table;
+  state.last_walked_module_name = record.module_name;
+  state.last_walked_translation_unit_identity_key =
+      record.translation_unit_identity_key;
+}
+
+bool TryWalkRegistrationTableUnlocked(
+    const objc3_runtime_registration_table *registration_table,
+    const objc3_runtime_image_descriptor *image,
+    RegisteredImageMetadata &record) {
+  if (registration_table == nullptr ||
+      registration_table->abi_version != 1 ||
+      registration_table->pointer_field_count != 11 ||
+      registration_table->image_descriptor == nullptr ||
+      !ImageDescriptorsMatch(registration_table->image_descriptor, image) ||
+      registration_table->discovery_root == nullptr ||
+      registration_table->linker_anchor == nullptr ||
+      registration_table->class_descriptor_root == nullptr ||
+      registration_table->protocol_descriptor_root == nullptr ||
+      registration_table->category_descriptor_root == nullptr ||
+      registration_table->property_descriptor_root == nullptr ||
+      registration_table->ivar_descriptor_root == nullptr ||
+      registration_table->image_local_init_state == nullptr) {
+    return false;
+  }
+
+  const void *const linker_anchor_target =
+      *reinterpret_cast<const void *const *>(registration_table->linker_anchor);
+  const std::uint64_t discovery_root_entry_count =
+      AggregateCount(registration_table->discovery_root);
+  if (discovery_root_entry_count < 6) {
+    return false;
+  }
+
+  const std::uint64_t class_descriptor_count =
+      AggregateCount(registration_table->class_descriptor_root);
+  const std::uint64_t protocol_descriptor_count =
+      AggregateCount(registration_table->protocol_descriptor_root);
+  const std::uint64_t category_descriptor_count =
+      AggregateCount(registration_table->category_descriptor_root);
+  const std::uint64_t property_descriptor_count =
+      AggregateCount(registration_table->property_descriptor_root);
+  const std::uint64_t ivar_descriptor_count =
+      AggregateCount(registration_table->ivar_descriptor_root);
+  const std::uint64_t selector_pool_count =
+      AggregateCount(registration_table->selector_pool_root);
+  const std::uint64_t string_pool_count =
+      AggregateCount(registration_table->string_pool_root);
+  const bool linker_anchor_matches_discovery_root =
+      linker_anchor_target == registration_table->discovery_root;
+
+  if (class_descriptor_count != image->class_descriptor_count ||
+      protocol_descriptor_count != image->protocol_descriptor_count ||
+      category_descriptor_count != image->category_descriptor_count ||
+      property_descriptor_count != image->property_descriptor_count ||
+      ivar_descriptor_count != image->ivar_descriptor_count ||
+      !linker_anchor_matches_discovery_root ||
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->class_descriptor_root) ||
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->protocol_descriptor_root) ||
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->category_descriptor_root) ||
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->property_descriptor_root) ||
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->ivar_descriptor_root)) {
+    return false;
+  }
+
+  if (registration_table->selector_pool_root != nullptr &&
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->selector_pool_root)) {
+    return false;
+  }
+  if (registration_table->string_pool_root != nullptr &&
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->string_pool_root)) {
+    return false;
+  }
+
+  for (std::uint64_t index = 0; index < selector_pool_count; ++index) {
+    const char *selector = reinterpret_cast<const char *>(
+        AggregateEntry(registration_table->selector_pool_root, index));
+    if (selector == nullptr || selector[0] == '\0') {
+      return false;
+    }
+    (void)LookupSelectorUnlocked(selector);
+  }
+  for (std::uint64_t index = 0; index < string_pool_count; ++index) {
+    const char *value = reinterpret_cast<const char *>(
+        AggregateEntry(registration_table->string_pool_root, index));
+    if (value == nullptr) {
+      return false;
+    }
+  }
+
+  record.module_name = image->module_name;
+  record.translation_unit_identity_key = image->translation_unit_identity_key;
+  record.registration_order_ordinal = image->registration_order_ordinal;
+  record.registration_table = registration_table;
+  record.discovery_root = registration_table->discovery_root;
+  record.class_descriptor_root = registration_table->class_descriptor_root;
+  record.protocol_descriptor_root = registration_table->protocol_descriptor_root;
+  record.category_descriptor_root = registration_table->category_descriptor_root;
+  record.property_descriptor_root = registration_table->property_descriptor_root;
+  record.ivar_descriptor_root = registration_table->ivar_descriptor_root;
+  record.selector_pool_root = registration_table->selector_pool_root;
+  record.string_pool_root = registration_table->string_pool_root;
+  record.discovery_root_entry_count = discovery_root_entry_count;
+  record.class_descriptor_count = class_descriptor_count;
+  record.protocol_descriptor_count = protocol_descriptor_count;
+  record.category_descriptor_count = category_descriptor_count;
+  record.property_descriptor_count = property_descriptor_count;
+  record.ivar_descriptor_count = ivar_descriptor_count;
+  record.selector_pool_count = selector_pool_count;
+  record.string_pool_count = string_pool_count;
+  record.linker_anchor_matches_discovery_root =
+      linker_anchor_matches_discovery_root;
+  record.used_staged_registration_table = true;
+  return true;
+}
+
 }  // namespace
+
+extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
+    const objc3_runtime_registration_table *registration_table) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.staged_registration_table = registration_table;
+}
 
 // M254-D001 runtime-bootstrap-api anchor: registration, selector lookup,
 // dispatch, snapshot, and reset remain the frozen bootstrap runtime boundary.
@@ -135,6 +389,9 @@ void ClearRejectedRegistrationUnlocked(RuntimeState &state) {
 int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  const objc3_runtime_registration_table *const staged_registration_table =
+      state.staged_registration_table;
+  state.staged_registration_table = nullptr;
   if (image == nullptr || image->module_name == nullptr ||
       image->module_name[0] == '\0' ||
       image->translation_unit_identity_key == nullptr ||
@@ -162,8 +419,33 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OUT_OF_ORDER_REGISTRATION;
   }
 
+  std::uint64_t descriptor_total = DescriptorTotal(image);
+  if (staged_registration_table != nullptr) {
+    RegisteredImageMetadata record;
+    if (!TryWalkRegistrationTableUnlocked(staged_registration_table, image,
+                                          record)) {
+      ClearImageWalkSnapshotUnlocked(state);
+      MarkRejectedRegistrationUnlocked(
+          state, image, OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR);
+      return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+    }
+    descriptor_total = record.class_descriptor_count +
+                       record.protocol_descriptor_count +
+                       record.category_descriptor_count +
+                       record.property_descriptor_count +
+                       record.ivar_descriptor_count;
+    state.registered_image_metadata_by_identity_key
+        [record.translation_unit_identity_key] = record;
+    ApplyImageWalkRecordUnlocked(
+        state,
+        state.registered_image_metadata_by_identity_key
+            .at(record.translation_unit_identity_key));
+  } else {
+    ClearImageWalkSnapshotUnlocked(state);
+  }
+
   ++state.registered_image_count;
-  state.registered_descriptor_total += DescriptorTotal(image);
+  state.registered_descriptor_total += descriptor_total;
   state.next_expected_registration_order_ordinal =
       image->registration_order_ordinal + 1;
   state.last_successful_registration_order_ordinal =
@@ -175,6 +457,42 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
   state.registration_order_by_identity_key.emplace(
       image->translation_unit_identity_key, image->registration_order_ordinal);
   ClearRejectedRegistrationUnlocked(state);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_image_walk_state_for_testing(
+    objc3_runtime_image_walk_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->walked_image_count = state.walked_image_count;
+  snapshot->last_discovery_root_entry_count =
+      state.last_discovery_root_entry_count;
+  snapshot->last_walked_class_descriptor_count =
+      state.last_walked_class_descriptor_count;
+  snapshot->last_walked_protocol_descriptor_count =
+      state.last_walked_protocol_descriptor_count;
+  snapshot->last_walked_category_descriptor_count =
+      state.last_walked_category_descriptor_count;
+  snapshot->last_walked_property_descriptor_count =
+      state.last_walked_property_descriptor_count;
+  snapshot->last_walked_ivar_descriptor_count =
+      state.last_walked_ivar_descriptor_count;
+  snapshot->last_walked_selector_pool_count =
+      state.last_walked_selector_pool_count;
+  snapshot->last_walked_string_pool_count =
+      state.last_walked_string_pool_count;
+  snapshot->last_linker_anchor_matches_discovery_root =
+      state.last_linker_anchor_matches_discovery_root ? 1 : 0;
+  snapshot->last_registration_used_staged_table =
+      state.last_registration_used_staged_table ? 1 : 0;
+  snapshot->last_walked_module_name =
+      StableCString(state.last_walked_module_name);
+  snapshot->last_walked_translation_unit_identity_key =
+      StableCString(state.last_walked_translation_unit_identity_key);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -245,6 +563,10 @@ void objc3_runtime_reset_for_testing(void) {
   state.last_rejected_translation_unit_identity_key.clear();
   state.last_rejected_registration_order_ordinal = 0;
   state.registration_order_by_identity_key.clear();
+  state.registered_image_metadata_by_identity_key.clear();
   state.selector_index_by_name.clear();
   state.selector_slots.clear();
+  state.staged_registration_table = nullptr;
+  state.walked_image_count = 0;
+  ClearImageWalkSnapshotUnlocked(state);
 }

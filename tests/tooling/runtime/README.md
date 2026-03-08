@@ -150,3 +150,15 @@ path now targets:
 - runtime-owned locking model `process-global-mutex-serialized-runtime-state`
 - image walk remains deferred to `M254-D002`
 - deterministic reset expansion remains deferred to `M254-D003`
+
+`M254-D002` proves the emitted startup path now stages and walks the
+registration table before the frozen D001 register-image call:
+
+- runtime probe
+  `tests/tooling/runtime/m254_d002_runtime_registrar_image_walk_probe.cpp`
+- startup evidence verifies the private stage hook
+  `objc3_runtime_stage_registration_table_for_bootstrap`
+- startup evidence verifies the private image-walk snapshot hook
+  `objc3_runtime_copy_image_walk_state_for_testing`
+- the probe validates that emitted selector pools preintern known selectors like
+  `tokenValue`
