@@ -8255,3 +8255,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `objc3c-native` probes for manifest preservation, precise export diagnostics,
   object inspection, and execution smoke remain synchronized with the E001
   aggregate gate before operator runbooks land in E003.
+
+- M251 lane-E E003 runtime-foundation developer runbook anchors explicit
+  publication artifacts in
+  `docs/contracts/m251_developer_runbooks_and_environment_publication_for_runtime_foundation_e003_expectations.md`,
+  `docs/runbooks/m251_runtime_foundation_developer_runbook.md`,
+  `spec/planning/compiler/m251/m251_e003_developer_runbooks_and_environment_publication_for_runtime_foundation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `tests/tooling/runtime/README.md`,
+  and `package.json` so the runbook-verified build, object inspection, and execution smoke
+  path remains synchronized with the E002 gate before M252 startup registration work begins.

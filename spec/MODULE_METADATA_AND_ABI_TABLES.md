@@ -5621,6 +5621,24 @@ Cross-lane runtime-foundation gate anchors must remain deterministic and fail
 closed before M251-E003 publishes operator runbooks and before M252 begins
 registration work.
 
+## M251 developer runbook and environment publication metadata anchors (E003)
+
+Deterministic lane-E runbook-publication anchors for `M251-E003` shall
+preserve:
+
+- contract id `objc3c-runtime-foundation-developer-runbook-environment-publication/m251-e003-v1`,
+- runbook path `docs/runbooks/m251_runtime_foundation_developer_runbook.md`,
+- object-inspection output root
+  `tmp/artifacts/compilation/objc3c-native/m251/runbook/object_inspection`,
+- smoke run id `m251_e003_runtime_foundation_runbook_smoke`,
+- smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m251_e003_runtime_foundation_runbook_smoke/summary.json`,
+- dependency summary path
+  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`.
+
+Runbook-publication anchors must remain deterministic and fail closed before
+M252 startup registration and runtime metadata realization work begins.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

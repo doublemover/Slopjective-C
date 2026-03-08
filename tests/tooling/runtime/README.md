@@ -44,3 +44,6 @@ driver can migrate from shim-backed execution to native-library linkage in
   `objc3_runtime_dispatch_i32`
 - `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains test-only evidence
   for explicit unresolved-symbol and formula-parity coverage
+
+`M251-E003` publishes the canonical operator runbook for this runtime-foundation
+slice at `docs/runbooks/m251_runtime_foundation_developer_runbook.md`.

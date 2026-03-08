@@ -381,6 +381,22 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`
 
+## Developer runbooks and environment publication for runtime foundation (M251-E003)
+
+- Lane-E now publishes the canonical operator runbook for the current runnable
+  runtime-foundation tranche at
+  `docs/runbooks/m251_runtime_foundation_developer_runbook.md`.
+- The runbook freezes the exact local command families for:
+  - `npm run build:objc3c-native`
+  - native object emission through `.\artifacts\bin\objc3c-native.exe`
+  - object inspection through `llvm-readobj.exe` and `llvm-objdump.exe`
+  - execution smoke replay under run id
+    `m251_e003_runtime_foundation_runbook_smoke`
+- The runbook remains fail closed unless those commands reproduce the published
+  evidence artifacts and remain aligned with the integrated E002 gate.
+- Validation/evidence path:
+  `tmp/reports/m251/M251-E003/runtime_foundation_developer_runbook_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

@@ -4410,3 +4410,26 @@ M251 lane outputs.
 E002 therefore proves the source-record, semantic-diagnostic,
 metadata-section-scaffold, and runtime-library execution layers line up on the
 same native toolchain path before M251 publishes operator runbooks in E003.
+
+## M251 developer runbooks and environment publication for runtime foundation (E003)
+
+Lane-E shall publish one canonical runtime-foundation runbook at
+`docs/runbooks/m251_runtime_foundation_developer_runbook.md`.
+
+`M251-E003` requires:
+
+- the documented build command `npm run build:objc3c-native`,
+- the documented native object-emission command through
+  `.\artifacts\bin\objc3c-native.exe`,
+- the documented object-inspection commands through `llvm-readobj.exe` and
+  `llvm-objdump.exe`,
+- the documented execution-smoke replay under run id
+  `m251_e003_runtime_foundation_runbook_smoke`,
+- the dependency summary
+  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`
+  to remain `ok = true`,
+- the documented command path to keep producing the published runtime archive,
+  object-inspection artifacts, and smoke summary without hidden setup drift.
+
+E003 therefore publishes the operator-facing build/inspection/smoke path for a
+fresh clone on this machine without claiming new runtime feature coverage.
