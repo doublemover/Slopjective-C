@@ -510,6 +510,24 @@ std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
+  std::ostringstream out;
+  // M253-D001 object-packaging/retention freeze anchor: lane-D now freezes the
+  // current produced-object handoff as module.obj plus retained aggregate
+  // symbols. Later archive/link/startup-registration work must preserve this
+  // boundary and may not silently replace llvm.used or aggregate symbol roots.
+  out << "contract=" << kObjc3RuntimeObjectPackagingRetentionContractId
+      << ";boundary_model="
+      << kObjc3RuntimeObjectPackagingRetentionBoundaryModel
+      << ";retention_anchor_model="
+      << kObjc3RuntimeObjectPackagingRetentionAnchorModel
+      << ";object_artifact=" << kObjc3RuntimeObjectPackagingRetentionArtifact
+      << ";aggregate_symbol_prefix="
+      << kObjc3RuntimeObjectPackagingRetentionSymbolPrefix
+      << ";non_goals=no-archive-packaging-link-registration-or-startup-bootstrap";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(HostRuntimeMetadataObjectFormat(),

@@ -5073,3 +5073,31 @@ from earlier scaffold-only probes.
 
 `M253-C006` does not add new metadata families, runtime registration/bootstrap,
 or descriptor-family rewiring. It expands binary inspection evidence only.
+
+## M253 object packaging and retention boundary (D001)
+
+Lane-D shall freeze the current produced-object handoff so later archive, link,
+and startup-registration work extends one explicit module.obj boundary rather
+than redefining retention and discoverability anchors.
+
+`M253-D001` requires:
+
+- contract id `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`,
+- boundary model
+  `current-object-file-boundary-with-retained-metadata-section-aggregates`,
+- retention-anchor model `llvm.used-plus-aggregate-section-symbols`,
+- emitted IR publication through
+  `; runtime_metadata_object_packaging_retention = ...` and
+  `!objc3.objc_runtime_object_packaging_retention`,
+- frozen current object artifact `module.obj`,
+- frozen aggregate symbol prefix `__objc3_sec_`,
+- shared discovery commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`,
+- one positive proof over the current metadata-rich emitted object path, and
+- one fail-closed negative proof that compile failure emits diagnostics but no
+  manifest/object/backend marker.
+
+`M253-D001` does not add archive packaging, link-registration, or startup
+registration/bootstrap behavior. It freezes the current produced-object
+boundary only.

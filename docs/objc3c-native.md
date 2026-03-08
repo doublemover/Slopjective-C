@@ -1098,6 +1098,35 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
 
+## Object packaging and retention boundary (M253-D001)
+
+- Lane-D now freezes the current object-packaging handoff through
+  `Objc3RuntimeMetadataObjectPackagingRetentionSummary`.
+- Contract id:
+  `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`.
+- The boundary model is
+  `current-object-file-boundary-with-retained-metadata-section-aggregates`.
+- The retention-anchor model is
+  `llvm.used-plus-aggregate-section-symbols`.
+- The emitted IR now carries:
+  - `; runtime_metadata_object_packaging_retention = ...`
+  - `!objc3.objc_runtime_object_packaging_retention`
+- The current object handoff is frozen as:
+  - object artifact `module.obj`
+  - aggregate symbol prefix `__objc3_sec_`
+  - section inventory command `llvm-readobj --sections module.obj`
+  - symbol inventory command `llvm-objdump --syms module.obj`
+- The positive proof fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
+- The negative proof fixture is
+  `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`.
+- `D001` remains deliberately bounded:
+  - no archive packaging contract yet,
+  - no link-registration contract yet,
+  - no startup registration/bootstrap yet.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-D001/object_packaging_and_retention_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

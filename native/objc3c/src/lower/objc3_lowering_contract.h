@@ -157,6 +157,20 @@ inline constexpr const char *kObjc3RuntimeBinaryInspectionSectionCommand =
     "llvm-readobj --sections module.obj";
 inline constexpr const char *kObjc3RuntimeBinaryInspectionSymbolCommand =
     "llvm-objdump --syms module.obj";
+// M253-D001 object-packaging/retention freeze anchor: lane-D now freezes the
+// current produced-object boundary around module.obj plus retained aggregate
+// metadata symbols. Later archive/link/startup-registration work must preserve
+// these anchors instead of redefining the object boundary ad hoc.
+inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionContractId =
+    "objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1";
+inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionBoundaryModel =
+    "current-object-file-boundary-with-retained-metadata-section-aggregates";
+inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionAnchorModel =
+    "llvm.used-plus-aggregate-section-symbols";
+inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionArtifact =
+    "module.obj";
+inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionSymbolPrefix =
+    "__objc3_sec_";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -858,6 +872,7 @@ std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
+std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);

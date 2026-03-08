@@ -8541,3 +8541,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   metadata section family across scaffold-only, class-heavy, category-heavy,
   and selector-pool-heavy objects, with a fail-closed negative compile case
   that produces no synthesized object-inspection outputs.
+- M253 lane-D D001 object packaging and retention freeze anchors explicit
+  contract artifacts in
+  `docs/contracts/m253_object_packaging_and_retention_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m253/m253_d001_object_packaging_and_retention_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so lane-D freezes the
+  current module.obj handoff, `@llvm.used` retention root, and retained
+  __objc3_sec_* aggregate symbols before later archive/link/startup
+  registration issues extend the packaging pipeline.

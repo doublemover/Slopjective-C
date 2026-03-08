@@ -1742,6 +1742,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_member_table_emission = !{!58}\n";
     out << "!objc3.objc_runtime_selector_string_pool_emission = !{!59}\n";
     out << "!objc3.objc_runtime_binary_inspection_harness = !{!60}\n";
+    out << "!objc3.objc_runtime_object_packaging_retention = !{!61}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2694,6 +2695,22 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeBinaryInspectionSymbolCommand)
         << "\", i64 4, i64 1}\n";
+    out << "!61 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeObjectPackagingRetentionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeObjectPackagingRetentionBoundaryModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeObjectPackagingRetentionAnchorModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeObjectPackagingRetentionArtifact)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeObjectPackagingRetentionSymbolPrefix)
+        << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "
@@ -4666,6 +4683,12 @@ class Objc3IREmitter {
         << Objc3RuntimeMetadataBinaryInspectionHarnessSummary()
         << ";positive_case_count=4"
         << ";negative_case_count=1"
+        << ";section_inventory_command="
+        << kObjc3RuntimeBinaryInspectionSectionCommand
+        << ";symbol_inventory_command="
+        << kObjc3RuntimeBinaryInspectionSymbolCommand << "\n";
+    out << "; runtime_metadata_object_packaging_retention = "
+        << Objc3RuntimeMetadataObjectPackagingRetentionSummary()
         << ";section_inventory_command="
         << kObjc3RuntimeBinaryInspectionSectionCommand
         << ";symbol_inventory_command="

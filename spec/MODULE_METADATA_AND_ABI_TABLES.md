@@ -6205,3 +6205,34 @@ shall preserve:
 Binary inspection harness anchors must remain deterministic and fail closed
 without claiming runtime registration, metadata-family expansion, or selector
 and descriptor rewiring beyond the already-closed `M253-C005` surface.
+
+## M253 object packaging and retention metadata anchors (D001)
+
+Deterministic lane-D object packaging and retention anchors for `M253-D001`
+shall preserve:
+
+- contract id `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_object_packaging_retention`,
+- boundary model
+  `current-object-file-boundary-with-retained-metadata-section-aggregates`,
+- retention-anchor model `llvm.used-plus-aggregate-section-symbols`,
+- current object artifact `module.obj`,
+- aggregate symbol prefix `__objc3_sec_`,
+- aggregate symbols:
+  - `__objc3_image_info`
+  - `__objc3_sec_class_descriptors`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- discovery commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`
+- evidence path
+  `tmp/reports/m253/M253-D001/object_packaging_and_retention_contract_summary.json`.
+
+Object packaging and retention anchors must remain deterministic and fail
+closed without claiming archive packaging, link registration, or startup
+bootstrap behavior in `M253-D001`.

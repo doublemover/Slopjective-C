@@ -295,6 +295,11 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // aggregate symbol inventories in a form that stays inspectable through one
   // shared llvm-readobj/llvm-objdump corpus. Compile-failure cases must remain
   // fail-closed and produce no synthesized object-inspection artifacts.
+  // M253-D001 object-packaging/retention freeze anchor: this same produced
+  // object boundary is now frozen as the lane-D packaging handoff, rooted in
+  // module.obj, @llvm.used retention, and retained __objc3_sec_* aggregate
+  // symbols. Later archive/link/startup registration work may extend the
+  // pipeline, but it may not replace or silently bypass these current anchors.
   // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
