@@ -4880,3 +4880,26 @@ The implementation must preserve:
 
 `M253-B003` does not add new metadata families, runtime registration, or
 bootstrap. It only expands the lowering-side emitted-format surface.
+
+## M253 metadata section emission freeze (C001)
+
+`M253-C001` freezes the current real-section emission boundary so later lane-C
+implementation issues can replace placeholder bytes without reopening the
+contract question.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`,
+- payload model `scaffold-placeholder-payloads-until-m253-c002`,
+- inventory model
+  `image-info-plus-class-protocol-category-property-ivar-sections`,
+- image-info payload model
+  `internal-{i32,i32}-zeroinitializer-image-info`,
+- descriptor payload model
+  `private-[1xi8]-zeroinitializer-per-descriptor`,
+- aggregate payload model
+  `i64-count-plus-pointer-vector-aggregates`,
+- the emitted IR comment
+  `; runtime_metadata_section_emission_boundary = ...`,
+- fail-closed non-goals:
+  no method, selector, or string-pool payload emission yet.

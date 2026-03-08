@@ -270,6 +270,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // M253-B003 object-format policy expansion anchor: llvm-direct object
   // emission now normalizes post-write determinism according to the produced
   // object format instead of assuming COFF-only behavior.
+  // M253-C001 metadata section emission freeze anchor: the backend consumes a
+  // real emitted metadata-section scaffold today, but it may not invent
+  // richer payload bytes or new metadata families while lane-C is still frozen
+  // at the placeholder-emission boundary.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

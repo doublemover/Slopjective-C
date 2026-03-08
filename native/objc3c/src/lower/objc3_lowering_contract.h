@@ -64,6 +64,25 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelElf =
     "llvm.used-appending-global+elf-stable-sections";
 inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelMachO =
     "llvm.used-appending-global+mach-o-data-segment-sections";
+// M253-C001 metadata section emission freeze anchor: native object files now
+// carry real metadata sections, but the payload bytes remain scaffold-only
+// placeholder shapes until the later lane-C implementation issues land.
+inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionContractId =
+    "objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1";
+inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionPayloadModel =
+    "scaffold-placeholder-payloads-until-m253-c002";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionEmissionInventoryModel =
+        "image-info-plus-class-protocol-category-property-ivar-sections";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionEmissionDescriptorPayloadModel =
+        "private-[1xi8]-zeroinitializer-per-descriptor";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionEmissionAggregatePayloadModel =
+        "i64-count-plus-pointer-vector-aggregates";
+inline constexpr const char
+    *kObjc3RuntimeMetadataSectionEmissionImageInfoPayloadModel =
+        "internal-{i32,i32}-zeroinitializer-image-info";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -759,6 +778,7 @@ bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
     const Objc3RuntimeMetadataLayoutPolicy &policy);
 std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
     const Objc3RuntimeMetadataLayoutPolicy &policy);
+std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary();
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
 const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);

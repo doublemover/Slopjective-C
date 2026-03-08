@@ -865,6 +865,34 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
 
+## Metadata section emission freeze (M253-C001)
+
+- Lane-C now freezes the current real-section emission boundary before payload
+  implementation issues start replacing placeholder bytes with encoded metadata
+  records.
+- Contract id:
+  `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`.
+- The frozen boundary is:
+  - payload model
+    `scaffold-placeholder-payloads-until-m253-c002`,
+  - inventory model
+    `image-info-plus-class-protocol-category-property-ivar-sections`,
+  - image-info payload model
+    `internal-{i32,i32}-zeroinitializer-image-info`,
+  - descriptor payload model
+    `private-[1xi8]-zeroinitializer-per-descriptor`,
+  - aggregate payload model
+    `i64-count-plus-pointer-vector-aggregates`.
+- `ir/objc3_ir_emitter.cpp` now publishes the boundary directly through:
+  - `; runtime_metadata_section_emission_boundary = ...`
+  - the existing scaffold globals under the current layout/object-format policy.
+- This freeze does not claim method, selector, or string-pool payload emission,
+  and it does not claim startup registration/bootstrap.
+- Readiness command:
+  `check:objc3c:m253-c001-lane-c-readiness`
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C001/metadata_section_emission_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

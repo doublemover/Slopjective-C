@@ -399,6 +399,25 @@ std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary() {
+  std::ostringstream out;
+  // M253-C001 metadata section emission freeze anchor: lane-C begins from the
+  // current real-section scaffold state rather than from manifest-only
+  // summaries. The boundary is explicit that payload bytes are still
+  // placeholders until later implementation issues replace them.
+  out << "contract=" << kObjc3RuntimeMetadataSectionEmissionContractId
+      << ";payload_model=" << kObjc3RuntimeMetadataSectionEmissionPayloadModel
+      << ";inventory_model=" << kObjc3RuntimeMetadataSectionEmissionInventoryModel
+      << ";image_info_payload_model="
+      << kObjc3RuntimeMetadataSectionEmissionImageInfoPayloadModel
+      << ";descriptor_payload_model="
+      << kObjc3RuntimeMetadataSectionEmissionDescriptorPayloadModel
+      << ";aggregate_payload_model="
+      << kObjc3RuntimeMetadataSectionEmissionAggregatePayloadModel
+      << ";non_goals=no-method-selector-string-pool-payloads";
+  return out.str();
+}
+
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
   std::ostringstream out;
   out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";

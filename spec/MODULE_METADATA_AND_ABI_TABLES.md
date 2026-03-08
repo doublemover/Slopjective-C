@@ -6007,6 +6007,23 @@ Deterministic lane-B object-format anchors for `M253-B003` shall preserve:
 - evidence path
   `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`.
 
+## M253 metadata section emission anchors (C001)
+
+Deterministic lane-C emission anchors for `M253-C001` shall preserve:
+
+- contract id `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`,
+- payload model `scaffold-placeholder-payloads-until-m253-c002`,
+- inventory model
+  `image-info-plus-class-protocol-category-property-ivar-sections`,
+- image-info payload model
+  `internal-{i32,i32}-zeroinitializer-image-info`,
+- descriptor payload model
+  `private-[1xi8]-zeroinitializer-per-descriptor`,
+- aggregate payload model
+  `i64-count-plus-pointer-vector-aggregates`,
+- evidence path
+  `tmp/reports/m253/M253-C001/metadata_section_emission_contract_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

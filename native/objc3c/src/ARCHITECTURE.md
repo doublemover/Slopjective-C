@@ -8465,3 +8465,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   explicit COFF/ELF/Mach-O surface for host-format section spellings,
   retention-anchor behavior, and produced-object determinism without changing
   the logical metadata ABI.
+- M253 lane-C C001 metadata section emission freeze anchors explicit
+  boundary artifacts in
+  `docs/contracts/m253_metadata_section_emission_contract_and_architecture_freeze_c001_expectations.md`,
+  `spec/planning/compiler/m253/m253_c001_metadata_section_emission_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so lane-C begins from
+  the current real-section scaffold boundary with explicit placeholder payload
+  models, explicit placeholder payload models for image-info/descriptors/
+  aggregates, and fail-closed non-goals before encoded metadata records land.

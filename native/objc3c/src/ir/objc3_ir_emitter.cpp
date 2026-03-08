@@ -4272,6 +4272,8 @@ class Objc3IREmitter {
     // The emitter may not reinterpret that COFF/ELF/Mach-O mapping locally.
     out << "; runtime_metadata_layout_policy = "
         << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
+    out << "; runtime_metadata_section_emission_boundary = "
+        << Objc3RuntimeMetadataSectionEmissionBoundarySummary() << "\n";
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
