@@ -5035,3 +5035,41 @@ protocol, category, property, and ivar descriptor payload contracts from
 `M253-C005` does not rewire existing descriptor bundles to pooled string
 pointers, nor does it add runtime registration/bootstrap or mutable runtime
 interning tables. It introduces canonical selector/string pool families only.
+
+## M253 binary inspection harness for emitted metadata (C006)
+
+Lane-C shall freeze one shared emitted-metadata inspection corpus so object-file
+structure is asserted against the current section families instead of inferred
+from earlier scaffold-only probes.
+
+`M253-C006` requires:
+
+- contract id `objc3c-runtime-binary-inspection-harness/m253-c006-v1`,
+- positive corpus model
+  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`,
+- negative corpus model
+  `negative-compile-failure-gating-with-no-object-inspection`,
+- emitted IR publication through
+  `; runtime_metadata_binary_inspection_harness = ...` and
+  `!objc3.objc_runtime_binary_inspection_harness`,
+- shared inspection commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`,
+- a positive corpus spanning scaffold-only, class-heavy, category-heavy, and
+  selector-pool-heavy emitted objects,
+- a fail-closed negative compile case that produces diagnostics but no
+  `module.obj` and no `module.manifest.json`,
+- section-family assertions covering
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`,
+  `objc3.runtime.ivar_descriptors`,
+  `objc3.runtime.selector_pool`, and
+  `objc3.runtime.string_pool`,
+- aggregate symbol assertions covering the corresponding `__objc3_*` section
+  anchors and zero/nonzero offsets where applicable.
+
+`M253-C006` does not add new metadata families, runtime registration/bootstrap,
+or descriptor-family rewiring. It expands binary inspection evidence only.

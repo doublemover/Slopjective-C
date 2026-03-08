@@ -6160,3 +6160,48 @@ preserve:
 Selector/string pool anchors must remain deterministic and fail closed before
 later issues add runtime registration, mutable runtime interning, or descriptor
 family rewiring to pooled pointers.
+
+## M253 binary inspection harness metadata anchors (C006)
+
+Deterministic lane-C emitted-metadata binary inspection anchors for `M253-C006`
+shall preserve:
+
+- contract id `objc3c-runtime-binary-inspection-harness/m253-c006-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_binary_inspection_harness`,
+- positive corpus model
+  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`,
+- negative corpus model
+  `negative-compile-failure-gating-with-no-object-inspection`,
+- shared object inspection commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`
+- emitted aggregate symbols:
+  - `__objc3_image_info`
+  - `__objc3_sec_class_descriptors`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- host object sections:
+  - `objc3.runtime.image_info`
+  - `objc3.runtime.class_descriptors`
+  - `objc3.runtime.protocol_descriptors`
+  - `objc3.runtime.category_descriptors`
+  - `objc3.runtime.property_descriptors`
+  - `objc3.runtime.ivar_descriptors`
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+- validation fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
+  - `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`
+- evidence path
+  `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`.
+
+Binary inspection harness anchors must remain deterministic and fail closed
+without claiming runtime registration, metadata-family expansion, or selector
+and descriptor rewiring beyond the already-closed `M253-C005` surface.

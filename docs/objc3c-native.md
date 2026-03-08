@@ -1050,6 +1050,54 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`
 
+## Binary inspection harness for emitted metadata (M253-C006)
+
+- Lane-C now freezes one emitted-metadata binary inspection corpus through
+  `Objc3RuntimeMetadataBinaryInspectionHarnessSummary`.
+- Contract id:
+  `objc3c-runtime-binary-inspection-harness/m253-c006-v1`.
+- The positive corpus model is
+  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`.
+- The negative corpus model is
+  `negative-compile-failure-gating-with-no-object-inspection`.
+- The emitted IR now carries:
+  - `; runtime_metadata_binary_inspection_harness = ...`
+  - `!objc3.objc_runtime_binary_inspection_harness`
+- The positive corpus covers:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
+- The negative corpus covers:
+  - `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`
+- The binary inspection harness proves object-file structure through:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`
+  - section-family presence and absence checks across
+    `objc3.runtime.image_info`,
+    `objc3.runtime.class_descriptors`,
+    `objc3.runtime.protocol_descriptors`,
+    `objc3.runtime.category_descriptors`,
+    `objc3.runtime.property_descriptors`,
+    `objc3.runtime.ivar_descriptors`,
+    `objc3.runtime.selector_pool`, and
+    `objc3.runtime.string_pool`
+  - aggregate symbol offsets for `__objc3_image_info`,
+    `__objc3_sec_class_descriptors`,
+    `__objc3_sec_protocol_descriptors`,
+    `__objc3_sec_category_descriptors`,
+    `__objc3_sec_property_descriptors`,
+    `__objc3_sec_ivar_descriptors`,
+    `__objc3_sec_selector_pool`, and
+    `__objc3_sec_string_pool`
+- `C006` remains bounded:
+  - no new metadata families,
+  - no runtime registration/bootstrap,
+  - no reopening of descriptor-family or selector/string-pool non-goals already
+    closed in `C002` through `C005`.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

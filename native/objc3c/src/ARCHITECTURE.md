@@ -8529,3 +8529,15 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so canonical selector and string pool sections become real retained metadata families while
   descriptor bundles remain shape-stable and message-send lowering stops using
   the older selector-only global naming scheme.
+- M253 lane-C C006 binary inspection harness expansion anchors explicit
+  conformance artifacts in
+  `docs/contracts/m253_binary_inspection_harness_for_emitted_metadata_conformance_corpus_expansion_c006_expectations.md`,
+  `spec/planning/compiler/m253/m253_c006_binary_inspection_harness_for_emitted_metadata_conformance_corpus_expansion_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so one shared
+  llvm-readobj/llvm-objdump corpus structurally proves every currently emitted
+  metadata section family across scaffold-only, class-heavy, category-heavy,
+  and selector-pool-heavy objects, with a fail-closed negative compile case
+  that produces no synthesized object-inspection outputs.

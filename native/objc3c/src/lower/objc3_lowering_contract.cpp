@@ -490,6 +490,26 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
+  std::ostringstream out;
+  // M253-C006 binary inspection harness expansion anchor: lane-C now proves
+  // emitted metadata sections structurally through one shared llvm-readobj and
+  // llvm-objdump corpus. The positive corpus covers scaffold-only, class-heavy,
+  // category-heavy, and selector-pool-heavy objects, while the negative corpus
+  // remains fail-closed when semantic validation prevents object emission.
+  out << "contract=" << kObjc3RuntimeBinaryInspectionHarnessContractId
+      << ";positive_corpus_model="
+      << kObjc3RuntimeBinaryInspectionPositiveCorpusModel
+      << ";negative_corpus_model="
+      << kObjc3RuntimeBinaryInspectionNegativeCorpusModel
+      << ";section_inventory_command="
+      << kObjc3RuntimeBinaryInspectionSectionCommand
+      << ";symbol_inventory_command="
+      << kObjc3RuntimeBinaryInspectionSymbolCommand
+      << ";non_goals=no-new-metadata-families-or-runtime-registration";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(HostRuntimeMetadataObjectFormat(),

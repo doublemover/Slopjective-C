@@ -142,6 +142,21 @@ inline constexpr const char *kObjc3RuntimeSelectorPoolLogicalSection =
     "objc3.runtime.selector_pool";
 inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
     "objc3.runtime.string_pool";
+// M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
+// emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
+// currently emitted metadata section family can be asserted structurally from
+// produced objects, including fail-closed negative gating when metadata
+// compilation stops before object emission.
+inline constexpr const char *kObjc3RuntimeBinaryInspectionHarnessContractId =
+    "objc3c-runtime-binary-inspection-harness/m253-c006-v1";
+inline constexpr const char *kObjc3RuntimeBinaryInspectionPositiveCorpusModel =
+    "positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks";
+inline constexpr const char *kObjc3RuntimeBinaryInspectionNegativeCorpusModel =
+    "negative-compile-failure-gating-with-no-object-inspection";
+inline constexpr const char *kObjc3RuntimeBinaryInspectionSectionCommand =
+    "llvm-readobj --sections module.obj";
+inline constexpr const char *kObjc3RuntimeBinaryInspectionSymbolCommand =
+    "llvm-objdump --syms module.obj";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -842,6 +857,7 @@ std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
 std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
+std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);

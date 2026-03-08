@@ -290,6 +290,11 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // canonical selector and string pool sections, including their stable ordinal
   // aggregates and pooled cstring payload bytes, without collapsing back to the
   // older selector-only global scheme.
+  // M253-C006 binary inspection harness expansion anchor: llvm-direct object
+  // emission must also preserve section families, relocation counts, and
+  // aggregate symbol inventories in a form that stays inspectable through one
+  // shared llvm-readobj/llvm-objdump corpus. Compile-failure cases must remain
+  // fail-closed and produce no synthesized object-inspection artifacts.
   // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
