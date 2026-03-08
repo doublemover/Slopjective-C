@@ -265,6 +265,58 @@ bool IsIvarSourceRecordLess(const Objc3RuntimeMetadataIvarSourceRecord &lhs,
          std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name, rhs.ivar_binding_symbol, rhs.line, rhs.column);
 }
 
+std::string BuildRuntimeClassOwnerIdentity(const std::string &class_name) {
+  return "class:" + class_name;
+}
+
+std::string BuildRuntimeMetaclassOwnerIdentity(const std::string &class_name) {
+  return "metaclass:" + class_name;
+}
+
+std::size_t CountClassMethods(const std::vector<Objc3MethodDecl> &methods) {
+  return static_cast<std::size_t>(
+      std::count_if(methods.begin(), methods.end(), [](const Objc3MethodDecl &method) {
+        return method.is_class_method;
+      }));
+}
+
+bool IsExecutableMetadataInterfaceNodeLess(
+    const Objc3ExecutableMetadataInterfaceGraphNode &lhs,
+    const Objc3ExecutableMetadataInterfaceGraphNode &rhs) {
+  return std::tie(lhs.class_name, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.class_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataImplementationNodeLess(
+    const Objc3ExecutableMetadataImplementationGraphNode &lhs,
+    const Objc3ExecutableMetadataImplementationGraphNode &rhs) {
+  return std::tie(lhs.class_name, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.class_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataClassNodeLess(
+    const Objc3ExecutableMetadataClassGraphNode &lhs,
+    const Objc3ExecutableMetadataClassGraphNode &rhs) {
+  return std::tie(lhs.class_name, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.class_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataMetaclassNodeLess(
+    const Objc3ExecutableMetadataMetaclassGraphNode &lhs,
+    const Objc3ExecutableMetadataMetaclassGraphNode &rhs) {
+  return std::tie(lhs.class_name, lhs.owner_identity, lhs.line, lhs.column) <
+         std::tie(rhs.class_name, rhs.owner_identity, rhs.line, rhs.column);
+}
+
+bool IsExecutableMetadataGraphEdgeLess(
+    const Objc3ExecutableMetadataGraphEdge &lhs,
+    const Objc3ExecutableMetadataGraphEdge &rhs) {
+  return std::tie(lhs.edge_kind, lhs.source_owner_identity, lhs.target_owner_identity,
+                  lhs.line, lhs.column) <
+         std::tie(rhs.edge_kind, rhs.source_owner_identity, rhs.target_owner_identity,
+                  rhs.line, rhs.column);
+}
+
 Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     const Objc3Program &program) {
   Objc3RuntimeMetadataSourceRecordSet records;
@@ -432,6 +484,264 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
                                          records.ivars_lexicographic.end(),
                                          IsIvarSourceRecordLess);
   return records;
+}
+
+Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
+    const Objc3Program &program,
+    const Objc3InterfaceImplementationSummary &interface_implementation_summary) {
+  Objc3ExecutableMetadataSourceGraph graph;
+
+  struct AggregatedClassSurface {
+    bool has_interface = false;
+    bool has_implementation = false;
+    std::string interface_owner_identity;
+    std::string implementation_owner_identity;
+    std::string super_class_owner_identity;
+    std::size_t interface_property_count = 0;
+    std::size_t implementation_property_count = 0;
+    std::size_t interface_method_count = 0;
+    std::size_t implementation_method_count = 0;
+    std::size_t interface_class_method_count = 0;
+    std::size_t implementation_class_method_count = 0;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
+  std::unordered_map<std::string, AggregatedClassSurface> aggregated_classes;
+  aggregated_classes.reserve(program.interfaces.size() + program.implementations.size());
+
+  auto &owner_edges = graph.owner_edges_lexicographic;
+  const auto add_owner_edge = [&owner_edges](const std::string &edge_kind,
+                                             const std::string &source_owner_identity,
+                                             const std::string &target_owner_identity,
+                                             unsigned line,
+                                             unsigned column) {
+    if (source_owner_identity.empty() || target_owner_identity.empty()) {
+      return;
+    }
+    Objc3ExecutableMetadataGraphEdge edge;
+    edge.edge_kind = edge_kind;
+    edge.source_owner_identity = source_owner_identity;
+    edge.target_owner_identity = target_owner_identity;
+    edge.line = line;
+    edge.column = column;
+    owner_edges.push_back(std::move(edge));
+  };
+
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.has_category) {
+      continue;
+    }
+
+    Objc3ExecutableMetadataInterfaceGraphNode node;
+    node.class_name = interface_decl.name;
+    node.owner_identity = interface_decl.semantic_link_symbol;
+    node.class_owner_identity = BuildRuntimeClassOwnerIdentity(interface_decl.name);
+    node.metaclass_owner_identity =
+        BuildRuntimeMetaclassOwnerIdentity(interface_decl.name);
+    node.super_class_owner_identity =
+        interface_decl.super_name.empty()
+            ? std::string{}
+            : BuildRuntimeClassOwnerIdentity(interface_decl.super_name);
+    node.has_super = !interface_decl.super_name.empty();
+    node.property_count = interface_decl.properties.size();
+    node.method_count = interface_decl.methods.size();
+    node.class_method_count = CountClassMethods(interface_decl.methods);
+    node.instance_method_count = node.method_count - node.class_method_count;
+    node.line = interface_decl.line;
+    node.column = interface_decl.column;
+    graph.interface_nodes_lexicographic.push_back(node);
+
+    AggregatedClassSurface &aggregate = aggregated_classes[interface_decl.name];
+    if (!aggregate.has_interface && !aggregate.has_implementation) {
+      aggregate.line = interface_decl.line;
+      aggregate.column = interface_decl.column;
+    }
+    aggregate.has_interface = true;
+    aggregate.interface_owner_identity = interface_decl.semantic_link_symbol;
+    aggregate.super_class_owner_identity = node.super_class_owner_identity;
+    aggregate.interface_property_count = node.property_count;
+    aggregate.interface_method_count = node.method_count;
+    aggregate.interface_class_method_count = node.class_method_count;
+
+    add_owner_edge("interface-to-class", node.owner_identity,
+                   node.class_owner_identity, node.line, node.column);
+    add_owner_edge("class-to-superclass", node.class_owner_identity,
+                   node.super_class_owner_identity, node.line, node.column);
+  }
+
+  for (const auto &implementation_decl : program.implementations) {
+    if (implementation_decl.has_category) {
+      continue;
+    }
+
+    Objc3ExecutableMetadataImplementationGraphNode node;
+    node.class_name = implementation_decl.name;
+    node.owner_identity = implementation_decl.semantic_link_symbol;
+    node.interface_owner_identity =
+        implementation_decl.semantic_link_interface_symbol;
+    node.class_owner_identity =
+        BuildRuntimeClassOwnerIdentity(implementation_decl.name);
+    node.metaclass_owner_identity =
+        BuildRuntimeMetaclassOwnerIdentity(implementation_decl.name);
+    node.has_matching_interface = !node.interface_owner_identity.empty();
+    node.property_count = implementation_decl.properties.size();
+    node.method_count = implementation_decl.methods.size();
+    node.class_method_count = CountClassMethods(implementation_decl.methods);
+    node.instance_method_count = node.method_count - node.class_method_count;
+    node.line = implementation_decl.line;
+    node.column = implementation_decl.column;
+    graph.implementation_nodes_lexicographic.push_back(node);
+
+    AggregatedClassSurface &aggregate = aggregated_classes[implementation_decl.name];
+    if (!aggregate.has_interface && !aggregate.has_implementation) {
+      aggregate.line = implementation_decl.line;
+      aggregate.column = implementation_decl.column;
+    }
+    aggregate.has_implementation = true;
+    aggregate.implementation_owner_identity = implementation_decl.semantic_link_symbol;
+    aggregate.implementation_property_count = node.property_count;
+    aggregate.implementation_method_count = node.method_count;
+    aggregate.implementation_class_method_count = node.class_method_count;
+
+    add_owner_edge("implementation-to-class", node.owner_identity,
+                   node.class_owner_identity, node.line, node.column);
+    add_owner_edge("implementation-to-interface", node.owner_identity,
+                   node.interface_owner_identity, node.line, node.column);
+  }
+
+  std::vector<std::string> class_names;
+  class_names.reserve(aggregated_classes.size());
+  for (const auto &entry : aggregated_classes) {
+    class_names.push_back(entry.first);
+  }
+  std::sort(class_names.begin(), class_names.end());
+
+  graph.class_nodes_lexicographic.reserve(class_names.size());
+  graph.metaclass_nodes_lexicographic.reserve(class_names.size());
+  for (const std::string &class_name : class_names) {
+    const AggregatedClassSurface &aggregate = aggregated_classes.at(class_name);
+
+    Objc3ExecutableMetadataClassGraphNode class_node;
+    class_node.class_name = class_name;
+    class_node.owner_identity = BuildRuntimeClassOwnerIdentity(class_name);
+    class_node.interface_owner_identity = aggregate.interface_owner_identity;
+    class_node.implementation_owner_identity =
+        aggregate.implementation_owner_identity;
+    class_node.metaclass_owner_identity =
+        BuildRuntimeMetaclassOwnerIdentity(class_name);
+    class_node.super_class_owner_identity = aggregate.super_class_owner_identity;
+    class_node.has_interface = aggregate.has_interface;
+    class_node.has_implementation = aggregate.has_implementation;
+    class_node.has_super = !aggregate.super_class_owner_identity.empty();
+    class_node.interface_property_count = aggregate.interface_property_count;
+    class_node.implementation_property_count =
+        aggregate.implementation_property_count;
+    class_node.interface_method_count = aggregate.interface_method_count;
+    class_node.implementation_method_count = aggregate.implementation_method_count;
+    class_node.interface_class_method_count =
+        aggregate.interface_class_method_count;
+    class_node.implementation_class_method_count =
+        aggregate.implementation_class_method_count;
+    class_node.interface_instance_method_count =
+        aggregate.interface_method_count -
+        aggregate.interface_class_method_count;
+    class_node.implementation_instance_method_count =
+        aggregate.implementation_method_count -
+        aggregate.implementation_class_method_count;
+    class_node.line = aggregate.line;
+    class_node.column = aggregate.column;
+    graph.class_nodes_lexicographic.push_back(class_node);
+
+    if (aggregate.has_interface) {
+      Objc3ExecutableMetadataMetaclassGraphNode metaclass_node;
+      metaclass_node.class_name = class_name;
+      metaclass_node.owner_identity =
+          BuildRuntimeMetaclassOwnerIdentity(class_name);
+      metaclass_node.class_owner_identity = class_node.owner_identity;
+      metaclass_node.interface_owner_identity = aggregate.interface_owner_identity;
+      metaclass_node.implementation_owner_identity =
+          aggregate.implementation_owner_identity;
+      metaclass_node.super_metaclass_owner_identity =
+          class_node.has_super
+              ? BuildRuntimeMetaclassOwnerIdentity(
+                    class_node.super_class_owner_identity.substr(6u))
+              : std::string{};
+      metaclass_node.derived_from_interface = true;
+      metaclass_node.has_implementation = aggregate.has_implementation;
+      metaclass_node.has_super = class_node.has_super;
+      metaclass_node.interface_class_method_count =
+          aggregate.interface_class_method_count;
+      metaclass_node.implementation_class_method_count =
+          aggregate.implementation_class_method_count;
+      metaclass_node.line = aggregate.line;
+      metaclass_node.column = aggregate.column;
+      graph.metaclass_nodes_lexicographic.push_back(metaclass_node);
+
+      add_owner_edge("class-to-metaclass", class_node.owner_identity,
+                     metaclass_node.owner_identity, class_node.line,
+                     class_node.column);
+      add_owner_edge("metaclass-to-super-metaclass",
+                     metaclass_node.owner_identity,
+                     metaclass_node.super_metaclass_owner_identity,
+                     metaclass_node.line, metaclass_node.column);
+    }
+  }
+
+  std::sort(graph.interface_nodes_lexicographic.begin(),
+            graph.interface_nodes_lexicographic.end(),
+            IsExecutableMetadataInterfaceNodeLess);
+  std::sort(graph.implementation_nodes_lexicographic.begin(),
+            graph.implementation_nodes_lexicographic.end(),
+            IsExecutableMetadataImplementationNodeLess);
+  std::sort(graph.class_nodes_lexicographic.begin(),
+            graph.class_nodes_lexicographic.end(),
+            IsExecutableMetadataClassNodeLess);
+  std::sort(graph.metaclass_nodes_lexicographic.begin(),
+            graph.metaclass_nodes_lexicographic.end(),
+            IsExecutableMetadataMetaclassNodeLess);
+  std::sort(graph.owner_edges_lexicographic.begin(),
+            graph.owner_edges_lexicographic.end(),
+            IsExecutableMetadataGraphEdgeLess);
+
+  const bool interface_count_aligned =
+      graph.interface_nodes_lexicographic.size() ==
+      interface_implementation_summary.declared_interfaces;
+  const bool implementation_count_aligned =
+      graph.implementation_nodes_lexicographic.size() ==
+      interface_implementation_summary.declared_implementations;
+  const bool metaclass_count_aligned =
+      graph.metaclass_nodes_lexicographic.size() ==
+      graph.interface_nodes_lexicographic.size();
+  const bool class_node_floor_satisfied =
+      graph.class_nodes_lexicographic.size() >=
+          graph.interface_nodes_lexicographic.size() &&
+      graph.class_nodes_lexicographic.size() >=
+          graph.implementation_nodes_lexicographic.size();
+
+  graph.deterministic =
+      std::is_sorted(graph.interface_nodes_lexicographic.begin(),
+                     graph.interface_nodes_lexicographic.end(),
+                     IsExecutableMetadataInterfaceNodeLess) &&
+      std::is_sorted(graph.implementation_nodes_lexicographic.begin(),
+                     graph.implementation_nodes_lexicographic.end(),
+                     IsExecutableMetadataImplementationNodeLess) &&
+      std::is_sorted(graph.class_nodes_lexicographic.begin(),
+                     graph.class_nodes_lexicographic.end(),
+                     IsExecutableMetadataClassNodeLess) &&
+      std::is_sorted(graph.metaclass_nodes_lexicographic.begin(),
+                     graph.metaclass_nodes_lexicographic.end(),
+                     IsExecutableMetadataMetaclassNodeLess) &&
+      std::is_sorted(graph.owner_edges_lexicographic.begin(),
+                     graph.owner_edges_lexicographic.end(),
+                     IsExecutableMetadataGraphEdgeLess);
+  graph.source_graph_complete =
+      graph.deterministic && interface_count_aligned &&
+      implementation_count_aligned && metaclass_count_aligned &&
+      class_node_floor_satisfied;
+  graph.ready_for_semantic_closure = graph.source_graph_complete;
+  graph.ready_for_lowering = false;
+  return graph;
 }
 
 Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipBoundary(
@@ -1689,9 +1999,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
 
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
+  result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(
+      Objc3ParsedProgramAst(result.program),
+      result.sema_type_metadata_handoff.interface_implementation_summary);
   result.runtime_metadata_source_ownership_boundary =
       BuildRuntimeMetadataSourceOwnershipBoundary(result.runtime_metadata_source_records,
-                                                 result.sema_type_metadata_handoff);
+                                                  result.sema_type_metadata_handoff);
   result.typed_sema_to_lowering_contract_surface =
       BuildObjc3TypedSemaToLoweringContractSurface(result, options);
   result.runtime_export_legality_boundary = BuildRuntimeExportLegalityBoundary(

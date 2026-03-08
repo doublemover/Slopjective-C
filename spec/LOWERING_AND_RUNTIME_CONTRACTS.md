@@ -4455,3 +4455,19 @@ semantic closure work begins.
 A001 therefore freezes the executable metadata source graph boundary and
 evidence only. It does not claim semantic closure, lowering readiness, runtime
 ingest packaging, or startup registration are complete.
+
+## M252 executable metadata graph completeness (A002)
+
+`M252-A002` promotes the executable metadata graph into one real frontend
+packet with:
+
+- contract id `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- first-class interface, implementation, class, and metaclass node entries,
+- canonical runtime owner identities on `class:` / `metaclass:` surfaces,
+- deterministic owner-edge ordering on `lexicographic-kind-source-target`,
+- explicit superclass and super-metaclass edges,
+- fail-closed `ready_for_semantic_closure == true` and
+  `ready_for_lowering == false` on the happy path.
+
+`M252-A002` does not complete protocol/category/property/ivar graph closure,
+semantic ambiguity diagnostics, or lowering/runtime ingest readiness.

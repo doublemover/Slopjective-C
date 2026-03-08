@@ -5030,6 +5030,9 @@ static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
 
 static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_name,
                                                        const std::string &category_name) {
+  // M252-A002 completeness: interface/implementation semantic-link symbols stay
+  // canonical declaration node identities while runtime class/metaclass graph
+  // nodes derive a separate class:/metaclass: owner surface.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

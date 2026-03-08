@@ -220,19 +220,19 @@ SEMA_PASSES_SNIPPETS: tuple[SnippetCheck, ...] = (
 FRONTEND_ARTIFACTS_SNIPPETS: tuple[SnippetCheck, ...] = (
     SnippetCheck(
         "M252-A001-ART-01",
-        '<< ",\\"objc_executable_metadata_source_graph\\":{\\"contract_id\\":\\""',
+        "BuildExecutableMetadataSourceGraphJson(",
     ),
     SnippetCheck(
         "M252-A001-ART-02",
-        '<< "\\",\\"owner_identity_model\\":\\"semantic-link-symbol-lexicographic-owner-identity\\""',
+        'const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph =',
     ),
     SnippetCheck(
         "M252-A001-ART-03",
-        '<< ",\\"metaclass_node_policy\\":\\"metaclass-nodes-derived-from-resolved-interface-symbols\\""',
+        'graph.owner_identity_model',
     ),
     SnippetCheck(
         "M252-A001-ART-04",
-        '<< ",\\"ready_for_lowering\\":false"',
+        'graph.ready_for_lowering',
     ),
 )
 

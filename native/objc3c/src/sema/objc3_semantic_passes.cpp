@@ -8839,6 +8839,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     }
 
     Objc3InterfaceInfo interface_info;
+    // M252-A002 completeness anchor: sema preserves deterministic interface
+    // super-name and implementation-pairing inputs for class/metaclass graph
+    // materialization in the frontend pipeline.
     interface_info.super_name = interface_decl.super_name;
     for (const auto &property_decl : interface_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, interface_decl.name, "interface", diagnostics);

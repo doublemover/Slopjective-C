@@ -414,6 +414,23 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-A001/executable_metadata_source_graph_contract_summary.json`
 
+## Interface implementation class metaclass graph completeness (M252-A002)
+
+- Lane-A now materializes the executable metadata source graph as a real
+  frontend packet instead of a count-only freeze.
+- The canonical packet type is `Objc3ExecutableMetadataSourceGraph`.
+- The manifest path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`.
+- Interface and implementation declaration nodes keep parser semantic-link
+  owner identities while runtime nodes publish canonical `class:` and
+  `metaclass:` owners plus deterministic owner edges.
+- `M252-A002` proves explicit `interface_node_entries`,
+  `implementation_node_entries`, `class_node_entries`,
+  `metaclass_node_entries`, and `owner_edges` on a happy-path superclass
+  fixture while remaining not yet lowering-ready.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-A002/executable_metadata_graph_completeness_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

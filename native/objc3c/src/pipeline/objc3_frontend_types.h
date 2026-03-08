@@ -1322,6 +1322,122 @@ inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
   return records.deterministic;
 }
 
+inline constexpr const char *kObjc3ExecutableMetadataSourceGraphContractId =
+    "objc3c-executable-metadata-source-graph-completeness/m252-a002-v1";
+inline constexpr const char *kObjc3ExecutableMetadataSourceGraphOwnerIdentityModel =
+    "semantic-link-symbol-and-runtime-owner-identity";
+inline constexpr const char *kObjc3ExecutableMetadataMetaclassNodePolicy =
+    "first-class-metaclass-nodes-derived-from-interface-runtime-owner-identities";
+inline constexpr const char *kObjc3ExecutableMetadataSourceGraphEdgeOrderingModel =
+    "lexicographic-kind-source-target";
+
+struct Objc3ExecutableMetadataInterfaceGraphNode {
+  std::string class_name;
+  std::string owner_identity;
+  std::string class_owner_identity;
+  std::string metaclass_owner_identity;
+  std::string super_class_owner_identity;
+  bool has_super = false;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  std::size_t class_method_count = 0;
+  std::size_t instance_method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataImplementationGraphNode {
+  std::string class_name;
+  std::string owner_identity;
+  std::string interface_owner_identity;
+  std::string class_owner_identity;
+  std::string metaclass_owner_identity;
+  bool has_matching_interface = false;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  std::size_t class_method_count = 0;
+  std::size_t instance_method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataClassGraphNode {
+  std::string class_name;
+  std::string owner_identity;
+  std::string interface_owner_identity;
+  std::string implementation_owner_identity;
+  std::string metaclass_owner_identity;
+  std::string super_class_owner_identity;
+  bool has_interface = false;
+  bool has_implementation = false;
+  bool has_super = false;
+  std::size_t interface_property_count = 0;
+  std::size_t implementation_property_count = 0;
+  std::size_t interface_method_count = 0;
+  std::size_t implementation_method_count = 0;
+  std::size_t interface_class_method_count = 0;
+  std::size_t implementation_class_method_count = 0;
+  std::size_t interface_instance_method_count = 0;
+  std::size_t implementation_instance_method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataMetaclassGraphNode {
+  std::string class_name;
+  std::string owner_identity;
+  std::string class_owner_identity;
+  std::string interface_owner_identity;
+  std::string implementation_owner_identity;
+  std::string super_metaclass_owner_identity;
+  bool derived_from_interface = false;
+  bool has_implementation = false;
+  bool has_super = false;
+  std::size_t interface_class_method_count = 0;
+  std::size_t implementation_class_method_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataGraphEdge {
+  std::string edge_kind;
+  std::string source_owner_identity;
+  std::string target_owner_identity;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ExecutableMetadataSourceGraph {
+  std::string contract_id = kObjc3ExecutableMetadataSourceGraphContractId;
+  std::string owner_identity_model =
+      kObjc3ExecutableMetadataSourceGraphOwnerIdentityModel;
+  std::string metaclass_node_policy =
+      kObjc3ExecutableMetadataMetaclassNodePolicy;
+  std::string edge_ordering_model =
+      kObjc3ExecutableMetadataSourceGraphEdgeOrderingModel;
+  std::vector<Objc3ExecutableMetadataInterfaceGraphNode>
+      interface_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataImplementationGraphNode>
+      implementation_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataClassGraphNode> class_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataMetaclassGraphNode>
+      metaclass_nodes_lexicographic;
+  std::vector<Objc3ExecutableMetadataGraphEdge> owner_edges_lexicographic;
+  bool deterministic = false;
+  bool source_graph_complete = false;
+  bool ready_for_semantic_closure = false;
+  bool ready_for_lowering = false;
+};
+
+inline bool IsReadyObjc3ExecutableMetadataSourceGraph(
+    const Objc3ExecutableMetadataSourceGraph &graph) {
+  return graph.deterministic && graph.source_graph_complete &&
+         graph.ready_for_semantic_closure && !graph.ready_for_lowering &&
+         !graph.contract_id.empty() && !graph.owner_identity_model.empty() &&
+         !graph.metaclass_node_policy.empty() &&
+         !graph.edge_ordering_model.empty();
+}
+
 struct Objc3RuntimeMetadataSourceOwnershipBoundary {
   std::string contract_id = kObjc3RuntimeMetadataSourceOwnershipContractId;
   std::string canonical_source_schema = kObjc3RuntimeMetadataCanonicalSourceSchema;
@@ -1869,6 +1985,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
+  Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
   Objc3RuntimeExportEnforcementSummary runtime_export_enforcement_summary;

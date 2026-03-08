@@ -8275,3 +8275,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   semantic-link-symbol owner identity model, derived metaclass policy, and
   manifest-published executable metadata source graph remain fail-closed before
   `M252-A002` graph-completion work begins.
+- M252 lane-A A002 executable metadata graph completeness anchors explicit
+  contract artifacts in
+  `docs/contracts/m252_interface_implementation_class_metaclass_graph_completeness_a002_expectations.md`,
+  `spec/planning/compiler/m252/m252_a002_interface_implementation_class_metaclass_graph_completeness_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so the
+  first-class interface, implementation, class, and metaclass nodes plus
+  deterministic owner edges stay fail-closed before `M252-A003` protocol/
+  category/property/ivar expansion and lane-B semantic closure work land.

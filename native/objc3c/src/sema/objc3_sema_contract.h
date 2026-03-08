@@ -108,6 +108,8 @@ struct Objc3ProtocolCategoryCompositionSummary {
 };
 
 struct Objc3ClassProtocolCategoryLinkingSummary {
+  // M252-A002 completeness anchor: these deterministic counts validate the
+  // first-class executable metadata graph packet.
   std::size_t declared_interfaces = 0;
   std::size_t resolved_interfaces = 0;
   std::size_t declared_implementations = 0;

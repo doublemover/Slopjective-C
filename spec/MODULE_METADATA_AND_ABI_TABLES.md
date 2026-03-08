@@ -5656,6 +5656,25 @@ Executable metadata source graph anchors must remain deterministic and fail
 closed before `M252-A002` and `M252-A003` complete semantic closure and edge
 inventory work.
 
+## M252 executable metadata graph completeness metadata anchors (A002)
+
+Deterministic lane-A executable metadata graph completeness for `M252-A002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- manifest node `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`,
+- explicit `interface_node_entries`,
+- explicit `implementation_node_entries`,
+- explicit `class_node_entries`,
+- explicit `metaclass_node_entries`,
+- explicit `owner_edges`,
+- evidence path
+  `tmp/reports/m252/M252-A002/executable_metadata_graph_completeness_summary.json`.
+
+The graph must remain deterministic and fail closed before `M252-A003`,
+lane-B semantic ambiguity work, lowering handoff, and runtime ingest packaging
+land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

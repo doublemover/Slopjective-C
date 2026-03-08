@@ -62,6 +62,204 @@ const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
   }
 }
 
+std::string EscapeJsonString(const std::string &value) {
+  std::ostringstream out;
+  for (const unsigned char c : value) {
+    switch (c) {
+      case '\\':
+        out << "\\\\";
+        break;
+      case '"':
+        out << "\\\"";
+        break;
+      case '\b':
+        out << "\\b";
+        break;
+      case '\f':
+        out << "\\f";
+        break;
+      case '\n':
+        out << "\\n";
+        break;
+      case '\r':
+        out << "\\r";
+        break;
+      case '\t':
+        out << "\\t";
+        break;
+      default:
+        if (c < 0x20u) {
+          out << "\\u00";
+          constexpr char kHex[] = "0123456789abcdef";
+          out << kHex[(c >> 4u) & 0x0fu] << kHex[c & 0x0fu];
+        } else {
+          out << static_cast<char>(c);
+        }
+        break;
+    }
+  }
+  return out.str();
+}
+
+std::string BuildExecutableMetadataSourceGraphJson(
+    const Objc3ExecutableMetadataSourceGraph &graph,
+    std::size_t protocol_node_count,
+    std::size_t category_node_count,
+    std::size_t property_node_count,
+    std::size_t ivar_node_count,
+    std::size_t method_node_count) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(graph.contract_id)
+      << "\",\"owner_identity_model\":\""
+      << EscapeJsonString(graph.owner_identity_model)
+      << "\",\"metaclass_node_policy\":\""
+      << EscapeJsonString(graph.metaclass_node_policy)
+      << "\",\"edge_ordering_model\":\""
+      << EscapeJsonString(graph.edge_ordering_model)
+      << "\",\"interface_nodes\":"
+      << graph.interface_nodes_lexicographic.size()
+      << ",\"implementation_nodes\":"
+      << graph.implementation_nodes_lexicographic.size()
+      << ",\"class_nodes\":" << graph.class_nodes_lexicographic.size()
+      << ",\"metaclass_nodes\":"
+      << graph.metaclass_nodes_lexicographic.size()
+      << ",\"protocol_nodes\":" << protocol_node_count
+      << ",\"category_nodes\":" << category_node_count
+      << ",\"property_nodes\":" << property_node_count
+      << ",\"ivar_nodes\":" << ivar_node_count
+      << ",\"method_nodes\":" << method_node_count
+      << ",\"interface_node_entries\":[";
+  for (std::size_t i = 0; i < graph.interface_nodes_lexicographic.size(); ++i) {
+    const auto &node = graph.interface_nodes_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"class_name\":\"" << EscapeJsonString(node.class_name)
+        << "\",\"owner_identity\":\"" << EscapeJsonString(node.owner_identity)
+        << "\",\"class_owner_identity\":\""
+        << EscapeJsonString(node.class_owner_identity)
+        << "\",\"metaclass_owner_identity\":\""
+        << EscapeJsonString(node.metaclass_owner_identity)
+        << "\",\"super_class_owner_identity\":\""
+        << EscapeJsonString(node.super_class_owner_identity)
+        << "\",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"property_count\":" << node.property_count
+        << ",\"method_count\":" << node.method_count
+        << ",\"class_method_count\":" << node.class_method_count
+        << ",\"instance_method_count\":" << node.instance_method_count
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+  }
+  out << "],\"implementation_node_entries\":[";
+  for (std::size_t i = 0; i < graph.implementation_nodes_lexicographic.size();
+       ++i) {
+    const auto &node = graph.implementation_nodes_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"class_name\":\"" << EscapeJsonString(node.class_name)
+        << "\",\"owner_identity\":\"" << EscapeJsonString(node.owner_identity)
+        << "\",\"interface_owner_identity\":\""
+        << EscapeJsonString(node.interface_owner_identity)
+        << "\",\"class_owner_identity\":\""
+        << EscapeJsonString(node.class_owner_identity)
+        << "\",\"metaclass_owner_identity\":\""
+        << EscapeJsonString(node.metaclass_owner_identity)
+        << "\",\"has_matching_interface\":"
+        << (node.has_matching_interface ? "true" : "false")
+        << ",\"property_count\":" << node.property_count
+        << ",\"method_count\":" << node.method_count
+        << ",\"class_method_count\":" << node.class_method_count
+        << ",\"instance_method_count\":" << node.instance_method_count
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+  }
+  out << "],\"class_node_entries\":[";
+  for (std::size_t i = 0; i < graph.class_nodes_lexicographic.size(); ++i) {
+    const auto &node = graph.class_nodes_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"class_name\":\"" << EscapeJsonString(node.class_name)
+        << "\",\"owner_identity\":\"" << EscapeJsonString(node.owner_identity)
+        << "\",\"interface_owner_identity\":\""
+        << EscapeJsonString(node.interface_owner_identity)
+        << "\",\"implementation_owner_identity\":\""
+        << EscapeJsonString(node.implementation_owner_identity)
+        << "\",\"metaclass_owner_identity\":\""
+        << EscapeJsonString(node.metaclass_owner_identity)
+        << "\",\"super_class_owner_identity\":\""
+        << EscapeJsonString(node.super_class_owner_identity)
+        << "\",\"has_interface\":" << (node.has_interface ? "true" : "false")
+        << ",\"has_implementation\":"
+        << (node.has_implementation ? "true" : "false")
+        << ",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"interface_property_count\":" << node.interface_property_count
+        << ",\"implementation_property_count\":"
+        << node.implementation_property_count
+        << ",\"interface_method_count\":" << node.interface_method_count
+        << ",\"implementation_method_count\":"
+        << node.implementation_method_count
+        << ",\"interface_class_method_count\":"
+        << node.interface_class_method_count
+        << ",\"implementation_class_method_count\":"
+        << node.implementation_class_method_count
+        << ",\"interface_instance_method_count\":"
+        << node.interface_instance_method_count
+        << ",\"implementation_instance_method_count\":"
+        << node.implementation_instance_method_count
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+  }
+  out << "],\"metaclass_node_entries\":[";
+  for (std::size_t i = 0; i < graph.metaclass_nodes_lexicographic.size(); ++i) {
+    const auto &node = graph.metaclass_nodes_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"class_name\":\"" << EscapeJsonString(node.class_name)
+        << "\",\"owner_identity\":\"" << EscapeJsonString(node.owner_identity)
+        << "\",\"class_owner_identity\":\""
+        << EscapeJsonString(node.class_owner_identity)
+        << "\",\"interface_owner_identity\":\""
+        << EscapeJsonString(node.interface_owner_identity)
+        << "\",\"implementation_owner_identity\":\""
+        << EscapeJsonString(node.implementation_owner_identity)
+        << "\",\"super_metaclass_owner_identity\":\""
+        << EscapeJsonString(node.super_metaclass_owner_identity)
+        << "\",\"derived_from_interface\":"
+        << (node.derived_from_interface ? "true" : "false")
+        << ",\"has_implementation\":"
+        << (node.has_implementation ? "true" : "false")
+        << ",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"interface_class_method_count\":"
+        << node.interface_class_method_count
+        << ",\"implementation_class_method_count\":"
+        << node.implementation_class_method_count
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+  }
+  out << "],\"owner_edges\":[";
+  for (std::size_t i = 0; i < graph.owner_edges_lexicographic.size(); ++i) {
+    const auto &edge = graph.owner_edges_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"edge_kind\":\"" << EscapeJsonString(edge.edge_kind)
+        << "\",\"source_owner_identity\":\""
+        << EscapeJsonString(edge.source_owner_identity)
+        << "\",\"target_owner_identity\":\""
+        << EscapeJsonString(edge.target_owner_identity)
+        << "\",\"line\":" << edge.line << ",\"column\":" << edge.column
+        << "}";
+  }
+  out << "],\"lexicographic_owner_edge_ordering\":"
+      << (graph.deterministic ? "true" : "false")
+      << ",\"source_graph_complete\":"
+      << (graph.source_graph_complete ? "true" : "false")
+      << ",\"ready_for_semantic_closure\":"
+      << (graph.ready_for_semantic_closure ? "true" : "false")
+      << ",\"ready_for_lowering\":"
+      << (graph.ready_for_lowering ? "true" : "false") << "}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -1923,6 +2121,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.symbol_graph_scope_resolution_summary;
   const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records =
       pipeline_result.runtime_metadata_source_records;
+  const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph =
+      pipeline_result.executable_metadata_source_graph;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
@@ -4213,31 +4413,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "}"
-           << ",\"objc_executable_metadata_source_graph\":{\"contract_id\":\""
-           << "objc3c-executable-metadata-source-graph-freeze/m252-a001-v1"
-           << "\",\"owner_identity_model\":\"semantic-link-symbol-lexicographic-owner-identity\""
-           << ",\"metaclass_node_policy\":\"metaclass-nodes-derived-from-resolved-interface-symbols\""
-           << ",\"class_nodes\":"
-           << class_protocol_category_linking_summary.resolved_class_interfaces
-           << ",\"metaclass_nodes\":"
-           << class_protocol_category_linking_summary.resolved_class_interfaces
-           << ",\"protocol_nodes\":"
-           << protocol_category_summary.resolved_protocol_symbols
-           << ",\"category_nodes\":"
-           << protocol_category_summary.resolved_category_symbols
-           << ",\"property_nodes\":"
-           << property_attribute_summary.property_declaration_entries
-           << ",\"ivar_nodes\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_sites
-           << ",\"method_nodes\":"
-           << (interface_class_method_symbols + interface_instance_method_symbols +
-               implementation_class_method_symbols + implementation_instance_method_symbols +
-               protocol_category_summary.protocol_method_symbols +
-               protocol_category_summary.category_method_symbols)
-           << ",\"lexicographic_owner_edge_ordering\":true"
-           << ",\"ready_for_semantic_closure\":false"
-           << ",\"ready_for_lowering\":false"
-           << "}"
+           << ",\"objc_executable_metadata_source_graph\":"
+           << BuildExecutableMetadataSourceGraphJson(
+                  executable_metadata_source_graph,
+                  protocol_category_summary.resolved_protocol_symbols,
+                  protocol_category_summary.resolved_category_symbols,
+                  property_attribute_summary.property_declaration_entries,
+                  property_synthesis_ivar_binding_contract.ivar_binding_sites,
+                  interface_class_method_symbols + interface_instance_method_symbols +
+                      implementation_class_method_symbols +
+                      implementation_instance_method_symbols +
+                      protocol_category_summary.protocol_method_symbols +
+                      protocol_category_summary.category_method_symbols)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

@@ -1,0 +1,37 @@
+module executableMetadataGraphClassMetaclass;
+
+@interface Base
+@property (readonly) id token;
++ (id) shared;
+- (id) token;
+@end
+
+@implementation Base
+@property (readonly) id token;
++ (id) shared {
+  return 1;
+}
+- (id) token {
+  return 2;
+}
+@end
+
+@interface Widget : Base
+@property (readonly) id currentValue;
++ (id) sharedWidget;
+- (id) currentValue;
+@end
+
+@implementation Widget
+@property (readonly) id currentValue;
++ (id) sharedWidget {
+  return 3;
+}
+- (id) currentValue {
+  return 4;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}
