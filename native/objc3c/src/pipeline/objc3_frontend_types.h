@@ -2139,6 +2139,63 @@ inline bool IsReadyObjc3ExecutableMetadataDebugProjectionSummary(
   return true;
 }
 
+struct Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary {
+  std::string contract_id =
+      kObjc3ExecutableMetadataRuntimeIngestPackagingContractId;
+  std::string typed_lowering_handoff_contract_id =
+      kObjc3ExecutableMetadataTypedLoweringHandoffContractId;
+  std::string debug_projection_contract_id =
+      kObjc3ExecutableMetadataDebugProjectionContractId;
+  std::string packaging_surface_path =
+      kObjc3ExecutableMetadataRuntimeIngestPackagingSurfacePath;
+  std::string typed_handoff_surface_path =
+      kObjc3ExecutableMetadataTypedLoweringHandoffManifestSurfacePath;
+  std::string debug_projection_surface_path =
+      kObjc3ExecutableMetadataDebugProjectionManifestSurfacePath;
+  std::string packaging_payload_model =
+      kObjc3ExecutableMetadataRuntimeIngestPackagingPayloadModel;
+  std::string transport_artifact_relative_path =
+      kObjc3ExecutableMetadataRuntimeIngestPackagingTransportArtifact;
+  bool boundary_frozen = false;
+  bool fail_closed = false;
+  bool typed_lowering_handoff_ready = false;
+  bool debug_projection_ready = false;
+  bool manifest_transport_frozen = false;
+  bool runtime_section_emission_not_yet_landed = false;
+  bool startup_registration_not_yet_landed = false;
+  bool runtime_loader_registration_not_yet_landed = false;
+  bool explicit_non_goals_published = false;
+  bool ready_for_packaging_implementation = false;
+  std::string typed_lowering_handoff_replay_key;
+  std::string debug_projection_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3ExecutableMetadataRuntimeIngestPackagingContractSummary(
+    const Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary
+        &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.typed_lowering_handoff_contract_id.empty() &&
+         !summary.debug_projection_contract_id.empty() &&
+         !summary.packaging_surface_path.empty() &&
+         !summary.typed_handoff_surface_path.empty() &&
+         !summary.debug_projection_surface_path.empty() &&
+         !summary.packaging_payload_model.empty() &&
+         !summary.transport_artifact_relative_path.empty() &&
+         summary.boundary_frozen && summary.fail_closed &&
+         summary.typed_lowering_handoff_ready && summary.debug_projection_ready &&
+         summary.manifest_transport_frozen &&
+         summary.runtime_section_emission_not_yet_landed &&
+         summary.startup_registration_not_yet_landed &&
+         summary.runtime_loader_registration_not_yet_landed &&
+         summary.explicit_non_goals_published &&
+         summary.ready_for_packaging_implementation &&
+         !summary.typed_lowering_handoff_replay_key.empty() &&
+         !summary.debug_projection_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3RuntimeSupportLibraryContractSummary {
   std::string contract_id = kObjc3RuntimeSupportLibraryContractId;
   std::string metadata_scaffold_contract_id =

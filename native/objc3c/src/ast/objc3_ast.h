@@ -344,6 +344,8 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
     "objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionContractId =
     "objc3c-executable-metadata-debug-projection/m252-c003-v1";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingContractId =
+    "objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
@@ -443,6 +445,12 @@ inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestInsp
     "print(payload['frontend']['pipeline']['semantic_surface']['objc_executable_metadata_debug_projection'])\"";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrInspectionCommand =
     "Select-String -Path module.ll -Pattern '!objc3.objc_executable_metadata_debug_projection'";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingPayloadModel =
+    "typed-handoff-plus-debug-projection-manifest-v1";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingTransportArtifact =
+    "module.manifest.json";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

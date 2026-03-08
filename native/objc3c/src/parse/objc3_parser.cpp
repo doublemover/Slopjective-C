@@ -5051,6 +5051,10 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
   // replays these same parser-owned owner identities before runtime section
   // emission lands, so inspection never depends on reparsing declaration text.
+  // M252-D001 runtime-ingest packaging anchor: lane-D packages this same
+  // parser-owned owner identity surface through one manifest transport
+  // contract, so later runtime ingest never reconstructs owner identity from
+  // raw syntax.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

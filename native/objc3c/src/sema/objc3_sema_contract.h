@@ -1600,6 +1600,10 @@ struct Objc3SemanticImplementationTypeMetadata {
 // M252-C003 debug-projection anchor: the manifest/IR inspection matrix replays
 // this same typed sema surface so operators inspect one deterministic schema
 // before runtime section emission lands.
+// M252-D001 runtime-ingest packaging anchor: the manifest packaging boundary
+// must carry this same typed sema surface forward verbatim, so runtime ingest
+// packaging never invents a second schema between lane-C publication and
+// later section emission/startup registration.
 struct Objc3SemanticTypeMetadataHandoff {
   std::vector<std::string> global_names_lexicographic;
   std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;

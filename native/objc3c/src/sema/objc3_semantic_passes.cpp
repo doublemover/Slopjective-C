@@ -8307,6 +8307,10 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
 // M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
 // replays this semantic integration surface verbatim before runtime section
 // emission and runtime ingest packaging land.
+// M252-D001 runtime-ingest packaging anchor: lane-D freezes one manifest
+// transport boundary over this semantic integration surface before section
+// emission/startup registration land, so later runtime ingest consumes the
+// published graph rather than a reconstructed sema view.
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);

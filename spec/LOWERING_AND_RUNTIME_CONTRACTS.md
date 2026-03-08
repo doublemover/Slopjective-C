@@ -4638,3 +4638,29 @@ The packet must preserve:
 `M252-C003` intentionally proves the manifest/debug projection on the
 metadata-rich fixtures and the IR named-metadata anchor on the runnable hello
 fixture before runtime section emission and runtime ingest packaging land.
+
+## M252 runtime ingest packaging for metadata graphs (D001)
+
+`M252-D001` freezes the canonical lane-D runtime-ingest packaging boundary:
+`Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary`.
+
+The packet must preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- typed-handoff dependency continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- debug-projection dependency continuity with
+  `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`,
+- payload model `typed-handoff-plus-debug-projection-manifest-v1`,
+- transport artifact `module.manifest.json`,
+- replay-key continuity with both the active C002 typed handoff and the C003
+  debug-projection packet,
+- fail-closed non-goals declaring that runtime section emission, startup
+  registration, and runtime-loader registration have not landed yet.
+
+`M252-D001` does not implement the binary section payload or startup
+registration path. It freezes the manifest transport contract that those later
+lane-D and M253 milestones must preserve.

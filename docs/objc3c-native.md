@@ -609,6 +609,31 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`
 
+## Runtime ingest packaging boundary (M252-D001)
+
+- Lane-D now freezes the canonical runtime-ingest packaging packet:
+  `Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary`.
+- The manifest semantic-surface path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`.
+- The boundary is defined over:
+  - the C002 typed handoff packet
+    `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`
+  - the C003 debug-projection packet
+    `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`
+- The frozen payload model is
+  `typed-handoff-plus-debug-projection-manifest-v1`.
+- The frozen transport artifact is `module.manifest.json`.
+- The boundary is intentionally manifest-only in `M252-D001`:
+  - no runtime section emission yet,
+  - no startup registration yet,
+  - no runtime loader registration yet.
+- Replay continuity is now explicit through:
+  - `typed_lowering_handoff_replay_key`
+  - `debug_projection_replay_key`
+  - `replay_key`
+- Validation/evidence path:
+  `tmp/reports/m252/M252-D001/runtime_ingest_packaging_for_metadata_graphs_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

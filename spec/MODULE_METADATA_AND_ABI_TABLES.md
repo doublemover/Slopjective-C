@@ -5827,6 +5827,25 @@ preserve:
 - evidence path
   `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`.
 
+## M252 runtime ingest packaging metadata anchors (D001)
+
+Deterministic lane-D runtime-ingest packaging anchors for `M252-D001` shall
+preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`,
+- typed handoff node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- debug projection node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- payload model `typed-handoff-plus-debug-projection-manifest-v1`,
+- transport artifact `module.manifest.json`,
+- replay-key continuity with both upstream lane-C packets,
+- evidence path
+  `tmp/reports/m252/M252-D001/runtime_ingest_packaging_for_metadata_graphs_contract_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

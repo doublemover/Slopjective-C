@@ -8358,3 +8358,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so one
   deterministic manifest/IR inspection matrix remains published before runtime
   section emission and runtime-ingest packaging land.
+- M252 lane-D D001 runtime-ingest packaging freeze anchors explicit contract
+  artifacts in
+  `docs/contracts/m252_runtime_ingest_packaging_for_metadata_graphs_contract_and_architecture_freeze_d001_expectations.md`,
+  `spec/planning/compiler/m252/m252_d001_runtime_ingest_packaging_for_metadata_graphs_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so one
+  manifest-only packaging boundary remains deterministic and fail-closed over
+  the C002 typed handoff and C003 debug projection before section emission and
+  startup registration land.
