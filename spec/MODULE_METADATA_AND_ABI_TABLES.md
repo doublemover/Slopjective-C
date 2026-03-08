@@ -5785,6 +5785,29 @@ Metadata graph lowering handoff anchors must remain deterministic and fail
 closed before lane-C lowering admission, real metadata section emission,
 runtime ingest packaging, and startup registration land.
 
+## M252 typed metadata graph handoff metadata anchors (C002)
+
+Deterministic lane-C typed metadata graph handoff anchors for `M252-C002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- manifest schema ordering model
+  `contract-header-then-source-graph-payload-v1`,
+- nested `source_graph` payload continuity with the canonical A003 executable
+  metadata graph packet,
+- parse/lowering projection fields
+  `executable_metadata_typed_lowering_handoff_ready`,
+  `executable_metadata_typed_lowering_handoff_deterministic`, and
+  `executable_metadata_typed_lowering_handoff_key`,
+- evidence path
+  `tmp/reports/m252/M252-C002/typed_metadata_graph_handoff_and_manifest_schema_summary.json`.
+
+Typed metadata graph handoff anchors must remain deterministic and fail closed
+before lane-C debug projection, D-lane runtime-ingest packaging, and M253
+object-section emission land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

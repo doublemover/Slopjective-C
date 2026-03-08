@@ -597,6 +597,49 @@ std::string BuildExecutableMetadataLoweringHandoffSurfaceJson(
   return out.str();
 }
 
+std::string BuildExecutableMetadataTypedLoweringHandoffJson(
+    const Objc3ExecutableMetadataTypedLoweringHandoff &surface) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(surface.contract_id)
+      << "\",\"executable_metadata_lowering_handoff_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_lowering_handoff_contract_id)
+      << "\",\"executable_metadata_source_graph_contract_id\":\""
+      << EscapeJsonString(surface.executable_metadata_source_graph_contract_id)
+      << "\",\"executable_metadata_semantic_consistency_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_semantic_consistency_contract_id)
+      << "\",\"executable_metadata_semantic_validation_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_semantic_validation_contract_id)
+      << "\",\"manifest_schema_ordering_model\":\""
+      << EscapeJsonString(surface.manifest_schema_ordering_model)
+      << "\",\"ready\":"
+      << (IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(surface) ? "true"
+                                                                     : "false")
+      << ",\"source_graph_ready\":"
+      << (surface.source_graph_ready ? "true" : "false")
+      << ",\"semantic_consistency_ready\":"
+      << (surface.semantic_consistency_ready ? "true" : "false")
+      << ",\"semantic_validation_ready\":"
+      << (surface.semantic_validation_ready ? "true" : "false")
+      << ",\"lowering_handoff_surface_ready\":"
+      << (surface.lowering_handoff_surface_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (surface.deterministic ? "true" : "false")
+      << ",\"manifest_schema_frozen\":"
+      << (surface.manifest_schema_frozen ? "true" : "false")
+      << ",\"fail_closed\":" << (surface.fail_closed ? "true" : "false")
+      << ",\"ready_for_lowering\":"
+      << (surface.ready_for_lowering ? "true" : "false")
+      << ",\"source_graph\":"
+      << BuildExecutableMetadataSourceGraphJson(surface.source_graph)
+      << ",\"replay_key\":\"" << EscapeJsonString(surface.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(surface.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -2482,6 +2525,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3ExecutableMetadataLoweringHandoffSurface
       &executable_metadata_lowering_handoff_surface =
           pipeline_result.executable_metadata_lowering_handoff_surface;
+  const Objc3ExecutableMetadataTypedLoweringHandoff
+      &executable_metadata_typed_lowering_handoff =
+          pipeline_result.executable_metadata_typed_lowering_handoff;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
@@ -3222,6 +3268,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                        .executable_metadata_lowering_handoff_deterministic
                    ? "true"
                    : "false")
+           << ",\"executable_metadata_typed_lowering_handoff_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .executable_metadata_typed_lowering_handoff_ready
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_typed_lowering_handoff_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .executable_metadata_typed_lowering_handoff_deterministic
+                   ? "true"
+                   : "false")
            << ",\"lowering_boundary_ready\": "
            << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
            << ",\"parse_lowering_conformance_matrix_case_count\": "
@@ -3326,6 +3382,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"executable_metadata_lowering_handoff_key\":\""
            << bundle.parse_lowering_readiness_surface
                   .executable_metadata_lowering_handoff_key
+           << "\",\"executable_metadata_typed_lowering_handoff_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .executable_metadata_typed_lowering_handoff_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
@@ -4813,6 +4872,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_lowering_handoff_surface\":"
            << BuildExecutableMetadataLoweringHandoffSurfaceJson(
                   executable_metadata_lowering_handoff_surface)
+           // M252-C002 typed-lowering anchor: the lowering-ready packet must
+           // publish the ordered metadata graph payload itself rather than a
+           // count-only summary so downstream lowering can consume one schema.
+           << ",\"objc_executable_metadata_typed_lowering_handoff\":"
+           << BuildExecutableMetadataTypedLoweringHandoffJson(
+                  executable_metadata_typed_lowering_handoff)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

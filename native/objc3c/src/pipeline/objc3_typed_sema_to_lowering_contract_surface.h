@@ -388,6 +388,13 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << ";metadata_graph_lowering_handoff_deterministic="
       << (surface.executable_metadata_lowering_handoff_deterministic ? "true"
                                                                      : "false")
+      << ";metadata_graph_typed_lowering_handoff_ready="
+      << (surface.executable_metadata_typed_lowering_handoff_ready ? "true"
+                                                                   : "false")
+      << ";metadata_graph_typed_lowering_handoff_deterministic="
+      << (surface.executable_metadata_typed_lowering_handoff_deterministic
+              ? "true"
+              : "false")
       << ";protocol_category=" << (surface.protocol_category_handoff_deterministic ? "true" : "false")
       << ";class_protocol_category_linking="
       << (surface.class_protocol_category_linking_handoff_deterministic ? "true" : "false")
@@ -403,6 +410,8 @@ inline std::string BuildObjc3TypedSemaToLoweringContractHandoffKey(
       << ";runtime_dispatch=" << (surface.runtime_dispatch_contract_consistent ? "true" : "false")
       << ";metadata_graph_lowering_handoff_key="
       << surface.executable_metadata_lowering_handoff_key
+      << ";metadata_graph_typed_lowering_handoff_key="
+      << surface.executable_metadata_typed_lowering_handoff_key
       << ";core_feature_passed_case_count=" << surface.typed_core_feature_passed_case_count
       << ";core_feature_failed_case_count=" << surface.typed_core_feature_failed_case_count
       << ";core_feature_consistent=" << (surface.typed_core_feature_consistent ? "true" : "false")
@@ -656,6 +665,17 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
            .empty();
   surface.executable_metadata_lowering_handoff_key =
       pipeline_result.executable_metadata_lowering_handoff_surface.replay_key;
+  surface.executable_metadata_typed_lowering_handoff_ready =
+      IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
+          pipeline_result.executable_metadata_typed_lowering_handoff);
+  surface.executable_metadata_typed_lowering_handoff_deterministic =
+      pipeline_result.executable_metadata_typed_lowering_handoff.deterministic &&
+      pipeline_result.executable_metadata_typed_lowering_handoff
+          .manifest_schema_frozen &&
+      !pipeline_result.executable_metadata_typed_lowering_handoff.replay_key
+           .empty();
+  surface.executable_metadata_typed_lowering_handoff_key =
+      pipeline_result.executable_metadata_typed_lowering_handoff.replay_key;
   surface.protocol_category_handoff_deterministic =
       pipeline_result.protocol_category_summary.deterministic_protocol_category_handoff;
   surface.class_protocol_category_linking_handoff_deterministic =
@@ -756,10 +776,12 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
       lowering_boundary.selector_global_ordering == kObjc3SelectorGlobalOrdering;
   surface.semantic_handoff_consistent =
       surface.semantic_integration_surface_built &&
-      surface.sema_parity_surface_ready;
+      surface.sema_parity_surface_ready &&
+      surface.executable_metadata_typed_lowering_handoff_ready;
   surface.semantic_handoff_deterministic =
       surface.semantic_type_metadata_handoff_deterministic &&
       surface.sema_parity_surface_deterministic &&
+      surface.executable_metadata_typed_lowering_handoff_deterministic &&
       surface.protocol_category_handoff_deterministic &&
       surface.class_protocol_category_linking_handoff_deterministic &&
       surface.selector_normalization_handoff_deterministic &&
@@ -1241,6 +1263,10 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
     surface.failure_reason = "symbol graph handoff is not deterministic";
   } else if (!surface.scope_resolution_handoff_deterministic) {
     surface.failure_reason = "scope resolution handoff is not deterministic";
+  } else if (!surface.executable_metadata_typed_lowering_handoff_ready) {
+    surface.failure_reason = "typed metadata lowering handoff is not ready";
+  } else if (!surface.executable_metadata_typed_lowering_handoff_deterministic) {
+    surface.failure_reason = "typed metadata lowering handoff is not deterministic";
   } else if (!surface.semantic_handoff_consistent) {
     surface.failure_reason = "semantic handoff is inconsistent";
   } else if (!surface.semantic_handoff_deterministic) {

@@ -4582,3 +4582,33 @@ The frozen packet must preserve:
 
 `M252-C001` does not emit object metadata sections, perform runtime ingest
 packaging, or claim executable metadata programs are globally lowering-ready.
+
+## M252 typed metadata graph handoff and manifest schema (C002)
+
+`M252-C002` promotes the frozen C001 boundary into one concrete lowering-ready
+packet:
+`Objc3ExecutableMetadataTypedLoweringHandoff`.
+
+The packet must preserve:
+
+- contract id `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- dependency continuity with:
+  - `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+  - `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+  - `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+  - `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- manifest schema ordering model
+  `contract-header-then-source-graph-payload-v1`,
+- publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- direct typed payload publication of the ordered metadata graph under
+  `source_graph`,
+- parse/lowering projection of
+  `executable_metadata_typed_lowering_handoff_ready`,
+  `executable_metadata_typed_lowering_handoff_deterministic`, and
+  `executable_metadata_typed_lowering_handoff_key`,
+- fail-closed `ready_for_lowering == true` on the typed handoff packet.
+
+`M252-C002` does not emit object-file metadata sections yet, but it does freeze
+the lowering-ready payload schema that those later section-emission issues must
+consume.

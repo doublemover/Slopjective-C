@@ -5044,6 +5044,10 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // M252-C001 lowering-handoff anchor: category semantic-link symbols remain
   // the parser-owned canonical owner identities that typed lowering handoff
   // packets consume without reparsing declaration containers.
+  // M252-C002 typed-lowering anchor: typed metadata graph handoff packets keep
+  // these parser-owned semantic-link owner identities in the published
+  // lowering schema so downstream lowering never reparses declaration
+  // containers to recover owner identity.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

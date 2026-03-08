@@ -8341,3 +8341,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so typed and parse/lowering surfaces project one canonical metadata handoff schema,
   replay key, and fail-closed readiness packet before lane-C lowering
   admission, metadata section emission, and runtime ingest work land.
+- M252 lane-C C002 typed metadata graph handoff anchors explicit contract
+  artifacts in
+  `docs/contracts/m252_typed_metadata_graph_handoff_and_manifest_schema_c002_expectations.md`,
+  `spec/planning/compiler/m252/m252_c002_typed_metadata_graph_handoff_and_manifest_schema_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so the
+  lowering-ready metadata graph payload, typed replay key, and manifest schema
+  ordering remain deterministic and fail-closed before lane-C debug projection,
+  D-lane runtime ingest packaging, and M253 section emission land.

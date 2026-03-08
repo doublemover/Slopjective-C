@@ -562,6 +562,31 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-C001/metadata_graph_lowering_handoff_contract_summary.json`
 
+## Typed metadata graph handoff and manifest schema (M252-C002)
+
+- Lane-C now materializes the concrete lowering-ready metadata graph packet:
+  `Objc3ExecutableMetadataTypedLoweringHandoff`.
+- The semantic-surface manifest path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`.
+- The packet keeps the C001 freeze packet intact while carrying the ordered
+  metadata graph payload itself under `source_graph` with the schema ordering
+  model `contract-header-then-source-graph-payload-v1`.
+- Parse/lowering readiness now projects:
+  - `executable_metadata_typed_lowering_handoff_ready`
+  - `executable_metadata_typed_lowering_handoff_deterministic`
+  - `executable_metadata_typed_lowering_handoff_key`
+- The lowering-ready packet now requires:
+  - C001 freeze readiness,
+  - A003 graph closure,
+  - B004 canonical sema/property-ivar replay alignment,
+  - exact graph-count continuity between the C001 freeze counters and the
+    typed payload.
+- `M252-C002` intentionally promotes the packet itself to
+  `ready_for_lowering == true` while the nested `source_graph` evidence remains
+  the pre-lowering A003 packet.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-C002/typed_metadata_graph_handoff_and_manifest_schema_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
