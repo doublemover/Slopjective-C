@@ -442,6 +442,7 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
   std::string discovery_root_logical_section;
   std::string linker_response_artifact_suffix;
   std::string discovery_artifact_suffix;
+  std::string translation_unit_identity_key;
   if (!ExtractBoundaryTokenValue(boundary_line, "linker_anchor_symbol",
                                  linker_anchor_symbol) ||
       !ExtractBoundaryTokenValue(boundary_line, "discovery_root_symbol",
@@ -455,6 +456,9 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
       !ExtractBoundaryTokenValue(boundary_line,
                                  "linker_response_artifact_suffix",
                                  linker_response_artifact_suffix) ||
+      !ExtractBoundaryTokenValue(boundary_line,
+                                 "translation_unit_identity_key",
+                                 translation_unit_identity_key) ||
       !ExtractBoundaryTokenValue(boundary_line, "discovery_artifact_suffix",
                                  discovery_artifact_suffix)) {
     error = "runtime metadata linker retention boundary line is missing one or "
@@ -507,6 +511,12 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
             << EscapeJsonString(linker_response_artifact_suffix) << "\",\n"
             << "  \"discovery_artifact_suffix\": \""
             << EscapeJsonString(discovery_artifact_suffix) << "\",\n"
+            << "  \"translation_unit_identity_model\": \""
+            << EscapeJsonString(
+                   kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel)
+            << "\",\n"
+            << "  \"translation_unit_identity_key\": \""
+            << EscapeJsonString(translation_unit_identity_key) << "\",\n"
             << "  \"driver_linker_flags\": [\"" << EscapeJsonString(linker_flag)
             << "\"]\n"
             << "}\n";

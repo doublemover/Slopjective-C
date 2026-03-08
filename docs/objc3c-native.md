@@ -1163,6 +1163,40 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-D002/linker_retention_and_dead_strip_resistance_summary.json`
 
+## Archive and static-link metadata discovery behavior (M253-D003)
+
+- Lane-D now closes the deferred archive/static-link discovery path through
+  `Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary`.
+- Contract id:
+  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`.
+- The anchor-seed model is
+  `module-and-metadata-replay-plus-translation-unit-identity`.
+- The translation-unit identity model is
+  `input-path-plus-parse-and-lowering-replay`.
+- The merge model is `deduplicated-driver-flag-fan-in`.
+- The emitted IR now also carries:
+  - `; runtime_metadata_archive_static_link_discovery = ...`
+  - `!objc3.objc_runtime_archive_static_link_discovery`
+- Object-level discovery JSON now also publishes:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+- The canonical merged artifacts are:
+  - `module.merged.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-discovery.json`
+- Metadata-only translation units without a source `main` now keep
+  `objc3c_entry` internal so multi-archive metadata retention does not fail on
+  duplicate public entry symbols.
+- The positive proof covers:
+  - same-module metadata-only translation units from distinct source paths
+    yielding distinct public linker/discovery symbols,
+  - multi-archive plain link dropping metadata,
+  - merged-response link retaining metadata,
+  - merged retained metadata exceeding the single-archive retained baseline.
+- The merge utility remains fail closed on malformed or colliding discovery
+  inputs.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

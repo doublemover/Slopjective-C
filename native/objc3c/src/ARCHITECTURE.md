@@ -8566,3 +8566,17 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   artifact that can retain metadata when the object is packaged into one
   archive/library without claiming the later multi-archive or multi-TU edge
   cases.
+- M253 lane-D D003 archive/static-link discovery behavior anchors explicit
+  edge-case completion artifacts in
+  `docs/contracts/m253_archive_and_static_link_metadata_discovery_behavior_edge_case_and_compatibility_completion_d003_expectations.md`,
+  `spec/planning/compiler/m253/m253_d003_archive_and_static_link_metadata_discovery_behavior_edge_case_and_compatibility_completion_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `io/objc3_process.cpp`, and
+  `scripts/merge_objc3_runtime_metadata_linker_artifacts.py` so lane-D closes
+  the deferred multi-archive and cross-translation-unit path by seeding public
+  anchors with translation-unit identity, keeping metadata-only library objects
+  from exporting a colliding public `objc3c_entry`, and standardizing one
+  merged discovery/response artifact pair for static-link fan-in.

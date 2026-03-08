@@ -7845,6 +7845,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       kObjc3RuntimeIvarDescriptorEmissionPayloadModel;
   ir_frontend_metadata.runtime_metadata_member_table_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_discovery_contract_id =
+      kObjc3RuntimeArchiveStaticLinkDiscoveryContractId;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_anchor_seed_model =
+      kObjc3RuntimeArchiveStaticLinkAnchorSeedModel;
+  ir_frontend_metadata
+      .runtime_metadata_archive_static_link_translation_unit_identity_model =
+      kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_merge_model =
+      kObjc3RuntimeArchiveStaticLinkMergeModel;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_response_artifact_suffix =
+      kObjc3RuntimeMergedLinkerResponseArtifactSuffix;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_discovery_artifact_suffix =
+      kObjc3RuntimeMergedDiscoveryArtifactSuffix;
+  ir_frontend_metadata.runtime_metadata_archive_static_link_discovery_ready =
+      true;
+  ir_frontend_metadata
+      .runtime_metadata_archive_static_link_translation_unit_identity_key =
+      input_path.generic_string() + "|" +
+      bundle.parse_lowering_readiness_surface.parse_artifact_replay_key + "|" +
+      bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key;
   {
     const bool typed_handoff_ready =
         IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(

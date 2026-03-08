@@ -196,6 +196,23 @@ inline constexpr const char *kObjc3RuntimeLinkerRetentionElfFlagModel =
     "-Wl,--undefined=<symbol>";
 inline constexpr const char *kObjc3RuntimeLinkerRetentionMachOFlagModel =
     "-Wl,-u,_<symbol>";
+// M253-D003 archive/static-link discovery anchor: lane-D now closes the
+// remaining multi-archive fan-in and cross-translation-unit discovery path by
+// making linker-anchor identity translation-unit-stable and by standardizing
+// one merged discovery/response artifact pair for downstream archive link
+// orchestration.
+inline constexpr const char *kObjc3RuntimeArchiveStaticLinkDiscoveryContractId =
+    "objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1";
+inline constexpr const char *kObjc3RuntimeArchiveStaticLinkAnchorSeedModel =
+    "module-and-metadata-replay-plus-translation-unit-identity";
+inline constexpr const char *kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel =
+    "input-path-plus-parse-and-lowering-replay";
+inline constexpr const char *kObjc3RuntimeArchiveStaticLinkMergeModel =
+    "deduplicated-driver-flag-fan-in";
+inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
+    ".merged.runtime-metadata-linker-options.rsp";
+inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
+    ".merged.runtime-metadata-discovery.json";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -899,6 +916,7 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
+std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section);
 std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(

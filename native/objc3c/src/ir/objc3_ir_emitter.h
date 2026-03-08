@@ -258,6 +258,15 @@ struct Objc3IRFrontendMetadata {
       runtime_metadata_property_bundles_lexicographic;
   std::vector<Objc3IRRuntimeMetadataIvarBundle>
       runtime_metadata_ivar_bundles_lexicographic;
+  std::string runtime_metadata_archive_static_link_discovery_contract_id;
+  std::string runtime_metadata_archive_static_link_anchor_seed_model;
+  std::string
+      runtime_metadata_archive_static_link_translation_unit_identity_model;
+  std::string runtime_metadata_archive_static_link_merge_model;
+  std::string runtime_metadata_archive_static_link_response_artifact_suffix;
+  std::string runtime_metadata_archive_static_link_discovery_artifact_suffix;
+  bool runtime_metadata_archive_static_link_discovery_ready = false;
+  std::string runtime_metadata_archive_static_link_translation_unit_identity_key;
   std::string runtime_metadata_object_inspection_contract_id;
   std::string runtime_metadata_object_inspection_scaffold_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;

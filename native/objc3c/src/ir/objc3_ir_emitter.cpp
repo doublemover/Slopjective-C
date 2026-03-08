@@ -1748,6 +1748,10 @@ class Objc3IREmitter {
     seed += frontend_metadata_.runtime_metadata_protocol_category_typed_handoff_replay_key;
     seed += "|";
     seed += frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key;
+    seed += "|";
+    seed +=
+        frontend_metadata_
+            .runtime_metadata_archive_static_link_translation_unit_identity_key;
     return LowerHex64(StableRuntimeMetadataLinkerAnchorHash(seed));
   }
 
@@ -1781,6 +1785,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_binary_inspection_harness = !{!60}\n";
     out << "!objc3.objc_runtime_object_packaging_retention = !{!61}\n";
     out << "!objc3.objc_runtime_linker_retention = !{!62}\n";
+    out << "!objc3.objc_runtime_archive_static_link_discovery = !{!63}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2767,6 +2772,40 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeLinkerResponseArtifactSuffix)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeLinkerDiscoveryArtifactSuffix)
+        << "\"}\n";
+    out << "!63 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_discovery_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_anchor_seed_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_translation_unit_identity_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_merge_model)
+        << "\", i1 "
+        << (frontend_metadata_
+                    .runtime_metadata_archive_static_link_discovery_ready
+                ? 1
+                : 0)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_response_artifact_suffix)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_discovery_artifact_suffix)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_translation_unit_identity_key)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4761,7 +4800,23 @@ class Objc3IREmitter {
         << ";linker_response_artifact_suffix="
         << kObjc3RuntimeLinkerResponseArtifactSuffix
         << ";discovery_artifact_suffix="
-        << kObjc3RuntimeLinkerDiscoveryArtifactSuffix << "\n";
+        << kObjc3RuntimeLinkerDiscoveryArtifactSuffix
+        << ";translation_unit_identity_key="
+        << frontend_metadata_
+               .runtime_metadata_archive_static_link_translation_unit_identity_key
+        << "\n";
+    out << "; runtime_metadata_archive_static_link_discovery = "
+        << Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary()
+        << ";translation_unit_identity_key="
+        << frontend_metadata_
+               .runtime_metadata_archive_static_link_translation_unit_identity_key
+        << ";merged_linker_response_artifact_suffix="
+        << frontend_metadata_
+               .runtime_metadata_archive_static_link_response_artifact_suffix
+        << ";merged_discovery_artifact_suffix="
+        << frontend_metadata_
+               .runtime_metadata_archive_static_link_discovery_artifact_suffix
+        << "\n";
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
@@ -7143,11 +7198,12 @@ class Objc3IREmitter {
   }
 
   void EmitEntryPoint(std::ostringstream &out) const {
-    out << "define i32 @objc3c_entry() {\n";
-    out << "entry:\n";
-
     auto main_it = function_arity_.find("main");
-    if (main_it != function_arity_.end() && main_it->second == 0) {
+    const bool has_zero_arity_main =
+        main_it != function_arity_.end() && main_it->second == 0;
+    if (has_zero_arity_main) {
+      out << "define i32 @objc3c_entry() {\n";
+      out << "entry:\n";
       ValueType main_return_type = ValueType::I32;
       const LoweredFunctionSignature *main_signature = LookupFunctionSignature("main");
       if (main_signature != nullptr) {
@@ -7169,6 +7225,8 @@ class Objc3IREmitter {
       return;
     }
 
+    out << "define internal i32 @objc3c_entry() {\n";
+    out << "entry:\n";
     std::string previous = "0";
     for (std::size_t i = 0; i < program_.globals.size(); ++i) {
       const auto &global = program_.globals[i];

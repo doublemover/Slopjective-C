@@ -5137,3 +5137,38 @@ current object format.
 
 `M253-D002` does not yet claim multi-archive fan-in or cross-translation-unit
 anchor-merging behavior. Those edge cases stay deferred to `M253-D003`.
+
+## M253 archive/static-link metadata discovery behavior (D003)
+
+Lane-D shall close the remaining archive/static-link metadata discovery gaps by
+making public linker/discovery symbols translation-unit-stable, by keeping
+metadata-only library objects from exporting a colliding public `objc3c_entry`,
+and by standardizing one merged discovery/response artifact pair for
+multi-archive static-link fan-in.
+
+`M253-D003` requires:
+
+- contract id
+  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`,
+- anchor-seed model
+  `module-and-metadata-replay-plus-translation-unit-identity`,
+- translation-unit identity model
+  `input-path-plus-parse-and-lowering-replay`,
+- merge model `deduplicated-driver-flag-fan-in`,
+- emitted IR publication through
+  `; runtime_metadata_archive_static_link_discovery = ...` and
+  `!objc3.objc_runtime_archive_static_link_discovery`,
+- object-level discovery JSON fields
+  `translation_unit_identity_model` and
+  `translation_unit_identity_key`,
+- canonical merged artifacts
+  `module.merged.runtime-metadata-linker-options.rsp` and
+  `module.merged.runtime-metadata-discovery.json`,
+- one positive proof that identical module/metadata source compiled from
+  distinct translation units yields distinct public anchor/discovery symbols,
+- one positive proof that multi-archive plain link drops metadata while the
+  merged response artifact retains it, and
+- one fail-closed negative proof that malformed or colliding discovery inputs
+  do not produce a false-success merged artifact.
+
+`M253-D003` does not add runtime registration or startup bootstrap behavior.

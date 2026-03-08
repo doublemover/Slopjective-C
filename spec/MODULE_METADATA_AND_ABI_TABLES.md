@@ -6268,3 +6268,34 @@ Deterministic lane-D linker-retention/dead-strip-resistance anchors for
 
 `M253-D002` must remain fail closed and bounded to the single-library retention
 proof without claiming multi-archive or cross-translation-unit behavior.
+
+## M253 archive/static-link metadata discovery behavior (D003)
+
+Deterministic lane-D archive/static-link discovery behavior for `M253-D003`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`,
+- emitted LLVM metadata
+  `!objc3.objc_runtime_archive_static_link_discovery`,
+- anchor-seed model
+  `module-and-metadata-replay-plus-translation-unit-identity`,
+- translation-unit identity model
+  `input-path-plus-parse-and-lowering-replay`,
+- merge model `deduplicated-driver-flag-fan-in`,
+- object-level discovery JSON fields
+  `translation_unit_identity_model` and
+  `translation_unit_identity_key`,
+- merged response artifact
+  `module.merged.runtime-metadata-linker-options.rsp`,
+- merged discovery artifact
+  `module.merged.runtime-metadata-discovery.json`,
+- a positive cross-translation-unit proof that identical metadata surfaces from
+  distinct source paths produce distinct public linker/discovery symbols,
+- a positive multi-archive proof that merged-response linking retains more
+  metadata than the single-archive retained baseline, and
+- evidence path
+  `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`.
+
+`M253-D003` closes archive/static-link discovery behavior without claiming
+runtime registration/startup bootstrap.

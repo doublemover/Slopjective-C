@@ -570,6 +570,26 @@ std::string Objc3RuntimeMetadataLinkerRetentionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
+  std::ostringstream out;
+  // M253-D003 archive/static-link discovery anchor: lane-D extends the D002
+  // object-level discovery path with translation-unit-stable public anchors and
+  // one merged discovery/response artifact pair that downstream archive/static
+  // link orchestration can consume deterministically across multiple TUs.
+  out << "contract=" << kObjc3RuntimeArchiveStaticLinkDiscoveryContractId
+      << ";anchor_seed_model="
+      << kObjc3RuntimeArchiveStaticLinkAnchorSeedModel
+      << ";translation_unit_identity_model="
+      << kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel
+      << ";merge_model=" << kObjc3RuntimeArchiveStaticLinkMergeModel
+      << ";merged_linker_response_artifact_suffix="
+      << kObjc3RuntimeMergedLinkerResponseArtifactSuffix
+      << ";merged_discovery_artifact_suffix="
+      << kObjc3RuntimeMergedDiscoveryArtifactSuffix
+      << ";non_goals=no-runtime-registration-or-startup-bootstrap";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);
