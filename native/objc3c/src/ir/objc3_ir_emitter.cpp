@@ -1740,6 +1740,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
     out << "!objc3.objc_runtime_metadata_layout_policy = !{!55}\n";
     out << "!objc3.objc_runtime_class_metaclass_emission = !{!56}\n";
+    out << "!objc3.objc_runtime_protocol_category_emission = !{!57}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2551,6 +2552,67 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_class_metaclass_typed_handoff_replay_key)
+        << "\"}\n";
+    std::size_t runtime_metadata_protocol_bundle_count = 0;
+    std::size_t runtime_metadata_protocol_inherited_reference_total = 0;
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic) {
+      ++runtime_metadata_protocol_bundle_count;
+      runtime_metadata_protocol_inherited_reference_total +=
+          bundle.inherited_protocol_owner_identities_lexicographic.size();
+    }
+    std::size_t runtime_metadata_category_bundle_count = 0;
+    std::size_t runtime_metadata_category_adopted_reference_total = 0;
+    std::size_t runtime_metadata_category_attachment_reference_total = 0;
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_category_bundles_lexicographic) {
+      ++runtime_metadata_category_bundle_count;
+      runtime_metadata_category_adopted_reference_total +=
+          bundle.adopted_protocol_owner_identities_lexicographic.size();
+      runtime_metadata_category_attachment_reference_total += 3u;
+    }
+    out << "!57 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_protocol_category_emission_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_protocol_emission_payload_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_category_emission_payload_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_protocol_reference_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_category_attachment_model)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_protocol_category_emission_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_metadata_protocol_category_emission_fail_closed
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_metadata_protocol_bundle_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_protocol_inherited_reference_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_metadata_category_bundle_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_category_adopted_reference_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_category_attachment_reference_total)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_protocol_category_typed_handoff_replay_key)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4342,6 +4404,16 @@ class Objc3IREmitter {
         frontend_metadata_
                 .runtime_metadata_class_metaclass_bundles_lexicographic.size() ==
             layout_policy.families[0].descriptor_count;
+    const bool emit_protocol_category_bundle_payloads =
+        frontend_metadata_.runtime_metadata_protocol_category_emission_ready &&
+        frontend_metadata_
+            .runtime_metadata_protocol_category_emission_fail_closed &&
+        !frontend_metadata_
+             .runtime_metadata_protocol_category_emission_contract_id.empty() &&
+        frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic.size() ==
+            layout_policy.families[1].descriptor_count &&
+        frontend_metadata_.runtime_metadata_category_bundles_lexicographic.size() ==
+            layout_policy.families[2].descriptor_count;
     if (emit_class_metaclass_bundle_payloads) {
       std::size_t total_instance_method_refs = 0;
       std::size_t total_class_method_refs = 0;
@@ -4363,6 +4435,35 @@ class Objc3IREmitter {
                  .runtime_metadata_class_metaclass_typed_handoff_replay_key
           << "\n";
     }
+    if (emit_protocol_category_bundle_payloads) {
+      std::size_t total_inherited_protocol_refs = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic) {
+        total_inherited_protocol_refs +=
+            bundle.inherited_protocol_owner_identities_lexicographic.size();
+      }
+      std::size_t total_adopted_protocol_refs = 0;
+      std::size_t total_category_attachment_refs = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_category_bundles_lexicographic) {
+        total_adopted_protocol_refs +=
+            bundle.adopted_protocol_owner_identities_lexicographic.size();
+        total_category_attachment_refs += 3u;
+      }
+      out << "; runtime_metadata_protocol_category_emission = "
+          << Objc3RuntimeMetadataProtocolCategoryEmissionSummary()
+          << ";protocol_bundle_count="
+          << frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic.size()
+          << ";inherited_protocol_refs=" << total_inherited_protocol_refs
+          << ";category_bundle_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic.size()
+          << ";adopted_protocol_refs=" << total_adopted_protocol_refs
+          << ";attachment_refs=" << total_category_attachment_refs
+          << ";typed_handoff_replay="
+          << frontend_metadata_
+                 .runtime_metadata_protocol_category_typed_handoff_replay_key
+          << "\n";
+    }
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
@@ -4371,6 +4472,27 @@ class Objc3IREmitter {
     const auto emit_retained = [&](const std::string &symbol) {
       retained_globals.push_back(symbol);
     };
+
+    std::unordered_map<std::string, std::string>
+        protocol_descriptor_symbols_by_owner_identity;
+    if (emit_protocol_category_bundle_payloads) {
+      protocol_descriptor_symbols_by_owner_identity.reserve(
+          frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+              .size());
+      for (std::size_t i = 0;
+           i <
+           frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+               .size();
+           ++i) {
+        const auto &bundle =
+            frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic[i];
+        protocol_descriptor_symbols_by_owner_identity.emplace(
+            bundle.owner_identity,
+            BuildRuntimeMetadataDescriptorSymbol(
+                layout_policy.descriptor_symbol_prefix,
+                kObjc3RuntimeMetadataLayoutPolicyProtocolFamily, i));
+      }
+    }
 
     const std::string image_info_symbol = "@" + layout_policy.image_info_symbol;
     out << image_info_symbol << " = " << layout_policy.aggregate_linkage
@@ -4535,10 +4657,292 @@ class Objc3IREmitter {
           emit_retained(aggregate_symbol);
         };
 
+    const auto emit_protocol_bundle_section =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          // M253-C003 protocol/category data emission anchor: protocol records
+          // now materialize as real descriptor bundles with inherited
+          // protocol-ref lists inside the protocol descriptor section.
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(
+              frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+                  .size());
+          for (std::size_t i = 0;
+               i <
+               frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+                   .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+                    [i];
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i);
+            const std::string name_symbol = BuildRuntimeMetadataAuxiliarySymbol(
+                layout_policy.descriptor_symbol_prefix, family.kind, "name", i);
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "owner_identity", i);
+            const std::string inherited_refs_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "inherited_protocol_refs", i);
+            const std::size_t name_storage_len = bundle.protocol_name.size() + 1u;
+            const std::size_t owner_identity_storage_len =
+                bundle.owner_identity.size() + 1u;
+            descriptor_symbols.push_back(descriptor_symbol);
+
+            out << name_symbol << " = private constant [" << name_storage_len
+                << " x i8] c\"" << EscapeCStringLiteral(bundle.protocol_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << owner_identity_symbol << " = private constant ["
+                << owner_identity_storage_len << " x i8] c\""
+                << EscapeCStringLiteral(bundle.owner_identity) << "\\00\", section \""
+                << family.emitted_section_name << "\", align 1\n";
+            out << inherited_refs_symbol << " = private global ";
+            if (bundle.inherited_protocol_owner_identities_lexicographic.empty()) {
+              out << "{ i64 } { i64 0 }";
+            } else {
+              out << "{ i64, ["
+                  << bundle.inherited_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] } { i64 "
+                  << bundle.inherited_protocol_owner_identities_lexicographic.size()
+                  << ", ["
+                  << bundle.inherited_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] [";
+              for (std::size_t inherited_index = 0;
+                   inherited_index <
+                   bundle.inherited_protocol_owner_identities_lexicographic.size();
+                   ++inherited_index) {
+                if (inherited_index != 0) {
+                  out << ", ";
+                }
+                std::string inherited_protocol_symbol = "null";
+                const auto inherited_it =
+                    protocol_descriptor_symbols_by_owner_identity.find(
+                        bundle.inherited_protocol_owner_identities_lexicographic
+                            [inherited_index]);
+                if (inherited_it !=
+                    protocol_descriptor_symbols_by_owner_identity.end()) {
+                  inherited_protocol_symbol = inherited_it->second;
+                }
+                out << "ptr " << inherited_protocol_symbol;
+              }
+              out << "] }";
+            }
+            out << ", section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            out << descriptor_symbol
+                << " = private global { ptr, ptr, ptr, i64, i64, i1 } { ptr "
+                << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
+                << inherited_refs_symbol << ", i64 " << bundle.property_count
+                << ", i64 " << bundle.method_count << ", i1 "
+                << (bundle.is_forward_declaration ? 1 : 0) << " }, section \""
+                << family.emitted_section_name << "\", align 8\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << family.emitted_section_name
+              << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
+    const auto emit_category_bundle_section =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          // M253-C003 protocol/category data emission anchor: category records
+          // now materialize as interface/implementation descriptor bundles with
+          // attachment lists and adopted protocol-ref lists inside the category
+          // descriptor section.
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(
+              frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                  .size());
+          for (std::size_t i = 0;
+               i <
+               frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                   .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                    [i];
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i);
+            const std::string class_name_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "class_name", i);
+            const std::string category_name_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "category_name", i);
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "owner_identity", i);
+            const std::string record_kind_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "record_kind", i);
+            const std::string category_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "category_owner_identity", i);
+            const std::string class_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "class_owner_identity", i);
+            const std::string attachment_list_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "attachments", i);
+            const std::string adopted_protocol_refs_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "adopted_protocol_refs", i);
+            descriptor_symbols.push_back(descriptor_symbol);
+
+            out << class_name_symbol << " = private constant ["
+                << (bundle.class_name.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.class_name) << "\\00\", section \""
+                << family.emitted_section_name << "\", align 1\n";
+            out << category_name_symbol << " = private constant ["
+                << (bundle.category_name.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.category_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << owner_identity_symbol << " = private constant ["
+                << (bundle.owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << record_kind_symbol << " = private constant ["
+                << (bundle.record_kind.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.record_kind)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << category_owner_identity_symbol << " = private constant ["
+                << (bundle.category_owner_identity.size() + 1u)
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.category_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << class_owner_identity_symbol << " = private constant ["
+                << (bundle.class_owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.class_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+
+            out << attachment_list_symbol << " = private global ";
+            const std::size_t attachment_count = 3u;
+            out << "{ i64, [" << attachment_count << " x ptr] } { i64 "
+                << attachment_count << ", [" << attachment_count << " x ptr] [";
+            out << "ptr " << class_owner_identity_symbol << ", ptr "
+                << category_owner_identity_symbol << ", ptr "
+                << owner_identity_symbol;
+            out << "] }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+
+            out << adopted_protocol_refs_symbol << " = private global ";
+            if (bundle.adopted_protocol_owner_identities_lexicographic.empty()) {
+              out << "{ i64 } { i64 0 }";
+            } else {
+              out << "{ i64, ["
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] } { i64 "
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << ", ["
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] [";
+              for (std::size_t adopted_index = 0;
+                   adopted_index <
+                   bundle.adopted_protocol_owner_identities_lexicographic.size();
+                   ++adopted_index) {
+                if (adopted_index != 0) {
+                  out << ", ";
+                }
+                std::string adopted_protocol_symbol = "null";
+                const auto adopted_it =
+                    protocol_descriptor_symbols_by_owner_identity.find(
+                        bundle.adopted_protocol_owner_identities_lexicographic
+                            [adopted_index]);
+                if (adopted_it !=
+                    protocol_descriptor_symbols_by_owner_identity.end()) {
+                  adopted_protocol_symbol = adopted_it->second;
+                }
+                out << "ptr " << adopted_protocol_symbol;
+              }
+              out << "] }";
+            }
+            out << ", section \"" << family.emitted_section_name
+                << "\", align 8\n";
+
+            out << descriptor_symbol
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 } "
+                   "{ ptr "
+                << class_name_symbol << ", ptr " << category_name_symbol
+                << ", ptr " << record_kind_symbol << ", ptr "
+                << owner_identity_symbol << ", ptr "
+                << attachment_list_symbol << ", ptr "
+                << adopted_protocol_refs_symbol << ", i64 "
+                << bundle.property_count << ", i64 "
+                << bundle.instance_method_count << ", i64 "
+                << bundle.class_method_count
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << family.emitted_section_name
+              << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
     for (const auto &family : layout_policy.families) {
       if (emit_class_metaclass_bundle_payloads &&
           family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily) {
         emit_class_metaclass_bundle_section(family);
+      } else if (emit_protocol_category_bundle_payloads &&
+                 family.kind == kObjc3RuntimeMetadataLayoutPolicyProtocolFamily) {
+        emit_protocol_bundle_section(family);
+      } else if (emit_protocol_category_bundle_payloads &&
+                 family.kind == kObjc3RuntimeMetadataLayoutPolicyCategoryFamily) {
+        emit_category_bundle_section(family);
       } else {
         emit_descriptor_section(family.kind, family.emitted_section_name,
                                 family.aggregate_symbol_name,

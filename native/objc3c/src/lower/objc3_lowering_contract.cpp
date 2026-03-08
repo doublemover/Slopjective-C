@@ -436,6 +436,23 @@ std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary() {
+  std::ostringstream out;
+  // M253-C003 protocol/category data emission anchor: lane-C now replaces the
+  // protocol/category family placeholder byte model with real descriptor
+  // bundles, count-plus-descriptor protocol-reference lists, and
+  // count-plus-owner-identity attachment lists without claiming that real
+  // selector/string pools or standalone property/ivar payload sections exist.
+  out << "contract=" << kObjc3RuntimeProtocolCategoryEmissionContractId
+      << ";protocol_payload_model=" << kObjc3RuntimeProtocolEmissionPayloadModel
+      << ";category_payload_model=" << kObjc3RuntimeCategoryEmissionPayloadModel
+      << ";protocol_reference_model=" << kObjc3RuntimeProtocolReferenceModel
+      << ";category_attachment_model="
+      << kObjc3RuntimeCategoryAttachmentModel
+      << ";non_goals=no-selector-string-pool-or-standalone-property-ivar-payloads";
+  return out.str();
+}
+
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
   std::ostringstream out;
   out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";

@@ -6066,3 +6066,33 @@ preserve:
 Class/metaclass emission anchors must remain deterministic and fail closed
 before later issues add protocol/category/property/ivar payload expansion,
 selector/string pools, or runtime registration/bootstrap.
+
+## M253 protocol and category data emission metadata anchors (C003)
+
+Deterministic lane-C protocol/category emission anchors for `M253-C003` shall
+preserve:
+
+- contract id `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_protocol_category_emission`,
+- protocol payload model
+  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`,
+- category payload model
+  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`,
+- protocol-reference model
+  `count-plus-descriptor-pointer-protocol-ref-lists`,
+- category-attachment model
+  `count-plus-owner-identity-pointer-attachment-lists`,
+- emitted protocol/category payload symbols:
+  - `__objc3_meta_protocol_inherited_protocol_refs_0001`
+  - `__objc3_meta_category_adopted_protocol_refs_0000`
+  - `__objc3_meta_category_attachments_0001`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`,
+- metadata-rich proof fixture
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C003/protocol_and_category_data_emission_summary.json`.
+
+Protocol/category emission anchors must remain deterministic and fail closed
+before later issues add selector/string pools, standalone property/ivar payload
+sections, or runtime registration/bootstrap.

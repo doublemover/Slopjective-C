@@ -278,6 +278,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // class descriptor bundles, llvm-direct object emission must preserve those
   // inline class/metaclass/name/method-ref payloads verbatim instead of
   // re-synthesizing or collapsing them back into placeholder bytes.
+  // M253-C003 protocol/category data emission anchor: the same llvm-direct
+  // path must preserve emitted protocol/category descriptor bundles,
+  // inherited/adopted protocol-ref lists, and owner-identity attachment lists
+  // verbatim instead of collapsing them back into placeholder bytes.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

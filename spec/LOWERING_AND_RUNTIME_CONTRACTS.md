@@ -4934,3 +4934,36 @@ inventory, ordering, visibility, object-format, and scaffold boundaries.
 payloads, standalone method/property/ivar list sections, or runtime
 registration/bootstrap. The class family alone advances from scaffold
 placeholders to real bundle payloads in this issue.
+
+## M253 protocol and category data emission (C003)
+
+Lane-C shall replace the protocol/category placeholder byte model with real
+protocol/category descriptor bundles while preserving the frozen emitted
+inventory, ordering, visibility, object-format, and scaffold boundaries.
+
+`M253-C003` requires:
+
+- contract id `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`,
+- protocol payload model
+  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`,
+- category payload model
+  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`,
+- protocol-reference model
+  `count-plus-descriptor-pointer-protocol-ref-lists`,
+- category-attachment model
+  `count-plus-owner-identity-pointer-attachment-lists`,
+- emitted IR publication through
+  `; runtime_metadata_protocol_category_emission = ...` and
+  `!objc3.objc_runtime_protocol_category_emission`,
+- fail-closed bundle emission over the current typed metadata handoff, protocol
+  source graph, runtime-export protocol/category accounting, and scaffold
+  protocol/category descriptor counts,
+- expansion of one combined category graph node into explicit
+  interface/implementation record bundles before emission,
+- llvm-direct object emission preserving the inline protocol/category payloads
+  verbatim.
+
+`M253-C003` does not add selector/string-pool payloads, standalone
+property/ivar payload sections, or runtime registration/bootstrap. The
+protocol/category families alone advance from scaffold placeholders to real
+bundle payloads in this issue.

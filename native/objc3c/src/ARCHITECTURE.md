@@ -8489,3 +8489,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   payload replaces class-family placeholders with real inline class/metaclass
   bundles while preserving llvm-direct class bundle payloads and the frozen
   non-goal boundary before later issues expand the other metadata families.
+- M253 lane-C C003 protocol and category data emission anchors explicit
+  implementation artifacts in
+  `docs/contracts/m253_protocol_and_category_data_emission_core_feature_implementation_c003_expectations.md`,
+  `spec/planning/compiler/m253/m253_c003_protocol_and_category_data_emission_core_feature_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, and `io/objc3_process.cpp` so
+  `runtime_metadata_protocol_bundles_lexicographic` and
+  `runtime_metadata_category_bundles_lexicographic` replace
+  protocol/category-family placeholders with real protocol descriptors,
+  inherited/adopted protocol-ref lists, and category attachment lists while
+  preserving llvm-direct payload bytes and the frozen non-goal boundary before
+  later issues expand selector/string pools and property/ivar payloads.

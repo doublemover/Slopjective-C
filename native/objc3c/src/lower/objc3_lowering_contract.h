@@ -98,6 +98,21 @@ inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionSuperLinkModel =
 inline constexpr const char
     *kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel =
         "count-plus-owner-identity-pointer-method-list-ref";
+// M253-C003 protocol/category data emission anchor: lane-C next replaces the
+// protocol/category family placeholder byte models with real descriptor bundles
+// while keeping cross-protocol references and category attachments explicit and
+// fail-closed without claiming that selector/string pools or standalone
+// property/ivar payload sections already exist.
+inline constexpr const char *kObjc3RuntimeProtocolCategoryEmissionContractId =
+    "objc3c-runtime-protocol-category-data-emission/m253-c003-v1";
+inline constexpr const char *kObjc3RuntimeProtocolEmissionPayloadModel =
+    "protocol-descriptor-bundles-with-inherited-protocol-ref-lists";
+inline constexpr const char *kObjc3RuntimeCategoryEmissionPayloadModel =
+    "category-descriptor-bundles-with-attachment-and-protocol-ref-lists";
+inline constexpr const char *kObjc3RuntimeProtocolReferenceModel =
+    "count-plus-descriptor-pointer-protocol-ref-lists";
+inline constexpr const char *kObjc3RuntimeCategoryAttachmentModel =
+    "count-plus-owner-identity-pointer-attachment-lists";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -795,6 +810,7 @@ std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
     const Objc3RuntimeMetadataLayoutPolicy &policy);
 std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary();
 std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
+std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
 const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);

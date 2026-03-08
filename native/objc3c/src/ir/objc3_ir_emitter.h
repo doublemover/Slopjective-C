@@ -20,6 +20,28 @@ struct Objc3IRRuntimeMetadataClassMetaclassBundle {
   std::size_t class_method_count = 0;
 };
 
+struct Objc3IRRuntimeMetadataProtocolBundle {
+  std::string protocol_name;
+  std::string owner_identity;
+  std::vector<std::string> inherited_protocol_owner_identities_lexicographic;
+  std::size_t property_count = 0;
+  std::size_t method_count = 0;
+  bool is_forward_declaration = false;
+};
+
+struct Objc3IRRuntimeMetadataCategoryBundle {
+  std::string record_kind;
+  std::string class_name;
+  std::string category_name;
+  std::string owner_identity;
+  std::string category_owner_identity;
+  std::string class_owner_identity;
+  std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
+  std::size_t property_count = 0;
+  std::size_t instance_method_count = 0;
+  std::size_t class_method_count = 0;
+};
+
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
   std::string compatibility_mode = "canonical";
@@ -166,6 +188,18 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_metadata_class_metaclass_typed_handoff_replay_key;
   std::vector<Objc3IRRuntimeMetadataClassMetaclassBundle>
       runtime_metadata_class_metaclass_bundles_lexicographic;
+  std::string runtime_metadata_protocol_category_emission_contract_id;
+  std::string runtime_metadata_protocol_emission_payload_model;
+  std::string runtime_metadata_category_emission_payload_model;
+  std::string runtime_metadata_protocol_reference_model;
+  std::string runtime_metadata_category_attachment_model;
+  bool runtime_metadata_protocol_category_emission_ready = false;
+  bool runtime_metadata_protocol_category_emission_fail_closed = false;
+  std::string runtime_metadata_protocol_category_typed_handoff_replay_key;
+  std::vector<Objc3IRRuntimeMetadataProtocolBundle>
+      runtime_metadata_protocol_bundles_lexicographic;
+  std::vector<Objc3IRRuntimeMetadataCategoryBundle>
+      runtime_metadata_category_bundles_lexicographic;
   std::string runtime_metadata_object_inspection_contract_id;
   std::string runtime_metadata_object_inspection_scaffold_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;

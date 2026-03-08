@@ -926,6 +926,50 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C002/class_and_metaclass_data_emission_summary.json`
 
+## Protocol and category data emission (M253-C003)
+
+- Lane-C now emits the next real executable metadata payload families through
+  `Objc3RuntimeMetadataProtocolCategoryEmissionSummary`.
+- Contract id:
+  `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`.
+- The protocol payload model is now
+  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`.
+- The category payload model is now
+  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`.
+- Protocol bundles now carry:
+  - one protocol-name cstring,
+  - one declaration-owner identity cstring,
+  - one inherited-protocol-ref list global,
+  - one descriptor record with property/method counts and forward-declaration state.
+- Category bundles now carry:
+  - one class-name cstring,
+  - one category-name cstring,
+  - one record-kind cstring,
+  - one record-owner identity cstring,
+  - one category-owner identity cstring,
+  - one class-owner identity cstring,
+  - one owner-identity attachment list,
+  - one adopted-protocol-ref list,
+  - one descriptor record with property/instance-method/class-method counts.
+- The happy-path metadata fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`.
+- The emitted IR now carries:
+  - `!objc3.objc_runtime_protocol_category_emission`
+  - `@__objc3_meta_protocol_inherited_protocol_refs_0001`
+  - `@__objc3_meta_category_adopted_protocol_refs_0000`
+  - `@__objc3_meta_category_attachments_0001`
+  - `@__objc3_sec_protocol_descriptors = internal global { i64, [2 x ptr] } ...`
+  - `@__objc3_sec_category_descriptors = internal global { i64, [2 x ptr] } ...`
+- The emitted object now proves `objc3.runtime.protocol_descriptors` and
+  `objc3.runtime.category_descriptors` are real object sections with
+  nontrivial bytes/relocations on the `llvm-direct` path.
+- C003 remains deliberately bounded:
+  - no selector/string-pool sections,
+  - no standalone property/ivar payload sections,
+  - no runtime registration/bootstrap.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C003/protocol_and_category_data_emission_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
