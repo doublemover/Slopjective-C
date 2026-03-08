@@ -6562,3 +6562,16 @@ smoke:
 - `compile_proof_command_surface`
 - `execution_smoke_command_surface`
 - `launch_integration_ready`
+
+## M254 startup registration gate metadata anchors (E001)
+
+`M254-E001` freezes one replay-stable bootstrap evidence chain over the emitted
+startup-registration metadata and its runtime/operator proofs. The gate remains
+summary-chain based, but the metadata anchors it trusts are still concrete:
+
+- `module.runtime-registration-manifest.json`
+- `translation_unit_registration_order_ordinal`
+- `bootstrap_registration_table_symbol`
+- `bootstrap_image_local_init_state_symbol`
+- `launch_integration_contract_id`
+- `driver_linker_flags`

@@ -5502,3 +5502,17 @@ smoke:
 - compile proof script `scripts/run_objc3c_native_compile_proof.ps1`
 - execution smoke script `scripts/check_objc3c_native_execution_smoke.ps1`
 - launch integration ready flag `launch_integration_ready`
+
+## M254 startup registration gate (E001)
+
+`M254-E001` introduces one fail-closed lane-E gate over the live startup
+registration/bootstrap evidence chain without adding new runtime behavior:
+
+- contract id `objc3c-runtime-startup-registration-gate/m254-e001-v1`
+- evidence model `a002-b002-c003-d003-d004-summary-chain`
+- failure model `fail-closed-on-bootstrap-evidence-drift`
+- upstream evidence must stay rooted in the canonical summaries for `M254-A002`,
+  `M254-B002`, `M254-C003`, `M254-D003`, and `M254-D004`
+- any drift in manifest authority, bootstrap status codes, registration-table
+  realization, deterministic reset/replay, or launch integration must fail
+  closed before `M254-E002`

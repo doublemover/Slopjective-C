@@ -184,6 +184,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.registration_entrypoint_symbol;
           manifest_inputs.translation_unit_identity_model =
               registration_manifest_summary.translation_unit_identity_model;
+          // M254-E001 startup-registration gate anchor: lane-E consumes the
+          // emitted registration manifest plus the A002/B002/C003/D003/D004 evidence chain
+          // exactly as published here before E002 closeout broadens the gate.
           manifest_inputs.launch_integration_contract_id =
               registration_manifest_summary.launch_integration_contract_id;
           manifest_inputs.runtime_library_resolution_model =

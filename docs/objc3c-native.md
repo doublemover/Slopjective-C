@@ -16657,3 +16657,21 @@ consume the same emitted runtime launch contract:
   - `compile_proof_command_surface`
   - `execution_smoke_command_surface`
   - `launch_integration_ready`
+
+## Startup registration gate (M254-E001)
+
+`M254-E001` freezes one lane-E closeout gate over the already-landed startup
+registration/bootstrap evidence chain:
+
+- contract id `objc3c-runtime-startup-registration-gate/m254-e001-v1`
+- evidence model `a002-b002-c003-d003-d004-summary-chain`
+- fail-closed model `fail-closed-on-bootstrap-evidence-drift`
+- canonical evidence output
+  `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
+- upstream proof chain:
+  - `M254-A002` registration-manifest ownership
+  - `M254-B002` live bootstrap semantics
+  - `M254-C003` registration-table realization and image-local init
+  - `M254-D003` deterministic reset/replay
+  - `M254-D004` operator launch integration
+- explicit handoff issue `M254-E002`

@@ -7501,6 +7501,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // manifest template and constructor-root ownership model that later
            // lowering/bootstrap lanes consume directly instead of reconstructing
            // startup registration inputs ad hoc from loose sidecars.
+           // M254-E001 startup-registration gate anchor: the semantic-surface registration manifest remains the canonical lane-E gate input
+           // for the A002/B002/C003/D003/D004 replay-stable bootstrap evidence chain.
            << ",\"objc_runtime_translation_unit_registration_manifest\":"
            << BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
                   runtime_translation_unit_registration_manifest)

@@ -186,3 +186,16 @@ runtime launch contract:
 - contract id `objc3c-runtime-launch-integration/m254-d004-v1`
 - smoke/proof link commands consume emitted `driver_linker_flags` from that
   manifest rather than heuristic runtime-library fallback logic
+
+`M254-E001` then freezes one lane-E startup-registration gate over the
+implemented bootstrap proof chain:
+
+- `M254-A002` registration manifest ownership
+- `M254-B002` live bootstrap semantics
+- `M254-C003` registration-table/image-local-init realization
+- `M254-D003` deterministic reset/replay proof
+- `M254-D004` operator launch contract
+- canonical gate evidence
+  `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
+- no new runtime/bootstrap behavior lands in `M254-E001`; it is a fail-closed
+  validation boundary ahead of `M254-E002`
