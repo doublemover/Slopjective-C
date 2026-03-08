@@ -730,6 +730,47 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`
 
+## Source-to-section mapping completeness matrix (M253-A002)
+
+- Lane-A now publishes the canonical source-to-section completeness matrix over
+  the executable metadata graph and the frozen emitted inventory boundary.
+- Contract id:
+  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`.
+- The canonical manifest surface is
+  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`.
+- Row ordering is frozen to source-graph node kind order:
+  `interface`, `implementation`, `class`, `metaclass`, `protocol`, `category`,
+  `property`, `method`, `ivar`.
+- Concrete emitted rows remain limited to:
+  - `class` -> `objc3.runtime.class_descriptors` /
+    `__objc3_meta_class_####` / `__objc3_sec_class_descriptors`,
+  - `protocol` -> `objc3.runtime.protocol_descriptors` /
+    `__objc3_meta_protocol_####` / `__objc3_sec_protocol_descriptors`,
+  - `category` -> `objc3.runtime.category_descriptors` /
+    `__objc3_meta_category_####` / `__objc3_sec_category_descriptors`,
+  - `property` -> `objc3.runtime.property_descriptors` /
+    `__objc3_meta_property_####` / `__objc3_sec_property_descriptors`,
+  - `ivar` -> `objc3.runtime.ivar_descriptors` /
+    `__objc3_meta_ivar_####` / `__objc3_sec_ivar_descriptors`.
+- Current non-standalone rows remain explicit and fail closed:
+  - `interface`,
+  - `implementation`,
+  - `metaclass`,
+  - `method`.
+- Concrete emitted rows all preserve the same relocation model today:
+  `zero-sentinel-or-count-plus-pointer-vector`.
+- Proof binding remains concrete per row:
+  - metadata-rich graph rows bind to
+    `m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+    or
+    `m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+  - emitted section/symbol rows bind to
+    `m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+    `llvm-readobj --sections module.obj`, and
+    `llvm-objdump --syms module.obj`.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

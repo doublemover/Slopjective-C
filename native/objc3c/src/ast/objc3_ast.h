@@ -406,6 +406,44 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionCommand
     "llvm-readobj --sections module.obj";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolCommand =
     "llvm-objdump --syms module.obj";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixContractId =
+    "objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixOrderingModel =
+    "source-graph-node-kind-order-v1";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionStandaloneEmissionMode =
+    "standalone-descriptor-section";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionNoStandaloneEmissionMode =
+    "no-standalone-emission-yet";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionFixturePlusObjectInspectionProofMode =
+    "fixture-plus-object-inspection";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionSourceGraphFixtureProofMode =
+    "source-graph-fixture";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionNoStandaloneValue =
+    "(none)";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionAggregateRelocationBehavior =
+    "zero-sentinel-or-count-plus-pointer-vector";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionNoStandaloneRelocationBehavior =
+    "none";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionInterfaceRowKey =
+    "interface-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionImplementationRowKey =
+    "implementation-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionClassRowKey =
+    "class-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMetaclassRowKey =
+    "metaclass-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionProtocolRowKey =
+    "protocol-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionCategoryRowKey =
+    "category-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionPropertyRowKey =
+    "property-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMethodRowKey =
+    "method-node-to-emission";
+inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionIvarRowKey =
+    "ivar-node-to-emission";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionNamedMetadataName =
     "!objc3.objc_executable_metadata_debug_projection";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestSurfacePath =

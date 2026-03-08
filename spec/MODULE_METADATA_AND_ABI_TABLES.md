@@ -5927,6 +5927,32 @@ Deterministic lane-A emitted inventory anchors for `M253-A001` shall preserve:
 - evidence path
   `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`.
 
+## M253 source-to-section completeness matrix metadata anchors (A002)
+
+Deterministic lane-A source-to-section completeness anchors for `M253-A002`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`,
+- manifest surface
+  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`,
+- row ordering model
+  `source-graph-node-kind-order-v1`,
+- concrete emitted rows for `class`, `protocol`, `category`, `property`, and
+  `ivar` bound to their canonical logical sections and aggregate symbols,
+- explicit no-standalone-emission rows for `interface`, `implementation`,
+  `metaclass`, and `method`,
+- proof fixture anchors
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`,
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+  and
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+- object-inspection command anchors
+  `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- evidence path
+  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

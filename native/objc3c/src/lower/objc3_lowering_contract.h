@@ -13,6 +13,9 @@ inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info
 // plus class/protocol/category/property/ivar descriptor sections until later
 // M253 issues extend it explicitly.
+// M253-A002 source-to-section matrix anchor: interface/implementation/
+// metaclass/method rows stay explicit no-standalone-emission entries until
+// later M253 payload work extends them.
 inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";
 inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";
 inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";

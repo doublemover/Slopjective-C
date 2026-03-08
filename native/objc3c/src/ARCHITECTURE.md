@@ -8418,3 +8418,16 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   class/protocol/category/property/ivar descriptor sections remain one frozen
   emitted inventory boundary before `M253-A002` publishes the completeness
   matrix.
+- M253 lane-A A002 source-to-section completeness matrix anchors explicit
+  contract artifacts in
+  `docs/contracts/m253_source_to_section_mapping_completeness_matrix_conformance_matrix_implementation_a002_expectations.md`,
+  `spec/planning/compiler/m253/m253_a002_source_to_section_mapping_completeness_matrix_conformance_matrix_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `ast/objc3_ast.h`, `lower/objc3_lowering_contract.h`,
+  `lower/objc3_lowering_contract.cpp`, `ir/objc3_ir_emitter.cpp`,
+  `io/objc3_process.cpp`, `pipeline/objc3_frontend_types.h`, and
+  `pipeline/objc3_frontend_artifacts.cpp` so source-graph node rows stay
+  deterministically mapped to the frozen emitted inventory while
+  interface/implementation/metaclass/method remain explicit
+  no-standalone-emission entries until later payload work lands.

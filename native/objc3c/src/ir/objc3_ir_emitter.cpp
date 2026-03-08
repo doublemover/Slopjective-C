@@ -1711,21 +1711,17 @@ class Objc3IREmitter {
   static std::string EscapeCStringLiteral(const std::string &text) {
     std::ostringstream out;
     for (unsigned char c : text) {
-      if (c == '\\' || c == '"') {
-        out << '\\' << static_cast<char>(c);
-        continue;
-      }
-      if (c >= 32 && c <= 126) {
-        out << static_cast<char>(c);
-        continue;
-      }
       std::ostringstream byte;
       byte << std::hex << std::uppercase << static_cast<int>(c);
       std::string value = byte.str();
       if (value.size() < 2) {
         value = "0" + value;
       }
-      out << "\\" << value;
+      if (c == '\\' || c == '"' || c < 32 || c > 126) {
+        out << "\\" << value;
+        continue;
+      }
+      out << static_cast<char>(c);
     }
     return out.str();
   }
@@ -4105,6 +4101,11 @@ class Objc3IREmitter {
       return;
     }
 
+    // M253-A002 source-to-section matrix anchor: emitted runtime metadata still
+    // materializes only image-info plus class/protocol/category/property/ivar
+    // descriptor sections. Interface/implementation/metaclass/method nodes
+    // remain explicit no-standalone-emission matrix rows until later M253
+    // payload work lands.
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;

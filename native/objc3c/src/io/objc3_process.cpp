@@ -171,6 +171,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // must preserve the IR-emitted runtime metadata section inventory exactly.
   // This backend boundary may not rewrite, rename, or silently substitute a
   // different metadata inventory model.
+  // M253-A002 source-to-section matrix anchor: only image-info plus
+  // class/protocol/category/property/ivar descriptor sections are materialized
+  // today, while unsupported standalone rows stay explicit in the published
+  // completeness matrix until later M253 work lands.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

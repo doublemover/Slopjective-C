@@ -4774,3 +4774,33 @@ The freeze must preserve:
 `M253-A001` does not yet publish the source-to-section completeness matrix,
 does not introduce concrete descriptor layouts, and does not add standalone
 method/selector/string-pool emitted sections.
+
+## M253 source-to-section mapping completeness matrix (A002)
+
+`M253-A002` publishes the deterministic completeness matrix that maps every
+currently supported executable metadata graph node kind to its emitted runtime
+metadata section payload, symbol family, relocation behavior, and proof anchor.
+
+The matrix must preserve:
+
+- contract id
+  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`,
+- manifest surface
+  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`,
+- source-graph node kind ordering
+  `interface`, `implementation`, `class`, `metaclass`, `protocol`, `category`,
+  `property`, `method`, `ivar`,
+- concrete emitted rows for:
+  `class`, `protocol`, `category`, `property`, and `ivar`,
+- explicit no-standalone-emission rows for:
+  `interface`, `implementation`, `metaclass`, and `method`,
+- the frozen relocation model
+  `zero-sentinel-or-count-plus-pointer-vector` for emitted descriptor families,
+- proof binding to metadata-rich source fixtures plus emitted object inspection
+  commands,
+- evidence path
+  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`.
+
+`M253-A002` still does not introduce real descriptor payload layouts, startup
+registration, runtime loader bootstrap, or standalone emitted
+method/selector/string-pool sections.
