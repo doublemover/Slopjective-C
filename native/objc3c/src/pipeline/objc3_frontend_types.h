@@ -2687,6 +2687,80 @@ inline bool IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeStartupBootstrapInvariantSummary {
+  std::string contract_id = kObjc3RuntimeStartupBootstrapInvariantContractId;
+  std::string registration_manifest_contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string bootstrap_surface_path =
+      kObjc3RuntimeStartupBootstrapInvariantSurfacePath;
+  std::string duplicate_registration_policy =
+      kObjc3RuntimeStartupBootstrapDuplicateRegistrationPolicy;
+  std::string realization_order_policy =
+      kObjc3RuntimeStartupBootstrapRealizationOrderPolicy;
+  std::string failure_mode = kObjc3RuntimeStartupBootstrapFailureMode;
+  std::string image_local_initialization_scope =
+      kObjc3RuntimeStartupBootstrapImageLocalInitializationScope;
+  std::string constructor_root_uniqueness_policy =
+      kObjc3RuntimeStartupBootstrapConstructorRootUniquenessPolicy;
+  std::string constructor_root_consumption_model =
+      kObjc3RuntimeStartupBootstrapConsumptionModel;
+  std::string startup_execution_mode =
+      kObjc3RuntimeStartupBootstrapExecutionMode;
+  std::string constructor_root_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol;
+  std::string registration_entrypoint_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
+  std::string manifest_authority_model =
+      kObjc3RuntimeTranslationUnitRegistrationManifestAuthorityModel;
+  std::string translation_unit_identity_model =
+      kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel;
+  bool fail_closed = false;
+  bool registration_manifest_contract_ready = false;
+  bool duplicate_registration_semantics_frozen = false;
+  bool realization_order_semantics_frozen = false;
+  bool failure_mode_semantics_frozen = false;
+  bool image_local_initialization_scope_frozen = false;
+  bool constructor_root_uniqueness_frozen = false;
+  bool startup_execution_not_yet_landed = false;
+  bool live_duplicate_registration_enforcement_not_yet_landed = false;
+  bool image_local_realization_not_yet_landed = false;
+  bool ready_for_bootstrap_implementation = false;
+  std::string registration_manifest_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeStartupBootstrapInvariantSummary(
+    const Objc3RuntimeStartupBootstrapInvariantSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.registration_manifest_contract_id.empty() &&
+         !summary.bootstrap_surface_path.empty() &&
+         !summary.duplicate_registration_policy.empty() &&
+         !summary.realization_order_policy.empty() &&
+         !summary.failure_mode.empty() &&
+         !summary.image_local_initialization_scope.empty() &&
+         !summary.constructor_root_uniqueness_policy.empty() &&
+         !summary.constructor_root_consumption_model.empty() &&
+         !summary.startup_execution_mode.empty() &&
+         !summary.constructor_root_symbol.empty() &&
+         !summary.registration_entrypoint_symbol.empty() &&
+         !summary.manifest_authority_model.empty() &&
+         !summary.translation_unit_identity_model.empty() &&
+         summary.fail_closed &&
+         summary.registration_manifest_contract_ready &&
+         summary.duplicate_registration_semantics_frozen &&
+         summary.realization_order_semantics_frozen &&
+         summary.failure_mode_semantics_frozen &&
+         summary.image_local_initialization_scope_frozen &&
+         summary.constructor_root_uniqueness_frozen &&
+         summary.startup_execution_not_yet_landed &&
+         summary.live_duplicate_registration_enforcement_not_yet_landed &&
+         summary.image_local_realization_not_yet_landed &&
+         summary.ready_for_bootstrap_implementation &&
+         !summary.registration_manifest_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3FrontendPipelineResult {
   Objc3ParsedProgram program;
   Objc3ParserContractSnapshot parser_contract_snapshot;

@@ -198,6 +198,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // later lowering/bootstrap lanes consume direct constructor-root
             // ownership inputs instead of reconstructing them from ad hoc
             // sidecar parsing rules.
+            // M254-B001 bootstrap-invariant anchor: later startup execution
+            // must continue to treat this manifest as the authoritative source
+            // for one constructor root per translation-unit identity, fail
+            // duplicate registration closed, and preserve deterministic
+            // realization order before user entry.
             WriteRuntimeRegistrationManifestArtifact(
                 cli_options.out_dir,
                 cli_options.emit_prefix,

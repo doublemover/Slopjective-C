@@ -1306,6 +1306,34 @@ and bootstrap lanes must consume directly.
 Validation/evidence path:
 `tmp/reports/m254/M254-A002/registration_manifests_and_constructor_root_ownership_summary.json`
 
+## Bootstrap invariants (M254-B001)
+
+`M254-B001` freezes the semantic boundary that later startup/bootstrap work
+must preserve:
+
+- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization scope
+  `runtime-owned-image-local-registration-state`
+- constructor-root uniqueness policy
+  `one-startup-root-per-translation-unit-identity`
+- constructor-root consumption model
+  `startup-root-consumes-registration-manifest`
+- startup execution mode `deferred-until-m254-c001`
+
+`M254-B001` is a freeze only. It does not add live bootstrap calls, duplicate
+registration enforcement, or image-local realization code yet.
+
+Validation/evidence path:
+`tmp/reports/m254/M254-B001/bootstrap_invariants_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

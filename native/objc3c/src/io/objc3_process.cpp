@@ -597,6 +597,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.constructor_init_stub_symbol_prefix +
       MakeIdentifierSafeSuffix(
           linker_retention_artifacts.translation_unit_identity_key);
+  // M254-B001 bootstrap-invariant anchor: later startup registration must
+  // preserve one init-stub/root identity per translation unit, reject
+  // duplicate registration on the same identity key, and fail closed before
+  // user entry if bootstrap materialization cannot honor that contract.
 
   std::ostringstream out;
   out << "{\n"

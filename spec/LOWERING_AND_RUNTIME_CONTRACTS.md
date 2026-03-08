@@ -5290,3 +5290,33 @@ Non-goals:
 - no constructor-root emission yet
 - no automatic startup registration yet
 - no runtime bootstrap execution yet
+
+## M254 startup bootstrap invariants (B001)
+
+`M254-B001` freezes the semantic invariants that later startup-registration and
+runtime-bootstrap implementation must preserve.
+
+- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`
+- upstream manifest contract id
+  `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization scope
+  `runtime-owned-image-local-registration-state`
+- constructor-root uniqueness policy
+  `one-startup-root-per-translation-unit-identity`
+- constructor-root consumption model
+  `startup-root-consumes-registration-manifest`
+- startup execution mode `deferred-until-m254-c001`
+
+Non-goals:
+
+- no live startup execution yet
+- no duplicate-registration enforcement yet
+- no image-local realization/runtime bootstrap execution yet

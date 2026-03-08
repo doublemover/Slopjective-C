@@ -8618,3 +8618,8 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   constructor-root authority model, init-stub ownership model, and
   translation-unit-identity-derived init-stub symbol shape that `M254-C001`
   must consume directly.
+- M254 lane-B B001 startup-bootstrap invariant freeze publishes one semantic
+  packet in `pipeline/objc3_frontend_artifacts.cpp` that binds duplicate
+  registration, realization order, failure mode, and image-local
+  initialization semantics to the live A002 registration manifest rather than
+  leaving later bootstrap work to infer them from driver/process behavior.

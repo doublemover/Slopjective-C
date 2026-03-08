@@ -574,6 +574,34 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestPriorityPolicy =
         "deferred-until-m254-c001";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapInvariantContractId =
+        "objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapInvariantSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_runtime_startup_bootstrap_invariants";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapDuplicateRegistrationPolicy =
+        "fail-closed-by-translation-unit-identity-key";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapRealizationOrderPolicy =
+        "constructor-root-then-registration-manifest-order";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapFailureMode =
+        "abort-before-user-main-no-partial-registration-commit";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapImageLocalInitializationScope =
+        "runtime-owned-image-local-registration-state";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapConstructorRootUniquenessPolicy =
+        "one-startup-root-per-translation-unit-identity";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapConsumptionModel =
+        "startup-root-consumes-registration-manifest";
+inline constexpr const char
+    *kObjc3RuntimeStartupBootstrapExecutionMode =
+        "deferred-until-m254-c001";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

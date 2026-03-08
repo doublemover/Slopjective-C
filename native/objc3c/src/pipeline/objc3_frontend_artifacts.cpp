@@ -1909,6 +1909,131 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeStartupBootstrapInvariantReplayKey(
+    const Objc3RuntimeStartupBootstrapInvariantSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";registration_manifest_contract_id="
+      << summary.registration_manifest_contract_id
+      << ";bootstrap_surface_path=" << summary.bootstrap_surface_path
+      << ";duplicate_registration_policy="
+      << summary.duplicate_registration_policy
+      << ";realization_order_policy=" << summary.realization_order_policy
+      << ";failure_mode=" << summary.failure_mode
+      << ";image_local_initialization_scope="
+      << summary.image_local_initialization_scope
+      << ";constructor_root_uniqueness_policy="
+      << summary.constructor_root_uniqueness_policy
+      << ";constructor_root_consumption_model="
+      << summary.constructor_root_consumption_model
+      << ";startup_execution_mode=" << summary.startup_execution_mode
+      << ";constructor_root_symbol=" << summary.constructor_root_symbol
+      << ";registration_entrypoint_symbol="
+      << summary.registration_entrypoint_symbol
+      << ";manifest_authority_model=" << summary.manifest_authority_model
+      << ";translation_unit_identity_model="
+      << summary.translation_unit_identity_model
+      << ";registration_manifest_replay_key="
+      << summary.registration_manifest_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeStartupBootstrapInvariantSummary
+BuildRuntimeStartupBootstrapInvariantSummary(
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &registration_manifest) {
+  Objc3RuntimeStartupBootstrapInvariantSummary summary;
+  summary.fail_closed = true;
+  summary.registration_manifest_contract_ready =
+      IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+          registration_manifest);
+  summary.duplicate_registration_semantics_frozen = true;
+  summary.realization_order_semantics_frozen = true;
+  summary.failure_mode_semantics_frozen = true;
+  summary.image_local_initialization_scope_frozen = true;
+  summary.constructor_root_uniqueness_frozen = true;
+  summary.startup_execution_not_yet_landed = true;
+  summary.live_duplicate_registration_enforcement_not_yet_landed = true;
+  summary.image_local_realization_not_yet_landed = true;
+  summary.ready_for_bootstrap_implementation =
+      summary.registration_manifest_contract_ready;
+  if (summary.registration_manifest_contract_ready) {
+    summary.registration_manifest_replay_key = registration_manifest.replay_key;
+  }
+  if (summary.ready_for_bootstrap_implementation) {
+    summary.replay_key =
+        BuildRuntimeStartupBootstrapInvariantReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeStartupBootstrapInvariantSummary(summary)) {
+    summary.failure_reason =
+        "runtime startup bootstrap invariant summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeStartupBootstrapInvariantSummaryJson(
+    const Objc3RuntimeStartupBootstrapInvariantSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"registration_manifest_contract_id\":\""
+      << EscapeJsonString(summary.registration_manifest_contract_id)
+      << "\",\"bootstrap_surface_path\":\""
+      << EscapeJsonString(summary.bootstrap_surface_path)
+      << "\",\"duplicate_registration_policy\":\""
+      << EscapeJsonString(summary.duplicate_registration_policy)
+      << "\",\"realization_order_policy\":\""
+      << EscapeJsonString(summary.realization_order_policy)
+      << "\",\"failure_mode\":\""
+      << EscapeJsonString(summary.failure_mode)
+      << "\",\"image_local_initialization_scope\":\""
+      << EscapeJsonString(summary.image_local_initialization_scope)
+      << "\",\"constructor_root_uniqueness_policy\":\""
+      << EscapeJsonString(summary.constructor_root_uniqueness_policy)
+      << "\",\"constructor_root_consumption_model\":\""
+      << EscapeJsonString(summary.constructor_root_consumption_model)
+      << "\",\"startup_execution_mode\":\""
+      << EscapeJsonString(summary.startup_execution_mode)
+      << "\",\"constructor_root_symbol\":\""
+      << EscapeJsonString(summary.constructor_root_symbol)
+      << "\",\"registration_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.registration_entrypoint_symbol)
+      << "\",\"manifest_authority_model\":\""
+      << EscapeJsonString(summary.manifest_authority_model)
+      << "\",\"translation_unit_identity_model\":\""
+      << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"ready\":"
+      << (IsReadyObjc3RuntimeStartupBootstrapInvariantSummary(summary) ? "true"
+                                                                       : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"registration_manifest_contract_ready\":"
+      << (summary.registration_manifest_contract_ready ? "true" : "false")
+      << ",\"duplicate_registration_semantics_frozen\":"
+      << (summary.duplicate_registration_semantics_frozen ? "true" : "false")
+      << ",\"realization_order_semantics_frozen\":"
+      << (summary.realization_order_semantics_frozen ? "true" : "false")
+      << ",\"failure_mode_semantics_frozen\":"
+      << (summary.failure_mode_semantics_frozen ? "true" : "false")
+      << ",\"image_local_initialization_scope_frozen\":"
+      << (summary.image_local_initialization_scope_frozen ? "true" : "false")
+      << ",\"constructor_root_uniqueness_frozen\":"
+      << (summary.constructor_root_uniqueness_frozen ? "true" : "false")
+      << ",\"startup_execution_not_yet_landed\":"
+      << (summary.startup_execution_not_yet_landed ? "true" : "false")
+      << ",\"live_duplicate_registration_enforcement_not_yet_landed\":"
+      << (summary.live_duplicate_registration_enforcement_not_yet_landed ? "true"
+                                                                         : "false")
+      << ",\"image_local_realization_not_yet_landed\":"
+      << (summary.image_local_realization_not_yet_landed ? "true" : "false")
+      << ",\"ready_for_bootstrap_implementation\":"
+      << (summary.ready_for_bootstrap_implementation ? "true" : "false")
+      << ",\"registration_manifest_replay_key\":\""
+      << EscapeJsonString(summary.registration_manifest_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 void AccumulateIdClassSelObjectPointerTypecheckSite(
     bool id_spelling,
     bool class_spelling,
@@ -3709,6 +3834,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeTranslationUnitRegistrationManifestSummary(
               runtime_translation_unit_registration_contract,
               runtime_support_library_link_wiring);
+  const Objc3RuntimeStartupBootstrapInvariantSummary
+      runtime_startup_bootstrap_invariants =
+          BuildRuntimeStartupBootstrapInvariantSummary(
+              runtime_translation_unit_registration_manifest);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -5655,6 +5784,99 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << EscapeJsonString(
                   runtime_translation_unit_registration_manifest.failure_reason)
            << "\""
+           << ",\"runtime_startup_bootstrap_invariant_contract_id\":\""
+           << runtime_startup_bootstrap_invariants.contract_id
+           << "\",\"runtime_startup_bootstrap_invariant_duplicate_registration_policy\":\""
+           << runtime_startup_bootstrap_invariants
+                  .duplicate_registration_policy
+           << "\",\"runtime_startup_bootstrap_invariant_realization_order_policy\":\""
+           << runtime_startup_bootstrap_invariants.realization_order_policy
+           << "\",\"runtime_startup_bootstrap_invariant_failure_mode\":\""
+           << runtime_startup_bootstrap_invariants.failure_mode
+           << "\",\"runtime_startup_bootstrap_invariant_image_local_initialization_scope\":\""
+           << runtime_startup_bootstrap_invariants
+                  .image_local_initialization_scope
+           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_uniqueness_policy\":\""
+           << runtime_startup_bootstrap_invariants
+                  .constructor_root_uniqueness_policy
+           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_consumption_model\":\""
+           << runtime_startup_bootstrap_invariants
+                  .constructor_root_consumption_model
+           << "\",\"runtime_startup_bootstrap_invariant_startup_execution_mode\":\""
+           << runtime_startup_bootstrap_invariants.startup_execution_mode
+           << "\",\"runtime_startup_bootstrap_invariant_constructor_root_symbol\":\""
+           << runtime_startup_bootstrap_invariants.constructor_root_symbol
+           << "\",\"runtime_startup_bootstrap_invariant_registration_entrypoint_symbol\":\""
+           << runtime_startup_bootstrap_invariants
+                  .registration_entrypoint_symbol
+           << "\",\"runtime_startup_bootstrap_invariant_manifest_authority_model\":\""
+           << runtime_startup_bootstrap_invariants.manifest_authority_model
+           << "\",\"runtime_startup_bootstrap_invariant_translation_unit_identity_model\":\""
+           << runtime_startup_bootstrap_invariants
+                  .translation_unit_identity_model
+           << "\",\"runtime_startup_bootstrap_invariant_fail_closed\":"
+           << (runtime_startup_bootstrap_invariants.fail_closed ? "true"
+                                                                : "false")
+           << ",\"runtime_startup_bootstrap_invariant_registration_manifest_contract_ready\":"
+           << (runtime_startup_bootstrap_invariants
+                       .registration_manifest_contract_ready
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_duplicate_registration_semantics_frozen\":"
+           << (runtime_startup_bootstrap_invariants
+                       .duplicate_registration_semantics_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_realization_order_semantics_frozen\":"
+           << (runtime_startup_bootstrap_invariants
+                       .realization_order_semantics_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_failure_mode_semantics_frozen\":"
+           << (runtime_startup_bootstrap_invariants
+                       .failure_mode_semantics_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_image_local_initialization_scope_frozen\":"
+           << (runtime_startup_bootstrap_invariants
+                       .image_local_initialization_scope_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_constructor_root_uniqueness_frozen\":"
+           << (runtime_startup_bootstrap_invariants
+                       .constructor_root_uniqueness_frozen
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_startup_execution_not_yet_landed\":"
+           << (runtime_startup_bootstrap_invariants
+                       .startup_execution_not_yet_landed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_live_duplicate_registration_enforcement_not_yet_landed\":"
+           << (runtime_startup_bootstrap_invariants
+                       .live_duplicate_registration_enforcement_not_yet_landed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_image_local_realization_not_yet_landed\":"
+           << (runtime_startup_bootstrap_invariants
+                       .image_local_realization_not_yet_landed
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_ready_for_bootstrap_implementation\":"
+           << (runtime_startup_bootstrap_invariants
+                       .ready_for_bootstrap_implementation
+                   ? "true"
+                   : "false")
+           << ",\"runtime_startup_bootstrap_invariant_registration_manifest_replay_key\":\""
+           << EscapeJsonString(
+                  runtime_startup_bootstrap_invariants
+                      .registration_manifest_replay_key)
+           << "\",\"runtime_startup_bootstrap_invariant_replay_key\":\""
+           << EscapeJsonString(runtime_startup_bootstrap_invariants.replay_key)
+           << "\",\"runtime_startup_bootstrap_invariant_failure_reason\":\""
+           << EscapeJsonString(
+                  runtime_startup_bootstrap_invariants.failure_reason)
+           << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
            << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << ",\"property_synthesis_sites\":"
@@ -6512,6 +6734,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_translation_unit_registration_manifest\":"
            << BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
                   runtime_translation_unit_registration_manifest)
+           // M254-B001 bootstrap-invariant anchor: lane-B freezes duplicate
+           // registration, realization order, failure mode, and image-local
+           // initialization semantics against the live A002 registration
+           // manifest so later bootstrap implementation extends one canonical
+           // sema/runtime packet.
+           << ",\"objc_runtime_startup_bootstrap_invariants\":"
+           << BuildRuntimeStartupBootstrapInvariantSummaryJson(
+                  runtime_startup_bootstrap_invariants)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

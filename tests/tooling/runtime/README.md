@@ -73,3 +73,15 @@ artifact on the native object-emission path:
   translation-unit identity key from linker-retention discovery
 - init-stub emission and runtime bootstrap execution are still deferred to
   later `M254` issues
+
+`M254-B001` freezes the startup/bootstrap semantic contract over that emitted
+manifest:
+
+- duplicate registration is defined against the translation-unit identity key
+  and must fail closed rather than silently merging
+- realization order is defined as constructor-root handoff followed by
+  registration-manifest order
+- bootstrap failure mode is
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization remains runtime-owned and image-local rather than
+  driver-owned global mutable state

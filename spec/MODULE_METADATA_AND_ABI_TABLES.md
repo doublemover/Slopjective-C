@@ -6390,3 +6390,29 @@ Canonical metadata/runtime anchors:
 
 This implementation still defers emitted init-stub and bootstrap behavior to
 later `M254` issues.
+
+## M254 startup bootstrap metadata anchors (B001)
+
+`M254-B001` publishes the startup/bootstrap semantic freeze at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
+- upstream manifest contract id
+  `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization scope
+  `runtime-owned-image-local-registration-state`
+- constructor-root uniqueness policy
+  `one-startup-root-per-translation-unit-identity`
+- constructor-root symbol `__objc3_runtime_register_image_ctor`
+- registration entrypoint `objc3_runtime_register_image`
+
+This freeze does not execute bootstrap logic yet; it defines the canonical
+semantic packet later `M254` startup work must preserve.
