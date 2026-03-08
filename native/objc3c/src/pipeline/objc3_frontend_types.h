@@ -1330,6 +1330,8 @@ inline constexpr const char *kObjc3ExecutableMetadataMetaclassNodePolicy =
     "first-class-metaclass-nodes-derived-from-interface-runtime-owner-identities";
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphEdgeOrderingModel =
     "lexicographic-kind-source-target";
+inline constexpr const char *kObjc3ExecutableMetadataSemanticConsistencyContractId =
+    "objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1";
 
 struct Objc3ExecutableMetadataInterfaceGraphNode {
   std::string class_name;
@@ -1521,6 +1523,58 @@ inline bool IsReadyObjc3ExecutableMetadataSourceGraph(
          !graph.contract_id.empty() && !graph.owner_identity_model.empty() &&
          !graph.metaclass_node_policy.empty() &&
          !graph.edge_ordering_model.empty();
+}
+
+struct Objc3ExecutableMetadataSemanticConsistencyBoundary {
+  std::string contract_id =
+      kObjc3ExecutableMetadataSemanticConsistencyContractId;
+  std::string executable_metadata_source_graph_contract_id;
+  bool semantic_boundary_frozen = false;
+  bool lowering_admission_ready = false;
+  bool fail_closed = false;
+  bool source_graph_ready = false;
+  bool protocol_category_handoff_deterministic = false;
+  bool class_protocol_category_linking_deterministic = false;
+  bool selector_normalization_deterministic = false;
+  bool property_attribute_deterministic = false;
+  bool symbol_graph_scope_resolution_deterministic = false;
+  bool protocol_inheritance_edges_complete = false;
+  bool category_attachment_edges_complete = false;
+  bool declaration_export_owner_split_complete = false;
+  bool property_method_ivar_owner_edges_complete = false;
+  bool semantic_conflict_diagnostics_enforcement_pending = true;
+  bool duplicate_export_owner_enforcement_pending = true;
+  bool lowering_admission_pending = true;
+  std::size_t protocol_node_count = 0;
+  std::size_t category_node_count = 0;
+  std::size_t property_node_count = 0;
+  std::size_t method_node_count = 0;
+  std::size_t ivar_node_count = 0;
+  std::size_t owner_edge_count = 0;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3ExecutableMetadataSemanticConsistencyBoundary(
+    const Objc3ExecutableMetadataSemanticConsistencyBoundary &boundary) {
+  return !boundary.contract_id.empty() &&
+         !boundary.executable_metadata_source_graph_contract_id.empty() &&
+         boundary.semantic_boundary_frozen &&
+         !boundary.lowering_admission_ready &&
+         boundary.fail_closed &&
+         boundary.source_graph_ready &&
+         boundary.protocol_category_handoff_deterministic &&
+         boundary.class_protocol_category_linking_deterministic &&
+         boundary.selector_normalization_deterministic &&
+         boundary.property_attribute_deterministic &&
+         boundary.symbol_graph_scope_resolution_deterministic &&
+         boundary.protocol_inheritance_edges_complete &&
+         boundary.category_attachment_edges_complete &&
+         boundary.declaration_export_owner_split_complete &&
+         boundary.property_method_ivar_owner_edges_complete &&
+         boundary.semantic_conflict_diagnostics_enforcement_pending &&
+         boundary.duplicate_export_owner_enforcement_pending &&
+         boundary.lowering_admission_pending &&
+         boundary.failure_reason.empty();
 }
 
 struct Objc3RuntimeMetadataSourceOwnershipBoundary {
@@ -2071,6 +2125,8 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;
+  Objc3ExecutableMetadataSemanticConsistencyBoundary
+      executable_metadata_semantic_consistency_boundary;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
   Objc3RuntimeExportEnforcementSummary runtime_export_enforcement_summary;

@@ -4492,3 +4492,21 @@ semantic ambiguity diagnostics, or lowering/runtime ingest readiness.
 
 `M252-A003` still does not claim semantic ambiguity diagnostics, lowering
 readiness, runtime ingest packaging, or startup registration are complete.
+
+## M252 executable metadata semantic consistency freeze (B001)
+
+`M252-B001` freezes one canonical lane-B semantic-consistency packet:
+
+- contract id `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+- packet type `Objc3ExecutableMetadataSemanticConsistencyBoundary`,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`,
+- deterministic dependence on the ready executable metadata source graph and
+  deterministic protocol/category, class-linking, selector, property, and
+  scope-resolution handoffs,
+- explicit pending enforcement bits for semantic conflict diagnostics,
+  duplicate export-owner enforcement, and lowering admission.
+
+`M252-B001` is allowed to be `ready=true` while those enforcement lanes remain
+pending, as long as the boundary is frozen, fail-closed, and
+`lowering_admission_ready == false`.

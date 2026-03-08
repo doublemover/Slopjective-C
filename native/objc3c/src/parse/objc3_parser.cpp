@@ -5021,6 +5021,8 @@ static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
   // M252-A003 completion: protocol inheritance/adoption targets remain on the
   // canonical protocol: owner surface so executable metadata graph edges stay
   // deterministic across protocol and category export packets.
+  // M252-B001 freeze: the same canonical protocol: owner identities remain the
+  // semantic-consistency boundary inputs for inheritance and attachment rules.
   std::vector<std::string> targets;
   targets.reserve(protocol_names.size());
   for (const auto &name : protocol_names) {

@@ -8293,3 +8293,12 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   protocol/category/property/method/ivar node packets and deterministic export
   owner edges stay fail-closed before lane-B semantic ambiguity work,
   lowering handoff, and runtime ingest packaging land.
+- M252 lane-B B001 executable metadata semantic consistency freeze anchors
+  explicit contract artifacts in
+  `docs/contracts/m252_executable_metadata_semantic_consistency_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m252/m252_b001_executable_metadata_semantic_consistency_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so the
+  semantic-consistency boundary remains frozen, fail-closed, and not
+  lowering-ready before lane-B diagnostics/enforcement work and lowering
+  admission land.

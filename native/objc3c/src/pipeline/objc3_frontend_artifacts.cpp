@@ -387,6 +387,63 @@ std::string BuildExecutableMetadataSourceGraphJson(
   return out.str();
 }
 
+std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
+    const Objc3ExecutableMetadataSemanticConsistencyBoundary &boundary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(boundary.contract_id)
+      << "\",\"executable_metadata_source_graph_contract_id\":\""
+      << EscapeJsonString(boundary.executable_metadata_source_graph_contract_id)
+      << "\",\"semantic_boundary_frozen\":"
+      << (boundary.semantic_boundary_frozen ? "true" : "false")
+      << ",\"lowering_admission_ready\":"
+      << (boundary.lowering_admission_ready ? "true" : "false")
+      << ",\"fail_closed\":"
+      << (boundary.fail_closed ? "true" : "false")
+      << ",\"ready\":"
+      << (IsReadyObjc3ExecutableMetadataSemanticConsistencyBoundary(boundary)
+              ? "true"
+              : "false")
+      << ",\"source_graph_ready\":"
+      << (boundary.source_graph_ready ? "true" : "false")
+      << ",\"protocol_category_handoff_deterministic\":"
+      << (boundary.protocol_category_handoff_deterministic ? "true" : "false")
+      << ",\"class_protocol_category_linking_deterministic\":"
+      << (boundary.class_protocol_category_linking_deterministic ? "true"
+                                                                 : "false")
+      << ",\"selector_normalization_deterministic\":"
+      << (boundary.selector_normalization_deterministic ? "true" : "false")
+      << ",\"property_attribute_deterministic\":"
+      << (boundary.property_attribute_deterministic ? "true" : "false")
+      << ",\"symbol_graph_scope_resolution_deterministic\":"
+      << (boundary.symbol_graph_scope_resolution_deterministic ? "true"
+                                                               : "false")
+      << ",\"protocol_inheritance_edges_complete\":"
+      << (boundary.protocol_inheritance_edges_complete ? "true" : "false")
+      << ",\"category_attachment_edges_complete\":"
+      << (boundary.category_attachment_edges_complete ? "true" : "false")
+      << ",\"declaration_export_owner_split_complete\":"
+      << (boundary.declaration_export_owner_split_complete ? "true" : "false")
+      << ",\"property_method_ivar_owner_edges_complete\":"
+      << (boundary.property_method_ivar_owner_edges_complete ? "true" : "false")
+      << ",\"semantic_conflict_diagnostics_enforcement_pending\":"
+      << (boundary.semantic_conflict_diagnostics_enforcement_pending ? "true"
+                                                                     : "false")
+      << ",\"duplicate_export_owner_enforcement_pending\":"
+      << (boundary.duplicate_export_owner_enforcement_pending ? "true"
+                                                              : "false")
+      << ",\"lowering_admission_pending\":"
+      << (boundary.lowering_admission_pending ? "true" : "false")
+      << ",\"protocol_node_count\":" << boundary.protocol_node_count
+      << ",\"category_node_count\":" << boundary.category_node_count
+      << ",\"property_node_count\":" << boundary.property_node_count
+      << ",\"method_node_count\":" << boundary.method_node_count
+      << ",\"ivar_node_count\":" << boundary.ivar_node_count
+      << ",\"owner_edge_count\":" << boundary.owner_edge_count
+      << ",\"failure_reason\":\"" << EscapeJsonString(boundary.failure_reason)
+      << "\"}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -2250,6 +2307,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.runtime_metadata_source_records;
   const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph =
       pipeline_result.executable_metadata_source_graph;
+  const Objc3ExecutableMetadataSemanticConsistencyBoundary
+      &executable_metadata_semantic_consistency_boundary =
+          pipeline_result.executable_metadata_semantic_consistency_boundary;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
@@ -4543,6 +4603,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_source_graph\":"
            << BuildExecutableMetadataSourceGraphJson(
                   executable_metadata_source_graph)
+           << ",\"objc_executable_metadata_semantic_consistency_boundary\":"
+           << BuildExecutableMetadataSemanticConsistencyBoundaryJson(
+                  executable_metadata_semantic_consistency_boundary)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

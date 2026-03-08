@@ -459,6 +459,25 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-A003/executable_metadata_export_graph_completion_summary.json`
 
+## Metadata semantic consistency freeze (M252-B001)
+
+- Lane-B now freezes one canonical semantic-consistency packet for executable
+  metadata graph admission:
+  `Objc3ExecutableMetadataSemanticConsistencyBoundary`.
+- The boundary consumes the ready A003 graph plus deterministic protocol/
+  category, linking, selector, property, and scope-resolution handoffs.
+- The manifest now publishes
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`.
+- The boundary is allowed to be `ready=true` while:
+  - semantic conflict diagnostics remain pending,
+  - duplicate export-owner enforcement remains pending,
+  - lowering admission remains pending.
+- The boundary must remain frozen, fail-closed, and not lowering-ready on both
+  the class/protocol/property/ivar fixture and the category/protocol/property
+  fixture.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-B001/executable_metadata_semantic_consistency_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

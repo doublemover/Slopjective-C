@@ -113,6 +113,8 @@ struct Objc3ClassProtocolCategoryLinkingSummary {
   // M252-A003 completion anchor: protocol/category composition counts stay
   // stable so protocol/category/property/ivar export graph closure can fail
   // closed on deterministic sema inputs.
+  // M252-B001 freeze anchor: these counts remain the canonical semantic
+  // consistency inputs for executable metadata graph admission.
   std::size_t declared_interfaces = 0;
   std::size_t resolved_interfaces = 0;
   std::size_t declared_implementations = 0;

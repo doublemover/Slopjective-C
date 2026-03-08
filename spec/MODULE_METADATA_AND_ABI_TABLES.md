@@ -5697,6 +5697,23 @@ shall preserve:
 The graph must remain deterministic and fail closed before lane-B semantic
 closure, lowering handoff, and runtime ingest packaging land.
 
+## M252 executable metadata semantic consistency metadata anchors (B001)
+
+Deterministic lane-B executable metadata semantic consistency for `M252-B001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`,
+- explicit pending-enforcement bits for semantic conflict diagnostics,
+  duplicate export-owner enforcement, and lowering admission,
+- evidence path
+  `tmp/reports/m252/M252-B001/executable_metadata_semantic_consistency_summary.json`.
+
+The boundary must remain deterministic and fail closed before lane-B
+diagnostics/enforcement work, lowering admission, and runtime ingest packaging
+land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

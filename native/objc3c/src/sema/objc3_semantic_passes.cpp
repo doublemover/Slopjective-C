@@ -8845,6 +8845,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     // M252-A003 completion anchor: sema must preserve protocol/category/member
     // declaration inventories without reordering so export graph closure stays
     // deterministic for protocol/category/property/ivar packets.
+    // M252-B001 freeze anchor: the same deterministic inventories remain the
+    // semantic-consistency boundary inputs for fail-closed lane-B admission.
     interface_info.super_name = interface_decl.super_name;
     for (const auto &property_decl : interface_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, interface_decl.name, "interface", diagnostics);
