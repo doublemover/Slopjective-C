@@ -5730,6 +5730,21 @@ The packet must remain graph-backed, deterministic, fail-closed, and not
 lowering-ready before category ambiguity diagnostics, export blocking, lowering
 handoff, and runtime ingest packaging land.
 
+## M252 category attachment duplication ambiguity diagnostics metadata anchors (B003)
+
+Deterministic lane-B runtime export diagnostic hardening for `M252-B003` shall
+preserve:
+
+- the runtime export blocker diagnostics `O3S261`, `O3S262`, and `O3S263`,
+- canonical `Root(Extras)`-style category owner spelling in diagnostics,
+- manifest-backed replay evidence from the existing semantic surfaces, and
+- evidence path
+  `tmp/reports/m252/M252-B003/category_attachment_duplication_ambiguity_diagnostics_summary.json`.
+
+The expansion must keep the happy path manifest-producing, reject category
+attachment collisions and duplicate runtime members deterministically, and avoid
+introducing a second runtime export packet.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

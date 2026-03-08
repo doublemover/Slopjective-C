@@ -3576,6 +3576,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"runtime_export_ready_for_runtime_export\":"
            << (runtime_export_enforcement.ready_for_runtime_export ? "true"
                                                                   : "false")
+           // M252-B003 diagnostic precision anchor: manifest evidence must
+           // preserve the duplicate/incomplete/illegal counters that feed the
+           // precise category-attachment, duplicate-member, and ambiguity
+           // diagnostics emitted by the runtime metadata blocker.
            << ",\"runtime_export_duplicate_runtime_identity_sites\":"
            << runtime_export_enforcement.duplicate_runtime_identity_sites
            << ",\"runtime_export_incomplete_declaration_sites\":"

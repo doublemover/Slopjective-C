@@ -7447,6 +7447,9 @@ class Objc3Parser {
     // lexicographic adopted-protocol list remain the parser-owned inputs for
     // graph-backed inheritance and protocol-composition validation.
     decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
+    // M252-B003 diagnostic precision anchor: category owners keep a canonical
+    // class(category) semantic-link identity so attachment-collision and
+    // ambiguity diagnostics can report the exact runtime metadata owner.
     decl->semantic_link_symbol =
         BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);
     if (!decl->super_name.empty()) {
@@ -7535,6 +7538,9 @@ class Objc3Parser {
     if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
       SynchronizeObjcContainer();
     }
+    // M252-B003 diagnostic precision anchor: category implementation owners
+    // mirror the canonical class(category) identity to keep attachment
+    // collision diagnostics deterministic across parse and pipeline stages.
     decl->semantic_link_symbol =
         BuildObjcContainerScopeOwner("implementation", decl->name, decl->has_category, decl->category_name);
     decl->semantic_link_interface_symbol = BuildObjcContainerScopeOwner("interface", decl->name, false, "");

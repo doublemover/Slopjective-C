@@ -8312,3 +8312,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   accounting, metaclass relationship checks, and `method-to-overridden-method`
   graph edges remain deterministic and fail-closed before later lane-B
   ambiguity/export enforcement and lowering admission land.
+- M252 lane-B B003 category attachment, duplication, and ambiguity diagnostics
+  anchors explicit contract artifacts in
+  `docs/contracts/m252_category_attachment_duplication_ambiguity_diagnostics_b003_expectations.md`,
+  `spec/planning/compiler/m252/m252_b003_category_attachment_duplication_ambiguity_diagnostics_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so
+  class-plus-category input, category attachment collisions, duplicate runtime
+  members, and ambiguous metadata graph resolution diagnostics remain
+  deterministic and fail-closed without regressing the frozen semantic
+  boundary.

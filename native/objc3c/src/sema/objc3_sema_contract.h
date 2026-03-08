@@ -1202,6 +1202,10 @@ struct Objc3InterfaceImplementationSummary {
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
+  // M252-B003 diagnostic precision anchor: these maps model class containers
+  // only. Category containers are validated separately so valid
+  // class-plus-category programs do not collapse into duplicate class-owner
+  // diagnostics before runtime metadata conflict analysis runs.
   std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
   Objc3InterfaceImplementationSummary interface_implementation_summary;

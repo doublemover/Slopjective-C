@@ -4526,3 +4526,16 @@ pending, as long as the boundary is frozen, fail-closed, and
 
 `M252-B002` must remain fail-closed and `lowering_admission_ready == false`
 even when the happy path is fully ready.
+
+## M252 category attachment duplication ambiguity diagnostics (B003)
+
+`M252-B003` hardens the existing runtime metadata export blocker with
+deterministic category conflict diagnostics:
+
+- `O3S261` for category attachment collisions,
+- `O3S262` for duplicate runtime members,
+- `O3S263` for ambiguous runtime metadata graph resolution.
+
+The expansion must preserve the valid class-plus-category happy path, keep
+`O3S260` for incomplete declarations, and remain fail-closed without claiming
+lowering admission or runtime ingest readiness.

@@ -498,6 +498,25 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-B002/executable_metadata_semantic_validation_summary.json`
 
+## Category attachment duplication ambiguity diagnostics (M252-B003)
+
+- Lane-B now hardens the existing runtime metadata export blocker instead of
+  adding a second export-enforcement packet.
+- Valid class-plus-category programs no longer collapse into duplicate class
+  interface or implementation diagnostics.
+- The blocker now emits:
+  - `O3S261` for category attachment collisions,
+  - `O3S262` for duplicate runtime members,
+  - `O3S263` for ambiguous runtime metadata graph resolution,
+  while preserving `O3S260` for incomplete declarations.
+- The B003 fixtures prove:
+  - one valid class-plus-category manifest-only accept case,
+  - one duplicate category interface reject case,
+  - one duplicate category implementation plus runtime member ambiguity reject
+    case.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-B003/category_attachment_duplication_ambiguity_diagnostics_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
