@@ -1741,6 +1741,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_layout_policy = !{!55}\n";
     out << "!objc3.objc_runtime_class_metaclass_emission = !{!56}\n";
     out << "!objc3.objc_runtime_protocol_category_emission = !{!57}\n";
+    out << "!objc3.objc_runtime_member_table_emission = !{!58}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2613,6 +2614,54 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_protocol_category_typed_handoff_replay_key)
+        << "\"}\n";
+    std::size_t runtime_metadata_method_list_bundle_count = 0;
+    std::size_t runtime_metadata_method_entry_total = 0;
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic) {
+      ++runtime_metadata_method_list_bundle_count;
+      runtime_metadata_method_entry_total += bundle.entries_lexicographic.size();
+    }
+    out << "!58 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_member_table_emission_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_method_list_emission_payload_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_method_list_grouping_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_property_descriptor_emission_payload_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_ivar_descriptor_emission_payload_model)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_member_table_emission_ready ? 1
+                                                                            : 0)
+        << ", i1 "
+        << (frontend_metadata_.runtime_metadata_member_table_emission_fail_closed
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_metadata_method_list_bundle_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_metadata_method_entry_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                   .size())
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                   .size())
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_member_table_typed_handoff_replay_key)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4414,6 +4463,15 @@ class Objc3IREmitter {
             layout_policy.families[1].descriptor_count &&
         frontend_metadata_.runtime_metadata_category_bundles_lexicographic.size() ==
             layout_policy.families[2].descriptor_count;
+    const bool emit_member_table_payloads =
+        frontend_metadata_.runtime_metadata_member_table_emission_ready &&
+        frontend_metadata_.runtime_metadata_member_table_emission_fail_closed &&
+        !frontend_metadata_
+             .runtime_metadata_member_table_emission_contract_id.empty() &&
+        frontend_metadata_.runtime_metadata_property_bundles_lexicographic.size() ==
+            layout_policy.families[3].descriptor_count &&
+        frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic.size() ==
+            layout_policy.families[4].descriptor_count;
     if (emit_class_metaclass_bundle_payloads) {
       std::size_t total_instance_method_refs = 0;
       std::size_t total_class_method_refs = 0;
@@ -4464,6 +4522,27 @@ class Objc3IREmitter {
                  .runtime_metadata_protocol_category_typed_handoff_replay_key
           << "\n";
     }
+    if (emit_member_table_payloads) {
+      std::size_t total_method_entries = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic) {
+        total_method_entries += bundle.entries_lexicographic.size();
+      }
+      out << "; runtime_metadata_member_table_emission = "
+          << Objc3RuntimeMetadataMemberTableEmissionSummary()
+          << ";method_list_bundle_count="
+          << frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+                 .size()
+          << ";method_entry_count=" << total_method_entries
+          << ";property_descriptor_count="
+          << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                 .size()
+          << ";ivar_descriptor_count="
+          << frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic.size()
+          << ";typed_handoff_replay="
+          << frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key
+          << "\n";
+    }
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
@@ -4491,6 +4570,33 @@ class Objc3IREmitter {
             BuildRuntimeMetadataDescriptorSymbol(
                 layout_policy.descriptor_symbol_prefix,
                 kObjc3RuntimeMetadataLayoutPolicyProtocolFamily, i));
+      }
+    }
+    const auto build_method_list_key = [](const std::string &owner_family_kind,
+                                          const std::string &owner_identity,
+                                          const std::string &list_kind) {
+      return owner_family_kind + "|" + owner_identity + "|" + list_kind;
+    };
+    std::unordered_map<std::string, std::string> method_list_symbols_by_key;
+    if (emit_member_table_payloads) {
+      method_list_symbols_by_key.reserve(
+          frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+              .size());
+      for (std::size_t i = 0;
+           i <
+           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+               .size();
+           ++i) {
+        const auto &bundle =
+            frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+                [i];
+        method_list_symbols_by_key.emplace(
+            build_method_list_key(bundle.owner_family_kind,
+                                  bundle.declaration_owner_identity,
+                                  bundle.list_kind),
+            BuildRuntimeMetadataAuxiliarySymbol(
+                layout_policy.descriptor_symbol_prefix, bundle.owner_family_kind,
+                bundle.list_kind + "_methods", i));
       }
     }
 
@@ -4536,6 +4642,380 @@ class Objc3IREmitter {
             out << "] }";
           }
           out << ", section \"" << section_name << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
+    const auto emit_method_list_bundles_for_family =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          if (!emit_member_table_payloads) {
+            return;
+          }
+          for (std::size_t bundle_index = 0;
+               bundle_index <
+               frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+                   .size();
+               ++bundle_index) {
+            const auto &bundle =
+                frontend_metadata_
+                    .runtime_metadata_method_list_bundles_lexicographic[bundle_index];
+            if (bundle.owner_family_kind != family.kind) {
+              continue;
+            }
+
+            const auto method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(bundle.owner_family_kind,
+                                      bundle.declaration_owner_identity,
+                                      bundle.list_kind));
+            if (method_list_it == method_list_symbols_by_key.end()) {
+              continue;
+            }
+
+            const std::string list_symbol = method_list_it->second;
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    bundle.list_kind + "_methods_owner_identity", bundle_index);
+            const std::string export_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    bundle.list_kind + "_methods_export_owner_identity",
+                    bundle_index);
+
+            out << owner_identity_symbol << " = private constant ["
+                << (bundle.declaration_owner_identity.size() + 1u)
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.declaration_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << export_owner_identity_symbol << " = private constant ["
+                << (bundle.export_owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.export_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            std::vector<std::string> entry_initializers;
+            entry_initializers.reserve(bundle.entries_lexicographic.size());
+            for (std::size_t entry_index = 0;
+                 entry_index < bundle.entries_lexicographic.size();
+                 ++entry_index) {
+              const auto &entry = bundle.entries_lexicographic[entry_index];
+              const std::string bundle_ordinal =
+                  FormatRuntimeMetadataDescriptorOrdinal(bundle_index);
+              const std::string entry_ordinal =
+                  FormatRuntimeMetadataDescriptorOrdinal(entry_index);
+              const std::string selector_symbol =
+                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
+                  "_" + bundle.list_kind + "_method_selector_" +
+                  bundle_ordinal + "_" + entry_ordinal;
+              const std::string entry_owner_identity_symbol =
+                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
+                  "_" + bundle.list_kind + "_method_owner_identity_" +
+                  bundle_ordinal + "_" + entry_ordinal;
+              const std::string return_type_symbol =
+                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
+                  "_" + bundle.list_kind + "_method_return_type_" +
+                  bundle_ordinal + "_" + entry_ordinal;
+
+              out << selector_symbol << " = private constant ["
+                  << (entry.selector.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(entry.selector)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+              out << entry_owner_identity_symbol << " = private constant ["
+                  << (entry.owner_identity.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(entry.owner_identity)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+              out << return_type_symbol << " = private constant ["
+                  << (entry.return_type_name.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(entry.return_type_name)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+              std::ostringstream entry_initializer;
+              entry_initializer << "{ ptr, ptr, ptr, i64, i1 } { ptr "
+                                << selector_symbol << ", ptr "
+                                << entry_owner_identity_symbol << ", ptr "
+                                << return_type_symbol << ", i64 "
+                                << entry.parameter_count << ", i1 "
+                                << (entry.has_body ? 1 : 0) << " }";
+              entry_initializers.push_back(entry_initializer.str());
+            }
+            out << list_symbol << " = private global ";
+            if (entry_initializers.empty()) {
+              out << "{ i64, ptr, ptr } { i64 0, ptr " << owner_identity_symbol
+                  << ", ptr " << export_owner_identity_symbol << " }";
+            } else {
+              out << "{ i64, ptr, ptr, [" << entry_initializers.size()
+                  << " x { ptr, ptr, ptr, i64, i1 }] } { i64 "
+                  << entry_initializers.size() << ", ptr "
+                  << owner_identity_symbol << ", ptr "
+                  << export_owner_identity_symbol << ", ["
+                  << entry_initializers.size()
+                  << " x { ptr, ptr, ptr, i64, i1 }] [";
+              for (std::size_t entry_index = 0;
+                   entry_index < entry_initializers.size(); ++entry_index) {
+                if (entry_index != 0) {
+                  out << ", ";
+                }
+                out << entry_initializers[entry_index];
+              }
+              out << "] }";
+            }
+            out << ", section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            emit_retained(list_symbol);
+          }
+        };
+
+    const auto emit_property_descriptor_section =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(
+              frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                  .size());
+          for (std::size_t i = 0;
+               i <
+               frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                   .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                    [i];
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i);
+            const std::string property_name_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "name", i);
+            const std::string type_name_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "type", i);
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "owner_identity", i);
+            const std::string declaration_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "declaration_owner_identity", i);
+            const std::string export_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "export_owner_identity", i);
+            const std::string getter_symbol = bundle.has_getter
+                                                  ? BuildRuntimeMetadataAuxiliarySymbol(
+                                                        layout_policy
+                                                            .descriptor_symbol_prefix,
+                                                        family.kind,
+                                                        "getter_selector", i)
+                                                  : std::string{"null"};
+            const std::string setter_symbol = bundle.has_setter
+                                                  ? BuildRuntimeMetadataAuxiliarySymbol(
+                                                        layout_policy
+                                                            .descriptor_symbol_prefix,
+                                                        family.kind,
+                                                        "setter_selector", i)
+                                                  : std::string{"null"};
+            const std::string ivar_binding_symbol =
+                bundle.ivar_binding_symbol.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "ivar_binding", i);
+            descriptor_symbols.push_back(descriptor_symbol);
+
+            out << property_name_symbol << " = private constant ["
+                << (bundle.property_name.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.property_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << type_name_symbol << " = private constant ["
+                << (bundle.type_name.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.type_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << owner_identity_symbol << " = private constant ["
+                << (bundle.owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << declaration_owner_identity_symbol << " = private constant ["
+                << (bundle.declaration_owner_identity.size() + 1u)
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.declaration_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << export_owner_identity_symbol << " = private constant ["
+                << (bundle.export_owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.export_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            if (bundle.has_getter) {
+              out << getter_symbol << " = private constant ["
+                  << (bundle.getter_selector.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.getter_selector)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (bundle.has_setter) {
+              out << setter_symbol << " = private constant ["
+                  << (bundle.setter_selector.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.setter_selector)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (!bundle.ivar_binding_symbol.empty()) {
+              out << ivar_binding_symbol << " = private constant ["
+                  << (bundle.ivar_binding_symbol.size() + 1u) << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.ivar_binding_symbol)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+
+            out << descriptor_symbol
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 } "
+                   "{ ptr "
+                << property_name_symbol << ", ptr " << type_name_symbol
+                << ", ptr " << owner_identity_symbol << ", ptr "
+                << declaration_owner_identity_symbol << ", ptr "
+                << export_owner_identity_symbol << ", ptr " << getter_symbol
+                << ", ptr " << setter_symbol << ", ptr " << ivar_binding_symbol
+                << ", i1 " << (bundle.has_getter ? 1 : 0) << ", i1 "
+                << (bundle.has_setter ? 1 : 0) << " }, section \""
+                << family.emitted_section_name << "\", align 8\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << family.emitted_section_name
+              << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
+    const auto emit_ivar_descriptor_section =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(
+              frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                  .size());
+          for (std::size_t i = 0;
+               i <
+               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                   .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                    [i];
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i);
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "owner_identity", i);
+            const std::string declaration_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "declaration_owner_identity", i);
+            const std::string export_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "export_owner_identity", i);
+            const std::string property_owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "property_owner_identity", i);
+            const std::string property_name_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "property_name", i);
+            const std::string ivar_binding_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "binding", i);
+            descriptor_symbols.push_back(descriptor_symbol);
+
+            out << owner_identity_symbol << " = private constant ["
+                << (bundle.owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << declaration_owner_identity_symbol << " = private constant ["
+                << (bundle.declaration_owner_identity.size() + 1u)
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.declaration_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << export_owner_identity_symbol << " = private constant ["
+                << (bundle.export_owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.export_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << property_owner_identity_symbol << " = private constant ["
+                << (bundle.property_owner_identity.size() + 1u)
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.property_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << property_name_symbol << " = private constant ["
+                << (bundle.property_name.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.property_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << ivar_binding_symbol << " = private constant ["
+                << (bundle.ivar_binding_symbol.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(bundle.ivar_binding_symbol)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+
+            out << descriptor_symbol
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << owner_identity_symbol << ", ptr "
+                << declaration_owner_identity_symbol << ", ptr "
+                << export_owner_identity_symbol << ", ptr "
+                << property_owner_identity_symbol << ", ptr "
+                << property_name_symbol << ", ptr " << ivar_binding_symbol
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << family.emitted_section_name
+              << "\", align 8\n";
           emit_retained(aggregate_symbol);
         };
 
@@ -4934,6 +5414,12 @@ class Objc3IREmitter {
         };
 
     for (const auto &family : layout_policy.families) {
+      if (emit_member_table_payloads &&
+          (family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily ||
+           family.kind == kObjc3RuntimeMetadataLayoutPolicyProtocolFamily ||
+           family.kind == kObjc3RuntimeMetadataLayoutPolicyCategoryFamily)) {
+        emit_method_list_bundles_for_family(family);
+      }
       if (emit_class_metaclass_bundle_payloads &&
           family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily) {
         emit_class_metaclass_bundle_section(family);
@@ -4943,6 +5429,12 @@ class Objc3IREmitter {
       } else if (emit_protocol_category_bundle_payloads &&
                  family.kind == kObjc3RuntimeMetadataLayoutPolicyCategoryFamily) {
         emit_category_bundle_section(family);
+      } else if (emit_member_table_payloads &&
+                 family.kind == kObjc3RuntimeMetadataLayoutPolicyPropertyFamily) {
+        emit_property_descriptor_section(family);
+      } else if (emit_member_table_payloads &&
+                 family.kind == kObjc3RuntimeMetadataLayoutPolicyIvarFamily) {
+        emit_ivar_descriptor_section(family);
       } else {
         emit_descriptor_section(family.kind, family.emitted_section_name,
                                 family.aggregate_symbol_name,

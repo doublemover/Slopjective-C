@@ -42,6 +42,50 @@ struct Objc3IRRuntimeMetadataCategoryBundle {
   std::size_t class_method_count = 0;
 };
 
+struct Objc3IRRuntimeMetadataMethodEntry {
+  std::string owner_identity;
+  std::string selector;
+  std::string return_type_name;
+  std::size_t parameter_count = 0;
+  bool has_body = false;
+};
+
+struct Objc3IRRuntimeMetadataMethodListBundle {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_family_kind;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string list_kind;
+  std::vector<Objc3IRRuntimeMetadataMethodEntry> entries_lexicographic;
+};
+
+struct Objc3IRRuntimeMetadataPropertyBundle {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_identity;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string property_name;
+  std::string type_name;
+  bool has_getter = false;
+  std::string getter_selector;
+  bool has_setter = false;
+  std::string setter_selector;
+  std::string ivar_binding_symbol;
+};
+
+struct Objc3IRRuntimeMetadataIvarBundle {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string owner_identity;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string property_owner_identity;
+  std::string property_name;
+  std::string ivar_binding_symbol;
+};
+
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
   std::string compatibility_mode = "canonical";
@@ -200,6 +244,20 @@ struct Objc3IRFrontendMetadata {
       runtime_metadata_protocol_bundles_lexicographic;
   std::vector<Objc3IRRuntimeMetadataCategoryBundle>
       runtime_metadata_category_bundles_lexicographic;
+  std::string runtime_metadata_member_table_emission_contract_id;
+  std::string runtime_metadata_method_list_emission_payload_model;
+  std::string runtime_metadata_method_list_grouping_model;
+  std::string runtime_metadata_property_descriptor_emission_payload_model;
+  std::string runtime_metadata_ivar_descriptor_emission_payload_model;
+  bool runtime_metadata_member_table_emission_ready = false;
+  bool runtime_metadata_member_table_emission_fail_closed = false;
+  std::string runtime_metadata_member_table_typed_handoff_replay_key;
+  std::vector<Objc3IRRuntimeMetadataMethodListBundle>
+      runtime_metadata_method_list_bundles_lexicographic;
+  std::vector<Objc3IRRuntimeMetadataPropertyBundle>
+      runtime_metadata_property_bundles_lexicographic;
+  std::vector<Objc3IRRuntimeMetadataIvarBundle>
+      runtime_metadata_ivar_bundles_lexicographic;
   std::string runtime_metadata_object_inspection_contract_id;
   std::string runtime_metadata_object_inspection_scaffold_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;

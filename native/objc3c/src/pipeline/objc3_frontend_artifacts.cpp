@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <sstream>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -7831,6 +7833,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       kObjc3RuntimeCategoryAttachmentModel;
   ir_frontend_metadata.runtime_metadata_protocol_category_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
+  ir_frontend_metadata.runtime_metadata_member_table_emission_contract_id =
+      kObjc3RuntimeMemberTableEmissionContractId;
+  ir_frontend_metadata.runtime_metadata_method_list_emission_payload_model =
+      kObjc3RuntimeMethodListEmissionPayloadModel;
+  ir_frontend_metadata.runtime_metadata_method_list_grouping_model =
+      kObjc3RuntimeMethodListEmissionGroupingModel;
+  ir_frontend_metadata.runtime_metadata_property_descriptor_emission_payload_model =
+      kObjc3RuntimePropertyDescriptorEmissionPayloadModel;
+  ir_frontend_metadata.runtime_metadata_ivar_descriptor_emission_payload_model =
+      kObjc3RuntimeIvarDescriptorEmissionPayloadModel;
+  ir_frontend_metadata.runtime_metadata_member_table_typed_handoff_replay_key =
+      executable_metadata_typed_lowering_handoff.replay_key;
   {
     const bool typed_handoff_ready =
         IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
@@ -8090,6 +8104,209 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ir_frontend_metadata
           .runtime_metadata_protocol_category_emission_fail_closed =
           protocol_category_payload_complete;
+
+      // M253-C004 member-table data emission anchor: the typed lowering
+      // handoff now also projects real owner-scoped method tables plus real
+      // property/ivar descriptor payload records without reopening the earlier
+      // class/protocol/category descriptor bundle shapes from C002/C003.
+      bool member_table_payload_complete = protocol_category_payload_complete;
+      std::vector<Objc3IRRuntimeMetadataPropertyBundle> property_bundles;
+      property_bundles.reserve(source_graph.property_nodes_lexicographic.size());
+      std::unordered_set<std::string> property_owner_identities;
+      property_owner_identities.reserve(
+          source_graph.property_nodes_lexicographic.size());
+      for (const auto &property_node : source_graph.property_nodes_lexicographic) {
+        if (property_node.owner_kind.empty() || property_node.owner_name.empty() ||
+            property_node.owner_identity.empty() ||
+            property_node.declaration_owner_identity.empty() ||
+            property_node.export_owner_identity.empty() ||
+            property_node.property_name.empty() || property_node.type_name.empty() ||
+            !property_owner_identities.insert(property_node.owner_identity).second ||
+            (property_node.has_getter && property_node.getter_selector.empty()) ||
+            (property_node.has_setter && property_node.setter_selector.empty())) {
+          member_table_payload_complete = false;
+          break;
+        }
+
+        Objc3IRRuntimeMetadataPropertyBundle bundle;
+        bundle.owner_kind = property_node.owner_kind;
+        bundle.owner_name = property_node.owner_name;
+        bundle.owner_identity = property_node.owner_identity;
+        bundle.declaration_owner_identity =
+            property_node.declaration_owner_identity;
+        bundle.export_owner_identity = property_node.export_owner_identity;
+        bundle.property_name = property_node.property_name;
+        bundle.type_name = property_node.type_name;
+        bundle.has_getter = property_node.has_getter;
+        bundle.getter_selector = property_node.getter_selector;
+        bundle.has_setter = property_node.has_setter;
+        bundle.setter_selector = property_node.setter_selector;
+        bundle.ivar_binding_symbol = property_node.ivar_binding_symbol;
+        property_bundles.push_back(std::move(bundle));
+      }
+      std::sort(
+          property_bundles.begin(), property_bundles.end(),
+          [](const Objc3IRRuntimeMetadataPropertyBundle &lhs,
+             const Objc3IRRuntimeMetadataPropertyBundle &rhs) {
+            return std::tie(lhs.declaration_owner_identity, lhs.property_name,
+                            lhs.owner_identity) <
+                   std::tie(rhs.declaration_owner_identity, rhs.property_name,
+                            rhs.owner_identity);
+          });
+
+      std::vector<Objc3IRRuntimeMetadataIvarBundle> ivar_bundles;
+      ivar_bundles.reserve(source_graph.ivar_nodes_lexicographic.size());
+      std::unordered_set<std::string> ivar_owner_identities;
+      ivar_owner_identities.reserve(source_graph.ivar_nodes_lexicographic.size());
+      if (member_table_payload_complete) {
+        for (const auto &ivar_node : source_graph.ivar_nodes_lexicographic) {
+          if (ivar_node.owner_kind.empty() || ivar_node.owner_name.empty() ||
+              ivar_node.owner_identity.empty() ||
+              ivar_node.declaration_owner_identity.empty() ||
+              ivar_node.export_owner_identity.empty() ||
+              ivar_node.property_owner_identity.empty() ||
+              ivar_node.property_name.empty() ||
+              ivar_node.ivar_binding_symbol.empty() ||
+              !ivar_owner_identities.insert(ivar_node.owner_identity).second) {
+            member_table_payload_complete = false;
+            break;
+          }
+
+          Objc3IRRuntimeMetadataIvarBundle bundle;
+          bundle.owner_kind = ivar_node.owner_kind;
+          bundle.owner_name = ivar_node.owner_name;
+          bundle.owner_identity = ivar_node.owner_identity;
+          bundle.declaration_owner_identity = ivar_node.declaration_owner_identity;
+          bundle.export_owner_identity = ivar_node.export_owner_identity;
+          bundle.property_owner_identity = ivar_node.property_owner_identity;
+          bundle.property_name = ivar_node.property_name;
+          bundle.ivar_binding_symbol = ivar_node.ivar_binding_symbol;
+          ivar_bundles.push_back(std::move(bundle));
+        }
+      }
+      std::sort(
+          ivar_bundles.begin(), ivar_bundles.end(),
+          [](const Objc3IRRuntimeMetadataIvarBundle &lhs,
+             const Objc3IRRuntimeMetadataIvarBundle &rhs) {
+            return std::tie(lhs.declaration_owner_identity, lhs.property_name,
+                            lhs.owner_identity) <
+                   std::tie(rhs.declaration_owner_identity, rhs.property_name,
+                            rhs.owner_identity);
+          });
+
+      std::vector<Objc3IRRuntimeMetadataMethodListBundle> method_list_bundles;
+      method_list_bundles.reserve(source_graph.method_nodes_lexicographic.size());
+      std::unordered_map<std::string, std::size_t> method_bundle_indexes;
+      method_bundle_indexes.reserve(source_graph.method_nodes_lexicographic.size());
+      const auto determine_owner_family_kind = [](const std::string &owner_kind)
+          -> std::string {
+        if (owner_kind == "protocol") {
+          return "protocol";
+        }
+        if (owner_kind == "class-interface" ||
+            owner_kind == "class-implementation") {
+          return "class";
+        }
+        if (owner_kind == "category-interface" ||
+            owner_kind == "category-implementation") {
+          return "category";
+        }
+        return {};
+      };
+      if (member_table_payload_complete) {
+        for (const auto &method_node : source_graph.method_nodes_lexicographic) {
+          const std::string list_kind =
+              method_node.is_class_method ? "class" : "instance";
+          const std::string owner_family_kind =
+              determine_owner_family_kind(method_node.owner_kind);
+          if (method_node.owner_kind.empty() || method_node.owner_name.empty() ||
+              owner_family_kind.empty() || method_node.owner_identity.empty() ||
+              method_node.declaration_owner_identity.empty() ||
+              method_node.export_owner_identity.empty() ||
+              method_node.selector.empty() ||
+              method_node.return_type_name.empty()) {
+            member_table_payload_complete = false;
+            break;
+          }
+
+          const std::string bundle_key =
+              method_node.declaration_owner_identity + "|" + list_kind;
+          auto bundle_it = method_bundle_indexes.find(bundle_key);
+          if (bundle_it == method_bundle_indexes.end()) {
+            Objc3IRRuntimeMetadataMethodListBundle bundle;
+            bundle.owner_kind = method_node.owner_kind;
+            bundle.owner_name = method_node.owner_name;
+            bundle.owner_family_kind = owner_family_kind;
+            bundle.declaration_owner_identity =
+                method_node.declaration_owner_identity;
+            bundle.export_owner_identity = method_node.export_owner_identity;
+            bundle.list_kind = list_kind;
+            method_list_bundles.push_back(std::move(bundle));
+            bundle_it = method_bundle_indexes
+                            .emplace(bundle_key, method_list_bundles.size() - 1u)
+                            .first;
+          }
+
+          auto &bundle = method_list_bundles[bundle_it->second];
+          if (bundle.owner_kind != method_node.owner_kind ||
+              bundle.owner_name != method_node.owner_name ||
+              bundle.owner_family_kind != owner_family_kind ||
+              bundle.export_owner_identity != method_node.export_owner_identity ||
+              bundle.list_kind != list_kind) {
+            member_table_payload_complete = false;
+            break;
+          }
+
+          Objc3IRRuntimeMetadataMethodEntry entry;
+          entry.owner_identity = method_node.owner_identity;
+          entry.selector = method_node.selector;
+          entry.return_type_name = method_node.return_type_name;
+          entry.parameter_count = method_node.parameter_count;
+          entry.has_body = method_node.has_body;
+          bundle.entries_lexicographic.push_back(std::move(entry));
+        }
+      }
+      std::sort(
+          method_list_bundles.begin(), method_list_bundles.end(),
+          [](const Objc3IRRuntimeMetadataMethodListBundle &lhs,
+             const Objc3IRRuntimeMetadataMethodListBundle &rhs) {
+            return std::tie(lhs.owner_family_kind,
+                            lhs.declaration_owner_identity, lhs.list_kind) <
+                   std::tie(rhs.owner_family_kind,
+                            rhs.declaration_owner_identity, rhs.list_kind);
+          });
+      for (auto &bundle : method_list_bundles) {
+        std::sort(bundle.entries_lexicographic.begin(),
+                  bundle.entries_lexicographic.end(),
+                  [](const Objc3IRRuntimeMetadataMethodEntry &lhs,
+                     const Objc3IRRuntimeMetadataMethodEntry &rhs) {
+                    return std::tie(lhs.selector, lhs.owner_identity,
+                                    lhs.parameter_count, lhs.return_type_name,
+                                    lhs.has_body) <
+                           std::tie(rhs.selector, rhs.owner_identity,
+                                    rhs.parameter_count, rhs.return_type_name,
+                                    rhs.has_body);
+                  });
+      }
+
+      member_table_payload_complete =
+          member_table_payload_complete &&
+          property_bundles.size() ==
+              runtime_metadata_section_scaffold.property_descriptor_count &&
+          ivar_bundles.size() ==
+              runtime_metadata_section_scaffold.ivar_descriptor_count;
+      if (member_table_payload_complete) {
+        ir_frontend_metadata.runtime_metadata_method_list_bundles_lexicographic =
+            std::move(method_list_bundles);
+        ir_frontend_metadata.runtime_metadata_property_bundles_lexicographic =
+            std::move(property_bundles);
+        ir_frontend_metadata.runtime_metadata_ivar_bundles_lexicographic =
+            std::move(ivar_bundles);
+      }
+      ir_frontend_metadata.runtime_metadata_member_table_emission_ready =
+          member_table_payload_complete;
+      ir_frontend_metadata.runtime_metadata_member_table_emission_fail_closed =
+          member_table_payload_complete;
     }
   }
   ir_frontend_metadata.runtime_metadata_object_inspection_contract_id =

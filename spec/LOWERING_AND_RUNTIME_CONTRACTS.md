@@ -4967,3 +4967,41 @@ inventory, ordering, visibility, object-format, and scaffold boundaries.
 property/ivar payload sections, or runtime registration/bootstrap. The
 protocol/category families alone advance from scaffold placeholders to real
 bundle payloads in this issue.
+
+## M253 method/property/ivar payload emission (C004)
+
+Lane-C shall emit deterministic owner-scoped method tables plus real property
+and ivar descriptor payload families while preserving the frozen class,
+protocol, and category descriptor shapes established in `M253-C002` and
+`M253-C003`.
+
+`M253-C004` requires:
+
+- contract id `objc3c-runtime-member-table-emission/m253-c004-v1`,
+- method-list payload model
+  `owner-scoped-method-table-globals-with-inline-entry-records`,
+- method-list grouping model
+  `declaration-owner-plus-class-kind-lexicographic`,
+- property payload model
+  `property-descriptor-records-with-accessor-and-binding-strings`,
+- ivar payload model
+  `ivar-descriptor-records-with-property-binding-strings`,
+- emitted IR publication through
+  `; runtime_metadata_member_table_emission = ...` and
+  `!objc3.objc_runtime_member_table_emission`,
+- fail-closed emission over the current typed metadata handoff, property/ivar
+  runtime-export accounting, method graph expansion, and scaffold
+  property/ivar descriptor counts,
+- deterministic lexicographic ordering of:
+  - method list bundles by owner family, declaration-owner identity, and list kind,
+  - method entries by selector, owner identity, parameter count, return type,
+    and body presence,
+  - property/ivar descriptor records by declaration-owner identity, property
+    name, and owner identity,
+- llvm-direct object emission preserving adjacent owner-scoped method table
+  bytes plus the standalone property/ivar descriptor payload sections verbatim.
+
+`M253-C004` does not add selector pools, runtime registration/bootstrap, or
+runtime consumption/dispatch over the emitted member tables. It advances the
+method/property/ivar families from scaffolds/placeholders to real payload
+records only.

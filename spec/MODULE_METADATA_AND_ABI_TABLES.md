@@ -6096,3 +6096,37 @@ preserve:
 Protocol/category emission anchors must remain deterministic and fail closed
 before later issues add selector/string pools, standalone property/ivar payload
 sections, or runtime registration/bootstrap.
+
+## M253 method/property/ivar payload metadata anchors (C004)
+
+Deterministic lane-C member-table emission anchors for `M253-C004` shall
+preserve:
+
+- contract id `objc3c-runtime-member-table-emission/m253-c004-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_member_table_emission`,
+- method-list payload model
+  `owner-scoped-method-table-globals-with-inline-entry-records`,
+- method-list grouping model
+  `declaration-owner-plus-class-kind-lexicographic`,
+- property payload model
+  `property-descriptor-records-with-accessor-and-binding-strings`,
+- ivar payload model
+  `ivar-descriptor-records-with-property-binding-strings`,
+- emitted member-table payload symbols:
+  - `__objc3_meta_class_instance_methods_0001`
+  - `__objc3_meta_protocol_instance_methods_0004`
+  - `__objc3_meta_category_instance_methods_0000`
+  - `__objc3_meta_property_0000`
+  - `__objc3_meta_property_0001`
+  - `__objc3_meta_ivar_0000`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`,
+- metadata-rich proof fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C004/method_property_and_ivar_list_emission_summary.json`.
+
+Method/property/ivar payload emission anchors must remain deterministic and fail
+closed before later issues add selector pooling, runtime registration, or live
+runtime consumption of the emitted member tables.

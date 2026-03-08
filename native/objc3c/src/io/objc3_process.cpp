@@ -282,6 +282,11 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // path must preserve emitted protocol/category descriptor bundles,
   // inherited/adopted protocol-ref lists, and owner-identity attachment lists
   // verbatim instead of collapsing them back into placeholder bytes.
+  // M253-C004 member-table data emission anchor: llvm-direct object emission
+  // must preserve method/property/ivar payloads verbatim, including adjacent
+  // owner-scoped method-table globals plus real property/ivar descriptor bytes
+  // exactly as emitted in IR. The
+  // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

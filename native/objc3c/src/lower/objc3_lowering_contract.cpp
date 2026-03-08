@@ -453,6 +453,27 @@ std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataMemberTableEmissionSummary() {
+  std::ostringstream out;
+  // M253-C004 member-table data emission anchor: lane-C now adds real
+  // owner-scoped method tables plus real property/ivar descriptor bytes while
+  // preserving the previously frozen class/protocol/category descriptor
+  // bundle shapes. Method-table grouping stays declaration-owner/class-kind
+  // ordered, and selector/property/field strings remain inline cstrings rather
+  // than opening selector/string-pool families yet.
+  out << "contract=" << kObjc3RuntimeMemberTableEmissionContractId
+      << ";method_list_payload_model="
+      << kObjc3RuntimeMethodListEmissionPayloadModel
+      << ";method_list_grouping_model="
+      << kObjc3RuntimeMethodListEmissionGroupingModel
+      << ";property_payload_model="
+      << kObjc3RuntimePropertyDescriptorEmissionPayloadModel
+      << ";ivar_payload_model="
+      << kObjc3RuntimeIvarDescriptorEmissionPayloadModel
+      << ";non_goals=no-selector-string-pool-or-runtime-registration";
+  return out.str();
+}
+
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
   std::ostringstream out;
   out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";

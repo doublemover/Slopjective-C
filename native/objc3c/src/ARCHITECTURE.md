@@ -8504,3 +8504,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   inherited/adopted protocol-ref lists, and category attachment lists while
   preserving llvm-direct payload bytes and the frozen non-goal boundary before
   later issues expand selector/string pools and property/ivar payloads.
+- M253 lane-C C004 method/property/ivar list emission anchors explicit
+  implementation artifacts in
+  `docs/contracts/m253_method_property_and_ivar_list_emission_core_feature_implementation_c004_expectations.md`,
+  `spec/planning/compiler/m253/m253_c004_method_property_and_ivar_list_emission_core_feature_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, and `io/objc3_process.cpp` so
+  `runtime_metadata_method_list_bundles_lexicographic`,
+  `runtime_metadata_property_bundles_lexicographic`, and
+  `runtime_metadata_ivar_bundles_lexicographic` replace member-family
+  placeholders with adjacent owner-scoped method tables plus real property/ivar descriptor bytes while preserving llvm-direct section bytes and the frozen
+  non-goal boundary before later issues add selector pools, registration, and
+  runtime consumption.

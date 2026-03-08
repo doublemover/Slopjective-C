@@ -970,6 +970,51 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C003/protocol_and_category_data_emission_summary.json`
 
+## Method, property, and ivar payload emission (M253-C004)
+
+- Lane-C now emits the next executable metadata payload families through
+  `Objc3RuntimeMetadataMemberTableEmissionSummary`.
+- Contract id:
+  `objc3c-runtime-member-table-emission/m253-c004-v1`.
+- The method-list payload model is now
+  `owner-scoped-method-table-globals-with-inline-entry-records`.
+- The method-list grouping model is now
+  `declaration-owner-plus-class-kind-lexicographic`.
+- The property payload model is now
+  `property-descriptor-records-with-accessor-and-binding-strings`.
+- The ivar payload model is now
+  `ivar-descriptor-records-with-property-binding-strings`.
+- The class/protocol/property/ivar metadata fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
+- The category/protocol/property metadata fixture is
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`.
+- The emitted IR now carries:
+  - `!objc3.objc_runtime_member_table_emission`
+  - owner-scoped method tables such as
+    `@__objc3_meta_class_instance_methods_0001`,
+    `@__objc3_meta_protocol_instance_methods_0004`, and
+    `@__objc3_meta_category_instance_methods_0000`
+  - real property descriptor globals such as `@__objc3_meta_property_0000` and
+    `@__objc3_meta_property_0001`
+  - real ivar descriptor globals such as `@__objc3_meta_ivar_0000`
+  - real aggregate families
+    `@__objc3_sec_property_descriptors = internal global { i64, [N x ptr] } ...`
+    and
+    `@__objc3_sec_ivar_descriptors = internal global { i64, [N x ptr] } ...`
+- The emitted object now proves:
+  - `objc3.runtime.property_descriptors` is a real object section with payload
+    bytes and relocations,
+  - `objc3.runtime.ivar_descriptors` is a real object section with payload bytes
+    and relocations,
+  - class/protocol/category sections retain adjacent method-table payload bytes on
+    the `llvm-direct` path.
+- `C004` remains deliberately bounded:
+  - no selector string pool,
+  - no runtime metadata registration/bootstrap,
+  - no runtime dispatch consumption of the new member tables yet.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C004/method_property_and_ivar_list_emission_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
