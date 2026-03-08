@@ -162,3 +162,16 @@ registration table before the frozen D001 register-image call:
   `objc3_runtime_copy_image_walk_state_for_testing`
 - the probe validates that emitted selector pools preintern known selectors like
   `tokenValue`
+
+`M254-D003` extends the private bootstrap probe surface with deterministic
+same-process reset/replay coverage:
+
+- the runtime zeroes retained emitted image-local init-state cells on
+  `objc3_runtime_reset_for_testing`
+- the runtime preserves a retained bootstrap catalog across reset
+- the private replay hook
+  `objc3_runtime_replay_registered_images_for_testing` re-registers retained
+  startup images in original registration order
+- the private reset/replay snapshot hook
+  `objc3_runtime_copy_reset_replay_state_for_testing` proves reset/replay
+  generation counts and cleared-init-state counts

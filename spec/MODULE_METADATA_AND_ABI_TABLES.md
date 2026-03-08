@@ -6535,3 +6535,16 @@ Canonical metadata/runtime anchors:
 - emitted registration manifest field
   `bootstrap_registrar_image_walk_snapshot_symbol`
 - emitted registration manifest field `bootstrap_registrar_image_walk_model`
+## M254 reset/replay metadata anchors (D003)
+
+`module.runtime-registration-manifest.json` now carries the deterministic
+bootstrap reset/replay handoff fields:
+
+- `bootstrap_reset_contract_id`
+- `bootstrap_reset_internal_header_path`
+- `bootstrap_reset_replay_registered_images_symbol`
+- `bootstrap_reset_reset_replay_state_snapshot_symbol`
+- `bootstrap_reset_lifecycle_model`
+- `bootstrap_reset_replay_order_model`
+- `bootstrap_reset_image_local_init_state_reset_model`
+- `bootstrap_reset_bootstrap_catalog_retention_model`

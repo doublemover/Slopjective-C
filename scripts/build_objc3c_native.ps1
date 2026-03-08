@@ -68,7 +68,7 @@ $stagedRuntimeLib = Join-Path $tmpOutDir ("objc3_runtime.{0}.lib" -f $runSuffix)
 function Write-BuildStep {
   param([Parameter(Mandatory = $true)][string]$Message)
 
-  Write-Output ("[build:objc3c-native] " + $Message)
+  Write-Host ("[build:objc3c-native] " + $Message)
 }
 
 function Publish-ArtifactWithRetry {
@@ -92,6 +92,90 @@ function Publish-ArtifactWithRetry {
       Start-Sleep -Milliseconds $SleepMilliseconds
     }
   }
+}
+
+function New-StagedObjectPath {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$ObjectDir,
+    [Parameter(Mandatory = $true)]
+    [string]$TargetName,
+    [Parameter(Mandatory = $true)]
+    [int]$Index
+  )
+
+  return (Join-Path $ObjectDir ("{0}.{1:D3}.obj" -f $TargetName, $Index))
+}
+
+function Compile-ObjectFiles {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$TargetName,
+    [Parameter(Mandatory = $true)]
+    [string[]]$SourcePaths,
+    [Parameter(Mandatory = $true)]
+    [string]$ObjectDir,
+    [Parameter(Mandatory = $true)]
+    [string]$Clangxx,
+    [Parameter(Mandatory = $true)]
+    [string]$IncludeDir,
+    [Parameter(Mandatory = $true)]
+    [string]$NativeSourceRoot,
+    [bool]$EnableLlvmDirectObjectEmission = $true
+  )
+
+  New-Item -ItemType Directory -Force -Path $ObjectDir | Out-Null
+  $objectPaths = New-Object System.Collections.Generic.List[string]
+  for ($index = 0; $index -lt $SourcePaths.Count; $index++) {
+    $sourcePath = $SourcePaths[$index]
+    $objectPath = New-StagedObjectPath -ObjectDir $ObjectDir -TargetName $TargetName -Index $index
+    $relativeSource = Get-RepoRelativePath -RootPath $repoRoot -TargetPath $sourcePath
+    Write-BuildStep ("compile_unit=" + $TargetName + " [" + ($index + 1) + "/" + $SourcePaths.Count + "] -> " + $relativeSource)
+    $compileArgs = @(
+      "-std=c++20"
+      "-Wall"
+      "-Wextra"
+      "-pedantic"
+    )
+    if ($EnableLlvmDirectObjectEmission) {
+      $compileArgs += "-DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1"
+    }
+    $compileArgs += @(
+      "-I$IncludeDir"
+      "-I$NativeSourceRoot"
+      "-c"
+      $sourcePath
+      "-o"
+      $objectPath
+    )
+    & $Clangxx @compileArgs
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $objectPaths.Add($objectPath) | Out-Null
+  }
+
+  return $objectPaths.ToArray()
+}
+
+function Link-ExecutableFromObjects {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$TargetName,
+    [Parameter(Mandatory = $true)]
+    [string[]]$ObjectPaths,
+    [Parameter(Mandatory = $true)]
+    [string]$Libclang,
+    [Parameter(Mandatory = $true)]
+    [string]$Clangxx,
+    [Parameter(Mandatory = $true)]
+    [string]$StagedOutput,
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot
+  )
+
+  Write-BuildStep ("link_start=" + $TargetName + " -> " + (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
+  & $Clangxx @ObjectPaths $Libclang -o $StagedOutput
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  Write-BuildStep ("link_done=" + $TargetName + " -> " + (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $StagedOutput))
 }
 
 function Get-RepoRelativePath {
@@ -1094,37 +1178,41 @@ Write-BuildStep ("clangxx=" + $clangxx)
 Write-BuildStep ("llvm_lib=" + $llvmLibTool)
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
 Write-BuildStep ("compile_start=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-
-& $clangxx `
-  -std=c++20 `
-  -Wall `
-  -Wextra `
-  -pedantic `
-  -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
-  "-I$includeDir" `
-  "-I$nativeSourceRoot" `
-  @nativeSourcePaths `
-  $libclang `
-  -o $stagedOutExe
-
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$nativeObjectDir = Join-Path $tmpOutDir ("objects.native." + $runSuffix)
+$nativeObjectPaths = Compile-ObjectFiles `
+  -TargetName "objc3c-native" `
+  -SourcePaths $nativeSourcePaths `
+  -ObjectDir $nativeObjectDir `
+  -Clangxx $clangxx `
+  -IncludeDir $includeDir `
+  -NativeSourceRoot $nativeSourceRoot `
+  -EnableLlvmDirectObjectEmission $true
+Link-ExecutableFromObjects `
+  -TargetName "objc3c-native" `
+  -ObjectPaths $nativeObjectPaths `
+  -Libclang $libclang `
+  -Clangxx $clangxx `
+  -StagedOutput $stagedOutExe `
+  -RepoRoot $repoRoot
 Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
 Write-BuildStep ("compile_done=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 Write-BuildStep ("compile_start=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-
-& $clangxx `
-  -std=c++20 `
-  -Wall `
-  -Wextra `
-  -pedantic `
-  -DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1 `
-  "-I$includeDir" `
-  "-I$nativeSourceRoot" `
-  @capiRunnerSourcePaths `
-  $libclang `
-  -o $stagedOutCapiExe
-
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+$capiObjectDir = Join-Path $tmpOutDir ("objects.capi." + $runSuffix)
+$capiObjectPaths = Compile-ObjectFiles `
+  -TargetName "objc3c-frontend-c-api-runner" `
+  -SourcePaths $capiRunnerSourcePaths `
+  -ObjectDir $capiObjectDir `
+  -Clangxx $clangxx `
+  -IncludeDir $includeDir `
+  -NativeSourceRoot $nativeSourceRoot `
+  -EnableLlvmDirectObjectEmission $true
+Link-ExecutableFromObjects `
+  -TargetName "objc3c-frontend-c-api-runner" `
+  -ObjectPaths $capiObjectPaths `
+  -Libclang $libclang `
+  -Clangxx $clangxx `
+  -StagedOutput $stagedOutCapiExe `
+  -RepoRoot $repoRoot
 Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
 Write-BuildStep ("compile_done=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
 Write-BuildStep ("compile_start=objc3_runtime.obj -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $stagedRuntimeObj))

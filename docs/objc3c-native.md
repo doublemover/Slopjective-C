@@ -16620,3 +16620,17 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
+## Realization sequencing and deterministic reset hooks (M254-D003)
+
+`M254-D003` keeps the frozen public bootstrap runtime API intact while adding
+private same-process reset/replay hooks to the runtime bootstrap boundary:
+
+- private replay hook `objc3_runtime_replay_registered_images_for_testing`
+- private reset/replay snapshot hook
+  `objc3_runtime_copy_reset_replay_state_for_testing`
+- reset lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- replay order model
+  `replay-re-registers-retained-images-in-original-registration-order`
+- bootstrap catalog retention model
+  `bootstrap-catalog-retained-across-reset-for-deterministic-replay`

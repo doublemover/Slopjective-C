@@ -768,6 +768,26 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                       kObjc3RuntimeBootstrapSelectorPoolInterningModel;
                   manifest_inputs.bootstrap_registrar_realization_staging_model =
                       kObjc3RuntimeBootstrapRealizationStagingModel;
+                  manifest_inputs.bootstrap_reset_contract_id =
+                      kObjc3RuntimeBootstrapResetContractId;
+                  manifest_inputs.bootstrap_reset_internal_header_path =
+                      kObjc3RuntimeBootstrapInternalHeaderPath;
+                  manifest_inputs
+                      .bootstrap_reset_replay_registered_images_symbol =
+                      kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol;
+                  manifest_inputs
+                      .bootstrap_reset_reset_replay_state_snapshot_symbol =
+                      kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol;
+                  manifest_inputs.bootstrap_reset_lifecycle_model =
+                      kObjc3RuntimeBootstrapResetLifecycleModel;
+                  manifest_inputs.bootstrap_reset_replay_order_model =
+                      kObjc3RuntimeBootstrapReplayOrderModel;
+                  manifest_inputs
+                      .bootstrap_reset_image_local_init_state_reset_model =
+                      kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
+                  manifest_inputs
+                      .bootstrap_reset_bootstrap_catalog_retention_model =
+                      kObjc3RuntimeBootstrapCatalogRetentionModel;
                   manifest_inputs.bootstrap_lowering_contract_id =
                       runtime_bootstrap_lowering_summary.contract_id;
                   manifest_inputs.bootstrap_lowering_boundary_model =

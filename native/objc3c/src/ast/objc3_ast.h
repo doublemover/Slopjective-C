@@ -663,6 +663,25 @@ inline constexpr const char
         "canonical-selector-pool-preinterned-during-startup-image-walk";
 inline constexpr const char *kObjc3RuntimeBootstrapRealizationStagingModel =
     "registration-table-roots-retained-for-later-realization";
+inline constexpr const char *kObjc3RuntimeBootstrapResetContractId =
+    "objc3c-runtime-bootstrap-reset-replay/m254-d003-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapResetSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_reset_contract";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol =
+        "objc3_runtime_replay_registered_images_for_testing";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol =
+        "objc3_runtime_copy_reset_replay_state_for_testing";
+inline constexpr const char *kObjc3RuntimeBootstrapResetLifecycleModel =
+    "reset-clears-live-runtime-state-and-zeroes-image-local-init-cells";
+inline constexpr const char *kObjc3RuntimeBootstrapReplayOrderModel =
+    "replay-re-registers-retained-images-in-original-registration-order";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapImageLocalInitStateResetModel =
+        "retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay";
+inline constexpr const char *kObjc3RuntimeBootstrapCatalogRetentionModel =
+    "bootstrap-catalog-retained-across-reset-for-deterministic-replay";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

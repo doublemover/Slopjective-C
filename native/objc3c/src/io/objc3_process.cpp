@@ -637,6 +637,14 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.bootstrap_runtime_api_dispatch_entrypoint_symbol.empty() ||
       inputs.bootstrap_runtime_api_state_snapshot_symbol.empty() ||
       inputs.bootstrap_runtime_api_reset_for_testing_symbol.empty() ||
+      inputs.bootstrap_reset_contract_id.empty() ||
+      inputs.bootstrap_reset_internal_header_path.empty() ||
+      inputs.bootstrap_reset_replay_registered_images_symbol.empty() ||
+      inputs.bootstrap_reset_reset_replay_state_snapshot_symbol.empty() ||
+      inputs.bootstrap_reset_lifecycle_model.empty() ||
+      inputs.bootstrap_reset_replay_order_model.empty() ||
+      inputs.bootstrap_reset_image_local_init_state_reset_model.empty() ||
+      inputs.bootstrap_reset_bootstrap_catalog_retention_model.empty() ||
       inputs.bootstrap_lowering_contract_id.empty() ||
       inputs.bootstrap_lowering_boundary_model.empty() ||
       inputs.bootstrap_global_ctor_list_model.empty() ||
@@ -859,6 +867,32 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"bootstrap_registrar_realization_staging_model\": \""
       << EscapeJsonString(
              inputs.bootstrap_registrar_realization_staging_model)
+      << "\",\n"
+      << "  \"bootstrap_reset_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_reset_contract_id) << "\",\n"
+      << "  \"bootstrap_reset_internal_header_path\": \""
+      << EscapeJsonString(inputs.bootstrap_reset_internal_header_path)
+      << "\",\n"
+      << "  \"bootstrap_reset_replay_registered_images_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_replay_registered_images_symbol)
+      << "\",\n"
+      << "  \"bootstrap_reset_reset_replay_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_reset_replay_state_snapshot_symbol)
+      << "\",\n"
+      << "  \"bootstrap_reset_lifecycle_model\": \""
+      << EscapeJsonString(inputs.bootstrap_reset_lifecycle_model) << "\",\n"
+      << "  \"bootstrap_reset_replay_order_model\": \""
+      << EscapeJsonString(inputs.bootstrap_reset_replay_order_model)
+      << "\",\n"
+      << "  \"bootstrap_reset_image_local_init_state_reset_model\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_image_local_init_state_reset_model)
+      << "\",\n"
+      << "  \"bootstrap_reset_bootstrap_catalog_retention_model\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_bootstrap_catalog_retention_model)
       << "\",\n"
       << "  \"bootstrap_lowering_contract_id\": \""
       << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"

@@ -73,6 +73,14 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string bootstrap_registrar_discovery_root_validation_model;
   std::string bootstrap_registrar_selector_pool_interning_model;
   std::string bootstrap_registrar_realization_staging_model;
+  std::string bootstrap_reset_contract_id;
+  std::string bootstrap_reset_internal_header_path;
+  std::string bootstrap_reset_replay_registered_images_symbol;
+  std::string bootstrap_reset_reset_replay_state_snapshot_symbol;
+  std::string bootstrap_reset_lifecycle_model;
+  std::string bootstrap_reset_replay_order_model;
+  std::string bootstrap_reset_image_local_init_state_reset_model;
+  std::string bootstrap_reset_bootstrap_catalog_retention_model;
   std::string bootstrap_lowering_contract_id;
   std::string bootstrap_lowering_boundary_model;
   std::string bootstrap_global_ctor_list_model;

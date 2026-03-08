@@ -6466,6 +6466,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3RuntimeBootstrapSelectorPoolInterningModel
            << "\",\"runtime_bootstrap_registrar_realization_staging_model\":\""
            << kObjc3RuntimeBootstrapRealizationStagingModel
+           << "\",\"runtime_bootstrap_reset_contract_id\":\""
+           << kObjc3RuntimeBootstrapResetContractId
+           << "\",\"runtime_bootstrap_reset_replay_registered_images_symbol\":\""
+           << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol
+           << "\",\"runtime_bootstrap_reset_reset_replay_state_snapshot_symbol\":\""
+           << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol
+           << "\",\"runtime_bootstrap_reset_lifecycle_model\":\""
+           << kObjc3RuntimeBootstrapResetLifecycleModel
+           << "\",\"runtime_bootstrap_reset_replay_order_model\":\""
+           << kObjc3RuntimeBootstrapReplayOrderModel
+           << "\",\"runtime_bootstrap_reset_image_local_init_state_reset_model\":\""
+           << kObjc3RuntimeBootstrapImageLocalInitStateResetModel
+           << "\",\"runtime_bootstrap_reset_bootstrap_catalog_retention_model\":\""
+           << kObjc3RuntimeBootstrapCatalogRetentionModel
            << "\",\"runtime_bootstrap_lowering_bootstrap_semantics_contract_id\":\""
            << runtime_bootstrap_lowering.bootstrap_semantics_contract_id
            << "\",\"runtime_bootstrap_lowering_boundary_model\":\""
@@ -7487,6 +7501,46 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   kObjc3RuntimeBootstrapSelectorPoolInterningModel)
            << "\",\"realization_staging_model\":\""
            << EscapeJsonString(kObjc3RuntimeBootstrapRealizationStagingModel)
+           << "\",\"fail_closed\":true"
+           << ",\"ready\":"
+           << ((IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api) &&
+                IsReadyObjc3RuntimeBootstrapLoweringSummary(
+                    runtime_bootstrap_lowering))
+                   ? "true"
+                   : "false")
+           << "}"
+           // M254-D003 bootstrap-reset anchor: the semantic surface now
+           // publishes the private deterministic reset/replay hooks that allow
+           // same-process smoke harnesses to clear live runtime state, zero the
+           // retained image-local init cells, and replay retained startup
+           // images in canonical registration order without widening the frozen
+           // D001 public runtime API.
+           << ",\"objc_runtime_bootstrap_reset_contract\":{"
+           << "\"contract_id\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapResetContractId)
+           << "\",\"surface_path\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapResetSurfacePath)
+           << "\",\"bootstrap_api_contract_id\":\""
+           << EscapeJsonString(runtime_bootstrap_api.contract_id)
+           << "\",\"bootstrap_registrar_contract_id\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapRegistrarContractId)
+           << "\",\"internal_header_path\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapInternalHeaderPath)
+           << "\",\"replay_registered_images_symbol\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol)
+           << "\",\"reset_replay_state_snapshot_symbol\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol)
+           << "\",\"reset_lifecycle_model\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapResetLifecycleModel)
+           << "\",\"replay_order_model\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapReplayOrderModel)
+           << "\",\"image_local_init_state_reset_model\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapImageLocalInitStateResetModel)
+           << "\",\"bootstrap_catalog_retention_model\":\""
+           << EscapeJsonString(kObjc3RuntimeBootstrapCatalogRetentionModel)
            << "\",\"fail_closed\":true"
            << ",\"ready\":"
            << ((IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api) &&

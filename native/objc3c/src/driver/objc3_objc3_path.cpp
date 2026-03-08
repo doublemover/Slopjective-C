@@ -255,6 +255,22 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3RuntimeBootstrapSelectorPoolInterningModel;
           manifest_inputs.bootstrap_registrar_realization_staging_model =
               kObjc3RuntimeBootstrapRealizationStagingModel;
+          manifest_inputs.bootstrap_reset_contract_id =
+              kObjc3RuntimeBootstrapResetContractId;
+          manifest_inputs.bootstrap_reset_internal_header_path =
+              kObjc3RuntimeBootstrapInternalHeaderPath;
+          manifest_inputs.bootstrap_reset_replay_registered_images_symbol =
+              kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol;
+          manifest_inputs.bootstrap_reset_reset_replay_state_snapshot_symbol =
+              kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol;
+          manifest_inputs.bootstrap_reset_lifecycle_model =
+              kObjc3RuntimeBootstrapResetLifecycleModel;
+          manifest_inputs.bootstrap_reset_replay_order_model =
+              kObjc3RuntimeBootstrapReplayOrderModel;
+          manifest_inputs.bootstrap_reset_image_local_init_state_reset_model =
+              kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
+          manifest_inputs.bootstrap_reset_bootstrap_catalog_retention_model =
+              kObjc3RuntimeBootstrapCatalogRetentionModel;
           // M254-C001 bootstrap-lowering anchor: driver-side artifact
           // materialization remains limited to the registration manifest. The
           // actual ctor-root/init-stub/registration-table IR globals stay

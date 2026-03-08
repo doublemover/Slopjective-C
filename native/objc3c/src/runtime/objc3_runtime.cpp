@@ -5,6 +5,7 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -56,6 +57,9 @@ struct RuntimeState {
       registration_order_by_identity_key;
   std::unordered_map<std::string, RegisteredImageMetadata>
       registered_image_metadata_by_identity_key;
+  std::vector<std::string> retained_bootstrap_identity_order;
+  std::unordered_map<std::string, RegisteredImageMetadata>
+      retained_bootstrap_metadata_by_identity_key;
   std::unordered_map<std::string, std::size_t> selector_index_by_name;
   std::deque<SelectorSlot> selector_slots;
   const objc3_runtime_registration_table *staged_registration_table = nullptr;
@@ -72,6 +76,13 @@ struct RuntimeState {
   bool last_registration_used_staged_table = false;
   std::string last_walked_module_name;
   std::string last_walked_translation_unit_identity_key;
+  std::uint64_t last_reset_cleared_image_local_init_state_count = 0;
+  std::uint64_t last_replayed_image_count = 0;
+  std::uint64_t reset_generation = 0;
+  std::uint64_t replay_generation = 0;
+  int last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  std::string last_replayed_module_name;
+  std::string last_replayed_translation_unit_identity_key;
 };
 
 RuntimeState &State() {
@@ -256,6 +267,58 @@ void ApplyImageWalkRecordUnlocked(RuntimeState &state,
       record.translation_unit_identity_key;
 }
 
+void RetainBootstrapRecordUnlocked(RuntimeState &state,
+                                   const RegisteredImageMetadata &record) {
+  const auto found = state.retained_bootstrap_metadata_by_identity_key.find(
+      record.translation_unit_identity_key);
+  if (found == state.retained_bootstrap_metadata_by_identity_key.end()) {
+    state.retained_bootstrap_identity_order.push_back(
+        record.translation_unit_identity_key);
+  }
+  state.retained_bootstrap_metadata_by_identity_key
+      [record.translation_unit_identity_key] = record;
+}
+
+std::uint64_t ZeroRetainedBootstrapImageLocalInitStatesUnlocked(
+    RuntimeState &state) {
+  std::uint64_t cleared_count = 0;
+  for (const std::string &identity_key : state.retained_bootstrap_identity_order) {
+    const auto found =
+        state.retained_bootstrap_metadata_by_identity_key.find(identity_key);
+    if (found == state.retained_bootstrap_metadata_by_identity_key.end()) {
+      continue;
+    }
+    const RegisteredImageMetadata &record = found->second;
+    if (record.registration_table == nullptr ||
+        record.registration_table->image_local_init_state == nullptr) {
+      continue;
+    }
+    *record.registration_table->image_local_init_state = 0;
+    ++cleared_count;
+  }
+  return cleared_count;
+}
+
+void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
+  state.registered_image_count = 0;
+  state.registered_descriptor_total = 0;
+  state.next_expected_registration_order_ordinal = 1;
+  state.last_successful_registration_order_ordinal = 0;
+  state.last_registration_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  state.last_registered_module_name.clear();
+  state.last_registered_translation_unit_identity_key.clear();
+  state.last_rejected_module_name.clear();
+  state.last_rejected_translation_unit_identity_key.clear();
+  state.last_rejected_registration_order_ordinal = 0;
+  state.registration_order_by_identity_key.clear();
+  state.registered_image_metadata_by_identity_key.clear();
+  state.selector_index_by_name.clear();
+  state.selector_slots.clear();
+  state.staged_registration_table = nullptr;
+  state.walked_image_count = 0;
+  ClearImageWalkSnapshotUnlocked(state);
+}
+
 bool TryWalkRegistrationTableUnlocked(
     const objc3_runtime_registration_table *registration_table,
     const objc3_runtime_image_descriptor *image,
@@ -373,25 +436,10 @@ bool TryWalkRegistrationTableUnlocked(
   return true;
 }
 
-}  // namespace
-
-extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
-    const objc3_runtime_registration_table *registration_table) {
-  RuntimeState &state = State();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  state.staged_registration_table = registration_table;
-}
-
-// M254-D001 runtime-bootstrap-api anchor: registration, selector lookup,
-// dispatch, snapshot, and reset remain the frozen bootstrap runtime boundary.
-// D002/D003 may extend image walk and reset behavior, but they must preserve
-// this surface and its fail-closed status/result contract.
-int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
-  RuntimeState &state = State();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  const objc3_runtime_registration_table *const staged_registration_table =
-      state.staged_registration_table;
-  state.staged_registration_table = nullptr;
+int RegisterImageUnlocked(
+    RuntimeState &state, const objc3_runtime_image_descriptor *image,
+    const objc3_runtime_registration_table *staged_registration_table,
+    bool retain_bootstrap_record, bool mark_image_local_init_state) {
   if (image == nullptr || image->module_name == nullptr ||
       image->module_name[0] == '\0' ||
       image->translation_unit_identity_key == nullptr ||
@@ -434,12 +482,19 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
                        record.category_descriptor_count +
                        record.property_descriptor_count +
                        record.ivar_descriptor_count;
+    if (retain_bootstrap_record) {
+      RetainBootstrapRecordUnlocked(state, record);
+    }
     state.registered_image_metadata_by_identity_key
         [record.translation_unit_identity_key] = record;
     ApplyImageWalkRecordUnlocked(
         state,
         state.registered_image_metadata_by_identity_key
             .at(record.translation_unit_identity_key));
+    if (mark_image_local_init_state &&
+        staged_registration_table->image_local_init_state != nullptr) {
+      *staged_registration_table->image_local_init_state = 1;
+    }
   } else {
     ClearImageWalkSnapshotUnlocked(state);
   }
@@ -458,6 +513,29 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
       image->translation_unit_identity_key, image->registration_order_ordinal);
   ClearRejectedRegistrationUnlocked(state);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+}  // namespace
+
+extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
+    const objc3_runtime_registration_table *registration_table) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.staged_registration_table = registration_table;
+}
+
+// M254-D001 runtime-bootstrap-api anchor: registration, selector lookup,
+// dispatch, snapshot, and reset remain the frozen bootstrap runtime boundary.
+// D002/D003 may extend image walk and reset behavior, but they must preserve
+// this surface and its fail-closed status/result contract.
+int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const objc3_runtime_registration_table *const staged_registration_table =
+      state.staged_registration_table;
+  state.staged_registration_table = nullptr;
+  return RegisterImageUnlocked(state, image, staged_registration_table, true,
+                               false);
 }
 
 int objc3_runtime_copy_image_walk_state_for_testing(
@@ -493,6 +571,85 @@ int objc3_runtime_copy_image_walk_state_for_testing(
       StableCString(state.last_walked_module_name);
   snapshot->last_walked_translation_unit_identity_key =
       StableCString(state.last_walked_translation_unit_identity_key);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_reset_replay_state_for_testing(
+    objc3_runtime_reset_replay_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->retained_bootstrap_image_count =
+      static_cast<std::uint64_t>(state.retained_bootstrap_identity_order.size());
+  snapshot->last_reset_cleared_image_local_init_state_count =
+      state.last_reset_cleared_image_local_init_state_count;
+  snapshot->last_replayed_image_count = state.last_replayed_image_count;
+  snapshot->reset_generation = state.reset_generation;
+  snapshot->replay_generation = state.replay_generation;
+  snapshot->last_replay_status = state.last_replay_status;
+  snapshot->last_replayed_module_name =
+      StableCString(state.last_replayed_module_name);
+  snapshot->last_replayed_translation_unit_identity_key =
+      StableCString(state.last_replayed_translation_unit_identity_key);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_replay_registered_images_for_testing(void) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  state.last_replayed_image_count = 0;
+  state.last_replayed_module_name.clear();
+  state.last_replayed_translation_unit_identity_key.clear();
+
+  if (state.registered_image_count != 0 ||
+      !state.registration_order_by_identity_key.empty() ||
+      state.next_expected_registration_order_ordinal != 1 ||
+      state.staged_registration_table != nullptr) {
+    state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+    return state.last_replay_status;
+  }
+
+  for (const std::string &identity_key : state.retained_bootstrap_identity_order) {
+    const auto found =
+        state.retained_bootstrap_metadata_by_identity_key.find(identity_key);
+    if (found == state.retained_bootstrap_metadata_by_identity_key.end() ||
+        found->second.registration_table == nullptr ||
+        found->second.registration_table->image_descriptor == nullptr) {
+      ClearLiveRegistrationStateUnlocked(state);
+      state.last_reset_cleared_image_local_init_state_count =
+          ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);
+      state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+      return state.last_replay_status;
+    }
+
+    const RegisteredImageMetadata &record = found->second;
+    const int status = RegisterImageUnlocked(state,
+                                             record.registration_table->image_descriptor,
+                                             record.registration_table, false,
+                                             true);
+    if (status != OBJC3_RUNTIME_REGISTRATION_STATUS_OK) {
+      ClearLiveRegistrationStateUnlocked(state);
+      state.last_reset_cleared_image_local_init_state_count =
+          ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);
+      state.last_replay_status = status;
+      state.last_replayed_image_count = 0;
+      state.last_replayed_module_name.clear();
+      state.last_replayed_translation_unit_identity_key.clear();
+      return status;
+    }
+
+    ++state.last_replayed_image_count;
+    state.last_replayed_module_name = record.module_name;
+    state.last_replayed_translation_unit_identity_key =
+        record.translation_unit_identity_key;
+  }
+
+  ++state.replay_generation;
+  state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -552,21 +709,12 @@ extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
 void objc3_runtime_reset_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  state.registered_image_count = 0;
-  state.registered_descriptor_total = 0;
-  state.next_expected_registration_order_ordinal = 1;
-  state.last_successful_registration_order_ordinal = 0;
-  state.last_registration_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-  state.last_registered_module_name.clear();
-  state.last_registered_translation_unit_identity_key.clear();
-  state.last_rejected_module_name.clear();
-  state.last_rejected_translation_unit_identity_key.clear();
-  state.last_rejected_registration_order_ordinal = 0;
-  state.registration_order_by_identity_key.clear();
-  state.registered_image_metadata_by_identity_key.clear();
-  state.selector_index_by_name.clear();
-  state.selector_slots.clear();
-  state.staged_registration_table = nullptr;
-  state.walked_image_count = 0;
-  ClearImageWalkSnapshotUnlocked(state);
+  ClearLiveRegistrationStateUnlocked(state);
+  state.last_reset_cleared_image_local_init_state_count =
+      ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);
+  ++state.reset_generation;
+  state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  state.last_replayed_image_count = 0;
+  state.last_replayed_module_name.clear();
+  state.last_replayed_translation_unit_identity_key.clear();
 }

@@ -94,3 +94,19 @@ registration table:
   `canonical-selector-pool-preinterned-during-startup-image-walk`
 - realization staging model
   `registration-table-roots-retained-for-later-realization`
+
+`M254-D003` expands that same private bootstrap surface with deterministic reset
+and replay hooks for same-process runtime probes:
+
+- private replay hook
+  `objc3_runtime_replay_registered_images_for_testing`
+- private reset/replay snapshot hook
+  `objc3_runtime_copy_reset_replay_state_for_testing`
+- reset lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- replay order model
+  `replay-re-registers-retained-images-in-original-registration-order`
+- image-local init-state reset model
+  `retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay`
+- bootstrap catalog retention model
+  `bootstrap-catalog-retained-across-reset-for-deterministic-replay`

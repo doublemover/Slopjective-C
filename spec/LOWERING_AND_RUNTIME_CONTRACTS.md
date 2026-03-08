@@ -5468,3 +5468,19 @@ the live registration table.
   `registration-table-roots-retained-for-later-realization`
 - no expanded deterministic reset coverage beyond the current runtime-owned
   testing hooks
+## M254 realization sequencing and deterministic reset hooks (D003)
+
+`M254-D003` preserves the frozen public runtime bootstrap API while extending
+the private bootstrap boundary with deterministic same-process reset/replay:
+
+- contract id `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_reset_contract`
+- private replay hook
+  `objc3_runtime_replay_registered_images_for_testing`
+- private reset/replay snapshot hook
+  `objc3_runtime_copy_reset_replay_state_for_testing`
+- reset lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- replay order model
+  `replay-re-registers-retained-images-in-original-registration-order`
