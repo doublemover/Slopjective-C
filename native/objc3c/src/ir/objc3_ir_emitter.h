@@ -3,12 +3,22 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "lower/objc3_lowering_contract.h"
 // Historical extraction contract marker:
 // #include "parse/objc3_parser_contract.h"
 
 struct Objc3Program;
+
+struct Objc3IRRuntimeMetadataClassMetaclassBundle {
+  std::string class_name;
+  std::string owner_identity;
+  std::string super_bundle_owner_identity;
+  bool has_super = false;
+  std::size_t instance_method_count = 0;
+  std::size_t class_method_count = 0;
+};
 
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
@@ -146,6 +156,16 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_metadata_section_scaffold_category_aggregate_symbol;
   std::string runtime_metadata_section_scaffold_property_aggregate_symbol;
   std::string runtime_metadata_section_scaffold_ivar_aggregate_symbol;
+  std::string runtime_metadata_class_metaclass_emission_contract_id;
+  std::string runtime_metadata_class_metaclass_payload_model;
+  std::string runtime_metadata_class_metaclass_name_model;
+  std::string runtime_metadata_class_metaclass_super_link_model;
+  std::string runtime_metadata_class_metaclass_method_list_reference_model;
+  bool runtime_metadata_class_metaclass_emission_ready = false;
+  bool runtime_metadata_class_metaclass_emission_fail_closed = false;
+  std::string runtime_metadata_class_metaclass_typed_handoff_replay_key;
+  std::vector<Objc3IRRuntimeMetadataClassMetaclassBundle>
+      runtime_metadata_class_metaclass_bundles_lexicographic;
   std::string runtime_metadata_object_inspection_contract_id;
   std::string runtime_metadata_object_inspection_scaffold_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;

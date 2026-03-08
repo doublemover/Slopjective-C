@@ -6038,3 +6038,31 @@ preserve:
 
 No new metadata node is introduced for B003; the precision change is diagnostic-surface only.
 This means runtime export diagnostic precision must remain source-anchored and deterministic before native metadata section emission, runtime registration, and executable object-model enforcement land.
+
+## M253 class and metaclass data emission metadata anchors (C002)
+
+Deterministic lane-C class/metaclass emission anchors for `M253-C002` shall
+preserve:
+
+- contract id `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_class_metaclass_emission`,
+- payload model
+  `class-source-record-descriptor-bundles-with-inline-metaclass-records`,
+- name model `shared-class-name-cstring-per-bundle`,
+- super-link model `nullable-super-source-record-bundle-pointer`,
+- method-list reference model
+  `count-plus-owner-identity-pointer-method-list-ref`,
+- emitted class-family payload symbols:
+  - `__objc3_meta_class_0000`
+  - `__objc3_meta_class_0003`
+  - `__objc3_meta_class_owner_identity_0000`
+  - `__objc3_meta_class_owner_identity_0003`
+  - `__objc3_sec_class_descriptors`,
+- metadata-rich proof fixture
+  `tests/tooling/fixtures/native/m252_executable_metadata_graph_class_metaclass.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C002/class_and_metaclass_data_emission_summary.json`.
+
+Class/metaclass emission anchors must remain deterministic and fail closed
+before later issues add protocol/category/property/ivar payload expansion,
+selector/string pools, or runtime registration/bootstrap.

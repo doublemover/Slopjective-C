@@ -274,6 +274,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // real emitted metadata-section scaffold today, but it may not invent
   // richer payload bytes or new metadata families while lane-C is still frozen
   // at the placeholder-emission boundary.
+  // M253-C002 class/metaclass data emission anchor: once the IR carries real
+  // class descriptor bundles, llvm-direct object emission must preserve those
+  // inline class/metaclass/name/method-ref payloads verbatim instead of
+  // re-synthesizing or collapsing them back into placeholder bytes.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

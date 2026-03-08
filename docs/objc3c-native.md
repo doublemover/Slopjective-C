@@ -893,6 +893,39 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-C001/metadata_section_emission_contract_summary.json`
 
+## Class and metaclass data emission (M253-C002)
+
+- Lane-C now emits the first real executable metadata payload family:
+  `Objc3RuntimeMetadataClassMetaclassEmissionSummary`.
+- Contract id:
+  `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`.
+- The class family payload model is now
+  `class-source-record-descriptor-bundles-with-inline-metaclass-records`.
+- Each emitted class bundle carries:
+  - one shared class-name cstring,
+  - one declaration-owner identity cstring,
+  - one instance-method-list reference `{ i64, ptr }`,
+  - one inline metaclass-method-list reference `{ i64, ptr }`,
+  - one class record and one inline metaclass record.
+- The happy-path metadata fixture is
+  `tests/tooling/fixtures/native/m252_executable_metadata_graph_class_metaclass.objc3`.
+- The emitted IR now carries:
+  - `!objc3.objc_runtime_class_metaclass_emission`
+  - `@__objc3_meta_class_0000`
+  - `@__objc3_meta_class_0003`
+  - `@__objc3_meta_class_owner_identity_0000`
+  - `@__objc3_meta_class_owner_identity_0003`
+  - `@__objc3_sec_class_descriptors = internal global { i64, [4 x ptr] } ...`
+- The emitted object now proves `objc3.runtime.class_descriptors` is a real
+  object section with nontrivial bytes/relocations on the `llvm-direct` path.
+- C002 remains deliberately bounded:
+  - no standalone metaclass section,
+  - no selector/string-pool sections,
+  - no standalone method/property/ivar list payload sections,
+  - no runtime registration/bootstrap.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-C002/class_and_metaclass_data_emission_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

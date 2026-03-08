@@ -2829,6 +2829,85 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     return bundle;
   }
 
+  const bool metadata_only_ir_emission_mode = [&pipeline_result]() {
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff =
+            pipeline_result.executable_metadata_typed_lowering_handoff;
+    const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph =
+        pipeline_result.executable_metadata_source_graph;
+    const Objc3RuntimeMetadataSourceOwnershipBoundary
+        &runtime_metadata_source_ownership =
+            pipeline_result.runtime_metadata_source_ownership_boundary;
+    const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
+        pipeline_result.runtime_export_legality_boundary;
+    const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement =
+        pipeline_result.runtime_export_enforcement_summary;
+    const Objc3RuntimeMetadataSectionAbiFreezeSummary runtime_metadata_section_abi =
+        BuildRuntimeMetadataSectionAbiFreezeSummary(
+            runtime_metadata_source_ownership,
+            runtime_export_legality,
+            runtime_export_enforcement);
+    const Objc3RuntimeMetadataSectionScaffoldSummary
+        runtime_metadata_section_scaffold =
+            BuildRuntimeMetadataSectionScaffoldSummary(
+                runtime_metadata_section_abi,
+                runtime_export_legality,
+                runtime_export_enforcement);
+    const Objc3RuntimeMetadataObjectInspectionHarnessSummary
+        runtime_metadata_object_inspection =
+            BuildRuntimeMetadataObjectInspectionHarnessSummary(
+                runtime_metadata_section_abi,
+                runtime_metadata_section_scaffold);
+    const Objc3RuntimeMetadataSourceToSectionMatrixSummary
+        runtime_metadata_source_to_section_matrix =
+            BuildRuntimeMetadataSourceToSectionMatrixSummary(
+                executable_metadata_source_graph,
+                runtime_metadata_section_abi,
+                runtime_metadata_section_scaffold,
+                runtime_metadata_object_inspection);
+    const Objc3ExecutableMetadataDebugProjectionSummary
+        executable_metadata_debug_projection =
+            BuildExecutableMetadataDebugProjectionSummary(
+                executable_metadata_typed_lowering_handoff);
+    const Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary
+        executable_metadata_runtime_ingest_packaging_contract =
+            BuildExecutableMetadataRuntimeIngestPackagingContractSummary(
+                executable_metadata_typed_lowering_handoff,
+                executable_metadata_debug_projection);
+    const std::string executable_metadata_runtime_ingest_binary_payload =
+        BuildExecutableMetadataRuntimeIngestBinaryEnvelope(
+            executable_metadata_runtime_ingest_packaging_contract,
+            executable_metadata_typed_lowering_handoff,
+            executable_metadata_debug_projection);
+    const Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary
+        executable_metadata_runtime_ingest_binary_boundary =
+            BuildExecutableMetadataRuntimeIngestBinaryBoundarySummary(
+                executable_metadata_runtime_ingest_packaging_contract,
+                executable_metadata_typed_lowering_handoff,
+                executable_metadata_debug_projection,
+                executable_metadata_runtime_ingest_binary_payload);
+    return IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
+               executable_metadata_typed_lowering_handoff) &&
+           IsReadyObjc3RuntimeMetadataSourceOwnershipBoundary(
+               runtime_metadata_source_ownership) &&
+           IsReadyObjc3RuntimeExportLegalityBoundary(runtime_export_legality) &&
+           IsReadyObjc3RuntimeExportEnforcementSummary(
+               runtime_export_enforcement) &&
+           IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
+               runtime_metadata_section_abi) &&
+           IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
+               runtime_metadata_section_scaffold) &&
+           IsReadyObjc3RuntimeMetadataSourceToSectionMatrixSummary(
+               runtime_metadata_source_to_section_matrix) &&
+           IsReadyObjc3ExecutableMetadataDebugProjectionSummary(
+               executable_metadata_debug_projection) &&
+           IsReadyObjc3ExecutableMetadataRuntimeIngestPackagingContractSummary(
+               executable_metadata_runtime_ingest_packaging_contract) &&
+           IsReadyObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary(
+               executable_metadata_runtime_ingest_binary_boundary) &&
+           runtime_metadata_section_scaffold.class_descriptor_count > 0u;
+  }();
+
   std::string post_pipeline_failure_code;
   std::string post_pipeline_failure_message;
   const auto record_post_pipeline_failure = [&](const char *code, std::string message) {
@@ -2839,20 +2918,25 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     post_pipeline_failure_message = std::move(message);
   };
 
-  std::string parse_lowering_readiness_error;
-  if (!IsObjc3ParseLoweringReadinessSurfaceReady(bundle.parse_lowering_readiness_surface,
-                                                 parse_lowering_readiness_error)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
-            parse_lowering_readiness_error);
-  }
+  const Objc3IREmissionCoreFeatureImplementationSurface
+      ir_emission_core_feature_impl_surface =
+          BuildObjc3IREmissionCoreFeatureImplementationSurface(pipeline_result);
 
-  std::string diagnostics_surfacing_scaffold_error;
-  if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingScaffoldReady(
-          pipeline_result.lowering_runtime_diagnostics_surfacing_scaffold,
-          diagnostics_surfacing_scaffold_error)) {
-    record_post_pipeline_failure("O3L301",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing scaffold check failed: " +
-            diagnostics_surfacing_scaffold_error);
-  }
+  if (!metadata_only_ir_emission_mode) {
+    std::string parse_lowering_readiness_error;
+    if (!IsObjc3ParseLoweringReadinessSurfaceReady(bundle.parse_lowering_readiness_surface,
+                                                   parse_lowering_readiness_error)) {
+      record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: parse-to-lowering readiness check failed: " +
+              parse_lowering_readiness_error);
+    }
+
+    std::string diagnostics_surfacing_scaffold_error;
+    if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingScaffoldReady(
+            pipeline_result.lowering_runtime_diagnostics_surfacing_scaffold,
+            diagnostics_surfacing_scaffold_error)) {
+      record_post_pipeline_failure("O3L301",         "LLVM IR emission failed: lowering/runtime diagnostics surfacing scaffold check failed: " +
+              diagnostics_surfacing_scaffold_error);
+    }
 
   std::string diagnostics_surfacing_core_feature_error;
   if (!IsObjc3LoweringRuntimeDiagnosticsSurfacingCoreFeatureImplementationSurfaceReady(
@@ -3008,10 +3092,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             lowering_pass_graph_edge_case_compatibility_error);
   }
 
-  const Objc3IREmissionCoreFeatureImplementationSurface
-      ir_emission_core_feature_impl_surface =
-          BuildObjc3IREmissionCoreFeatureImplementationSurface(pipeline_result);
-  std::string ir_emission_core_feature_impl_error;
+    std::string ir_emission_core_feature_impl_error;
   if (!IsObjc3IREmissionCoreFeatureImplementationReady(
           ir_emission_core_feature_impl_surface,
           ir_emission_core_feature_impl_error)) {
@@ -3115,6 +3196,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           ir_emission_core_feature_advanced_integration_shard1_error)) {
     record_post_pipeline_failure("O3L337",         "LLVM IR emission failed: IR emission core feature advanced integration shard 1 check failed: " +
             ir_emission_core_feature_advanced_integration_shard1_error);
+  }
   }
   std::vector<const FunctionDecl *> manifest_functions;
   manifest_functions.reserve(program.functions.size());
@@ -3441,61 +3523,63 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               .performance_quality_guardrails_ready,
           pipeline_result.lowering_pipeline_pass_graph_core_feature_surface
               .performance_quality_guardrails_key);
-  std::string ownership_aware_lowering_behavior_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_error)) {
-    record_post_pipeline_failure("O3L305",         "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
-            ownership_aware_lowering_behavior_error);
-  }
-  std::string ownership_aware_lowering_behavior_expansion_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_expansion_error)) {
-    record_post_pipeline_failure("O3L310",         "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
-            ownership_aware_lowering_behavior_expansion_error);
-  }
-  std::string ownership_aware_lowering_behavior_edge_case_compatibility_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_edge_case_compatibility_error)) {
-    record_post_pipeline_failure("O3L312",         "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
-            ownership_aware_lowering_behavior_edge_case_compatibility_error);
-  }
-  std::string ownership_aware_lowering_behavior_recovery_determinism_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_recovery_determinism_error)) {
-    record_post_pipeline_failure("O3L318",         "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
-            ownership_aware_lowering_behavior_recovery_determinism_error);
-  }
-  std::string ownership_aware_lowering_behavior_conformance_matrix_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_conformance_matrix_error)) {
-    record_post_pipeline_failure("O3L319",         "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
-            ownership_aware_lowering_behavior_conformance_matrix_error);
-  }
-  std::string ownership_aware_lowering_behavior_conformance_corpus_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_conformance_corpus_error)) {
-    record_post_pipeline_failure("O3L320",         "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
-            ownership_aware_lowering_behavior_conformance_corpus_error);
-  }
-  std::string ownership_aware_lowering_behavior_performance_quality_guardrails_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_performance_quality_guardrails_error)) {
-    record_post_pipeline_failure("O3L328",         "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
-            ownership_aware_lowering_behavior_performance_quality_guardrails_error);
-  }
-  std::string ownership_aware_lowering_behavior_cross_lane_integration_error;
-  if (!IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
-          ownership_aware_lowering_behavior_scaffold,
-          ownership_aware_lowering_behavior_cross_lane_integration_error)) {
-    record_post_pipeline_failure("O3L329",         "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
-            ownership_aware_lowering_behavior_cross_lane_integration_error);
+  if (!metadata_only_ir_emission_mode) {
+    std::string ownership_aware_lowering_behavior_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorScaffoldReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_error)) {
+      record_post_pipeline_failure("O3L305",         "LLVM IR emission failed: ownership-aware lowering modular split scaffold check failed: " +
+              ownership_aware_lowering_behavior_error);
+    }
+    std::string ownership_aware_lowering_behavior_expansion_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorCoreFeatureExpansionReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_expansion_error)) {
+      record_post_pipeline_failure("O3L310",         "LLVM IR emission failed: ownership-aware lowering core feature expansion check failed: " +
+              ownership_aware_lowering_behavior_expansion_error);
+    }
+    std::string ownership_aware_lowering_behavior_edge_case_compatibility_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorEdgeCaseCompatibilityReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_edge_case_compatibility_error)) {
+      record_post_pipeline_failure("O3L312",         "LLVM IR emission failed: ownership-aware lowering edge-case compatibility check failed: " +
+              ownership_aware_lowering_behavior_edge_case_compatibility_error);
+    }
+    std::string ownership_aware_lowering_behavior_recovery_determinism_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorRecoveryDeterminismReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_recovery_determinism_error)) {
+      record_post_pipeline_failure("O3L318",         "LLVM IR emission failed: ownership-aware lowering recovery determinism check failed: " +
+              ownership_aware_lowering_behavior_recovery_determinism_error);
+    }
+    std::string ownership_aware_lowering_behavior_conformance_matrix_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceMatrixReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_conformance_matrix_error)) {
+      record_post_pipeline_failure("O3L319",         "LLVM IR emission failed: ownership-aware lowering conformance matrix check failed: " +
+              ownership_aware_lowering_behavior_conformance_matrix_error);
+    }
+    std::string ownership_aware_lowering_behavior_conformance_corpus_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorConformanceCorpusReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_conformance_corpus_error)) {
+      record_post_pipeline_failure("O3L320",         "LLVM IR emission failed: ownership-aware lowering conformance corpus check failed: " +
+              ownership_aware_lowering_behavior_conformance_corpus_error);
+    }
+    std::string ownership_aware_lowering_behavior_performance_quality_guardrails_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorPerformanceQualityGuardrailsReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_performance_quality_guardrails_error)) {
+      record_post_pipeline_failure("O3L328",         "LLVM IR emission failed: ownership-aware lowering performance quality guardrails check failed: " +
+              ownership_aware_lowering_behavior_performance_quality_guardrails_error);
+    }
+    std::string ownership_aware_lowering_behavior_cross_lane_integration_error;
+    if (!IsObjc3OwnershipAwareLoweringBehaviorCrossLaneIntegrationReady(
+            ownership_aware_lowering_behavior_scaffold,
+            ownership_aware_lowering_behavior_cross_lane_integration_error)) {
+      record_post_pipeline_failure("O3L329",         "LLVM IR emission failed: ownership-aware lowering cross-lane integration check failed: " +
+              ownership_aware_lowering_behavior_cross_lane_integration_error);
+    }
   }
   const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
       BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
@@ -7722,6 +7806,130 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_section_scaffold.property_aggregate_symbol;
   ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_aggregate_symbol =
       runtime_metadata_section_scaffold.ivar_aggregate_symbol;
+  ir_frontend_metadata.runtime_metadata_class_metaclass_emission_contract_id =
+      kObjc3RuntimeClassMetaclassEmissionContractId;
+  ir_frontend_metadata.runtime_metadata_class_metaclass_payload_model =
+      kObjc3RuntimeClassMetaclassEmissionPayloadModel;
+  ir_frontend_metadata.runtime_metadata_class_metaclass_name_model =
+      kObjc3RuntimeClassMetaclassEmissionNameModel;
+  ir_frontend_metadata.runtime_metadata_class_metaclass_super_link_model =
+      kObjc3RuntimeClassMetaclassEmissionSuperLinkModel;
+  ir_frontend_metadata
+      .runtime_metadata_class_metaclass_method_list_reference_model =
+      kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel;
+  ir_frontend_metadata.runtime_metadata_class_metaclass_typed_handoff_replay_key =
+      executable_metadata_typed_lowering_handoff.replay_key;
+  {
+    const bool typed_handoff_ready =
+        IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
+            executable_metadata_typed_lowering_handoff);
+    if (typed_handoff_ready) {
+      const auto &source_graph =
+          executable_metadata_typed_lowering_handoff.source_graph;
+      std::unordered_map<std::string,
+                         const Objc3ExecutableMetadataClassGraphNode *>
+          class_nodes_by_name;
+      class_nodes_by_name.reserve(source_graph.class_nodes_lexicographic.size());
+      for (const auto &class_node : source_graph.class_nodes_lexicographic) {
+        class_nodes_by_name.emplace(class_node.class_name, &class_node);
+      }
+      std::unordered_map<std::string,
+                         const Objc3ExecutableMetadataMetaclassGraphNode *>
+          metaclass_nodes_by_name;
+      metaclass_nodes_by_name.reserve(
+          source_graph.metaclass_nodes_lexicographic.size());
+      for (const auto &metaclass_node :
+           source_graph.metaclass_nodes_lexicographic) {
+        metaclass_nodes_by_name.emplace(metaclass_node.class_name,
+                                        &metaclass_node);
+      }
+      std::unordered_map<std::string,
+                         const Objc3ExecutableMetadataImplementationGraphNode *>
+          implementation_nodes_by_name;
+      implementation_nodes_by_name.reserve(
+          source_graph.implementation_nodes_lexicographic.size());
+      for (const auto &implementation_node :
+           source_graph.implementation_nodes_lexicographic) {
+        implementation_nodes_by_name.emplace(implementation_node.class_name,
+                                             &implementation_node);
+      }
+
+      bool bundle_payload_complete = true;
+      std::vector<Objc3IRRuntimeMetadataClassMetaclassBundle> bundles;
+      bundles.reserve(source_graph.interface_nodes_lexicographic.size() +
+                      source_graph.implementation_nodes_lexicographic.size());
+      for (const auto &interface_node : source_graph.interface_nodes_lexicographic) {
+        const auto metaclass_it =
+            metaclass_nodes_by_name.find(interface_node.class_name);
+        const auto class_it =
+            class_nodes_by_name.find(interface_node.class_name);
+        if (metaclass_it == metaclass_nodes_by_name.end() ||
+            class_it == class_nodes_by_name.end()) {
+          bundle_payload_complete = false;
+          break;
+        }
+
+        Objc3IRRuntimeMetadataClassMetaclassBundle bundle;
+        bundle.class_name = interface_node.class_name;
+        bundle.owner_identity = interface_node.owner_identity;
+        bundle.has_super = class_it->second->has_super;
+        bundle.super_bundle_owner_identity =
+            class_it->second->has_super
+                ? ("interface:" + class_it->second->super_class_owner_identity.substr(6))
+                : std::string{};
+        bundle.instance_method_count = interface_node.instance_method_count;
+        bundle.class_method_count =
+            metaclass_it->second->interface_class_method_count;
+        bundles.push_back(std::move(bundle));
+      }
+      for (const auto &implementation_node :
+           source_graph.implementation_nodes_lexicographic) {
+        const auto metaclass_it =
+            metaclass_nodes_by_name.find(implementation_node.class_name);
+        const auto class_it =
+            class_nodes_by_name.find(implementation_node.class_name);
+        if (metaclass_it == metaclass_nodes_by_name.end() ||
+            class_it == class_nodes_by_name.end()) {
+          bundle_payload_complete = false;
+          break;
+        }
+
+        Objc3IRRuntimeMetadataClassMetaclassBundle bundle;
+        bundle.class_name = implementation_node.class_name;
+        bundle.owner_identity = implementation_node.owner_identity;
+        bundle.has_super = class_it->second->has_super;
+        if (class_it->second->has_super) {
+          const std::string super_class_name =
+              class_it->second->super_class_owner_identity.substr(6);
+          const auto super_impl_it =
+              implementation_nodes_by_name.find(super_class_name);
+          if (super_impl_it == implementation_nodes_by_name.end()) {
+            bundle_payload_complete = false;
+            break;
+          }
+          bundle.super_bundle_owner_identity =
+              super_impl_it->second->owner_identity;
+        }
+        bundle.instance_method_count = implementation_node.instance_method_count;
+        bundle.class_method_count =
+            metaclass_it->second->implementation_class_method_count;
+        bundles.push_back(std::move(bundle));
+      }
+
+      bundle_payload_complete =
+          bundle_payload_complete &&
+          bundles.size() ==
+              runtime_metadata_section_scaffold.class_descriptor_count;
+      if (bundle_payload_complete) {
+        ir_frontend_metadata.runtime_metadata_class_metaclass_bundles_lexicographic =
+            std::move(bundles);
+      }
+      ir_frontend_metadata.runtime_metadata_class_metaclass_emission_ready =
+          bundle_payload_complete;
+      ir_frontend_metadata.runtime_metadata_class_metaclass_emission_fail_closed =
+          bundle_payload_complete;
+    }
+  }
   ir_frontend_metadata.runtime_metadata_object_inspection_contract_id =
       runtime_metadata_object_inspection.contract_id;
   ir_frontend_metadata.runtime_metadata_object_inspection_scaffold_contract_id =

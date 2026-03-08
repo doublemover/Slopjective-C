@@ -8476,3 +8476,16 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   the current real-section scaffold boundary with explicit placeholder payload
   models, explicit placeholder payload models for image-info/descriptors/
   aggregates, and fail-closed non-goals before encoded metadata records land.
+- M253 lane-C C002 class and metaclass data emission anchors explicit
+  implementation artifacts in
+  `docs/contracts/m253_class_and_metaclass_data_emission_core_feature_implementation_c002_expectations.md`,
+  `spec/planning/compiler/m253/m253_c002_class_and_metaclass_data_emission_core_feature_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.h`, `ir/objc3_ir_emitter.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, and `io/objc3_process.cpp` so
+  one declaration-owner-ordered `runtime_metadata_class_metaclass_bundles_lexicographic`
+  payload replaces class-family placeholders with real inline class/metaclass
+  bundles while preserving llvm-direct class bundle payloads and the frozen
+  non-goal boundary before later issues expand the other metadata families.

@@ -83,6 +83,21 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeMetadataSectionEmissionImageInfoPayloadModel =
         "internal-{i32,i32}-zeroinitializer-image-info";
+// M253-C002 class/metaclass data emission anchor: lane-C begins replacing the
+// class-family placeholder byte model with real class descriptor bundles while
+// keeping metaclass payloads inline with their class bundles and deferring real
+// method/property/ivar lists plus selector/string pools to later issues.
+inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionContractId =
+    "objc3c-runtime-class-metaclass-data-emission/m253-c002-v1";
+inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionPayloadModel =
+    "class-source-record-descriptor-bundles-with-inline-metaclass-records";
+inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionNameModel =
+    "shared-class-name-cstring-per-bundle";
+inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionSuperLinkModel =
+    "nullable-super-source-record-bundle-pointer";
+inline constexpr const char
+    *kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel =
+        "count-plus-owner-identity-pointer-method-list-ref";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -779,6 +794,7 @@ bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
 std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
     const Objc3RuntimeMetadataLayoutPolicy &policy);
 std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary();
+std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
 bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
 const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);

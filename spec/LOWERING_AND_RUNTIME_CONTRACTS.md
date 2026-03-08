@@ -4903,3 +4903,34 @@ The implementation must preserve:
   `; runtime_metadata_section_emission_boundary = ...`,
 - fail-closed non-goals:
   no method, selector, or string-pool payload emission yet.
+
+## M253 class and metaclass data emission (C002)
+
+Lane-C shall replace the class-family placeholder byte model with real
+class/metaclass descriptor bundles while preserving the frozen emitted
+inventory, ordering, visibility, object-format, and scaffold boundaries.
+
+`M253-C002` requires:
+
+- contract id `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`,
+- payload model
+  `class-source-record-descriptor-bundles-with-inline-metaclass-records`,
+- name model `shared-class-name-cstring-per-bundle`,
+- super-link model `nullable-super-source-record-bundle-pointer`,
+- method-list reference model
+  `count-plus-owner-identity-pointer-method-list-ref`,
+- emitted IR publication through
+  `; runtime_metadata_class_metaclass_emission = ...` and
+  `!objc3.objc_runtime_class_metaclass_emission`,
+- metadata-only IR admission on ready metadata fixtures so native IR/object
+  emission no longer depends on the older global parse/lowering gate for this
+  payload family,
+- declaration-owner-ordered bundle emission over the current typed metadata
+  handoff, runtime-export class accounting, and scaffold class-descriptor
+  counts,
+- llvm-direct object emission preserving the inline bundle payloads verbatim.
+
+`M253-C002` does not add standalone metaclass sections, selector/string-pool
+payloads, standalone method/property/ivar list sections, or runtime
+registration/bootstrap. The class family alone advances from scaffold
+placeholders to real bundle payloads in this issue.

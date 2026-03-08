@@ -1739,6 +1739,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
     out << "!objc3.objc_runtime_metadata_layout_policy = !{!55}\n";
+    out << "!objc3.objc_runtime_class_metaclass_emission = !{!56}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2498,6 +2499,58 @@ class Objc3IREmitter {
                runtime_metadata_layout_policy))
         << "\", !\""
         << EscapeCStringLiteral(runtime_metadata_layout_policy.failure_reason)
+        << "\"}\n";
+    std::size_t runtime_metadata_class_bundle_count = 0;
+    std::size_t runtime_metadata_instance_method_reference_total = 0;
+    std::size_t runtime_metadata_class_method_reference_total = 0;
+    for (const auto &bundle :
+         frontend_metadata_
+             .runtime_metadata_class_metaclass_bundles_lexicographic) {
+      ++runtime_metadata_class_bundle_count;
+      runtime_metadata_instance_method_reference_total +=
+          bundle.instance_method_count;
+      runtime_metadata_class_method_reference_total += bundle.class_method_count;
+    }
+    out << "!56 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_class_metaclass_emission_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_class_metaclass_payload_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.runtime_metadata_class_metaclass_name_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_class_metaclass_super_link_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_class_metaclass_method_list_reference_model)
+        << "\", i1 "
+        << (frontend_metadata_.runtime_metadata_class_metaclass_emission_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .runtime_metadata_class_metaclass_emission_fail_closed
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(runtime_metadata_class_bundle_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_instance_method_reference_total)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_class_method_reference_total)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .runtime_metadata_class_metaclass_typed_handoff_replay_key)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4165,6 +4218,13 @@ class Objc3IREmitter {
            FormatRuntimeMetadataDescriptorOrdinal(ordinal);
   }
 
+  std::string BuildRuntimeMetadataAuxiliarySymbol(
+      const std::string &descriptor_symbol_prefix, const std::string &kind,
+      const std::string &suffix, std::size_t ordinal) const {
+    return "@" + descriptor_symbol_prefix + kind + "_" + suffix + "_" +
+           FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+  }
+
   bool TryBuildRuntimeMetadataLayoutPolicy(
       Objc3RuntimeMetadataLayoutPolicy &policy, std::string &error) const {
     Objc3RuntimeMetadataLayoutPolicyInput input;
@@ -4274,6 +4334,35 @@ class Objc3IREmitter {
         << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
     out << "; runtime_metadata_section_emission_boundary = "
         << Objc3RuntimeMetadataSectionEmissionBoundarySummary() << "\n";
+    const bool emit_class_metaclass_bundle_payloads =
+        frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
+        frontend_metadata_.runtime_metadata_class_metaclass_emission_fail_closed &&
+        !frontend_metadata_
+             .runtime_metadata_class_metaclass_emission_contract_id.empty() &&
+        frontend_metadata_
+                .runtime_metadata_class_metaclass_bundles_lexicographic.size() ==
+            layout_policy.families[0].descriptor_count;
+    if (emit_class_metaclass_bundle_payloads) {
+      std::size_t total_instance_method_refs = 0;
+      std::size_t total_class_method_refs = 0;
+      for (const auto &bundle :
+           frontend_metadata_
+               .runtime_metadata_class_metaclass_bundles_lexicographic) {
+        total_instance_method_refs += bundle.instance_method_count;
+        total_class_method_refs += bundle.class_method_count;
+      }
+      out << "; runtime_metadata_class_metaclass_emission = "
+          << Objc3RuntimeMetadataClassMetaclassEmissionSummary()
+          << ";bundle_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << ";instance_method_refs=" << total_instance_method_refs
+          << ";class_method_refs=" << total_class_method_refs
+          << ";typed_handoff_replay="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_typed_handoff_replay_key
+          << "\n";
+    }
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
@@ -4328,10 +4417,133 @@ class Objc3IREmitter {
           emit_retained(aggregate_symbol);
         };
 
+    const auto emit_class_metaclass_bundle_section =
+        [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          std::unordered_map<std::string, std::string> descriptor_symbols_by_owner_identity;
+          descriptor_symbols_by_owner_identity.reserve(
+              frontend_metadata_
+                  .runtime_metadata_class_metaclass_bundles_lexicographic.size());
+          for (std::size_t i = 0;
+               i < frontend_metadata_
+                       .runtime_metadata_class_metaclass_bundles_lexicographic
+                           .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_
+                    .runtime_metadata_class_metaclass_bundles_lexicographic[i];
+            descriptor_symbols_by_owner_identity.emplace(
+                bundle.owner_identity,
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i));
+          }
+
+          std::vector<std::string> descriptor_symbols;
+          descriptor_symbols.reserve(
+              frontend_metadata_
+                  .runtime_metadata_class_metaclass_bundles_lexicographic.size());
+          for (std::size_t i = 0;
+               i < frontend_metadata_
+                       .runtime_metadata_class_metaclass_bundles_lexicographic
+                           .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_
+                    .runtime_metadata_class_metaclass_bundles_lexicographic[i];
+            const std::string descriptor_symbol =
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind, i);
+            const std::string name_symbol = BuildRuntimeMetadataAuxiliarySymbol(
+                layout_policy.descriptor_symbol_prefix, family.kind, "name", i);
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "owner_identity", i);
+            const std::string instance_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "instance_method_list_ref", i);
+            const std::string metaclass_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, "metaclass",
+                    "method_list_ref", i);
+            std::string super_bundle_symbol = "null";
+            if (bundle.has_super) {
+              const auto super_it =
+                  descriptor_symbols_by_owner_identity.find(
+                      bundle.super_bundle_owner_identity);
+              if (super_it != descriptor_symbols_by_owner_identity.end()) {
+                super_bundle_symbol = super_it->second;
+              }
+            }
+            const std::size_t storage_len = bundle.class_name.size() + 1u;
+            const std::size_t owner_identity_storage_len =
+                bundle.owner_identity.size() + 1u;
+            descriptor_symbols.push_back(descriptor_symbol);
+
+            out << name_symbol << " = private constant [" << storage_len
+                << " x i8] c\""
+                << EscapeCStringLiteral(bundle.class_name)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << owner_identity_symbol << " = private constant ["
+                << owner_identity_storage_len << " x i8] c\""
+                << EscapeCStringLiteral(bundle.owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << instance_method_list_ref_symbol
+                << " = private global { i64, ptr } { i64 "
+                << bundle.instance_method_count << ", ptr "
+                << owner_identity_symbol
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            out << metaclass_method_list_ref_symbol
+                << " = private global { i64, ptr } { i64 "
+                << bundle.class_method_count << ", ptr "
+                << owner_identity_symbol
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            out << descriptor_symbol
+                << " = private global { { ptr, ptr, ptr }, { ptr, ptr, ptr } } "
+                   "{ { ptr, ptr, ptr } { ptr "
+                << name_symbol << ", ptr " << super_bundle_symbol << ", ptr "
+                << instance_method_list_ref_symbol << " }, { ptr, ptr, ptr } { ptr "
+                << name_symbol << ", ptr " << super_bundle_symbol << ", ptr "
+                << metaclass_method_list_ref_symbol << " } }, section \""
+                << family.emitted_section_name << "\", align 8\n";
+            emit_retained(descriptor_symbol);
+          }
+
+          const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
+              << " global ";
+          if (descriptor_symbols.empty()) {
+            out << "{ i64 } { i64 0 }";
+          } else {
+            out << "{ i64, [" << descriptor_symbols.size()
+                << " x ptr] } { i64 " << descriptor_symbols.size() << ", ["
+                << descriptor_symbols.size() << " x ptr] [";
+            for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+              if (i != 0) {
+                out << ", ";
+              }
+              out << "ptr " << descriptor_symbols[i];
+            }
+            out << "] }";
+          }
+          out << ", section \"" << family.emitted_section_name
+              << "\", align 8\n";
+          emit_retained(aggregate_symbol);
+        };
+
     for (const auto &family : layout_policy.families) {
-      emit_descriptor_section(family.kind, family.emitted_section_name,
-                              family.aggregate_symbol_name,
-                              family.descriptor_count);
+      if (emit_class_metaclass_bundle_payloads &&
+          family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily) {
+        emit_class_metaclass_bundle_section(family);
+      } else {
+        emit_descriptor_section(family.kind, family.emitted_section_name,
+                                family.aggregate_symbol_name,
+                                family.descriptor_count);
+      }
     }
 
     out << "@llvm.used = appending global [" << retained_globals.size()

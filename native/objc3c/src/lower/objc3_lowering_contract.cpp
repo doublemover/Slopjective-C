@@ -418,6 +418,24 @@ std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary() {
+  std::ostringstream out;
+  // M253-C002 class/metaclass data emission anchor: lane-C now replaces the
+  // class-family placeholder byte model with one real descriptor-bundle
+  // payload. Each class descriptor bundle carries a class record, an inline
+  // metaclass record, one shared class-name cstring, nullable superclass
+  // bundle links, and method-list reference globals without claiming that real
+  // method/property/ivar list payloads or selector/string pools already exist.
+  out << "contract=" << kObjc3RuntimeClassMetaclassEmissionContractId
+      << ";payload_model=" << kObjc3RuntimeClassMetaclassEmissionPayloadModel
+      << ";name_model=" << kObjc3RuntimeClassMetaclassEmissionNameModel
+      << ";super_link_model=" << kObjc3RuntimeClassMetaclassEmissionSuperLinkModel
+      << ";method_list_reference_model="
+      << kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel
+      << ";non_goals=no-standalone-metaclass-section-or-selector-string-pool";
+  return out.str();
+}
+
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary) {
   std::ostringstream out;
   out << "declare i32 @" << boundary.runtime_dispatch_symbol << "(i32, ptr";
