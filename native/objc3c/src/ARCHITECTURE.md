@@ -8350,3 +8350,11 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   lowering-ready metadata graph payload, typed replay key, and manifest schema
   ordering remain deterministic and fail-closed before lane-C debug projection,
   D-lane runtime ingest packaging, and M253 section emission land.
+- M252 lane-C C003 metadata debug projection anchors explicit contract artifacts
+  in
+  `docs/contracts/m252_metadata_debug_projection_and_replay_anchors_c003_expectations.md`,
+  `spec/planning/compiler/m252/m252_c003_metadata_debug_projection_and_replay_anchors_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so one
+  deterministic manifest/IR inspection matrix remains published before runtime
+  section emission and runtime-ingest packaging land.

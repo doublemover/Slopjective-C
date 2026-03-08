@@ -4612,3 +4612,29 @@ The packet must preserve:
 `M252-C002` does not emit object-file metadata sections yet, but it does freeze
 the lowering-ready payload schema that those later section-emission issues must
 consume.
+
+## M252 metadata debug projection and replay anchors (C003)
+
+`M252-C003` publishes the canonical lane-C metadata inspection matrix:
+`Objc3ExecutableMetadataDebugProjectionSummary`.
+
+The packet must preserve:
+
+- contract id `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- typed-handoff dependency continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- IR named-metadata publication under
+  `!objc3.objc_executable_metadata_debug_projection`,
+- deterministic matrix rows:
+  - `class-protocol-property-ivar-manifest-projection`,
+  - `category-protocol-property-manifest-projection`,
+  - `hello-ir-named-metadata-anchor`,
+- replay-anchor continuity between the debug-projection packet and the active
+  C002 typed handoff whenever the current input actually materializes a typed
+  metadata payload.
+
+`M252-C003` intentionally proves the manifest/debug projection on the
+metadata-rich fixtures and the IR named-metadata anchor on the runnable hello
+fixture before runtime section emission and runtime ingest packaging land.

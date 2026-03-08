@@ -587,6 +587,28 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-C002/typed_metadata_graph_handoff_and_manifest_schema_summary.json`
 
+## Metadata debug projection and replay anchors (M252-C003)
+
+- Lane-C now publishes the canonical metadata debug-projection packet:
+  `Objc3ExecutableMetadataDebugProjectionSummary`.
+- The manifest semantic-surface path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`.
+- The IR-facing named metadata anchor is
+  `!objc3.objc_executable_metadata_debug_projection`.
+- The matrix currently publishes three deterministic rows:
+  - `class-protocol-property-ivar-manifest-projection`
+  - `category-protocol-property-manifest-projection`
+  - `hello-ir-named-metadata-anchor`
+- The two metadata-rich fixtures prove manifest/debug projection on the real
+  typed handoff payload, while the runnable `hello.objc3` fixture proves the
+  IR named-metadata anchor that operators will inspect before runtime section
+  emission lands.
+- Metadata-rich fixtures also publish the active C002 typed-handoff replay key
+  through the debug-projection packet, so manifest inspection stays tied to the
+  concrete lowering-ready payload when it is present.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

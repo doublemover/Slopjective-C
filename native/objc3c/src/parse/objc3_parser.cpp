@@ -5048,6 +5048,9 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // these parser-owned semantic-link owner identities in the published
   // lowering schema so downstream lowering never reparses declaration
   // containers to recover owner identity.
+  // M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
+  // replays these same parser-owned owner identities before runtime section
+  // emission lands, so inspection never depends on reparsing declaration text.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

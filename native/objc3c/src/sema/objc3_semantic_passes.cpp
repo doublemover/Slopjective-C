@@ -8304,6 +8304,9 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
 // M252-C002 typed-lowering anchor: the concrete lowering-ready metadata graph
 // handoff continues to consume this semantic integration surface without
 // reparsing syntax, so type/owner closure must remain deterministic here.
+// M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
+// replays this semantic integration surface verbatim before runtime section
+// emission and runtime ingest packaging land.
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);

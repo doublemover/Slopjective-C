@@ -5808,6 +5808,25 @@ Typed metadata graph handoff anchors must remain deterministic and fail closed
 before lane-C debug projection, D-lane runtime-ingest packaging, and M253
 object-section emission land.
 
+## M252 metadata debug projection metadata anchors (C003)
+
+Deterministic lane-C metadata debug-projection anchors for `M252-C003` shall
+preserve:
+
+- contract id `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- named LLVM metadata
+  `!objc3.objc_executable_metadata_debug_projection`,
+- matrix rows
+  `class-protocol-property-ivar-manifest-projection`,
+  `category-protocol-property-manifest-projection`, and
+  `hello-ir-named-metadata-anchor`,
+- active typed-handoff replay-key carry-through whenever the current input
+  actually materializes the C002 typed handoff packet,
+- evidence path
+  `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

@@ -1597,6 +1597,9 @@ struct Objc3SemanticImplementationTypeMetadata {
 // M252-C002 typed-lowering anchor: the concrete lowering-ready metadata graph
 // packet consumes this same deterministic sema metadata surface so the typed
 // handoff stays schema-stable between manifest publication and later lowering.
+// M252-C003 debug-projection anchor: the manifest/IR inspection matrix replays
+// this same typed sema surface so operators inspect one deterministic schema
+// before runtime section emission lands.
 struct Objc3SemanticTypeMetadataHandoff {
   std::vector<std::string> global_names_lexicographic;
   std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;

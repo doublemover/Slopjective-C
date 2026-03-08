@@ -342,6 +342,8 @@ inline constexpr const char *kObjc3RuntimeMetadataSectionScaffoldContractId =
     "objc3c-runtime-metadata-section-scaffold/m251-c002-v1";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
     "objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionContractId =
+    "objc3c-executable-metadata-debug-projection/m252-c003-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
@@ -396,6 +398,51 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionCommand
     "llvm-readobj --sections module.obj";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolCommand =
     "llvm-objdump --syms module.obj";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionNamedMetadataName =
+    "!objc3.objc_executable_metadata_debug_projection";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection";
+inline constexpr const char *kObjc3ExecutableMetadataTypedLoweringHandoffManifestSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff";
+inline constexpr const char *kObjc3ExecutableMetadataSourceGraphManifestSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassFixturePath =
+    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryFixturePath =
+    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrFixturePath =
+    "tests/tooling/fixtures/native/hello.objc3";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionEmitPrefix =
+    "module";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestRelativePath =
+    "module.manifest.json";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrRelativePath =
+    "module.ll";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassManifestRowKey =
+    "class-protocol-property-ivar-manifest-projection";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryManifestRowKey =
+    "category-protocol-property-manifest-projection";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrNamedMetadataRowKey =
+    "hello-ir-named-metadata-anchor";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassProbeCommand =
+    "artifacts/bin/objc3c-frontend-c-api-runner.exe "
+    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3 "
+    "--out-dir <probe-root>/class_protocol_property_ivar --emit-prefix module "
+    "--no-emit-ir --no-emit-object";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryProbeCommand =
+    "artifacts/bin/objc3c-frontend-c-api-runner.exe "
+    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3 "
+    "--out-dir <probe-root>/category_protocol_property --emit-prefix module "
+    "--no-emit-ir --no-emit-object";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrProbeCommand =
+    "artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 "
+    "--out-dir <probe-root>/hello_ir_anchor --emit-prefix module --no-emit-object";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionManifestInspectionCommand =
+    "python -c \"import json,pathlib; "
+    "payload=json.loads(pathlib.Path('module.manifest.json').read_text()); "
+    "print(payload['frontend']['pipeline']['semantic_surface']['objc_executable_metadata_debug_projection'])\"";
+inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrInspectionCommand =
+    "Select-String -Path module.ll -Pattern '!objc3.objc_executable_metadata_debug_projection'";
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

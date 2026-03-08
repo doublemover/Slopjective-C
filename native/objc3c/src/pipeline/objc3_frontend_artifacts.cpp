@@ -640,6 +640,147 @@ std::string BuildExecutableMetadataTypedLoweringHandoffJson(
   return out.str();
 }
 
+std::string BuildExecutableMetadataDebugProjectionRowDescriptor(
+    const Objc3ExecutableMetadataDebugProjectionMatrixRow &row) {
+  std::ostringstream out;
+  out << row.row_key << "|" << row.artifact_kind << "|" << row.fixture_path << "|"
+      << row.emit_prefix << "|" << row.artifact_relative_path << "|"
+      << row.probe_command << "|" << row.inspection_command << "|"
+      << row.expected_anchor;
+  return out.str();
+}
+
+std::string BuildExecutableMetadataDebugProjectionReplayKey(
+    const Objc3ExecutableMetadataDebugProjectionSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id << ";typed_handoff_contract_id="
+      << summary.typed_lowering_handoff_contract_id
+      << ";source_graph_contract_id=" << summary.source_graph_contract_id
+      << ";named_metadata_name=" << summary.named_metadata_name
+      << ";manifest_surface_path=" << summary.manifest_surface_path
+      << ";typed_handoff_surface_path=" << summary.typed_handoff_surface_path
+      << ";source_graph_surface_path=" << summary.source_graph_surface_path;
+  for (std::size_t index = 0; index < summary.rows.size(); ++index) {
+    out << ";row[" << index << "]="
+        << BuildExecutableMetadataDebugProjectionRowDescriptor(
+               summary.rows[index]);
+  }
+  return out.str();
+}
+
+Objc3ExecutableMetadataDebugProjectionSummary
+BuildExecutableMetadataDebugProjectionSummary(
+    const Objc3ExecutableMetadataTypedLoweringHandoff
+        &executable_metadata_typed_lowering_handoff) {
+  Objc3ExecutableMetadataDebugProjectionSummary summary;
+  summary.fail_closed = true;
+  summary.matrix_published = true;
+  summary.manifest_debug_surface_published = true;
+  summary.ir_named_metadata_published = true;
+  summary.active_typed_handoff_ready =
+      IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
+          executable_metadata_typed_lowering_handoff);
+  if (summary.active_typed_handoff_ready) {
+    summary.active_typed_handoff_replay_key =
+        executable_metadata_typed_lowering_handoff.replay_key;
+  }
+  summary.rows[0] = Objc3ExecutableMetadataDebugProjectionMatrixRow{
+      kObjc3ExecutableMetadataDebugProjectionClassManifestRowKey,
+      "manifest",
+      kObjc3ExecutableMetadataDebugProjectionClassFixturePath,
+      kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+      kObjc3ExecutableMetadataDebugProjectionManifestRelativePath,
+      kObjc3ExecutableMetadataDebugProjectionClassProbeCommand,
+      kObjc3ExecutableMetadataDebugProjectionManifestInspectionCommand,
+      kObjc3ExecutableMetadataDebugProjectionManifestSurfacePath};
+  summary.rows[1] = Objc3ExecutableMetadataDebugProjectionMatrixRow{
+      kObjc3ExecutableMetadataDebugProjectionCategoryManifestRowKey,
+      "manifest",
+      kObjc3ExecutableMetadataDebugProjectionCategoryFixturePath,
+      kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+      kObjc3ExecutableMetadataDebugProjectionManifestRelativePath,
+      kObjc3ExecutableMetadataDebugProjectionCategoryProbeCommand,
+      kObjc3ExecutableMetadataDebugProjectionManifestInspectionCommand,
+      kObjc3ExecutableMetadataTypedLoweringHandoffManifestSurfacePath};
+  summary.rows[2] = Objc3ExecutableMetadataDebugProjectionMatrixRow{
+      kObjc3ExecutableMetadataDebugProjectionIrNamedMetadataRowKey,
+      "llvm-ir",
+      kObjc3ExecutableMetadataDebugProjectionIrFixturePath,
+      kObjc3ExecutableMetadataDebugProjectionEmitPrefix,
+      kObjc3ExecutableMetadataDebugProjectionIrRelativePath,
+      kObjc3ExecutableMetadataDebugProjectionIrProbeCommand,
+      kObjc3ExecutableMetadataDebugProjectionIrInspectionCommand,
+      kObjc3ExecutableMetadataDebugProjectionNamedMetadataName};
+  summary.matrix_row_count = summary.rows.size();
+  summary.replay_key =
+      BuildExecutableMetadataDebugProjectionReplayKey(summary);
+  summary.replay_anchor_deterministic = !summary.replay_key.empty();
+  if (!IsReadyObjc3ExecutableMetadataDebugProjectionSummary(summary)) {
+    summary.failure_reason =
+        "executable metadata debug projection matrix contract is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildExecutableMetadataDebugProjectionSummaryJson(
+    const Objc3ExecutableMetadataDebugProjectionSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"typed_lowering_handoff_contract_id\":\""
+      << EscapeJsonString(summary.typed_lowering_handoff_contract_id)
+      << "\",\"source_graph_contract_id\":\""
+      << EscapeJsonString(summary.source_graph_contract_id)
+      << "\",\"named_metadata_name\":\""
+      << EscapeJsonString(summary.named_metadata_name)
+      << "\",\"manifest_surface_path\":\""
+      << EscapeJsonString(summary.manifest_surface_path)
+      << "\",\"typed_handoff_surface_path\":\""
+      << EscapeJsonString(summary.typed_handoff_surface_path)
+      << "\",\"source_graph_surface_path\":\""
+      << EscapeJsonString(summary.source_graph_surface_path)
+      << "\",\"ready\":"
+      << (IsReadyObjc3ExecutableMetadataDebugProjectionSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"matrix_published\":"
+      << (summary.matrix_published ? "true" : "false")
+      << ",\"fail_closed\":"
+      << (summary.fail_closed ? "true" : "false")
+      << ",\"manifest_debug_surface_published\":"
+      << (summary.manifest_debug_surface_published ? "true" : "false")
+      << ",\"ir_named_metadata_published\":"
+      << (summary.ir_named_metadata_published ? "true" : "false")
+      << ",\"replay_anchor_deterministic\":"
+      << (summary.replay_anchor_deterministic ? "true" : "false")
+      << ",\"active_typed_handoff_ready\":"
+      << (summary.active_typed_handoff_ready ? "true" : "false")
+      << ",\"matrix_row_count\":" << summary.matrix_row_count
+      << ",\"rows\":[";
+  for (std::size_t index = 0; index < summary.rows.size(); ++index) {
+    const auto &row = summary.rows[index];
+    if (index != 0u) {
+      out << ",";
+    }
+    out << "{\"row_key\":\"" << EscapeJsonString(row.row_key)
+        << "\",\"artifact_kind\":\"" << EscapeJsonString(row.artifact_kind)
+        << "\",\"fixture_path\":\"" << EscapeJsonString(row.fixture_path)
+        << "\",\"emit_prefix\":\"" << EscapeJsonString(row.emit_prefix)
+        << "\",\"artifact_relative_path\":\""
+        << EscapeJsonString(row.artifact_relative_path)
+        << "\",\"probe_command\":\"" << EscapeJsonString(row.probe_command)
+        << "\",\"inspection_command\":\""
+        << EscapeJsonString(row.inspection_command)
+        << "\",\"expected_anchor\":\""
+        << EscapeJsonString(row.expected_anchor) << "\"}";
+  }
+  out << "],\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"active_typed_handoff_replay_key\":\""
+      << EscapeJsonString(summary.active_typed_handoff_replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -2550,6 +2691,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeMetadataObjectInspectionHarnessSummary(
               runtime_metadata_section_abi,
               runtime_metadata_section_scaffold);
+  const Objc3ExecutableMetadataDebugProjectionSummary
+      executable_metadata_debug_projection =
+          BuildExecutableMetadataDebugProjectionSummary(
+              executable_metadata_typed_lowering_handoff);
   const Objc3RuntimeSupportLibraryContractSummary runtime_support_library =
       BuildRuntimeSupportLibraryContractSummary();
   const Objc3RuntimeSupportLibraryCoreFeatureSummary
@@ -3879,6 +4024,61 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_metadata_object_inspection.symbol_inventory_command
            << "\",\"runtime_metadata_object_inspection_failure_reason\":\""
            << runtime_metadata_object_inspection.failure_reason
+           << "\",\"executable_metadata_debug_projection_contract_id\":\""
+           << EscapeJsonString(executable_metadata_debug_projection.contract_id)
+           << "\",\"executable_metadata_debug_projection_typed_handoff_contract_id\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection
+                      .typed_lowering_handoff_contract_id)
+           << "\",\"executable_metadata_debug_projection_source_graph_contract_id\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.source_graph_contract_id)
+           << "\",\"executable_metadata_debug_projection_named_metadata_name\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.named_metadata_name)
+           << "\",\"executable_metadata_debug_projection_manifest_surface_path\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.manifest_surface_path)
+           << "\",\"executable_metadata_debug_projection_typed_handoff_surface_path\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.typed_handoff_surface_path)
+           << "\",\"executable_metadata_debug_projection_source_graph_surface_path\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.source_graph_surface_path)
+           << "\",\"executable_metadata_debug_projection_matrix_published\":"
+           << (executable_metadata_debug_projection.matrix_published ? "true"
+                                                                    : "false")
+           << ",\"executable_metadata_debug_projection_fail_closed\":"
+           << (executable_metadata_debug_projection.fail_closed ? "true"
+                                                                : "false")
+           << ",\"executable_metadata_debug_projection_manifest_debug_surface_published\":"
+           << (executable_metadata_debug_projection
+                       .manifest_debug_surface_published
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_debug_projection_ir_named_metadata_published\":"
+           << (executable_metadata_debug_projection.ir_named_metadata_published
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_debug_projection_replay_anchor_deterministic\":"
+           << (executable_metadata_debug_projection.replay_anchor_deterministic
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_debug_projection_active_typed_handoff_ready\":"
+           << (executable_metadata_debug_projection.active_typed_handoff_ready
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_debug_projection_matrix_row_count\":"
+           << executable_metadata_debug_projection.matrix_row_count
+           << ",\"executable_metadata_debug_projection_replay_key\":\""
+           << EscapeJsonString(executable_metadata_debug_projection.replay_key)
+           << "\",\"executable_metadata_debug_projection_active_typed_handoff_replay_key\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection
+                      .active_typed_handoff_replay_key)
+           << "\",\"executable_metadata_debug_projection_failure_reason\":\""
+           << EscapeJsonString(
+                  executable_metadata_debug_projection.failure_reason)
            << "\",\"runtime_support_library_contract_id\":\""
            << runtime_support_library.contract_id
            << "\",\"runtime_support_library_metadata_scaffold_contract_id\":\""
@@ -4878,6 +5078,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_typed_lowering_handoff\":"
            << BuildExecutableMetadataTypedLoweringHandoffJson(
                   executable_metadata_typed_lowering_handoff)
+           // M252-C003 debug-projection anchor: lane-C must publish one
+           // canonical metadata inspection matrix across manifest and IR-facing
+           // surfaces before runtime section emission lands.
+           << ",\"objc_executable_metadata_debug_projection\":"
+           << BuildExecutableMetadataDebugProjectionSummaryJson(
+                  executable_metadata_debug_projection)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"
@@ -6758,6 +6964,57 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_object_inspection.symbol_inventory_row_key;
   ir_frontend_metadata.runtime_metadata_object_inspection_symbol_inventory_command =
       runtime_metadata_object_inspection.symbol_inventory_command;
+  ir_frontend_metadata.executable_metadata_debug_projection_contract_id =
+      executable_metadata_debug_projection.contract_id;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_typed_handoff_contract_id =
+      executable_metadata_debug_projection.typed_lowering_handoff_contract_id;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_source_graph_contract_id =
+      executable_metadata_debug_projection.source_graph_contract_id;
+  ir_frontend_metadata.executable_metadata_debug_projection_named_metadata_name =
+      executable_metadata_debug_projection.named_metadata_name;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_manifest_surface_path =
+      executable_metadata_debug_projection.manifest_surface_path;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_typed_handoff_surface_path =
+      executable_metadata_debug_projection.typed_handoff_surface_path;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_source_graph_surface_path =
+      executable_metadata_debug_projection.source_graph_surface_path;
+  ir_frontend_metadata.executable_metadata_debug_projection_matrix_published =
+      executable_metadata_debug_projection.matrix_published;
+  ir_frontend_metadata.executable_metadata_debug_projection_fail_closed =
+      executable_metadata_debug_projection.fail_closed;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_manifest_debug_surface_published =
+      executable_metadata_debug_projection.manifest_debug_surface_published;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_ir_named_metadata_published =
+      executable_metadata_debug_projection.ir_named_metadata_published;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_replay_anchor_deterministic =
+      executable_metadata_debug_projection.replay_anchor_deterministic;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_active_typed_handoff_ready =
+      executable_metadata_debug_projection.active_typed_handoff_ready;
+  ir_frontend_metadata.executable_metadata_debug_projection_matrix_row_count =
+      executable_metadata_debug_projection.matrix_row_count;
+  ir_frontend_metadata.executable_metadata_debug_projection_replay_key =
+      executable_metadata_debug_projection.replay_key;
+  ir_frontend_metadata
+      .executable_metadata_debug_projection_active_typed_handoff_replay_key =
+      executable_metadata_debug_projection.active_typed_handoff_replay_key;
+  ir_frontend_metadata.executable_metadata_debug_projection_row0_descriptor =
+      BuildExecutableMetadataDebugProjectionRowDescriptor(
+          executable_metadata_debug_projection.rows[0]);
+  ir_frontend_metadata.executable_metadata_debug_projection_row1_descriptor =
+      BuildExecutableMetadataDebugProjectionRowDescriptor(
+          executable_metadata_debug_projection.rows[1]);
+  ir_frontend_metadata.executable_metadata_debug_projection_row2_descriptor =
+      BuildExecutableMetadataDebugProjectionRowDescriptor(
+          executable_metadata_debug_projection.rows[2]);
   ir_frontend_metadata.runtime_support_library_contract_id =
       runtime_support_library.contract_id;
   ir_frontend_metadata.runtime_support_library_metadata_scaffold_contract_id =

@@ -165,6 +165,12 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_object_inspection_contract_id
           << "\n";
     }
+    if (!frontend_metadata_
+             .executable_metadata_debug_projection_contract_id.empty()) {
+      out << "; executable_metadata_debug_projection = "
+          << frontend_metadata_.executable_metadata_debug_projection_contract_id
+          << "\n";
+    }
     if (!frontend_metadata_.runtime_support_library_contract_id.empty()) {
       out << "; runtime_support_library = "
           << frontend_metadata_.runtime_support_library_contract_id << "\n";
@@ -1740,6 +1746,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
     out << "!objc3.objc_runtime_support_library_link_wiring = !{!53}\n";
+    out << "!objc3.objc_executable_metadata_debug_projection = !{!54}\n";
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
@@ -2345,6 +2352,87 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_support_library_link_wiring_driver_link_mode)
+        << "\"}\n";
+    out << "!54 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_typed_handoff_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_source_graph_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_named_metadata_name)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_manifest_surface_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_typed_handoff_surface_path)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_source_graph_surface_path)
+        << "\", i1 "
+        << (frontend_metadata_
+                    .executable_metadata_debug_projection_matrix_published
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_.executable_metadata_debug_projection_fail_closed
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .executable_metadata_debug_projection_manifest_debug_surface_published
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .executable_metadata_debug_projection_ir_named_metadata_published
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .executable_metadata_debug_projection_replay_anchor_deterministic
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .executable_metadata_debug_projection_active_typed_handoff_ready
+                ? 1
+                : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_matrix_row_count)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_metadata_debug_projection_replay_key)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_active_typed_handoff_replay_key)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_row0_descriptor)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_row1_descriptor)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .executable_metadata_debug_projection_row2_descriptor)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
