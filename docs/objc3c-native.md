@@ -536,6 +536,32 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-B004/property_ivar_export_legality_synthesis_preconditions_summary.json`
 
+## Metadata graph lowering handoff freeze (M252-C001)
+
+- Lane-C now freezes one canonical typed lowering-handoff packet for the
+  executable metadata graph:
+  `Objc3ExecutableMetadataLoweringHandoffSurface`.
+- The semantic-surface manifest path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`.
+- The packet is assembled from the ready executable metadata source graph, the
+  semantic-consistency boundary, the semantic-validation surface, and the
+  deterministic sema/linking summaries that later lowering must consume without
+  reparsing declaration containers.
+- Typed and parse/lowering projections now publish:
+  - `executable_metadata_lowering_handoff_ready`
+  - `executable_metadata_lowering_handoff_deterministic`
+  - `executable_metadata_lowering_handoff_key`
+- `M252-C001` is intentionally fail-closed:
+  - `ready == true`
+  - `fail_closed == true`
+  - `ready_for_lowering == false`
+- Non-goals:
+  - no object-file metadata section emission yet,
+  - no runtime ingest packaging yet,
+  - no global lowering admission for metadata-driven programs yet.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-C001/metadata_graph_lowering_handoff_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

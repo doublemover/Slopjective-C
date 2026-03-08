@@ -54,6 +54,8 @@ struct Objc3TypedSemaToLoweringContractSurface {
   bool semantic_type_metadata_handoff_deterministic = false;
   bool sema_parity_surface_ready = false;
   bool sema_parity_surface_deterministic = false;
+  bool executable_metadata_lowering_handoff_ready = false;
+  bool executable_metadata_lowering_handoff_deterministic = false;
   bool protocol_category_handoff_deterministic = false;
   bool class_protocol_category_linking_handoff_deterministic = false;
   bool selector_normalization_handoff_deterministic = false;
@@ -126,6 +128,7 @@ struct Objc3TypedSemaToLoweringContractSurface {
   std::size_t typed_performance_quality_guardrails_passed_case_count = 0;
   std::size_t typed_performance_quality_guardrails_failed_case_count = 0;
   std::string typed_handoff_key;
+  std::string executable_metadata_lowering_handoff_key;
   std::string typed_core_feature_key;
   std::string typed_core_feature_expansion_key;
   std::string compatibility_handoff_key;
@@ -246,6 +249,8 @@ struct Objc3ParseLoweringReadinessSurface {
   bool semantic_integration_surface_built = false;
   bool semantic_diagnostics_deterministic = false;
   bool semantic_type_metadata_deterministic = false;
+  bool executable_metadata_lowering_handoff_ready = false;
+  bool executable_metadata_lowering_handoff_deterministic = false;
   bool protocol_category_deterministic = false;
   bool class_protocol_category_linking_deterministic = false;
   bool selector_normalization_deterministic = false;
@@ -363,6 +368,7 @@ struct Objc3ParseLoweringReadinessSurface {
   std::string toolchain_runtime_ga_operations_advanced_performance_key;
   std::string toolchain_runtime_ga_operations_advanced_core_shard2_key;
   std::string toolchain_runtime_ga_operations_integration_closeout_signoff_key;
+  std::string executable_metadata_lowering_handoff_key;
   std::string typed_sema_core_feature_key;
   std::string typed_sema_core_feature_expansion_key;
   std::string typed_sema_edge_case_compatibility_key;
@@ -1334,6 +1340,8 @@ inline constexpr const char *kObjc3ExecutableMetadataSemanticConsistencyContract
     "objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1";
 inline constexpr const char *kObjc3ExecutableMetadataSemanticValidationContractId =
     "objc3c-executable-metadata-semantic-validation/m252-b002-v1";
+inline constexpr const char *kObjc3ExecutableMetadataLoweringHandoffContractId =
+    "objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1";
 
 struct Objc3ExecutableMetadataInterfaceGraphNode {
   std::string class_name;
@@ -1650,6 +1658,61 @@ inline bool IsReadyObjc3ExecutableMetadataSemanticValidationSurface(
          surface.semantic_validation_complete &&
          !surface.lowering_admission_ready &&
          surface.fail_closed &&
+         surface.failure_reason.empty();
+}
+
+struct Objc3ExecutableMetadataLoweringHandoffSurface {
+  std::string contract_id = kObjc3ExecutableMetadataLoweringHandoffContractId;
+  std::string executable_metadata_source_graph_contract_id;
+  std::string executable_metadata_semantic_consistency_contract_id;
+  std::string executable_metadata_semantic_validation_contract_id;
+  bool source_graph_ready = false;
+  bool semantic_consistency_ready = false;
+  bool semantic_validation_ready = false;
+  bool semantic_type_metadata_handoff_deterministic = false;
+  bool protocol_category_handoff_deterministic = false;
+  bool class_protocol_category_linking_handoff_deterministic = false;
+  bool selector_normalization_handoff_deterministic = false;
+  bool property_attribute_handoff_deterministic = false;
+  bool symbol_graph_scope_resolution_handoff_deterministic = false;
+  bool property_synthesis_ivar_binding_handoff_deterministic = false;
+  bool lowering_schema_frozen = false;
+  bool fail_closed = false;
+  bool ready_for_lowering = false;
+  std::size_t interface_node_count = 0;
+  std::size_t implementation_node_count = 0;
+  std::size_t class_node_count = 0;
+  std::size_t metaclass_node_count = 0;
+  std::size_t protocol_node_count = 0;
+  std::size_t category_node_count = 0;
+  std::size_t property_node_count = 0;
+  std::size_t method_node_count = 0;
+  std::size_t ivar_node_count = 0;
+  std::size_t owner_edge_count = 0;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3ExecutableMetadataLoweringHandoffSurface(
+    const Objc3ExecutableMetadataLoweringHandoffSurface &surface) {
+  return !surface.contract_id.empty() &&
+         !surface.executable_metadata_source_graph_contract_id.empty() &&
+         !surface.executable_metadata_semantic_consistency_contract_id.empty() &&
+         !surface.executable_metadata_semantic_validation_contract_id.empty() &&
+         surface.source_graph_ready &&
+         surface.semantic_consistency_ready &&
+         surface.semantic_validation_ready &&
+         surface.semantic_type_metadata_handoff_deterministic &&
+         surface.protocol_category_handoff_deterministic &&
+         surface.class_protocol_category_linking_handoff_deterministic &&
+         surface.selector_normalization_handoff_deterministic &&
+         surface.property_attribute_handoff_deterministic &&
+         surface.symbol_graph_scope_resolution_handoff_deterministic &&
+         surface.property_synthesis_ivar_binding_handoff_deterministic &&
+         surface.lowering_schema_frozen &&
+         surface.fail_closed &&
+         !surface.ready_for_lowering &&
+         !surface.replay_key.empty() &&
          surface.failure_reason.empty();
 }
 
@@ -2205,6 +2268,8 @@ struct Objc3FrontendPipelineResult {
       executable_metadata_semantic_consistency_boundary;
   Objc3ExecutableMetadataSemanticValidationSurface
       executable_metadata_semantic_validation_surface;
+  Objc3ExecutableMetadataLoweringHandoffSurface
+      executable_metadata_lowering_handoff_surface;
   Objc3RuntimeMetadataSourceOwnershipBoundary runtime_metadata_source_ownership_boundary;
   Objc3RuntimeExportLegalityBoundary runtime_export_legality_boundary;
   Objc3RuntimeExportEnforcementSummary runtime_export_enforcement_summary;

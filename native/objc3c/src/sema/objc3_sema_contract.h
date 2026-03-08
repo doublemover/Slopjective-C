@@ -1591,6 +1591,9 @@ struct Objc3SemanticImplementationTypeMetadata {
   std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
+// M252-C001 lowering-handoff anchor: this typed metadata handoff is the
+// canonical sema-to-lowering schema input for executable metadata graph
+// lowering freeze packets and must remain deterministic and replayable.
 struct Objc3SemanticTypeMetadataHandoff {
   std::vector<std::string> global_names_lexicographic;
   std::vector<Objc3SemanticFunctionTypeMetadata> functions_lexicographic;

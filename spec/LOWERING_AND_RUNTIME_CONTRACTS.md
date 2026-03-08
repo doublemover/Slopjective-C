@@ -4558,3 +4558,27 @@ The packet-free hardening must preserve:
 The expansion must keep missing interface properties and incompatible property
 signatures fail-closed under `O3S206`, and category-only property export keep
 the synthesis counters at zero.
+
+## M252 metadata graph lowering handoff freeze (C001)
+
+`M252-C001` freezes one canonical lane-C lowering-handoff packet:
+`Objc3ExecutableMetadataLoweringHandoffSurface`.
+
+The frozen packet must preserve:
+
+- contract id `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- deterministic dependence on the ready executable metadata source graph,
+  semantic-consistency boundary, and semantic-validation surface,
+- deterministic dependence on typed sema metadata, protocol/category,
+  class/protocol/category linking, selector normalization, property attribute,
+  symbol-graph/scope resolution, and property-synthesis/ivar-binding handoffs,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`,
+- typed/parse projection of
+  `executable_metadata_lowering_handoff_ready`,
+  `executable_metadata_lowering_handoff_deterministic`, and
+  `executable_metadata_lowering_handoff_key`,
+- fail-closed `ready_for_lowering == false`.
+
+`M252-C001` does not emit object metadata sections, perform runtime ingest
+packaging, or claim executable metadata programs are globally lowering-ready.

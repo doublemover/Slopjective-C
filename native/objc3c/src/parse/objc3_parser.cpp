@@ -5041,6 +5041,9 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // M252-A003 completion: category export packets keep category:Class(Category)
   // as the canonical category node owner identity while declaration/member
   // nodes continue to reference interface:/implementation: semantic-link owners.
+  // M252-C001 lowering-handoff anchor: category semantic-link symbols remain
+  // the parser-owned canonical owner identities that typed lowering handoff
+  // packets consume without reparsing declaration containers.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

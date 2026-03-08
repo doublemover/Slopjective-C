@@ -2295,6 +2295,12 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       pipeline_result.sema_parity_surface.deterministic_semantic_diagnostics;
   surface.semantic_type_metadata_deterministic =
       typed_sema_to_lowering_contract_surface.semantic_type_metadata_handoff_deterministic;
+  surface.executable_metadata_lowering_handoff_ready =
+      typed_sema_to_lowering_contract_surface
+          .executable_metadata_lowering_handoff_ready;
+  surface.executable_metadata_lowering_handoff_deterministic =
+      typed_sema_to_lowering_contract_surface
+          .executable_metadata_lowering_handoff_deterministic;
   surface.protocol_category_deterministic =
       typed_sema_to_lowering_contract_surface.protocol_category_handoff_deterministic;
   surface.class_protocol_category_linking_deterministic =
@@ -2329,6 +2335,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_failed_case_count;
   surface.typed_sema_core_feature_key =
       typed_sema_to_lowering_contract_surface.typed_core_feature_key;
+  surface.executable_metadata_lowering_handoff_key =
+      typed_sema_to_lowering_contract_surface
+          .executable_metadata_lowering_handoff_key;
   surface.typed_sema_core_feature_expansion_key =
       typed_sema_to_lowering_contract_surface.typed_core_feature_expansion_key;
   surface.typed_sema_edge_case_compatibility_consistent =

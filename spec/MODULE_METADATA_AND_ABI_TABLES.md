@@ -5764,6 +5764,27 @@ The hardening must keep category-only property export at zero synthesis counts
 and reject missing-interface or incompatible implementation properties under
 `O3S206`.
 
+## M252 metadata graph lowering handoff metadata anchors (C001)
+
+Deterministic lane-C metadata graph lowering handoff anchors for `M252-C001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`,
+- parse/lowering projection fields
+  `executable_metadata_lowering_handoff_ready`,
+  `executable_metadata_lowering_handoff_deterministic`, and
+  `executable_metadata_lowering_handoff_key`,
+- typed-handoff continuity through the canonical metadata graph lowering
+  handoff key, and
+- evidence path
+  `tmp/reports/m252/M252-C001/metadata_graph_lowering_handoff_contract_summary.json`.
+
+Metadata graph lowering handoff anchors must remain deterministic and fail
+closed before lane-C lowering admission, real metadata section emission,
+runtime ingest packaging, and startup registration land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

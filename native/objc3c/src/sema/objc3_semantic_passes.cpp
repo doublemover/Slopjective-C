@@ -8297,6 +8297,10 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
   return summary;
 }
 
+// M252-C001 lowering-handoff anchor: semantic integration plus type metadata
+// handoff remain the canonical executable metadata graph source for typed
+// lowering handoff packets and must stay deterministic before lowering claims
+// readiness.
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                         std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);

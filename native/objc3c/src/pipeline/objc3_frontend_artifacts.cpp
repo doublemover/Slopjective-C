@@ -534,6 +534,69 @@ std::string BuildExecutableMetadataSemanticValidationSurfaceJson(
   return out.str();
 }
 
+std::string BuildExecutableMetadataLoweringHandoffSurfaceJson(
+    const Objc3ExecutableMetadataLoweringHandoffSurface &surface) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(surface.contract_id)
+      << "\",\"executable_metadata_source_graph_contract_id\":\""
+      << EscapeJsonString(surface.executable_metadata_source_graph_contract_id)
+      << "\",\"executable_metadata_semantic_consistency_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_semantic_consistency_contract_id)
+      << "\",\"executable_metadata_semantic_validation_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_semantic_validation_contract_id)
+      << "\",\"ready\":"
+      << (IsReadyObjc3ExecutableMetadataLoweringHandoffSurface(surface)
+              ? "true"
+              : "false")
+      << ",\"source_graph_ready\":"
+      << (surface.source_graph_ready ? "true" : "false")
+      << ",\"semantic_consistency_ready\":"
+      << (surface.semantic_consistency_ready ? "true" : "false")
+      << ",\"semantic_validation_ready\":"
+      << (surface.semantic_validation_ready ? "true" : "false")
+      << ",\"semantic_type_metadata_handoff_deterministic\":"
+      << (surface.semantic_type_metadata_handoff_deterministic ? "true"
+                                                               : "false")
+      << ",\"protocol_category_handoff_deterministic\":"
+      << (surface.protocol_category_handoff_deterministic ? "true" : "false")
+      << ",\"class_protocol_category_linking_handoff_deterministic\":"
+      << (surface.class_protocol_category_linking_handoff_deterministic ? "true"
+                                                                        : "false")
+      << ",\"selector_normalization_handoff_deterministic\":"
+      << (surface.selector_normalization_handoff_deterministic ? "true"
+                                                               : "false")
+      << ",\"property_attribute_handoff_deterministic\":"
+      << (surface.property_attribute_handoff_deterministic ? "true" : "false")
+      << ",\"symbol_graph_scope_resolution_handoff_deterministic\":"
+      << (surface.symbol_graph_scope_resolution_handoff_deterministic ? "true"
+                                                                      : "false")
+      << ",\"property_synthesis_ivar_binding_handoff_deterministic\":"
+      << (surface.property_synthesis_ivar_binding_handoff_deterministic ? "true"
+                                                                        : "false")
+      << ",\"lowering_schema_frozen\":"
+      << (surface.lowering_schema_frozen ? "true" : "false")
+      << ",\"fail_closed\":" << (surface.fail_closed ? "true" : "false")
+      << ",\"ready_for_lowering\":"
+      << (surface.ready_for_lowering ? "true" : "false")
+      << ",\"interface_node_count\":" << surface.interface_node_count
+      << ",\"implementation_node_count\":"
+      << surface.implementation_node_count
+      << ",\"class_node_count\":" << surface.class_node_count
+      << ",\"metaclass_node_count\":" << surface.metaclass_node_count
+      << ",\"protocol_node_count\":" << surface.protocol_node_count
+      << ",\"category_node_count\":" << surface.category_node_count
+      << ",\"property_node_count\":" << surface.property_node_count
+      << ",\"method_node_count\":" << surface.method_node_count
+      << ",\"ivar_node_count\":" << surface.ivar_node_count
+      << ",\"owner_edge_count\":" << surface.owner_edge_count
+      << ",\"replay_key\":\"" << EscapeJsonString(surface.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(surface.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -2416,6 +2479,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3ExecutableMetadataSemanticValidationSurface
       &executable_metadata_semantic_validation_surface =
           pipeline_result.executable_metadata_semantic_validation_surface;
+  const Objc3ExecutableMetadataLoweringHandoffSurface
+      &executable_metadata_lowering_handoff_surface =
+          pipeline_result.executable_metadata_lowering_handoff_surface;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
@@ -3146,6 +3212,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    : "false")
            << ",\"semantic_integration_surface_built\": "
            << (bundle.parse_lowering_readiness_surface.semantic_integration_surface_built ? "true" : "false")
+           << ",\"executable_metadata_lowering_handoff_ready\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .executable_metadata_lowering_handoff_ready
+                   ? "true"
+                   : "false")
+           << ",\"executable_metadata_lowering_handoff_deterministic\": "
+           << (bundle.parse_lowering_readiness_surface
+                       .executable_metadata_lowering_handoff_deterministic
+                   ? "true"
+                   : "false")
            << ",\"lowering_boundary_ready\": "
            << (bundle.parse_lowering_readiness_surface.lowering_boundary_ready ? "true" : "false")
            << ",\"parse_lowering_conformance_matrix_case_count\": "
@@ -3247,6 +3323,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"toolchain_runtime_ga_operations_integration_closeout_signoff_key\":\""
            << bundle.parse_lowering_readiness_surface
                   .toolchain_runtime_ga_operations_integration_closeout_signoff_key
+           << "\",\"executable_metadata_lowering_handoff_key\":\""
+           << bundle.parse_lowering_readiness_surface
+                  .executable_metadata_lowering_handoff_key
            << "\",\"failure_reason\":\"" << bundle.parse_lowering_readiness_surface.failure_reason
            << "\",\"lowering_boundary_replay_key\":\""
            << bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key
@@ -4728,6 +4807,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_semantic_validation_surface\":"
            << BuildExecutableMetadataSemanticValidationSurfaceJson(
                   executable_metadata_semantic_validation_surface)
+           // M252-C001 lowering-handoff anchor: metadata graph lowering
+           // handoff freeze must publish as a first-class semantic surface so
+           // typed handoff and parse/lowering projections consume one schema.
+           << ",\"objc_executable_metadata_lowering_handoff_surface\":"
+           << BuildExecutableMetadataLoweringHandoffSurfaceJson(
+                  executable_metadata_lowering_handoff_surface)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"
