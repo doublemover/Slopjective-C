@@ -352,6 +352,10 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
     "objc3c-runtime-support-library-core-feature/m251-d002-v1";
+// M253-A001 emitted metadata inventory freeze anchor: these constants define
+// the canonical logical sections, symbol families, linkage, visibility,
+// retention root, and inspection commands for the currently supported runtime
+// metadata inventory.
 inline constexpr const char *kObjc3RuntimeMetadataLogicalImageInfoSection =
     "objc3.runtime.image_info";
 inline constexpr const char *kObjc3RuntimeMetadataLogicalClassDescriptorSection =

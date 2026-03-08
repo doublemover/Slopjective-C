@@ -8,6 +8,11 @@ inline constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
 inline constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
 inline constexpr const char *kObjc3RuntimeDispatchSymbol = "objc3_msgsend_i32";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
+// M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
+// not own or infer object-file metadata inventory. The emitted inventory
+// remains the frontend ABI/scaffold/object-inspection boundary for image-info
+// plus class/protocol/category/property/ivar descriptor sections until later
+// M253 issues extend it explicitly.
 inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";
 inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";
 inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";

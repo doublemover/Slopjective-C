@@ -167,6 +167,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
                            const std::filesystem::path &object_out,
                            std::string &error) {
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
+  // M253-A001 emitted metadata inventory freeze anchor: the llvm-direct path
+  // must preserve the IR-emitted runtime metadata section inventory exactly.
+  // This backend boundary may not rewrite, rename, or silently substitute a
+  // different metadata inventory model.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

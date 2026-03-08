@@ -5900,6 +5900,33 @@ Deterministic lane-E integrated corpus anchors for `M252-E002` shall preserve:
 - evidence path
   `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.
 
+## M253 emitted metadata inventory metadata anchors (A001)
+
+Deterministic lane-A emitted inventory anchors for `M253-A001` shall preserve:
+
+- contract id
+  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`,
+- the canonical logical sections
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and
+  `objc3.runtime.ivar_descriptors`,
+- symbol families and policies
+  `__objc3_meta_`,
+  `__objc3_sec_`,
+  `__objc3_image_info`,
+  descriptor linkage `private`,
+  aggregate linkage `internal`,
+  metadata visibility `hidden`,
+  retention root `llvm.used`,
+- object-inspection command anchors
+  `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- evidence path
+  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

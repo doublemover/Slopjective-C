@@ -695,6 +695,41 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`
 
+## Emitted metadata inventory freeze (M253-A001)
+
+- Lane-A now freezes the emitted runtime metadata inventory boundary that later
+  section-emission issues must preserve.
+- Contract id:
+  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`.
+- The currently supported emitted inventory is explicitly limited to:
+  - `objc3.runtime.image_info` via `__objc3_image_info`,
+  - `objc3.runtime.class_descriptors`,
+  - `objc3.runtime.protocol_descriptors`,
+  - `objc3.runtime.category_descriptors`,
+  - `objc3.runtime.property_descriptors`,
+  - `objc3.runtime.ivar_descriptors`.
+- Symbol and retention policy remain frozen to:
+  - descriptor symbol prefix `__objc3_meta_`,
+  - aggregate symbol prefix `__objc3_sec_`,
+  - descriptor linkage `private`,
+  - aggregate linkage `internal`,
+  - metadata visibility policy `hidden`,
+  - retention root `llvm.used`.
+- The freeze explicitly binds three surfaces together:
+  - constant declarations in `ast/objc3_ast.h`,
+  - ABI/scaffold/object-inspection summaries in
+    `pipeline/objc3_frontend_types.h`,
+  - concrete LLVM IR emission in `ir/objc3_ir_emitter.cpp`.
+- Explicit non-goals in `M253-A001`:
+  - no source-to-section completeness matrix yet,
+  - no concrete descriptor payload layout yet beyond the scaffold,
+  - no startup registration yet,
+  - no standalone emitted method/selector/string-pool sections yet.
+- The next implementation issue `M253-A002` must preserve this inventory while
+  publishing the node-to-section completeness matrix.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

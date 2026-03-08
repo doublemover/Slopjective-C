@@ -86,6 +86,10 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
 }
 
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary) {
+  // M253-A001 emitted metadata inventory freeze anchor: replay keys here
+  // cover lowering/message-send ABI only. Runtime metadata section inventory
+  // stays frozen in the frontend ABI/scaffold summaries and is not inferred
+  // from lowering-boundary strings.
   return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +
          ";runtime_dispatch_arg_slots=" + std::to_string(boundary.runtime_dispatch_arg_slots) +
          ";selector_global_ordering=" + boundary.selector_global_ordering;

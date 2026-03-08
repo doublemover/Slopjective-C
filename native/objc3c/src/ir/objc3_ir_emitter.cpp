@@ -4074,6 +4074,11 @@ class Objc3IREmitter {
   }
 
   bool ShouldEmitRuntimeMetadataSectionScaffold() const {
+    // M253-A001 emitted metadata inventory freeze anchor: the currently
+    // supported emitted inventory is image-info plus class/protocol/category/
+    // property/ivar descriptor sections retained via llvm.used. Separate
+    // method/selector/string-pool section families remain explicit non-goals
+    // until later M253 issues extend the inventory model.
     return frontend_metadata_.runtime_metadata_section_ready_for_scaffold &&
            frontend_metadata_.runtime_export_ready_for_runtime_export &&
            frontend_metadata_.runtime_metadata_section_scaffold_emitted &&

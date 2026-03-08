@@ -4740,3 +4740,37 @@ The gate must preserve:
   than recursively nesting the whole lane stack,
 - evidence path
   `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.
+
+## M253 emitted metadata inventory freeze (A001)
+
+`M253-A001` freezes the emitted runtime metadata inventory boundary before the
+lane-A completeness matrix and later real payload work land.
+
+The freeze must preserve:
+
+- contract id
+  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`,
+- the canonical emitted inventory families:
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and
+  `objc3.runtime.ivar_descriptors`,
+- the frozen symbol policies:
+  `__objc3_meta_`,
+  `__objc3_sec_`,
+  `__objc3_image_info`,
+  descriptor linkage `private`,
+  aggregate linkage `internal`,
+  metadata visibility `hidden`,
+  retention root `llvm.used`,
+- the requirement that lowering-boundary replay keys and backend object
+  emission preserve this inventory rather than inferring or rewriting another
+  metadata layout,
+- the stable evidence path
+  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`.
+
+`M253-A001` does not yet publish the source-to-section completeness matrix,
+does not introduce concrete descriptor layouts, and does not add standalone
+method/selector/string-pool emitted sections.

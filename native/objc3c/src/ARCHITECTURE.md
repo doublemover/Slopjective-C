@@ -8406,3 +8406,15 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   so representative cases such as `class-protocol-property-ivar-runtime-graph`
   and `missing-interface-property-diagnostic` stay synchronized on the real
   frontend runner path before M253 section-emission work begins.
+- M253 lane-A A001 emitted metadata inventory freeze anchors explicit contract
+  artifacts in
+  `docs/contracts/m253_emitted_metadata_inventory_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m253/m253_a001_emitted_metadata_inventory_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `ast/objc3_ast.h`, `lower/objc3_lowering_contract.h`,
+  `lower/objc3_lowering_contract.cpp`, `ir/objc3_ir_emitter.cpp`, and
+  `io/objc3_process.cpp` so image-info plus
+  class/protocol/category/property/ivar descriptor sections remain one frozen
+  emitted inventory boundary before `M253-A002` publishes the completeness
+  matrix.
