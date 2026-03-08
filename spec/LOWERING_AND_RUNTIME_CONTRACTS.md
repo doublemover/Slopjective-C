@@ -5101,3 +5101,39 @@ than redefining retention and discoverability anchors.
 `M253-D001` does not add archive packaging, link-registration, or startup
 registration/bootstrap behavior. It freezes the current produced-object
 boundary only.
+
+## M253 linker retention anchors and dead-strip resistance (D002)
+
+Lane-D shall keep emitted metadata discoverable after the object is packaged
+into one library/archive by publishing one public linker anchor, one public
+discovery root, and one deterministic driver response-file payload for the
+current object format.
+
+`M253-D002` requires:
+
+- contract id
+  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`,
+- anchor model `public-linker-anchor-rooted-in-discovery-table`,
+- discovery model `public-discovery-root-over-retained-metadata-aggregates`,
+- emitted IR publication through
+  `; runtime_metadata_linker_retention = ...` and
+  `!objc3.objc_runtime_linker_retention`,
+- one hashed public linker-anchor symbol
+  `objc3_runtime_metadata_link_anchor_<hash>`,
+- one hashed public discovery-root symbol
+  `objc3_runtime_metadata_discovery_root_<hash>`,
+- one emitted response artifact
+  `module.runtime-metadata-linker-options.rsp`,
+- one emitted discovery artifact
+  `module.runtime-metadata-discovery.json`,
+- current-format driver linker flag models:
+  - COFF: `-Wl,/include:<symbol>`
+  - ELF: `-Wl,--undefined=<symbol>`
+  - Mach-O: `-Wl,-u,_<symbol>`,
+- one happy-path proof that static-library packaging drops metadata without the
+  response file and retains metadata with it, and
+- one fail-closed negative proof that compile failure produces no object,
+  backend marker, linker response file, or discovery artifact.
+
+`M253-D002` does not yet claim multi-archive fan-in or cross-translation-unit
+anchor-merging behavior. Those edge cases stay deferred to `M253-D003`.

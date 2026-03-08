@@ -1724,6 +1724,43 @@ class Objc3IREmitter {
     return out.str();
   }
 
+  static std::uint64_t StableRuntimeMetadataLinkerAnchorHash(
+      const std::string &text) {
+    std::uint64_t hash = 1469598103934665603ull;
+    for (unsigned char c : text) {
+      hash ^= static_cast<std::uint64_t>(c);
+      hash *= 1099511628211ull;
+    }
+    return hash;
+  }
+
+  static std::string LowerHex64(std::uint64_t value) {
+    std::ostringstream out;
+    out << std::hex << std::nouppercase << value;
+    return out.str();
+  }
+
+  std::string RuntimeMetadataLinkerAnchorSuffix() const {
+    std::string seed = program_.module_name;
+    seed += "|";
+    seed += frontend_metadata_.runtime_metadata_class_metaclass_typed_handoff_replay_key;
+    seed += "|";
+    seed += frontend_metadata_.runtime_metadata_protocol_category_typed_handoff_replay_key;
+    seed += "|";
+    seed += frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key;
+    return LowerHex64(StableRuntimeMetadataLinkerAnchorHash(seed));
+  }
+
+  std::string RuntimeMetadataLinkerAnchorSymbol() const {
+    return "objc3_runtime_metadata_link_anchor_" +
+           RuntimeMetadataLinkerAnchorSuffix();
+  }
+
+  std::string RuntimeMetadataDiscoveryRootSymbol() const {
+    return "objc3_runtime_metadata_discovery_root_" +
+           RuntimeMetadataLinkerAnchorSuffix();
+  }
+
   void EmitFrontendMetadata(std::ostringstream &out) const {
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
@@ -1743,6 +1780,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_selector_string_pool_emission = !{!59}\n";
     out << "!objc3.objc_runtime_binary_inspection_harness = !{!60}\n";
     out << "!objc3.objc_runtime_object_packaging_retention = !{!61}\n";
+    out << "!objc3.objc_runtime_linker_retention = !{!62}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2710,6 +2748,25 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3RuntimeObjectPackagingRetentionSymbolPrefix)
+        << "\"}\n";
+    out << "!62 = !{!\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerRetentionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerRetentionAnchorModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerDiscoveryModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerAnchorLogicalSection)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerDiscoveryRootLogicalSection)
+        << "\", !\""
+        << EscapeCStringLiteral(RuntimeMetadataLinkerAnchorSymbol())
+        << "\", !\""
+        << EscapeCStringLiteral(RuntimeMetadataDiscoveryRootSymbol())
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerResponseArtifactSuffix)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLinkerDiscoveryArtifactSuffix)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4693,6 +4750,18 @@ class Objc3IREmitter {
         << kObjc3RuntimeBinaryInspectionSectionCommand
         << ";symbol_inventory_command="
         << kObjc3RuntimeBinaryInspectionSymbolCommand << "\n";
+    out << "; runtime_metadata_linker_retention = "
+        << Objc3RuntimeMetadataLinkerRetentionSummary()
+        << ";linker_anchor_symbol=" << RuntimeMetadataLinkerAnchorSymbol()
+        << ";discovery_root_symbol=" << RuntimeMetadataDiscoveryRootSymbol()
+        << ";linker_anchor_logical_section="
+        << kObjc3RuntimeLinkerAnchorLogicalSection
+        << ";discovery_root_logical_section="
+        << kObjc3RuntimeLinkerDiscoveryRootLogicalSection
+        << ";linker_response_artifact_suffix="
+        << kObjc3RuntimeLinkerResponseArtifactSuffix
+        << ";discovery_artifact_suffix="
+        << kObjc3RuntimeLinkerDiscoveryArtifactSuffix << "\n";
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
@@ -5636,6 +5705,43 @@ class Objc3IREmitter {
                                   "@__objc3_sec_string_pool",
                                   kObjc3RuntimeStringPoolLogicalSection);
     }
+
+    std::vector<std::string> discovery_root_targets;
+    discovery_root_targets.reserve(layout_policy.families.size() + 3);
+    discovery_root_targets.push_back(image_info_symbol);
+    for (const auto &family : layout_policy.families) {
+      discovery_root_targets.push_back("@" + family.aggregate_symbol_name);
+    }
+    if (emit_selector_string_pools) {
+      discovery_root_targets.push_back("@__objc3_sec_selector_pool");
+      discovery_root_targets.push_back("@__objc3_sec_string_pool");
+    }
+
+    const std::string discovery_root_symbol =
+        "@" + RuntimeMetadataDiscoveryRootSymbol();
+    const std::string linker_anchor_symbol =
+        "@" + RuntimeMetadataLinkerAnchorSymbol();
+    out << discovery_root_symbol << " = dso_local constant { i64, ["
+        << discovery_root_targets.size() << " x ptr] } { i64 "
+        << discovery_root_targets.size() << ", ["
+        << discovery_root_targets.size() << " x ptr] [";
+    for (std::size_t i = 0; i < discovery_root_targets.size(); ++i) {
+      if (i != 0) {
+        out << ", ";
+      }
+      out << "ptr " << discovery_root_targets[i];
+    }
+    out << "] }, section \""
+        << Objc3RuntimeMetadataHostSectionForLogicalName(
+               kObjc3RuntimeLinkerDiscoveryRootLogicalSection)
+        << "\", align 8\n";
+    out << linker_anchor_symbol << " = dso_local global ptr "
+        << discovery_root_symbol << ", section \""
+        << Objc3RuntimeMetadataHostSectionForLogicalName(
+               kObjc3RuntimeLinkerAnchorLogicalSection)
+        << "\", align 8\n";
+    emit_retained(discovery_root_symbol);
+    emit_retained(linker_anchor_symbol);
 
     out << "@llvm.used = appending global [" << retained_globals.size()
         << " x ptr] [";

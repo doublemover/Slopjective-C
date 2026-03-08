@@ -597,6 +597,36 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
           } else {
             backend_output_recorded = true;
             backend_output_payload = backend_text;
+            std::string linker_response_payload;
+            std::string discovery_json;
+            std::string linker_retention_error;
+            if (!TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
+                    ir_out,
+                    object_out,
+                    linker_response_payload,
+                    discovery_json,
+                    linker_retention_error)) {
+              compile_status = 125;
+              backend_error = linker_retention_error;
+            } else {
+              const std::filesystem::path linker_response_out =
+                  BuildRuntimeMetadataLinkerResponseArtifactPath(out_dir,
+                                                                 emit_prefix);
+              if (!WriteTextFile(linker_response_out,
+                                 linker_response_payload,
+                                 backend_output_error)) {
+                compile_status = 125;
+              } else {
+                const std::filesystem::path discovery_out =
+                    BuildRuntimeMetadataDiscoveryArtifactPath(out_dir,
+                                                              emit_prefix);
+                if (!WriteTextFile(discovery_out,
+                                   discovery_json,
+                                   backend_output_error)) {
+                  compile_status = 125;
+                }
+              }
+            }
           }
         }
         const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =

@@ -1,5 +1,7 @@
 #include "io/objc3_process.h"
 
+#include "lower/objc3_lowering_contract.h"
+
 #if defined(_WIN32)
 #include <process.h>
 #else
@@ -11,6 +13,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -148,6 +151,76 @@ void NormalizeObjectDeterminism(const std::filesystem::path &object_out) {
     default:
       return;
   }
+}
+
+std::string ProducedObjectFormatName(ProducedObjectFormat format) {
+  switch (format) {
+    case ProducedObjectFormat::kCoff:
+      return kObjc3RuntimeMetadataObjectFormatCoff;
+    case ProducedObjectFormat::kElf:
+      return kObjc3RuntimeMetadataObjectFormatElf;
+    case ProducedObjectFormat::kMachO:
+      return kObjc3RuntimeMetadataObjectFormatMachO;
+    case ProducedObjectFormat::kUnknown:
+    default:
+      return "";
+  }
+}
+
+bool ExtractBoundaryTokenValue(const std::string &line,
+                               const std::string &key,
+                               std::string &value) {
+  const std::string token = key + "=";
+  const std::size_t start = line.find(token);
+  if (start == std::string::npos) {
+    return false;
+  }
+  const std::size_t value_start = start + token.size();
+  std::size_t value_end = line.find(';', value_start);
+  if (value_end == std::string::npos) {
+    value_end = line.size();
+  }
+  value = line.substr(value_start, value_end - value_start);
+  return !value.empty();
+}
+
+std::string EscapeJsonString(const std::string &text) {
+  std::ostringstream out;
+  for (unsigned char c : text) {
+    switch (c) {
+      case '\\':
+        out << "\\\\";
+        break;
+      case '"':
+        out << "\\\"";
+        break;
+      case '\b':
+        out << "\\b";
+        break;
+      case '\f':
+        out << "\\f";
+        break;
+      case '\n':
+        out << "\\n";
+        break;
+      case '\r':
+        out << "\\r";
+        break;
+      case '\t':
+        out << "\\t";
+        break;
+      default:
+        if (c < 0x20) {
+          out << "\\u";
+          constexpr char kHex[] = "0123456789abcdef";
+          out << "00" << kHex[(c >> 4u) & 0x0f] << kHex[c & 0x0f];
+        } else {
+          out << static_cast<char>(c);
+        }
+        break;
+    }
+  }
+  return out.str();
 }
 
 }  // namespace
@@ -321,4 +394,122 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   error = "llvm-direct object emission backend unavailable in this build (enable OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION).";
   return 125;
 #endif
+}
+
+bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
+    const std::filesystem::path &ir_path,
+    const std::filesystem::path &object_out,
+    std::string &linker_response_file_payload,
+    std::string &discovery_json,
+    std::string &error) {
+  linker_response_file_payload.clear();
+  discovery_json.clear();
+  error.clear();
+
+  const ProducedObjectFormat produced_format =
+      DetectProducedObjectFormat(object_out);
+  const std::string object_format = ProducedObjectFormatName(produced_format);
+  if (object_format.empty()) {
+    error = "unable to determine produced object format for runtime metadata "
+            "linker retention artifacts: " +
+            object_out.string();
+    return false;
+  }
+
+  std::ifstream ir_stream(ir_path, std::ios::binary);
+  if (!ir_stream.is_open()) {
+    error = "unable to open IR for runtime metadata linker retention artifacts: " +
+            ir_path.string();
+    return false;
+  }
+
+  std::string boundary_line;
+  for (std::string line; std::getline(ir_stream, line);) {
+    if (line.rfind("; runtime_metadata_linker_retention = ", 0) == 0) {
+      boundary_line = std::move(line);
+      break;
+    }
+  }
+  if (boundary_line.empty()) {
+    error = "runtime metadata linker retention boundary line not found in IR: " +
+            ir_path.string();
+    return false;
+  }
+
+  std::string linker_anchor_symbol;
+  std::string discovery_root_symbol;
+  std::string linker_anchor_logical_section;
+  std::string discovery_root_logical_section;
+  std::string linker_response_artifact_suffix;
+  std::string discovery_artifact_suffix;
+  if (!ExtractBoundaryTokenValue(boundary_line, "linker_anchor_symbol",
+                                 linker_anchor_symbol) ||
+      !ExtractBoundaryTokenValue(boundary_line, "discovery_root_symbol",
+                                 discovery_root_symbol) ||
+      !ExtractBoundaryTokenValue(boundary_line,
+                                 "linker_anchor_logical_section",
+                                 linker_anchor_logical_section) ||
+      !ExtractBoundaryTokenValue(boundary_line,
+                                 "discovery_root_logical_section",
+                                 discovery_root_logical_section) ||
+      !ExtractBoundaryTokenValue(boundary_line,
+                                 "linker_response_artifact_suffix",
+                                 linker_response_artifact_suffix) ||
+      !ExtractBoundaryTokenValue(boundary_line, "discovery_artifact_suffix",
+                                 discovery_artifact_suffix)) {
+    error = "runtime metadata linker retention boundary line is missing one or "
+            "more required tokens: " +
+            ir_path.string();
+    return false;
+  }
+
+  const std::string linker_flag =
+      Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
+          object_format, linker_anchor_symbol);
+  if (linker_flag.empty()) {
+    error = "no linker-retention driver flag available for produced object "
+            "format " +
+            object_format;
+    return false;
+  }
+  linker_response_file_payload = linker_flag + "\n";
+
+  const std::string emitted_linker_anchor_section =
+      Objc3RuntimeMetadataSectionForObjectFormat(
+          object_format, linker_anchor_logical_section);
+  const std::string emitted_discovery_root_section =
+      Objc3RuntimeMetadataSectionForObjectFormat(
+          object_format, discovery_root_logical_section);
+
+  std::ostringstream discovery;
+  discovery << "{\n"
+            << "  \"contract_id\": \""
+            << EscapeJsonString(kObjc3RuntimeLinkerRetentionContractId)
+            << "\",\n"
+            << "  \"object_format\": \"" << EscapeJsonString(object_format)
+            << "\",\n"
+            << "  \"object_artifact\": \""
+            << EscapeJsonString(kObjc3RuntimeObjectPackagingRetentionArtifact)
+            << "\",\n"
+            << "  \"linker_anchor_symbol\": \""
+            << EscapeJsonString(linker_anchor_symbol) << "\",\n"
+            << "  \"discovery_root_symbol\": \""
+            << EscapeJsonString(discovery_root_symbol) << "\",\n"
+            << "  \"linker_anchor_logical_section\": \""
+            << EscapeJsonString(linker_anchor_logical_section) << "\",\n"
+            << "  \"discovery_root_logical_section\": \""
+            << EscapeJsonString(discovery_root_logical_section) << "\",\n"
+            << "  \"linker_anchor_emitted_section\": \""
+            << EscapeJsonString(emitted_linker_anchor_section) << "\",\n"
+            << "  \"discovery_root_emitted_section\": \""
+            << EscapeJsonString(emitted_discovery_root_section) << "\",\n"
+            << "  \"linker_response_artifact_suffix\": \""
+            << EscapeJsonString(linker_response_artifact_suffix) << "\",\n"
+            << "  \"discovery_artifact_suffix\": \""
+            << EscapeJsonString(discovery_artifact_suffix) << "\",\n"
+            << "  \"driver_linker_flags\": [\"" << EscapeJsonString(linker_flag)
+            << "\"]\n"
+            << "}\n";
+  discovery_json = discovery.str();
+  return true;
 }

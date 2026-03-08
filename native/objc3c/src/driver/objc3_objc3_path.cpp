@@ -109,6 +109,26 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       WriteText(backend_out, backend_text);
       backend_output_recorded = true;
       backend_output_payload = backend_text;
+      std::string linker_response_payload;
+      std::string discovery_json;
+      std::string linker_retention_error;
+      if (!TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
+              ir_out,
+              object_out,
+              linker_response_payload,
+              discovery_json,
+              linker_retention_error)) {
+        compile_status = 125;
+        std::cerr << linker_retention_error << "\n";
+      } else {
+        WriteRuntimeMetadataLinkerResponseArtifact(
+            cli_options.out_dir,
+            cli_options.emit_prefix,
+            linker_response_payload);
+        WriteRuntimeMetadataDiscoveryArtifact(cli_options.out_dir,
+                                             cli_options.emit_prefix,
+                                             discovery_json);
+      }
     }
 
     const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface toolchain_runtime_core_feature_surface =

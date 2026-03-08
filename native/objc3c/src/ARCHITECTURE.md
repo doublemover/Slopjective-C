@@ -8552,3 +8552,17 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   current module.obj handoff, `@llvm.used` retention root, and retained
   __objc3_sec_* aggregate symbols before later archive/link/startup
   registration issues extend the packaging pipeline.
+- M253 lane-D D002 linker-retention and dead-strip-resistance anchors explicit
+  core feature artifacts in
+  `docs/contracts/m253_linker_retention_anchors_and_dead_strip_resistance_core_feature_implementation_d002_expectations.md`,
+  `spec/planning/compiler/m253/m253_d002_linker_retention_anchors_and_dead_strip_resistance_core_feature_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, `io/objc3_process.cpp`,
+  `io/objc3_manifest_artifacts.cpp`, `driver/objc3_objc3_path.cpp`, and
+  `libobjc3c_frontend/frontend_anchor.cpp` so lane-D emits one hashed public
+  linker anchor, one hashed public discovery root, and one driver response-file
+  artifact that can retain metadata when the object is packaged into one
+  archive/library without claiming the later multi-archive or multi-TU edge
+  cases.

@@ -18,3 +18,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
                            const std::filesystem::path &ir_path,
                            const std::filesystem::path &object_out,
                            std::string &error);
+
+bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
+    const std::filesystem::path &ir_path,
+    const std::filesystem::path &object_out,
+    std::string &linker_response_file_payload,
+    std::string &discovery_json,
+    std::string &error);

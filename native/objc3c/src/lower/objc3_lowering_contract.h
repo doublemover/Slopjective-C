@@ -171,6 +171,31 @@ inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionArtifact =
     "module.obj";
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionSymbolPrefix =
     "__objc3_sec_";
+// M253-D002 linker-retention/dead-strip resistance anchor: lane-D now adds one
+// public linker anchor plus one public discovery root over the retained
+// metadata aggregates. The compiler publishes a driver-friendly linker-response
+// file and a discovery JSON sidecar so single-library packaging can survive
+// dead stripping without claiming the later multi-archive/TU edge cases.
+inline constexpr const char *kObjc3RuntimeLinkerRetentionContractId =
+    "objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1";
+inline constexpr const char *kObjc3RuntimeLinkerRetentionAnchorModel =
+    "public-linker-anchor-rooted-in-discovery-table";
+inline constexpr const char *kObjc3RuntimeLinkerDiscoveryModel =
+    "public-discovery-root-over-retained-metadata-aggregates";
+inline constexpr const char *kObjc3RuntimeLinkerResponseArtifactSuffix =
+    ".runtime-metadata-linker-options.rsp";
+inline constexpr const char *kObjc3RuntimeLinkerDiscoveryArtifactSuffix =
+    ".runtime-metadata-discovery.json";
+inline constexpr const char *kObjc3RuntimeLinkerAnchorLogicalSection =
+    "objc3.runtime.linker_anchor";
+inline constexpr const char *kObjc3RuntimeLinkerDiscoveryRootLogicalSection =
+    "objc3.runtime.discovery_root";
+inline constexpr const char *kObjc3RuntimeLinkerRetentionCoffFlagModel =
+    "-Wl,/include:<symbol>";
+inline constexpr const char *kObjc3RuntimeLinkerRetentionElfFlagModel =
+    "-Wl,--undefined=<symbol>";
+inline constexpr const char *kObjc3RuntimeLinkerRetentionMachOFlagModel =
+    "-Wl,-u,_<symbol>";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -873,6 +898,11 @@ std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
+std::string Objc3RuntimeMetadataLinkerRetentionSummary();
+std::string Objc3RuntimeMetadataSectionForObjectFormat(
+    const std::string &object_format, const std::string &logical_section);
+std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
+    const std::string &object_format, const std::string &symbol_name);
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section);
 bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);

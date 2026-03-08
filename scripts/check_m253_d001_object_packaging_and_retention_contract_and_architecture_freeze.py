@@ -172,6 +172,11 @@ EXPECTED_SECTION_NAMES = (
     "objc3.runtime.selector_pool",
     "objc3.runtime.string_pool",
 )
+D002_EXTENSION_SECTION_NAMES = (
+    "objc3.runtime.discovery_root",
+    "objc3.runtime.linker_anchor",
+)
+ALLOWED_SECTION_NAMES = EXPECTED_SECTION_NAMES + D002_EXTENSION_SECTION_NAMES
 EXPECTED_SYMBOLS = (
     "__objc3_image_info",
     "__objc3_sec_class_descriptors",
@@ -371,6 +376,9 @@ def run_positive_probe(
     sections = extract_metadata_sections(readobj_stdout)
     symbols = extract_symbol_offsets(objdump_stdout)
     diagnostics_seen = diagnostics_count(manifest_payload)
+    sorted_section_names = sorted(sections.keys())
+    expected_section_set = set(EXPECTED_SECTION_NAMES)
+    allowed_section_set = set(ALLOWED_SECTION_NAMES)
     case_summary: dict[str, Any] = {
         "case_id": "M253-D001-CASE-POSITIVE-OBJECT-RETENTION",
         "fixture": display_path(args.positive_fixture),
@@ -382,7 +390,13 @@ def run_positive_probe(
         "backend": backend,
         "diagnostics_count": diagnostics_seen,
         "boundary_line": boundary_line,
-        "section_names": sorted(sections.keys()),
+        "section_names": sorted_section_names,
+        "forward_extension_section_names": [
+            name for name in sorted_section_names if name not in expected_section_set
+        ],
+        "unexpected_section_names": [
+            name for name in sorted_section_names if name not in allowed_section_set
+        ],
         "tracked_symbol_offsets": {name: symbols[name] for name in EXPECTED_SYMBOLS if name in symbols},
     }
 
@@ -408,7 +422,14 @@ def run_positive_probe(
         checks_total += 1
         checks_passed += require(token in boundary_line, display_path(ir_path if ir_path.exists() else out_dir), f"M253-D001-POS-BOUNDARY-TOKEN-{index:02d}", f"boundary line missing token: {token}", failures)
     checks_total += 1
-    checks_passed += require(sorted(sections.keys()) == sorted(EXPECTED_SECTION_NAMES), display_path(obj_path if obj_path.exists() else out_dir), "M253-D001-POS-SECTIONS", f"unexpected section inventory: {sorted(sections.keys())}", failures)
+    checks_passed += require(
+        expected_section_set.issubset(set(sorted_section_names))
+        and set(sorted_section_names).issubset(allowed_section_set),
+        display_path(obj_path if obj_path.exists() else out_dir),
+        "M253-D001-POS-SECTIONS",
+        f"unexpected section inventory: {sorted_section_names}",
+        failures,
+    )
     for symbol in EXPECTED_SYMBOLS:
         checks_total += 1
         checks_passed += require(symbol in symbols, display_path(obj_path if obj_path.exists() else out_dir), f"M253-D001-POS-SYMBOL-{symbol}", f"symbol must be present: {symbol}", failures)

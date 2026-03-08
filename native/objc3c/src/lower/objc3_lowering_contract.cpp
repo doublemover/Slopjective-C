@@ -108,6 +108,23 @@ std::string MapRuntimeMetadataSectionForObjectFormat(
   return "";
 }
 
+std::string BuildRuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
+    const std::string &object_format, const std::string &symbol_name) {
+  if (symbol_name.empty()) {
+    return "";
+  }
+  if (object_format == kObjc3RuntimeMetadataObjectFormatCoff) {
+    return std::string("-Wl,/include:") + symbol_name;
+  }
+  if (object_format == kObjc3RuntimeMetadataObjectFormatElf) {
+    return std::string("-Wl,--undefined=") + symbol_name;
+  }
+  if (object_format == kObjc3RuntimeMetadataObjectFormatMachO) {
+    return std::string("-Wl,-u,_") + symbol_name;
+  }
+  return "";
+}
+
 std::size_t CountRuntimeMetadataLayoutDescriptors(
     const std::array<Objc3RuntimeMetadataLayoutPolicyFamily,
                      kObjc3RuntimeMetadataLayoutPolicyFamilyCount> &families) {
@@ -526,6 +543,42 @@ std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
       << kObjc3RuntimeObjectPackagingRetentionSymbolPrefix
       << ";non_goals=no-archive-packaging-link-registration-or-startup-bootstrap";
   return out.str();
+}
+
+std::string Objc3RuntimeMetadataLinkerRetentionSummary() {
+  std::ostringstream out;
+  // M253-D002 linker-retention/dead-strip resistance anchor: lane-D adds one
+  // real public linker anchor and one public discovery root, together with a
+  // driver response-file payload that can force-retain the archived object that
+  // owns the metadata sections. Multi-archive and multi-TU edge cases remain
+  // deferred until M253-D003.
+  out << "contract=" << kObjc3RuntimeLinkerRetentionContractId
+      << ";anchor_model=" << kObjc3RuntimeLinkerRetentionAnchorModel
+      << ";discovery_model=" << kObjc3RuntimeLinkerDiscoveryModel
+      << ";linker_anchor_logical_section="
+      << kObjc3RuntimeLinkerAnchorLogicalSection
+      << ";discovery_root_logical_section="
+      << kObjc3RuntimeLinkerDiscoveryRootLogicalSection
+      << ";linker_response_artifact_suffix="
+      << kObjc3RuntimeLinkerResponseArtifactSuffix
+      << ";discovery_artifact_suffix="
+      << kObjc3RuntimeLinkerDiscoveryArtifactSuffix
+      << ";coff_flag_model=" << kObjc3RuntimeLinkerRetentionCoffFlagModel
+      << ";elf_flag_model=" << kObjc3RuntimeLinkerRetentionElfFlagModel
+      << ";mach_o_flag_model=" << kObjc3RuntimeLinkerRetentionMachOFlagModel
+      << ";non_goals=no-multi-archive-fan-in-or-cross-translation-unit-anchor-merging";
+  return out.str();
+}
+
+std::string Objc3RuntimeMetadataSectionForObjectFormat(
+    const std::string &object_format, const std::string &logical_section) {
+  return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);
+}
+
+std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
+    const std::string &object_format, const std::string &symbol_name) {
+  return BuildRuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
+      object_format, symbol_name);
 }
 
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(

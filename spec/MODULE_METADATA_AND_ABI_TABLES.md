@@ -6236,3 +6236,35 @@ shall preserve:
 Object packaging and retention anchors must remain deterministic and fail
 closed without claiming archive packaging, link registration, or startup
 bootstrap behavior in `M253-D001`.
+
+## M253 linker retention and dead-strip resistance metadata anchors (D002)
+
+Deterministic lane-D linker-retention/dead-strip-resistance anchors for
+`M253-D002` shall preserve:
+
+- contract id
+  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_linker_retention`,
+- anchor model `public-linker-anchor-rooted-in-discovery-table`,
+- discovery model `public-discovery-root-over-retained-metadata-aggregates`,
+- logical linker-anchor section `objc3.runtime.linker_anchor`,
+- logical discovery-root section `objc3.runtime.discovery_root`,
+- one hashed public linker-anchor symbol
+  `objc3_runtime_metadata_link_anchor_<hash>`,
+- one hashed public discovery-root symbol
+  `objc3_runtime_metadata_discovery_root_<hash>`,
+- emitted response artifact
+  `module.runtime-metadata-linker-options.rsp`,
+- emitted discovery artifact
+  `module.runtime-metadata-discovery.json`,
+- current-format driver linker flags:
+  - COFF: `-Wl,/include:<symbol>`
+  - ELF: `-Wl,--undefined=<symbol>`
+  - Mach-O: `-Wl,-u,_<symbol>`,
+- a happy-path archive/static-link proof that metadata sections are absent
+  without the response artifact and present with it, and
+- evidence path
+  `tmp/reports/m253/M253-D002/linker_retention_and_dead_strip_resistance_summary.json`.
+
+`M253-D002` must remain fail closed and bounded to the single-library retention
+proof without claiming multi-archive or cross-translation-unit behavior.

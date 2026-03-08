@@ -1127,6 +1127,42 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-D001/object_packaging_and_retention_contract_summary.json`
 
+## Linker retention anchors and dead-strip resistance (M253-D002)
+
+- Lane-D now publishes a real linker-retention/discovery handoff through
+  `Objc3RuntimeMetadataLinkerRetentionSummary`.
+- Contract id:
+  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`.
+- The anchor model is
+  `public-linker-anchor-rooted-in-discovery-table`.
+- The discovery model is
+  `public-discovery-root-over-retained-metadata-aggregates`.
+- The emitted IR now carries:
+  - `; runtime_metadata_linker_retention = ...`
+  - `!objc3.objc_runtime_linker_retention`
+- Successful object emission now also writes:
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- The response artifact is driver-friendly and emits exactly one force-retain
+  flag for the current object format:
+  - COFF: `-Wl,/include:<symbol>`
+  - ELF: `-Wl,--undefined=<symbol>`
+  - Mach-O: `-Wl,-u,_<symbol>`
+- The object now exports one hashed public linker anchor symbol
+  `objc3_runtime_metadata_link_anchor_<hash>` and one hashed public discovery
+  root symbol `objc3_runtime_metadata_discovery_root_<hash>`.
+- The positive proof packages `module.obj` into a static library, shows that a
+  plain link drops the metadata, then re-links with the emitted response file
+  and proves the metadata sections survive in the final executable.
+- The negative proof remains fail-closed: compile failure emits no object,
+  backend marker, linker response file, or discovery JSON.
+- `D002` still remains deliberately bounded:
+  - no multi-archive fan-in proof yet,
+  - no cross-translation-unit anchor-merging proof yet,
+  - no startup registration/bootstrap yet.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-D002/linker_retention_and_dead_strip_resistance_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

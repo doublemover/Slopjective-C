@@ -129,7 +129,9 @@ def test_dynamic_probe_records_object_packaging_retention_boundary(tmp_path: Pat
     assert positive["process_exit_code"] == 0
     assert positive["backend"] == "llvm-direct"
     assert contract.BOUNDARY_COMMENT_PREFIX in positive["boundary_line"]
-    assert positive["section_names"] == sorted(contract.EXPECTED_SECTION_NAMES)
+    assert set(contract.EXPECTED_SECTION_NAMES).issubset(set(positive["section_names"]))
+    assert positive["forward_extension_section_names"] == sorted(contract.D002_EXTENSION_SECTION_NAMES)
+    assert positive["unexpected_section_names"] == []
     assert positive["tracked_symbol_offsets"]["__objc3_sec_class_descriptors"] > 0
     assert positive["tracked_symbol_offsets"]["__objc3_sec_category_descriptors"] == 0
 
