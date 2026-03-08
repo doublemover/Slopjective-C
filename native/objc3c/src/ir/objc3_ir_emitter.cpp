@@ -108,6 +108,8 @@ class Objc3IREmitter {
 
     EmitPrototypeDeclarations(body);
 
+    EmitRuntimeBootstrapLoweringFunctions(body);
+
     for (const FunctionDecl *fn : function_definitions_) {
       EmitFunction(*fn, body);
       body << "\n";
@@ -1763,6 +1765,93 @@ class Objc3IREmitter {
   std::string RuntimeMetadataDiscoveryRootSymbol() const {
     return "objc3_runtime_metadata_discovery_root_" +
            RuntimeMetadataLinkerAnchorSuffix();
+  }
+
+  static std::string MakeIdentifierSafeSuffix(const std::string &text) {
+    std::string out;
+    out.reserve(text.size());
+    for (unsigned char ch : text) {
+      if (std::isalnum(ch) != 0 || ch == '_') {
+        out.push_back(static_cast<char>(ch));
+      } else {
+        out.push_back('_');
+      }
+    }
+    if (out.empty()) {
+      out = "module";
+    }
+    return out;
+  }
+
+  static std::string EncodeBoundaryTokenValueHex(const std::string &text) {
+    static constexpr char kHex[] = "0123456789abcdef";
+    std::string out;
+    out.reserve(text.size() * 2u);
+    for (unsigned char ch : text) {
+      out.push_back(kHex[(ch >> 4) & 0x0f]);
+      out.push_back(kHex[ch & 0x0f]);
+    }
+    return out;
+  }
+
+  bool ShouldEmitRuntimeBootstrapLowering() const {
+    return ShouldEmitRuntimeMetadataSectionScaffold() &&
+           frontend_metadata_.runtime_bootstrap_lowering_ready &&
+           frontend_metadata_.runtime_bootstrap_lowering_fail_closed &&
+           !frontend_metadata_.runtime_bootstrap_lowering_contract_id.empty() &&
+           !frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol
+                .empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_lowering_init_stub_symbol_prefix.empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_lowering_registration_table_symbol_prefix
+                .empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_lowering_registration_entrypoint_symbol
+                .empty() &&
+           !frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
+                .empty() &&
+           !frontend_metadata_
+                .runtime_metadata_archive_static_link_translation_unit_identity_key
+                .empty();
+  }
+
+  std::string RuntimeBootstrapSafeSuffix() const {
+    return MakeIdentifierSafeSuffix(
+        frontend_metadata_
+            .runtime_metadata_archive_static_link_translation_unit_identity_key);
+  }
+
+  std::string RuntimeBootstrapModuleNameGlobalSymbol() const {
+    return ".objc3_runtime_module_name_" + RuntimeBootstrapSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapTranslationUnitIdentityGlobalSymbol() const {
+    return ".objc3_runtime_translation_unit_identity_" +
+           RuntimeBootstrapSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapImageDescriptorSymbol() const {
+    return "__objc3_runtime_image_descriptor_" + RuntimeBootstrapSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapInitStubSymbol() const {
+    return frontend_metadata_.runtime_bootstrap_lowering_init_stub_symbol_prefix +
+           RuntimeBootstrapSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapRegistrationTableSymbol() const {
+    return frontend_metadata_
+               .runtime_bootstrap_lowering_registration_table_symbol_prefix +
+           RuntimeBootstrapSafeSuffix();
+  }
+
+  static constexpr const char *RuntimeBootstrapImageDescriptorType() {
+    return "{ ptr, ptr, i64, i64, i64, i64, i64, i64 }";
+  }
+
+  static constexpr const char *RuntimeBootstrapRegistrationTableType() {
+    return "{ ptr, ptr, ptr }";
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
@@ -4685,6 +4774,23 @@ class Objc3IREmitter {
         << Objc3RuntimeMetadataSectionEmissionBoundarySummary() << "\n";
     out << "; runtime_bootstrap_lowering_boundary = "
         << Objc3RuntimeBootstrapLoweringBoundarySummary() << "\n";
+    if (ShouldEmitRuntimeBootstrapLowering()) {
+      out << "; runtime_bootstrap_ctor_init_emission = "
+          << "contract=objc3c-runtime-constructor-init-stub-emission/m254-c002-v1"
+          << ";constructor_root_symbol="
+          << frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol
+          << ";constructor_init_stub_symbol=" << RuntimeBootstrapInitStubSymbol()
+          << ";registration_table_symbol="
+          << RuntimeBootstrapRegistrationTableSymbol()
+          << ";image_descriptor_symbol="
+          << RuntimeBootstrapImageDescriptorSymbol()
+          << ";registration_entrypoint_symbol="
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_entrypoint_symbol
+          << ";global_ctor_list_model="
+          << frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
+          << ";happy_path=register-before-user-main\n";
+    }
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
         frontend_metadata_.runtime_metadata_class_metaclass_emission_fail_closed &&
@@ -4825,12 +4931,20 @@ class Objc3IREmitter {
         << ";translation_unit_identity_key="
         << frontend_metadata_
                .runtime_metadata_archive_static_link_translation_unit_identity_key
+        << ";translation_unit_identity_key_hex="
+        << EncodeBoundaryTokenValueHex(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_translation_unit_identity_key)
         << "\n";
     out << "; runtime_metadata_archive_static_link_discovery = "
         << Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary()
         << ";translation_unit_identity_key="
         << frontend_metadata_
                .runtime_metadata_archive_static_link_translation_unit_identity_key
+        << ";translation_unit_identity_key_hex="
+        << EncodeBoundaryTokenValueHex(
+               frontend_metadata_
+                   .runtime_metadata_archive_static_link_translation_unit_identity_key)
         << ";merged_linker_response_artifact_suffix="
         << frontend_metadata_
                .runtime_metadata_archive_static_link_response_artifact_suffix
@@ -5832,6 +5946,67 @@ class Objc3IREmitter {
         << "\", align 8\n";
     emit_retained(discovery_root_symbol);
     emit_retained(linker_anchor_symbol);
+
+    if (ShouldEmitRuntimeBootstrapLowering()) {
+      const std::string module_name_symbol =
+          "@" + RuntimeBootstrapModuleNameGlobalSymbol();
+      const std::string translation_unit_identity_symbol =
+          "@" + RuntimeBootstrapTranslationUnitIdentityGlobalSymbol();
+      const std::string image_descriptor_symbol =
+          "@" + RuntimeBootstrapImageDescriptorSymbol();
+      const std::string registration_table_symbol =
+          "@" + RuntimeBootstrapRegistrationTableSymbol();
+      const std::string constructor_root_symbol =
+          "@" +
+          frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol;
+      const std::string module_name =
+          program_.module_name.empty() ? "objc3_module" : program_.module_name;
+      const std::string &translation_unit_identity_key =
+          frontend_metadata_
+              .runtime_metadata_archive_static_link_translation_unit_identity_key;
+      out << module_name_symbol << " = private unnamed_addr constant ["
+          << (module_name.size() + 1u) << " x i8] c\""
+          << EscapeCStringLiteral(module_name) << "\\00\", align 1\n";
+      out << translation_unit_identity_symbol
+          << " = private unnamed_addr constant ["
+          << (translation_unit_identity_key.size() + 1u) << " x i8] c\""
+          << EscapeCStringLiteral(translation_unit_identity_key)
+          << "\\00\", align 1\n";
+      out << image_descriptor_symbol << " = internal constant "
+          << RuntimeBootstrapImageDescriptorType()
+          << " { ptr getelementptr inbounds (["
+          << (module_name.size() + 1u) << " x i8], ptr " << module_name_symbol
+          << ", i32 0, i32 0), ptr getelementptr inbounds (["
+          << (translation_unit_identity_key.size() + 1u)
+          << " x i8], ptr " << translation_unit_identity_symbol
+          << ", i32 0, i32 0)"
+          << ", i64 1, i64 "
+          << frontend_metadata_.runtime_metadata_section_scaffold_class_descriptor_count
+          << ", i64 "
+          << frontend_metadata_
+                 .runtime_metadata_section_scaffold_protocol_descriptor_count
+          << ", i64 "
+          << frontend_metadata_
+                 .runtime_metadata_section_scaffold_category_descriptor_count
+          << ", i64 "
+          << frontend_metadata_
+                 .runtime_metadata_section_scaffold_property_descriptor_count
+          << ", i64 "
+          << frontend_metadata_
+                 .runtime_metadata_section_scaffold_ivar_descriptor_count
+          << " }, align 8\n";
+      out << registration_table_symbol
+          << " = internal constant " << RuntimeBootstrapRegistrationTableType()
+          << " { ptr "
+          << image_descriptor_symbol << ", ptr " << discovery_root_symbol
+          << ", ptr " << linker_anchor_symbol << " }, align 8\n";
+      out << "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
+             "[{ i32, ptr, ptr } { i32 65535, ptr "
+          << constructor_root_symbol << ", ptr " << registration_table_symbol
+          << " }]\n";
+      emit_retained(image_descriptor_symbol);
+      emit_retained(registration_table_symbol);
+    }
 
     out << "@llvm.used = appending global [" << retained_globals.size()
         << " x ptr] [";
@@ -7089,6 +7264,14 @@ class Objc3IREmitter {
 
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
     bool emitted = false;
+    if (ShouldEmitRuntimeBootstrapLowering()) {
+      out << "declare i32 @"
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_entrypoint_symbol
+          << "(ptr)\n";
+      out << "declare void @abort()\n";
+      emitted = true;
+    }
     for (const auto &entry : function_signatures_) {
       if (defined_functions_.find(entry.first) != defined_functions_.end()) {
         continue;
@@ -7108,6 +7291,46 @@ class Objc3IREmitter {
     if (emitted) {
       out << "\n";
     }
+  }
+
+  void EmitRuntimeBootstrapLoweringFunctions(std::ostringstream &out) const {
+    if (!ShouldEmitRuntimeBootstrapLowering()) {
+      return;
+    }
+
+    const std::string init_stub_symbol =
+        "@" + RuntimeBootstrapInitStubSymbol();
+    const std::string ctor_root_symbol =
+        "@" +
+        frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol;
+    const std::string registration_table_symbol =
+        "@" + RuntimeBootstrapRegistrationTableSymbol();
+    const std::string register_image_symbol =
+        "@" +
+        frontend_metadata_.runtime_bootstrap_lowering_registration_entrypoint_symbol;
+
+    out << "define internal void " << init_stub_symbol << "() {\n";
+    out << "entry:\n";
+    out << "  %bootstrap_image_slot = getelementptr inbounds "
+        << RuntimeBootstrapRegistrationTableType() << ", ptr "
+        << registration_table_symbol << ", i32 0, i32 0\n";
+    out << "  %bootstrap_image = load ptr, ptr %bootstrap_image_slot, align 8\n";
+    out << "  %bootstrap_status = call i32 " << register_image_symbol
+        << "(ptr %bootstrap_image)\n";
+    out << "  %bootstrap_ok = icmp eq i32 %bootstrap_status, 0\n";
+    out << "  br i1 %bootstrap_ok, label %bootstrap_success, label %bootstrap_fail\n";
+    out << "bootstrap_fail:\n";
+    out << "  call void @abort()\n";
+    out << "  unreachable\n";
+    out << "bootstrap_success:\n";
+    out << "  ret void\n";
+    out << "}\n\n";
+
+    out << "define internal void " << ctor_root_symbol << "() {\n";
+    out << "entry:\n";
+    out << "  call void " << init_stub_symbol << "()\n";
+    out << "  ret void\n";
+    out << "}\n\n";
   }
 
   void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {

@@ -267,6 +267,18 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_metadata_archive_static_link_discovery_artifact_suffix;
   bool runtime_metadata_archive_static_link_discovery_ready = false;
   std::string runtime_metadata_archive_static_link_translation_unit_identity_key;
+  std::string runtime_bootstrap_lowering_contract_id;
+  std::string runtime_bootstrap_lowering_boundary_model;
+  std::string runtime_bootstrap_lowering_constructor_root_symbol;
+  std::string runtime_bootstrap_lowering_init_stub_symbol_prefix;
+  std::string runtime_bootstrap_lowering_registration_table_symbol_prefix;
+  std::string runtime_bootstrap_lowering_registration_entrypoint_symbol;
+  std::string runtime_bootstrap_lowering_global_ctor_list_model;
+  std::string runtime_bootstrap_lowering_constructor_root_emission_state;
+  std::string runtime_bootstrap_lowering_init_stub_emission_state;
+  std::string runtime_bootstrap_lowering_registration_table_emission_state;
+  bool runtime_bootstrap_lowering_ready = false;
+  bool runtime_bootstrap_lowering_fail_closed = false;
   std::string runtime_metadata_object_inspection_contract_id;
   std::string runtime_metadata_object_inspection_scaffold_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;

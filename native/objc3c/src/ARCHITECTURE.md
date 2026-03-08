@@ -8637,3 +8637,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `io/objc3_process.cpp` so later ctor-root/init-stub/registration-table
   materialization extends one explicit manifest-driven boundary instead of
   inventing bootstrap globals independently in the driver or artifact writers.
+- M254 lane-C C002 constructor/init-stub emission materializes that boundary in
+  `ir/objc3_ir_emitter.cpp` with one real ctor root, one derived init stub, one
+  derived registration table, one derived image descriptor, and one
+  `@llvm.global_ctors` entry. `driver/objc3_objc3_path.cpp`,
+  `pipeline/objc3_frontend_artifacts.cpp`, and `io/objc3_process.cpp` preserve
+  the manifest authority for the derived symbols so startup probes can compare
+  emitted IR/object state against one deterministic translation-unit packet.

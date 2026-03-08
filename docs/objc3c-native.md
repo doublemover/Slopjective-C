@@ -1399,6 +1399,28 @@ Evidence:
 
 `tmp/reports/m254/M254-C001/bootstrap_lowering_contract_summary.json`
 
+## Constructor and init-stub emission (M254-C002)
+
+`M254-C002` turns the frozen `M254-C001` lowering boundary into a live emitted
+startup path.
+
+- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
+- emitted ctor root `__objc3_runtime_register_image_ctor`
+- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- emitted registration-table prefix `__objc3_runtime_registration_table_`
+- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
+- emitted `@llvm.global_ctors` list model
+  `llvm.global_ctors-single-root-priority-65535`
+- init stub calls `objc3_runtime_register_image`
+- non-zero registration status fails closed through `abort()`
+- COFF object output carries the startup constructor list in `.CRT$XCU`
+- `module.runtime-registration-manifest.json` publishes the exact derived
+  init-stub and registration-table symbols for the emitted translation unit
+
+Evidence:
+
+`tmp/reports/m254/M254-C002/constructor_init_stub_emission_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

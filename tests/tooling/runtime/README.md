@@ -113,3 +113,14 @@ emitting it yet:
   `llvm.global_ctors-single-root-priority-65535`
 - emitted IR must stay explicit that no ctor root, no init stub, and no
   registration table are materialized yet
+
+`M254-C002` then turns that frozen boundary into a live emitted startup path:
+
+- emitted IR now contains `@llvm.global_ctors`
+- the canonical ctor root remains `__objc3_runtime_register_image_ctor`
+- the canonical init-stub prefix remains
+  `__objc3_runtime_register_image_init_stub_`
+- the canonical registration-table prefix remains
+  `__objc3_runtime_registration_table_`
+- startup probes link a metadata-only `.objc3` object and prove registration
+  happened before `main`

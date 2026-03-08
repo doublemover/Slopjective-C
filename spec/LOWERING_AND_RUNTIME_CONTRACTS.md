@@ -5375,3 +5375,23 @@ Non-goals:
 - no emitted constructor-root global yet
 - no emitted init-stub global yet
 - no emitted registration-table global yet
+
+## M254 constructor and init-stub emission (C002)
+
+`M254-C002` materializes the first real lowering-owned startup registration
+path from the emitted registration manifest plus the live `M254-B002`
+semantics surface.
+
+- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
+- emitted ctor root `__objc3_runtime_register_image_ctor`
+- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- emitted registration-table prefix `__objc3_runtime_registration_table_`
+- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
+- emitted `@llvm.global_ctors` model
+  `llvm.global_ctors-single-root-priority-65535`
+- init stub calls `objc3_runtime_register_image`
+- non-zero registration status fails closed through `abort()`
+- emitted registration manifest must publish the exact derived init-stub and
+  registration-table symbols
+- COFF object emission must materialize the startup constructor path in
+  `.CRT$XCU`

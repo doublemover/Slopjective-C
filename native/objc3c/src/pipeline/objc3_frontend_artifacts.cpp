@@ -9096,6 +9096,41 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       input_path.generic_string() + "|" +
       bundle.parse_lowering_readiness_surface.parse_artifact_replay_key + "|" +
       bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key;
+  // M254-C002 bootstrap materialization anchor: the native IR emitter consumes
+  // this lowering packet directly when it materializes the ctor root, derived
+  // init stub, registration table, and image descriptor. Driver/process code
+  // may publish the same packet, but they may not re-derive those symbol
+  // shapes independently from truncated sidecar state.
+  ir_frontend_metadata.runtime_bootstrap_lowering_contract_id =
+      bundle.runtime_bootstrap_lowering_summary.contract_id;
+  ir_frontend_metadata.runtime_bootstrap_lowering_boundary_model =
+      bundle.runtime_bootstrap_lowering_summary.lowering_boundary_model;
+  ir_frontend_metadata.runtime_bootstrap_lowering_constructor_root_symbol =
+      bundle.runtime_bootstrap_lowering_summary.constructor_root_symbol;
+  ir_frontend_metadata.runtime_bootstrap_lowering_init_stub_symbol_prefix =
+      bundle.runtime_bootstrap_lowering_summary
+          .constructor_init_stub_symbol_prefix;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_registration_table_symbol_prefix =
+      bundle.runtime_bootstrap_lowering_summary
+          .registration_table_symbol_prefix;
+  ir_frontend_metadata.runtime_bootstrap_lowering_registration_entrypoint_symbol =
+      bundle.runtime_bootstrap_lowering_summary.registration_entrypoint_symbol;
+  ir_frontend_metadata.runtime_bootstrap_lowering_global_ctor_list_model =
+      bundle.runtime_bootstrap_lowering_summary.global_ctor_list_model;
+  ir_frontend_metadata.runtime_bootstrap_lowering_constructor_root_emission_state =
+      bundle.runtime_bootstrap_lowering_summary.constructor_root_emission_state;
+  ir_frontend_metadata.runtime_bootstrap_lowering_init_stub_emission_state =
+      bundle.runtime_bootstrap_lowering_summary.init_stub_emission_state;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_registration_table_emission_state =
+      bundle.runtime_bootstrap_lowering_summary
+          .registration_table_emission_state;
+  ir_frontend_metadata.runtime_bootstrap_lowering_ready =
+      bundle.runtime_bootstrap_lowering_summary
+          .ready_for_bootstrap_materialization;
+  ir_frontend_metadata.runtime_bootstrap_lowering_fail_closed =
+      bundle.runtime_bootstrap_lowering_summary.fail_closed;
   {
     const bool typed_handoff_ready =
         IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(

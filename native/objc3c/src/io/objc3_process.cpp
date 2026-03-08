@@ -184,6 +184,47 @@ bool ExtractBoundaryTokenValue(const std::string &line,
   return !value.empty();
 }
 
+int DecodeHexNibble(char ch) {
+  if (ch >= '0' && ch <= '9') {
+    return ch - '0';
+  }
+  if (ch >= 'a' && ch <= 'f') {
+    return 10 + (ch - 'a');
+  }
+  if (ch >= 'A' && ch <= 'F') {
+    return 10 + (ch - 'A');
+  }
+  return -1;
+}
+
+bool DecodeHexString(const std::string &text, std::string &decoded) {
+  if ((text.size() % 2u) != 0u) {
+    return false;
+  }
+  decoded.clear();
+  decoded.reserve(text.size() / 2u);
+  for (std::size_t i = 0; i < text.size(); i += 2u) {
+    const int high = DecodeHexNibble(text[i]);
+    const int low = DecodeHexNibble(text[i + 1u]);
+    if (high < 0 || low < 0) {
+      decoded.clear();
+      return false;
+    }
+    decoded.push_back(static_cast<char>((high << 4) | low));
+  }
+  return true;
+}
+
+bool ExtractHexBoundaryTokenValue(const std::string &line,
+                                  const std::string &key,
+                                  std::string &value) {
+  std::string encoded;
+  if (!ExtractBoundaryTokenValue(line, key, encoded)) {
+    return false;
+  }
+  return DecodeHexString(encoded, value) && !value.empty();
+}
+
 std::string EscapeJsonString(const std::string &text) {
   std::ostringstream out;
   for (unsigned char c : text) {
@@ -477,9 +518,12 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
       !ExtractBoundaryTokenValue(boundary_line,
                                  "linker_response_artifact_suffix",
                                  artifacts.linker_response_artifact_suffix) ||
-      !ExtractBoundaryTokenValue(boundary_line,
-                                 "translation_unit_identity_key",
-                                 artifacts.translation_unit_identity_key) ||
+      !(ExtractHexBoundaryTokenValue(boundary_line,
+                                     "translation_unit_identity_key_hex",
+                                     artifacts.translation_unit_identity_key) ||
+        ExtractBoundaryTokenValue(boundary_line,
+                                  "translation_unit_identity_key",
+                                  artifacts.translation_unit_identity_key)) ||
       !ExtractBoundaryTokenValue(boundary_line, "discovery_artifact_suffix",
                                  artifacts.discovery_artifact_suffix)) {
     error = "runtime metadata linker retention boundary line is missing one or "
@@ -616,6 +660,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.constructor_init_stub_symbol_prefix +
       MakeIdentifierSafeSuffix(
           linker_retention_artifacts.translation_unit_identity_key);
+  const std::string bootstrap_registration_table_symbol =
+      inputs.bootstrap_registration_table_symbol_prefix +
+      MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key);
   // M254-B001 bootstrap-invariant anchor: later startup registration must
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
@@ -630,6 +678,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // materialization boundary. This artifact may publish the canonical names
   // and non-goal states, but it may not synthesize bootstrap globals on its
   // own ahead of the later lowering implementation issue.
+  // M254-C002 constructor/init-stub emission anchor: once lowering emits the
+  // real bootstrap globals, this manifest must publish the exact derived
+  // init-stub and registration-table symbols from the full translation-unit
+  // identity key, not a truncated semicolon-split fragment.
 
   std::ostringstream out;
   out << "{\n"
@@ -730,6 +782,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"bootstrap_registration_table_symbol_prefix\": \""
       << EscapeJsonString(inputs.bootstrap_registration_table_symbol_prefix)
       << "\",\n"
+      << "  \"bootstrap_registration_table_symbol\": \""
+      << EscapeJsonString(bootstrap_registration_table_symbol) << "\",\n"
       << "  \"success_status_code\": " << inputs.success_status_code << ",\n"
       << "  \"invalid_descriptor_status_code\": "
       << inputs.invalid_descriptor_status_code << ",\n"

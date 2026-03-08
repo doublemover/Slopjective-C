@@ -6464,3 +6464,20 @@ The emitted `module.runtime-registration-manifest.json` payload now also
 carries this lowering contract so later ctor-root materialization consumes one
 authoritative manifest packet instead of reconstructing bootstrap anchors from
 loosely related sidecars.
+
+## M254 constructor and init-stub emission metadata anchors (C002)
+
+`M254-C002` turns the frozen lowering packet into live emitted startup
+artifacts.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
+- emitted ctor root `__objc3_runtime_register_image_ctor`
+- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- emitted registration-table prefix `__objc3_runtime_registration_table_`
+- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
+- emitted `@llvm.global_ctors` model
+  `llvm.global_ctors-single-root-priority-65535`
+- emitted registration manifest field `bootstrap_registration_table_symbol`
+- COFF startup constructor section `.CRT$XCU`

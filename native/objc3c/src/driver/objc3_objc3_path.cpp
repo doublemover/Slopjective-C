@@ -264,6 +264,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // later lowering/bootstrap lanes consume direct constructor-root
             // ownership inputs instead of reconstructing them from ad hoc
             // sidecar parsing rules.
+            // M254-C002 constructor/init-stub emission anchor: the same
+            // manifest now publishes the exact derived registration-table
+            // symbol alongside the init-stub symbol so emitted IR/object
+            // bootstrap artifacts can be checked against one authoritative
+            // manifest packet.
             // M254-B001 bootstrap-invariant anchor: later startup execution
             // must continue to treat this manifest as the authoritative source
             // for one constructor root per translation-unit identity, fail

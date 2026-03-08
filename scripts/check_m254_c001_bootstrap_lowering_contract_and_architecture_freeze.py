@@ -342,14 +342,28 @@ def run_dynamic_probe(args: argparse.Namespace, failures: list[Finding]) -> tupl
     checks_passed += require(f"global_ctor_list_model={GLOBAL_CTOR_LIST_MODEL}" in boundary_line, display_path(ir_path), "M254-C001-IR-GLOBAL-CTOR", "IR global ctor list model mismatch", failures)
     checks_total += 1
     checks_passed += require("no-ctor-root-no-init-stub-no-registration-table-materialized-yet" in boundary_line, display_path(ir_path), "M254-C001-IR-NONGOALS", "IR non-goal boundary mismatch", failures)
+    bootstrap_globals_materialized = "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }]" in ir_text
+    case["bootstrap_globals_materialized"] = bootstrap_globals_materialized
     checks_total += 1
-    checks_passed += require("@llvm.global_ctors" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-GLOBAL-CTORS", "IR must not materialize llvm.global_ctors yet", failures)
+    if bootstrap_globals_materialized:
+        checks_passed += require(f"ptr @{CTOR_ROOT_SYMBOL}" in ir_text, display_path(ir_path), "M254-C001-IR-CTOR-ROOT-MATERIALIZED", "materialized ctor root must preserve the frozen symbol name", failures)
+    else:
+        checks_passed += require("@llvm.global_ctors" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-GLOBAL-CTORS", "IR must not materialize llvm.global_ctors before C002 lands", failures)
     checks_total += 1
-    checks_passed += require(f"@{CTOR_ROOT_SYMBOL}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-CTOR-ROOT", "IR must not materialize ctor root yet", failures)
+    if bootstrap_globals_materialized:
+        checks_passed += require(f"@{INIT_STUB_SYMBOL_PREFIX}" in ir_text, display_path(ir_path), "M254-C001-IR-INIT-STUB-MATERIALIZED", "materialized init stub must preserve the frozen symbol prefix", failures)
+    else:
+        checks_passed += require(f"@{CTOR_ROOT_SYMBOL}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-CTOR-ROOT", "IR must not materialize ctor root before C002 lands", failures)
     checks_total += 1
-    checks_passed += require(f"@{INIT_STUB_SYMBOL_PREFIX}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-INIT-STUB", "IR must not materialize init stubs yet", failures)
+    if bootstrap_globals_materialized:
+        checks_passed += require(f"@{REGISTRATION_TABLE_SYMBOL_PREFIX}" in ir_text, display_path(ir_path), "M254-C001-IR-TABLE-MATERIALIZED", "materialized registration table must preserve the frozen symbol prefix", failures)
+    else:
+        checks_passed += require(f"@{INIT_STUB_SYMBOL_PREFIX}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-INIT-STUB", "IR must not materialize init stubs before C002 lands", failures)
     checks_total += 1
-    checks_passed += require(f"@{REGISTRATION_TABLE_SYMBOL_PREFIX}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-TABLE", "IR must not materialize registration tables yet", failures)
+    if bootstrap_globals_materialized:
+        checks_passed += require("call i32 @objc3_runtime_register_image(ptr %bootstrap_image)" in ir_text, display_path(ir_path), "M254-C001-IR-RUNTIME-CALL-MATERIALIZED", "materialized bootstrap lowering must still call the frozen runtime registration entrypoint", failures)
+    else:
+        checks_passed += require(f"@{REGISTRATION_TABLE_SYMBOL_PREFIX}" not in ir_text, display_path(ir_path), "M254-C001-IR-NO-TABLE", "IR must not materialize registration tables before C002 lands", failures)
     checks_total += 1
     checks_passed += require(obj_path.stat().st_size > 0, display_path(obj_path), "M254-C001-OBJ-SIZE", "object output must be non-empty", failures)
 
