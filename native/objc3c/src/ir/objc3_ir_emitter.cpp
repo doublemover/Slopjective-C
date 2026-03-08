@@ -4106,6 +4106,12 @@ class Objc3IREmitter {
     // descriptor sections. Interface/implementation/metaclass/method nodes
     // remain explicit no-standalone-emission matrix rows until later M253
     // payload work lands.
+    // M253-B001 layout/visibility policy anchor: image-info emits first, then
+    // class/protocol/category/property/ivar families. Within each family,
+    // descriptor ordinals ascend before the family aggregate. Metadata globals
+    // stay local-linkage only (private descriptors, internal image-info and
+    // aggregates), use no COMDAT, omit explicit hidden visibility spelling,
+    // and remain retained through @llvm.used in emission order.
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;

@@ -5953,6 +5953,26 @@ shall preserve:
 - evidence path
   `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`.
 
+## M253 layout ordering and visibility policy metadata anchors (B001)
+
+Deterministic lane-B layout/visibility anchors for `M253-B001` shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`,
+- family ordering model
+  `image-info-then-class-protocol-category-property-ivar`,
+- within-family ordering model
+  `ascending-descriptor-ordinal-then-family-aggregate`,
+- relocation model
+  `zero-sentinel-or-count-plus-pointer-vector`,
+- COMDAT policy `disabled`,
+- visibility spelling policy
+  `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`,
+- object-format policy model `object-format-neutral-until-m253-b003`,
+- evidence path
+  `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

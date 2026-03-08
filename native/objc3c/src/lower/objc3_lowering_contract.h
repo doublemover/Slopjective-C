@@ -16,6 +16,29 @@ inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A002 source-to-section matrix anchor: interface/implementation/
 // metaclass/method rows stay explicit no-standalone-emission entries until
 // later M253 payload work extends them.
+// M253-B001 layout/visibility policy anchor: lowering contracts freeze one
+// emitted metadata layout policy without inferring a second model. Image-info
+// emits first; descriptor families follow class/protocol/category/property/ivar
+// order; descriptor ordinals ascend before the family aggregate; emitted
+// metadata remains local-linkage/no-COMDAT; explicit hidden visibility is not
+// spelled on IR globals because local linkage already keeps them non-exported;
+// llvm.used preserves retention order; and object-format-specific variants stay
+// deferred until M253-B003.
+inline constexpr const char *kObjc3RuntimeMetadataLayoutOrderingVisibilityPolicyContractId =
+    "objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1";
+inline constexpr const char *kObjc3RuntimeMetadataLayoutFamilyOrderingModel =
+    "image-info-then-class-protocol-category-property-ivar";
+inline constexpr const char *kObjc3RuntimeMetadataDescriptorOrderingModel =
+    "ascending-descriptor-ordinal-then-family-aggregate";
+inline constexpr const char *kObjc3RuntimeMetadataAggregateRelocationPolicy =
+    "zero-sentinel-or-count-plus-pointer-vector";
+inline constexpr const char *kObjc3RuntimeMetadataComdatPolicy = "disabled";
+inline constexpr const char *kObjc3RuntimeMetadataVisibilitySpellingPolicy =
+    "local-linkage-omits-explicit-ir-visibility";
+inline constexpr const char *kObjc3RuntimeMetadataRetentionOrderingModel =
+    "llvm.used-emission-order";
+inline constexpr const char *kObjc3RuntimeMetadataObjectFormatPolicyModel =
+    "object-format-neutral-until-m253-b003";
 inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";
 inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";
 inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";

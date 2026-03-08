@@ -771,6 +771,42 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
 
+## Layout ordering and visibility policy freeze (M253-B001)
+
+- Lane-B now freezes the current emitted metadata layout/visibility policy so
+  `M253-B002` can semantic-finalize one known boundary instead of inferring a
+  second model.
+- Contract id:
+  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`.
+- The frozen emitted policy remains:
+  - family ordering model
+    `image-info-then-class-protocol-category-property-ivar`,
+  - family order `image-info`, `class`, `protocol`, `category`, `property`,
+    `ivar`,
+  - within-family ordering
+    `ascending-descriptor-ordinal-then-family-aggregate`,
+  - aggregate relocation model
+    `zero-sentinel-or-count-plus-pointer-vector`,
+  - COMDAT policy `disabled`,
+  - visibility spelling policy
+    `local-linkage-omits-explicit-ir-visibility`,
+  - retention ordering `llvm.used-emission-order`,
+  - object-format policy model `object-format-neutral-until-m253-b003`.
+- The real emitted scaffold remains synchronized to that policy today:
+  - `@__objc3_image_info` emits first,
+  - aggregate section families follow class/protocol/category/property/ivar
+    order,
+  - metadata globals stay local-linkage-only,
+  - `@llvm.used` preserves emission order,
+  - no COMDAT is introduced.
+- Explicit non-goals in `M253-B001`:
+  - no semantic finalization of layout decisions yet; that lands in
+    `M253-B002`,
+  - no COFF/ELF/Mach-O-specific variants yet; that lands in `M253-B003`,
+  - no new emitted method/selector/string-pool sections.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

@@ -92,6 +92,12 @@ std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boun
   // from lowering-boundary strings.
   // M253-A002 source-to-section matrix anchor: the node-to-section matrix
   // remains a frontend artifact summary rather than a lowering-boundary string.
+  // M253-B001 layout/visibility policy anchor: replay keys may not infer or
+  // rewrite metadata family ordering, descriptor ordinal ordering,
+  // zero-sentinel-or-count-plus-pointer-vector relocation, the local-linkage/no-COMDAT policy,
+  // explicit visibility spelling policy, or llvm.used retention order. Those
+  // remain one frozen emitted policy surface until M253-B002 and M253-B003
+  // extend them explicitly.
   return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +
          ";runtime_dispatch_arg_slots=" + std::to_string(boundary.runtime_dispatch_arg_slots) +
          ";selector_global_ordering=" + boundary.selector_global_ordering;

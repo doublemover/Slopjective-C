@@ -175,6 +175,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // class/protocol/category/property/ivar descriptor sections are materialized
   // today, while unsupported standalone rows stay explicit in the published
   // completeness matrix until later M253 work lands.
+  // M253-B001 layout/visibility policy anchor: llvm-direct object emission must preserve
+  // emitted global order, section family order, the local-linkage/no-COMDAT policy,
+  // and llvm.used retention order exactly. Backend execution may not inject
+  // exported visibility or object-format-specific rewrites before M253-B003 lands.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

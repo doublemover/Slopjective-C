@@ -8431,3 +8431,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   deterministically mapped to the frozen emitted inventory while
   interface/implementation/metaclass/method remain explicit
   no-standalone-emission entries until later payload work lands.
+- M253 lane-B B001 layout ordering and visibility policy freeze anchors explicit
+  contract artifacts in
+  `docs/contracts/m253_layout_ordering_and_visibility_policy_contract_and_architecture_freeze_b001_expectations.md`,
+  `spec/planning/compiler/m253/m253_b001_layout_ordering_and_visibility_policy_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so B002 can
+  semantic-finalize metadata ordering/visibility decisions against one frozen
+  emitted policy surface. B002 can semantic-finalize metadata ordering/visibility decisions
+  while B003 remains the explicit object-format expansion point.

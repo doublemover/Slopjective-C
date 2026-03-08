@@ -4804,3 +4804,31 @@ The matrix must preserve:
 `M253-A002` still does not introduce real descriptor payload layouts, startup
 registration, runtime loader bootstrap, or standalone emitted
 method/selector/string-pool sections.
+
+## M253 layout ordering and visibility policy freeze (B001)
+
+`M253-B001` freezes one emitted metadata layout/visibility policy surface
+before semantic finalization and object-format expansion land.
+
+The freeze must preserve:
+
+- contract id
+  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`,
+- family ordering model
+  `image-info-then-class-protocol-category-property-ivar`,
+- within-family ordering model
+  `ascending-descriptor-ordinal-then-family-aggregate`,
+- relocation model
+  `zero-sentinel-or-count-plus-pointer-vector`,
+- COMDAT policy `disabled`,
+- visibility spelling policy
+  `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`,
+- object-format policy model `object-format-neutral-until-m253-b003`,
+- the requirement that lowering replay keys and llvm-direct object emission do
+  not infer or rewrite another ordering/visibility model.
+
+`M253-B001` does not yet implement semantic finalization of layout decisions;
+semantic finalization of layout decisions remains deferred to `M253-B002`.
+It also does not add COFF/ELF/Mach-O policy variants; that remains deferred to
+`M253-B003`.
