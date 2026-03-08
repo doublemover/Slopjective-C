@@ -1,0 +1,16 @@
+module m252CategoryPropertyExportOnly;
+
+@interface Root (Debug)
+@property (readonly) id shadow;
+@end
+
+@implementation Root (Debug)
+@property (readonly) id shadow;
+- (id) shadow {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

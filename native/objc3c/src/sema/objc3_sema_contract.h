@@ -517,6 +517,9 @@ struct Objc3MethodLookupOverrideConflictSummary {
 };
 
 struct Objc3PropertySynthesisIvarBindingSummary {
+  // M252-B004 export-legality anchor: these counts are the canonical sema
+  // preconditions for property/ivar runtime export and must not degrade into
+  // generic property-declaration totals.
   std::size_t property_synthesis_sites = 0;
   std::size_t property_synthesis_explicit_ivar_bindings = 0;
   std::size_t property_synthesis_default_ivar_bindings = 0;

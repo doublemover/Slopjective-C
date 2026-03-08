@@ -4539,3 +4539,22 @@ deterministic category conflict diagnostics:
 The expansion must preserve the valid class-plus-category happy path, keep
 `O3S260` for incomplete declarations, and remain fail-closed without claiming
 lowering admission or runtime ingest readiness.
+
+## M252 property ivar export legality and synthesis preconditions (B004)
+
+`M252-B004` freezes the property/ivar export legality surface so the
+property-synthesis/ivar-binding lowering contract is built from
+`Objc3SemaParityContractSurface` instead of the older property-attribute
+fallback.
+
+The packet-free hardening must preserve:
+
+- one canonical property-synthesis/ivar-binding summary published through
+  `frontend.pipeline.sema_pass_manager`,
+- the same counts under
+  `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface`,
+- and a lowering replay key derived from those same counts.
+
+The expansion must keep missing interface properties and incompatible property
+signatures fail-closed under `O3S206`, and category-only property export keep
+the synthesis counters at zero.

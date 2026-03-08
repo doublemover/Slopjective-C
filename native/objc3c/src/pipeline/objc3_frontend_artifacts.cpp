@@ -607,10 +607,23 @@ Objc3ParserDiagnosticCodeCoverage BuildObjc3ParserDiagnosticCodeCoverage(
 }
 
 Objc3PropertySynthesisIvarBindingContract BuildPropertySynthesisIvarBindingContract(
-    const Objc3FrontendPropertyAttributeSummary &summary) {
-  return Objc3DefaultPropertySynthesisIvarBindingContract(
-      summary.property_declaration_entries,
-      summary.deterministic_property_attribute_handoff);
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  const Objc3PropertySynthesisIvarBindingSummary &summary =
+      sema_parity_surface.property_synthesis_ivar_binding_summary;
+  Objc3PropertySynthesisIvarBindingContract contract;
+  contract.property_synthesis_sites = summary.property_synthesis_sites;
+  contract.property_synthesis_explicit_ivar_bindings =
+      summary.property_synthesis_explicit_ivar_bindings;
+  contract.property_synthesis_default_ivar_bindings =
+      summary.property_synthesis_default_ivar_bindings;
+  contract.ivar_binding_sites = summary.ivar_binding_sites;
+  contract.ivar_binding_resolved = summary.ivar_binding_resolved;
+  contract.ivar_binding_missing = summary.ivar_binding_missing;
+  contract.ivar_binding_conflicts = summary.ivar_binding_conflicts;
+  contract.deterministic =
+      summary.deterministic &&
+      sema_parity_surface.deterministic_property_synthesis_ivar_binding_handoff;
+  return contract;
 }
 
 Objc3RuntimeMetadataSectionAbiFreezeSummary
@@ -2435,12 +2448,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeSupportLibraryLinkWiringSummary(
               runtime_support_library_core_feature);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
-      BuildPropertySynthesisIvarBindingContract(property_attribute_summary);
+      BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
     record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid property synthesis/ivar binding lowering contract");
   }
   const std::string property_synthesis_ivar_binding_replay_key =
       Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
+  const Objc3PropertySynthesisIvarBindingSummary &property_synthesis_ivar_binding_summary =
+      pipeline_result.sema_parity_surface.property_synthesis_ivar_binding_summary;
+  // M252-B004 export-legality anchor: manifest sema surfaces must publish the
+  // canonical sema property-synthesis/ivar-binding summary rather than the
+  // lowering fallback contract used for later replay keys.
+  const bool property_synthesis_ivar_binding_handoff_deterministic =
+      property_synthesis_ivar_binding_summary.deterministic &&
+      pipeline_result.sema_parity_surface
+          .deterministic_property_synthesis_ivar_binding_handoff;
   const Objc3IdClassSelObjectPointerTypecheckContract id_class_sel_object_pointer_typecheck_contract =
       BuildIdClassSelObjectPointerTypecheckContract(program);
   if (!IsValidObjc3IdClassSelObjectPointerTypecheckContract(id_class_sel_object_pointer_typecheck_contract)) {
@@ -3910,21 +3932,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_support_library_core_feature.failure_reason
            << "\""
            << ",\"deterministic_property_synthesis_ivar_binding_handoff\":"
-           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << ",\"property_synthesis_sites\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_sites
+           << property_synthesis_ivar_binding_summary.property_synthesis_sites
            << ",\"property_synthesis_explicit_ivar_bindings\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
+           << property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings
            << ",\"property_synthesis_default_ivar_bindings\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings
            << ",\"ivar_binding_sites\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_sites
+           << property_synthesis_ivar_binding_summary.ivar_binding_sites
            << ",\"ivar_binding_resolved\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << property_synthesis_ivar_binding_summary.ivar_binding_resolved
            << ",\"ivar_binding_missing\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_missing
+           << property_synthesis_ivar_binding_summary.ivar_binding_missing
            << ",\"ivar_binding_conflicts\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_conflicts
+           << property_synthesis_ivar_binding_summary.ivar_binding_conflicts
            << ",\"lowering_property_synthesis_ivar_binding_replay_key\":\""
            << property_synthesis_ivar_binding_replay_key
            << "\""
@@ -4679,23 +4701,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << (property_attribute_summary.deterministic_property_attribute_handoff ? "true" : "false")
            << "}"
            << ",\"objc_property_synthesis_ivar_binding_surface\":{\"property_synthesis_sites\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_sites
+           << property_synthesis_ivar_binding_summary.property_synthesis_sites
            << ",\"property_synthesis_explicit_ivar_bindings\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
+           << property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings
            << ",\"property_synthesis_default_ivar_bindings\":"
-           << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings
            << ",\"ivar_binding_sites\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_sites
+           << property_synthesis_ivar_binding_summary.ivar_binding_sites
            << ",\"ivar_binding_resolved\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << property_synthesis_ivar_binding_summary.ivar_binding_resolved
            << ",\"ivar_binding_missing\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_missing
+           << property_synthesis_ivar_binding_summary.ivar_binding_missing
            << ",\"ivar_binding_conflicts\":"
-           << property_synthesis_ivar_binding_contract.ivar_binding_conflicts
+           << property_synthesis_ivar_binding_summary.ivar_binding_conflicts
            << ",\"replay_key\":\""
            << property_synthesis_ivar_binding_replay_key
            << "\",\"deterministic_handoff\":"
-           << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
+           << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << "}"
            << ",\"objc_executable_metadata_source_graph\":"
            << BuildExecutableMetadataSourceGraphJson(

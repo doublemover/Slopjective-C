@@ -8322,3 +8322,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   members, and ambiguous metadata graph resolution diagnostics remain
   deterministic and fail-closed without regressing the frozen semantic
   boundary.
+- M252 lane-B B004 property and ivar export legality anchors explicit contract
+  artifacts in
+  `docs/contracts/m252_property_ivar_export_legality_synthesis_preconditions_b004_expectations.md`,
+  `spec/planning/compiler/m252/m252_b004_property_ivar_export_legality_synthesis_preconditions_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so property
+  synthesis and ivar-binding manifest counters and replay keys stay derived
+  from the canonical sema summary instead of fallback property totals, while
+  missing-interface and incompatible implementation properties remain
+  deterministic and fail-closed before lowering handoff and runtime ingest
+  work land.

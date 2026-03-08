@@ -1,0 +1,17 @@
+module m252ClassPropertySynthesisReady;
+
+@interface Root
+@property (readonly, getter=value) id token;
+- (id) value;
+@end
+
+@implementation Root
+@property (readonly, getter=value) id token;
+- (id) value {
+  return 1;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -4979,6 +4979,9 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
   return summary;
 }
 
+// M252-B004 export-legality anchor: class implementation property synthesis
+// plus ivar-binding preconditions remain the canonical sema summary that later
+// runtime metadata export milestones consume without source-shape revalidation.
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   Objc3PropertySynthesisIvarBindingSummary summary;

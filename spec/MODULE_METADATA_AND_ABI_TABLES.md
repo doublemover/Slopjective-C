@@ -5745,6 +5745,25 @@ The expansion must keep the happy path manifest-producing, reject category
 attachment collisions and duplicate runtime members deterministically, and avoid
 introducing a second runtime export packet.
 
+## M252 property ivar export legality metadata anchors (B004)
+
+Deterministic lane-B property and ivar export legality hardening for `M252-B004`
+shall preserve:
+
+- manifest-backed `property_synthesis_sites`, explicit/default ivar-binding
+  counts, and resolved/missing/conflict totals from the canonical sema
+  property-synthesis summary,
+- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`,
+- `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.replay_key`,
+- lowering replay key derived from the same canonical sema
+  property-synthesis summary, and
+- evidence path
+  `tmp/reports/m252/M252-B004/property_ivar_export_legality_synthesis_preconditions_summary.json`.
+
+The hardening must keep category-only property export at zero synthesis counts
+and reject missing-interface or incompatible implementation properties under
+`O3S206`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

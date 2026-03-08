@@ -517,6 +517,25 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-B003/category_attachment_duplication_ambiguity_diagnostics_summary.json`
 
+## Property ivar export legality and synthesis preconditions (M252-B004)
+
+- Lane-B now freezes property and ivar export legality around the canonical
+  sema property-synthesis/ivar-binding summary.
+- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+  and
+  `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.replay_key`
+  are both derived from the same canonical sema summary rather than generic
+  property-declaration totals.
+- The B004 fixtures prove:
+  - one class implementation property success case with exactly one resolved
+    default ivar binding,
+  - one category-only property success case with zero synthesis and ivar-binding
+    sites,
+  - one missing-interface-property reject case with `O3S206`,
+  - one incompatible-property-signature reject case with `O3S206`.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-B004/property_ivar_export_legality_synthesis_preconditions_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

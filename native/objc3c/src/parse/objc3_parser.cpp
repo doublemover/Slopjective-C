@@ -7143,6 +7143,9 @@ class Objc3Parser {
   }
 
   bool ParseObjcPropertyAttributes(std::vector<Objc3PropertyAttributeDecl> &attributes) {
+    // M252-B004 export-legality anchor: property attribute spelling must stay
+    // canonical here so later property/ivar export preconditions can trust the
+    // parser-owned source shape without reparsing attributes.
     if (!Match(TokenKind::LParen)) {
       return true;
     }

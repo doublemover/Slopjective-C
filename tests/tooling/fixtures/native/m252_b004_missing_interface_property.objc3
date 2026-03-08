@@ -1,0 +1,13 @@
+// Expected diagnostic code(s): O3S206.
+module m252MissingInterfaceProperty;
+
+@interface Root
+@end
+
+@implementation Root
+@property (readonly) id value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}
