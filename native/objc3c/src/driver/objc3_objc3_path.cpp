@@ -47,6 +47,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // this driver tranche still stops at deterministic object emission.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
     }
+    if (!artifacts.runtime_metadata_binary.empty()) {
+      WriteRuntimeMetadataBinaryArtifact(cli_options.out_dir,
+                                        cli_options.emit_prefix,
+                                        artifacts.runtime_metadata_binary);
+    }
     if (!artifacts.diagnostics.empty()) {
       return 1;
     }

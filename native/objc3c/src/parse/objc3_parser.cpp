@@ -7467,6 +7467,9 @@ class Objc3Parser {
     // M252-B003 diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.
+    // M252-D002 binary-boundary anchor: lane-D packages this same semantic-link
+    // identity into the runtime-facing metadata envelope so later binary
+    // consumers do not reconstruct owner strings from ad hoc parser state.
     decl->semantic_link_symbol =
         BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);
     if (!decl->super_name.empty()) {

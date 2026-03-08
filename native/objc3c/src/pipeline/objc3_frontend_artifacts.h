@@ -12,6 +12,7 @@ struct Objc3FrontendArtifactBundle {
   std::vector<std::string> post_pipeline_diagnostics;
   std::vector<std::string> diagnostics;
   std::string manifest_json;
+  std::string runtime_metadata_binary;
   std::string ir_text;
 };
 

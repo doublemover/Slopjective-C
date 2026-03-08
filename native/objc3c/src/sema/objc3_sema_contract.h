@@ -1209,6 +1209,9 @@ struct Objc3SemanticIntegrationSurface {
   // only. Category containers are validated separately so valid
   // class-plus-category programs do not collapse into duplicate class-owner
   // diagnostics before runtime metadata conflict analysis runs.
+  // M252-D002 binary-boundary anchor: the executable metadata binary envelope
+  // must consume the canonical sema-owned class/category split without
+  // rebuilding container ownership from manifest-only heuristics.
   std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
   Objc3InterfaceImplementationSummary interface_implementation_summary;

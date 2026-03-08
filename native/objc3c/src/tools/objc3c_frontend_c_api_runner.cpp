@@ -17,6 +17,7 @@
 #include "io/objc3_cli_reporting_output_contract_edge_case_expansion_and_robustness_surface.h"
 #include "io/objc3_cli_reporting_output_contract_edge_case_compatibility_surface.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_surface.h"
+#include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
 
@@ -224,6 +225,12 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
   const char *compatibility_mode_name =
       options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY ? "legacy" : "canonical";
+  const fs::path runtime_metadata_binary_path =
+      BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
+  const std::string runtime_metadata_binary_path_text =
+      fs::exists(runtime_metadata_binary_path)
+          ? runtime_metadata_binary_path.generic_string()
+          : std::string();
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -241,7 +248,8 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << "    \"diagnostics\": \"" << EscapeJsonString(OptionalPath(result.diagnostics_path)) << "\",\n";
   out << "    \"manifest\": \"" << EscapeJsonString(OptionalPath(result.manifest_path)) << "\",\n";
   out << "    \"ir\": \"" << EscapeJsonString(OptionalPath(result.ir_path)) << "\",\n";
-  out << "    \"object\": \"" << EscapeJsonString(OptionalPath(result.object_path)) << "\"\n";
+  out << "    \"object\": \"" << EscapeJsonString(OptionalPath(result.object_path)) << "\",\n";
+  out << "    \"runtime_metadata_binary\": \"" << EscapeJsonString(runtime_metadata_binary_path_text) << "\"\n";
   out << "  },\n";
   out << "  \"last_error\": \"" << EscapeJsonString(last_error) << "\",\n";
   out << "  \"stages\": {\n";

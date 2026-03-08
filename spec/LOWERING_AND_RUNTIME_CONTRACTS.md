@@ -4664,3 +4664,34 @@ The packet must preserve:
 `M252-D001` does not implement the binary section payload or startup
 registration path. It freezes the manifest transport contract that those later
 lane-D and M253 milestones must preserve.
+
+## M252 artifact packaging and binary boundary for metadata payloads (D002)
+
+`M252-D002` materializes the canonical lane-D runtime-ingest binary boundary:
+`Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary`.
+
+The packet must preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-binary-boundary/m252-d002-v1`,
+- packaging-contract continuity with
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- typed-handoff continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- debug-projection continuity with
+  `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary`,
+- emitted artifact `module.runtime-metadata.bin`,
+- binary envelope format `objc3-runtime-metadata-envelope-v1`,
+- binary magic `OBJC3RM1`,
+- deterministic chunk set:
+  - `runtime_ingest_packaging_contract`,
+  - `typed_lowering_handoff`,
+  - `debug_projection`,
+- replay-key continuity with the active D001/C002/C003 packets,
+- fail-closed readiness for later section-emission/bootstrap handoff.
+
+`M252-D002` still stops short of object-file section emission and startup
+registration. It lands the standalone runtime-facing binary artifact that those
+later milestones must consume.

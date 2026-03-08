@@ -346,6 +346,8 @@ inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionContractId =
     "objc3c-executable-metadata-debug-projection/m252-c003-v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingContractId =
     "objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryBoundaryContractId =
+    "objc3c-executable-metadata-runtime-ingest-binary-boundary/m252-d002-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
@@ -451,6 +453,24 @@ inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingPaylo
     "typed-handoff-plus-debug-projection-manifest-v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingTransportArtifact =
     "module.manifest.json";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeFormat =
+    "objc3-runtime-metadata-envelope-v1";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactSuffix =
+    ".runtime-metadata.bin";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryArtifactRelativePath =
+    "module.runtime-metadata.bin";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryMagic =
+    "OBJC3RM1";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryPackagingChunkName =
+    "runtime_ingest_packaging_contract";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryTypedHandoffChunkName =
+    "typed_lowering_handoff";
+inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryDebugProjectionChunkName =
+    "debug_projection";
+inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeVersion = 1u;
+inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeChunkCount = 3u;
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

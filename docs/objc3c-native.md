@@ -634,6 +634,25 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-D001/runtime_ingest_packaging_for_metadata_graphs_contract_summary.json`
 
+## Runtime ingest binary boundary (M252-D002)
+
+- Lane-D now materializes the canonical runtime-ingest binary packet:
+  `Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary`.
+- The manifest semantic-surface path is
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary`.
+- The emitted runtime-facing artifact is `module.runtime-metadata.bin`.
+- The binary envelope format is `objc3-runtime-metadata-envelope-v1`.
+- The envelope preserves exactly three deterministic chunks:
+  - `runtime_ingest_packaging_contract`
+  - `typed_lowering_handoff`
+  - `debug_projection`
+- The binary boundary is driven from the frozen D001/C002/C003 packets rather
+  than a second ad hoc source-model traversal, so later section emission and
+  bootstrap work can consume one canonical artifact boundary without reparsing
+  manifest JSON.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-D002/artifact_packaging_and_binary_boundary_for_metadata_payloads_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

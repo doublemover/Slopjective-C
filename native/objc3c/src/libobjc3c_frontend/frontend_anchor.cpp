@@ -14,6 +14,7 @@
 #include <system_error>
 #include <vector>
 
+#include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
@@ -23,6 +24,7 @@ struct objc3c_frontend_context {
   std::string last_error;
   std::string diagnostics_path;
   std::string manifest_path;
+  std::string runtime_metadata_binary_path;
   std::string ir_path;
   std::string object_path;
 };
@@ -252,6 +254,31 @@ static bool WriteTextFile(const std::filesystem::path &path, const std::string &
   return true;
 }
 
+static bool WriteBinaryFile(const std::filesystem::path &path,
+                            const std::string &contents,
+                            std::string &error) {
+  std::error_code mkdir_error;
+  if (!path.parent_path().empty()) {
+    std::filesystem::create_directories(path.parent_path(), mkdir_error);
+  }
+  if (mkdir_error) {
+    error = "failed to create output directory '" + path.parent_path().string() + "': " + mkdir_error.message();
+    return false;
+  }
+
+  std::ofstream out(path, std::ios::binary);
+  if (!out.is_open()) {
+    error = "failed to open output file '" + path.string() + "' for writing";
+    return false;
+  }
+  out.write(contents.data(), static_cast<std::streamsize>(contents.size()));
+  if (!out.good()) {
+    error = "failed while writing output file '" + path.string() + "'";
+    return false;
+  }
+  return true;
+}
+
 static bool ReadTextFile(const std::filesystem::path &path, std::string &contents, std::string &error) {
   std::ifstream input(path, std::ios::binary);
   if (!input.is_open()) {
@@ -338,6 +365,7 @@ static void ClearCompileResultPaths(objc3c_frontend_context_t *context) {
   }
   context->diagnostics_path.clear();
   context->manifest_path.clear();
+  context->runtime_metadata_binary_path.clear();
   context->ir_path.clear();
   context->object_path.clear();
 }
@@ -453,6 +481,23 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       objc3c_frontend_set_error(context, io_error.c_str());
     } else {
       context->manifest_path = manifest_out.generic_string();
+    }
+  }
+
+  if (has_out_dir && !product.artifact_bundle.runtime_metadata_binary.empty()) {
+    const std::filesystem::path runtime_metadata_out =
+        BuildRuntimeMetadataBinaryArtifactPath(out_dir, emit_prefix);
+    std::string io_error;
+    if (!WriteBinaryFile(runtime_metadata_out,
+                         product.artifact_bundle.runtime_metadata_binary,
+                         io_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, io_error.c_str());
+    } else {
+      context->runtime_metadata_binary_path =
+          runtime_metadata_out.generic_string();
     }
   }
 

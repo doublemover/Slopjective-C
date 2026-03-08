@@ -8367,3 +8367,19 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   manifest-only packaging boundary remains deterministic and fail-closed over
   the C002 typed handoff and C003 debug projection before section emission and
   startup registration land.
+- M252 lane-D D002 runtime-ingest binary boundary anchors explicit artifact
+  packaging in
+  `docs/contracts/m252_artifact_packaging_and_binary_boundary_for_metadata_payloads_d002_expectations.md`,
+  `spec/planning/compiler/m252/m252_d002_artifact_packaging_and_binary_boundary_for_metadata_payloads_packet.md`,
+  `ast/objc3_ast.h`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `pipeline/objc3_frontend_artifacts.h`,
+  `io/objc3_file_io.h`, `io/objc3_file_io.cpp`,
+  `io/objc3_manifest_artifacts.h`, `io/objc3_manifest_artifacts.cpp`,
+  `driver/objc3_objc3_path.cpp`,
+  `libobjc3c_frontend/frontend_anchor.cpp`,
+  `tools/objc3c_frontend_c_api_runner.cpp`, `docs/objc3c-native.md`,
+  `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so one
+  deterministic `module.runtime-metadata.bin` envelope remains emitted and
+  replay-stable over the D001/C002/C003 packets before object-file section
+  emission and startup registration land.

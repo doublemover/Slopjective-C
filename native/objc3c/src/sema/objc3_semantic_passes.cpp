@@ -4982,6 +4982,9 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
 // M252-B004 export-legality anchor: class implementation property synthesis
 // plus ivar-binding preconditions remain the canonical sema summary that later
 // runtime metadata export milestones consume without source-shape revalidation.
+// M252-D002 binary-boundary anchor: lane-D packages this exact sema-owned
+// property/ivar summary into the runtime metadata envelope so later binary
+// consumers stay aligned with lowering admission and replay keys.
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   Objc3PropertySynthesisIvarBindingSummary summary;
