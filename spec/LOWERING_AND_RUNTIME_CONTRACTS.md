@@ -4832,3 +4832,26 @@ The freeze must preserve:
 semantic finalization of layout decisions remains deferred to `M253-B002`.
 It also does not add COFF/ELF/Mach-O policy variants; that remains deferred to
 `M253-B003`.
+
+## M253 deterministic ordering, visibility, and relocation semantics (B002)
+
+`M253-B002` normalizes one metadata layout policy before IR emission so the
+emitter consumes a shared lowering decision instead of re-hardcoding order and
+relocation locally.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-layout-policy/m253-b002-v1`,
+- normalized layout-policy packets in `lower/objc3_lowering_contract.h`,
+- fail-closed builder logic in `lower/objc3_lowering_contract.cpp`,
+- named metadata `!objc3.objc_runtime_metadata_layout_policy`,
+- metadata node `!55`,
+- replay comment `; runtime_metadata_layout_policy = ...`,
+- family order `image-info`, `class`, `protocol`, `category`, `property`,
+  `ivar`,
+- relocation model `zero-sentinel-or-count-plus-pointer-vector`,
+- visibility spelling policy `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`.
+
+`M253-B002` still does not add COFF/ELF/Mach-O policy variants; that remains
+`M253-B003`.

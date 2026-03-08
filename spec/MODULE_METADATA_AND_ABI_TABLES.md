@@ -5973,6 +5973,21 @@ Deterministic lane-B layout/visibility anchors for `M253-B001` shall preserve:
 - evidence path
   `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`.
 
+## M253 normalized metadata layout policy anchors (B002)
+
+Deterministic lane-B semantic-finalization anchors for `M253-B002` shall
+preserve:
+
+- contract id `objc3c-runtime-metadata-layout-policy/m253-b002-v1`,
+- named metadata `!objc3.objc_runtime_metadata_layout_policy`,
+- metadata node `!55`,
+- replay comment `; runtime_metadata_layout_policy =`,
+- replay comment `; runtime_metadata_layout_policy = ...`,
+- fail-closed normalization of descriptor linkage `private`, aggregate linkage
+  `internal`, metadata visibility `hidden`, and retention root `llvm.used`,
+- evidence path
+  `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

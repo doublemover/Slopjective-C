@@ -8442,3 +8442,15 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   semantic-finalize metadata ordering/visibility decisions against one frozen
   emitted policy surface. B002 can semantic-finalize metadata ordering/visibility decisions
   while B003 remains the explicit object-format expansion point.
+- M253 lane-B B002 normalized layout policy anchors explicit
+  semantic-finalization artifacts in
+  `docs/contracts/m253_deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_b002_expectations.md`,
+  `spec/planning/compiler/m253/m253_b002_deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so the emitted
+  runtime metadata scaffold consumes one lowering-owned normalized layout
+  policy and publishes that semantic-finalization boundary through
+  `!objc3.objc_runtime_metadata_layout_policy`, `!55`, and the replay comment
+  `; runtime_metadata_layout_policy = ...`.

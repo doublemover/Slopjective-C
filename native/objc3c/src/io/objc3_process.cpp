@@ -179,6 +179,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // emitted global order, section family order, the local-linkage/no-COMDAT policy,
   // and llvm.used retention order exactly. Backend execution may not inject
   // exported visibility or object-format-specific rewrites before M253-B003 lands.
+  // M253-B002 normalized layout policy anchor: llvm-direct object emission now
+  // consumes an IR surface that already encodes one normalized metadata layout replay key.
+  // The backend may not reorder, relax, or reinterpret that
+  // semantic finalization boundary.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});
   if (llc_status == 0) {

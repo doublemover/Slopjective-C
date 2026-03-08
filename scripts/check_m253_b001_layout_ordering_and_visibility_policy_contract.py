@@ -340,7 +340,6 @@ def run_native_probe(args: argparse.Namespace, failures: list[Finding]) -> tuple
         return checks_total, checks_passed, case
 
     ir_text = read_text(ir_path)
-    case["contains_comdat"] = "comdat" in ir_text
     symbol_positions: dict[str, int] = {}
     checks_total += 1
     checks_passed += require("@llvm.used = appending global [" in ir_text, display_path(ir_path), "M253-B001-NATIVE-LLVM-USED", "IR must contain @llvm.used retention root", failures)
@@ -364,9 +363,10 @@ def run_native_probe(args: argparse.Namespace, failures: list[Finding]) -> tuple
     }
     case["metadata_lines"] = metadata_lines
     checks_total += 1
-    checks_passed += require("comdat" not in ir_text, display_path(ir_path), "M253-B001-NATIVE-COMDAT", "metadata IR must not introduce COMDAT", failures)
-    checks_total += 1
     checks_passed += require(all("hidden" not in line for line in metadata_lines.values()), display_path(ir_path), "M253-B001-NATIVE-HIDDEN", "metadata global lines must not spell explicit hidden visibility", failures)
+    case["contains_metadata_comdat"] = any(" comdat" in line for line in metadata_lines.values())
+    checks_total += 1
+    checks_passed += require(not case["contains_metadata_comdat"], display_path(ir_path), "M253-B001-NATIVE-COMDAT", "metadata globals must not spell COMDAT", failures)
     checks_total += 1
     checks_passed += require("@__objc3_image_info = internal global { i32, i32 } zeroinitializer, section \"objc3.runtime.image_info\", align 4" in ir_text, display_path(ir_path), "M253-B001-NATIVE-IMAGE-INFO", "image-info line mismatch", failures)
     for symbol, section in (

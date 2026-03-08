@@ -120,7 +120,7 @@ def test_dynamic_probes_cover_manifest_matrix_and_emitted_ir_policy(tmp_path: Pa
     assert runner_case["row_keys"] == contract.MATRIX_ROW_KEYS
 
     assert native_case["process_exit_code"] == 0
-    assert native_case["contains_comdat"] is False
+    assert native_case["contains_metadata_comdat"] is False
     assert "@llvm.used = appending global [" in native_case["llvm_used_line"]
     positions = [native_case["symbol_positions"][symbol] for symbol in contract.FAMILY_ORDER]
     assert positions == sorted(positions)

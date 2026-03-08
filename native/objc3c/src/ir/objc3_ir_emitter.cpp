@@ -1738,6 +1738,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
     out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
+    out << "!objc3.objc_runtime_metadata_layout_policy = !{!55}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2039,6 +2040,14 @@ class Objc3IREmitter {
                frontend_metadata_
                    .runtime_metadata_section_scaffold_ivar_aggregate_symbol)
         << "\"}\n";
+    Objc3RuntimeMetadataLayoutPolicy runtime_metadata_layout_policy;
+    std::string runtime_metadata_layout_policy_error;
+    if (!TryBuildRuntimeMetadataLayoutPolicy(runtime_metadata_layout_policy,
+                                             runtime_metadata_layout_policy_error) &&
+        runtime_metadata_layout_policy.failure_reason.empty()) {
+      runtime_metadata_layout_policy.failure_reason =
+          runtime_metadata_layout_policy_error;
+    }
     out << "!50 = !{!\""
         << EscapeCStringLiteral(
                frontend_metadata_.runtime_metadata_object_inspection_contract_id)
@@ -2429,6 +2438,55 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .executable_metadata_debug_projection_row2_descriptor)
+        << "\"}\n";
+    out << "!55 = !{!\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.abi_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.scaffold_contract_id)
+        << "\", i1 "
+        << (runtime_metadata_layout_policy.ready ? 1 : 0) << ", i1 "
+        << (runtime_metadata_layout_policy.fail_closed ? 1 : 0) << ", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.family_ordering_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.descriptor_ordering_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.aggregate_relocation_policy)
+        << "\", !\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.comdat_policy)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.visibility_spelling_policy)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.retention_ordering_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.object_format_policy_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.descriptor_linkage)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.aggregate_linkage)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               runtime_metadata_layout_policy.metadata_visibility)
+        << "\", !\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.retention_root)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               runtime_metadata_layout_policy.total_retained_global_count)
+        << ", !\""
+        << EscapeCStringLiteral(Objc3RuntimeMetadataLayoutPolicyReplayKey(
+               runtime_metadata_layout_policy))
+        << "\", !\""
+        << EscapeCStringLiteral(runtime_metadata_layout_policy.failure_reason)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4090,14 +4148,96 @@ class Objc3IREmitter {
   }
 
   std::string BuildRuntimeMetadataDescriptorSymbol(
-      const std::string &kind,
+      const std::string &descriptor_symbol_prefix, const std::string &kind,
       std::size_t ordinal) const {
-    return "@" + frontend_metadata_.runtime_metadata_section_descriptor_symbol_prefix +
-           kind + "_" + FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+    return "@" + descriptor_symbol_prefix + kind + "_" +
+           FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+  }
+
+  bool TryBuildRuntimeMetadataLayoutPolicy(
+      Objc3RuntimeMetadataLayoutPolicy &policy, std::string &error) const {
+    Objc3RuntimeMetadataLayoutPolicyInput input;
+    input.abi_contract_id =
+        frontend_metadata_.runtime_metadata_section_abi_contract_id;
+    input.scaffold_contract_id =
+        frontend_metadata_.runtime_metadata_section_scaffold_contract_id;
+    input.section_boundary_ready =
+        frontend_metadata_.runtime_metadata_section_ready_for_scaffold;
+    input.runtime_export_ready =
+        frontend_metadata_.runtime_export_ready_for_runtime_export;
+    input.scaffold_emitted =
+        frontend_metadata_.runtime_metadata_section_scaffold_emitted;
+    input.scaffold_fail_closed =
+        frontend_metadata_.runtime_metadata_section_scaffold_fail_closed;
+    input.uses_llvm_used =
+        frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used;
+    input.image_info_emitted =
+        frontend_metadata_.runtime_metadata_section_scaffold_image_info_emitted;
+    input.image_info_symbol =
+        frontend_metadata_.runtime_metadata_section_scaffold_image_info_symbol;
+    input.image_info_section =
+        frontend_metadata_.runtime_metadata_section_logical_image_info_section;
+    input.descriptor_symbol_prefix =
+        frontend_metadata_.runtime_metadata_section_descriptor_symbol_prefix;
+    input.descriptor_linkage =
+        frontend_metadata_.runtime_metadata_section_descriptor_linkage;
+    input.aggregate_linkage =
+        frontend_metadata_.runtime_metadata_section_aggregate_linkage;
+    input.metadata_visibility =
+        frontend_metadata_.runtime_metadata_section_visibility;
+    input.retention_root =
+        frontend_metadata_.runtime_metadata_section_retention_root;
+    input.total_retained_global_count =
+        frontend_metadata_
+            .runtime_metadata_section_scaffold_total_retained_global_count;
+    input.families = {{
+        {kObjc3RuntimeMetadataLayoutPolicyClassFamily,
+         frontend_metadata_
+             .runtime_metadata_section_logical_class_descriptor_section,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_class_aggregate_symbol,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_class_descriptor_count},
+        {kObjc3RuntimeMetadataLayoutPolicyProtocolFamily,
+         frontend_metadata_
+             .runtime_metadata_section_logical_protocol_descriptor_section,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_protocol_aggregate_symbol,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_protocol_descriptor_count},
+        {kObjc3RuntimeMetadataLayoutPolicyCategoryFamily,
+         frontend_metadata_
+             .runtime_metadata_section_logical_category_descriptor_section,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_category_aggregate_symbol,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_category_descriptor_count},
+        {kObjc3RuntimeMetadataLayoutPolicyPropertyFamily,
+         frontend_metadata_
+             .runtime_metadata_section_logical_property_descriptor_section,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_property_aggregate_symbol,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_property_descriptor_count},
+        {kObjc3RuntimeMetadataLayoutPolicyIvarFamily,
+         frontend_metadata_.runtime_metadata_section_logical_ivar_descriptor_section,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_ivar_aggregate_symbol,
+         frontend_metadata_
+             .runtime_metadata_section_scaffold_ivar_descriptor_count},
+    }};
+    return ::TryBuildObjc3RuntimeMetadataLayoutPolicy(input, policy, error);
   }
 
   void EmitRuntimeMetadataSectionScaffold(std::ostringstream &out) const {
     if (!ShouldEmitRuntimeMetadataSectionScaffold()) {
+      return;
+    }
+
+    Objc3RuntimeMetadataLayoutPolicy layout_policy;
+    std::string layout_policy_error;
+    if (!TryBuildRuntimeMetadataLayoutPolicy(layout_policy, layout_policy_error) ||
+        !IsReadyObjc3RuntimeMetadataLayoutPolicy(layout_policy)) {
       return;
     }
 
@@ -4112,24 +4252,25 @@ class Objc3IREmitter {
     // stay local-linkage only (private descriptors, internal image-info and
     // aggregates), use no COMDAT, omit explicit hidden visibility spelling,
     // and remain retained through @llvm.used in emission order.
+    // M253-B002 normalized layout policy anchor: semantic finalization now
+    // happens before emission. This function consumes one normalized lowering
+    // policy packet and materializes exactly that plan, rather than
+    // re-hardcoding family order or relocation behavior locally.
+    out << "; runtime_metadata_layout_policy = "
+        << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
     out << "; runtime metadata section scaffold globals\n";
 
     std::vector<std::string> retained_globals;
-    retained_globals.reserve(
-        frontend_metadata_.runtime_metadata_section_scaffold_total_retained_global_count);
+    retained_globals.reserve(layout_policy.total_retained_global_count);
 
     const auto emit_retained = [&](const std::string &symbol) {
       retained_globals.push_back(symbol);
     };
 
-    const std::string image_info_symbol =
-        "@" +
-        frontend_metadata_.runtime_metadata_section_scaffold_image_info_symbol;
-    out << image_info_symbol << " = "
-        << frontend_metadata_.runtime_metadata_section_aggregate_linkage
+    const std::string image_info_symbol = "@" + layout_policy.image_info_symbol;
+    out << image_info_symbol << " = " << layout_policy.aggregate_linkage
         << " global { i32, i32 } zeroinitializer, section \""
-        << frontend_metadata_.runtime_metadata_section_logical_image_info_section
-        << "\", align 4\n";
+        << layout_policy.image_info_section << "\", align 4\n";
     emit_retained(image_info_symbol);
 
     const auto emit_descriptor_section =
@@ -4141,18 +4282,17 @@ class Objc3IREmitter {
           descriptor_symbols.reserve(descriptor_count);
           for (std::size_t i = 0; i < descriptor_count; ++i) {
             const std::string descriptor_symbol =
-                BuildRuntimeMetadataDescriptorSymbol(kind, i);
+                BuildRuntimeMetadataDescriptorSymbol(
+                    layout_policy.descriptor_symbol_prefix, kind, i);
             descriptor_symbols.push_back(descriptor_symbol);
-            out << descriptor_symbol << " = "
-                << frontend_metadata_.runtime_metadata_section_descriptor_linkage
+            out << descriptor_symbol << " = " << layout_policy.descriptor_linkage
                 << " global [1 x i8] zeroinitializer, section \""
                 << section_name << "\", align 1\n";
             emit_retained(descriptor_symbol);
           }
 
           const std::string aggregate_symbol = "@" + aggregate_symbol_name;
-          out << aggregate_symbol << " = "
-              << frontend_metadata_.runtime_metadata_section_aggregate_linkage
+          out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
               << " global ";
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
@@ -4172,44 +4312,11 @@ class Objc3IREmitter {
           emit_retained(aggregate_symbol);
         };
 
-    emit_descriptor_section(
-        "class",
-        frontend_metadata_.runtime_metadata_section_logical_class_descriptor_section,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_class_aggregate_symbol,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_class_descriptor_count);
-    emit_descriptor_section(
-        "protocol",
-        frontend_metadata_
-            .runtime_metadata_section_logical_protocol_descriptor_section,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_protocol_aggregate_symbol,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_protocol_descriptor_count);
-    emit_descriptor_section(
-        "category",
-        frontend_metadata_
-            .runtime_metadata_section_logical_category_descriptor_section,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_category_aggregate_symbol,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_category_descriptor_count);
-    emit_descriptor_section(
-        "property",
-        frontend_metadata_
-            .runtime_metadata_section_logical_property_descriptor_section,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_property_aggregate_symbol,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_property_descriptor_count);
-    emit_descriptor_section(
-        "ivar",
-        frontend_metadata_.runtime_metadata_section_logical_ivar_descriptor_section,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_ivar_aggregate_symbol,
-        frontend_metadata_
-            .runtime_metadata_section_scaffold_ivar_descriptor_count);
+    for (const auto &family : layout_policy.families) {
+      emit_descriptor_section(family.kind, family.section_name,
+                              family.aggregate_symbol_name,
+                              family.descriptor_count);
+    }
 
     out << "@llvm.used = appending global [" << retained_globals.size()
         << " x ptr] [";

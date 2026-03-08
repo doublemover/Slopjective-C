@@ -807,6 +807,35 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`
 
+## Deterministic ordering, visibility, and relocation semantics (M253-B002)
+
+- Lane-B now turns the frozen `M253-B001` policy into one real normalized
+  lowering capability before `M253-B003` expands object-format variants.
+- Contract id:
+  `objc3c-runtime-metadata-layout-policy/m253-b002-v1`.
+- The normalized policy is published directly in emitted IR through:
+  - named metadata `!objc3.objc_runtime_metadata_layout_policy`,
+  - node `!55`,
+  - replay comment `; runtime_metadata_layout_policy =`,
+  - replay line `; runtime_metadata_layout_policy = ...`.
+- `lower/objc3_lowering_contract.cpp` now builds one fail-closed layout policy
+  from the canonical ABI/scaffold inputs:
+  - descriptor linkage `private`,
+  - aggregate linkage `internal`,
+  - metadata visibility `hidden`,
+  - retention root `llvm.used`,
+  - family order `class`, `protocol`, `category`, `property`, `ivar`,
+  - retained-global count equal to descriptor inventory plus image-info and
+    family aggregates.
+- `ir/objc3_ir_emitter.cpp` now consumes the normalized plan directly instead
+  of hardcoding five repeated family emission calls.
+- `io/objc3_process.cpp` keeps llvm-direct object emission explicit about
+  preserving that semantic-finalization boundary.
+- Readiness command:
+  `check:objc3c:m253-b002-lane-b-readiness`
+- Validation/evidence path:
+  `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
