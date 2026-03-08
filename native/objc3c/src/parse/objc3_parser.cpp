@@ -4803,6 +4803,8 @@ static std::vector<std::string> BuildScopePathLexicographic(std::string owner_sy
   return path;
 }
 
+// M252-A001 freeze: semantic-link symbols remain the canonical owner identities
+// for executable metadata source graph nodes until semantic closure lands.
 static std::string BuildObjcContainerScopeOwner(const std::string &container_kind,
                                                 const std::string &name,
                                                 bool has_category,

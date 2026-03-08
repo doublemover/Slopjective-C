@@ -5639,6 +5639,23 @@ preserve:
 Runbook-publication anchors must remain deterministic and fail closed before
 M252 startup registration and runtime metadata realization work begins.
 
+## M252 executable metadata source graph metadata anchors (A001)
+
+Deterministic lane-A executable metadata source graph anchors for `M252-A001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`,
+- manifest node `objc_executable_metadata_source_graph`,
+- owner identity model `semantic-link-symbol-lexicographic-owner-identity`,
+- metaclass node policy
+  `metaclass-nodes-derived-from-resolved-interface-symbols`,
+- evidence path
+  `tmp/reports/m252/M252-A001/executable_metadata_source_graph_contract_summary.json`.
+
+Executable metadata source graph anchors must remain deterministic and fail
+closed before `M252-A002` and `M252-A003` complete semantic closure and edge
+inventory work.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

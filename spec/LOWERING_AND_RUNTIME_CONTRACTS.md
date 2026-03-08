@@ -4433,3 +4433,25 @@ Lane-E shall publish one canonical runtime-foundation runbook at
 
 E003 therefore publishes the operator-facing build/inspection/smoke path for a
 fresh clone on this machine without claiming new runtime feature coverage.
+
+## M252 executable metadata source graph freeze (A001)
+
+Lane-A shall freeze one canonical source-graph contract before metadata
+semantic closure work begins.
+
+`M252-A001` requires:
+
+- one deterministic executable metadata source graph contract id:
+  `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`,
+- one owner-identity model:
+  `semantic-link-symbol-lexicographic-owner-identity`,
+- one metaclass policy:
+  `metaclass-nodes-derived-from-resolved-interface-symbols`,
+- parser/semantic/pipeline anchors to preserve class, metaclass, protocol,
+  category, property, ivar, and method graph coverage,
+- lexicographic owner/edge ordering to remain frozen and fail closed before
+  `M252-A002` graph-completion work begins.
+
+A001 therefore freezes the executable metadata source graph boundary and
+evidence only. It does not claim semantic closure, lowering readiness, runtime
+ingest packaging, or startup registration are complete.

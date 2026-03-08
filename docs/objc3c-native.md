@@ -397,6 +397,23 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m251/M251-E003/runtime_foundation_developer_runbook_summary.json`
 
+## Executable metadata source graph freeze (M252-A001)
+
+- Lane-A now freezes the canonical executable metadata source graph boundary for
+  the next runtime-metadata tranche.
+- The frozen manifest/document contract is
+  `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`.
+- The graph keeps owner identities on the existing
+  `semantic-link-symbol-lexicographic-owner-identity` model and freezes
+  metaclass nodes as
+  `metaclass-nodes-derived-from-resolved-interface-symbols` until semantic
+  closure work lands in `M252-A002+`.
+- The manifest now publishes `objc_executable_metadata_source_graph` evidence
+  for class, metaclass, protocol, category, property, ivar, and method node
+  counts while remaining fail closed and not yet lowering-ready.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-A001/executable_metadata_source_graph_contract_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

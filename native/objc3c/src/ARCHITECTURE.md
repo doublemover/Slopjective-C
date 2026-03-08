@@ -8265,3 +8265,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `tests/tooling/runtime/README.md`,
   and `package.json` so the runbook-verified build, object inspection, and execution smoke
   path remains synchronized with the E002 gate before M252 startup registration work begins.
+
+- M252 lane-A A001 executable metadata source graph freeze anchors explicit
+  contract artifacts in
+  `docs/contracts/m252_executable_metadata_source_graph_contract_and_architecture_freeze_a001_expectations.md`,
+  `spec/planning/compiler/m252/m252_a001_executable_metadata_source_graph_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so the
+  semantic-link-symbol owner identity model, derived metaclass policy, and
+  manifest-published executable metadata source graph remain fail-closed before
+  `M252-A002` graph-completion work begins.

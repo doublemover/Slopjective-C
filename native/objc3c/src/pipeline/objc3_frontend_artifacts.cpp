@@ -4213,6 +4213,31 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_executable_metadata_source_graph\":{\"contract_id\":\""
+           << "objc3c-executable-metadata-source-graph-freeze/m252-a001-v1"
+           << "\",\"owner_identity_model\":\"semantic-link-symbol-lexicographic-owner-identity\""
+           << ",\"metaclass_node_policy\":\"metaclass-nodes-derived-from-resolved-interface-symbols\""
+           << ",\"class_nodes\":"
+           << class_protocol_category_linking_summary.resolved_class_interfaces
+           << ",\"metaclass_nodes\":"
+           << class_protocol_category_linking_summary.resolved_class_interfaces
+           << ",\"protocol_nodes\":"
+           << protocol_category_summary.resolved_protocol_symbols
+           << ",\"category_nodes\":"
+           << protocol_category_summary.resolved_category_symbols
+           << ",\"property_nodes\":"
+           << property_attribute_summary.property_declaration_entries
+           << ",\"ivar_nodes\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_sites
+           << ",\"method_nodes\":"
+           << (interface_class_method_symbols + interface_instance_method_symbols +
+               implementation_class_method_symbols + implementation_instance_method_symbols +
+               protocol_category_summary.protocol_method_symbols +
+               protocol_category_summary.category_method_symbols)
+           << ",\"lexicographic_owner_edge_ordering\":true"
+           << ",\"ready_for_semantic_closure\":false"
+           << ",\"ready_for_lowering\":false"
+           << "}"
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"
