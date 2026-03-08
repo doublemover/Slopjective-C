@@ -5395,3 +5395,21 @@ semantics surface.
   registration-table symbols
 - COFF object emission must materialize the startup constructor path in
   `.CRT$XCU`
+
+## M254 registration-table emission and image-local initialization (C003)
+
+`M254-C003` expands the lowering-owned startup path so later runtime image
+walks consume one self-describing per-image registration boundary.
+
+- contract id
+  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
+- registration-table layout model
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+- image-local init-state prefix
+  `__objc3_runtime_image_local_init_state_`
+- registration-table ABI version `1`
+- registration-table pointer-field count `11`
+- emitted init stub guards startup with the image-local init-state cell before
+  runtime registration
+- emitted registration tables now include section-root and pool-root pointers
+  for later runtime image-walk stages

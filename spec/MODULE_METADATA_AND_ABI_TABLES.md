@@ -6481,3 +6481,17 @@ Canonical metadata/runtime anchors:
   `llvm.global_ctors-single-root-priority-65535`
 - emitted registration manifest field `bootstrap_registration_table_symbol`
 - COFF startup constructor section `.CRT$XCU`
+
+`M254-C003` expands that startup boundary with one self-describing
+registration-table layout for later runtime image walks.
+
+- contract id
+  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
+- emitted image-local init-state prefix
+  `__objc3_runtime_image_local_init_state_`
+- registration-table layout model
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+- registration-table ABI version `1`
+- registration-table pointer-field count `11`
+- emitted registration manifest field
+  `bootstrap_image_local_init_state_symbol`

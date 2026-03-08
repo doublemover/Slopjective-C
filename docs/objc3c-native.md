@@ -1421,6 +1421,31 @@ Evidence:
 
 `tmp/reports/m254/M254-C002/constructor_init_stub_emission_summary.json`
 
+## Registration table emission and image-local initialization (M254-C003)
+
+`M254-C003` expands the live startup path with one self-describing
+registration table and one image-local init-state cell per emitted
+translation unit.
+
+- contract id
+  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
+- registration-table layout model
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+- image-local init-state prefix
+  `__objc3_runtime_image_local_init_state_`
+- registration-table ABI version `1`
+- registration-table pointer-field count `11`
+- emitted init stub now guards startup with the image-local init-state cell
+  before calling `objc3_runtime_register_image`
+- emitted registration tables now carry the class/protocol/category/property/
+  ivar section roots plus selector/string pool roots
+- `module.runtime-registration-manifest.json` publishes the layout model,
+  pointer/ABI counts, and the exact derived image-local init-state symbol
+
+Evidence:
+
+`tmp/reports/m254/M254-C003/registration_table_image_local_initialization_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

@@ -2239,14 +2239,28 @@ std::string BuildRuntimeBootstrapLoweringReplayKey(
       << summary.constructor_init_stub_symbol_prefix
       << ";registration_table_symbol_prefix="
       << summary.registration_table_symbol_prefix
+      << ";image_local_init_state_symbol_prefix="
+      << summary.image_local_init_state_symbol_prefix
       << ";registration_entrypoint_symbol="
       << summary.registration_entrypoint_symbol
       << ";global_ctor_list_model=" << summary.global_ctor_list_model
+      << ";registration_table_layout_model="
+      << summary.registration_table_layout_model
+      << ";image_local_initialization_model="
+      << summary.image_local_initialization_model
+      << ";registration_table_abi_version="
+      << summary.registration_table_abi_version
+      << ";registration_table_pointer_field_count="
+      << summary.registration_table_pointer_field_count
       << ";constructor_root_emission_state="
       << summary.constructor_root_emission_state
       << ";init_stub_emission_state=" << summary.init_stub_emission_state
       << ";registration_table_emission_state="
       << summary.registration_table_emission_state
+      << ";bootstrap_ir_materialization_landed="
+      << (summary.bootstrap_ir_materialization_landed ? "true" : "false")
+      << ";image_local_initialization_landed="
+      << (summary.image_local_initialization_landed ? "true" : "false")
       << ";registration_manifest_replay_key="
       << summary.registration_manifest_replay_key
       << ";bootstrap_semantics_replay_key="
@@ -2269,7 +2283,13 @@ Objc3RuntimeBootstrapLoweringSummary BuildRuntimeBootstrapLoweringSummary(
   summary.manifest_authority_preserved =
       summary.registration_manifest_contract_ready &&
       registration_manifest.constructor_root_manifest_authoritative;
-  summary.no_bootstrap_ir_materialization_yet = true;
+  summary.no_bootstrap_ir_materialization_yet = false;
+  summary.bootstrap_ir_materialization_landed =
+      summary.registration_manifest_contract_ready &&
+      summary.bootstrap_semantics_contract_ready;
+  summary.image_local_initialization_landed =
+      summary.registration_manifest_contract_ready &&
+      summary.bootstrap_semantics_contract_ready;
   summary.ready_for_bootstrap_materialization =
       summary.registration_manifest_contract_ready &&
       summary.bootstrap_semantics_contract_ready;
@@ -2306,11 +2326,21 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
       << EscapeJsonString(summary.constructor_init_stub_symbol_prefix)
       << "\",\"registration_table_symbol_prefix\":\""
       << EscapeJsonString(summary.registration_table_symbol_prefix)
+      << "\",\"image_local_init_state_symbol_prefix\":\""
+      << EscapeJsonString(summary.image_local_init_state_symbol_prefix)
       << "\",\"registration_entrypoint_symbol\":\""
       << EscapeJsonString(summary.registration_entrypoint_symbol)
       << "\",\"global_ctor_list_model\":\""
       << EscapeJsonString(summary.global_ctor_list_model)
-      << "\",\"constructor_root_emission_state\":\""
+      << "\",\"registration_table_layout_model\":\""
+      << EscapeJsonString(summary.registration_table_layout_model)
+      << "\",\"image_local_initialization_model\":\""
+      << EscapeJsonString(summary.image_local_initialization_model)
+      << "\",\"registration_table_abi_version\":"
+      << summary.registration_table_abi_version
+      << ",\"registration_table_pointer_field_count\":"
+      << summary.registration_table_pointer_field_count
+      << ",\"constructor_root_emission_state\":\""
       << EscapeJsonString(summary.constructor_root_emission_state)
       << "\",\"init_stub_emission_state\":\""
       << EscapeJsonString(summary.init_stub_emission_state)
@@ -2330,6 +2360,10 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
       << (summary.manifest_authority_preserved ? "true" : "false")
       << ",\"no_bootstrap_ir_materialization_yet\":"
       << (summary.no_bootstrap_ir_materialization_yet ? "true" : "false")
+      << ",\"bootstrap_ir_materialization_landed\":"
+      << (summary.bootstrap_ir_materialization_landed ? "true" : "false")
+      << ",\"image_local_initialization_landed\":"
+      << (summary.image_local_initialization_landed ? "true" : "false")
       << ",\"ready_for_bootstrap_materialization\":"
       << (summary.ready_for_bootstrap_materialization ? "true" : "false")
       << ",\"registration_manifest_replay_key\":\""
@@ -9101,6 +9135,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   // init stub, registration table, and image descriptor. Driver/process code
   // may publish the same packet, but they may not re-derive those symbol
   // shapes independently from truncated sidecar state.
+  // M254-C003 registration-table/image-local-init anchor: the same lowering
+  // packet now also carries the self-describing registration-table layout,
+  // ABI/version counts, and image-local init-state model that the emitter,
+  // manifest writers, and later runtime image-walk code must preserve exactly.
   ir_frontend_metadata.runtime_bootstrap_lowering_contract_id =
       bundle.runtime_bootstrap_lowering_summary.contract_id;
   ir_frontend_metadata.runtime_bootstrap_lowering_boundary_model =
@@ -9114,10 +9152,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       .runtime_bootstrap_lowering_registration_table_symbol_prefix =
       bundle.runtime_bootstrap_lowering_summary
           .registration_table_symbol_prefix;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix =
+      bundle.runtime_bootstrap_lowering_summary
+          .image_local_init_state_symbol_prefix;
   ir_frontend_metadata.runtime_bootstrap_lowering_registration_entrypoint_symbol =
       bundle.runtime_bootstrap_lowering_summary.registration_entrypoint_symbol;
   ir_frontend_metadata.runtime_bootstrap_lowering_global_ctor_list_model =
       bundle.runtime_bootstrap_lowering_summary.global_ctor_list_model;
+  ir_frontend_metadata.runtime_bootstrap_lowering_registration_table_layout_model =
+      bundle.runtime_bootstrap_lowering_summary.registration_table_layout_model;
+  ir_frontend_metadata.runtime_bootstrap_lowering_image_local_initialization_model =
+      bundle.runtime_bootstrap_lowering_summary
+          .image_local_initialization_model;
+  ir_frontend_metadata.runtime_bootstrap_lowering_registration_table_abi_version =
+      bundle.runtime_bootstrap_lowering_summary
+          .registration_table_abi_version;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_registration_table_pointer_field_count =
+      bundle.runtime_bootstrap_lowering_summary
+          .registration_table_pointer_field_count;
   ir_frontend_metadata.runtime_bootstrap_lowering_constructor_root_emission_state =
       bundle.runtime_bootstrap_lowering_summary.constructor_root_emission_state;
   ir_frontend_metadata.runtime_bootstrap_lowering_init_stub_emission_state =
@@ -9126,6 +9180,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       .runtime_bootstrap_lowering_registration_table_emission_state =
       bundle.runtime_bootstrap_lowering_summary
           .registration_table_emission_state;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_bootstrap_ir_materialization_landed =
+      bundle.runtime_bootstrap_lowering_summary
+          .bootstrap_ir_materialization_landed;
+  ir_frontend_metadata
+      .runtime_bootstrap_lowering_image_local_initialization_landed =
+      bundle.runtime_bootstrap_lowering_summary
+          .image_local_initialization_landed;
   ir_frontend_metadata.runtime_bootstrap_lowering_ready =
       bundle.runtime_bootstrap_lowering_summary
           .ready_for_bootstrap_materialization;

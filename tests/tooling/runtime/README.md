@@ -124,3 +124,12 @@ emitting it yet:
   `__objc3_runtime_registration_table_`
 - startup probes link a metadata-only `.objc3` object and prove registration
   happened before `main`
+
+`M254-C003` expands the same emitted startup path with one self-describing
+registration table and one image-local init-state cell per emitted image:
+
+- emitted registration tables now carry ABI/version integers and section-root
+  pointers for class/protocol/category/property/ivar aggregates
+- selector/string pool roots are carried directly in the table when present
+- the init stub now guards startup with the image-local init-state cell before
+  calling `objc3_runtime_register_image`

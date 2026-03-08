@@ -233,6 +233,16 @@ inline constexpr const char *kObjc3RuntimeBootstrapGlobalCtorListModel =
     "llvm.global_ctors-single-root-priority-65535";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix =
     "__objc3_runtime_registration_table_";
+inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitStateSymbolPrefix =
+    "__objc3_runtime_image_local_init_state_";
+inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableLayoutModel =
+    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state";
+inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitializationModel =
+    "guarded-once-per-image-local-state-cell";
+inline constexpr std::uint64_t kObjc3RuntimeBootstrapRegistrationTableAbiVersion =
+    1u;
+inline constexpr std::uint64_t
+    kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 11u;
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
 // object-emission evidence contract over A002/B003/C006/D003 so later closeout
 // work must fail closed if the source-to-section matrix, object-format policy,

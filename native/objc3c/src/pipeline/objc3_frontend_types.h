@@ -2878,10 +2878,20 @@ struct Objc3RuntimeBootstrapLoweringSummary {
       kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix;
   std::string registration_table_symbol_prefix =
       kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix;
+  std::string image_local_init_state_symbol_prefix =
+      kObjc3RuntimeBootstrapImageLocalInitStateSymbolPrefix;
   std::string registration_entrypoint_symbol =
       kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
   std::string global_ctor_list_model =
       kObjc3RuntimeBootstrapGlobalCtorListModel;
+  std::string registration_table_layout_model =
+      kObjc3RuntimeBootstrapRegistrationTableLayoutModel;
+  std::string image_local_initialization_model =
+      kObjc3RuntimeBootstrapImageLocalInitializationModel;
+  std::uint64_t registration_table_abi_version =
+      kObjc3RuntimeBootstrapRegistrationTableAbiVersion;
+  std::uint64_t registration_table_pointer_field_count =
+      kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount;
   std::string constructor_root_emission_state =
       kObjc3RuntimeBootstrapConstructorRootEmissionState;
   std::string init_stub_emission_state =
@@ -2894,6 +2904,8 @@ struct Objc3RuntimeBootstrapLoweringSummary {
   bool lowering_contract_published = false;
   bool manifest_authority_preserved = false;
   bool no_bootstrap_ir_materialization_yet = false;
+  bool bootstrap_ir_materialization_landed = false;
+  bool image_local_initialization_landed = false;
   bool ready_for_bootstrap_materialization = false;
   std::string registration_manifest_replay_key;
   std::string bootstrap_semantics_replay_key;
@@ -2911,8 +2923,13 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
          !summary.constructor_root_symbol.empty() &&
          !summary.constructor_init_stub_symbol_prefix.empty() &&
          !summary.registration_table_symbol_prefix.empty() &&
+         !summary.image_local_init_state_symbol_prefix.empty() &&
          !summary.registration_entrypoint_symbol.empty() &&
          !summary.global_ctor_list_model.empty() &&
+         !summary.registration_table_layout_model.empty() &&
+         !summary.image_local_initialization_model.empty() &&
+         summary.registration_table_abi_version > 0 &&
+         summary.registration_table_pointer_field_count > 0 &&
          !summary.constructor_root_emission_state.empty() &&
          !summary.init_stub_emission_state.empty() &&
          !summary.registration_table_emission_state.empty() &&
@@ -2921,7 +2938,9 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
          summary.bootstrap_semantics_contract_ready &&
          summary.lowering_contract_published &&
          summary.manifest_authority_preserved &&
-         summary.no_bootstrap_ir_materialization_yet &&
+         !summary.no_bootstrap_ir_materialization_yet &&
+         summary.bootstrap_ir_materialization_landed &&
+         summary.image_local_initialization_landed &&
          summary.ready_for_bootstrap_materialization &&
          !summary.registration_manifest_replay_key.empty() &&
          !summary.bootstrap_semantics_replay_key.empty() &&

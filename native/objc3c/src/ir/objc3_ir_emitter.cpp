@@ -1807,10 +1807,29 @@ class Objc3IREmitter {
                 .runtime_bootstrap_lowering_registration_table_symbol_prefix
                 .empty() &&
            !frontend_metadata_
+                .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix
+                .empty() &&
+           !frontend_metadata_
                 .runtime_bootstrap_lowering_registration_entrypoint_symbol
                 .empty() &&
            !frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
                 .empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_lowering_registration_table_layout_model
+                .empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_lowering_image_local_initialization_model
+                .empty() &&
+           frontend_metadata_
+                   .runtime_bootstrap_lowering_registration_table_abi_version >
+               0 &&
+           frontend_metadata_
+                   .runtime_bootstrap_lowering_registration_table_pointer_field_count >
+               0 &&
+           frontend_metadata_
+               .runtime_bootstrap_lowering_bootstrap_ir_materialization_landed &&
+           frontend_metadata_
+               .runtime_bootstrap_lowering_image_local_initialization_landed &&
            !frontend_metadata_
                 .runtime_metadata_archive_static_link_translation_unit_identity_key
                 .empty();
@@ -1846,12 +1865,18 @@ class Objc3IREmitter {
            RuntimeBootstrapSafeSuffix();
   }
 
+  std::string RuntimeBootstrapImageLocalInitStateSymbol() const {
+    return frontend_metadata_
+               .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix +
+           RuntimeBootstrapSafeSuffix();
+  }
+
   static constexpr const char *RuntimeBootstrapImageDescriptorType() {
     return "{ ptr, ptr, i64, i64, i64, i64, i64, i64 }";
   }
 
   static constexpr const char *RuntimeBootstrapRegistrationTableType() {
-    return "{ ptr, ptr, ptr }";
+    return "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }";
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
@@ -4790,6 +4815,36 @@ class Objc3IREmitter {
           << ";global_ctor_list_model="
           << frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
           << ";happy_path=register-before-user-main\n";
+      out << "; runtime_registration_table_image_local_initialization = "
+          << "contract=objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1"
+          << ";registration_table_symbol="
+          << RuntimeBootstrapRegistrationTableSymbol()
+          << ";registration_table_layout_model="
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_table_layout_model
+          << ";registration_table_abi_version="
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_table_abi_version
+          << ";registration_table_pointer_field_count="
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_table_pointer_field_count
+          << ";class_section_root_symbol=__objc3_sec_class_descriptors"
+          << ";protocol_section_root_symbol=__objc3_sec_protocol_descriptors"
+          << ";category_section_root_symbol=__objc3_sec_category_descriptors"
+          << ";property_section_root_symbol=__objc3_sec_property_descriptors"
+          << ";ivar_section_root_symbol=__objc3_sec_ivar_descriptors"
+          << ";selector_pool_symbol="
+          << (selector_pool_globals_.empty() ? "null"
+                                             : "@__objc3_sec_selector_pool")
+          << ";string_pool_symbol="
+          << (runtime_string_pool_globals_.empty() ? "null"
+                                                   : "@__objc3_sec_string_pool")
+          << ";image_local_init_state_symbol="
+          << RuntimeBootstrapImageLocalInitStateSymbol()
+          << ";image_local_initialization_model="
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_image_local_initialization_model
+          << ";happy_path=guarded-once-before-runtime-registration\n";
     }
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
@@ -5956,9 +6011,25 @@ class Objc3IREmitter {
           "@" + RuntimeBootstrapImageDescriptorSymbol();
       const std::string registration_table_symbol =
           "@" + RuntimeBootstrapRegistrationTableSymbol();
+      const std::string image_local_init_state_symbol =
+          "@" + RuntimeBootstrapImageLocalInitStateSymbol();
       const std::string constructor_root_symbol =
           "@" +
           frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol;
+      const std::string class_section_root_symbol =
+          "@__objc3_sec_class_descriptors";
+      const std::string protocol_section_root_symbol =
+          "@__objc3_sec_protocol_descriptors";
+      const std::string category_section_root_symbol =
+          "@__objc3_sec_category_descriptors";
+      const std::string property_section_root_symbol =
+          "@__objc3_sec_property_descriptors";
+      const std::string ivar_section_root_symbol =
+          "@__objc3_sec_ivar_descriptors";
+      const std::string selector_pool_symbol =
+          emit_selector_string_pools ? "@__objc3_sec_selector_pool" : "null";
+      const std::string string_pool_symbol =
+          emit_selector_string_pools ? "@__objc3_sec_string_pool" : "null";
       const std::string module_name =
           program_.module_name.empty() ? "objc3_module" : program_.module_name;
       const std::string &translation_unit_identity_key =
@@ -5995,17 +6066,32 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .runtime_metadata_section_scaffold_ivar_descriptor_count
           << " }, align 8\n";
+      out << image_local_init_state_symbol
+          << " = internal global i8 0, align 1\n";
       out << registration_table_symbol
           << " = internal constant " << RuntimeBootstrapRegistrationTableType()
-          << " { ptr "
-          << image_descriptor_symbol << ", ptr " << discovery_root_symbol
-          << ", ptr " << linker_anchor_symbol << " }, align 8\n";
+          << " { i64 "
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_table_abi_version
+          << ", i64 "
+          << frontend_metadata_
+                 .runtime_bootstrap_lowering_registration_table_pointer_field_count
+          << ", ptr " << image_descriptor_symbol << ", ptr "
+          << discovery_root_symbol << ", ptr " << linker_anchor_symbol
+          << ", ptr " << class_section_root_symbol << ", ptr "
+          << protocol_section_root_symbol << ", ptr "
+          << category_section_root_symbol << ", ptr "
+          << property_section_root_symbol << ", ptr "
+          << ivar_section_root_symbol << ", ptr " << selector_pool_symbol
+          << ", ptr " << string_pool_symbol << ", ptr "
+          << image_local_init_state_symbol << " }, align 8\n";
       out << "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
              "[{ i32, ptr, ptr } { i32 65535, ptr "
           << constructor_root_symbol << ", ptr " << registration_table_symbol
           << " }]\n";
       emit_retained(image_descriptor_symbol);
       emit_retained(registration_table_symbol);
+      emit_retained(image_local_init_state_symbol);
     }
 
     out << "@llvm.used = appending global [" << retained_globals.size()
@@ -7311,9 +7397,17 @@ class Objc3IREmitter {
 
     out << "define internal void " << init_stub_symbol << "() {\n";
     out << "entry:\n";
+    out << "  %bootstrap_state_slot = getelementptr inbounds "
+        << RuntimeBootstrapRegistrationTableType() << ", ptr "
+        << registration_table_symbol << ", i32 0, i32 12\n";
+    out << "  %bootstrap_state_cell = load ptr, ptr %bootstrap_state_slot, align 8\n";
+    out << "  %bootstrap_state = load i8, ptr %bootstrap_state_cell, align 1\n";
+    out << "  %bootstrap_already_initialized = icmp ne i8 %bootstrap_state, 0\n";
+    out << "  br i1 %bootstrap_already_initialized, label %bootstrap_success, label %bootstrap_register\n";
+    out << "bootstrap_register:\n";
     out << "  %bootstrap_image_slot = getelementptr inbounds "
         << RuntimeBootstrapRegistrationTableType() << ", ptr "
-        << registration_table_symbol << ", i32 0, i32 0\n";
+        << registration_table_symbol << ", i32 0, i32 2\n";
     out << "  %bootstrap_image = load ptr, ptr %bootstrap_image_slot, align 8\n";
     out << "  %bootstrap_status = call i32 " << register_image_symbol
         << "(ptr %bootstrap_image)\n";
@@ -7323,6 +7417,7 @@ class Objc3IREmitter {
     out << "  call void @abort()\n";
     out << "  unreachable\n";
     out << "bootstrap_success:\n";
+    out << "  store i8 1, ptr %bootstrap_state_cell, align 1\n";
     out << "  ret void\n";
     out << "}\n\n";
 

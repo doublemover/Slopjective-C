@@ -628,10 +628,15 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.bootstrap_lowering_contract_id.empty() ||
       inputs.bootstrap_lowering_boundary_model.empty() ||
       inputs.bootstrap_global_ctor_list_model.empty() ||
+      inputs.bootstrap_registration_table_layout_model.empty() ||
+      inputs.bootstrap_image_local_initialization_model.empty() ||
       inputs.bootstrap_constructor_root_emission_state.empty() ||
       inputs.bootstrap_init_stub_emission_state.empty() ||
       inputs.bootstrap_registration_table_emission_state.empty() ||
       inputs.bootstrap_registration_table_symbol_prefix.empty() ||
+      inputs.bootstrap_image_local_init_state_symbol_prefix.empty() ||
+      inputs.bootstrap_registration_table_abi_version == 0 ||
+      inputs.bootstrap_registration_table_pointer_field_count == 0 ||
       inputs.translation_unit_registration_order_ordinal == 0 ||
       inputs.object_artifact_relative_path.empty() ||
       inputs.backend_artifact_relative_path.empty()) {
@@ -664,6 +669,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.bootstrap_registration_table_symbol_prefix +
       MakeIdentifierSafeSuffix(
           linker_retention_artifacts.translation_unit_identity_key);
+  const std::string bootstrap_image_local_init_state_symbol =
+      inputs.bootstrap_image_local_init_state_symbol_prefix +
+      MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key);
   // M254-B001 bootstrap-invariant anchor: later startup registration must
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
@@ -682,6 +691,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // real bootstrap globals, this manifest must publish the exact derived
   // init-stub and registration-table symbols from the full translation-unit
   // identity key, not a truncated semicolon-split fragment.
+  // M254-C003 registration-table/image-local-init anchor: once lowering
+  // expands that emitted boundary, the manifest must also publish the
+  // self-describing registration-table layout contract and exact derived
+  // image-local init-state symbol from the same translation-unit identity key.
 
   std::ostringstream out;
   out << "{\n"
@@ -769,6 +782,12 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"bootstrap_global_ctor_list_model\": \""
       << EscapeJsonString(inputs.bootstrap_global_ctor_list_model)
       << "\",\n"
+      << "  \"bootstrap_registration_table_layout_model\": \""
+      << EscapeJsonString(inputs.bootstrap_registration_table_layout_model)
+      << "\",\n"
+      << "  \"bootstrap_image_local_initialization_model\": \""
+      << EscapeJsonString(inputs.bootstrap_image_local_initialization_model)
+      << "\",\n"
       << "  \"bootstrap_constructor_root_emission_state\": \""
       << EscapeJsonString(inputs.bootstrap_constructor_root_emission_state)
       << "\",\n"
@@ -782,8 +801,19 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"bootstrap_registration_table_symbol_prefix\": \""
       << EscapeJsonString(inputs.bootstrap_registration_table_symbol_prefix)
       << "\",\n"
+      << "  \"bootstrap_image_local_init_state_symbol_prefix\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_image_local_init_state_symbol_prefix)
+      << "\",\n"
       << "  \"bootstrap_registration_table_symbol\": \""
       << EscapeJsonString(bootstrap_registration_table_symbol) << "\",\n"
+      << "  \"bootstrap_image_local_init_state_symbol\": \""
+      << EscapeJsonString(bootstrap_image_local_init_state_symbol)
+      << "\",\n"
+      << "  \"bootstrap_registration_table_abi_version\": "
+      << inputs.bootstrap_registration_table_abi_version << ",\n"
+      << "  \"bootstrap_registration_table_pointer_field_count\": "
+      << inputs.bootstrap_registration_table_pointer_field_count << ",\n"
       << "  \"success_status_code\": " << inputs.success_status_code << ",\n"
       << "  \"invalid_descriptor_status_code\": "
       << inputs.invalid_descriptor_status_code << ",\n"

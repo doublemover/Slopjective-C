@@ -8644,3 +8644,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `pipeline/objc3_frontend_artifacts.cpp`, and `io/objc3_process.cpp` preserve
   the manifest authority for the derived symbols so startup probes can compare
   emitted IR/object state against one deterministic translation-unit packet.
+- M254 lane-C C003 registration-table/image-local-init expansion turns that
+  registration table into one self-describing per-image packet with ABI/version
+  counts, section-root pointers, selector/string pool roots, and one
+  image-local init-state cell that the emitted init stub guards before runtime
+  registration. The manifest side keeps publishing the exact derived state-cell
+  symbol and layout contract so later runtime image-walk work consumes the same
+  lowering-owned boundary rather than rediscovering it from object trivia.

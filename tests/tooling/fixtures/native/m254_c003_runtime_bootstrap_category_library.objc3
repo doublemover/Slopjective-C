@@ -1,0 +1,33 @@
+module runtimeBootstrapCategoryLibrary;
+
+@protocol Worker
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Widget
+@property (readonly) id value;
+- (id) value;
+@end
+
+@implementation Widget
+@property (readonly) id value;
+- (id) value {
+  return 7;
+}
+@end
+
+@interface Widget (Debug)<Worker>
+@property (readonly) id shadow;
+- (id) debugName;
+@end
+
+@implementation Widget (Debug)
+@property (readonly) id shadow;
+- (id) debugName {
+  return 3;
+}
+- (id) tokenValue {
+  return 5;
+}
+@end
