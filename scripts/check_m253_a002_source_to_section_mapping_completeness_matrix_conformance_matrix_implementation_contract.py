@@ -32,6 +32,11 @@ EXPECTED_SECTIONS = (
     "objc3.runtime.property_descriptors",
     "objc3.runtime.ivar_descriptors",
 )
+EXPECTED_SUPPLEMENTAL_SECTIONS = (
+    "objc3.runtime.discovery_root",
+    "objc3.runtime.linker_anchor",
+)
+EXPECTED_INSPECTION_SECTIONS = EXPECTED_SECTIONS + EXPECTED_SUPPLEMENTAL_SECTIONS
 EXPECTED_SYMBOLS = (
     "__objc3_image_info",
     "__objc3_sec_class_descriptors",
@@ -609,8 +614,12 @@ def run_dynamic_probes(args: argparse.Namespace, failures: list[Finding]) -> tup
             native_case["retained_symbols"] = retained_symbols
             checks_total += require(readobj_result.returncode == 0, display_path(object_path), "M253-A002-READOBJ-STATUS", "llvm-readobj must exit 0", failures)
             checks_total += require(objdump_result.returncode == 0, display_path(object_path), "M253-A002-OBJDUMP-STATUS", "llvm-objdump must exit 0", failures)
-            checks_total += require(sorted(section["name"] for section in metadata_sections) == sorted(EXPECTED_SECTIONS), display_path(object_path), "M253-A002-OBJECT-SECTIONS", "metadata sections mismatch", failures)
-            checks_total += require(all(section["raw_data_size"] == 8 for section in metadata_sections), display_path(object_path), "M253-A002-OBJECT-SIZES", "expected zero-descriptor section sizes of 8", failures)
+            section_names = sorted(section["name"] for section in metadata_sections)
+            section_sizes = {section["name"]: section["raw_data_size"] for section in metadata_sections}
+            checks_total += require(section_names == sorted(EXPECTED_INSPECTION_SECTIONS), display_path(object_path), "M253-A002-OBJECT-SECTIONS", "metadata sections mismatch", failures)
+            checks_total += require(all(section_sizes.get(name) == 8 for name in EXPECTED_SECTIONS), display_path(object_path), "M253-A002-OBJECT-BASE-SIZES", "expected base matrix section sizes of 8", failures)
+            checks_total += require(int(section_sizes.get("objc3.runtime.discovery_root", 0) or 0) > 8, display_path(object_path), "M253-A002-OBJECT-DISCOVERY-SIZE", "expected non-trivial discovery_root packaging payload", failures)
+            checks_total += require(section_sizes.get("objc3.runtime.linker_anchor") == 8, display_path(object_path), "M253-A002-OBJECT-LINKER-ANCHOR-SIZE", "expected linker_anchor section size of 8", failures)
             checks_total += require(sorted(retained_symbols) == sorted(EXPECTED_SYMBOLS), display_path(object_path), "M253-A002-OBJECT-SYMBOLS", "retained symbol inventory mismatch", failures)
             checks_total += require(backend_marker in {"llvm-direct", "llc"}, display_path(object_path), "M253-A002-OBJECT-BACKEND", "unexpected object backend marker", failures)
 

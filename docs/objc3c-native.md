@@ -1197,6 +1197,29 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`
 
+## Metadata emission gate (M253-E001)
+
+- Lane-E now freezes the emitted-metadata evidence gate through
+  `Objc3RuntimeMetadataEmissionGateSummary`.
+- Contract id:
+  `objc3c-runtime-metadata-emission-gate/m253-e001-v1`.
+- The evidence model is `a002-b003-c006-d003-summary-chain`.
+- The failure model is `fail-closed-on-upstream-summary-drift`.
+- The emitted IR now also carries:
+  - `; runtime_metadata_emission_gate = ...`
+  - `!objc3.objc_runtime_metadata_emission_gate`
+- The gate consumes the canonical upstream evidence:
+  - `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
+  - `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
+  - `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
+  - `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`
+- The gate remains fail closed if any upstream summary disappears, stops
+  reporting `ok: true`, or drops the case-level invariants that define the
+  current object-emission boundary.
+- This freeze is the prerequisite for `M253-E002` cross-lane closeout.
+- Validation/evidence path:
+  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

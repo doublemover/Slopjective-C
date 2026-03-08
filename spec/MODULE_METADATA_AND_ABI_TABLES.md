@@ -6299,3 +6299,24 @@ shall preserve:
 
 `M253-D003` closes archive/static-link discovery behavior without claiming
 runtime registration/startup bootstrap.
+
+## M253 metadata emission gate (E001)
+
+Deterministic lane-E metadata emission gate behavior for `M253-E001` shall
+preserve:
+
+- contract id `objc3c-runtime-metadata-emission-gate/m253-e001-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_metadata_emission_gate`,
+- evidence model `a002-b003-c006-d003-summary-chain`,
+- failure model `fail-closed-on-upstream-summary-drift`,
+- canonical upstream evidence paths:
+  - `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
+  - `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
+  - `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
+  - `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`,
+- next-closeout handoff `M253-E002`, and
+- evidence path
+  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`.
+
+`M253-E001` is an aggregate gate only; it adds no new metadata section family
+and no runtime registration behavior.

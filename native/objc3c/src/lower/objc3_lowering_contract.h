@@ -213,6 +213,16 @@ inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
     ".merged.runtime-metadata-linker-options.rsp";
 inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
     ".merged.runtime-metadata-discovery.json";
+// M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
+// object-emission evidence contract over A002/B003/C006/D003 so later closeout
+// work must fail closed if the source-to-section matrix, object-format policy,
+// binary inspection corpus, or archive/static-link discovery proof drifts.
+inline constexpr const char *kObjc3RuntimeMetadataEmissionGateContractId =
+    "objc3c-runtime-metadata-emission-gate/m253-e001-v1";
+inline constexpr const char *kObjc3RuntimeMetadataEmissionGateEvidenceModel =
+    "a002-b003-c006-d003-summary-chain";
+inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
+    "fail-closed-on-upstream-summary-drift";
 // M253-B002 normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -917,6 +927,7 @@ std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
+std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section);
 std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(

@@ -105,3 +105,5 @@ def test_contract_dynamic_probe_passes_when_tooling_is_available(tmp_path: Path)
     assert any(row["row_key"] == "class-node-to-emission" for row in matrix["rows"])
     assert any(row["row_key"] == "method-node-to-emission" for row in matrix["rows"])
     assert inspection_case["object_backend"] in {"llvm-direct", "llc"}
+    section_names = sorted(section["name"] for section in inspection_case["metadata_sections"])
+    assert section_names == sorted(contract.EXPECTED_INSPECTION_SECTIONS)

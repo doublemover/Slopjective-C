@@ -402,6 +402,10 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     std::string &linker_response_file_payload,
     std::string &discovery_json,
     std::string &error) {
+  // M253-E001 metadata-emission gate anchor: lane-E consumes the object-level
+  // linker-retention/discovery artifacts published on this path together with
+  // the C006 binary-inspection corpus and the D003 merged-discovery proof.
+  // Any drift here must fail closed before later cross-lane closeout runs.
   linker_response_file_payload.clear();
   discovery_json.clear();
   error.clear();

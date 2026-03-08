@@ -5172,3 +5172,28 @@ multi-archive static-link fan-in.
   do not produce a false-success merged artifact.
 
 `M253-D003` does not add runtime registration or startup bootstrap behavior.
+
+## M253 metadata emission gate (E001)
+
+Lane-E shall freeze one fail-closed evidence gate over the implemented
+source-to-section matrix, object-format policy, binary inspection corpus, and
+archive/static-link discovery proof before `M253-E002` cross-lane closeout
+begins.
+
+`M253-E001` requires:
+
+- contract id `objc3c-runtime-metadata-emission-gate/m253-e001-v1`,
+- evidence model `a002-b003-c006-d003-summary-chain`,
+- failure model `fail-closed-on-upstream-summary-drift`,
+- emitted IR publication through
+  `; runtime_metadata_emission_gate = ...` and
+  `!objc3.objc_runtime_metadata_emission_gate`,
+- direct validation of the canonical upstream summaries:
+  - `M253-A002`
+  - `M253-B003`
+  - `M253-C006`
+  - `M253-D003`,
+- one checker/test pair that rejects drift in any upstream evidence file, and
+- an explicit handoff that `M253-E002` is the next closeout issue.
+
+`M253-E001` does not add new object-emission behavior or runtime registration.

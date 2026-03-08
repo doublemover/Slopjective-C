@@ -8580,3 +8580,14 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   anchors with translation-unit identity, keeping metadata-only library objects
   from exporting a colliding public `objc3c_entry`, and standardizing one
   merged discovery/response artifact pair for static-link fan-in.
+- M253 lane-E E001 metadata emission gate anchors explicit aggregate evidence
+  freeze artifacts in
+  `docs/contracts/m253_metadata_emission_gate_contract_and_architecture_freeze_e001_expectations.md`,
+  `spec/planning/compiler/m253/m253_e001_metadata_emission_gate_contract_and_architecture_freeze_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `lower/objc3_lowering_contract.h`, `lower/objc3_lowering_contract.cpp`,
+  `ir/objc3_ir_emitter.cpp`, and `io/objc3_process.cpp` so lane-E freezes one
+  fail-closed A002/B003/C006/D003 metadata emission boundary summary chain over
+  `M253-A002`, `M253-B003`, `M253-C006`, and
+  `M253-D003` before `M253-E002` cross-lane closeout begins.

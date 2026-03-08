@@ -590,6 +590,20 @@ std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetadataEmissionGateSummary() {
+  std::ostringstream out;
+  // M253-E001 metadata-emission gate anchor: lane-E freezes one fail-closed
+  // evidence chain over the implemented A002/B003/C006/D003 summaries before
+  // cross-lane closeout begins, so later work must preserve the same source
+  // matrix, object-format policy, binary inspection corpus, and archive/static
+  // link discovery proofs instead of redefining the gate ad hoc.
+  out << "contract=" << kObjc3RuntimeMetadataEmissionGateContractId
+      << ";evidence_model=" << kObjc3RuntimeMetadataEmissionGateEvidenceModel
+      << ";failure_model=" << kObjc3RuntimeMetadataEmissionGateFailureModel
+      << ";non_goals=no-new-emission-families-or-runtime-registration";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);

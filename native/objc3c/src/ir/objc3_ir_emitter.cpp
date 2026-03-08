@@ -1786,6 +1786,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_object_packaging_retention = !{!61}\n";
     out << "!objc3.objc_runtime_linker_retention = !{!62}\n";
     out << "!objc3.objc_runtime_archive_static_link_discovery = !{!63}\n";
+    out << "!objc3.objc_runtime_metadata_emission_gate = !{!64}\n";
     out << "!objc3.objc_runtime_metadata_object_inspection = !{!50}\n";
     out << "!objc3.objc_runtime_support_library = !{!51}\n";
     out << "!objc3.objc_runtime_support_library_core_feature = !{!52}\n";
@@ -2806,6 +2807,13 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_metadata_archive_static_link_translation_unit_identity_key)
+        << "\"}\n";
+    out << "!64 = !{!\""
+        << EscapeCStringLiteral(kObjc3RuntimeMetadataEmissionGateContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMetadataEmissionGateEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMetadataEmissionGateFailureModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -4816,6 +4824,13 @@ class Objc3IREmitter {
         << ";merged_discovery_artifact_suffix="
         << frontend_metadata_
                .runtime_metadata_archive_static_link_discovery_artifact_suffix
+        << "\n";
+    out << "; runtime_metadata_emission_gate = "
+        << Objc3RuntimeMetadataEmissionGateSummary()
+        << ";source_to_section_matrix_issue=M253-A002"
+        << ";object_format_policy_issue=M253-B003"
+        << ";binary_inspection_issue=M253-C006"
+        << ";archive_static_link_issue=M253-D003"
         << "\n";
     out << "; runtime metadata section scaffold globals\n";
 

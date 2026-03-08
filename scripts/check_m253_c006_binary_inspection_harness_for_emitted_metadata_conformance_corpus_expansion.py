@@ -194,6 +194,18 @@ def exact_section(name: str, raw_size: int, relocations: int) -> SectionExpectat
     )
 
 
+DISCOVERY_ROOT_SECTION = SectionExpectation(
+    "objc3.runtime.discovery_root",
+    56,
+    6,
+)
+LINKER_ANCHOR_SECTION = exact_section(
+    "objc3.runtime.linker_anchor",
+    8,
+    1,
+)
+
+
 def canonical_json(payload: object) -> str:
     return json.dumps(payload, indent=2) + "\n"
 
@@ -347,6 +359,8 @@ def make_positive_probe_specs(args: argparse.Namespace) -> tuple[PositiveProbeSp
                 exact_section("objc3.runtime.category_descriptors", 8, 0),
                 exact_section("objc3.runtime.property_descriptors", 8, 0),
                 exact_section("objc3.runtime.ivar_descriptors", 8, 0),
+                DISCOVERY_ROOT_SECTION,
+                LINKER_ANCHOR_SECTION,
             ),
             expected_absent_sections=(
                 "objc3.runtime.selector_pool",
@@ -385,6 +399,8 @@ def make_positive_probe_specs(args: argparse.Namespace) -> tuple[PositiveProbeSp
                 exact_section("objc3.runtime.category_descriptors", 8, 0),
                 SectionExpectation("objc3.runtime.property_descriptors", 500, 20),
                 SectionExpectation("objc3.runtime.ivar_descriptors", 200, 5),
+                DISCOVERY_ROOT_SECTION,
+                LINKER_ANCHOR_SECTION,
                 SectionExpectation("objc3.runtime.selector_pool", 64, 4),
                 SectionExpectation("objc3.runtime.string_pool", 512, 16),
             ),
@@ -424,6 +440,8 @@ def make_positive_probe_specs(args: argparse.Namespace) -> tuple[PositiveProbeSp
                 SectionExpectation("objc3.runtime.category_descriptors", 700, 25),
                 SectionExpectation("objc3.runtime.property_descriptors", 500, 18),
                 SectionExpectation("objc3.runtime.ivar_descriptors", 200, 5),
+                DISCOVERY_ROOT_SECTION,
+                LINKER_ANCHOR_SECTION,
                 SectionExpectation("objc3.runtime.selector_pool", 32, 2),
                 SectionExpectation("objc3.runtime.string_pool", 512, 16),
             ),
@@ -463,6 +481,8 @@ def make_positive_probe_specs(args: argparse.Namespace) -> tuple[PositiveProbeSp
                 exact_section("objc3.runtime.category_descriptors", 8, 0),
                 exact_section("objc3.runtime.property_descriptors", 8, 0),
                 exact_section("objc3.runtime.ivar_descriptors", 8, 0),
+                DISCOVERY_ROOT_SECTION,
+                LINKER_ANCHOR_SECTION,
                 SectionExpectation("objc3.runtime.selector_pool", 24, 1),
                 exact_section("objc3.runtime.string_pool", 8, 0),
             ),

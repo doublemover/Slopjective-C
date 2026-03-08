@@ -130,8 +130,10 @@ def test_dynamic_probe_records_binary_inspection_corpus(tmp_path: Path) -> None:
     assert [section["name"] for section in zero_case["sections"]] == [
         "objc3.runtime.category_descriptors",
         "objc3.runtime.class_descriptors",
+        "objc3.runtime.discovery_root",
         "objc3.runtime.image_info",
         "objc3.runtime.ivar_descriptors",
+        "objc3.runtime.linker_anchor",
         "objc3.runtime.property_descriptors",
         "objc3.runtime.protocol_descriptors",
     ]
@@ -142,18 +144,24 @@ def test_dynamic_probe_records_binary_inspection_corpus(tmp_path: Path) -> None:
     assert class_case["tracked_symbol_offsets"]["__objc3_sec_class_descriptors"] > 0
     assert class_case["tracked_symbol_offsets"]["__objc3_sec_category_descriptors"] == 0
     assert contract.BOUNDARY_COMMENT_PREFIX in class_case["boundary_line"]
+    assert "objc3.runtime.discovery_root" in [section["name"] for section in class_case["sections"]]
+    assert "objc3.runtime.linker_anchor" in [section["name"] for section in class_case["sections"]]
 
     category_case = cases["M253-C006-CASE-CATEGORY-PROTOCOL-PROPERTY"]
     assert category_case["process_exit_code"] == 0
     assert category_case["backend"] == "llvm-direct"
     assert category_case["tracked_symbol_offsets"]["__objc3_sec_class_descriptors"] == 0
     assert category_case["tracked_symbol_offsets"]["__objc3_sec_category_descriptors"] > 0
+    assert "objc3.runtime.discovery_root" in [section["name"] for section in category_case["sections"]]
+    assert "objc3.runtime.linker_anchor" in [section["name"] for section in category_case["sections"]]
 
     message_case = cases["M253-C006-CASE-MESSAGE-SEND"]
     assert message_case["process_exit_code"] == 0
     assert message_case["backend"] == "llvm-direct"
     assert message_case["tracked_symbol_offsets"]["__objc3_sec_selector_pool"] > 0
     assert message_case["tracked_symbol_offsets"]["__objc3_sec_string_pool"] == 0
+    assert "objc3.runtime.discovery_root" in [section["name"] for section in message_case["sections"]]
+    assert "objc3.runtime.linker_anchor" in [section["name"] for section in message_case["sections"]]
 
     negative_case = cases["M253-C006-CASE-NEGATIVE-MISSING-INTERFACE-PROPERTY"]
     assert negative_case["process_exit_code"] != 0
