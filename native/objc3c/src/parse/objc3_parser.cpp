@@ -5058,6 +5058,9 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // M252-E001 semantic-closure gate anchor: lane-E freezes this parser-owned
   // owner identity surface together with B004 legality, C003 debug
   // projection, and D002 packaging before M253-A001 section emission begins.
+  // M252-E002 corpus-sync anchor: representative class/category/property/ivar
+  // runner probes continue to derive owner identity from this same parser
+  // surface on the real integrated path.
   return "category:" + owner_name + "(" + category_name + ")";
 }
 

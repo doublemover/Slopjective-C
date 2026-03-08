@@ -8394,3 +8394,15 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   so `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002` remain one
   synchronized semantic-closure proof before `M253-A001` section emission
   begins.
+- M252 lane-E E002 metadata-closure corpus sync anchors explicit integrated
+  contract artifacts in
+  `docs/contracts/m252_conformance_corpus_and_docs_sync_for_metadata_graph_closure_e002_expectations.md`,
+  `spec/planning/compiler/m252/m252_e002_conformance_corpus_and_docs_sync_for_metadata_graph_closure_packet.md`,
+  `scripts/run_m252_e002_lane_e_readiness.py`, `docs/objc3c-native.md`,
+  `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, `package.json`,
+  `parse/objc3_parser.cpp`, `sema/objc3_sema_contract.h`,
+  `sema/objc3_semantic_passes.cpp`, and `pipeline/objc3_frontend_artifacts.cpp`
+  so representative cases such as `class-protocol-property-ivar-runtime-graph`
+  and `missing-interface-property-diagnostic` stay synchronized on the real
+  frontend runner path before M253 section-emission work begins.

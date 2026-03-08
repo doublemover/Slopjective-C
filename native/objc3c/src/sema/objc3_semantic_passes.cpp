@@ -4988,6 +4988,8 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
 // M252-E001 semantic-closure gate anchor: lane-E treats this sema-owned
 // property/ivar summary as one required section-emission prerequisite beside
 // A003 graph closure, C003 replay projection, and D002 packaging.
+// M252-E002 corpus-sync anchor: the integrated corpus gate replays this
+// property/ivar summary directly from manifest output on the real runner path.
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
   Objc3PropertySynthesisIvarBindingSummary summary;

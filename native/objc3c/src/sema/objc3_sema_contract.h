@@ -523,6 +523,9 @@ struct Objc3PropertySynthesisIvarBindingSummary {
   // M252-E001 semantic-closure gate anchor: lane-E consumes this property/ivar
   // legality summary together with the A003 graph, C003 projection, and D002
   // packaging proofs before M253-A001 section emission begins.
+  // M252-E002 corpus-sync anchor: representative legality corpus cases keep
+  // these counts deterministic so docs and integrated gate coverage stay
+  // aligned on the real runner path.
   std::size_t property_synthesis_sites = 0;
   std::size_t property_synthesis_explicit_ivar_bindings = 0;
   std::size_t property_synthesis_default_ivar_bindings = 0;

@@ -5883,6 +5883,23 @@ preserve:
 - evidence path
   `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`.
 
+## M252 metadata closure conformance corpus metadata anchors (E002)
+
+Deterministic lane-E integrated corpus anchors for `M252-E002` shall preserve:
+
+- contract id
+  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`,
+- dependency continuity with `M252-E001`,
+- representative case ids
+  `class-protocol-property-ivar-runtime-graph`,
+  `category-protocol-property-runtime-graph`,
+  `class-property-synthesis-ready`,
+  `category-property-export-only`,
+  `missing-interface-property-diagnostic`, and
+  `incompatible-property-signature-diagnostic`,
+- evidence path
+  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall

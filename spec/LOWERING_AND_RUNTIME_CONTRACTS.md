@@ -4718,3 +4718,25 @@ The gate must preserve:
 `M252-E001` still does not implement object-file section emission, startup
 registration, or runtime metadata loader bootstrap. It freezes the aggregate
 pre-section-emission proof that the next implementation issue must preserve.
+
+## M252 conformance corpus and docs sync for metadata graph closure (E002)
+
+`M252-E002` adds the first representative integrated corpus gate for metadata
+graph closure on the real frontend runner path.
+
+The gate must preserve:
+
+- contract id
+  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`,
+- dependency continuity through `M252-E001`,
+- representative cases
+  `class-protocol-property-ivar-runtime-graph`,
+  `category-protocol-property-runtime-graph`,
+  `class-property-synthesis-ready`,
+  `category-property-export-only`,
+  `missing-interface-property-diagnostic`, and
+  `incompatible-property-signature-diagnostic`,
+- a direct readiness runner that exercises the real frontend runner path rather
+  than recursively nesting the whole lane stack,
+- evidence path
+  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.

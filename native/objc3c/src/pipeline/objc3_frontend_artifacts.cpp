@@ -5602,6 +5602,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // M252-E001 semantic-closure gate anchor: lane-E freezes the
            // aggregate A003/B004/C003/D002 boundary here so M253-A001 section
            // emission consumes one synchronized metadata closure proof.
+           // M252-E002 corpus-sync anchor: integrated corpus probes must
+           // observe these synchronized metadata surfaces through the real
+           // frontend runner path rather than mock packets.
            << ",\"objc_executable_metadata_runtime_ingest_binary_boundary\":"
            << BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
                   executable_metadata_runtime_ingest_binary_boundary)

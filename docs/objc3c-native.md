@@ -674,6 +674,27 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`
 
+## Conformance corpus and docs sync for metadata graph closure (M252-E002)
+
+- Lane-E now adds the first representative metadata-closure corpus sync gate on
+  the real frontend runner path:
+  `artifacts/bin/objc3c-frontend-c-api-runner.exe`.
+- Contract id:
+  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`.
+- Representative integrated corpus cases now remain explicit in docs and the
+  checker:
+  - `class-protocol-property-ivar-runtime-graph`
+  - `category-protocol-property-runtime-graph`
+  - `class-property-synthesis-ready`
+  - `category-property-export-only`
+  - `missing-interface-property-diagnostic`
+  - `incompatible-property-signature-diagnostic`
+- `scripts/run_m252_e002_lane_e_readiness.py` executes the direct integrated
+  path once, rather than recursively re-entering every upstream lane readiness
+  script.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:
