@@ -1783,6 +1783,14 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestReplayKey(
       << summary.registration_entrypoint_symbol
       << ";translation_unit_identity_model="
       << summary.translation_unit_identity_model
+      << ";class_descriptor_count=" << summary.class_descriptor_count
+      << ";protocol_descriptor_count=" << summary.protocol_descriptor_count
+      << ";category_descriptor_count=" << summary.category_descriptor_count
+      << ";property_descriptor_count=" << summary.property_descriptor_count
+      << ";ivar_descriptor_count=" << summary.ivar_descriptor_count
+      << ";total_descriptor_count=" << summary.total_descriptor_count
+      << ";translation_unit_registration_order_ordinal="
+      << summary.translation_unit_registration_order_ordinal
       << ";translation_unit_registration_replay_key="
       << summary.translation_unit_registration_replay_key;
   for (std::size_t index = 0;
@@ -1798,7 +1806,9 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
     const Objc3RuntimeTranslationUnitRegistrationContractSummary
         &registration_contract,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
-        &runtime_support_library_link_wiring) {
+        &runtime_support_library_link_wiring,
+    const Objc3RuntimeMetadataSectionScaffoldSummary
+        &runtime_metadata_section_scaffold) {
   Objc3RuntimeTranslationUnitRegistrationManifestSummary summary;
   summary.fail_closed = true;
   summary.translation_unit_registration_contract_ready =
@@ -1814,6 +1824,18 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
   summary.runtime_registration_artifact_emitted_by_driver = true;
   summary.runtime_owned_payload_artifact_count =
       summary.runtime_owned_payload_artifacts.size();
+  summary.class_descriptor_count =
+      runtime_metadata_section_scaffold.class_descriptor_count;
+  summary.protocol_descriptor_count =
+      runtime_metadata_section_scaffold.protocol_descriptor_count;
+  summary.category_descriptor_count =
+      runtime_metadata_section_scaffold.category_descriptor_count;
+  summary.property_descriptor_count =
+      runtime_metadata_section_scaffold.property_descriptor_count;
+  summary.ivar_descriptor_count =
+      runtime_metadata_section_scaffold.ivar_descriptor_count;
+  summary.total_descriptor_count =
+      runtime_metadata_section_scaffold.total_descriptor_count;
   if (summary.translation_unit_registration_contract_ready) {
     summary.translation_unit_registration_replay_key =
         registration_contract.replay_key;
@@ -1901,7 +1923,21 @@ std::string BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
       << EscapeJsonString(summary.registration_entrypoint_symbol)
       << "\",\"translation_unit_identity_model\":\""
       << EscapeJsonString(summary.translation_unit_identity_model)
-      << "\",\"translation_unit_registration_replay_key\":\""
+      << "\",\"class_descriptor_count\":"
+      << summary.class_descriptor_count
+      << ",\"protocol_descriptor_count\":"
+      << summary.protocol_descriptor_count
+      << ",\"category_descriptor_count\":"
+      << summary.category_descriptor_count
+      << ",\"property_descriptor_count\":"
+      << summary.property_descriptor_count
+      << ",\"ivar_descriptor_count\":"
+      << summary.ivar_descriptor_count
+      << ",\"total_descriptor_count\":"
+      << summary.total_descriptor_count
+      << ",\"translation_unit_registration_order_ordinal\":"
+      << summary.translation_unit_registration_order_ordinal
+      << ",\"translation_unit_registration_replay_key\":\""
       << EscapeJsonString(summary.translation_unit_registration_replay_key)
       << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\",\"failure_reason\":\""
@@ -2027,6 +2063,160 @@ std::string BuildRuntimeStartupBootstrapInvariantSummaryJson(
       << ",\"ready_for_bootstrap_implementation\":"
       << (summary.ready_for_bootstrap_implementation ? "true" : "false")
       << ",\"registration_manifest_replay_key\":\""
+      << EscapeJsonString(summary.registration_manifest_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
+std::string BuildRuntimeBootstrapSemanticsReplayKey(
+    const Objc3RuntimeBootstrapSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";bootstrap_invariant_contract_id="
+      << summary.bootstrap_invariant_contract_id
+      << ";registration_manifest_contract_id="
+      << summary.registration_manifest_contract_id
+      << ";bootstrap_surface_path=" << summary.bootstrap_surface_path
+      << ";duplicate_registration_policy="
+      << summary.duplicate_registration_policy
+      << ";realization_order_policy=" << summary.realization_order_policy
+      << ";failure_mode=" << summary.failure_mode
+      << ";image_local_initialization_scope="
+      << summary.image_local_initialization_scope
+      << ";constructor_root_symbol=" << summary.constructor_root_symbol
+      << ";registration_entrypoint_symbol="
+      << summary.registration_entrypoint_symbol
+      << ";manifest_authority_model=" << summary.manifest_authority_model
+      << ";translation_unit_identity_model="
+      << summary.translation_unit_identity_model
+      << ";runtime_library_archive_relative_path="
+      << summary.runtime_library_archive_relative_path
+      << ";registration_result_model=" << summary.registration_result_model
+      << ";registration_order_ordinal_model="
+      << summary.registration_order_ordinal_model
+      << ";runtime_state_snapshot_symbol="
+      << summary.runtime_state_snapshot_symbol
+      << ";success_status_code=" << summary.success_status_code
+      << ";invalid_descriptor_status_code="
+      << summary.invalid_descriptor_status_code
+      << ";duplicate_registration_status_code="
+      << summary.duplicate_registration_status_code
+      << ";out_of_order_status_code="
+      << summary.out_of_order_status_code
+      << ";translation_unit_registration_order_ordinal="
+      << summary.translation_unit_registration_order_ordinal
+      << ";bootstrap_invariant_replay_key="
+      << summary.bootstrap_invariant_replay_key
+      << ";registration_manifest_replay_key="
+      << summary.registration_manifest_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeBootstrapSemanticsSummary BuildRuntimeBootstrapSemanticsSummary(
+    const Objc3RuntimeStartupBootstrapInvariantSummary &bootstrap_invariants,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &registration_manifest) {
+  Objc3RuntimeBootstrapSemanticsSummary summary;
+  summary.fail_closed = true;
+  summary.bootstrap_invariant_contract_ready =
+      IsReadyObjc3RuntimeStartupBootstrapInvariantSummary(
+          bootstrap_invariants);
+  summary.registration_manifest_contract_ready =
+      IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+          registration_manifest);
+  summary.registration_manifest_bootstrap_semantics_published =
+      summary.registration_manifest_contract_ready;
+  summary.live_runtime_enforcement_landed = true;
+  summary.runtime_probe_required = true;
+  summary.no_partial_commit_on_failure = true;
+  summary.ready_for_constructor_root_implementation =
+      summary.bootstrap_invariant_contract_ready &&
+      summary.registration_manifest_contract_ready;
+  summary.translation_unit_registration_order_ordinal =
+      registration_manifest.translation_unit_registration_order_ordinal;
+  if (summary.bootstrap_invariant_contract_ready) {
+    summary.bootstrap_invariant_replay_key = bootstrap_invariants.replay_key;
+  }
+  if (summary.registration_manifest_contract_ready) {
+    summary.registration_manifest_replay_key = registration_manifest.replay_key;
+  }
+  if (summary.ready_for_constructor_root_implementation) {
+    summary.replay_key = BuildRuntimeBootstrapSemanticsReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeBootstrapSemanticsSummary(summary)) {
+    summary.failure_reason =
+        "runtime bootstrap semantics summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeBootstrapSemanticsSummaryJson(
+    const Objc3RuntimeBootstrapSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"bootstrap_invariant_contract_id\":\""
+      << EscapeJsonString(summary.bootstrap_invariant_contract_id)
+      << "\",\"registration_manifest_contract_id\":\""
+      << EscapeJsonString(summary.registration_manifest_contract_id)
+      << "\",\"bootstrap_surface_path\":\""
+      << EscapeJsonString(summary.bootstrap_surface_path)
+      << "\",\"duplicate_registration_policy\":\""
+      << EscapeJsonString(summary.duplicate_registration_policy)
+      << "\",\"realization_order_policy\":\""
+      << EscapeJsonString(summary.realization_order_policy)
+      << "\",\"failure_mode\":\""
+      << EscapeJsonString(summary.failure_mode)
+      << "\",\"image_local_initialization_scope\":\""
+      << EscapeJsonString(summary.image_local_initialization_scope)
+      << "\",\"constructor_root_symbol\":\""
+      << EscapeJsonString(summary.constructor_root_symbol)
+      << "\",\"registration_entrypoint_symbol\":\""
+      << EscapeJsonString(summary.registration_entrypoint_symbol)
+      << "\",\"manifest_authority_model\":\""
+      << EscapeJsonString(summary.manifest_authority_model)
+      << "\",\"translation_unit_identity_model\":\""
+      << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"runtime_library_archive_relative_path\":\""
+      << EscapeJsonString(summary.runtime_library_archive_relative_path)
+      << "\",\"registration_result_model\":\""
+      << EscapeJsonString(summary.registration_result_model)
+      << "\",\"registration_order_ordinal_model\":\""
+      << EscapeJsonString(summary.registration_order_ordinal_model)
+      << "\",\"runtime_state_snapshot_symbol\":\""
+      << EscapeJsonString(summary.runtime_state_snapshot_symbol)
+      << "\",\"success_status_code\":" << summary.success_status_code
+      << ",\"invalid_descriptor_status_code\":"
+      << summary.invalid_descriptor_status_code
+      << ",\"duplicate_registration_status_code\":"
+      << summary.duplicate_registration_status_code
+      << ",\"out_of_order_status_code\":"
+      << summary.out_of_order_status_code
+      << ",\"translation_unit_registration_order_ordinal\":"
+      << summary.translation_unit_registration_order_ordinal
+      << ",\"ready\":"
+      << (IsReadyObjc3RuntimeBootstrapSemanticsSummary(summary) ? "true"
+                                                                : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"bootstrap_invariant_contract_ready\":"
+      << (summary.bootstrap_invariant_contract_ready ? "true" : "false")
+      << ",\"registration_manifest_contract_ready\":"
+      << (summary.registration_manifest_contract_ready ? "true" : "false")
+      << ",\"live_runtime_enforcement_landed\":"
+      << (summary.live_runtime_enforcement_landed ? "true" : "false")
+      << ",\"registration_manifest_bootstrap_semantics_published\":"
+      << (summary.registration_manifest_bootstrap_semantics_published ? "true"
+                                                                      : "false")
+      << ",\"runtime_probe_required\":"
+      << (summary.runtime_probe_required ? "true" : "false")
+      << ",\"no_partial_commit_on_failure\":"
+      << (summary.no_partial_commit_on_failure ? "true" : "false")
+      << ",\"ready_for_constructor_root_implementation\":"
+      << (summary.ready_for_constructor_root_implementation ? "true" : "false")
+      << ",\"bootstrap_invariant_replay_key\":\""
+      << EscapeJsonString(summary.bootstrap_invariant_replay_key)
+      << "\",\"registration_manifest_replay_key\":\""
       << EscapeJsonString(summary.registration_manifest_replay_key)
       << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\",\"failure_reason\":\""
@@ -3833,11 +4023,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_translation_unit_registration_manifest =
           BuildRuntimeTranslationUnitRegistrationManifestSummary(
               runtime_translation_unit_registration_contract,
-              runtime_support_library_link_wiring);
+              runtime_support_library_link_wiring,
+              runtime_metadata_section_scaffold);
   const Objc3RuntimeStartupBootstrapInvariantSummary
       runtime_startup_bootstrap_invariants =
           BuildRuntimeStartupBootstrapInvariantSummary(
               runtime_translation_unit_registration_manifest);
+  const Objc3RuntimeBootstrapSemanticsSummary
+      runtime_bootstrap_semantics = BuildRuntimeBootstrapSemanticsSummary(
+          runtime_startup_bootstrap_invariants,
+          runtime_translation_unit_registration_manifest);
   const Objc3PropertySynthesisIvarBindingContract property_synthesis_ivar_binding_contract =
       BuildPropertySynthesisIvarBindingContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3PropertySynthesisIvarBindingContract(property_synthesis_ivar_binding_contract)) {
@@ -5729,7 +5924,28 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_translation_unit_registration_manifest_translation_unit_identity_model\":\""
            << runtime_translation_unit_registration_manifest
                   .translation_unit_identity_model
-           << "\",\"runtime_translation_unit_registration_manifest_fail_closed\":"
+           << "\",\"runtime_translation_unit_registration_manifest_class_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .class_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_protocol_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .protocol_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_category_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .category_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_property_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .property_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_ivar_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .ivar_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_total_descriptor_count\":"
+           << runtime_translation_unit_registration_manifest
+                  .total_descriptor_count
+           << ",\"runtime_translation_unit_registration_manifest_translation_unit_registration_order_ordinal\":"
+           << runtime_translation_unit_registration_manifest
+                  .translation_unit_registration_order_ordinal
+           << ",\"runtime_translation_unit_registration_manifest_fail_closed\":"
            << (runtime_translation_unit_registration_manifest.fail_closed
                    ? "true"
                    : "false")
@@ -5783,6 +5999,54 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_translation_unit_registration_manifest_failure_reason\":\""
            << EscapeJsonString(
                   runtime_translation_unit_registration_manifest.failure_reason)
+           << "\""
+           << ",\"runtime_bootstrap_semantics_contract_id\":\""
+           << runtime_bootstrap_semantics.contract_id
+           << "\",\"runtime_bootstrap_semantics_bootstrap_invariant_contract_id\":\""
+           << runtime_bootstrap_semantics.bootstrap_invariant_contract_id
+           << "\",\"runtime_bootstrap_semantics_registration_manifest_contract_id\":\""
+           << runtime_bootstrap_semantics.registration_manifest_contract_id
+           << "\",\"runtime_bootstrap_semantics_duplicate_registration_policy\":\""
+           << runtime_bootstrap_semantics.duplicate_registration_policy
+           << "\",\"runtime_bootstrap_semantics_realization_order_policy\":\""
+           << runtime_bootstrap_semantics.realization_order_policy
+           << "\",\"runtime_bootstrap_semantics_failure_mode\":\""
+           << runtime_bootstrap_semantics.failure_mode
+           << "\",\"runtime_bootstrap_semantics_result_model\":\""
+           << runtime_bootstrap_semantics.registration_result_model
+           << "\",\"runtime_bootstrap_semantics_registration_order_ordinal_model\":\""
+           << runtime_bootstrap_semantics.registration_order_ordinal_model
+           << "\",\"runtime_bootstrap_semantics_runtime_state_snapshot_symbol\":\""
+           << runtime_bootstrap_semantics.runtime_state_snapshot_symbol
+           << "\",\"runtime_bootstrap_semantics_runtime_library_archive_relative_path\":\""
+           << runtime_bootstrap_semantics.runtime_library_archive_relative_path
+           << "\",\"runtime_bootstrap_semantics_translation_unit_registration_order_ordinal\":"
+           << runtime_bootstrap_semantics.translation_unit_registration_order_ordinal
+           << ",\"runtime_bootstrap_semantics_success_status_code\":"
+           << runtime_bootstrap_semantics.success_status_code
+           << ",\"runtime_bootstrap_semantics_invalid_descriptor_status_code\":"
+           << runtime_bootstrap_semantics.invalid_descriptor_status_code
+           << ",\"runtime_bootstrap_semantics_duplicate_registration_status_code\":"
+           << runtime_bootstrap_semantics.duplicate_registration_status_code
+           << ",\"runtime_bootstrap_semantics_out_of_order_status_code\":"
+           << runtime_bootstrap_semantics.out_of_order_status_code
+           << ",\"runtime_bootstrap_semantics_fail_closed\":"
+           << (runtime_bootstrap_semantics.fail_closed ? "true" : "false")
+           << ",\"runtime_bootstrap_semantics_live_runtime_enforcement_landed\":"
+           << (runtime_bootstrap_semantics.live_runtime_enforcement_landed ? "true"
+                                                                          : "false")
+           << ",\"runtime_bootstrap_semantics_no_partial_commit_on_failure\":"
+           << (runtime_bootstrap_semantics.no_partial_commit_on_failure ? "true"
+                                                                        : "false")
+           << ",\"runtime_bootstrap_semantics_ready_for_constructor_root_implementation\":"
+           << (runtime_bootstrap_semantics
+                       .ready_for_constructor_root_implementation
+                   ? "true"
+                   : "false")
+           << ",\"runtime_bootstrap_semantics_replay_key\":\""
+           << EscapeJsonString(runtime_bootstrap_semantics.replay_key)
+           << "\",\"runtime_bootstrap_semantics_failure_reason\":\""
+           << EscapeJsonString(runtime_bootstrap_semantics.failure_reason)
            << "\""
            << ",\"runtime_startup_bootstrap_invariant_contract_id\":\""
            << runtime_startup_bootstrap_invariants.contract_id
@@ -6742,6 +7006,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_startup_bootstrap_invariants\":"
            << BuildRuntimeStartupBootstrapInvariantSummaryJson(
                   runtime_startup_bootstrap_invariants)
+           // M254-B002 bootstrap-semantics anchor: lane-B now lands the live
+           // runtime enforcement/result-code surface that must remain aligned
+           // with the emitted registration manifest and the native runtime
+           // probe harness.
+           << ",\"objc_runtime_startup_bootstrap_semantics\":"
+           << BuildRuntimeBootstrapSemanticsSummaryJson(
+                  runtime_bootstrap_semantics)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"
@@ -7746,6 +8017,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
+  bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
 
   if (!post_pipeline_failure_code.empty()) {
     if (!options.emit_ir && !options.emit_object) {

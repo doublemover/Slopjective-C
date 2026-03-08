@@ -8623,3 +8623,10 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   registration, realization order, failure mode, and image-local
   initialization semantics to the live A002 registration manifest rather than
   leaving later bootstrap work to infer them from driver/process behavior.
+- M254 lane-B B002 startup-bootstrap semantics implementation extends that
+  packet with live runtime enforcement in `runtime/objc3_runtime.cpp` and
+  `runtime/objc3_runtime.h`, publishes one runtime-facing semantic surface in
+  `pipeline/objc3_frontend_artifacts.cpp`, and expands
+  `module.runtime-registration-manifest.json` so the emitted artifact carries
+  the same duplicate/order/failure/status-code contract that the native probe
+  validates before constructor-root automation lands.

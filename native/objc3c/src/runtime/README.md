@@ -40,3 +40,13 @@ changing the canonical runtime API surface:
 - `native/objc3c/src/runtime/objc3_runtime.cpp` exports the compatibility
   bridge symbol `objc3_msgsend_i32`, which forwards to
   `objc3_runtime_dispatch_i32`
+
+`M254-B002` extends the same runtime surface with live startup/bootstrap
+semantics while preserving the canonical archive/header path:
+
+- `objc3_runtime_register_image` now consumes a translation-unit identity key
+  plus a strict positive registration ordinal
+- duplicate translation-unit identity keys fail closed with status `-2`
+- non-monotonic registration ordinals fail closed with status `-3`
+- `objc3_runtime_copy_registration_state_for_testing` exposes committed state
+  to the native runtime probe so partial commits are detectable

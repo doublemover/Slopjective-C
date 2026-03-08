@@ -570,6 +570,18 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.constructor_priority_policy.empty() ||
       inputs.registration_entrypoint_symbol.empty() ||
       inputs.translation_unit_identity_model.empty() ||
+      inputs.total_descriptor_count !=
+          inputs.class_descriptor_count + inputs.protocol_descriptor_count +
+              inputs.category_descriptor_count +
+              inputs.property_descriptor_count + inputs.ivar_descriptor_count ||
+      inputs.bootstrap_semantics_contract_id.empty() ||
+      inputs.duplicate_registration_policy.empty() ||
+      inputs.realization_order_policy.empty() ||
+      inputs.failure_mode.empty() ||
+      inputs.registration_result_model.empty() ||
+      inputs.registration_order_ordinal_model.empty() ||
+      inputs.runtime_state_snapshot_symbol.empty() ||
+      inputs.translation_unit_registration_order_ordinal == 0 ||
       inputs.object_artifact_relative_path.empty() ||
       inputs.backend_artifact_relative_path.empty()) {
     error =
@@ -601,6 +613,11 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
   // user entry if bootstrap materialization cannot honor that contract.
+  // M254-B002 live bootstrap semantics anchor: the emitted registration
+  // manifest now carries the exact duplicate-registration, order, failure-mode,
+  // and runtime-status-code contract consumed by the real runtime library and
+  // probe harness. Drift between the emitted manifest and runtime behavior must
+  // fail closed before later constructor-root automation lands.
 
   std::ostringstream out;
   out << "{\n"
@@ -654,6 +671,41 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.constructor_priority_policy) << "\",\n"
       << "  \"translation_unit_identity_model\": \""
       << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
+      << "  \"class_descriptor_count\": " << inputs.class_descriptor_count
+      << ",\n"
+      << "  \"protocol_descriptor_count\": "
+      << inputs.protocol_descriptor_count << ",\n"
+      << "  \"category_descriptor_count\": "
+      << inputs.category_descriptor_count << ",\n"
+      << "  \"property_descriptor_count\": "
+      << inputs.property_descriptor_count << ",\n"
+      << "  \"ivar_descriptor_count\": " << inputs.ivar_descriptor_count
+      << ",\n"
+      << "  \"total_descriptor_count\": " << inputs.total_descriptor_count
+      << ",\n"
+      << "  \"bootstrap_semantics_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_semantics_contract_id) << "\",\n"
+      << "  \"duplicate_registration_policy\": \""
+      << EscapeJsonString(inputs.duplicate_registration_policy) << "\",\n"
+      << "  \"realization_order_policy\": \""
+      << EscapeJsonString(inputs.realization_order_policy) << "\",\n"
+      << "  \"failure_mode\": \"" << EscapeJsonString(inputs.failure_mode)
+      << "\",\n"
+      << "  \"registration_result_model\": \""
+      << EscapeJsonString(inputs.registration_result_model) << "\",\n"
+      << "  \"registration_order_ordinal_model\": \""
+      << EscapeJsonString(inputs.registration_order_ordinal_model) << "\",\n"
+      << "  \"runtime_state_snapshot_symbol\": \""
+      << EscapeJsonString(inputs.runtime_state_snapshot_symbol) << "\",\n"
+      << "  \"success_status_code\": " << inputs.success_status_code << ",\n"
+      << "  \"invalid_descriptor_status_code\": "
+      << inputs.invalid_descriptor_status_code << ",\n"
+      << "  \"duplicate_registration_status_code\": "
+      << inputs.duplicate_registration_status_code << ",\n"
+      << "  \"out_of_order_status_code\": "
+      << inputs.out_of_order_status_code << ",\n"
+      << "  \"translation_unit_registration_order_ordinal\": "
+      << inputs.translation_unit_registration_order_ordinal << ",\n"
       << "  \"translation_unit_identity_key\": \""
       << EscapeJsonString(
              linker_retention_artifacts.translation_unit_identity_key)
@@ -672,7 +724,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(linker_retention_artifacts.driver_linker_flag)
       << "\"\n"
       << "  ],\n"
-      << "  \"ready_for_lowering_init_stub_emission\": true\n"
+      << "  \"ready_for_lowering_init_stub_emission\": true,\n"
+      << "  \"ready_for_runtime_bootstrap_enforcement\": true\n"
       << "}\n";
   manifest_json = out.str();
   return true;

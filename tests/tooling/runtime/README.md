@@ -85,3 +85,16 @@ manifest:
   `abort-before-user-main-no-partial-registration-commit`
 - image-local initialization remains runtime-owned and image-local rather than
   driver-owned global mutable state
+
+`M254-B002` turns that freeze into a live runtime contract:
+
+- `objc3_runtime_register_image` now rejects duplicate translation-unit
+  identity keys with status `-2`
+- non-monotonic registration ordinals are rejected with status `-3`
+- invalid descriptors are rejected with status `-1`
+- `objc3_runtime_copy_registration_state_for_testing` exposes the committed
+  runtime state so probes can verify failed registrations do not partially
+  commit
+- emitted `module.runtime-registration-manifest.json` payloads now carry the
+  same duplicate/order/failure/status-code surface consumed by the runtime
+  probe

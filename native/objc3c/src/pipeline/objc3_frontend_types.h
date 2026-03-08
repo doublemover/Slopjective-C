@@ -2640,6 +2640,14 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestSummary {
       kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
   std::string translation_unit_identity_model =
       kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel;
+  std::size_t class_descriptor_count = 0;
+  std::size_t protocol_descriptor_count = 0;
+  std::size_t category_descriptor_count = 0;
+  std::size_t property_descriptor_count = 0;
+  std::size_t ivar_descriptor_count = 0;
+  std::size_t total_descriptor_count = 0;
+  std::uint64_t translation_unit_registration_order_ordinal =
+      kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal;
   bool fail_closed = false;
   bool translation_unit_registration_contract_ready = false;
   bool runtime_support_library_link_wiring_ready = false;
@@ -2683,6 +2691,13 @@ inline bool IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
          !summary.constructor_priority_policy.empty() &&
          !summary.registration_entrypoint_symbol.empty() &&
          !summary.translation_unit_identity_model.empty() &&
+         summary.total_descriptor_count ==
+             summary.class_descriptor_count +
+                 summary.protocol_descriptor_count +
+                 summary.category_descriptor_count +
+                 summary.property_descriptor_count +
+                 summary.ivar_descriptor_count &&
+         summary.translation_unit_registration_order_ordinal > 0 &&
          !summary.translation_unit_registration_replay_key.empty() &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
@@ -2757,6 +2772,92 @@ inline bool IsReadyObjc3RuntimeStartupBootstrapInvariantSummary(
          summary.live_duplicate_registration_enforcement_not_yet_landed &&
          summary.image_local_realization_not_yet_landed &&
          summary.ready_for_bootstrap_implementation &&
+         !summary.registration_manifest_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+struct Objc3RuntimeBootstrapSemanticsSummary {
+  std::string contract_id = kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string bootstrap_invariant_contract_id =
+      kObjc3RuntimeStartupBootstrapInvariantContractId;
+  std::string registration_manifest_contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string bootstrap_surface_path =
+      kObjc3RuntimeBootstrapSemanticsSurfacePath;
+  std::string duplicate_registration_policy =
+      kObjc3RuntimeStartupBootstrapDuplicateRegistrationPolicy;
+  std::string realization_order_policy =
+      kObjc3RuntimeStartupBootstrapRealizationOrderPolicy;
+  std::string failure_mode = kObjc3RuntimeStartupBootstrapFailureMode;
+  std::string image_local_initialization_scope =
+      kObjc3RuntimeStartupBootstrapImageLocalInitializationScope;
+  std::string constructor_root_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol;
+  std::string registration_entrypoint_symbol =
+      kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol;
+  std::string manifest_authority_model =
+      kObjc3RuntimeTranslationUnitRegistrationManifestAuthorityModel;
+  std::string translation_unit_identity_model =
+      kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel;
+  std::string runtime_library_archive_relative_path =
+      kObjc3RuntimeSupportLibraryArchiveRelativePath;
+  std::string registration_result_model =
+      kObjc3RuntimeBootstrapResultModel;
+  std::string registration_order_ordinal_model =
+      kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel;
+  std::string runtime_state_snapshot_symbol =
+      kObjc3RuntimeBootstrapStateSnapshotSymbol;
+  int success_status_code = kObjc3RuntimeBootstrapSuccessStatusCode;
+  int invalid_descriptor_status_code =
+      kObjc3RuntimeBootstrapInvalidDescriptorStatusCode;
+  int duplicate_registration_status_code =
+      kObjc3RuntimeBootstrapDuplicateRegistrationStatusCode;
+  int out_of_order_status_code =
+      kObjc3RuntimeBootstrapOutOfOrderStatusCode;
+  std::uint64_t translation_unit_registration_order_ordinal =
+      kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal;
+  bool fail_closed = false;
+  bool bootstrap_invariant_contract_ready = false;
+  bool registration_manifest_contract_ready = false;
+  bool live_runtime_enforcement_landed = false;
+  bool registration_manifest_bootstrap_semantics_published = false;
+  bool runtime_probe_required = false;
+  bool no_partial_commit_on_failure = false;
+  bool ready_for_constructor_root_implementation = false;
+  std::string bootstrap_invariant_replay_key;
+  std::string registration_manifest_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeBootstrapSemanticsSummary(
+    const Objc3RuntimeBootstrapSemanticsSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.bootstrap_invariant_contract_id.empty() &&
+         !summary.registration_manifest_contract_id.empty() &&
+         !summary.bootstrap_surface_path.empty() &&
+         !summary.duplicate_registration_policy.empty() &&
+         !summary.realization_order_policy.empty() &&
+         !summary.failure_mode.empty() &&
+         !summary.image_local_initialization_scope.empty() &&
+         !summary.constructor_root_symbol.empty() &&
+         !summary.registration_entrypoint_symbol.empty() &&
+         !summary.manifest_authority_model.empty() &&
+         !summary.translation_unit_identity_model.empty() &&
+         !summary.runtime_library_archive_relative_path.empty() &&
+         !summary.registration_result_model.empty() &&
+         !summary.registration_order_ordinal_model.empty() &&
+         !summary.runtime_state_snapshot_symbol.empty() &&
+         summary.translation_unit_registration_order_ordinal > 0 &&
+         summary.fail_closed &&
+         summary.bootstrap_invariant_contract_ready &&
+         summary.registration_manifest_contract_ready &&
+         summary.live_runtime_enforcement_landed &&
+         summary.registration_manifest_bootstrap_semantics_published &&
+         summary.runtime_probe_required &&
+         summary.no_partial_commit_on_failure &&
+         summary.ready_for_constructor_root_implementation &&
+         !summary.bootstrap_invariant_replay_key.empty() &&
          !summary.registration_manifest_replay_key.empty() &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }

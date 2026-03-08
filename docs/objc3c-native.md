@@ -1334,6 +1334,35 @@ registration enforcement, or image-local realization code yet.
 Validation/evidence path:
 `tmp/reports/m254/M254-B001/bootstrap_invariants_contract_summary.json`
 
+## Live bootstrap semantics (M254-B002)
+
+`M254-B002` turns the frozen `M254-B001` packet into a live runtime/bootstrap
+semantic surface at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`.
+
+The canonical runtime contract is:
+
+- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- runtime result model `zero-success-negative-fail-closed`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- duplicate status code `-2`
+- out-of-order status code `-3`
+- canonical registration order ordinal `1`
+
+`M254-B002` also expands `module.runtime-registration-manifest.json` so the
+emitted artifact carries the same runtime duplicate/order/failure contract and
+status-code model the native runtime probe executes against.
+
+Validation/evidence path:
+`tmp/reports/m254/M254-B002/bootstrap_semantics_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

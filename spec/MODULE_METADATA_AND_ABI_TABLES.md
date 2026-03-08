@@ -6416,3 +6416,28 @@ Canonical metadata/runtime anchors:
 
 This freeze does not execute bootstrap logic yet; it defines the canonical
 semantic packet later `M254` startup work must preserve.
+
+## M254 live startup bootstrap metadata anchors (B002)
+
+`M254-B002` publishes the live startup/bootstrap runtime packet at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- runtime result model `zero-success-negative-fail-closed`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- duplicate-registration status code `-2`
+- out-of-order status code `-3`
+- registration-manifest ordinal field `translation_unit_registration_order_ordinal`
+
+The emitted `module.runtime-registration-manifest.json` payload now carries
+this same runtime-facing policy and status-code surface so runtime probes can
+detect drift between emitted metadata and realized behavior.

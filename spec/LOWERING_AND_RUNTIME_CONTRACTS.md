@@ -5320,3 +5320,32 @@ Non-goals:
 - no live startup execution yet
 - no duplicate-registration enforcement yet
 - no image-local realization/runtime bootstrap execution yet
+
+## M254 live startup bootstrap semantics (B002)
+
+`M254-B002` lands the first live runtime-side startup/bootstrap enforcement
+surface while constructor-root emission is still deferred to `M254-C001`.
+
+- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- runtime result model `zero-success-negative-fail-closed`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- registration order ordinal model
+  `strictly-monotonic-positive-registration-order-ordinal`
+
+Required behavior:
+
+- duplicate translation-unit identity keys are rejected with status `-2`
+- non-monotonic registration ordinals are rejected with status `-3`
+- invalid descriptors are rejected with status `-1`
+- failed registrations do not partially commit runtime-owned state
+- emitted `module.runtime-registration-manifest.json` payloads carry the same
+  status-code and policy surface consumed by the native runtime probe

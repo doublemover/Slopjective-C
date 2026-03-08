@@ -602,6 +602,24 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeStartupBootstrapExecutionMode =
         "deferred-until-m254-c001";
+inline constexpr const char *kObjc3RuntimeBootstrapSemanticsContractId =
+    "objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapSemanticsSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics";
+inline constexpr const char *kObjc3RuntimeBootstrapResultModel =
+    "zero-success-negative-fail-closed";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel =
+        "strictly-monotonic-positive-registration-order-ordinal";
+inline constexpr const char *kObjc3RuntimeBootstrapStateSnapshotSymbol =
+    "objc3_runtime_copy_registration_state_for_testing";
+inline constexpr int kObjc3RuntimeBootstrapSuccessStatusCode = 0;
+inline constexpr int kObjc3RuntimeBootstrapInvalidDescriptorStatusCode = -1;
+inline constexpr int
+    kObjc3RuntimeBootstrapDuplicateRegistrationStatusCode = -2;
+inline constexpr int kObjc3RuntimeBootstrapOutOfOrderStatusCode = -3;
+inline constexpr std::uint64_t
+    kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal = 1u;
 inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
     "objc3_runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =

@@ -143,6 +143,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               manifest_inputs;
           const auto &registration_manifest_summary =
               artifacts.runtime_translation_unit_registration_manifest_summary;
+          const auto &runtime_bootstrap_semantics_summary =
+              artifacts.runtime_bootstrap_semantics_summary;
           manifest_inputs.contract_id = registration_manifest_summary.contract_id;
           manifest_inputs.translation_unit_registration_contract_id =
               registration_manifest_summary
@@ -177,6 +179,46 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.registration_entrypoint_symbol;
           manifest_inputs.translation_unit_identity_model =
               registration_manifest_summary.translation_unit_identity_model;
+          manifest_inputs.class_descriptor_count =
+              registration_manifest_summary.class_descriptor_count;
+          manifest_inputs.protocol_descriptor_count =
+              registration_manifest_summary.protocol_descriptor_count;
+          manifest_inputs.category_descriptor_count =
+              registration_manifest_summary.category_descriptor_count;
+          manifest_inputs.property_descriptor_count =
+              registration_manifest_summary.property_descriptor_count;
+          manifest_inputs.ivar_descriptor_count =
+              registration_manifest_summary.ivar_descriptor_count;
+          manifest_inputs.total_descriptor_count =
+              registration_manifest_summary.total_descriptor_count;
+          manifest_inputs.bootstrap_semantics_contract_id =
+              runtime_bootstrap_semantics_summary.contract_id;
+          manifest_inputs.duplicate_registration_policy =
+              runtime_bootstrap_semantics_summary.duplicate_registration_policy;
+          manifest_inputs.realization_order_policy =
+              runtime_bootstrap_semantics_summary.realization_order_policy;
+          manifest_inputs.failure_mode =
+              runtime_bootstrap_semantics_summary.failure_mode;
+          manifest_inputs.registration_result_model =
+              runtime_bootstrap_semantics_summary.registration_result_model;
+          manifest_inputs.registration_order_ordinal_model =
+              runtime_bootstrap_semantics_summary
+                  .registration_order_ordinal_model;
+          manifest_inputs.runtime_state_snapshot_symbol =
+              runtime_bootstrap_semantics_summary.runtime_state_snapshot_symbol;
+          manifest_inputs.success_status_code =
+              runtime_bootstrap_semantics_summary.success_status_code;
+          manifest_inputs.invalid_descriptor_status_code =
+              runtime_bootstrap_semantics_summary
+                  .invalid_descriptor_status_code;
+          manifest_inputs.duplicate_registration_status_code =
+              runtime_bootstrap_semantics_summary
+                  .duplicate_registration_status_code;
+          manifest_inputs.out_of_order_status_code =
+              runtime_bootstrap_semantics_summary.out_of_order_status_code;
+          manifest_inputs.translation_unit_registration_order_ordinal =
+              registration_manifest_summary
+                  .translation_unit_registration_order_ordinal;
           manifest_inputs.object_artifact_relative_path =
               object_out.filename().generic_string();
           manifest_inputs.backend_artifact_relative_path =
@@ -203,6 +245,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // for one constructor root per translation-unit identity, fail
             // duplicate registration closed, and preserve deterministic
             // realization order before user entry.
+            // M254-B002 bootstrap-semantics anchor: the manifest now also
+            // carries the live runtime duplicate/order/failure contract and
+            // status-code model consumed by the runtime library probe.
             WriteRuntimeRegistrationManifestArtifact(
                 cli_options.out_dir,
                 cli_options.emit_prefix,
