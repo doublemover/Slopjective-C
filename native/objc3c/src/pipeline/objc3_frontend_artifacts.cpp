@@ -444,6 +444,96 @@ std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
   return out.str();
 }
 
+std::string BuildExecutableMetadataSemanticValidationSurfaceJson(
+    const Objc3ExecutableMetadataSemanticValidationSurface &surface) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(surface.contract_id)
+      << "\",\"executable_metadata_semantic_consistency_contract_id\":\""
+      << EscapeJsonString(
+             surface.executable_metadata_semantic_consistency_contract_id)
+      << "\",\"semantic_consistency_ready\":"
+      << (surface.semantic_consistency_ready ? "true" : "false")
+      << ",\"ready\":"
+      << (IsReadyObjc3ExecutableMetadataSemanticValidationSurface(surface)
+              ? "true"
+              : "false")
+      << ",\"method_lookup_override_conflict_handoff_deterministic\":"
+      << (surface.method_lookup_override_conflict_handoff_deterministic
+              ? "true"
+              : "false")
+      << ",\"class_protocol_category_linking_deterministic\":"
+      << (surface.class_protocol_category_linking_deterministic ? "true"
+                                                                : "false")
+      << ",\"class_inheritance_edges_complete\":"
+      << (surface.class_inheritance_edges_complete ? "true" : "false")
+      << ",\"protocol_inheritance_edges_complete\":"
+      << (surface.protocol_inheritance_edges_complete ? "true" : "false")
+      << ",\"metaclass_edges_complete\":"
+      << (surface.metaclass_edges_complete ? "true" : "false")
+      << ",\"inheritance_chain_cycle_free\":"
+      << (surface.inheritance_chain_cycle_free ? "true" : "false")
+      << ",\"superclass_targets_resolved\":"
+      << (surface.superclass_targets_resolved ? "true" : "false")
+      << ",\"protocol_inheritance_targets_resolved\":"
+      << (surface.protocol_inheritance_targets_resolved ? "true" : "false")
+      << ",\"metaclass_targets_resolved\":"
+      << (surface.metaclass_targets_resolved ? "true" : "false")
+      << ",\"metaclass_lineage_aligned\":"
+      << (surface.metaclass_lineage_aligned ? "true" : "false")
+      << ",\"method_override_edges_complete\":"
+      << (surface.method_override_edges_complete ? "true" : "false")
+      << ",\"override_lookup_complete\":"
+      << (surface.override_lookup_complete ? "true" : "false")
+      << ",\"override_conflicts_absent\":"
+      << (surface.override_conflicts_absent ? "true" : "false")
+      << ",\"protocol_composition_valid\":"
+      << (surface.protocol_composition_valid ? "true" : "false")
+      << ",\"inheritance_validation_ready\":"
+      << (surface.inheritance_validation_ready ? "true" : "false")
+      << ",\"override_validation_ready\":"
+      << (surface.override_validation_ready ? "true" : "false")
+      << ",\"protocol_composition_validation_ready\":"
+      << (surface.protocol_composition_validation_ready ? "true" : "false")
+      << ",\"metaclass_relationship_validation_ready\":"
+      << (surface.metaclass_relationship_validation_ready ? "true" : "false")
+      << ",\"semantic_validation_complete\":"
+      << (surface.semantic_validation_complete ? "true" : "false")
+      << ",\"lowering_admission_ready\":"
+      << (surface.lowering_admission_ready ? "true" : "false")
+      << ",\"fail_closed\":"
+      << (surface.fail_closed ? "true" : "false")
+      << ",\"class_inheritance_edge_count\":"
+      << surface.class_inheritance_edge_count
+      << ",\"protocol_inheritance_edge_count\":"
+      << surface.protocol_inheritance_edge_count
+      << ",\"metaclass_super_edge_count\":"
+      << surface.metaclass_super_edge_count
+      << ",\"override_edge_count\":" << surface.override_edge_count
+      << ",\"class_method_override_edge_count\":"
+      << surface.class_method_override_edge_count
+      << ",\"instance_method_override_edge_count\":"
+      << surface.instance_method_override_edge_count
+      << ",\"override_lookup_sites\":" << surface.override_lookup_sites
+      << ",\"override_lookup_hits\":" << surface.override_lookup_hits
+      << ",\"override_lookup_misses\":" << surface.override_lookup_misses
+      << ",\"override_conflicts\":" << surface.override_conflicts
+      << ",\"unresolved_base_interfaces\":"
+      << surface.unresolved_base_interfaces
+      << ",\"protocol_composition_sites\":"
+      << surface.protocol_composition_sites
+      << ",\"protocol_composition_symbols\":"
+      << surface.protocol_composition_symbols
+      << ",\"category_composition_sites\":"
+      << surface.category_composition_sites
+      << ",\"category_composition_symbols\":"
+      << surface.category_composition_symbols
+      << ",\"invalid_protocol_composition_sites\":"
+      << surface.invalid_protocol_composition_sites
+      << ",\"failure_reason\":\""
+      << EscapeJsonString(surface.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -2310,6 +2400,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3ExecutableMetadataSemanticConsistencyBoundary
       &executable_metadata_semantic_consistency_boundary =
           pipeline_result.executable_metadata_semantic_consistency_boundary;
+  const Objc3ExecutableMetadataSemanticValidationSurface
+      &executable_metadata_semantic_validation_surface =
+          pipeline_result.executable_metadata_semantic_validation_surface;
   const Objc3RuntimeMetadataSourceOwnershipBoundary &runtime_metadata_source_ownership =
       pipeline_result.runtime_metadata_source_ownership_boundary;
   const Objc3RuntimeExportLegalityBoundary &runtime_export_legality =
@@ -4606,6 +4699,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_semantic_consistency_boundary\":"
            << BuildExecutableMetadataSemanticConsistencyBoundaryJson(
                   executable_metadata_semantic_consistency_boundary)
+           << ",\"objc_executable_metadata_semantic_validation_surface\":"
+           << BuildExecutableMetadataSemanticValidationSurfaceJson(
+                  executable_metadata_semantic_validation_surface)
            << ",\"objc_id_class_sel_object_pointer_typecheck_surface\":{\"id_typecheck_sites\":"
            << id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites
            << ",\"class_typecheck_sites\":"

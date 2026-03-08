@@ -5,6 +5,7 @@
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -1089,6 +1090,95 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     }
   }
 
+  std::unordered_map<std::string, const Objc3ExecutableMetadataClassGraphNode *>
+      class_nodes_by_owner_identity;
+  class_nodes_by_owner_identity.reserve(graph.class_nodes_lexicographic.size());
+  for (const auto &class_node : graph.class_nodes_lexicographic) {
+    class_nodes_by_owner_identity.emplace(class_node.owner_identity, &class_node);
+  }
+
+  std::unordered_map<std::string,
+                     const Objc3ExecutableMetadataInterfaceGraphNode *>
+      interface_nodes_by_owner_identity;
+  interface_nodes_by_owner_identity.reserve(
+      graph.interface_nodes_lexicographic.size());
+  for (const auto &interface_node : graph.interface_nodes_lexicographic) {
+    interface_nodes_by_owner_identity.emplace(interface_node.owner_identity,
+                                              &interface_node);
+  }
+
+  std::unordered_map<std::string, std::string>
+      class_interface_method_owner_identity_by_key;
+  class_interface_method_owner_identity_by_key.reserve(
+      graph.method_nodes_lexicographic.size());
+  const auto build_interface_method_key =
+      [](const std::string &declaration_owner_identity,
+         const std::string &selector, bool is_class_method) {
+        return declaration_owner_identity + "::" +
+               (is_class_method ? "class" : "instance") + "::" + selector;
+      };
+  for (const auto &method_node : graph.method_nodes_lexicographic) {
+    if (method_node.owner_kind != "class-interface") {
+      continue;
+    }
+    class_interface_method_owner_identity_by_key.emplace(
+        build_interface_method_key(method_node.declaration_owner_identity,
+                                   method_node.selector,
+                                   method_node.is_class_method),
+        method_node.owner_identity);
+  }
+
+  const auto find_overridden_interface_method_owner_identity =
+      [&](const Objc3ExecutableMetadataInterfaceGraphNode &interface_node,
+          const Objc3ExecutableMetadataMethodGraphNode &method_node) {
+        std::string next_super_owner_identity =
+            interface_node.super_class_owner_identity;
+        std::unordered_set<std::string> visited;
+        while (!next_super_owner_identity.empty()) {
+          if (!visited.insert(next_super_owner_identity).second) {
+            return std::string{};
+          }
+          const auto class_it =
+              class_nodes_by_owner_identity.find(next_super_owner_identity);
+          if (class_it == class_nodes_by_owner_identity.end() ||
+              class_it->second->interface_owner_identity.empty()) {
+            return std::string{};
+          }
+          const std::string key = build_interface_method_key(
+              class_it->second->interface_owner_identity, method_node.selector,
+              method_node.is_class_method);
+          const auto method_it =
+              class_interface_method_owner_identity_by_key.find(key);
+          if (method_it !=
+              class_interface_method_owner_identity_by_key.end()) {
+            return method_it->second;
+          }
+          next_super_owner_identity =
+              class_it->second->super_class_owner_identity;
+        }
+        return std::string{};
+      };
+
+  for (const auto &method_node : graph.method_nodes_lexicographic) {
+    if (method_node.owner_kind != "class-interface") {
+      continue;
+    }
+    const auto interface_it = interface_nodes_by_owner_identity.find(
+        method_node.declaration_owner_identity);
+    if (interface_it == interface_nodes_by_owner_identity.end() ||
+        !interface_it->second->has_super) {
+      continue;
+    }
+    const std::string overridden_method_owner_identity =
+        find_overridden_interface_method_owner_identity(*interface_it->second,
+                                                        method_node);
+    if (!overridden_method_owner_identity.empty()) {
+      add_owner_edge("method-to-overridden-method", method_node.owner_identity,
+                     overridden_method_owner_identity, method_node.line,
+                     method_node.column);
+    }
+  }
+
   std::sort(graph.interface_nodes_lexicographic.begin(),
             graph.interface_nodes_lexicographic.end(),
             IsExecutableMetadataInterfaceNodeLess);
@@ -1472,6 +1562,339 @@ BuildExecutableMetadataSemanticConsistencyBoundary(
         "metadata semantic consistency freeze is not fail-closed";
   }
   return boundary;
+}
+
+Objc3ExecutableMetadataSemanticValidationSurface
+BuildExecutableMetadataSemanticValidationSurface(
+    const Objc3ExecutableMetadataSourceGraph &graph,
+    const Objc3ExecutableMetadataSemanticConsistencyBoundary
+        &semantic_consistency_boundary,
+    const Objc3SemanticTypeMetadataHandoff &sema_type_metadata_handoff,
+    const Objc3FrontendClassProtocolCategoryLinkingSummary
+        &class_protocol_category_linking_summary) {
+  Objc3ExecutableMetadataSemanticValidationSurface surface;
+  surface.executable_metadata_semantic_consistency_contract_id =
+      semantic_consistency_boundary.contract_id;
+  surface.semantic_consistency_ready =
+      IsReadyObjc3ExecutableMetadataSemanticConsistencyBoundary(
+          semantic_consistency_boundary);
+
+  const Objc3MethodLookupOverrideConflictSummary
+      &method_lookup_override_conflict_summary =
+          sema_type_metadata_handoff.method_lookup_override_conflict_summary;
+  surface.method_lookup_override_conflict_handoff_deterministic =
+      method_lookup_override_conflict_summary.deterministic;
+  surface.class_protocol_category_linking_deterministic =
+      class_protocol_category_linking_summary
+          .deterministic_class_protocol_category_linking_handoff;
+
+  surface.override_lookup_sites =
+      method_lookup_override_conflict_summary.override_lookup_sites;
+  surface.override_lookup_hits =
+      method_lookup_override_conflict_summary.override_lookup_hits;
+  surface.override_lookup_misses =
+      method_lookup_override_conflict_summary.override_lookup_misses;
+  surface.override_conflicts =
+      method_lookup_override_conflict_summary.override_conflicts;
+  surface.unresolved_base_interfaces =
+      method_lookup_override_conflict_summary.unresolved_base_interfaces;
+  surface.protocol_composition_sites =
+      class_protocol_category_linking_summary.protocol_composition_sites;
+  surface.protocol_composition_symbols =
+      class_protocol_category_linking_summary.protocol_composition_symbols;
+  surface.category_composition_sites =
+      class_protocol_category_linking_summary.category_composition_sites;
+  surface.category_composition_symbols =
+      class_protocol_category_linking_summary.category_composition_symbols;
+  surface.invalid_protocol_composition_sites =
+      class_protocol_category_linking_summary.invalid_protocol_composition_sites;
+
+  const auto count_edges = [&](const std::string &edge_kind) {
+    return static_cast<std::size_t>(std::count_if(
+        graph.owner_edges_lexicographic.begin(),
+        graph.owner_edges_lexicographic.end(),
+        [&](const Objc3ExecutableMetadataGraphEdge &edge) {
+          return edge.edge_kind == edge_kind;
+        }));
+  };
+  const auto has_edge = [&](const std::string &edge_kind,
+                            const std::string &source_owner_identity,
+                            const std::string &target_owner_identity) {
+    return std::any_of(
+        graph.owner_edges_lexicographic.begin(),
+        graph.owner_edges_lexicographic.end(),
+        [&](const Objc3ExecutableMetadataGraphEdge &edge) {
+          return edge.edge_kind == edge_kind &&
+                 edge.source_owner_identity == source_owner_identity &&
+                 edge.target_owner_identity == target_owner_identity;
+        });
+  };
+
+  surface.class_inheritance_edge_count = count_edges("class-to-superclass");
+  surface.protocol_inheritance_edge_count =
+      count_edges("protocol-to-inherited-protocol");
+  surface.metaclass_super_edge_count =
+      count_edges("metaclass-to-super-metaclass");
+  surface.override_edge_count = count_edges("method-to-overridden-method");
+
+  std::unordered_map<std::string, const Objc3ExecutableMetadataClassGraphNode *>
+      class_nodes_by_owner_identity;
+  class_nodes_by_owner_identity.reserve(graph.class_nodes_lexicographic.size());
+  for (const auto &class_node : graph.class_nodes_lexicographic) {
+    class_nodes_by_owner_identity.emplace(class_node.owner_identity, &class_node);
+  }
+
+  std::unordered_map<
+      std::string, const Objc3ExecutableMetadataMetaclassGraphNode *>
+      metaclass_nodes_by_owner_identity;
+  metaclass_nodes_by_owner_identity.reserve(
+      graph.metaclass_nodes_lexicographic.size());
+  for (const auto &metaclass_node : graph.metaclass_nodes_lexicographic) {
+    metaclass_nodes_by_owner_identity.emplace(metaclass_node.owner_identity,
+                                              &metaclass_node);
+  }
+
+  std::unordered_map<
+      std::string, const Objc3ExecutableMetadataProtocolGraphNode *>
+      protocol_nodes_by_owner_identity;
+  protocol_nodes_by_owner_identity.reserve(
+      graph.protocol_nodes_lexicographic.size());
+  for (const auto &protocol_node : graph.protocol_nodes_lexicographic) {
+    protocol_nodes_by_owner_identity.emplace(protocol_node.owner_identity,
+                                             &protocol_node);
+  }
+
+  std::unordered_map<
+      std::string, const Objc3ExecutableMetadataInterfaceGraphNode *>
+      interface_nodes_by_owner_identity;
+  interface_nodes_by_owner_identity.reserve(
+      graph.interface_nodes_lexicographic.size());
+  for (const auto &interface_node : graph.interface_nodes_lexicographic) {
+    interface_nodes_by_owner_identity.emplace(interface_node.owner_identity,
+                                              &interface_node);
+  }
+
+  std::unordered_map<std::string, const Objc3ExecutableMetadataMethodGraphNode *>
+      class_interface_methods_by_key;
+  class_interface_methods_by_key.reserve(graph.method_nodes_lexicographic.size());
+  const auto build_interface_method_key =
+      [](const std::string &declaration_owner_identity,
+         const std::string &selector, bool is_class_method) {
+        return declaration_owner_identity + "::" +
+               (is_class_method ? "class" : "instance") + "::" + selector;
+      };
+  for (const auto &method_node : graph.method_nodes_lexicographic) {
+    if (method_node.owner_kind != "class-interface") {
+      continue;
+    }
+    class_interface_methods_by_key.emplace(
+        build_interface_method_key(method_node.declaration_owner_identity,
+                                   method_node.selector,
+                                   method_node.is_class_method),
+        &method_node);
+  }
+
+  surface.class_inheritance_edges_complete = true;
+  surface.inheritance_chain_cycle_free = true;
+  surface.superclass_targets_resolved = true;
+  for (const auto &class_node : graph.class_nodes_lexicographic) {
+    if (!class_node.has_super) {
+      continue;
+    }
+    if (!has_edge("class-to-superclass", class_node.owner_identity,
+                  class_node.super_class_owner_identity)) {
+      surface.class_inheritance_edges_complete = false;
+    }
+    std::string next_super_owner_identity = class_node.super_class_owner_identity;
+    std::unordered_set<std::string> visited;
+    while (!next_super_owner_identity.empty()) {
+      if (!visited.insert(next_super_owner_identity).second) {
+        surface.inheritance_chain_cycle_free = false;
+        break;
+      }
+      const auto class_it =
+          class_nodes_by_owner_identity.find(next_super_owner_identity);
+      if (class_it == class_nodes_by_owner_identity.end()) {
+        surface.superclass_targets_resolved = false;
+        break;
+      }
+      next_super_owner_identity = class_it->second->super_class_owner_identity;
+    }
+  }
+
+  surface.protocol_inheritance_edges_complete = true;
+  surface.protocol_inheritance_targets_resolved = true;
+  for (const auto &protocol_node : graph.protocol_nodes_lexicographic) {
+    for (const auto &target_owner_identity :
+         protocol_node.inherited_protocol_owner_identities_lexicographic) {
+      if (!has_edge("protocol-to-inherited-protocol",
+                    protocol_node.owner_identity, target_owner_identity)) {
+        surface.protocol_inheritance_edges_complete = false;
+      }
+      if (protocol_nodes_by_owner_identity.find(target_owner_identity) ==
+          protocol_nodes_by_owner_identity.end()) {
+        surface.protocol_inheritance_targets_resolved = false;
+      }
+    }
+  }
+
+  surface.metaclass_edges_complete = true;
+  surface.metaclass_targets_resolved = true;
+  surface.metaclass_lineage_aligned = true;
+  for (const auto &metaclass_node : graph.metaclass_nodes_lexicographic) {
+    const auto class_it =
+        class_nodes_by_owner_identity.find(metaclass_node.class_owner_identity);
+    if (class_it == class_nodes_by_owner_identity.end()) {
+      surface.metaclass_targets_resolved = false;
+      surface.metaclass_lineage_aligned = false;
+      continue;
+    }
+    if (!has_edge("class-to-metaclass", metaclass_node.class_owner_identity,
+                  metaclass_node.owner_identity)) {
+      surface.metaclass_edges_complete = false;
+    }
+    if (class_it->second->metaclass_owner_identity != metaclass_node.owner_identity) {
+      surface.metaclass_lineage_aligned = false;
+    }
+    if (metaclass_node.has_super) {
+      if (!has_edge("metaclass-to-super-metaclass", metaclass_node.owner_identity,
+                    metaclass_node.super_metaclass_owner_identity)) {
+        surface.metaclass_edges_complete = false;
+      }
+      const auto super_metaclass_it =
+          metaclass_nodes_by_owner_identity.find(
+              metaclass_node.super_metaclass_owner_identity);
+      if (super_metaclass_it == metaclass_nodes_by_owner_identity.end()) {
+        surface.metaclass_targets_resolved = false;
+        surface.metaclass_lineage_aligned = false;
+      } else if (class_it->second->has_super &&
+                 super_metaclass_it->second->class_owner_identity !=
+                     class_it->second->super_class_owner_identity) {
+        surface.metaclass_lineage_aligned = false;
+      }
+    } else if (!metaclass_node.super_metaclass_owner_identity.empty()) {
+      surface.metaclass_lineage_aligned = false;
+    }
+  }
+
+  surface.method_override_edges_complete = true;
+  for (const auto &method_node : graph.method_nodes_lexicographic) {
+    if (method_node.owner_kind != "class-interface") {
+      continue;
+    }
+    const auto interface_it = interface_nodes_by_owner_identity.find(
+        method_node.declaration_owner_identity);
+    if (interface_it == interface_nodes_by_owner_identity.end() ||
+        !interface_it->second->has_super) {
+      continue;
+    }
+
+    std::string next_super_owner_identity =
+        interface_it->second->super_class_owner_identity;
+    const Objc3ExecutableMetadataMethodGraphNode *overridden_method = nullptr;
+    std::unordered_set<std::string> visited;
+    while (!next_super_owner_identity.empty()) {
+      if (!visited.insert(next_super_owner_identity).second) {
+        break;
+      }
+      const auto class_it =
+          class_nodes_by_owner_identity.find(next_super_owner_identity);
+      if (class_it == class_nodes_by_owner_identity.end() ||
+          class_it->second->interface_owner_identity.empty()) {
+        break;
+      }
+      const auto base_method_it = class_interface_methods_by_key.find(
+          build_interface_method_key(class_it->second->interface_owner_identity,
+                                     method_node.selector,
+                                     method_node.is_class_method));
+      if (base_method_it != class_interface_methods_by_key.end()) {
+        overridden_method = base_method_it->second;
+        break;
+      }
+      next_super_owner_identity = class_it->second->super_class_owner_identity;
+    }
+    if (overridden_method == nullptr) {
+      continue;
+    }
+    if (!has_edge("method-to-overridden-method", method_node.owner_identity,
+                  overridden_method->owner_identity)) {
+      surface.method_override_edges_complete = false;
+    } else if (method_node.is_class_method) {
+      ++surface.class_method_override_edge_count;
+    } else {
+      ++surface.instance_method_override_edge_count;
+    }
+  }
+
+  surface.override_lookup_complete =
+      method_lookup_override_conflict_summary.unresolved_base_interfaces == 0u;
+  surface.override_conflicts_absent =
+      method_lookup_override_conflict_summary.override_conflicts == 0u;
+  surface.protocol_composition_valid =
+      class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
+          0u &&
+      class_protocol_category_linking_summary.protocol_composition_symbols >=
+          class_protocol_category_linking_summary
+              .category_composition_symbols &&
+      class_protocol_category_linking_summary.protocol_composition_sites >=
+          class_protocol_category_linking_summary.category_composition_sites;
+
+  surface.inheritance_validation_ready =
+      surface.class_inheritance_edges_complete &&
+      surface.protocol_inheritance_edges_complete &&
+      surface.inheritance_chain_cycle_free &&
+      surface.superclass_targets_resolved &&
+      surface.protocol_inheritance_targets_resolved;
+  surface.override_validation_ready =
+      surface.method_lookup_override_conflict_handoff_deterministic &&
+      surface.method_override_edges_complete &&
+      surface.override_lookup_complete &&
+      surface.override_conflicts_absent;
+  surface.protocol_composition_validation_ready =
+      surface.class_protocol_category_linking_deterministic &&
+      surface.protocol_composition_valid;
+  surface.metaclass_relationship_validation_ready =
+      surface.metaclass_edges_complete &&
+      surface.metaclass_targets_resolved &&
+      surface.metaclass_lineage_aligned;
+
+  if (surface.contract_id.empty()) {
+    surface.failure_reason =
+        "executable metadata semantic validation contract id is empty";
+  } else if (surface.executable_metadata_semantic_consistency_contract_id.empty()) {
+    surface.failure_reason =
+        "executable metadata semantic consistency dependency contract id is empty";
+  } else if (!surface.semantic_consistency_ready) {
+    surface.failure_reason =
+        "executable metadata semantic consistency boundary is not ready";
+  } else if (!surface.method_lookup_override_conflict_handoff_deterministic) {
+    surface.failure_reason =
+        "method lookup/override conflict handoff is not deterministic";
+  } else if (!surface.class_protocol_category_linking_deterministic) {
+    surface.failure_reason =
+        "class/protocol/category linking handoff is not deterministic";
+  } else if (!surface.inheritance_validation_ready) {
+    surface.failure_reason =
+        "inheritance validation is incomplete";
+  } else if (!surface.override_validation_ready) {
+    surface.failure_reason = "override validation is incomplete";
+  } else if (!surface.protocol_composition_validation_ready) {
+    surface.failure_reason =
+        "protocol composition validation is incomplete";
+  } else if (!surface.metaclass_relationship_validation_ready) {
+    surface.failure_reason =
+        "metaclass relationship validation is incomplete";
+  }
+
+  surface.semantic_validation_complete = surface.failure_reason.empty();
+  surface.lowering_admission_ready = false;
+  surface.fail_closed = surface.semantic_validation_complete &&
+                        !surface.lowering_admission_ready;
+  if (surface.failure_reason.empty() && !surface.fail_closed) {
+    surface.failure_reason =
+        "executable metadata semantic validation surface is not fail-closed";
+  }
+  return surface;
 }
 
 Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipBoundary(
@@ -2740,6 +3163,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.selector_normalization_summary,
           result.property_attribute_summary,
           result.symbol_graph_scope_resolution_summary);
+  result.executable_metadata_semantic_validation_surface =
+      BuildExecutableMetadataSemanticValidationSurface(
+          result.executable_metadata_source_graph,
+          result.executable_metadata_semantic_consistency_boundary,
+          result.sema_type_metadata_handoff,
+          result.class_protocol_category_linking_summary);
   result.runtime_metadata_source_ownership_boundary =
       BuildRuntimeMetadataSourceOwnershipBoundary(result.runtime_metadata_source_records,
                                                   result.sema_type_metadata_handoff);

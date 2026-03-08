@@ -7443,6 +7443,9 @@ class Objc3Parser {
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
     }
+    // M252-B002 anchor: interface superclass names plus the canonical
+    // lexicographic adopted-protocol list remain the parser-owned inputs for
+    // graph-backed inheritance and protocol-composition validation.
     decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
     decl->semantic_link_symbol =
         BuildObjcContainerScopeOwner("interface", decl->name, decl->has_category, decl->category_name);

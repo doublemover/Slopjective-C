@@ -1,0 +1,43 @@
+module executableMetadataSemanticValidation;
+
+@protocol BaseWorker;
+
+@protocol Worker<BaseWorker>
+- (id) token;
+@end
+
+@interface Root
++ (id) shared;
+- (id) token;
+@end
+
+@implementation Root
++ (id) shared {
+  return 1;
+}
+- (id) token {
+  return 2;
+}
+@end
+
+@interface Widget : Root
++ (id) shared;
+- (id) token;
+- (id<Worker>) currentWorker;
+@end
+
+@implementation Widget
++ (id) shared {
+  return 3;
+}
+- (id) token {
+  return 4;
+}
+- (id<Worker>) currentWorker {
+  return 5;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

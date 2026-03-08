@@ -4510,3 +4510,19 @@ readiness, runtime ingest packaging, or startup registration are complete.
 `M252-B001` is allowed to be `ready=true` while those enforcement lanes remain
 pending, as long as the boundary is frozen, fail-closed, and
 `lowering_admission_ready == false`.
+
+## M252 inheritance override protocol composition validation (B002)
+
+`M252-B002` adds one executable-metadata semantic-validation packet:
+
+- contract id `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+- packet type `Objc3ExecutableMetadataSemanticValidationSurface`,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`,
+- graph-backed `method-to-overridden-method` owner edges for legal
+  class-interface overrides,
+- deterministic validation of inheritance chains, override legality,
+  protocol-composition accounting, and metaclass relationships.
+
+`M252-B002` must remain fail-closed and `lowering_admission_ready == false`
+even when the happy path is fully ready.

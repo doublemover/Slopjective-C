@@ -8302,3 +8302,13 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   semantic-consistency boundary remains frozen, fail-closed, and not
   lowering-ready before lane-B diagnostics/enforcement work and lowering
   admission land.
+- M252 lane-B B002 executable metadata semantic validation anchors explicit
+  contract artifacts in
+  `docs/contracts/m252_inheritance_override_protocol_composition_validation_b002_expectations.md`,
+  `spec/planning/compiler/m252/m252_b002_inheritance_override_protocol_composition_validation_packet.md`,
+  `docs/objc3c-native.md`, `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`,
+  `spec/MODULE_METADATA_AND_ABI_TABLES.md`, and `package.json` so
+  inheritance-chain validation, override legality, protocol-composition
+  accounting, metaclass relationship checks, and `method-to-overridden-method`
+  graph edges remain deterministic and fail-closed before later lane-B
+  ambiguity/export enforcement and lowering admission land.

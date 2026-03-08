@@ -478,6 +478,26 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - Validation/evidence path:
   `tmp/reports/m252/M252-B001/executable_metadata_semantic_consistency_summary.json`
 
+## Inheritance override protocol composition validation (M252-B002)
+
+- Lane-B now publishes one graph-backed semantic-validation packet:
+  `Objc3ExecutableMetadataSemanticValidationSurface`.
+- The manifest now publishes
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`.
+- The executable metadata graph now carries
+  `method-to-overridden-method` owner edges for legal class-interface
+  overrides discovered through superclass chains.
+- The B002 happy-path fixture proves:
+  - class inheritance validation,
+  - protocol inheritance validation,
+  - metaclass super-edge validation,
+  - override legality without conflicts,
+  - protocol-composition validation without invalid sites.
+- The validation packet must remain `ready=true`, fail-closed, and
+  `lowering_admission_ready == false`.
+- Validation/evidence path:
+  `tmp/reports/m252/M252-B002/executable_metadata_semantic_validation_summary.json`
+
 ## Driver shell split boundaries (M136-E001)
 
 - Driver source wiring order is deterministic:

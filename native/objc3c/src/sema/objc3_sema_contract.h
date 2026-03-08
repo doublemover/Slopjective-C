@@ -498,6 +498,9 @@ struct Objc3SymbolGraphScopeResolutionSummary {
 };
 
 struct Objc3MethodLookupOverrideConflictSummary {
+  // M252-B002 anchor: lane-B executable metadata semantic validation consumes
+  // this deterministic override summary as the canonical legality handoff for
+  // superclass override checks before lowering admission exists.
   std::size_t method_lookup_sites = 0;
   std::size_t method_lookup_hits = 0;
   std::size_t method_lookup_misses = 0;

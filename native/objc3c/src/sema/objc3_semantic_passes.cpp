@@ -2767,6 +2767,9 @@ static void AccumulateProtocolCompositionSite(bool has_protocol_composition,
                                               bool has_invalid_protocol_composition,
                                               bool is_category_context,
                                               Objc3ProtocolCategoryCompositionSummary &summary) {
+  // M252-B002 anchor: protocol-composition site accounting stays deterministic
+  // so the executable metadata semantic-validation surface can fail closed on
+  // invalid composition sites without inventing a second accounting model.
   if (!has_protocol_composition) {
     if (has_invalid_protocol_composition) {
       summary.deterministic = false;
@@ -4715,6 +4718,9 @@ static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflic
     }
     for (const auto &method_entry : interface_info.methods) {
       ++summary.override_lookup_sites;
+      // M252-B002 anchor: this superclass walk and signature check remain the
+      // canonical override-legality source that the executable metadata graph
+      // replays with `method-to-overridden-method` owner edges.
       bool missing_base = false;
       bool cycle_detected = false;
       const Objc3MethodInfo *base_method =

@@ -5714,6 +5714,22 @@ The boundary must remain deterministic and fail closed before lane-B
 diagnostics/enforcement work, lowering admission, and runtime ingest packaging
 land.
 
+## M252 inheritance override protocol composition validation metadata anchors (B002)
+
+Deterministic lane-B executable metadata semantic validation for `M252-B002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`,
+- graph owner edge kind `method-to-overridden-method`,
+- evidence path
+  `tmp/reports/m252/M252-B002/executable_metadata_semantic_validation_summary.json`.
+
+The packet must remain graph-backed, deterministic, fail-closed, and not
+lowering-ready before category ambiguity diagnostics, export blocking, lowering
+handoff, and runtime ingest packaging land.
+
 ## M251 runtime export diagnostic precision metadata anchors (B003)
 
 Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
