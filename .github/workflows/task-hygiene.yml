@@ -34,7 +34,23 @@ jobs:
         run: npm run build:objc3c-native
 
       - name: Probe hosted-runner LLVM capabilities
-        run: npm run check:objc3c:llvm-capabilities
+        shell: pwsh
+        run: |
+          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
+          python scripts/probe_objc3c_llvm_capabilities.py --summary-out $summaryPath
+          $probeExit = $LASTEXITCODE
+          $summary = Get-Content $summaryPath | ConvertFrom-Json
+          if ($probeExit -eq 0) {
+            Write-Host "Hosted runner exposes clang and llc object-emission capability."
+            exit 0
+          }
+          if (-not $summary.clang.found) {
+            throw "Hosted runner capability probe failed without clang availability."
+          }
+          if ($summary.llc.found -or $summary.llc_features.supports_filetype_obj) {
+            throw "Hosted runner capability probe reported an unexpected llc failure mode."
+          }
+          Write-Host "Hosted runner does not provide llc --filetype=obj capability; continuing via capability-routed parity validation."
 
       - name: Verify capability-routed source parity
         run: npm run check:objc3c:library-cli-parity:source:m144
