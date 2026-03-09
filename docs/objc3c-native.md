@@ -16962,3 +16962,21 @@ compatibility shim:
   compatibility evidence and is not authoritative proof of live execution
 - `M255-E002` is the next issue allowed to replace shim-based smoke and
   closeout assumptions with integrated live-dispatch evidence
+
+## Live dispatch smoke and replay closeout (M255-E002)
+
+`M255-E002` replaces the last shim-era execution-smoke and replay-proof
+assumptions with canonical live runtime dispatch evidence:
+
+- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
+- smoke/replay now publish `requires_live_runtime_dispatch`
+- the canonical smoke summary path is
+  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
+- replay proof must preserve identical canonical hashes across two live smoke
+  runs
+- `compatibility_runtime_shim` remains published only as non-authoritative
+  evidence metadata
+- supported message-send fixtures and runtime-dispatch unresolved-symbol
+  negatives now assert `objc3_runtime_dispatch_i32`
+- the canonical lane-E closeout summary path is
+  `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`

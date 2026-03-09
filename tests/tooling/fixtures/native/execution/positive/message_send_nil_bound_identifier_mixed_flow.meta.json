@@ -1,0 +1,7 @@
+{
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  },
+  "fixture": "message_send_nil_bound_identifier_mixed_flow.objc3"
+}

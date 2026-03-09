@@ -17,17 +17,18 @@ Optional meta sidecar schema:
 
 - `fixture`: must match `<name>.objc3`.
 - `execution.native_compile_args`: optional string array appended to native compiler arguments.
-- `execution.requires_runtime_shim` (optional): defaults to `true`; set to `false` for fixtures that should link/execute without the runtime shim.
+- `execution.requires_live_runtime_dispatch` (optional): defaults to `false`; set to `true` for fixtures that must keep a live runtime-dispatch declaration/call in emitted LLVM IR.
+- `execution.runtime_dispatch_symbol` (optional): expected emitted dispatch symbol when `execution.requires_live_runtime_dispatch` is `true`. The canonical symbol is `objc3_runtime_dispatch_i32`.
 
-## Runtime-shim note
+## Live-runtime dispatch note
 
-Fixtures that use message-send syntax (`[receiver selector: ...]`) require the runtime shim implementation of `objc3_msgsend_i32`.
+Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. The compatibility shim remains test-only evidence and is not the authoritative smoke-path contract.
 
 For `message_send_runtime_shim.objc3`:
 
 - Selector: `sum:with:`
 - `selector_score = 4299`
-- Shim value:
+- Live runtime dispatch value:
   - `41 + 97*9 + 7*3 + 11*4 + 13*0 + 17*0 + 19*4299 = 82660`
 - Fixture return expression: `82660 - 82583 = 77`
 
@@ -37,42 +38,42 @@ For `message_send_nil_receiver_short_circuit.objc3`:
 
 - Mutable receiver value can evaluate to nil at runtime and short-circuits through the emitted nil-dispatch branch.
 - Fixture returns `0 + 5`, so `message_send_nil_receiver_short_circuit.exitcode.txt` is `5`.
-- Runtime dispatch symbol linkage is still required for this fixture because lowering retains the non-nil dispatch branch.
+- Live runtime dispatch linkage is still required for this fixture because lowering retains the non-nil dispatch branch.
 
 For `message_send_direct_nil_receiver_elision.objc3`:
 
-- Direct nil receiver message-send lowering is compile-time elided to constant `0`.
-- Fixture sets `execution.requires_runtime_shim=false` in sidecar metadata and links without `objc3_msgsend_i32` shim.
+- Direct nil receiver message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
+- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
 - Fixture returns `0 + 9`, so `message_send_direct_nil_receiver_elision.exitcode.txt` is `9`.
 
 For `message_send_direct_nil_receiver_keyword_elision.objc3`:
 
-- Direct nil receiver keyword message-send lowering is compile-time elided to constant `0`.
-- Fixture sets `execution.requires_runtime_shim=false` in sidecar metadata and links without `objc3_msgsend_i32` shim.
+- Direct nil receiver keyword message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
+- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
 - Fixture returns `0 + 6`, so `message_send_direct_nil_receiver_keyword_elision.exitcode.txt` is `6`.
 
 For `message_send_nil_bound_identifier_unary_elision.objc3`:
 
-- Immutable nil-bound identifier receiver unary message-send lowering is compile-time elided to constant `0`.
-- Fixture sets `execution.requires_runtime_shim=false` in sidecar metadata and links without `objc3_msgsend_i32` shim.
+- Immutable nil-bound identifier receiver unary message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
+- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
 - Fixture returns `0 + 12`, so `message_send_nil_bound_identifier_unary_elision.exitcode.txt` is `12`.
 
 For `message_send_nil_bound_identifier_keyword_elision.objc3`:
 
-- Immutable nil-bound identifier receiver keyword message-send lowering is compile-time elided to constant `0`.
-- Fixture sets `execution.requires_runtime_shim=false` in sidecar metadata and links without `objc3_msgsend_i32` shim.
+- Immutable nil-bound identifier receiver keyword message-send lowering now preserves the canonical live runtime dispatch call with receiver `0`.
+- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
 - Fixture returns `0 + 13`, so `message_send_nil_bound_identifier_keyword_elision.exitcode.txt` is `13`.
 
 For `message_send_nil_bound_identifier_mixed_flow.objc3`:
 
 - Mixed immutable/mutable nil-bound receiver flows are deterministic: immutable binding elides while mutable binding retains runtime dispatch branch/call behavior.
-- Fixture links with runtime shim (default behavior) because one send remains non-elided.
+- Fixture links with live runtime dispatch because one send remains non-elided.
 - Fixture returns `0 + 0 + 14`, so `message_send_nil_bound_identifier_mixed_flow.exitcode.txt` is `14`.
 
 For `message_send_nil_bound_identifier_pre_reassignment_elision.objc3`:
 
-- A nil-bound identifier send-site that occurs before reassignment is flow-sensitively elided.
-- Fixture sets `execution.requires_runtime_shim=false` in sidecar metadata and links without `objc3_msgsend_i32` shim.
+- A nil-bound identifier send-site that occurs before reassignment still lowers through the canonical live runtime dispatch entrypoint with receiver `0`.
+- Fixture sets `execution.requires_live_runtime_dispatch=true` in sidecar metadata and proves the live path rather than a compatibility shim.
 - Fixture returns `0 + 16`, so `message_send_nil_bound_identifier_pre_reassignment_elision.exitcode.txt` is `16`.
 
 ## Assignment fixtures

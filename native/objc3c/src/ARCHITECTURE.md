@@ -8728,3 +8728,16 @@ dispatch stack:
   compatibility/test evidence and is not authoritative proof of live execution
 - `M255-E002` is the first issue allowed to replace shim-based smoke and
   closeout gates with one integrated live-dispatch evidence path
+
+## M255 live dispatch smoke and replay closeout (E002)
+
+`M255-E002` makes the integrated execution smoke and replay harness authoritative
+for the live runtime path:
+
+- execution smoke and replay now treat the live runtime path as authoritative
+- summary payloads publish `requires_live_runtime_dispatch`,
+  `runtime_library`, `compatibility_runtime_shim`, and the canonical default
+  symbol `objc3_runtime_dispatch_i32`
+- message-send fixtures and runtime-dispatch unresolved-symbol negatives now
+  assert the canonical live runtime symbol rather than the compatibility shim
+- the compatibility shim remains explicit non-authoritative evidence only

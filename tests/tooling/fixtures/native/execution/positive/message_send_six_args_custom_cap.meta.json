@@ -4,6 +4,8 @@
     "native_compile_args": [
       "--objc3-max-message-args",
       "6"
-    ]
+    ],
+    "requires_live_runtime_dispatch": true,
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32"
   }
 }

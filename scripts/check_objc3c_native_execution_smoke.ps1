@@ -7,7 +7,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $positiveFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/positive"
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/negative"
-$runtimeShimSource = Join-Path $repoRoot "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
+$compatibilityRuntimeShimSource = Join-Path $repoRoot "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
 $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
@@ -163,9 +163,9 @@ function Get-PositiveExpectation {
     throw "execution smoke FAIL: invalid exit code '$raw' in $expectedPath"
   }
   $compileArgs = @()
-  $requiresRuntimeShim = $true
-  $requiresRuntimeShimExplicit = $false
-  $runtimeDispatchSymbol = "objc3_msgsend_i32"
+  $requiresLiveRuntimeDispatch = $false
+  $requiresLiveRuntimeDispatchExplicit = $false
+  $runtimeDispatchSymbol = "objc3_runtime_dispatch_i32"
   $metaPath = [System.IO.Path]::ChangeExtension($FixturePath, ".meta.json")
   if (Test-Path -LiteralPath $metaPath -PathType Leaf) {
     $metaRaw = Get-Content -LiteralPath $metaPath -Raw
@@ -191,8 +191,12 @@ function Get-PositiveExpectation {
       }
     }
     if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "requires_runtime_shim") {
-      $requiresRuntimeShim = [bool]$metaSpec.execution.requires_runtime_shim
-      $requiresRuntimeShimExplicit = $true
+      $requiresLiveRuntimeDispatch = [bool]$metaSpec.execution.requires_runtime_shim
+      $requiresLiveRuntimeDispatchExplicit = $true
+    }
+    if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") {
+      $requiresLiveRuntimeDispatch = [bool]$metaSpec.execution.requires_live_runtime_dispatch
+      $requiresLiveRuntimeDispatchExplicit = $true
     }
     if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "runtime_dispatch_symbol") {
       $candidate = "$($metaSpec.execution.runtime_dispatch_symbol)".Trim()
@@ -206,8 +210,8 @@ function Get-PositiveExpectation {
     expected_path = $expectedPath
     expected_exit = [int]$parsed
     compile_args = @($compileArgs)
-    requires_runtime_shim = $requiresRuntimeShim
-    requires_runtime_shim_explicit = $requiresRuntimeShimExplicit
+    requires_live_runtime_dispatch = $requiresLiveRuntimeDispatch
+    requires_live_runtime_dispatch_explicit = $requiresLiveRuntimeDispatchExplicit
     runtime_dispatch_symbol = $runtimeDispatchSymbol
     meta_path = $metaPath
   }
@@ -253,14 +257,19 @@ function Get-NegativeExpectation {
     throw "execution smoke FAIL: negative expectation fixture field does not match fixture name in $expectPath"
   }
 
-  $requiresRuntimeShim = $false
-  $requiresRuntimeShimExplicit = $false
+  $requiresLiveRuntimeDispatch = $false
+  $requiresLiveRuntimeDispatchExplicit = $false
   if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_runtime_shim") {
-    $requiresRuntimeShim = [bool]$spec.execution.requires_runtime_shim
-    $requiresRuntimeShimExplicit = $true
+    $requiresLiveRuntimeDispatch = [bool]$spec.execution.requires_runtime_shim
+    $requiresLiveRuntimeDispatchExplicit = $true
   }
 
-  $runtimeDispatchSymbol = "objc3_msgsend_i32"
+  if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") {
+    $requiresLiveRuntimeDispatch = [bool]$spec.execution.requires_live_runtime_dispatch
+    $requiresLiveRuntimeDispatchExplicit = $true
+  }
+
+  $runtimeDispatchSymbol = "objc3_runtime_dispatch_i32"
   if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "runtime_dispatch_symbol") {
     $candidate = "$($spec.execution.runtime_dispatch_symbol)".Trim()
     if (-not [string]::IsNullOrWhiteSpace($candidate)) {
@@ -270,8 +279,8 @@ function Get-NegativeExpectation {
 
   return [pscustomobject]@{
     stage = $stage
-    requires_runtime_shim = $requiresRuntimeShim
-    requires_runtime_shim_explicit = $requiresRuntimeShimExplicit
+    requires_live_runtime_dispatch = $requiresLiveRuntimeDispatch
+    requires_live_runtime_dispatch_explicit = $requiresLiveRuntimeDispatchExplicit
     runtime_dispatch_symbol = $runtimeDispatchSymbol
     required_link_tokens = @($requiredTokens)
     expectation_path = $expectPath
@@ -397,7 +406,7 @@ function Assert-RuntimeDispatchParityFromLl {
   param(
     [Parameter(Mandatory = $true)][string]$LlPath,
     [Parameter(Mandatory = $true)][string]$FixtureRel,
-    [Parameter(Mandatory = $true)][bool]$RequiresRuntimeShim,
+    [Parameter(Mandatory = $true)][bool]$RequiresLiveRuntimeDispatch,
     [Parameter(Mandatory = $true)][string]$RuntimeDispatchSymbol
   )
 
@@ -411,15 +420,15 @@ function Assert-RuntimeDispatchParityFromLl {
   $hasDeclare = $llCodeText.IndexOf($declareToken, [System.StringComparison]::Ordinal) -ge 0
   $hasCall = $llCodeText.IndexOf($callToken, [System.StringComparison]::Ordinal) -ge 0
 
-  if ($RequiresRuntimeShim) {
+  if ($RequiresLiveRuntimeDispatch) {
     if (-not $hasDeclare -or -not $hasCall) {
-      throw "execution smoke FAIL: runtime-shim metadata requires dispatch declaration+call for $FixtureRel (symbol=$RuntimeDispatchSymbol)"
+      throw "execution smoke FAIL: live-runtime-dispatch metadata requires dispatch declaration+call for $FixtureRel (symbol=$RuntimeDispatchSymbol)"
     }
     return
   }
 
   if ($hasDeclare -or $hasCall) {
-    throw "execution smoke FAIL: runtime-shim metadata forbids dispatch declaration/call for $FixtureRel (symbol=$RuntimeDispatchSymbol)"
+    throw "execution smoke FAIL: live-runtime-dispatch metadata forbids dispatch declaration/call for $FixtureRel (symbol=$RuntimeDispatchSymbol)"
   }
 }
 
@@ -460,12 +469,12 @@ try {
       throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)"
     }
 
-    if ($expectation.requires_runtime_shim_explicit) {
+    if ($expectation.requires_live_runtime_dispatch_explicit) {
       $llPath = Join-Path $compileDir "module.ll"
       Assert-RuntimeDispatchParityFromLl `
         -LlPath $llPath `
         -FixtureRel $fixtureRel `
-        -RequiresRuntimeShim $expectation.requires_runtime_shim `
+        -RequiresLiveRuntimeDispatch $expectation.requires_live_runtime_dispatch `
         -RuntimeDispatchSymbol $expectation.runtime_dispatch_symbol
     }
 
@@ -501,8 +510,8 @@ try {
       expectation = Get-RepoRelativePath -Path $expectation.expected_path -Root $repoRoot
       meta = if (Test-Path -LiteralPath $expectation.meta_path -PathType Leaf) { Get-RepoRelativePath -Path $expectation.meta_path -Root $repoRoot } else { "" }
       native_compile_args = @($expectation.compile_args)
-      requires_runtime_shim = $expectation.requires_runtime_shim
-      requires_runtime_shim_explicit = $expectation.requires_runtime_shim_explicit
+      requires_live_runtime_dispatch = $expectation.requires_live_runtime_dispatch
+      requires_live_runtime_dispatch_explicit = $expectation.requires_live_runtime_dispatch_explicit
       runtime_dispatch_symbol = $expectation.runtime_dispatch_symbol
       launch_integration_contract_id = $launchContract.launch_integration_contract_id
       registration_manifest = $launchContract.registration_manifest_relative_path
@@ -558,7 +567,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
-        requires_runtime_shim = $spec.requires_runtime_shim
+        requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         compile_exit = $compileExit
         link_exit = -1
@@ -583,12 +592,12 @@ try {
       source = $launchContract.runtime_library_source
     }
 
-    if ($spec.requires_runtime_shim_explicit) {
+    if ($spec.requires_live_runtime_dispatch_explicit) {
       $llPath = Join-Path $compileDir "module.ll"
       Assert-RuntimeDispatchParityFromLl `
         -LlPath $llPath `
         -FixtureRel $fixtureRel `
-        -RequiresRuntimeShim $spec.requires_runtime_shim `
+        -RequiresLiveRuntimeDispatch $spec.requires_live_runtime_dispatch `
         -RuntimeDispatchSymbol $spec.runtime_dispatch_symbol
     }
 
@@ -615,7 +624,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
-        requires_runtime_shim = $spec.requires_runtime_shim
+        requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         launch_integration_contract_id = $launchContract.launch_integration_contract_id
         registration_manifest = $launchContract.registration_manifest_relative_path
@@ -657,7 +666,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
-        requires_runtime_shim = $spec.requires_runtime_shim
+        requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         launch_integration_contract_id = $launchContract.launch_integration_contract_id
         registration_manifest = $launchContract.registration_manifest_relative_path
@@ -688,7 +697,8 @@ try {
     runtime_launch_contract_script = Get-RepoRelativePath -Path $runtimeLaunchContractScript -Root $repoRoot
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_library = if (Test-Path -LiteralPath $defaultRuntimeLibrary -PathType Leaf) { Get-RepoRelativePath -Path $defaultRuntimeLibrary -Root $repoRoot } else { "" }
-    runtime_shim = if (Test-Path -LiteralPath $runtimeShimSource -PathType Leaf) { Get-RepoRelativePath -Path $runtimeShimSource -Root $repoRoot } else { "" }
+    compatibility_runtime_shim = if (Test-Path -LiteralPath $compatibilityRuntimeShimSource -PathType Leaf) { Get-RepoRelativePath -Path $compatibilityRuntimeShimSource -Root $repoRoot } else { "" }
+    live_runtime_dispatch_default_symbol = "objc3_runtime_dispatch_i32"
     clang = $clangCommand
     llc = $llcCommand
     llc_source = $llcSourcePath
@@ -701,6 +711,7 @@ try {
   $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding utf8
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $summaryPath -Root $repoRoot)"
   Write-Output "status: PASS"
+  $global:LASTEXITCODE = 0
 }
 finally {
   Pop-Location

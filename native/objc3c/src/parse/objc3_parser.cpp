@@ -10225,6 +10225,10 @@ class Objc3Parser {
     // execute through the live runtime path rather than the compatibility shim
     // remains a lane-E evidence responsibility rooted in C004/D004 and handed
     // off to E002 for smoke/closeout replacement.
+    // M255-E002 live-dispatch smoke/replay closeout anchor: execution-smoke
+    // proof consumes the canonical runtime dispatch symbol from the published
+    // parser/sema handoff rather than treating the compatibility shim as the
+    // primary proof surface.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

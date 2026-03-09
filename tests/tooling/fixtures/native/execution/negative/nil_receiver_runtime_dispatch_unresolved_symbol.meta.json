@@ -4,12 +4,12 @@
   "expect_failure": {
     "stage": "link",
     "required_diagnostic_tokens": [
-      "link.unresolved_symbol:objc3_msgsend_i32",
+      "link.unresolved_symbol:objc3_runtime_dispatch_i32",
       "link.input_object_basename:module."
     ]
   },
   "execution": {
-    "requires_runtime_shim": true,
-    "runtime_dispatch_symbol": "objc3_msgsend_i32"
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
   }
 }

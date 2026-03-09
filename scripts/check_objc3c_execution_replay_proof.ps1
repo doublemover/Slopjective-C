@@ -81,7 +81,7 @@ function Get-CanonicalSummaryJson {
           fixture = $_.fixture
           expectation = $_.expectation
           stage = if ($_.PSObject.Properties.Name -contains "stage") { $_.stage } else { "" }
-          requires_runtime_shim = if ($_.PSObject.Properties.Name -contains "requires_runtime_shim") { [bool]$_.requires_runtime_shim } else { $false }
+          requires_live_runtime_dispatch = if ($_.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") { [bool]$_.requires_live_runtime_dispatch } else { $false }
           runtime_dispatch_symbol = if ($_.PSObject.Properties.Name -contains "runtime_dispatch_symbol") { "$($_.runtime_dispatch_symbol)" } else { "" }
           compile_exit = [int]$_.compile_exit
           link_exit = [int]$_.link_exit
@@ -96,7 +96,9 @@ function Get-CanonicalSummaryJson {
 
   $canonical = [ordered]@{
     native_exe = if ($summary.PSObject.Properties.Name -contains "native_exe") { "$($summary.native_exe)" } else { "" }
-    runtime_shim = "$($summary.runtime_shim)"
+    runtime_library = if ($summary.PSObject.Properties.Name -contains "runtime_library") { "$($summary.runtime_library)" } else { "" }
+    compatibility_runtime_shim = if ($summary.PSObject.Properties.Name -contains "compatibility_runtime_shim") { "$($summary.compatibility_runtime_shim)" } else { "" }
+    live_runtime_dispatch_default_symbol = if ($summary.PSObject.Properties.Name -contains "live_runtime_dispatch_default_symbol") { "$($summary.live_runtime_dispatch_default_symbol)" } else { "" }
     clang = "$($summary.clang)"
     total = [int]$summary.total
     passed = [int]$summary.passed

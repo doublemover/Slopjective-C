@@ -9,6 +9,6 @@
     ]
   },
   "execution": {
-    "requires_runtime_shim": false
+    "requires_live_runtime_dispatch": false
   }
 }

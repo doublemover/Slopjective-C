@@ -7156,6 +7156,10 @@ class Objc3IREmitter {
       // compatibility shim remains exported only as evidence/test surface, and
       // E002 is the first issue allowed to replace shim-based smoke/closeout
       // assumptions with the integrated live-dispatch gate.
+      // M255-E002 live-dispatch smoke/replay closeout anchor: smoke and replay
+      // now treat canonical runtime dispatch evidence as authoritative, so
+      // emitted live sends must continue to surface objc3_runtime_dispatch_i32
+      // even for nil-result paths that return 0 through the runtime.
       // M255-D001 lookup/dispatch runtime freeze anchor: emitted IR still
       // targets only the canonical lookup/dispatch boundary and does not
       // materialize runtime selector-table, method-cache, or slow-path helper

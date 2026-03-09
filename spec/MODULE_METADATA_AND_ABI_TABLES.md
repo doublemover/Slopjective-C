@@ -6792,3 +6792,20 @@ is authoritative:
   - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
 - `objc3_msgsend_i32` remains an exported compatibility/test symbol and not the
   authoritative live-dispatch proof surface
+
+## M255 live dispatch smoke/replay metadata anchors (E002)
+
+`M255-E002` freezes the metadata/evidence anchors for the integrated live
+smoke/replay closeout surface:
+
+- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
+- smoke summaries now publish:
+  - `requires_live_runtime_dispatch`
+  - `runtime_dispatch_symbol`
+  - `runtime_library`
+  - `compatibility_runtime_shim`
+  - `live_runtime_dispatch_default_symbol`
+- canonical live smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
+- canonical issue closeout summary path
+  `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`

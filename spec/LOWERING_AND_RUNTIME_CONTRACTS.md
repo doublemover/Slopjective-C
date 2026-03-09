@@ -5760,3 +5760,19 @@ dispatch path:
   is not an acceptable substitute for live-dispatch proof
 - `M255-E002` is the explicit handoff for replacing shim-based smoke and
   closeout gates with integrated live-dispatch evidence
+
+## M255 live dispatch smoke and replay closeout (E002)
+
+`M255-E002` closes the live-dispatch tranche by making the integrated smoke and
+replay proof authoritative:
+
+- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
+- execution smoke now publishes `requires_live_runtime_dispatch`
+- the canonical live smoke summary path is
+  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
+- execution replay proof now canonicalizes `runtime_library`,
+  `compatibility_runtime_shim`, and `live_runtime_dispatch_default_symbol`
+- supported message-send and runtime-dispatch negative fixtures now assert
+  `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains compatibility/test evidence only and is not an
+  acceptable substitute for live smoke/replay proof

@@ -67,6 +67,10 @@ boundary over A002/B003/C004/D004 proving supported sends execute through the
 live runtime path rather than this shim. This shim remains exported only for
 formula-parity / compatibility evidence and must not be treated as
 authoritative live-dispatch proof.
+M255-E002 smoke/replay closeout: execution smoke and replay now publish
+canonical live runtime dispatch evidence (`requires_live_runtime_dispatch`,
+`objc3_runtime_dispatch_i32`, and the runtime library path). This shim remains
+non-authoritative evidence for live smoke/replay proof.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

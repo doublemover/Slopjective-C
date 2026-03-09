@@ -236,6 +236,16 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
     "fail-closed-on-live-dispatch-evidence-drift";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
     "M255-E002";
+// M255-E002 live-dispatch smoke/replay closeout anchor: lane-E now replaces
+// the last shim-era smoke/replay assumptions with canonical live runtime
+// dispatch evidence. Execution smoke and replay must publish
+// requires_live_runtime_dispatch, the canonical runtime library path, the
+// compatibility shim as non-authoritative evidence only, and the canonical
+// default symbol objc3_runtime_dispatch_i32.
+inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutContractId =
+    "objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1";
+inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutModel =
+    "live-runtime-dispatch-smoke-and-replay-authoritative-shim-evidence-non-authoritative";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info

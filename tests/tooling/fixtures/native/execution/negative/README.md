@@ -19,7 +19,7 @@ Each negative execution fixture is a pair of files sharing a basename:
     ]
   },
   "execution": {
-    "requires_runtime_shim": true
+    "requires_live_runtime_dispatch": true
   }
 }
 ```
@@ -30,8 +30,8 @@ Field notes:
 - `fixture`: fixture filename this sidecar describes.
 - `expect_failure.stage`: first failing pipeline stage (`compile`, `link`, or `run`).
 - `expect_failure.required_diagnostic_tokens`: case-sensitive substrings that must all appear in diagnostics for the failing stage.
-- `execution.requires_runtime_shim`: whether successful execution would require a runtime dispatch shim.
-- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_runtime_shim` is true.
+- `execution.requires_live_runtime_dispatch`: whether successful execution would require a live runtime dispatch declaration/call in emitted LLVM IR.
+- `execution.runtime_dispatch_symbol` (optional): expected dispatch symbol when `requires_live_runtime_dispatch` is true. The canonical symbol is `objc3_runtime_dispatch_i32`.
 
 ## Assignment fixture note
 
@@ -105,9 +105,9 @@ Field notes:
 
 ## Runtime-dispatch fixture notes
 
-- `runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_msgsend_i32` on non-nil message-send lowering.
-- `nil_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_msgsend_i32` when a mutable receiver is reassigned from runtime-unknown value and lowering retains dispatch linkage.
-- `numeric_zero_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_msgsend_i32`; numeric zero receivers are intentionally non-elided and retain dispatch linkage.
+- `runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` on non-nil message-send lowering.
+- `nil_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32` when a mutable receiver is reassigned from runtime-unknown value and lowering retains dispatch linkage.
+- `numeric_zero_receiver_runtime_dispatch_unresolved_symbol.objc3` is a link-stage negative expecting unresolved symbol diagnostics for `objc3_runtime_dispatch_i32`; numeric zero receivers are intentionally non-elided and retain dispatch linkage.
 - `nil_bound_identifier_reassigned_function.objc3` is a compile-stage negative expecting semantic diagnostics (`O3S206`) for invalid mutable nil-bound identifier reassignment to a function value.
 
 ## Prototype fixture notes
