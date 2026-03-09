@@ -266,3 +266,5 @@ if ($Failures.Count -gt 0) {
 
 Write-Output ("metadata_only_fixtures_excluded_from_minima: {0}" -f $MetadataOnlyFixtureCount)
 Write-Output "Conformance suite check passed."
+$global:LASTEXITCODE = 0
+exit 0
