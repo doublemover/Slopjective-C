@@ -2311,6 +2311,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   result.parity_surface.type_metadata_implementation_entries =
       result.type_metadata_handoff.implementations_lexicographic.size();
   result.parity_surface.interface_implementation_summary = result.type_metadata_handoff.interface_implementation_summary;
+  result.parity_surface.bootstrap_legality_failure_contract_summary =
+      result.integration_surface.bootstrap_legality_failure_contract_summary;
   result.parity_surface.interface_method_symbols_total =
       result.parity_surface.interface_implementation_summary.interface_method_symbols;
   result.parity_surface.implementation_method_symbols_total =

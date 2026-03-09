@@ -221,6 +221,47 @@ static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &ta
   return false;
 }
 
+static std::string BuildBootstrapLegalityFailureContractReplayKey(
+    const Objc3BootstrapLegalityFailureContractSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id << ";surface_path=" << summary.surface_path
+      << ";duplicate_registration_policy="
+      << summary.duplicate_registration_policy
+      << ";image_registration_order_invariant="
+      << summary.image_registration_order_invariant
+      << ";failure_mode=" << summary.failure_mode
+      << ";restart_lifecycle_model=" << summary.restart_lifecycle_model
+      << ";replay_order_model=" << summary.replay_order_model
+      << ";image_local_init_reset_model="
+      << summary.image_local_init_reset_model
+      << ";catalog_retention_model=" << summary.catalog_retention_model
+      << ";runtime_state_snapshot_symbol="
+      << summary.runtime_state_snapshot_symbol;
+  return out.str();
+}
+
+static Objc3BootstrapLegalityFailureContractSummary
+BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3BootstrapLegalityFailureContractSummary summary;
+  summary.fail_closed = true;
+  summary.duplicate_registration_policy_frozen = true;
+  summary.image_order_invariant_frozen = true;
+  summary.bootstrap_rejection_frozen = true;
+  summary.restart_boundary_frozen = true;
+  summary.semantic_diagnostics_required = true;
+  summary.ready_for_lowering_and_runtime =
+      surface.interface_implementation_summary.deterministic;
+  if (summary.ready_for_lowering_and_runtime) {
+    summary.replay_key = BuildBootstrapLegalityFailureContractReplayKey(summary);
+  }
+  if (!IsReadyObjc3BootstrapLegalityFailureContractSummary(summary)) {
+    summary.failure_reason =
+        "bootstrap legality duplicate/order/failure contract summary is incomplete";
+  }
+  return summary;
+}
+
 static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
   if (lhs.is_vector != rhs.is_vector) {
     return false;
@@ -10788,6 +10829,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       interface_implementation_summary.linked_implementation_symbols <=
           interface_implementation_summary.interface_method_symbols;
   surface.interface_implementation_summary = interface_implementation_summary;
+  surface.bootstrap_legality_failure_contract_summary =
+      BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
+          surface);
   // M256-A001 executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before

@@ -901,6 +901,8 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_arc_diagnostics_fixit_handoff = false;
   bool deterministic_autoreleasepool_scope_handoff = false;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3BootstrapLegalityFailureContractSummary
+      bootstrap_legality_failure_contract_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;

@@ -7053,3 +7053,33 @@ Frozen metadata/runtime anchors:
   - `constructor_init_stub_symbol`
   - `bootstrap_registration_table_symbol`
   - `bootstrap_image_local_init_state_symbol`
+
+## M263 bootstrap legality metadata anchors (B001)
+
+`M263-B001` publishes the fail-closed bootstrap legality packet at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- legality model:
+  - `duplicate_registration_policy`
+  - `image_registration_order_invariant`
+  - `failure_mode`
+  - `restart_lifecycle_model`
+  - `replay_order_model`
+  - `image_local_init_reset_model`
+  - `catalog_retention_model`
+  - `runtime_state_snapshot_symbol`
+- continuity fields:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identity_source`
+  - `translation_unit_registration_order_ordinal`
+
+This freeze does not yet land multi-image bootstrap execution or replay.

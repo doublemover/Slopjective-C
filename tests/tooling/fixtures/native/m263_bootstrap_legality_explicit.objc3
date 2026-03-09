@@ -1,0 +1,9 @@
+#pragma objc_language_version(3)
+#pragma objc_registration_descriptor(BootstrapLegalityDescriptor)
+#pragma objc_image_root(BootstrapLegalityImageRoot)
+
+module BootstrapLegalityExplicit;
+
+fn main() -> i32 {
+  return 0;
+}

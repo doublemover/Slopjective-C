@@ -15218,3 +15218,38 @@ frontend artifact that later lowering and runtime work can consume directly.
   - registration entrypoint symbol
   - runtime-support archive path
   - constructor-root, init-stub, registration-table, and image-local-init symbols
+
+## Bootstrap legality, duplicate policy, and failure contract (M263-B001)
+
+`M263-B001` freezes the fail-closed semantic legality packet that bridges the
+emitted `M263-A002` frontend closure and the live `M254-B002` bootstrap
+semantics surface.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- image-order invariant
+  `strictly-monotonic-positive-registration-order-ordinal`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- restart lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- replay order model
+  `replay-re-registers-retained-images-in-original-registration-order`
+- image-local init reset model
+  `retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay`
+- catalog retention model
+  `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- identifier/source carry-through:
+  - registration descriptor identifier
+  - image-root identifier
+  - identity-source classification
+  - translation-unit registration ordinal

@@ -6008,3 +6008,40 @@ Non-goals:
 - no bootstrap-table lowering yet
 - no multi-image replay behavior yet
 - no runtime bootstrap execution yet
+
+## M263 bootstrap legality, duplicate policy, and failure contract (B001)
+
+`M263-B001` freezes the semantic legality packet that sits above the emitted
+`M263-A002` descriptor closure and above the live `M254-B002` bootstrap
+semantics surface.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- frozen legality policies:
+  - duplicate registration
+    `fail-closed-by-translation-unit-identity-key`
+  - image order invariant
+    `strictly-monotonic-positive-registration-order-ordinal`
+  - failure mode
+    `abort-before-user-main-no-partial-registration-commit`
+  - restart lifecycle
+    `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+  - replay order
+    `replay-re-registers-retained-images-in-original-registration-order`
+  - image-local init reset
+    `retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay`
+  - catalog retention
+    `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
+- identifier and ordinal continuity flows through from `M263-A002`; later
+  runtime work must not rebuild bootstrap identity/order from scratch.
+
+Non-goals:
+
+- no multi-image bootstrap execution yet
+- no runtime replay implementation yet
+- no API widening beyond the already-frozen bootstrap/runtime contracts

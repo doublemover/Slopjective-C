@@ -1219,6 +1219,62 @@ struct Objc3InterfaceImplementationSummary {
   bool deterministic = true;
 };
 
+inline constexpr const char *kObjc3BootstrapLegalityFailureContractId =
+    "objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1";
+inline constexpr const char *kObjc3BootstrapLegalityFailureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract";
+inline constexpr const char *kObjc3BootstrapLegalityImageOrderInvariantModel =
+    kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel;
+
+struct Objc3BootstrapLegalityFailureContractSummary {
+  std::string contract_id = kObjc3BootstrapLegalityFailureContractId;
+  std::string surface_path = kObjc3BootstrapLegalityFailureSurfacePath;
+  std::string duplicate_registration_policy =
+      kObjc3RuntimeStartupBootstrapDuplicateRegistrationPolicy;
+  std::string image_registration_order_invariant =
+      kObjc3BootstrapLegalityImageOrderInvariantModel;
+  std::string failure_mode = kObjc3RuntimeStartupBootstrapFailureMode;
+  std::string restart_lifecycle_model =
+      kObjc3RuntimeBootstrapResetLifecycleModel;
+  std::string replay_order_model = kObjc3RuntimeBootstrapReplayOrderModel;
+  std::string image_local_init_reset_model =
+      kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
+  std::string catalog_retention_model =
+      kObjc3RuntimeBootstrapCatalogRetentionModel;
+  std::string runtime_state_snapshot_symbol =
+      kObjc3RuntimeBootstrapStateSnapshotSymbol;
+  bool fail_closed = false;
+  bool duplicate_registration_policy_frozen = false;
+  bool image_order_invariant_frozen = false;
+  bool bootstrap_rejection_frozen = false;
+  bool restart_boundary_frozen = false;
+  bool semantic_diagnostics_required = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3BootstrapLegalityFailureContractSummary(
+    const Objc3BootstrapLegalityFailureContractSummary &summary) {
+  return !summary.contract_id.empty() && !summary.surface_path.empty() &&
+         !summary.duplicate_registration_policy.empty() &&
+         !summary.image_registration_order_invariant.empty() &&
+         !summary.failure_mode.empty() &&
+         !summary.restart_lifecycle_model.empty() &&
+         !summary.replay_order_model.empty() &&
+         !summary.image_local_init_reset_model.empty() &&
+         !summary.catalog_retention_model.empty() &&
+         !summary.runtime_state_snapshot_symbol.empty() &&
+         summary.fail_closed &&
+         summary.duplicate_registration_policy_frozen &&
+         summary.image_order_invariant_frozen &&
+         summary.bootstrap_rejection_frozen &&
+         summary.restart_boundary_frozen &&
+         summary.semantic_diagnostics_required &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
@@ -1237,6 +1293,8 @@ struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, Objc3CategoryMergeInfo>
       category_merge_surfaces;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  Objc3BootstrapLegalityFailureContractSummary
+      bootstrap_legality_failure_contract_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;

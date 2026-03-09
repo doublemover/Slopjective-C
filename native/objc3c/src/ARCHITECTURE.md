@@ -8943,3 +8943,26 @@ emission work and the M256 lane-B legality work:
   - `spec/planning/compiler/m256/m256_c001_executable_object_artifact_lowering_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m256-c001-executable-object-artifact-lowering-contract`
   - `check:objc3c:m256-c001-lane-c-readiness`
+
+## M263 bootstrap legality, duplicate policy, and failure contract (B001)
+
+`M263-B001` freezes one semantic legality bridge over the residual bootstrap
+surface:
+
+- sema owns the canonical legality packet for:
+  - duplicate registration policy
+  - image-order invariants
+  - fail-closed bootstrap rejection
+  - restart/replay boundaries
+- frontend publication owns the manifest-visible bridge that ties that sema
+  packet to:
+  - the emitted `M263-A002` registration-descriptor frontend closure
+  - the live `M254-B002` bootstrap semantics packet
+- later lowering/runtime work must extend this one legality bridge rather than
+  rebuilding registration identity, order, or restart semantics from emitted
+  objects or runtime sidecars
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_bootstrap_legality_duplicate_policy_and_failure_contract_and_architecture_freeze_b001_expectations.md`
+  - `spec/planning/compiler/m263/m263_b001_bootstrap_legality_duplicate_policy_and_failure_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m263-b001-bootstrap-legality-duplicate-policy-and-failure-contract`
+  - `check:objc3c:m263-b001-lane-b-readiness`

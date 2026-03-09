@@ -1,0 +1,7 @@
+#pragma objc_language_version(3)
+
+module BootstrapLegalityDefault;
+
+fn main() -> i32 {
+  return 0;
+}
