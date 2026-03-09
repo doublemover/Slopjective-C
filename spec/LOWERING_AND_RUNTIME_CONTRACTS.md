@@ -6100,3 +6100,32 @@ bootstrap semantics, and the `M254-D003` deterministic reset/replay contract.
     descriptor status path
   - reset preserves retained catalog state and zeroes the live init-state cells
   - reset plus replay restores the retained image in canonical order
+
+## M263 constructor-root and init-array lowering contract (C001)
+
+`M263-C001` freezes the live lowering boundary above the emitted
+`M263-A002` registration-descriptor artifact and the emitted translation-unit
+registration manifest.
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- descriptor handoff contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- descriptor artifact
+  `module.runtime-registration-descriptor.json`
+- lowering boundary model
+  `registration-descriptor-and-registration-manifest-drive-constructor-root-init-stub-registration-table-and-platform-init-array-lowering`
+- emitted lowering guarantees:
+  - constructor root `__objc3_runtime_register_image_ctor`
+  - init-stub prefix `__objc3_runtime_register_image_init_stub_`
+  - registration-table prefix `__objc3_runtime_registration_table_`
+  - image-local-init prefix `__objc3_runtime_image_local_init_state_`
+  - platform startup participation
+    `llvm.global_ctors-single-root-priority-65535`
+  - init stub still stages the registration table before calling
+    `objc3_runtime_register_image`
+- non-goals:
+  - no multi-image root fanout yet
+  - no replay partitioning/late linker synthesis yet

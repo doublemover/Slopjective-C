@@ -5006,6 +5006,9 @@ class Objc3IREmitter {
         << Objc3RuntimeMetadataLayoutPolicyReplayKey(layout_policy) << "\n";
     out << "; runtime_metadata_section_emission_boundary = "
         << Objc3RuntimeMetadataSectionEmissionBoundarySummary() << "\n";
+    // M263-C001 freezes this emitted boundary against the live ctor-root and
+    // llvm.global_ctors path rather than the earlier deferred placeholder
+    // model, so later multi-image lowering must preserve these names/shapes.
     out << "; runtime_bootstrap_lowering_boundary = "
         << Objc3RuntimeBootstrapLoweringBoundarySummary() << "\n";
     if (ShouldEmitRuntimeBootstrapLowering()) {

@@ -641,13 +641,19 @@ std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
 
 std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
   std::ostringstream out;
-  // M254-C001 bootstrap lowering freeze anchor: lane-C freezes the exact
-  // lowering boundary that later constructor-root materialization must extend.
-  // The lowering side is authoritative for ctor-root/global_ctors/init-stub/
-  // registration-table naming and ordering, but this issue remains explicit
-  // that no such IR globals are emitted yet.
+  // M263-C001 constructor-root/init-array lowering freeze anchor: the live
+  // lowering path already materializes ctor-root/global_ctors/init-stub/
+  // registration-table/image-local-init globals. This summary is the
+  // canonical replay-stable description of that current boundary and the
+  // registration-descriptor handoff it consumes.
   out << "contract=" << kObjc3RuntimeBootstrapLoweringContractId
       << ";boundary_model=" << kObjc3RuntimeBootstrapLoweringBoundaryModel
+      << ";registration_descriptor_handoff_contract_id="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorHandoffContractId
+      << ";registration_descriptor_artifact="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorArtifact
+      << ";registration_descriptor_handoff_model="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorHandoffModel
       << ";constructor_root_symbol="
       << kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol
       << ";init_stub_symbol_prefix="
@@ -664,7 +670,7 @@ std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
       << kObjc3RuntimeBootstrapInitStubEmissionState
       << ";registration_table_emission_state="
       << kObjc3RuntimeBootstrapRegistrationTableEmissionState
-      << ";non_goals=no-ctor-root-no-init-stub-no-registration-table-materialized-yet";
+      << ";non_goals=no-multi-image-root-fanout-no-runtime-replay-partitioning-no-late-linker-synthesis";
   return out.str();
 }
 

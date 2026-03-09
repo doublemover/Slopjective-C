@@ -9004,3 +9004,27 @@ widening the public runtime API:
   - `spec/planning/compiler/m263/m263_b003_bootstrap_failure_mode_and_restart_semantics_edge_case_and_compatibility_completion_packet.md`
   - `check:objc3c:m263-b003-bootstrap-failure-mode-and-restart-semantics`
   - `check:objc3c:m263-b003-lane-b-readiness`
+
+## M263 constructor-root and init-array lowering contract (C001)
+
+`M263-C001` freezes the live lowering boundary that now materializes startup
+bootstrap artifacts directly into the native object path:
+
+- lowering owns the canonical constructor-root/init-stub/registration-table
+  naming and `llvm.global_ctors` participation contract
+- frontend publication keeps `objc_runtime_bootstrap_lowering_contract` as the
+  manifest-visible packet that runtime/bootstrap work consumes
+- the emitted `M263-A002` registration-descriptor artifact plus the emitted
+  registration manifest are the authoritative lowering inputs; later multi-image
+  work must preserve that handoff rather than rebuilding names from IR-local
+  heuristics
+- proof requires real emitted artifacts:
+  - `module.runtime-registration-descriptor.json`
+  - `module.runtime-registration-manifest.json`
+  - `module.ll`
+  - `module.obj`
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_constructor_root_and_init_array_lowering_contract_and_architecture_freeze_c001_expectations.md`
+  - `spec/planning/compiler/m263/m263_c001_constructor_root_and_init_array_lowering_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m263-c001-constructor-root-and-init-array-lowering-contract`
+  - `check:objc3c:m263-c001-lane-c-readiness`

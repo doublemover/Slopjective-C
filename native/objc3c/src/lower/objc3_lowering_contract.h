@@ -472,22 +472,33 @@ inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
     ".merged.runtime-metadata-linker-options.rsp";
 inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
     ".merged.runtime-metadata-discovery.json";
-// M254-C001 bootstrap lowering freeze anchor: lane-C now freezes the lowering
-// boundary that will eventually materialize one constructor root, one derived
-// init stub, and one registration table per translation unit from the emitted
-// registration manifest plus the live bootstrap semantics contract. The
-// current boundary is explicit that those IR globals are not materialized yet.
+// M263-C001 constructor-root/init-array lowering freeze anchor: the existing
+// bootstrap-lowering surface is now the canonical live lowering contract for
+// constructor roots, derived init stubs, registration tables, and
+// llvm.global_ctors participation. The registration-descriptor artifact plus
+// the emitted registration manifest remain the authoritative lowering inputs
+// that later multi-image work must preserve rather than reconstructing symbol
+// names ad hoc in IR emission or the driver.
 inline constexpr const char *kObjc3RuntimeBootstrapLoweringContractId =
-    "objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1";
+    "objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1";
 inline constexpr const char *kObjc3RuntimeBootstrapLoweringBoundaryModel =
-    "registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering";
+    "registration-descriptor-and-registration-manifest-drive-constructor-root-init-stub-registration-table-and-platform-init-array-lowering";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorHandoffContractId =
+        "objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorArtifact =
+        "module.runtime-registration-descriptor.json";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorHandoffModel =
+        "registration-descriptor-artifact-and-registration-manifest-are-authoritative-lowering-inputs";
 inline constexpr const char *kObjc3RuntimeBootstrapConstructorRootEmissionState =
-    "deferred-until-m254-c002";
+    "materialized-before-user-main-via-llvm-global-ctors-single-root";
 inline constexpr const char *kObjc3RuntimeBootstrapInitStubEmissionState =
-    "deferred-until-m254-c002";
+    "materialized-before-user-main-via-derived-init-stub";
 inline constexpr const char
     *kObjc3RuntimeBootstrapRegistrationTableEmissionState =
-        "deferred-until-m254-c002";
+        "materialized-in-native-object-artifact";
 inline constexpr const char *kObjc3RuntimeBootstrapGlobalCtorListModel =
     "llvm.global_ctors-single-root-priority-65535";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix =

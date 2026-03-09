@@ -2989,10 +2989,16 @@ struct Objc3RuntimeBootstrapLoweringSummary {
       kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
   std::string bootstrap_semantics_contract_id =
       kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string registration_descriptor_frontend_closure_contract_id =
+      kObjc3RuntimeBootstrapRegistrationDescriptorHandoffContractId;
+  std::string registration_descriptor_artifact =
+      kObjc3RuntimeBootstrapRegistrationDescriptorArtifact;
   std::string bootstrap_surface_path =
       "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract";
   std::string lowering_boundary_model =
       kObjc3RuntimeBootstrapLoweringBoundaryModel;
+  std::string registration_descriptor_handoff_model =
+      kObjc3RuntimeBootstrapRegistrationDescriptorHandoffModel;
   std::string constructor_root_symbol =
       kObjc3RuntimeTranslationUnitRegistrationConstructorRootSymbol;
   std::string constructor_init_stub_symbol_prefix =
@@ -3022,6 +3028,7 @@ struct Objc3RuntimeBootstrapLoweringSummary {
   bool fail_closed = false;
   bool registration_manifest_contract_ready = false;
   bool bootstrap_semantics_contract_ready = false;
+  bool registration_descriptor_frontend_closure_contract_ready = false;
   bool lowering_contract_published = false;
   bool manifest_authority_preserved = false;
   bool no_bootstrap_ir_materialization_yet = false;
@@ -3030,6 +3037,7 @@ struct Objc3RuntimeBootstrapLoweringSummary {
   bool ready_for_bootstrap_materialization = false;
   std::string registration_manifest_replay_key;
   std::string bootstrap_semantics_replay_key;
+  std::string registration_descriptor_frontend_closure_replay_key;
   std::string replay_key;
   std::string failure_reason;
 };
@@ -3039,8 +3047,11 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
   return !summary.contract_id.empty() &&
          !summary.registration_manifest_contract_id.empty() &&
          !summary.bootstrap_semantics_contract_id.empty() &&
+         !summary.registration_descriptor_frontend_closure_contract_id.empty() &&
+         !summary.registration_descriptor_artifact.empty() &&
          !summary.bootstrap_surface_path.empty() &&
          !summary.lowering_boundary_model.empty() &&
+         !summary.registration_descriptor_handoff_model.empty() &&
          !summary.constructor_root_symbol.empty() &&
          !summary.constructor_init_stub_symbol_prefix.empty() &&
          !summary.registration_table_symbol_prefix.empty() &&
@@ -3057,6 +3068,7 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
          summary.fail_closed &&
          summary.registration_manifest_contract_ready &&
          summary.bootstrap_semantics_contract_ready &&
+         summary.registration_descriptor_frontend_closure_contract_ready &&
          summary.lowering_contract_published &&
          summary.manifest_authority_preserved &&
          !summary.no_bootstrap_ir_materialization_yet &&
@@ -3065,6 +3077,7 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
          summary.ready_for_bootstrap_materialization &&
          !summary.registration_manifest_replay_key.empty() &&
          !summary.bootstrap_semantics_replay_key.empty() &&
+         !summary.registration_descriptor_frontend_closure_replay_key.empty() &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 

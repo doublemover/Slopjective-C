@@ -295,6 +295,35 @@ replay, and unsupported bootstrap topologies over the live reset/replay hooks.
   - reset clears live state but retains bootstrap catalog state for recovery
   - reset plus replay restores the retained image in canonical order
 
+## Constructor-root and init-array lowering contract (M263-C001)
+
+`M263-C001` freezes the live lowering boundary that now materializes the
+constructor root, derived init stub, registration table, image-local init
+state, and `llvm.global_ctors` participation from the emitted registration
+manifest plus the emitted registration-descriptor artifact.
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- descriptor handoff contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- emitted descriptor artifact
+  `module.runtime-registration-descriptor.json`
+- lowering boundary model
+  `registration-descriptor-and-registration-manifest-drive-constructor-root-init-stub-registration-table-and-platform-init-array-lowering`
+- emitted lowering guarantees:
+  - constructor root symbol remains `__objc3_runtime_register_image_ctor`
+  - derived init stubs preserve the `__objc3_runtime_register_image_init_stub_`
+    prefix
+  - registration tables preserve the
+    `__objc3_runtime_registration_table_` prefix
+  - image-local init state cells preserve the
+    `__objc3_runtime_image_local_init_state_` prefix
+  - `@llvm.global_ctors` preserves the single-root priority `65535` lowering
+  - the init stub still stages the registration table and then calls
+    `objc3_runtime_register_image`
+
 ## M148 frontend selector-normalized method declaration grammar
 
 Frontend parser/AST method-declaration support now captures selector pieces and emits a canonical selector spelling for

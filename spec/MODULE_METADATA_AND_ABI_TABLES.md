@@ -7141,3 +7141,38 @@ Metadata/runtime anchors:
   - `reset_replay_state_snapshot_symbol`
   - `invalid_descriptor_status_code`
   - `translation_unit_registration_order_ordinal`
+
+## M263 constructor-root and init-array lowering metadata anchors (C001)
+
+`M263-C001` freezes the live lowering bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- handoff fields:
+  - `registration_descriptor_frontend_closure_contract_id`
+  - `registration_descriptor_artifact`
+  - `registration_descriptor_handoff_model`
+- emitted lowering fields:
+  - `constructor_root_symbol`
+  - `constructor_init_stub_symbol_prefix`
+  - `registration_table_symbol_prefix`
+  - `image_local_init_state_symbol_prefix`
+  - `registration_entrypoint_symbol`
+  - `global_ctor_list_model`
+  - `registration_table_layout_model`
+  - `image_local_initialization_model`
+  - `constructor_root_emission_state`
+  - `init_stub_emission_state`
+  - `registration_table_emission_state`
+- emitted artifact proof minimums:
+  - `module.runtime-registration-manifest.json`
+  - `module.runtime-registration-descriptor.json`
+  - `module.ll`
+  - `module.obj`

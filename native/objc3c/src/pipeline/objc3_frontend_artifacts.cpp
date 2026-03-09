@@ -2346,8 +2346,14 @@ std::string BuildRuntimeBootstrapLoweringReplayKey(
       << summary.registration_manifest_contract_id
       << ";bootstrap_semantics_contract_id="
       << summary.bootstrap_semantics_contract_id
+      << ";registration_descriptor_frontend_closure_contract_id="
+      << summary.registration_descriptor_frontend_closure_contract_id
+      << ";registration_descriptor_artifact="
+      << summary.registration_descriptor_artifact
       << ";bootstrap_surface_path=" << summary.bootstrap_surface_path
       << ";lowering_boundary_model=" << summary.lowering_boundary_model
+      << ";registration_descriptor_handoff_model="
+      << summary.registration_descriptor_handoff_model
       << ";constructor_root_symbol=" << summary.constructor_root_symbol
       << ";constructor_init_stub_symbol_prefix="
       << summary.constructor_init_stub_symbol_prefix
@@ -2378,14 +2384,22 @@ std::string BuildRuntimeBootstrapLoweringReplayKey(
       << ";registration_manifest_replay_key="
       << summary.registration_manifest_replay_key
       << ";bootstrap_semantics_replay_key="
-      << summary.bootstrap_semantics_replay_key;
+      << summary.bootstrap_semantics_replay_key
+      << ";registration_descriptor_frontend_closure_replay_key="
+      << summary.registration_descriptor_frontend_closure_replay_key;
   return out.str();
 }
 
+// M263-C001 constructor-root/init-array lowering anchor: the canonical
+// lowering summary now freezes the live ctor-root/global_ctors materialization
+// path and requires the emitted registration-descriptor frontend closure to be
+// ready before the handoff is considered valid.
 Objc3RuntimeBootstrapLoweringSummary BuildRuntimeBootstrapLoweringSummary(
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary
         &registration_manifest,
-    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics) {
+    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics,
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+        &registration_descriptor_frontend_closure) {
   Objc3RuntimeBootstrapLoweringSummary summary;
   summary.fail_closed = true;
   summary.registration_manifest_contract_ready =
@@ -2393,6 +2407,9 @@ Objc3RuntimeBootstrapLoweringSummary BuildRuntimeBootstrapLoweringSummary(
           registration_manifest);
   summary.bootstrap_semantics_contract_ready =
       IsReadyObjc3RuntimeBootstrapSemanticsSummary(bootstrap_semantics);
+  summary.registration_descriptor_frontend_closure_contract_ready =
+      IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(
+          registration_descriptor_frontend_closure);
   summary.lowering_contract_published = true;
   summary.manifest_authority_preserved =
       summary.registration_manifest_contract_ready &&
@@ -2400,18 +2417,25 @@ Objc3RuntimeBootstrapLoweringSummary BuildRuntimeBootstrapLoweringSummary(
   summary.no_bootstrap_ir_materialization_yet = false;
   summary.bootstrap_ir_materialization_landed =
       summary.registration_manifest_contract_ready &&
-      summary.bootstrap_semantics_contract_ready;
+      summary.bootstrap_semantics_contract_ready &&
+      summary.registration_descriptor_frontend_closure_contract_ready;
   summary.image_local_initialization_landed =
       summary.registration_manifest_contract_ready &&
-      summary.bootstrap_semantics_contract_ready;
+      summary.bootstrap_semantics_contract_ready &&
+      summary.registration_descriptor_frontend_closure_contract_ready;
   summary.ready_for_bootstrap_materialization =
       summary.registration_manifest_contract_ready &&
-      summary.bootstrap_semantics_contract_ready;
+      summary.bootstrap_semantics_contract_ready &&
+      summary.registration_descriptor_frontend_closure_contract_ready;
   if (summary.registration_manifest_contract_ready) {
     summary.registration_manifest_replay_key = registration_manifest.replay_key;
   }
   if (summary.bootstrap_semantics_contract_ready) {
     summary.bootstrap_semantics_replay_key = bootstrap_semantics.replay_key;
+  }
+  if (summary.registration_descriptor_frontend_closure_contract_ready) {
+    summary.registration_descriptor_frontend_closure_replay_key =
+        registration_descriptor_frontend_closure.replay_key;
   }
   if (summary.ready_for_bootstrap_materialization) {
     summary.replay_key = BuildRuntimeBootstrapLoweringReplayKey(summary);
@@ -2430,10 +2454,17 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
       << EscapeJsonString(summary.registration_manifest_contract_id)
       << "\",\"bootstrap_semantics_contract_id\":\""
       << EscapeJsonString(summary.bootstrap_semantics_contract_id)
+      << "\",\"registration_descriptor_frontend_closure_contract_id\":\""
+      << EscapeJsonString(
+             summary.registration_descriptor_frontend_closure_contract_id)
+      << "\",\"registration_descriptor_artifact\":\""
+      << EscapeJsonString(summary.registration_descriptor_artifact)
       << "\",\"bootstrap_surface_path\":\""
       << EscapeJsonString(summary.bootstrap_surface_path)
       << "\",\"lowering_boundary_model\":\""
       << EscapeJsonString(summary.lowering_boundary_model)
+      << "\",\"registration_descriptor_handoff_model\":\""
+      << EscapeJsonString(summary.registration_descriptor_handoff_model)
       << "\",\"constructor_root_symbol\":\""
       << EscapeJsonString(summary.constructor_root_symbol)
       << "\",\"constructor_init_stub_symbol_prefix\":\""
@@ -2468,6 +2499,10 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
       << (summary.registration_manifest_contract_ready ? "true" : "false")
       << ",\"bootstrap_semantics_contract_ready\":"
       << (summary.bootstrap_semantics_contract_ready ? "true" : "false")
+      << ",\"registration_descriptor_frontend_closure_contract_ready\":"
+      << (summary.registration_descriptor_frontend_closure_contract_ready
+              ? "true"
+              : "false")
       << ",\"lowering_contract_published\":"
       << (summary.lowering_contract_published ? "true" : "false")
       << ",\"manifest_authority_preserved\":"
@@ -2484,6 +2519,9 @@ std::string BuildRuntimeBootstrapLoweringSummaryJson(
       << EscapeJsonString(summary.registration_manifest_replay_key)
       << "\",\"bootstrap_semantics_replay_key\":\""
       << EscapeJsonString(summary.bootstrap_semantics_replay_key)
+      << "\",\"registration_descriptor_frontend_closure_replay_key\":\""
+      << EscapeJsonString(
+             summary.registration_descriptor_frontend_closure_replay_key)
       << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\",\"failure_reason\":\""
       << EscapeJsonString(summary.failure_reason) << "\"}";
@@ -5786,10 +5824,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               runtime_bootstrap_legality_failure_contract,
               runtime_registration_descriptor_frontend_closure,
               runtime_bootstrap_semantics, translation_unit_identity_key);
-  const Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering =
-      BuildRuntimeBootstrapLoweringSummary(
-          runtime_translation_unit_registration_manifest,
-          runtime_bootstrap_semantics);
+    const Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering =
+        BuildRuntimeBootstrapLoweringSummary(
+            runtime_translation_unit_registration_manifest,
+            runtime_bootstrap_semantics,
+            runtime_registration_descriptor_frontend_closure);
   const Objc3RuntimeBootstrapFailureRestartSemanticsSummary
       runtime_bootstrap_failure_restart_semantics =
           BuildRuntimeBootstrapFailureRestartSemanticsSummary(
@@ -8635,8 +8674,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3RuntimeBootstrapCatalogRetentionModel
            << "\",\"runtime_bootstrap_lowering_bootstrap_semantics_contract_id\":\""
            << runtime_bootstrap_lowering.bootstrap_semantics_contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_contract_id\":\""
+           << runtime_bootstrap_lowering
+                  .registration_descriptor_frontend_closure_contract_id
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_artifact\":\""
+           << runtime_bootstrap_lowering.registration_descriptor_artifact
            << "\",\"runtime_bootstrap_lowering_boundary_model\":\""
            << runtime_bootstrap_lowering.lowering_boundary_model
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_handoff_model\":\""
+           << runtime_bootstrap_lowering.registration_descriptor_handoff_model
            << "\",\"runtime_bootstrap_lowering_constructor_root_symbol\":\""
            << runtime_bootstrap_lowering.constructor_root_symbol
            << "\",\"runtime_bootstrap_lowering_init_stub_symbol_prefix\":\""
@@ -8655,6 +8701,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_bootstrap_lowering.registration_table_emission_state
            << "\",\"runtime_bootstrap_lowering_fail_closed\":"
            << (runtime_bootstrap_lowering.fail_closed ? "true" : "false")
+           << ",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_contract_ready\":"
+           << (runtime_bootstrap_lowering
+                       .registration_descriptor_frontend_closure_contract_ready
+                   ? "true"
+                   : "false")
            << ",\"runtime_bootstrap_lowering_no_bootstrap_ir_materialization_yet\":"
            << (runtime_bootstrap_lowering.no_bootstrap_ir_materialization_yet
                    ? "true"
@@ -8665,6 +8716,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    : "false")
            << ",\"runtime_bootstrap_lowering_replay_key\":\""
            << EscapeJsonString(runtime_bootstrap_lowering.replay_key)
+           << "\",\"runtime_bootstrap_lowering_registration_descriptor_frontend_closure_replay_key\":\""
+           << EscapeJsonString(runtime_bootstrap_lowering
+                                   .registration_descriptor_frontend_closure_replay_key)
            << "\",\"runtime_bootstrap_lowering_failure_reason\":\""
            << EscapeJsonString(runtime_bootstrap_lowering.failure_reason)
            << "\""
