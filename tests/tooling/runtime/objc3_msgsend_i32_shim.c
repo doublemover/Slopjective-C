@@ -48,6 +48,11 @@ M255-C004 live-dispatch cutover: normalized dynamic sends now also lower to
 `objc3_runtime_dispatch_i32`; this shim remains exported only as explicit
 formula-parity / compatibility evidence and is no longer a live lowering
 target.
+M255-D001 lookup/dispatch runtime freeze: selector interning, metadata-backed
+lookup tables, method caches, and runtime slow paths remain owned by the native
+`objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface. This
+shim stays test-only compatibility evidence and is not the authoritative live
+runtime lookup/dispatch implementation.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

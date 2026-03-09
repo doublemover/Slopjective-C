@@ -207,3 +207,16 @@ with one published operator runbook:
 - `scripts/check_objc3c_native_execution_smoke.ps1`
 - canonical closeout evidence
   `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+`M255-D001` freezes the next runtime-owned boundary after the live dispatch
+cutover:
+
+- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+- canonical selector lookup symbol `objc3_runtime_lookup_selector`
+- canonical dispatch symbol `objc3_runtime_dispatch_i32`
+- selector handles remain stable per canonical selector spelling within the
+  process-global runtime state
+- metadata-backed selector lookup tables remain deferred to `M255-D002`
+- method-cache / slow-path resolution remain deferred to `M255-D003`
+- protocol/category-aware resolution remains deferred to `M255-D004`
+- `objc3_msgsend_i32` remains compatibility/test evidence only

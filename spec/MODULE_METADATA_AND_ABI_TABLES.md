@@ -6711,3 +6711,18 @@ runtime cutover:
 - all supported live sends lower directly to `objc3_runtime_dispatch_i32`
 - `objc3_msgsend_i32` remains exported but is not emitted on the live path
 - reserved direct-dispatch surfaces remain fail closed
+
+## M255 lookup/dispatch runtime metadata anchors (D001)
+
+`M255-D001` freezes the runtime-owned lookup/dispatch anchor set without
+claiming later method-cache or protocol/category-aware resolution work:
+
+- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+- canonical selector lookup symbol `objc3_runtime_lookup_selector`
+- canonical dispatch symbol `objc3_runtime_dispatch_i32`
+- canonical selector handle type `objc3_runtime_selector_handle`
+- selector interning model
+  `process-global-selector-intern-table-stable-id-per-canonical-selector-spelling`
+- metadata-backed selector lookup tables remain deferred to `M255-D002`
+- method-cache and runtime slow-path lookup remain deferred to `M255-D003`
+- protocol/category-aware method resolution remains deferred to `M255-D004`

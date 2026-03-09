@@ -43,6 +43,11 @@ typedef struct objc3_runtime_registration_state_snapshot {
   uint64_t last_rejected_registration_order_ordinal;
 } objc3_runtime_registration_state_snapshot;
 
+// M255-D001 lookup-dispatch-runtime anchor: the canonical runtime-owned lookup
+// and dispatch surface remains objc3_runtime_lookup_selector plus
+// objc3_runtime_dispatch_i32 over objc3_runtime_selector_handle. Later
+// selector-table, method-cache, and protocol/category-aware slow-path work must
+// extend this ABI without renaming or silently narrowing it.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

@@ -8658,3 +8658,19 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   now publish one canonical header/archive/entrypoint/reset contract so later
   registrar/image-walk and deterministic-reset work extends one runtime boundary
   instead of inferring launch behavior from scattered implementation details.
+## M255 lookup and dispatch runtime freeze (D001)
+
+`M255-D001` freezes the runtime-owned selector interning and dispatch boundary
+that the live lane-C call ABI targets. The preserved canonical surface is:
+
+- `objc3_runtime_lookup_selector`
+- `objc3_runtime_dispatch_i32`
+- `objc3_runtime_selector_handle`
+
+This freeze is intentionally narrow:
+
+- metadata-backed selector lookup tables are deferred to `M255-D002`
+- method-cache and runtime slow-path lookup are deferred to `M255-D003`
+- protocol/category-aware method resolution is deferred to `M255-D004`
+- the compatibility shim remains test-only evidence, not the authoritative live
+  runtime lookup/dispatch surface

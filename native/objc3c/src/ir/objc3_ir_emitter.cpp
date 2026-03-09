@@ -6939,6 +6939,12 @@ class Objc3IREmitter {
       // for canonical surfaces stay runtime-owned, the compatibility symbol is
       // retained only as a non-emitted alias/test surface, and reserved direct
       // dispatch surfaces still fail closed before IR emission.
+      // M255-D001 lookup/dispatch runtime freeze anchor: emitted IR still
+      // targets only the canonical lookup/dispatch boundary and does not
+      // materialize runtime selector-table, method-cache, or slow-path helper
+      // symbols. Those runtime-owned details stay behind the frozen
+      // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 surface
+      // until later lane-D issues extend them explicitly.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowered.dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;

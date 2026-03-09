@@ -10204,6 +10204,11 @@ class Objc3Parser {
     // dynamic sends onto objc3_runtime_dispatch_i32 too, removing the last
     // live-path compatibility-bridge dependency while keeping reserved direct
     // dispatch fail closed in IR lowering.
+    // M255-D001 lookup/dispatch runtime freeze anchor: parser still does not
+    // own selector interning, metadata-backed lookup tables, method caches, or
+    // slow-path runtime resolution. It hands normalized selector text and
+    // receiver form through to the canonical runtime-owned lookup/dispatch
+    // boundary for lane-D to extend later.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

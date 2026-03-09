@@ -138,6 +138,31 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel =
         "direct-dispatch-remains-fail-closed-after-live-cutover";
+// M255-D001 lookup/dispatch runtime freeze anchor: lane-D now freezes the
+// runtime-owned selector interning, lookup-table, cache, and slow-path
+// boundary that the live lane-C call ABI targets. The canonical runtime API
+// remains objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32;
+// metadata-backed selector lookup tables land in M255-D002, method-cache and
+// slow-path lookup land in M255-D003, protocol/category-aware method
+// resolution lands in M255-D004, and unsupported runtime-resolution surfaces
+// remain fail closed until those issues materialize them explicitly.
+inline constexpr const char *kObjc3RuntimeLookupDispatchContractId =
+    "objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1";
+inline constexpr const char
+    *kObjc3RuntimeLookupDispatchSelectorInterningModel =
+        "process-global-selector-intern-table-stable-id-per-canonical-selector-spelling";
+inline constexpr const char
+    *kObjc3RuntimeLookupDispatchLookupTableModel =
+        "metadata-backed-selector-lookup-tables-deferred-until-m255-d002";
+inline constexpr const char *kObjc3RuntimeLookupDispatchCacheModel =
+    "method-cache-and-runtime-slow-path-deferred-until-m255-d003";
+inline constexpr const char
+    *kObjc3RuntimeLookupDispatchProtocolCategoryModel =
+        "protocol-and-category-aware-method-resolution-deferred-until-m255-d004";
+inline constexpr const char *kObjc3RuntimeLookupDispatchCompatibilityModel =
+    "compatibility-shim-remains-test-only-non-authoritative-runtime-surface";
+inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
+    "runtime-lookup-and-dispatch-fail-closed-on-unmaterialized-resolution";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory

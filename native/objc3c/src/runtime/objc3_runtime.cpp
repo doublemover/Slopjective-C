@@ -91,6 +91,10 @@ RuntimeState &State() {
 }
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
+  // M255-D001 lookup-dispatch-runtime anchor: selector interning remains
+  // process-global stable-id state here until M255-D002 materializes
+  // metadata-backed lookup tables and M255-D003 lands method-cache / slow-path
+  // resolution on top of the same canonical runtime API.
   if (selector == nullptr) {
     return nullptr;
   }
@@ -133,6 +137,10 @@ std::int64_t ComputeSelectorScore(const char *selector) {
 
 int ComputeDispatchResult(int receiver, const char *selector, int a0, int a1,
                           int a2, int a3) {
+  // M255-D001 lookup-dispatch-runtime anchor: live dispatch still preserves the
+  // deterministic formula while lane-D freezes the runtime-owned boundary. Real
+  // method-cache and metadata-backed slow-path lookup arrive in later M255
+  // lane-D issues without changing the canonical dispatch entrypoint.
   std::int64_t value = 41;
   value += static_cast<std::int64_t>(receiver) * 97;
   value += static_cast<std::int64_t>(a0) * 7;

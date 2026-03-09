@@ -110,3 +110,18 @@ and replay hooks for same-process runtime probes:
   `retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay`
 - bootstrap catalog retention model
   `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
+
+`M255-D001` then freezes the runtime-owned lookup/dispatch boundary that the
+live lane-C call ABI now targets:
+
+- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+- canonical selector lookup symbol `objc3_runtime_lookup_selector`
+- canonical dispatch symbol `objc3_runtime_dispatch_i32`
+- canonical selector handle type `objc3_runtime_selector_handle`
+- selector interning model
+  `process-global-selector-intern-table-stable-id-per-canonical-selector-spelling`
+- metadata-backed selector lookup tables remain deferred to `M255-D002`
+- method-cache and runtime slow-path lookup remain deferred to `M255-D003`
+- protocol/category-aware method resolution remains deferred to `M255-D004`
+- the compatibility shim remains test-only evidence and is not the
+  authoritative runtime-owned lookup/dispatch implementation
