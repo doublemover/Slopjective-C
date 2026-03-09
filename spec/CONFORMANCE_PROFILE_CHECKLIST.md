@@ -251,3 +251,20 @@ A serious conformance claim should ship with:
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
   - runtime contracts for `throws` and `async` behave correctly under optimization,
 - migration tooling notes for large codebases (warning groups, fix-its, staged adoption).
+
+## M264 frontend claim truth packet (implementation note)
+
+Current native `objc3c` work publishes one fail-closed frontend packet for
+claim truthfulness:
+
+- `frontend.pipeline.semantic_surface.objc_runnable_feature_claim_inventory`
+
+The packet must separate:
+
+- runnable native claims
+- source-only recognized claims
+- unsupported fail-closed claims
+
+Until strictness, strict concurrency, effects, async/await, actors, blocks, and
+ARC are live, that packet is the canonical source used to avoid over-claiming
+Objective-C 3 conformance.

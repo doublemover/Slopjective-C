@@ -223,3 +223,23 @@ Conforming metadata/interface behavior shall preserve whether a declaration is e
 **Rationale:** Declaration-scoped control supports gradual adoption, avoids module-wide semantic surprises, and keeps mixed erased/reified codebases tractable.
 
 **Spec impact:** [Part 3](#part-3) [§3.5.5](#part-3-5-5) and [§3.9](#part-3-9).
+
+---
+
+## D-016: Conformance and version claims are bounded by one live frontend inventory {#decisions-d-016}
+
+**Decision:** The native `objc3c` toolchain shall publish one canonical frontend
+feature-claim inventory that explicitly separates:
+
+- runnable claims,
+- source-only recognized claims,
+- unsupported fail-closed claims.
+
+Strictness, strict concurrency, effects, async/await, actors, blocks, and ARC
+shall not be advertised as supported until they move into the runnable set.
+
+**Rationale:** This prevents the project from over-claiming Objective-C 3
+support based on parser/sema or contract-only progress.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.

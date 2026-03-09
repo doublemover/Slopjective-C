@@ -10348,6 +10348,10 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3ParseResult result;
   result.program = parser.Parse();
   result.diagnostics = parser.TakeDiagnostics();
+  // M264-A001 source/frontend-truth anchor: the parser contract snapshot stays
+  // the canonical declaration/grammar coverage record consumed by the emitted
+  // runnable feature-claim inventory. Later lanes may refine claims, but they
+  // must not invent a second frontend source-of-truth surface.
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
   return result;

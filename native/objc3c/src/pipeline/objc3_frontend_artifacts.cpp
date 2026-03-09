@@ -65,6 +65,129 @@ const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
   }
 }
 
+std::string EscapeJsonString(const std::string &value);
+
+std::string BuildStringArrayJson(const std::vector<std::string> &values) {
+  std::ostringstream out;
+  out << "[";
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    if (index != 0) {
+      out << ",";
+    }
+    out << "\"" << EscapeJsonString(values[index]) << "\"";
+  }
+  out << "]";
+  return out.str();
+}
+
+std::vector<std::string> BuildRunnableFeatureClaimIds() {
+  return {
+      kObjc3RunnableFeatureClaimModule,
+      kObjc3RunnableFeatureClaimGlobalLet,
+      kObjc3RunnableFeatureClaimFunctionBodies,
+      kObjc3RunnableFeatureClaimExternPrototypes,
+      kObjc3RunnableFeatureClaimScalarCore,
+      kObjc3RunnableFeatureClaimControlFlow,
+      kObjc3RunnableFeatureClaimMessageSend,
+  };
+}
+
+std::vector<std::string> BuildSourceOnlyFeatureClaimIds() {
+  return {
+      kObjc3SourceOnlyFeatureClaimProtocols,
+      kObjc3SourceOnlyFeatureClaimInterfaces,
+      kObjc3SourceOnlyFeatureClaimImplementations,
+      kObjc3SourceOnlyFeatureClaimCategories,
+      kObjc3SourceOnlyFeatureClaimProperties,
+      kObjc3SourceOnlyFeatureClaimObjectPointerSurface,
+  };
+}
+
+std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
+  return {
+      kObjc3UnsupportedFeatureClaimStrictness,
+      kObjc3UnsupportedFeatureClaimStrictConcurrency,
+      kObjc3UnsupportedFeatureClaimThrows,
+      kObjc3UnsupportedFeatureClaimAsyncAwait,
+      kObjc3UnsupportedFeatureClaimActors,
+      kObjc3UnsupportedFeatureClaimBlocks,
+      kObjc3UnsupportedFeatureClaimArc,
+  };
+}
+
+std::string BuildRunnableFeatureClaimInventoryReplayKey(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result) {
+  std::ostringstream out;
+  out << kObjc3RunnableFeatureClaimInventoryContractId
+      << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
+      << ";language_version=" << static_cast<unsigned>(options.language_version)
+      << ";compatibility_mode=" << CompatibilityModeName(options.compatibility_mode)
+      << ";migration_assist=" << (options.migration_assist ? "true" : "false")
+      << ";truth_model=" << kObjc3RunnableFeatureClaimTruthModel
+      << ";declared_globals=" << pipeline_result.program.ast.globals.size()
+      << ";declared_functions=" << pipeline_result.program.ast.functions.size()
+      << ";declared_protocols=" << pipeline_result.program.ast.protocols.size()
+      << ";declared_interfaces=" << pipeline_result.program.ast.interfaces.size()
+      << ";declared_implementations=" << pipeline_result.program.ast.implementations.size()
+      << ";protocol_properties=" << pipeline_result.parser_contract_snapshot.protocol_property_decl_count
+      << ";interface_properties=" << pipeline_result.parser_contract_snapshot.interface_property_decl_count
+      << ";implementation_properties=" << pipeline_result.parser_contract_snapshot.implementation_property_decl_count
+      << ";long_tail_constructs=" << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count;
+  return out.str();
+}
+
+std::string BuildRunnableFeatureClaimInventoryJson(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result) {
+  const std::vector<std::string> runnable_claim_ids =
+      BuildRunnableFeatureClaimIds();
+  const std::vector<std::string> source_only_claim_ids =
+      BuildSourceOnlyFeatureClaimIds();
+  const std::vector<std::string> unsupported_claim_ids =
+      BuildUnsupportedFeatureClaimIds();
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << kObjc3RunnableFeatureClaimInventoryContractId
+      << "\",\"effective_language_mode\":\"" << kObjc3RunnableFeatureClaimModeName
+      << "\",\"effective_language_version\":"
+      << static_cast<unsigned>(options.language_version)
+      << ",\"effective_compatibility_mode\":\""
+      << CompatibilityModeName(options.compatibility_mode)
+      << "\",\"migration_assist_enabled\":"
+      << (options.migration_assist ? "true" : "false")
+      << ",\"strictness_selection_supported\":false"
+      << ",\"strict_concurrency_mode_supported\":false"
+      << ",\"mode_truth_fail_closed\":true"
+      << ",\"truth_model\":\"" << kObjc3RunnableFeatureClaimTruthModel << "\""
+      << ",\"runnable_feature_claim_count\":" << runnable_claim_ids.size()
+      << ",\"source_only_feature_claim_count\":" << source_only_claim_ids.size()
+      << ",\"unsupported_feature_claim_count\":" << unsupported_claim_ids.size()
+      << ",\"declared_protocol_count\":"
+      << pipeline_result.program.ast.protocols.size()
+      << ",\"declared_interface_count\":"
+      << pipeline_result.program.ast.interfaces.size()
+      << ",\"declared_implementation_count\":"
+      << pipeline_result.program.ast.implementations.size()
+      << ",\"declared_function_count\":"
+      << pipeline_result.program.ast.functions.size()
+      << ",\"declared_global_count\":"
+      << pipeline_result.program.ast.globals.size()
+      << ",\"long_tail_construct_count\":"
+      << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count
+      << ",\"runnable_feature_claim_ids\":"
+      << BuildStringArrayJson(runnable_claim_ids)
+      << ",\"source_only_feature_claim_ids\":"
+      << BuildStringArrayJson(source_only_claim_ids)
+      << ",\"unsupported_feature_claim_ids\":"
+      << BuildStringArrayJson(unsupported_claim_ids)
+      << ",\"replay_key\":\""
+      << EscapeJsonString(
+             BuildRunnableFeatureClaimInventoryReplayKey(options, pipeline_result))
+      << "\"}";
+  return out.str();
+}
+
 std::string EscapeJsonString(const std::string &value) {
   std::ostringstream out;
   for (const unsigned char c : value) {
@@ -9609,6 +9732,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << "}"
+           // M264-A001 mode-truth inventory anchor: lane-A publishes one
+           // truthful frontend packet that separates runnable claims,
+           // source-only claims, and fail-closed unsupported claims for the
+           // currently implemented Objective-C 3 native subset.
+           << ",\"objc_runnable_feature_claim_inventory\":"
+           << BuildRunnableFeatureClaimInventoryJson(options, pipeline_result)
            << ",\"objc_executable_metadata_source_graph\":"
            << BuildExecutableMetadataSourceGraphJson(
                   executable_metadata_source_graph)

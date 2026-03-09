@@ -112,6 +112,59 @@ inline constexpr const char *kObjc3BootstrapRegistrationDescriptorPragmaName =
 inline constexpr const char *kObjc3BootstrapImageRootPragmaName =
     "objc_image_root";
 
+// M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
+// must be emitted from one canonical frontend inventory that separates runnable,
+// source-only, and fail-closed unsupported surfaces.
+inline constexpr const char *kObjc3RunnableFeatureClaimInventoryContractId =
+    "objc3c-runnable-feature-claim-inventory/m264-a001-v1";
+inline constexpr const char *kObjc3RunnableFeatureClaimModeName =
+    "objc3-v1-native-subset";
+inline constexpr const char *kObjc3RunnableFeatureClaimTruthModel =
+    "truthful-runnable-subset-plus-source-only-plus-fail-closed-unsupported";
+
+inline constexpr const char *kObjc3RunnableFeatureClaimModule =
+    "runnable:module-declaration";
+inline constexpr const char *kObjc3RunnableFeatureClaimGlobalLet =
+    "runnable:global-let";
+inline constexpr const char *kObjc3RunnableFeatureClaimFunctionBodies =
+    "runnable:function-bodies";
+inline constexpr const char *kObjc3RunnableFeatureClaimExternPrototypes =
+    "runnable:extern-prototypes";
+inline constexpr const char *kObjc3RunnableFeatureClaimScalarCore =
+    "runnable:scalar-core";
+inline constexpr const char *kObjc3RunnableFeatureClaimControlFlow =
+    "runnable:control-flow";
+inline constexpr const char *kObjc3RunnableFeatureClaimMessageSend =
+    "runnable:message-send-basic";
+
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimProtocols =
+    "source-only:protocol-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimInterfaces =
+    "source-only:interface-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimImplementations =
+    "source-only:implementation-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimCategories =
+    "source-only:category-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimProperties =
+    "source-only:property-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerSurface =
+    "source-only:object-pointer-nullability-generics";
+
+inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictness =
+    "unsupported:strictness-selection";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictConcurrency =
+    "unsupported:strict-concurrency-selection";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimThrows =
+    "unsupported:throws";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimAsyncAwait =
+    "unsupported:async-await";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimActors =
+    "unsupported:actors";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimBlocks =
+    "unsupported:blocks";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
+    "unsupported:arc";
+
 enum class Objc3SemaTokenKind {
   PointerDeclarator,
   NullabilitySuffix,

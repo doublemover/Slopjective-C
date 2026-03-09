@@ -10627,6 +10627,34 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 
 - Optional toolchain override:
   - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH=<clang executable>`
+
+## Runnable feature-claim inventory (M264-A001)
+
+`M264-A001` freezes one truthful frontend packet for versioning/conformance work:
+
+- `frontend.pipeline.semantic_surface.objc_runnable_feature_claim_inventory`
+
+The packet is intentionally explicit about current reality:
+
+- effective language mode: `objc3-v1-native-subset`
+- supported compatibility modes: `canonical`, `legacy`
+- migration assist: surfaced truthfully from the active frontend options
+- strictness selection: not yet supported
+- strict concurrency selection: not yet supported
+
+The inventory separates:
+
+- runnable claims
+- source-only claims
+- fail-closed unsupported claims
+
+Validation deliberately proves both sides of that split:
+
+- runnable hello-world mode truth through `artifacts/bin/objc3c-native.exe`
+- source-only declaration truth through `artifacts/bin/objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+
+This prevents later milestones from over-claiming runtime-backed Objective-C 3
+support before the corresponding lanes are actually implemented and runnable.
 ## Deterministic contract commands
 
 From repo root:
