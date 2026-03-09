@@ -81,10 +81,16 @@ REQUIRED_SNIPPETS: dict[str, tuple[SnippetRule, ...]] = {
         SnippetRule("M135-CTR-04", "`python scripts/check_m135_direct_llvm_contract.py`"),
     ),
     "planning_lint_workflow": (
-        SnippetRule("M135-CI-PLN-01", "python scripts/check_m135_direct_llvm_contract.py"),
+        SnippetRule("M135-CI-PLN-01", "name: Planning Lint (Legacy Manual)"),
+        SnippetRule(
+            "M135-CI-PLN-02",
+            "Planning source of truth now lives primarily in GitHub milestones and issues.",
+        ),
     ),
     "task_hygiene_workflow": (
-        SnippetRule("M135-CI-TH-01", "npm run check:compiler-closeout:m135"),
+        SnippetRule("M135-CI-TH-01", "name: ObjC3C Core CI"),
+        SnippetRule("M135-CI-TH-02", "npm run build:objc3c-native"),
+        SnippetRule("M135-CI-TH-03", "npm run test:objc3c:execution-smoke"),
     ),
 }
 
@@ -255,7 +261,7 @@ def render_drift_report(*, findings: list[DriftFinding], rerun_tokens: list[str]
     lines.extend(
         [
             "remediation:",
-            "1. Restore M135 packet/docs/CI contract snippets and package-script wiring.",
+            "1. Restore M135 packet/docs/CI contract snippets and package-script wiring for the active workflow layout.",
             "2. Re-run validator:",
             " ".join(rerun_tokens),
         ]

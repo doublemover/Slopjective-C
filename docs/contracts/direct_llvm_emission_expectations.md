@@ -25,10 +25,10 @@
 The following checks are required to stay wired and fail-closed:
 
 - `python scripts/check_m135_direct_llvm_contract.py`
-- `npm run check:compiler-closeout:m135`
-- `npm run check:task-hygiene`
+- `npm run build:objc3c-native`
+- `npm run test:objc3c:execution-smoke`
 
-The checker validates packet/docs presence and CI wiring so contract drift fails before milestone closeout.
+The checker validates packet/docs presence and CI wiring so contract drift fails before milestone closeout. The active push/PR validation path is `Spec Quality` plus `ObjC3C Core CI`; legacy `Planning Lint` remains manual-only to preserve historical traceability without forcing stale roadmap checks on every push.
 
 ## M145 Matrix Extension (Lane B + Lane C)
 
@@ -83,5 +83,6 @@ Lane-D fixture anchor payload used by the M145 checker when validating fail-clos
 
 1. `npm run lint:md:all`
 2. `npm run check:compiler-closeout:m135`
-3. `npm run check:task-hygiene`
-4. Execute the M135 native command set from `spec/planning/compiler/m135/m135_parallel_dispatch_plan_20260228.md`.
+3. `npm run build:objc3c-native`
+4. `npm run test:objc3c:execution-smoke`
+5. Execute the M135 native command set from `spec/planning/compiler/m135/m135_parallel_dispatch_plan_20260228.md`.
