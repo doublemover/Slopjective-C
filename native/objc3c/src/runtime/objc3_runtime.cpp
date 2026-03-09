@@ -1394,6 +1394,10 @@ int objc3_runtime_copy_image_walk_state_for_testing(
 
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  // M263-D002 live-registration-discovery-replay anchor: discovery-root/image
+  // walk state stays runtime-owned, is republished after deterministic replay,
+  // and remains the canonical proof surface for the last discovered metadata
+  // families rather than a manifest-only summary.
   snapshot->walked_image_count = state.walked_image_count;
   snapshot->last_discovery_root_entry_count =
       state.last_discovery_root_entry_count;
@@ -1430,6 +1434,10 @@ int objc3_runtime_copy_reset_replay_state_for_testing(
 
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  // M263-D002 live-registration-discovery-replay anchor: reset/replay evidence
+  // is published directly from runtime state so probes can verify retained
+  // bootstrap catalog ownership, reset clears, and replayed identity/generation
+  // without trusting sidecar manifests.
   snapshot->retained_bootstrap_image_count =
       static_cast<std::uint64_t>(state.retained_bootstrap_identity_order.size());
   snapshot->last_reset_cleared_image_local_init_state_count =
@@ -1606,6 +1614,10 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  // M263-D002 live-registration-discovery-replay anchor: replay consumes the
+  // retained bootstrap catalog only when live registration state is empty,
+  // republishes discovery/image-walk state through the same staged-table path,
+  // and records last-replayed identity plus replay-generation evidence.
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();

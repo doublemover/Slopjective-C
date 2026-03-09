@@ -7251,3 +7251,31 @@ Metadata/runtime anchors:
   - `last_walked_property_descriptor_count`
   - `last_walked_ivar_descriptor_count`
   - `last_registration_used_staged_table`
+
+## M263 live registration, discovery, and replay anchors (D002)
+
+`M263-D002` publishes the live runtime tracking surface over emitted metadata
+images.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+- manifest proof fields:
+  - `bootstrap_live_registration_contract_id`
+  - `bootstrap_live_registration_model`
+  - `bootstrap_live_discovery_tracking_model`
+  - `bootstrap_live_replay_tracking_model`
+  - `bootstrap_live_replay_registered_images_symbol`
+  - `bootstrap_live_reset_replay_state_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+- published replay/discovery fields:
+  - `retained_bootstrap_image_count`
+  - `last_reset_cleared_image_local_init_state_count`
+  - `last_replayed_image_count`
+  - `replay_generation`
+  - `last_replayed_module_name`
+  - `last_replayed_translation_unit_identity_key`

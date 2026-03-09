@@ -125,6 +125,10 @@ void objc3_runtime_stage_registration_table_for_bootstrap(
     const objc3_runtime_registration_table *registration_table);
 int objc3_runtime_copy_image_walk_state_for_testing(
     objc3_runtime_image_walk_state_snapshot *snapshot);
+// M263-D002 live-registration-discovery-replay anchor: the retained bootstrap
+// catalog, reset/replay snapshot, and replay entrypoint are the canonical
+// runtime-owned proof surface for live discovery tracking and deterministic
+// replay over emitted metadata images.
 int objc3_runtime_replay_registered_images_for_testing(void);
 int objc3_runtime_copy_reset_replay_state_for_testing(
     objc3_runtime_reset_replay_state_snapshot *snapshot);

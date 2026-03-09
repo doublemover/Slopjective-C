@@ -6202,3 +6202,31 @@ and publishes one authoritative image-walk snapshot for runtime probes.
     snapshot is committed
   - duplicate registration must fail closed without incrementing registered-image
     counters or next-expected ordinal
+
+## M263 live registration, discovery, and replay implementation (D002)
+
+`M263-D002` freezes the already-live runtime tracking surface that sits above
+`M263-D001`: successful startup registration, discovery-root accounting, reset,
+and deterministic replay over retained bootstrap images.
+
+- contract id
+  `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+- upstream runtime/lowering contracts:
+  - `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - live registration
+    `emitted-metadata-images-register-through-native-runtime-and-retained-bootstrap-catalog`
+  - live discovery tracking
+    `image-walk-snapshot-tracks-last-discovered-root-and-descriptor-families`
+  - live replay tracking
+    `reset-replay-state-snapshot-tracks-retained-images-reset-clears-and-last-replayed-identity`
+- canonical runtime bridge:
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+- frozen invariants:
+  - startup registration must retain exactly one bootstrap record per emitted image
+  - reset must clear live counters while preserving the retained bootstrap catalog
+  - replay must republish the same image-walk/discovery evidence through the
+    staged-table path and record last-replayed identity/generation

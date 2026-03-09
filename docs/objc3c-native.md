@@ -6531,6 +6531,33 @@ snapshot for probes and closeout evidence.
   - `bootstrap_table_deduplication_model`
   - `bootstrap_table_image_state_publication_model`
 
+## Live registration, discovery, and replay tracking (M263-D002)
+
+`M263-D002` freezes the live runtime proof surface above the retained bootstrap
+catalog: successful startup registration, discovery-root tracking, reset, and
+deterministic replay all publish through the native runtime rather than through
+manifest-only claims.
+
+- contract id
+  `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+- live registration model
+  `emitted-metadata-images-register-through-native-runtime-and-retained-bootstrap-catalog`
+- live discovery tracking model
+  `image-walk-snapshot-tracks-last-discovered-root-and-descriptor-families`
+- live replay tracking model
+  `reset-replay-state-snapshot-tracks-retained-images-reset-clears-and-last-replayed-identity`
+- canonical runtime bridge:
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+- manifest proof fields:
+  - `bootstrap_live_registration_contract_id`
+  - `bootstrap_live_registration_model`
+  - `bootstrap_live_discovery_tracking_model`
+  - `bootstrap_live_replay_tracking_model`
+  - `bootstrap_live_replay_registered_images_symbol`
+  - `bootstrap_live_reset_replay_state_snapshot_symbol`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:
