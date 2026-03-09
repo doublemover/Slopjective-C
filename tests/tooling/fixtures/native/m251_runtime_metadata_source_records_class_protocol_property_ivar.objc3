@@ -1,6 +1,7 @@
 module runtimeMetadataClassRecords;
 
-@protocol Base;
+@protocol Base
+@end
 
 @protocol Worker<Base>
 @property (readonly, getter=tokenValue) id token;
@@ -8,13 +9,19 @@ module runtimeMetadataClassRecords;
 @end
 
 @interface Widget<Worker>
+@property (readonly, getter=tokenValue) id token;
 @property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue;
 - (id) currentValue;
 + (id) shared;
 @end
 
 @implementation Widget
+@property (readonly, getter=tokenValue) id token;
 @property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue {
+  return 0;
+}
 - (id) currentValue {
   return 1;
 }

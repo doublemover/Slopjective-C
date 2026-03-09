@@ -2006,6 +2006,11 @@ class Objc3IREmitter {
     // inheritance legality, override compatibility, protocol conformance, and
     // deterministic category merge behavior; executable enforcement begins in
     // later M256 lane-B issues.
+    // M256-B002 protocol-conformance implementation anchor: IR remains a
+    // proof-only consumer of the sema-owned protocol conformance result while
+    // publishing the same protocol/category source identities after sema
+    // starts enforcing required-vs-optional protocol member coverage with
+    // fail-closed diagnostics.
     if (frontend_metadata_.executable_protocol_category_source_closure_ready) {
       out << "; executable_protocol_category_source_closure = contract="
           << frontend_metadata_

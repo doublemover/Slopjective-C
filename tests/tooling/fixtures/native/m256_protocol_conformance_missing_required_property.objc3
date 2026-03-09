@@ -1,0 +1,16 @@
+module protocolConformanceMissingRequiredProperty;
+
+@protocol Worker
+@required
+@property (readonly) id token;
+@end
+
+@interface Widget <Worker>
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}

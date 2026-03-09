@@ -17095,3 +17095,27 @@ must implement without reinterpreting the already-frozen source graph:
 - the next implementation issue is `M256-B002`
 - the canonical lane-B summary path is
   `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
+
+## Protocol conformance and required/optional member enforcement (M256-B002)
+
+`M256-B002` implements the first live executable protocol-conformance rule set
+over the frozen `M256-A003`/`M256-B001` source and semantic boundaries:
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- parser owns required/optional partitioning for protocol methods and
+  properties
+- sema now enforces required methods and required properties for interfaces and
+  category interfaces
+- optional members remain non-blocking
+- inherited protocol requirements are closed transitively and fail closed on
+  incompatible required members
+- deterministic conformance diagnostics use `O3S218` for:
+  - missing required selector
+  - incompatible required selector
+  - missing required property
+  - incompatible required property
+- IR remains a proof-only consumer of the sema-owned conformance result and
+  does not reinterpret legality
+- the canonical lane-B summary path is
+  `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`

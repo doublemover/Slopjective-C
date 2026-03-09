@@ -5875,5 +5875,21 @@ class/protocol/category runtime work:
   - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
   - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
   - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
-  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
 - the next implementation issue is `M256-B002`
+
+## M256 protocol conformance and required/optional member enforcement (B002)
+
+`M256-B002` implements the first live protocol-conformance legality pass over
+the frozen M256 source graph:
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- parser owns required/optional partitioning for protocol methods and
+  properties
+- sema owns required-member closure construction and conformance enforcement
+- required methods and required properties are enforced
+- optional members remain non-blocking
+- inherited protocol requirements fail closed on incompatible required members
+- deterministic conformance diagnostics use `O3S218`
+- IR remains a downstream proof consumer of the sema-owned conformance result

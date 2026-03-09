@@ -89,6 +89,14 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           tokens.push_back(Token{TokenKind::KwAtProtocol, "@protocol", token_line, token_column});
           continue;
         }
+        if (directive == "required") {
+          tokens.push_back(Token{TokenKind::KwAtRequired, "@required", token_line, token_column});
+          continue;
+        }
+        if (directive == "optional") {
+          tokens.push_back(Token{TokenKind::KwAtOptional, "@optional", token_line, token_column});
+          continue;
+        }
         if (directive == "property") {
           tokens.push_back(Token{TokenKind::KwAtProperty, "@property", token_line, token_column});
           continue;

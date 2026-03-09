@@ -1,0 +1,18 @@
+module protocolConformanceIncompatibleProperty;
+
+@protocol Worker
+@required
+@property (readonly) id token;
+@end
+
+@interface Widget <Worker>
+@property (readonly) i32 token;
+@end
+
+@implementation Widget
+@property (readonly) i32 token;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

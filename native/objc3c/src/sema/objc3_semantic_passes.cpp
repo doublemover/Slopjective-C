@@ -329,6 +329,13 @@ static bool IsSortedUniqueStrings(const std::vector<std::string> &values) {
   return std::adjacent_find(values.begin(), values.end()) == values.end();
 }
 
+static std::vector<std::string> BuildSortedUniqueStringsLocal(
+    std::vector<std::string> values) {
+  std::sort(values.begin(), values.end());
+  values.erase(std::unique(values.begin(), values.end()), values.end());
+  return values;
+}
+
 static ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(const std::string &suffix_text) {
   ProtocolCompositionParseResult result;
   if (suffix_text.empty()) {
@@ -1686,6 +1693,189 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
   return info;
+}
+
+struct Objc3ProtocolRequirementInfo {
+  std::string selector;
+  Objc3MethodInfo method;
+  std::string protocol_name;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ProtocolPropertyRequirementInfo {
+  std::string property_name;
+  Objc3PropertyInfo property;
+  std::string protocol_name;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3ProtocolSemanticDefinition {
+  std::string name;
+  bool is_forward_declaration = false;
+  std::vector<std::string> inherited_protocols_lexicographic;
+  std::unordered_map<std::string, Objc3ProtocolPropertyRequirementInfo>
+      required_properties_by_name;
+  std::unordered_map<std::string, Objc3ProtocolRequirementInfo>
+      required_methods_by_key;
+};
+
+enum class Objc3ProtocolRequirementClosureStatus {
+  Ready,
+  MissingProtocol,
+  ForwardDeclaration,
+  InheritanceCycle,
+  IncompatibleInheritedRequirement,
+};
+
+struct Objc3ProtocolRequirementClosure {
+  Objc3ProtocolRequirementClosureStatus status =
+      Objc3ProtocolRequirementClosureStatus::Ready;
+  std::string failing_protocol_name;
+  std::string conflicting_member_name;
+  bool conflicting_member_is_method = false;
+  bool conflicting_selector_is_class_method = false;
+  std::unordered_map<std::string, const Objc3ProtocolPropertyRequirementInfo *>
+      required_properties_by_name;
+  std::unordered_map<std::string, const Objc3ProtocolRequirementInfo *>
+      required_methods_by_key;
+};
+
+static std::string BuildProtocolRequirementKey(const std::string &selector,
+                                               bool is_class_method) {
+  return std::string(is_class_method ? "+" : "-") + selector;
+}
+
+static std::string FormatMethodSelectorForDiagnostic(const std::string &selector,
+                                                     bool is_class_method) {
+  return std::string(is_class_method ? "+" : "-") + selector;
+}
+
+static std::string BuildCategoryOwnerIdentity(const std::string &class_name,
+                                              const std::string &category_name) {
+  return "category:" + class_name + "(" + category_name + ")";
+}
+
+static std::string FormatObjcContainerName(const std::string &name,
+                                           bool has_category,
+                                           const std::string &category_name) {
+  return has_category ? name + "(" + category_name + ")" : name;
+}
+
+static std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+BuildProtocolSemanticDefinitions(const Objc3Program &ast,
+                                 std::vector<std::string> &diagnostics) {
+  std::unordered_map<std::string, Objc3ProtocolSemanticDefinition> definitions;
+  for (const auto &protocol_decl : ast.protocols) {
+    constexpr const char *kContainerLabel = "protocol";
+    const std::string container_name = protocol_decl.name;
+    auto definition_it = definitions.find(protocol_decl.name);
+    if (definition_it == definitions.end()) {
+      Objc3ProtocolSemanticDefinition definition;
+      definition.name = protocol_decl.name;
+      definition.is_forward_declaration = protocol_decl.is_forward_declaration;
+      definition.inherited_protocols_lexicographic =
+          BuildSortedUniqueStringsLocal(protocol_decl.inherited_protocols);
+      definition_it =
+          definitions.emplace(protocol_decl.name, std::move(definition)).first;
+    } else if (!definition_it->second.is_forward_declaration &&
+               !protocol_decl.is_forward_declaration) {
+      diagnostics.push_back(MakeDiag(protocol_decl.line, protocol_decl.column,
+                                     "O3S200",
+                                     "duplicate protocol '" + protocol_decl.name +
+                                         "'"));
+      continue;
+    } else if (definition_it->second.is_forward_declaration &&
+               !protocol_decl.is_forward_declaration) {
+      definition_it->second.is_forward_declaration = false;
+      definition_it->second.inherited_protocols_lexicographic =
+          BuildSortedUniqueStringsLocal(protocol_decl.inherited_protocols);
+      definition_it->second.required_methods_by_key.clear();
+    } else {
+      continue;
+    }
+
+    if (protocol_decl.is_forward_declaration) {
+      continue;
+    }
+
+    std::unordered_set<std::string> property_names;
+    for (const auto &property_decl : protocol_decl.properties) {
+      ValidatePropertyTypeSuffixes(property_decl, container_name, kContainerLabel,
+                                   diagnostics);
+      Objc3PropertyInfo property_info =
+          BuildPropertyInfo(property_decl, container_name, kContainerLabel,
+                            diagnostics);
+      if (!property_names.insert(property_decl.name).second) {
+        diagnostics.push_back(
+            MakeDiag(property_decl.line, property_decl.column, "O3S200",
+                     "duplicate protocol property '" + property_decl.name +
+                         "' in protocol '" + protocol_decl.name + "'"));
+        continue;
+      }
+      if (property_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        continue;
+      }
+
+      Objc3ProtocolPropertyRequirementInfo requirement;
+      requirement.property_name = property_decl.name;
+      requirement.property = std::move(property_info);
+      requirement.protocol_name = protocol_decl.name;
+      requirement.line = property_decl.line;
+      requirement.column = property_decl.column;
+      definition_it->second.required_properties_by_name.emplace(
+          requirement.property_name, std::move(requirement));
+    }
+
+    for (const auto &method_decl : protocol_decl.methods) {
+      const MethodSelectorNormalizationContractInfo selector_contract =
+          BuildMethodSelectorNormalizationContractInfo(method_decl);
+      ValidateMethodSelectorNormalizationContract(method_decl, container_name,
+                                                 kContainerLabel,
+                                                 selector_contract, diagnostics);
+      ValidateMethodReturnTypeSuffixes(method_decl, container_name,
+                                       kContainerLabel, diagnostics);
+      ValidateMethodParameterTypeSuffixes(method_decl, container_name,
+                                          kContainerLabel, diagnostics);
+      if (method_decl.has_body) {
+        diagnostics.push_back(MakeDiag(
+            method_decl.line, method_decl.column, "O3S206",
+            "type mismatch: protocol selector '" +
+                selector_contract.normalized_selector + "' in '" +
+                protocol_decl.name + "' must not define a body"));
+      }
+
+      const std::string requirement_key = BuildProtocolRequirementKey(
+          selector_contract.normalized_selector, method_decl.is_class_method);
+      if (definition_it->second.required_methods_by_key.find(requirement_key) !=
+          definition_it->second.required_methods_by_key.end()) {
+        diagnostics.push_back(MakeDiag(
+            method_decl.line, method_decl.column, "O3S200",
+            "duplicate protocol selector '" +
+                FormatMethodSelectorForDiagnostic(
+                    selector_contract.normalized_selector,
+                    method_decl.is_class_method) +
+                "' in protocol '" + protocol_decl.name + "'"));
+        continue;
+      }
+      if (method_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        continue;
+      }
+
+      Objc3ProtocolRequirementInfo requirement;
+      requirement.selector = selector_contract.normalized_selector;
+      requirement.method = BuildMethodInfo(method_decl, selector_contract);
+      requirement.protocol_name = protocol_decl.name;
+      requirement.line = method_decl.line;
+      requirement.column = method_decl.column;
+      definition_it->second.required_methods_by_key.emplace(requirement_key,
+                                                            std::move(requirement));
+    }
+  }
+  return definitions;
 }
 
 static bool IsCompatibleMethodSignature(const Objc3MethodInfo &lhs, const Objc3MethodInfo &rhs) {
@@ -4922,6 +5112,474 @@ static const Objc3MethodInfo *ResolveMethodInOwnerImplementation(
   }
   return FindMethodInfoWithKind(implementation_it->second.methods, selector,
                                 is_class_method);
+}
+
+static const Objc3MethodInfo *ResolveMethodInCategoryInterface(
+    const std::unordered_map<std::string, Objc3InterfaceInfo> &category_interfaces,
+    const std::string &owner_identity,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto interface_it = category_interfaces.find(owner_identity);
+  if (interface_it == category_interfaces.end()) {
+    return nullptr;
+  }
+  return FindMethodInfoWithKind(interface_it->second.methods, selector,
+                                is_class_method);
+}
+
+static const Objc3MethodInfo *ResolveMethodInCategoryImplementation(
+    const std::unordered_map<std::string, Objc3ImplementationInfo>
+        &category_implementations,
+    const std::string &owner_identity,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto implementation_it = category_implementations.find(owner_identity);
+  if (implementation_it == category_implementations.end()) {
+    return nullptr;
+  }
+  return FindMethodInfoWithKind(implementation_it->second.methods, selector,
+                                is_class_method);
+}
+
+static const Objc3PropertyInfo *ResolvePropertyInOwnerInterface(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &property_name) {
+  const auto interface_it = surface.interfaces.find(owner_name);
+  if (interface_it == surface.interfaces.end()) {
+    return nullptr;
+  }
+  const auto property_it = interface_it->second.properties.find(property_name);
+  if (property_it == interface_it->second.properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
+static const Objc3PropertyInfo *ResolvePropertyInOwnerImplementation(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &property_name) {
+  const auto implementation_it = surface.implementations.find(owner_name);
+  if (implementation_it == surface.implementations.end()) {
+    return nullptr;
+  }
+  const auto property_it =
+      implementation_it->second.properties.find(property_name);
+  if (property_it == implementation_it->second.properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
+static const Objc3PropertyInfo *ResolvePropertyInCategoryInterface(
+    const std::unordered_map<std::string, Objc3InterfaceInfo>
+        &category_interfaces,
+    const std::string &owner_identity,
+    const std::string &property_name) {
+  const auto interface_it = category_interfaces.find(owner_identity);
+  if (interface_it == category_interfaces.end()) {
+    return nullptr;
+  }
+  const auto property_it = interface_it->second.properties.find(property_name);
+  if (property_it == interface_it->second.properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
+static const Objc3PropertyInfo *ResolvePropertyInCategoryImplementation(
+    const std::unordered_map<std::string, Objc3ImplementationInfo>
+        &category_implementations,
+    const std::string &owner_identity,
+    const std::string &property_name) {
+  const auto implementation_it = category_implementations.find(owner_identity);
+  if (implementation_it == category_implementations.end()) {
+    return nullptr;
+  }
+  const auto property_it =
+      implementation_it->second.properties.find(property_name);
+  if (property_it == implementation_it->second.properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
+static const Objc3PropertyInfo *FindSurfacePropertyInSuperChain(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &interface_name,
+    const std::string &property_name,
+    bool &missing_base,
+    bool &cycle_detected) {
+  missing_base = false;
+  cycle_detected = false;
+  const auto interface_it = surface.interfaces.find(interface_name);
+  if (interface_it == surface.interfaces.end()) {
+    missing_base = true;
+    return nullptr;
+  }
+
+  std::string next_super = interface_it->second.super_name;
+  std::unordered_set<std::string> visited;
+  while (!next_super.empty()) {
+    if (!visited.insert(next_super).second) {
+      cycle_detected = true;
+      return nullptr;
+    }
+    const auto super_it = surface.interfaces.find(next_super);
+    if (super_it == surface.interfaces.end()) {
+      missing_base = true;
+      return nullptr;
+    }
+    const auto property_it = super_it->second.properties.find(property_name);
+    if (property_it != super_it->second.properties.end()) {
+      return &property_it->second;
+    }
+    next_super = super_it->second.super_name;
+  }
+  return nullptr;
+}
+
+static const Objc3MethodInfo *ResolveDeclaredConformanceMethod(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method) {
+  const Objc3MethodInfo *method =
+      ResolveMethodInOwnerInterface(surface, owner_name, selector, is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  method =
+      ResolveMethodInOwnerImplementation(surface, owner_name, selector, is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  bool missing_base = false;
+  bool cycle_detected = false;
+  return FindSurfaceMethodInSuperChain(surface, owner_name, selector,
+                                       is_class_method, missing_base,
+                                       cycle_detected);
+}
+
+static const Objc3MethodInfo *ResolveCategoryConformanceMethod(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::unordered_map<std::string, Objc3InterfaceInfo> &category_interfaces,
+    const std::unordered_map<std::string, Objc3ImplementationInfo>
+        &category_implementations,
+    const std::string &class_name,
+    const std::string &category_name,
+    const std::string &selector,
+    bool is_class_method) {
+  const std::string category_owner_identity =
+      BuildCategoryOwnerIdentity(class_name, category_name);
+  const Objc3MethodInfo *method = ResolveMethodInCategoryInterface(
+      category_interfaces, category_owner_identity, selector, is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  method = ResolveMethodInCategoryImplementation(category_implementations,
+                                                 category_owner_identity,
+                                                 selector, is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  method = ResolveMethodInOwnerInterface(surface, class_name, selector,
+                                         is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  method = ResolveMethodInOwnerImplementation(surface, class_name, selector,
+                                              is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
+  bool missing_base = false;
+  bool cycle_detected = false;
+  return FindSurfaceMethodInSuperChain(surface, class_name, selector,
+                                       is_class_method, missing_base,
+                                       cycle_detected);
+}
+
+static const Objc3PropertyInfo *ResolveDeclaredConformanceProperty(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &property_name) {
+  const Objc3PropertyInfo *property =
+      ResolvePropertyInOwnerInterface(surface, owner_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property =
+      ResolvePropertyInOwnerImplementation(surface, owner_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  bool missing_base = false;
+  bool cycle_detected = false;
+  return FindSurfacePropertyInSuperChain(surface, owner_name, property_name,
+                                         missing_base, cycle_detected);
+}
+
+static const Objc3PropertyInfo *ResolveCategoryConformanceProperty(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::unordered_map<std::string, Objc3InterfaceInfo> &category_interfaces,
+    const std::unordered_map<std::string, Objc3ImplementationInfo>
+        &category_implementations,
+    const std::string &class_name,
+    const std::string &category_name,
+    const std::string &property_name) {
+  const std::string category_owner_identity =
+      BuildCategoryOwnerIdentity(class_name, category_name);
+  const Objc3PropertyInfo *property = ResolvePropertyInCategoryInterface(
+      category_interfaces, category_owner_identity, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property = ResolvePropertyInCategoryImplementation(category_implementations,
+                                                     category_owner_identity,
+                                                     property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property = ResolvePropertyInOwnerInterface(surface, class_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property =
+      ResolvePropertyInOwnerImplementation(surface, class_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  bool missing_base = false;
+  bool cycle_detected = false;
+  return FindSurfacePropertyInSuperChain(surface, class_name, property_name,
+                                         missing_base, cycle_detected);
+}
+
+static bool CollectProtocolRequirementClosure(
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &definitions,
+    const std::string &protocol_name,
+    std::unordered_set<std::string> &active_protocols,
+    Objc3ProtocolRequirementClosure &closure) {
+  const auto definition_it = definitions.find(protocol_name);
+  if (definition_it == definitions.end()) {
+    closure.status = Objc3ProtocolRequirementClosureStatus::MissingProtocol;
+    closure.failing_protocol_name = protocol_name;
+    return false;
+  }
+  const Objc3ProtocolSemanticDefinition &definition = definition_it->second;
+  if (definition.is_forward_declaration) {
+    closure.status = Objc3ProtocolRequirementClosureStatus::ForwardDeclaration;
+    closure.failing_protocol_name = protocol_name;
+    return false;
+  }
+  if (!active_protocols.insert(protocol_name).second) {
+    closure.status = Objc3ProtocolRequirementClosureStatus::InheritanceCycle;
+    closure.failing_protocol_name = protocol_name;
+    return false;
+  }
+
+  for (const auto &inherited_protocol_name :
+       definition.inherited_protocols_lexicographic) {
+    if (!CollectProtocolRequirementClosure(definitions, inherited_protocol_name,
+                                          active_protocols, closure)) {
+      active_protocols.erase(protocol_name);
+      return false;
+    }
+  }
+
+  for (const auto &entry : definition.required_properties_by_name) {
+    const std::string &property_name = entry.first;
+    const Objc3ProtocolPropertyRequirementInfo &requirement = entry.second;
+    const auto existing_it =
+        closure.required_properties_by_name.find(property_name);
+    if (existing_it != closure.required_properties_by_name.end()) {
+      if (!IsCompatiblePropertySignature(existing_it->second->property,
+                                         requirement.property)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.property_name;
+        closure.conflicting_member_is_method = false;
+        closure.conflicting_selector_is_class_method = false;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    closure.required_properties_by_name.emplace(property_name, &requirement);
+  }
+
+  for (const auto &entry : definition.required_methods_by_key) {
+    const std::string &requirement_key = entry.first;
+    const Objc3ProtocolRequirementInfo &requirement = entry.second;
+    const auto existing_it =
+        closure.required_methods_by_key.find(requirement_key);
+    if (existing_it != closure.required_methods_by_key.end()) {
+      if (!IsCompatibleMethodSignature(existing_it->second->method,
+                                       requirement.method)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.selector;
+        closure.conflicting_member_is_method = true;
+        closure.conflicting_selector_is_class_method =
+            requirement.method.is_class_method;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    closure.required_methods_by_key.emplace(requirement_key, &requirement);
+  }
+
+  active_protocols.erase(protocol_name);
+  return true;
+}
+
+// M256-B002 protocol-conformance enforcement anchor: sema now consumes the
+// parser-owned required/optional partition directly and rejects missing or
+// incompatible adopted protocol members before runtime metadata consumption.
+static void ValidateDeclaredProtocolConformance(
+    const Objc3Program &ast,
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    const std::unordered_map<std::string, Objc3InterfaceInfo> &category_interfaces,
+    const std::unordered_map<std::string, Objc3ImplementationInfo>
+        &category_implementations,
+    std::vector<std::string> &diagnostics) {
+  for (const auto &interface_decl : ast.interfaces) {
+    if (interface_decl.adopted_protocols_lexicographic.empty()) {
+      continue;
+    }
+
+    const std::string container_name = FormatObjcContainerName(
+        interface_decl.name, interface_decl.has_category,
+        interface_decl.category_name);
+    const std::string container_label =
+        interface_decl.has_category ? "category interface" : "interface";
+
+    const std::vector<std::string> adopted_protocols_lexicographic =
+        BuildSortedUniqueStringsLocal(interface_decl.adopted_protocols);
+    for (const auto &adopted_protocol_name :
+         adopted_protocols_lexicographic) {
+      Objc3ProtocolRequirementClosure closure;
+      std::unordered_set<std::string> active_protocols;
+      if (!CollectProtocolRequirementClosure(protocol_definitions,
+                                            adopted_protocol_name,
+                                            active_protocols, closure)) {
+        std::string detail;
+        switch (closure.status) {
+        case Objc3ProtocolRequirementClosureStatus::MissingProtocol:
+          detail = "adopts unknown protocol '" + closure.failing_protocol_name +
+                   "'";
+          break;
+        case Objc3ProtocolRequirementClosureStatus::ForwardDeclaration:
+          detail = "adopts forward-declared protocol '" +
+                   closure.failing_protocol_name + "'";
+          break;
+        case Objc3ProtocolRequirementClosureStatus::InheritanceCycle:
+          detail = "adopts protocol '" + closure.failing_protocol_name +
+                   "' with cyclic inherited requirements";
+          break;
+        case Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement:
+          if (closure.conflicting_member_is_method) {
+            detail = "adopts protocol '" + closure.failing_protocol_name +
+                     "' with incompatible required selector '" +
+                     FormatMethodSelectorForDiagnostic(
+                         closure.conflicting_member_name,
+                         closure.conflicting_selector_is_class_method) +
+                     "'";
+          } else {
+            detail = "adopts protocol '" + closure.failing_protocol_name +
+                     "' with incompatible required property '" +
+                     closure.conflicting_member_name + "'";
+          }
+          break;
+        case Objc3ProtocolRequirementClosureStatus::Ready:
+          break;
+        }
+        diagnostics.push_back(MakeDiag(
+            interface_decl.line, interface_decl.column, "O3S218",
+            "protocol conformance failure: " + container_label + " '" +
+                container_name + "' " + detail));
+        continue;
+      }
+
+      for (const auto &entry : closure.required_methods_by_key) {
+        const Objc3ProtocolRequirementInfo &requirement = *entry.second;
+        const Objc3MethodInfo *candidate = nullptr;
+        if (interface_decl.has_category) {
+          candidate = ResolveCategoryConformanceMethod(
+              surface, category_interfaces, category_implementations,
+              interface_decl.name, interface_decl.category_name,
+              requirement.selector, requirement.method.is_class_method);
+        } else {
+          candidate = ResolveDeclaredConformanceMethod(
+              surface, interface_decl.name, requirement.selector,
+              requirement.method.is_class_method);
+        }
+
+        if (candidate == nullptr) {
+          diagnostics.push_back(MakeDiag(
+              interface_decl.line, interface_decl.column, "O3S218",
+              "protocol conformance failure: " + container_label + " '" +
+                  container_name + "' is missing required selector '" +
+                  FormatMethodSelectorForDiagnostic(
+                      requirement.selector, requirement.method.is_class_method) +
+                  "' from protocol '" + requirement.protocol_name + "'"));
+          continue;
+        }
+        if (!IsCompatibleMethodSignature(*candidate, requirement.method)) {
+          diagnostics.push_back(MakeDiag(
+              interface_decl.line, interface_decl.column, "O3S218",
+              "protocol conformance failure: " + container_label + " '" +
+                  container_name + "' selector '" +
+                  FormatMethodSelectorForDiagnostic(
+                  requirement.selector, requirement.method.is_class_method) +
+                  "' is incompatible with protocol '" +
+                  requirement.protocol_name + "'"));
+        }
+      }
+
+      for (const auto &entry : closure.required_properties_by_name) {
+        const Objc3ProtocolPropertyRequirementInfo &requirement = *entry.second;
+        const Objc3PropertyInfo *candidate = nullptr;
+        if (interface_decl.has_category) {
+          candidate = ResolveCategoryConformanceProperty(
+              surface, category_interfaces, category_implementations,
+              interface_decl.name, interface_decl.category_name,
+              requirement.property_name);
+        } else {
+          candidate = ResolveDeclaredConformanceProperty(
+              surface, interface_decl.name, requirement.property_name);
+        }
+
+        if (candidate == nullptr) {
+          diagnostics.push_back(MakeDiag(
+              interface_decl.line, interface_decl.column, "O3S218",
+              "protocol conformance failure: " + container_label + " '" +
+                  container_name + "' is missing required property '" +
+                  requirement.property_name + "' from protocol '" +
+                  requirement.protocol_name + "'"));
+          continue;
+        }
+        if (!IsCompatiblePropertySignature(*candidate, requirement.property)) {
+          diagnostics.push_back(MakeDiag(
+              interface_decl.line, interface_decl.column, "O3S218",
+              "protocol conformance failure: " + container_label + " '" +
+                  container_name + "' property '" +
+                  requirement.property_name +
+                  "' is incompatible with protocol '" +
+                  requirement.protocol_name + "'"));
+        }
+      }
+    }
+  }
 }
 
 static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
@@ -8710,6 +9368,12 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   Objc3SemanticIntegrationSurface surface;
   std::unordered_map<std::string, int> resolved_global_values;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
+  const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+      protocol_definitions =
+          BuildProtocolSemanticDefinitions(ast, diagnostics);
+  std::unordered_map<std::string, Objc3InterfaceInfo> category_interfaces;
+  std::unordered_map<std::string, Objc3ImplementationInfo>
+      category_implementations;
   // M252-B003 diagnostic precision anchor: class interface/implementation
   // summaries exclude category containers so valid class-plus-category
   // programs do not degrade into duplicate class-owner diagnostics before the
@@ -8726,11 +9390,6 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                           return !decl.has_category;
                         }));
 
-  const auto format_objc_container_name = [](const std::string &name,
-                                             bool has_category,
-                                             const std::string &category_name) {
-    return has_category ? name + "(" + category_name + ")" : name;
-  };
   const auto interface_container_label = [](bool has_category) {
     return has_category ? "category interface" : "interface";
   };
@@ -9273,7 +9932,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
 
   for (const auto &interface_decl : ast.interfaces) {
     const bool is_category_interface = interface_decl.has_category;
-    const std::string container_name = format_objc_container_name(
+    const std::string container_name = FormatObjcContainerName(
         interface_decl.name, interface_decl.has_category,
         interface_decl.category_name);
     const std::string container_label =
@@ -9356,12 +10015,25 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
 
     if (!is_category_interface) {
       surface.interfaces.emplace(interface_decl.name, std::move(interface_info));
+    } else {
+      const std::string category_owner_identity =
+          BuildCategoryOwnerIdentity(interface_decl.name,
+                                     interface_decl.category_name);
+      if (!category_interfaces
+               .emplace(category_owner_identity, std::move(interface_info))
+               .second) {
+        diagnostics.push_back(MakeDiag(interface_decl.line,
+                                       interface_decl.column,
+                                       "O3S200",
+                                       "duplicate category interface '" +
+                                           container_name + "'"));
+      }
     }
   }
 
   for (const auto &implementation_decl : ast.implementations) {
     const bool is_category_implementation = implementation_decl.has_category;
-    const std::string container_name = format_objc_container_name(
+    const std::string container_name = FormatObjcContainerName(
         implementation_decl.name, implementation_decl.has_category,
         implementation_decl.category_name);
     const std::string container_label =
@@ -9496,8 +10168,28 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
     if (!is_category_implementation) {
       surface.implementations.emplace(implementation_decl.name,
                                       std::move(implementation_info));
+    } else {
+      const std::string category_owner_identity =
+          BuildCategoryOwnerIdentity(implementation_decl.name,
+                                     implementation_decl.category_name);
+      if (!category_implementations
+               .emplace(category_owner_identity, std::move(implementation_info))
+               .second) {
+        diagnostics.push_back(MakeDiag(implementation_decl.line,
+                                       implementation_decl.column,
+                                       "O3S200",
+                                       "duplicate category implementation '" +
+                                           container_name + "'"));
+      }
     }
   }
+
+  // M256-B002 protocol-conformance enforcement anchor: parser-owned
+  // @required/@optional partitions are now enforced here against class and
+  // category adoption before runtime metadata consumption can proceed.
+  ValidateDeclaredProtocolConformance(ast, surface, protocol_definitions,
+                                      category_interfaces,
+                                      category_implementations, diagnostics);
 
   interface_implementation_summary.resolved_interfaces = surface.interfaces.size();
   interface_implementation_summary.resolved_implementations = surface.implementations.size();

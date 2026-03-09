@@ -1,6 +1,7 @@
 module runtimeMetadataCategoryRecords;
 
-@protocol Base;
+@protocol Base
+@end
 
 @protocol Worker<Base>
 @property (readonly, getter=tokenValue) id token;
@@ -8,12 +9,18 @@ module runtimeMetadataCategoryRecords;
 @end
 
 @interface Widget (Debug)<Worker>
+@property (readonly, getter=tokenValue) id token;
 @property (readonly) id shadow;
+- (id) tokenValue;
 - (id) debugName;
 @end
 
 @implementation Widget (Debug)
+@property (readonly, getter=tokenValue) id token;
 @property (readonly) id shadow;
+- (id) tokenValue {
+  return 2;
+}
 - (id) debugName {
   return 3;
 }

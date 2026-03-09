@@ -1,0 +1,58 @@
+module protocolConformancePositive;
+
+@protocol Worker
+@required
+@property (readonly) id token;
+- (i32) inheritedValue;
++ (i32) classValue;
+@optional
+@property (readonly) id optionalToken;
+- (i32) optionalValue;
+@end
+
+@protocol Tracer
+@required
+@property (readonly) id shadow;
+- (i32) tracedValue;
++ (i32) classValue;
+@optional
+@property (readonly) id ignoredShadow;
+- (i32) ignoredValue;
+@end
+
+@interface Base
+- (i32) inheritedValue;
+@end
+
+@implementation Base
+- (i32) inheritedValue {
+  return 7;
+}
+@end
+
+@interface Widget : Base <Worker>
+@property (readonly) id token;
++ (i32) classValue;
+@end
+
+@implementation Widget
+@property (readonly) id token;
++ (i32) classValue {
+  return 11;
+}
+@end
+
+@interface Widget (Tracing) <Tracer>
+@property (readonly) id shadow;
+@end
+
+@implementation Widget (Tracing)
+@property (readonly) id shadow;
+- (i32) tracedValue {
+  return 13;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -6909,3 +6909,23 @@ semantic interpretation boundary over the already-emitted M256 source graph:
 - IR anchor remains proof-only commentary over the same source-closure metadata
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
+
+## M256 protocol-conformance metadata anchors (B002)
+
+`M256-B002` still does not add new emitted runtime metadata records. It makes
+the semantic legality boundary executable and publishes the proof surface around
+that decision:
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- parser-owned anchors remain:
+  - required/optional partitioning for protocol methods
+  - required/optional partitioning for protocol properties
+- sema-owned rule anchors are:
+  - required methods and required properties are enforced
+  - optional members remain non-blocking
+  - inherited protocol requirements fail closed on incompatible required members
+  - conformance diagnostics collapse onto `O3S218`
+- IR anchor remains proof-only commentary over the same conformance result
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`

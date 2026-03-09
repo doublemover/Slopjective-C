@@ -7296,7 +7296,8 @@ class Objc3Parser {
 
   void SynchronizeObjcContainer() {
     while (!At(TokenKind::Eof)) {
-      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus) || At(TokenKind::KwAtProperty)) {
+      if (At(TokenKind::KwAtEnd) || At(TokenKind::Minus) || At(TokenKind::Plus) || At(TokenKind::KwAtProperty) ||
+          At(TokenKind::KwAtRequired) || At(TokenKind::KwAtOptional)) {
         return;
       }
       if (At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) || At(TokenKind::KwAtProtocol) ||
@@ -7390,10 +7391,26 @@ class Objc3Parser {
       return decl;
     }
 
+    // M256-B002 protocol requirement parsing anchor: @protocol containers now
+    // preserve explicit @required/@optional partitions on parser-owned method
+    // and property source records. The @required/@optional partition is parser-owned
+    // so lane-B sema can enforce conformance without reinterpreting raw
+    // declaration text.
+    Objc3ProtocolRequirementKind requirement_kind =
+        Objc3ProtocolRequirementKind::Required;
     while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (Match(TokenKind::KwAtRequired)) {
+        requirement_kind = Objc3ProtocolRequirementKind::Required;
+        continue;
+      }
+      if (Match(TokenKind::KwAtOptional)) {
+        requirement_kind = Objc3ProtocolRequirementKind::Optional;
+        continue;
+      }
       if (At(TokenKind::KwAtProperty)) {
         Objc3PropertyDecl property;
         if (ParseObjcPropertyDecl(property)) {
+          property.protocol_requirement_kind = requirement_kind;
           property.scope_owner_symbol = decl->scope_owner_symbol;
           property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
           decl->properties.push_back(std::move(property));
@@ -7412,6 +7429,7 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, false)) {
+        method.protocol_requirement_kind = requirement_kind;
         method.scope_owner_symbol = decl->scope_owner_symbol;
         method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
         AssignObjcMethodLookupOverrideConflictSymbols(method, decl->semantic_link_symbol, decl->semantic_link_symbol);

@@ -8833,3 +8833,24 @@ object-model enforcement:
   - `spec/planning/compiler/m256/m256_b001_object_model_semantic_rules_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m256-b001-object-model-semantic-rules-contract-and-architecture-freeze`
   - `check:objc3c:m256-b001-lane-b-readiness`
+
+## M256 protocol conformance and required/optional member enforcement (B002)
+
+`M256-B002` is the first executable lane-B rule implementation over the M256
+object model:
+
+- parser continues to own `@required`/`@optional` partitioning only
+- sema now owns live enforcement for:
+  - required protocol methods
+  - required protocol properties
+  - inherited required-member compatibility
+  - category-interface protocol conformance against category plus base-class
+    declarations
+- optional protocol members remain non-blocking
+- deterministic conformance failures collapse onto `O3S218`
+- IR remains proof-only and must not reinterpret the sema-owned legality result
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_protocol_conformance_and_required_optional_member_enforcement_core_feature_implementation_b002_expectations.md`
+  - `spec/planning/compiler/m256/m256_b002_protocol_conformance_and_required_optional_member_enforcement_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-b002-protocol-conformance-and-required-optional-member-enforcement`
+  - `check:objc3c:m256-b002-lane-b-readiness`

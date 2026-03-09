@@ -1,0 +1,20 @@
+module protocolConformanceIncompatibleSignature;
+
+@protocol Worker
+@required
+- (i32) requiredValue;
+@end
+
+@interface Widget <Worker>
+- (bool) requiredValue;
+@end
+
+@implementation Widget
+- (bool) requiredValue {
+  return true;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

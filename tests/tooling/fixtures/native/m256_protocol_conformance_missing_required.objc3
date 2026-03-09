@@ -1,0 +1,16 @@
+module protocolConformanceMissingRequired;
+
+@protocol Worker
+@required
+- (i32) requiredValue;
+@end
+
+@interface Widget <Worker>
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}

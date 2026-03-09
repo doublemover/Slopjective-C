@@ -736,6 +736,12 @@ inline constexpr const char
     *kObjc3RuntimeSupportLibraryRuntimeOwnershipBoundary =
         "runtime-owns-registration-lookup-and-dispatch-state";
 
+enum class Objc3ProtocolRequirementKind {
+  NotApplicable,
+  Required,
+  Optional,
+};
+
 struct Objc3MethodDecl {
   struct SelectorPiece {
     std::string keyword;
@@ -944,6 +950,8 @@ struct Objc3MethodDecl {
   std::size_t inline_asm_intrinsic_gate_blocked_sites = 0;
   std::size_t inline_asm_intrinsic_contract_violation_sites = 0;
   std::string inline_asm_intrinsic_governance_profile;
+  Objc3ProtocolRequirementKind protocol_requirement_kind =
+      Objc3ProtocolRequirementKind::NotApplicable;
   bool is_class_method = false;
   bool has_body = false;
   std::vector<std::unique_ptr<Stmt>> body;
@@ -1033,6 +1041,8 @@ struct Objc3PropertyDecl {
   bool has_setter = false;
   std::string getter_selector;
   std::string setter_selector;
+  Objc3ProtocolRequirementKind protocol_requirement_kind =
+      Objc3ProtocolRequirementKind::NotApplicable;
   std::string scope_owner_symbol;
   std::string scope_path_symbol;
   std::string property_synthesis_symbol;

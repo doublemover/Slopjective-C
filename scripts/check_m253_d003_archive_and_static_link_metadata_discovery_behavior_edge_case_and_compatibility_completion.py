@@ -198,6 +198,7 @@ def build_library_fixture_source(source_text: str) -> str:
 
 def build_alternate_library_fixture_source(source_text: str) -> str:
     base = build_library_fixture_source(source_text)
+    base = base.replace("@protocol Base\n@end", "@protocol AltBase\n@end")
     return (
         base.replace("module runtimeMetadataClassRecords;", "module runtimeMetadataClassRecordsAlt;")
         .replace("@protocol Base;", "@protocol AltBase;")
