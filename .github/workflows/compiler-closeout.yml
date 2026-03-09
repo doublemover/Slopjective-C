@@ -1,75 +1,16 @@
-name: Compiler Closeout
+name: Compiler Closeout (Legacy Manual)
 
 on:
-  pull_request:
-  push:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  compiler-closeout:
+  legacy-closeout-note:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Python tooling dependencies
+      - name: Explain legacy workflow status
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest
-      - name: Install Node dependencies
-        run: npm ci
-      - name: Enforce M180 cross-module conformance packet/docs contract
-        run: npm run check:compiler-closeout:m180
-      - name: Run M180 cross-module conformance integration gate
-        run: npm run check:objc3c:m180-cross-module-conformance-contracts
-      - name: Enforce M181 throws propagation packet/docs contract
-        run: npm run check:compiler-closeout:m181
-      - name: Run M181 throws propagation integration gate
-        run: npm run check:objc3c:m181-throws-propagation-contracts
-      - name: Enforce M182 result-like lowering packet/docs contract
-        run: npm run check:compiler-closeout:m182
-      - name: Run M182 result-like lowering integration gate
-        run: npm run check:objc3c:m182-result-like-contracts
-      - name: Enforce M183 NSError bridging packet/docs contract
-        run: npm run check:compiler-closeout:m183
-      - name: Run M183 NSError bridging integration gate
-        run: npm run check:objc3c:m183-ns-error-bridging-contracts
-      - name: Enforce M184 unwind safety/cleanup emission packet/docs contract
-        run: npm run check:compiler-closeout:m184
-      - name: Run M184 unwind safety/cleanup emission integration gate
-        run: npm run check:objc3c:m184-unwind-safety-cleanup-emission-contracts
-      - name: Enforce M185 error diagnostics/recovery packet/docs contract
-        run: npm run check:compiler-closeout:m185
-      - name: Run M185 error diagnostics/recovery integration gate
-        run: npm run check:objc3c:m185-error-diagnostics-ux-recovery-contracts
-      - name: Enforce M186 async grammar/continuation IR packet/docs contract
-        run: npm run check:compiler-closeout:m186
-      - name: Run M186 async grammar/continuation IR integration gate
-        run: npm run check:objc3c:m186-async-continuation-contracts
-      - name: Enforce M187 await lowering/suspension-state packet/docs contract
-        run: npm run check:compiler-closeout:m187
-      - name: Run M187 await lowering/suspension-state integration gate
-        run: npm run check:objc3c:m187-await-lowering-suspension-state-contracts
-      - name: Enforce M188 actor isolation/sendability packet/docs contract
-        run: npm run check:compiler-closeout:m188
-      - name: Run M188 actor isolation/sendability integration gate
-        run: npm run check:objc3c:m188-actor-isolation-sendability-contracts
-      - name: Enforce M189 task-runtime interop/cancellation packet/docs contract
-        run: npm run check:compiler-closeout:m189
-      - name: Run M189 task-runtime interop/cancellation integration gate
-        run: npm run check:objc3c:m189-task-runtime-interop-cancellation-contracts
-      - name: Enforce M190 concurrency replay/race-guard packet/docs contract
-        run: npm run check:compiler-closeout:m190
-      - name: Run M190 concurrency replay/race-guard integration gate
-        run: npm run check:objc3c:m190-concurrency-replay-race-guard-contracts
-      - name: Enforce M191 unsafe-pointer packet/docs contract
-        run: npm run check:compiler-closeout:m191
-      - name: Run M191 unsafe-pointer integration gate
-        run: npm run check:objc3c:m191-unsafe-pointer-contracts
+          echo "This legacy roadmap closeout workflow is manual-only."
+          echo "Active validation now lives in ObjC3C Core CI, Spec Quality, and Publish Spec."

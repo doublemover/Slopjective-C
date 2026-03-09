@@ -797,6 +797,1802 @@ This requirement is intentionally testable: if importing a module can change whe
 
 ## C.3 Canonical lowering patterns (mixed; see subsection tags) <a id="c-3"></a>
 
+### C.3.0 Lowering pass-graph scaffold (normative for implementations) <a id="c-3-0"></a>
+
+Implementations shall maintain a deterministic lowering pass graph from
+frontend stage handoff (`lex -> parse -> sema`) through lowering-boundary
+normalization and direct IR-emission entrypoint enablement (`lower -> emit`).
+
+At minimum, the pass-graph gate shall validate:
+
+- lexer/parser/semantic diagnostic surfaces are fail-closed clean before emit;
+- lowering boundary normalization and runtime dispatch declaration synthesis are
+  replay-key stable for the active lowering options; and
+- the direct IR emission route remains enabled as the first-class path (no
+  implicit fail-open bypass).
+- a core-feature readiness surface is emitted with deterministic replay keys
+  that can be carried into IR metadata closeout evidence.
+- an expansion readiness surface is emitted with deterministic expansion keys,
+  and implementations shall fail closed before IR emission when expansion
+  accounting/replay anchors drift.
+- ownership-aware lowering contracts (ownership qualifiers, retain/release,
+  autoreleasepool scope, ARC diagnostics/fixits) remain replay-key stable and
+  fail closed when ownership-lowering invariants drift.
+- ownership-aware lowering modular split scaffolding shall validate ownership
+  qualifier, retain/release, autoreleasepool, and ARC diagnostics lane-contract
+  replay keys before direct IR emission proceeds.
+- ownership-aware lowering core feature implementation shall remain fail-closed
+  for ownership qualifier, retain/release, autoreleasepool, and ARC
+  diagnostics/fixit lowering contracts so milestone optimization improvements
+  cannot bypass direct LLVM IR emission hardening.
+- ownership-aware lowering core feature expansion shall remain fail-closed for
+  weak/unowned semantics integration, ownership profile accounting consistency,
+  and deterministic expansion replay keys before direct LLVM IR emission.
+- direct IR emission completeness for ObjC lowering patterns shall remain
+  metadata-stable and fail closed on pass-graph or lowering-boundary drift.
+- IR-emission completeness modular split scaffolding shall remain deterministic
+  and fail closed while transporting pass-graph core/expansion/edge
+  compatibility replay keys into IR metadata evidence surfaces.
+- IR-emission core-feature implementation shall remain deterministic and fail
+  closed when modular split transport, runtime boundary handoff, or direct IR
+  entrypoint readiness drifts.
+- object emission and link-path routing (clang/llvm-direct) shall remain
+  deterministic and fail closed when backend route selection or object artifact
+  generation drifts.
+- toolchain/runtime modular split scaffolding shall synthesize deterministic
+  backend selection/capability and IR/object compile-route readiness keys
+  before backend object dispatch.
+- toolchain/runtime core feature implementation shall remain fail-closed on
+  backend-output marker path/payload drift and core-feature readiness drift
+  after backend object dispatch.
+- runtime-facing type metadata semantics governance shall preserve
+  deterministic sema parity handoff, runtime-shim default dispatch symbol
+  (`objc3_msgsend_i32`), and fail-closed pipeline/artifact metadata projection
+  continuity (`M227-D001`).
+- runtime-facing type metadata modular split/scaffolding governance shall preserve explicit
+  lane-D dependency anchors (`M227-D001`) and fail closed on sema handoff scaffold/pass-flow scaffold
+  or runtime-facing metadata projection drift before runtime-facing core-feature validation advances.
+- runtime-facing type metadata edge-case expansion and robustness governance shall preserve explicit lane-D dependency anchors (`M227-D006`, `M227-D005`) and fail closed on
+  runtime-facing type metadata expansion/robustness consistency, readiness, or robustness-key continuity drift before diagnostics-hardening validation advances.
+- runtime-facing type metadata diagnostics hardening governance shall preserve explicit lane-D dependency anchors (`M227-D007`, `M227-D006`) and fail closed on
+  runtime-facing type metadata diagnostics-hardening consistency, readiness, key, or alignment continuity drift before recovery/determinism validation advances.
+- runtime-facing type metadata recovery/determinism hardening governance shall preserve explicit lane-D dependency anchors (`M227-D008`, `M227-D007`) and fail closed on
+  runtime-facing type metadata recovery/determinism consistency, readiness, key, or alignment continuity drift before conformance-matrix validation advances.
+- runtime-facing type metadata conformance matrix implementation governance shall preserve explicit lane-D dependency anchors (`M227-D009`, `M227-D008`) and fail closed on
+  runtime-facing type metadata conformance matrix consistency, readiness, key, or alignment continuity drift before conformance-corpus validation advances.
+- runtime-facing type metadata conformance corpus expansion governance shall preserve explicit lane-D dependency anchors (`M227-D010`, `M227-D009`) and fail closed on
+  runtime-facing type metadata conformance corpus consistency, readiness, key, or alignment continuity drift before performance/quality validation advances.
+- runtime-facing type metadata performance and quality guardrails governance shall preserve explicit lane-D dependency anchors (`M227-D011`, `M227-D010`) and fail closed on
+  runtime-facing type metadata performance/quality consistency, readiness, key, or alignment continuity drift before integration-closeout validation advances.
+- runtime-facing type metadata integration closeout and gate sign-off governance shall preserve explicit lane-D dependency anchors (`M227-D012`, `M227-D011`) and fail closed on
+  runtime-facing type metadata integration closeout/sign-off consistency, readiness, key, or alignment continuity drift before lane-D readiness sign-off advances.
+- toolchain/runtime core feature expansion shall remain fail-closed on backend
+  marker-path determinism and backend marker payload-to-route consistency drift
+  before core-feature implementation readiness can pass.
+- edge-case compatibility completion shall include deterministic compatibility
+  handoff and language-version/pragma coordinate ordering gates that fail
+  closed before IR emission.
+- edge-case expansion and robustness shall include deterministic expansion
+  consistency and robustness readiness/key gates that fail closed before IR
+  emission.
+- diagnostics hardening shall include deterministic diagnostics consistency and
+  diagnostics hardening readiness/key gates that fail closed before IR
+  emission.
+- recovery and determinism hardening shall include deterministic recovery
+  consistency and recovery/determinism readiness/key gates that fail closed
+  before IR emission.
+- conformance matrix implementation shall include deterministic conformance
+  consistency and conformance-matrix readiness/key gates that fail closed
+  before IR emission.
+- conformance corpus expansion shall include deterministic conformance-corpus
+  consistency and conformance-corpus readiness/key gates that fail closed
+  before IR emission.
+- performance and quality guardrails shall include deterministic
+  performance-quality consistency and performance-quality readiness/key gates
+  that fail closed before IR emission.
+- cross-lane integration sync shall preserve deterministic lane dependency
+  anchors (`A011`, `B007`, `C005`, `D006`, `E006`) and fail closed when
+  contract continuity drifts.
+- docs and operator runbook synchronization shall preserve deterministic lane-A
+  documentation/runbook anchors (`A011`, `B007`, `C005`, `D006`, `E006`,
+  `A012`) and fail closed when operator command sequencing or evidence-path
+  continuity drifts.
+- release-candidate and replay dry-run wiring shall preserve deterministic
+  lane-A release-replay anchors (`A013`), wrapper compile replay artifact
+  continuity, and lowering replay-proof command sequencing so readiness fails
+  closed when replay evidence drifts.
+- advanced core workpack (shard 1) wiring shall preserve deterministic
+  toolchain/runtime GA advanced-core consistency/readiness and
+  advanced-core-key continuity (`A014`) so lane-A advanced shard closure fails
+  closed when advanced-core evidence drifts.
+- integration closeout and gate sign-off wiring shall preserve deterministic
+  toolchain/runtime GA integration-closeout sign-off
+  consistency/readiness/key continuity (`A015`) so lane-A closeout fails
+  closed when integration sign-off evidence drifts.
+- IR-emission core-feature expansion shall remain deterministic, preserve
+  expansion readiness/key continuity, and fail closed when pass-graph
+  expansion continuity or expansion metadata transport drifts.
+- IR-emission edge-case compatibility completion shall remain deterministic,
+  preserve compatibility consistency/readiness and compatibility-key
+  continuity, and fail closed when pass-graph compatibility evidence or
+  metadata transport continuity drifts.
+- IR-emission recovery and determinism hardening shall remain deterministic,
+  preserve recovery consistency/readiness and recovery-determinism-key
+  continuity, and fail closed when pass-graph or parse-artifact
+  recovery-determinism evidence drifts.
+- IR-emission conformance matrix implementation shall remain deterministic,
+  preserve conformance consistency/readiness and conformance-matrix-key
+  continuity, and fail closed when pass-graph or parse-artifact
+  conformance-matrix evidence drifts.
+- IR-emission conformance corpus expansion shall remain deterministic,
+  preserve conformance-corpus consistency/readiness and
+  conformance-corpus-key continuity, and fail closed when pass-graph or
+  parse-artifact conformance-corpus evidence drifts.
+- IR-emission performance and quality guardrails shall remain deterministic,
+  preserve performance/quality consistency/readiness and
+  performance-quality-key continuity, and fail closed when pass-graph or
+  parse-artifact performance-quality evidence drifts.
+- IR-emission cross-lane integration sync shall remain deterministic,
+  preserve cross-lane integration consistency/readiness and
+  cross-lane-integration-key continuity, and fail closed when pass-graph or
+  parse-artifact cross-lane integration evidence drifts.
+- IR-emission docs and operator runbook synchronization governance shall
+  preserve explicit lane-C dependency anchors (`M228-C013`, `M228-C012`) and
+  fail closed on docs/runbook command sequencing, evidence path continuity, or
+  dependency-anchor drift before release-candidate dry-run gates advance.
+- IR-emission release-candidate and replay dry-run governance shall preserve
+  explicit lane-C dependency anchors (`M228-C014`, `M228-C013`) and fail
+  closed on release/replay command sequencing, evidence path continuity, or
+  dependency-anchor drift before advanced workpack gates advance.
+- IR-emission advanced core workpack (shard 1) governance shall preserve
+  explicit lane-C dependency anchors (`M228-C015`, `M228-C014`) and fail
+  closed on advanced-core shard1 consistency, key-transport continuity, or
+  dependency-anchor drift before advanced edge-compatibility gates advance.
+- IR-emission advanced edge compatibility workpack (shard 1) governance shall
+  preserve explicit lane-C dependency anchors (`M228-C016`, `M228-C015`) and
+  fail closed on advanced-edge-compatibility shard1 consistency,
+  key-transport continuity, or dependency-anchor drift before advanced
+  diagnostics gates advance.
+- IR-emission advanced diagnostics workpack (shard 1) governance shall
+  preserve explicit lane-C dependency anchors (`M228-C017`, `M228-C016`) and
+  fail closed on advanced-diagnostics shard1 consistency, key-transport
+  continuity, or dependency-anchor drift before advanced conformance gates
+  advance.
+- IR-emission advanced conformance workpack (shard 1) governance shall
+  preserve explicit lane-C dependency anchors (`M228-C018`, `M228-C017`) and
+  fail closed on advanced-conformance shard1 consistency, key-transport
+  continuity, or dependency-anchor drift before advanced integration gates
+  advance.
+- IR-emission advanced integration workpack (shard 1) governance shall
+  preserve explicit lane-C dependency anchors (`M228-C019`, `M228-C018`) and
+  fail closed on advanced-integration shard1 consistency, key-transport
+  continuity, or dependency-anchor drift before advanced performance gates
+  advance.
+- ownership-aware lowering edge-case and compatibility completion shall include
+  deterministic compatibility consistency/readiness and compatibility-key
+  transport gates that fail closed before IR emission.
+- ownership-aware lowering edge-case expansion and robustness shall include
+  deterministic robustness expansion/readiness and robustness-key transport
+  gates that fail closed before IR emission.
+- ownership-aware lowering diagnostics hardening shall include deterministic
+  diagnostics consistency/readiness and diagnostics-key transport gates that
+  fail closed before IR emission.
+- ownership-aware lowering recovery and determinism hardening shall include
+  deterministic recovery consistency/readiness and recovery-key transport gates
+  that fail closed before IR emission.
+- ownership-aware lowering conformance matrix implementation shall include
+  deterministic conformance consistency/readiness and conformance-matrix-key
+  transport gates that fail closed before IR emission.
+- ownership-aware lowering conformance corpus expansion shall include
+  deterministic conformance-corpus consistency/readiness and
+  conformance-corpus-key transport gates that fail closed before IR emission.
+- ownership-aware lowering performance and quality guardrails shall include
+  deterministic performance/quality consistency/readiness and
+  performance-quality-key transport gates derived from parse-lowering
+  performance/quality case accounting
+  (`parse_lowering_performance_quality_guardrails_*`) and shall fail closed
+  before IR emission when guardrail consistency, readiness, key continuity, or
+  case-pass continuity drifts.
+- ownership-aware lowering cross-lane integration sync shall include
+  deterministic lane-B/lane-A integration consistency/readiness and
+  cross-lane-integration-key transport gates derived from ownership-aware
+  performance/quality guardrails and lowering pass-graph conformance/performance
+  continuity, and shall fail closed before IR emission when integration
+  continuity or key continuity drifts.
+- ownership-aware lowering docs and operator runbook synchronization governance
+  shall preserve explicit lane-B dependency anchors (`M228-B013`, `M228-B012`)
+  and fail closed on docs/runbook synchronization continuity, command
+  sequencing, or evidence-path drift before lane-B release validation advances.
+- ownership-aware lowering release-candidate and replay dry-run governance
+  shall preserve explicit lane-B dependency anchors (`M228-B014`, `M228-B013`)
+  and fail closed on release/replay continuity, command sequencing, or
+  evidence-path drift before lane-B advanced-core validation advances.
+- ownership-aware lowering advanced core workpack (shard 1) governance shall
+  preserve explicit lane-B dependency anchors (`M228-B015`, `M228-B014`) and
+  fail closed on advanced-core-shard1 continuity, command sequencing, or
+  evidence-path drift before lane-B advanced edge-compatibility validation
+  advances.
+- ownership-aware lowering advanced edge compatibility workpack (shard 1)
+  governance shall preserve explicit lane-B dependency anchors (`M228-B016`,
+  `M228-B015`) and fail closed on advanced-edge-compatibility-shard1
+  continuity, command sequencing, or evidence-path drift before lane-B
+  advanced diagnostics validation advances.
+- ownership-aware lowering advanced diagnostics workpack (shard 1) governance
+  shall preserve explicit lane-B dependency anchors (`M228-B017`, `M228-B016`)
+  and fail closed on advanced-diagnostics-shard1 continuity, command
+  sequencing, or evidence-path drift before lane-B advanced conformance
+  validation advances.
+- ownership-aware lowering advanced conformance workpack (shard 1) governance
+  shall preserve explicit lane-B dependency anchors (`M228-B018`, `M228-B017`)
+  and fail closed on advanced-conformance-shard1 continuity, command
+  sequencing, or evidence-path drift before lane-B advanced shard-2
+  validation advances.
+- ownership-aware lowering advanced integration workpack (shard 1) governance
+  shall preserve explicit lane-B dependency anchors (`M228-B019`, `M228-B018`)
+  and fail closed on advanced-integration-shard1 continuity, command
+  sequencing, or evidence-path drift before lane-B advanced performance
+  validation advances.
+- ownership-aware lowering advanced performance workpack (shard 1) governance
+  shall preserve explicit lane-B dependency anchors (`M228-B020`, `M228-B019`)
+  and fail closed on advanced-performance-shard1 continuity, command
+  sequencing, or evidence-path drift before lane-B advanced shard-2
+  validation advances.
+- ownership-aware lowering advanced core workpack (shard 2) governance shall
+  preserve explicit lane-B dependency anchors (`M228-B021`, `M228-B020`) and
+  fail closed on advanced-core-shard2 continuity, command sequencing, or
+  evidence-path drift before lane-B integration closeout validation advances.
+- ownership-aware lowering integration closeout and gate sign-off governance
+  shall preserve explicit lane-B dependency anchors (`M228-B022`, `M228-B021`)
+  and fail closed on integration-closeout-signoff continuity, command
+  sequencing, or evidence-path drift before lane-B closeout readiness advances.
+- toolchain/runtime edge-case compatibility completion shall remain
+  deterministic, preserve compatibility consistency/readiness and
+  compatibility-key continuity, and fail closed when backend route/output
+  compatibility evidence drifts.
+- toolchain/runtime edge-case expansion and robustness shall remain
+  deterministic, preserve robustness consistency/readiness and robustness-key
+  continuity, and fail closed when backend route/output robustness evidence
+  drifts.
+- toolchain/runtime recovery and determinism hardening shall remain
+  deterministic, preserve recovery consistency/readiness and
+  recovery-determinism-key continuity, and fail closed when backend route/output
+  recovery-determinism evidence drifts.
+- toolchain/runtime conformance matrix implementation shall remain
+  deterministic, preserve conformance consistency/readiness and
+  conformance-matrix-key continuity, and fail closed when backend route/output
+  conformance-matrix evidence drifts.
+- toolchain/runtime conformance corpus expansion shall remain deterministic,
+  preserve conformance-corpus consistency/readiness and
+  conformance-corpus-key continuity, and fail closed when backend route/output
+  conformance-corpus evidence drifts.
+- toolchain/runtime performance and quality guardrails shall remain
+  deterministic, preserve performance/quality consistency/readiness and
+  performance-quality-key continuity, and fail closed when backend route/output
+  quality guardrail evidence drifts.
+- replay-proof/performance closeout gate wiring shall preserve explicit lane-E
+  dependency anchors (`M228-A001`, `M228-B001`, `M228-C002`, `M228-D001`) and
+  fail closed when dependency references or closeout evidence commands drift.
+- replay-proof/performance modular split and scaffolding closeout gate wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E001`, `M228-A002`,
+  `M228-B002`, `M228-C004`, `M228-D002`) and fail closed when dependency
+  references or closeout evidence commands drift.
+- replay-proof/performance core-feature implementation closeout gate wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E002`, `M228-A003`,
+  `M228-B003`, `M228-C003`, `M228-D003`) and fail closed when dependency
+  references or closeout evidence commands drift.
+- replay-proof/performance core-feature expansion closeout gate wiring shall
+  preserve explicit lane-E dependency anchors (`M228-E003`, `M228-A003`, `M228-B004`,
+  `M228-C003`, `M228-D003`, and pending token `M228-C008`) and
+  fail closed when dependency references, readiness chaining, or closeout
+  evidence commands drift.
+- replay-proof/performance edge-case compatibility completion closeout wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E004`, `M228-A004`,
+  `M228-B006`, `M228-C004`, `M228-D005`, and pending token `M228-C010`) and
+  fail closed when dependency references, readiness chaining, pending-token
+  continuity, or closeout evidence commands drift.
+- replay-proof/performance lane-E edge-case expansion and robustness closeout
+  wiring shall preserve explicit lane-E dependency anchors (`M228-E005`,
+  `M228-A006`, `M228-B006`, `M228-C006`, `M228-D006`) and fail closed when
+  dependency references, readiness chaining, or closeout evidence commands
+  drift.
+- replay-proof/performance diagnostics hardening closeout wiring shall preserve
+  explicit lane-E dependency anchors (`M228-E006`, `M228-A007`, `M228-B007`,
+  `M228-D007`, and pending token `M228-C007`) and fail closed when dependency
+  references, readiness chaining, pending-token continuity, or closeout
+  evidence commands drift.
+- replay-proof/performance recovery and determinism hardening closeout wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E007`, `M228-A008`,
+  `M228-B008`, `M228-D008`, and pending token `M228-C008`) and fail closed when
+  dependency references, readiness chaining, pending-token continuity, or
+  closeout evidence commands drift.
+- replay-proof/performance conformance matrix implementation closeout wiring
+  shall preserve explicit lane-E dependency anchors (`M228-E008`, `M228-A009`,
+  `M228-B009`, `M228-C008`, `M228-D009`, and pending tokens `M228-A007`,
+  `M228-B010`, `M228-C017`, `M228-D007`) and fail closed when dependency
+  references, readiness chaining, pending-token continuity, or closeout
+  evidence commands drift.
+- lowering/codegen cost profiling and controls contract-freeze wiring shall preserve explicit lane-C dependency anchors (`none`) and fail closed when dependency
+  references, compile-route proof hooks, or perf-budget evidence commands drift.
+- lowering/codegen modular split/scaffolding wiring shall preserve explicit lane-C dependency anchor (`M247-C001`) and fail closed when dependency references,
+  readiness chaining, or modular split/scaffolding evidence commands drift.
+- lowering/codegen core feature implementation wiring shall preserve explicit lane-C dependency anchor (`M247-C002`) and fail closed when dependency references,
+  readiness chaining, or core feature implementation evidence commands drift.
+- lowering/codegen core feature expansion wiring shall preserve explicit lane-C dependency anchor (`M247-C003`) and fail closed when dependency references,
+  readiness chaining, or core feature expansion evidence commands drift.
+- lowering/codegen edge-case and compatibility completion wiring shall preserve explicit lane-C dependency anchor (`M247-C004`) and fail closed when dependency references,
+  readiness chaining, or edge-case compatibility evidence commands drift.
+- lowering/codegen edge-case expansion and robustness wiring shall preserve explicit lane-C dependency anchor (`M247-C005`) and fail closed when dependency references,
+  readiness chaining, or edge-case robustness evidence commands drift.
+- lowering/codegen diagnostics hardening wiring shall preserve explicit lane-C dependency anchor (`M247-C006`) and fail closed when dependency references,
+  readiness chaining, or edge-case robustness evidence commands drift.
+- lowering/codegen recovery and determinism hardening wiring shall preserve explicit lane-C dependency anchor (`M247-C007`) and fail closed when dependency references,
+  readiness chaining, or recovery/determinism evidence commands drift.
+- lowering/codegen conformance matrix implementation wiring shall preserve explicit lane-C dependency anchor (`M247-C008`) and fail closed when dependency references,
+  readiness chaining, or conformance-matrix continuity evidence commands drift.
+- performance SLO gate/reporting wiring shall preserve explicit lane-E
+  dependency anchors (`M247-A001`, `M247-B001`, `M247-C001`, `M247-D001`) and
+  fail closed when dependency references, compile-route proof hooks, or
+  perf-budget evidence commands drift.
+- performance SLO modular split/scaffolding wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E001`, `M247-A002`, `M247-B002`, `M247-C002`,
+  `M247-D002`) and fail closed when dependency references or modular split
+  evidence commands drift.
+- performance SLO core feature implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E002`, `M247-A003`, `M247-B003`, `M247-C003`,
+  `M247-D002`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or core implementation evidence commands drift.
+- performance SLO edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E005`, `M247-A006`, `M247-B007`, `M247-C006`,
+  `M247-D005`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or edge-case robustness evidence commands drift.
+- performance SLO diagnostics hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M247-E006`, `M247-A007`, `M247-B007`, `M247-C007`,
+  `M247-D007`) and fail closed when dependency references, readiness chaining,
+  pending-token continuity, or diagnostics hardening evidence commands drift.
+- semantic hot-path analysis/budgeting recovery and determinism hardening wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B007`) and fail closed
+  when dependency references, pending-token continuity, or contract-gating
+  evidence commands drift.
+- semantic hot-path analysis/budgeting conformance matrix implementation wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B008`) and fail closed
+  when dependency references, conformance-matrix continuity, or contract-gating
+  evidence commands drift.
+- semantic hot-path analysis/budgeting conformance corpus expansion wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B009`) and fail closed
+  when dependency references, conformance-corpus continuity, or contract-gating
+  evidence commands drift.
+- semantic hot-path analysis/budgeting cross-lane integration sync wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B011`) and fail closed
+  when dependency references, cross-lane synchronization continuity, or
+  contract-gating evidence commands drift.
+- semantic hot-path analysis/budgeting docs and operator runbook synchronization wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B012`) and fail closed when dependency references, docs-runbook-synchronization consistency/readiness, docs-runbook-synchronization-key continuity, or contract-gating evidence commands drift.
+- semantic hot-path analysis/budgeting release-candidate and replay dry-run wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B013`) and fail closed when dependency references, release-candidate/replay command sequencing continuity, release-candidate-replay-key continuity, or contract-gating evidence commands drift.
+- semantic hot-path analysis/budgeting advanced core workpack (shard 1) wiring
+  shall preserve explicit lane-B dependency anchor (`M247-B014`) and fail closed when dependency references, advanced-core-workpack command sequencing continuity, advanced-core-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+- frontend profiling and hot-path decomposition contract and architecture freeze wiring shall preserve explicit lane-A dependency anchor (`none`) and fail closed when dependency references,
+  deterministic lane-A parser/AST profiling and hot-path decomposition anchors and fail closed on contract-freeze drift.
+- frontend profiling and hot-path decomposition modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M247-A001`) and fail closed on scaffolding evidence drift.
+- frontend profiling and hot-path decomposition edge-case expansion and
+  robustness wiring shall preserve explicit lane-A dependency anchor
+  (`M247-A005`) and fail closed when dependency references, parser-boundary
+  replay hooks, or profiling evidence commands drift.
+- frontend profiling and hot-path decomposition diagnostics hardening wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A006`) and fail closed
+  when dependency references, profiling diagnostics, or compile-time budget
+  evidence commands drift.
+- frontend profiling and hot-path decomposition recovery and determinism hardening wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A007`) and fail closed
+  when dependency references, recovery replay proofs, or compile-time budget
+  evidence commands drift.
+- frontend profiling and hot-path decomposition conformance matrix implementation wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A008`) and fail closed
+  when dependency references, conformance-matrix continuity, or contract-gating
+  evidence commands drift.
+- frontend profiling and hot-path decomposition conformance corpus expansion wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A009`) and fail closed
+  when dependency references, conformance-corpus continuity, or contract-gating
+  evidence commands drift.
+- frontend profiling and hot-path decomposition performance and quality guardrails wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A010`) and fail closed
+  when dependency references, performance-quality continuity, or contract-gating
+  evidence commands drift.
+- frontend profiling and hot-path decomposition cross-lane integration sync wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A011`) and fail closed
+  when dependency references, cross-lane synchronization continuity, or
+  contract-gating evidence commands drift.
+- frontend profiling and hot-path decomposition docs and operator runbook synchronization wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A012`) and fail closed
+  when dependency references, docs/runbook synchronization continuity, or
+  contract-gating evidence commands drift.
+- frontend profiling and hot-path decomposition release-candidate and replay dry-run wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A013`) and fail closed
+  when dependency references, release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
+- frontend profiling and hot-path decomposition advanced edge compatibility workpack (shard 1) wiring
+  shall preserve explicit lane-A dependency anchor (`M247-A015`) and fail closed
+  when dependency references, advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+- runtime/link/build throughput optimization core-feature expansion wiring
+  shall preserve explicit lane-D dependency anchor (`M247-D003`) and fail
+  closed when dependency references, pending-token continuity, or throughput
+  contract-gating evidence commands drift.
+- runtime/link/build throughput optimization edge-case and compatibility completion wiring
+  shall preserve explicit lane-D dependency anchor (`M247-D004`) and fail
+  closed when dependency references or throughput edge-compatibility evidence
+  commands drift.
+- runtime/link/build throughput optimization conformance matrix implementation wiring
+  shall preserve explicit lane-D dependency anchor (`M247-D008`) and fail
+  closed when dependency references, conformance-matrix continuity, or throughput conformance-matrix evidence
+  commands drift.
+- interop surface syntax and declaration forms governance shall preserve
+  deterministic lane-A anchors, explicit dependency tokens (`none` for `M244-A001`),
+  and fail closed on declaration-form boundary drift before downstream interop
+  lowering/runtime integration advances.
+- interop surface syntax/declaration-form modular split scaffolding governance shall preserve explicit
+  lane-A dependency anchor (`M244-A001`) and fail closed when modular split
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form core-feature implementation governance shall preserve explicit
+  lane-A dependency anchor (`M244-A002`) and fail closed when core-feature
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form core-feature expansion governance shall preserve explicit
+  lane-A dependency anchor (`M244-A003`) and fail closed when core-feature
+  expansion dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form edge-case and compatibility completion governance shall preserve explicit
+  lane-A dependency anchor (`M244-A004`) and fail closed when edge-case
+  completion dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form edge-case expansion and robustness governance shall preserve explicit
+  lane-A dependency anchor (`M244-A005`) and fail closed when edge-case
+  expansion dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form diagnostics hardening governance shall preserve explicit
+  lane-A dependency anchor (`M244-A006`) and fail closed when diagnostics
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form recovery and determinism hardening governance shall preserve explicit
+  lane-A dependency anchor (`M244-A007`) and fail closed when recovery
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form conformance matrix implementation governance shall preserve explicit
+  lane-A dependency anchor (`M244-A008`) and fail closed when conformance
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form conformance corpus expansion governance shall preserve explicit
+  lane-A dependency anchor (`M244-A009`) and fail closed when conformance
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form performance and quality guardrails governance shall preserve explicit
+  lane-A dependency anchor (`M244-A010`) and fail closed when quality
+  dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form cross-lane integration sync governance shall preserve explicit
+  lane-A dependency anchors (`M244-A011`, `M244-B007`, `M244-C007`, `M244-D004`, and `M244-E006`) and fail closed
+  when integration dependency references or readiness evidence commands drift.
+- interop surface syntax/declaration-form integration closeout and gate sign-off governance shall preserve explicit
+  lane-A dependency anchor (`M244-A012`) and fail closed when integration closeout
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance governance shall preserve
+  deterministic lane-C anchors, explicit dependency tokens (`none` for `M244-C001`),
+  and fail closed on lowering and ABI conformance boundary drift before
+  downstream runtime projection and cross-lane conformance expansion advances.
+- interop lowering and ABI conformance modular split scaffolding governance shall preserve explicit
+  lane-C dependency anchor (`M244-C001`) and fail closed when modular split
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance core-feature implementation governance shall preserve explicit
+  lane-C dependency anchor (`M244-C002`) and fail closed when core-feature
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance core-feature expansion governance shall preserve explicit
+  lane-C dependency anchor (`M244-C003`) and fail closed when core-feature
+  expansion dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance edge-case and compatibility completion governance shall preserve explicit
+  lane-C dependency anchor (`M244-C004`) and fail closed when edge-case
+  completion dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance edge-case expansion and robustness governance shall preserve explicit
+  lane-C dependency anchor (`M244-C005`) and fail closed when edge-case
+  expansion dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance diagnostics hardening governance shall preserve explicit
+  lane-C dependency anchor (`M244-C006`) and fail closed when diagnostics
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance recovery and determinism hardening governance shall preserve explicit
+  lane-C dependency anchor (`M244-C007`) and fail closed when recovery
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance conformance matrix implementation governance shall preserve explicit
+  lane-C dependency anchor (`M244-C008`) and fail closed when conformance matrix
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance conformance corpus expansion governance shall preserve explicit
+  lane-C dependency anchor (`M244-C009`) and fail closed when conformance corpus
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance performance and quality guardrails governance shall preserve explicit
+  lane-C dependency anchor (`M244-C010`) and fail closed when performance/quality
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance cross-lane integration sync governance shall preserve explicit
+  lane-C dependency anchor (`M244-C011`) and fail closed when cross-lane integration
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance docs and operator runbook synchronization governance shall preserve explicit
+  lane-C dependency anchor (`M244-C012`) and fail closed when docs/runbook synchronization
+  dependency references or readiness evidence commands drift.
+- interop lowering and ABI conformance release-candidate and replay dry-run governance shall preserve explicit
+  lane-C dependency anchor (`M244-C013`) and fail closed when release-candidate/replay dry-run
+  dependency references or readiness evidence commands drift.
+- runtime/link bridge-path governance shall preserve explicit lane-D dependency anchors (`M244-A001`) and fail closed on bridge-path boundary drift before
+  downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path modular split scaffolding governance shall preserve explicit lane-D dependency anchors (`M244-D001`) and fail closed on
+  modular split scaffolding evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path core feature implementation governance shall preserve explicit lane-D dependency anchors (`M244-D002`) and fail closed on
+  core-feature implementation evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path core feature expansion governance shall preserve explicit lane-D dependency anchors (`M244-D003`) and fail closed on
+  core-feature expansion evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path edge-case and compatibility completion governance shall preserve explicit lane-D dependency anchors (`M244-D004`) and fail closed on
+  edge-case and compatibility completion evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path edge-case expansion and robustness governance shall preserve explicit lane-D dependency anchors (`M244-D005`) and fail closed on
+  edge-case expansion and robustness evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path diagnostics hardening governance shall preserve explicit lane-D dependency anchors (`M244-D006`) and fail closed on
+  diagnostics hardening evidence drift before downstream runtime projection and metadata integration advances.
+- runtime/link bridge-path recovery and determinism hardening governance shall preserve explicit lane-D dependency anchors (`M244-D007`) and fail closed on
+  recovery and determinism hardening evidence drift before downstream runtime projection and metadata integration advances.
+- interop semantic contracts and type mediation governance shall preserve
+  deterministic lane-B anchors, explicit dependency tokens (`none` for `M244-B001`),
+  and fail closed on semantic/type mediation drift before downstream interop
+  lowering/runtime integration advances.
+- interop semantic/type mediation modular split scaffolding governance shall preserve explicit
+  lane-B dependency anchor (`M244-B001`) and fail closed when modular split
+  dependency references or readiness evidence commands drift.
+- interop semantic/type mediation core-feature implementation governance shall preserve explicit
+  lane-B dependency anchor (`M244-B002`) and fail closed when core-feature
+  dependency references or readiness evidence commands drift.
+- interop semantic/type mediation core-feature expansion governance shall preserve explicit
+  lane-B dependency anchor (`M244-B003`) and fail closed when core-feature
+  expansion dependency references or readiness evidence commands drift.
+- interop semantic/type mediation edge-case and compatibility completion governance shall preserve explicit
+  lane-B dependency anchor (`M244-B004`) and fail closed when edge-case
+  completion dependency references or readiness evidence commands drift.
+- interop semantic/type mediation edge-case expansion and robustness governance shall preserve explicit
+  lane-B dependency anchor (`M244-B005`) and fail closed when edge-case
+  expansion dependency references or readiness evidence commands drift.
+- interop semantic/type mediation cross-lane integration sync governance shall preserve explicit
+  lane-B dependency anchor (`M244-B011`) and fail closed when cross-lane integration
+  dependency references or readiness evidence commands drift.
+- interop semantic/type mediation docs and operator runbook synchronization governance shall preserve explicit
+  lane-B dependency anchor (`M244-B012`) and fail closed when docs/runbook synchronization
+  dependency references or readiness evidence commands drift.
+- interop semantic/type mediation advanced core workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchor (`M244-B014`) and fail closed when advanced core workpack (shard 1)
+  dependency references or readiness evidence commands drift.
+- interop conformance gate and operations contract and architecture freeze wiring shall preserve explicit
+  lane-E dependency anchors (`M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E readiness hooks drift.
+- interop conformance gate and operations modular split/scaffolding wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E001`, `M244-A002`, `M244-B002`, `M244-C002`, and `M244-D002`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D modular split readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E modular split readiness hooks drift.
+- interop conformance gate and operations core-feature implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E002`, `M244-A002`, `M244-B003`, `M244-C004`, and `M244-D004`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D core-feature readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E core-feature readiness hooks drift.
+- interop conformance gate and operations core-feature expansion wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E003`, `M244-A003`, `M244-B004`, `M244-C005`, and `M244-D005`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D core-feature expansion readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E core-feature expansion readiness hooks drift.
+- interop conformance gate and operations edge-case and compatibility completion wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E004`, `M244-A004`, `M244-B006`, `M244-C007`, and `M244-D006`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case and compatibility completion readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E edge-case and compatibility completion readiness hooks drift.
+- interop conformance gate and operations edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E005`, `M244-A005`, `M244-B007`, `M244-C008`, and `M244-D008`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D edge-case expansion and robustness readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E edge-case expansion and robustness readiness hooks drift.
+- interop conformance gate and operations diagnostics hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D diagnostics hardening readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E diagnostics hardening readiness hooks drift.
+- interop conformance gate and operations recovery and determinism hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E007`, `M244-A006`, `M244-B009`, `M244-C011`, and `M244-D010`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D recovery and determinism hardening readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E recovery and determinism hardening readiness hooks drift.
+- interop conformance gate and operations conformance matrix implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M244-E008`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`),
+  preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D conformance matrix implementation readiness hooks,
+  and fail closed when dependency token/reference continuity, interop evidence commands,
+  or lane-E conformance matrix implementation readiness hooks drift.
+- suite partitioning and fixture ownership governance shall preserve explicit
+  lane-A dependency boundary anchors and fail closed on fixture partition drift
+  before parser and recovery replay validation advances.
+- suite partitioning modular split/scaffolding shall preserve explicit lane-A
+  dependency anchors (`M248-A001`) and fail closed on scaffolding evidence drift
+  before parser replay readiness advances.
+- suite partitioning and fixture ownership recovery and determinism hardening governance
+  shall preserve explicit lane-A dependency anchors (`M248-A007`) and fail
+  closed on recovery and determinism hardening evidence drift before downstream
+  parser replay and lane-e conformance matrix advances.
+- frontend behavior parity across toolchains governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on toolchain portability drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on property/ivar semantics drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on nullability/generics/qualifier semantics drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference governance shall preserve
+  deterministic lane-B boundary anchors and fail closed on nullability/generics/qualifier semantic-inference drift
+  before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation governance shall preserve deterministic lane-C
+  boundary anchors and fail closed on nullability/generics/qualifier lowering and ABI representation drift
+  before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation modular split/scaffolding governance shall preserve explicit
+  lane-C dependency anchors (`M235-C001`) and fail closed on modular split/scaffolding evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation core feature implementation governance shall preserve explicit
+  lane-C dependency anchors (`M235-C002`) and fail closed on core feature implementation evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation core feature expansion governance shall preserve explicit
+  lane-C dependency anchors (`M235-C003`) and fail closed on core feature expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualified type lowering and ABI representation edge-case and compatibility completion governance shall preserve explicit
+  lane-C dependency anchors (`M235-C004`) and fail closed on edge-case and compatibility completion evidence drift
+  before semantic parity and lowering portability validation advances.
+- interop behavior for qualified generic APIs governance shall preserve explicit
+  lane-D dependency anchors (`M235-C001`) and fail closed on interop contract and architecture evidence drift
+  before semantic parity and lowering portability validation advances.
+- interop behavior for qualified generic APIs modular split/scaffolding governance shall preserve explicit
+  lane-D dependency anchors (`M235-D001`) and fail closed on modular split/scaffolding interop evidence drift
+  before semantic parity and lowering portability validation advances.
+- interop behavior for qualified generic APIs core feature implementation governance shall preserve explicit
+  lane-D dependency anchors (`M235-D002`) and fail closed on core feature implementation interop evidence drift
+  before semantic parity and lowering portability validation advances.
+- interop behavior for qualified generic APIs core feature expansion governance shall preserve explicit
+  lane-D dependency anchors (`M235-D003`) and fail closed on core feature expansion interop evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic conformance gate governance shall preserve explicit
+  lane-E dependency anchors (`M235-A001`, `M235-B001`, `M235-C001`) and fail closed on lane-E contract freeze evidence drift
+  before cross-lane conformance gate expansion validation advances.
+- qualifier/generic conformance gate modular split/scaffolding governance shall preserve explicit
+  lane-E dependency anchors (`M235-E001`, `M235-A002`, `M235-B004`, `M235-C003`, `M235-D001`) and fail closed on lane-E modular split/scaffolding evidence drift
+  before cross-lane conformance gate expansion validation advances.
+- qualifier/generic conformance gate core feature implementation governance shall preserve explicit
+  lane-E dependency anchors (`M235-E002`, `M235-A003`, `M235-B006`, `M235-C004`, `M235-D002`) and fail closed on lane-E core feature implementation evidence drift
+  before cross-lane conformance gate expansion validation advances.
+- qualifier/generic semantic inference modular split/scaffolding governance shall preserve explicit
+  lane-B dependency anchors (`M235-B001`) and fail closed on scaffolding evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference core feature implementation governance shall preserve explicit
+  lane-B dependency anchors (`M235-B002`) and fail closed on core-feature evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference core feature expansion governance shall preserve explicit
+  lane-B dependency anchors (`M235-B003`) and fail closed on core-feature expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference edge-case and compatibility completion governance shall preserve explicit
+  lane-B dependency anchors (`M235-B004`) and fail closed on edge-case and compatibility completion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference edge-case expansion and robustness governance shall preserve explicit
+  lane-B dependency anchors (`M235-B005`) and fail closed on edge-case expansion and robustness evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference diagnostics hardening governance shall preserve explicit
+  lane-B dependency anchors (`M235-B006`) and fail closed on diagnostics hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference recovery and determinism hardening governance shall preserve explicit
+  lane-B dependency anchors (`M235-B007`) and fail closed on recovery and determinism hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference conformance matrix implementation governance shall preserve explicit
+  lane-B dependency anchors (`M235-B008`) and fail closed on conformance matrix implementation evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference conformance corpus expansion governance shall preserve explicit
+  lane-B dependency anchors (`M235-B009`) and fail closed on conformance corpus expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference performance and quality guardrails governance shall preserve explicit
+  lane-B dependency anchors (`M235-B010`) and fail closed on performance and quality guardrails evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference cross-lane integration sync governance shall preserve explicit
+  lane-B dependency anchors (`M235-B011`) and fail closed on cross-lane integration sync evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference docs and operator runbook synchronization governance shall preserve explicit
+  lane-B dependency anchors (`M235-B012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference release-candidate and replay dry-run governance shall preserve explicit
+  lane-B dependency anchors (`M235-B013`) and fail closed on release-candidate and replay dry-run evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced core workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B014`) and fail closed on advanced core workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced diagnostics workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B016`) and fail closed on advanced diagnostics workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced conformance workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B017`) and fail closed on advanced conformance workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced integration workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B018`) and fail closed on advanced integration workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced performance workpack (shard 1) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B019`) and fail closed on advanced performance workpack (shard 1) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced core workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B020`) and fail closed on advanced core workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced edge compatibility workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B021`) and fail closed on advanced edge compatibility workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced diagnostics workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B022`) and fail closed on advanced diagnostics workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced conformance workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B023`) and fail closed on advanced conformance workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced integration workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B024`) and fail closed on advanced integration workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced performance workpack (shard 2) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B025`) and fail closed on advanced performance workpack (shard 2) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced core workpack (shard 3) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B026`) and fail closed on advanced core workpack (shard 3) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced edge compatibility workpack (shard 3) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B027`) and fail closed on advanced edge compatibility workpack (shard 3) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference advanced diagnostics workpack (shard 3) governance shall preserve explicit
+  lane-B dependency anchors (`M235-B028`) and fail closed on advanced diagnostics workpack (shard 3) evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic semantic inference integration closeout and gate sign-off governance shall preserve explicit
+  lane-B dependency anchors (`M235-B029`) and fail closed on integration closeout and gate sign-off evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M235-A001`) and fail closed on scaffolding evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization core feature implementation governance shall preserve explicit
+  lane-A dependency anchors (`M235-A002`) and fail closed on core-feature evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization core feature expansion governance shall preserve explicit
+  lane-A dependency anchors (`M235-A003`) and fail closed on core-feature expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization edge-case and compatibility completion governance shall preserve explicit
+  lane-A dependency anchors (`M235-A004`) and fail closed on edge-case and compatibility completion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization edge-case expansion and robustness governance shall preserve explicit
+  lane-A dependency anchors (`M235-A005`) and fail closed on edge-case expansion and robustness evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization diagnostics hardening governance shall preserve explicit
+  lane-A dependency anchors (`M235-A006`) and fail closed on diagnostics hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization recovery and determinism hardening governance shall preserve explicit
+  lane-A dependency anchors (`M235-A007`) and fail closed on recovery and determinism hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization conformance matrix implementation governance shall preserve explicit
+  lane-A dependency anchors (`M235-A008`) and fail closed on conformance matrix implementation evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization conformance corpus expansion governance shall preserve explicit
+  lane-A dependency anchors (`M235-A009`) and fail closed on conformance corpus expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization performance and quality guardrails wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A010`) and fail closed on performance and quality guardrails evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization cross-lane integration sync wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A011`) and fail closed on cross-lane integration sync evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization docs and operator runbook synchronization wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before semantic parity and lowering portability validation advances.
+- qualifier/generic grammar normalization release-candidate and replay dry-run wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A013`) and fail closed when
+  release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
+- qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A015`) and fail closed when
+  advanced-edge-compatibility-workpack command sequencing continuity, advanced-edge-compatibility-workpack-shard-1-key continuity, or contract-gating evidence commands drift.
+- qualifier/generic grammar normalization integration closeout and gate sign-off wiring shall preserve explicit
+  lane-A dependency anchor (`M235-A016`) and fail closed when
+  integration-closeout-and-gate-signoff command sequencing continuity, integration-closeout-and-gate-signoff-key continuity, or contract-gating evidence commands drift.
+- accessor and ivar lowering contracts governance shall preserve deterministic lane-C
+  boundary anchors and fail closed on property/ivar lowering semantics drift before
+  runtime property metadata and integration validation advances.
+- accessor and ivar lowering modular split/scaffolding governance shall preserve explicit lane-C
+  dependency anchors (`M234-C001`) and fail closed on modular split evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts core feature implementation shall preserve explicit
+  lane-C dependency anchors (`M234-C001`, `M234-C002`) and fail closed on core-feature
+  evidence drift before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts core feature expansion shall preserve explicit lane-C dependency token (`M234-C003`) and fail closed on core-feature expansion evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts edge-case and compatibility completion governance shall preserve explicit
+  lane-C dependency anchors (`M234-C004`) and fail closed on edge-case and compatibility completion evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts edge-case expansion and robustness governance shall preserve explicit
+  lane-C dependency anchors (`M234-C005`) and fail closed on edge-case expansion and robustness evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts diagnostics hardening governance shall preserve explicit
+  lane-C dependency anchors (`M234-C006`) and fail closed on diagnostics hardening evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts recovery and determinism hardening governance shall preserve explicit
+  lane-C dependency anchors (`M234-C007`) and fail closed on recovery and determinism hardening evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts conformance matrix implementation governance shall preserve explicit
+  lane-C dependency anchors (`M234-C008`) and fail closed on conformance matrix implementation evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts conformance corpus expansion governance shall preserve explicit
+  lane-C dependency anchors (`M234-C009`) and fail closed on conformance corpus expansion evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts performance and quality guardrails governance shall preserve explicit
+  lane-C dependency anchors (`M234-C010`) and fail closed on performance and quality guardrails evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts cross-lane integration sync governance shall preserve explicit
+  lane-C dependency anchors (`M234-C011`) and fail closed on cross-lane integration sync evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts docs and operator runbook synchronization governance shall preserve explicit
+  lane-C dependency anchors (`M234-C012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts release-candidate and replay dry-run governance shall preserve explicit
+  lane-C dependency anchors (`M234-C013`) and fail closed on release-candidate and replay dry-run evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts advanced core workpack (shard 1) governance shall preserve explicit
+  lane-C dependency anchors (`M234-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+  lane-C dependency anchors (`M234-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+  before runtime property metadata and integration validation advances.
+- accessor and ivar lowering contracts integration closeout and gate sign-off governance shall preserve explicit
+  lane-C dependency anchors (`M234-C016`) and fail closed on integration closeout and gate sign-off evidence drift
+  before runtime property metadata and integration validation advances.
+- runtime property metadata integration governance shall preserve deterministic lane-D
+  boundary anchors and fail closed on runtime property metadata integration drift before
+  runtime property metadata conformance and runtime validation advances.
+- runtime property metadata integration modular split scaffolding shall
+  preserve explicit lane-D dependency anchors (`M234-D001`) and fail closed on
+  modular split/scaffolding evidence drift before runtime property metadata
+  conformance and runtime validation advances.
+- runtime property metadata integration core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M234-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
+- runtime property metadata integration core feature expansion shall
+  preserve explicit lane-D dependency anchors (`M234-D003`) and fail closed on
+  core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
+- property and ivar syntax surface completion modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M234-A001`) and fail closed on scaffolding evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion core feature implementation governance shall preserve explicit
+  lane-A dependency anchors (`M234-A002`) and fail closed on core-feature evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion core feature expansion governance shall preserve explicit
+  lane-A dependency anchors (`M234-A003`) and fail closed on core-feature expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion edge-case and compatibility completion governance shall preserve explicit
+  lane-A dependency anchors (`M234-A004`) and fail closed on edge-case and compatibility completion evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion edge-case expansion and robustness governance shall preserve explicit
+  lane-A dependency anchors (`M234-A005`) and fail closed on edge-case expansion and robustness evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion diagnostics hardening governance shall preserve explicit
+  lane-A dependency anchors (`M234-A006`) and fail closed on diagnostics hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion recovery and determinism hardening governance shall preserve explicit
+  lane-A dependency anchors (`M234-A007`) and fail closed on recovery and determinism hardening evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion conformance matrix implementation governance shall preserve explicit
+  lane-A dependency anchors (`M234-A008`) and fail closed on conformance matrix implementation evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion conformance corpus expansion governance shall preserve explicit
+  lane-A dependency anchors (`M234-A009`) and fail closed on conformance corpus expansion evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion performance and quality guardrails wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A010`) and fail closed on guardrail evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion cross-lane integration sync wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A011`) and fail closed on cross-lane integration evidence drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion docs and operator runbook synchronization wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A012`) and fail closed on docs/runbook synchronization drift
+  before semantic parity and lowering portability validation advances.
+- property and ivar syntax surface completion release-candidate and replay dry-run wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A013`) and fail closed when release-candidate/replay command sequencing continuity, release_candidate_replay_key continuity, or contract-gating evidence commands drift.
+- property and ivar syntax surface completion advanced core workpack (shard 1) wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A014`) and fail closed when advanced-core command sequencing continuity or shard-1 evidence drift occurs.
+- property and ivar syntax surface completion integration closeout and gate sign-off wiring shall preserve explicit
+  lane-A dependency anchor (`M234-A015`) and fail closed when integration-closeout-and-gate-signoff command sequencing continuity, integration-closeout-and-gate-signoff-key continuity, or contract-gating evidence commands drift.
+- feature packaging surface and compatibility governance shall preserve
+  deterministic lane-A boundary anchors and fail closed on release packaging drift
+  before semantic migration and IR/object policy validation advances.
+- feature packaging modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M249-A001`) and fail closed on scaffolding evidence drift
+  before semantic migration and IR/object policy validation advances.
+- feature packaging core feature implementation governance shall preserve explicit
+  lane-A dependency anchors (`M249-A002`) and fail closed on core-feature evidence drift
+  before semantic migration and IR/object policy validation advances.
+- semantic/lowering test architecture governance shall preserve explicit lane-B
+  diagnostic replay anchors and fail closed on semantic fixture drift before
+  lowering matrix and conformance expansion validation advances.
+- semantic/lowering modular split scaffolding shall preserve explicit lane-B
+  dependency anchors (`M248-B001`) and fail closed on modular split evidence
+  drift before semantic replay readiness advances.
+- type-system completeness for ObjC3 forms governance shall preserve explicit
+  lane-B dependency anchors (`M227-B001`) and fail closed on canonical ObjC
+  type-form contract drift before semantic compatibility and migration
+  validation advances.
+- type-system diagnostics hardening governance shall preserve explicit lane-B dependency anchors (`M227-B007`, `M227-B006`) and fail closed on canonical ObjC type-form diagnostics consistency/readiness or diagnostics-key continuity drift before semantic compatibility and migration validation advances.
+- type-system recovery/determinism hardening governance shall preserve explicit lane-B dependency anchors (`M227-B008`, `M227-B007`) and fail closed on canonical ObjC type-form recovery consistency/readiness or recovery-key continuity drift before semantic compatibility and migration validation advances.
+- type-system conformance matrix implementation governance shall preserve explicit lane-B dependency anchors (`M227-B009`, `M227-B008`) and fail closed on canonical ObjC type-form conformance matrix consistency/readiness or conformance-matrix-key continuity drift before semantic compatibility and migration validation advances.
+- type-system conformance corpus expansion governance shall preserve explicit lane-B dependency anchors (`M227-B010`, `M227-B009`) and fail closed on canonical ObjC type-form conformance corpus consistency/readiness, case-accounting continuity, or conformance-corpus-key continuity drift before semantic compatibility and migration validation advances.
+- type-system performance and quality guardrails governance shall preserve explicit lane-B dependency anchors (`M227-B011`, `M227-B010`) and fail closed on canonical ObjC type-form performance/quality guardrail accounting, consistency/readiness, or performance-quality-key continuity drift before semantic compatibility and migration validation advances.
+- type-system docs and operator runbook synchronization governance shall preserve explicit lane-B dependency anchors (`M227-B013`, `M227-B012`) and fail closed on canonical ObjC type-form docs/runbook command sequencing or evidence-path continuity drift before semantic compatibility and migration validation advances.
+- type-system release-candidate replay dry-run governance shall preserve explicit lane-B dependency anchors (`M227-B014`, `M227-B013`) and fail closed on canonical ObjC type-form release/replay command sequencing or evidence-path continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced core workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B015`, `M227-B014`) and fail closed on canonical ObjC type-form advanced-core command sequencing, evidence-path continuity, or advanced-core continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B016`, `M227-B015`) and fail closed on canonical ObjC type-form advanced-edge-compatibility command sequencing, evidence-path continuity, or advanced-edge-compatibility continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B017`, `M227-B016`) and fail closed on canonical ObjC type-form advanced-diagnostics command sequencing, evidence-path continuity, or advanced-diagnostics continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced conformance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B018`, `M227-B017`) and fail closed on canonical ObjC type-form advanced-conformance command sequencing, evidence-path continuity, or advanced-conformance continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced integration workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B019`, `M227-B018`) and fail closed on canonical ObjC type-form advanced-integration command sequencing, evidence-path continuity, or advanced-integration continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced performance workpack (shard 1) governance shall preserve explicit lane-B dependency anchors (`M227-B020`, `M227-B019`) and fail closed on canonical ObjC type-form advanced-performance command sequencing, evidence-path continuity, or advanced-performance continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced core workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B021`, `M227-B020`) and fail closed on canonical ObjC type-form advanced-core-shard2 command sequencing, evidence-path continuity, or advanced-core-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced edge compatibility workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B022`, `M227-B021`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard2 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B023`, `M227-B022`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard2 command sequencing, evidence-path continuity, or advanced-diagnostics-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced conformance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B024`, `M227-B023`) and fail closed on canonical ObjC type-form advanced-conformance-shard2 command sequencing, evidence-path continuity, or advanced-conformance-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced integration workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B025`, `M227-B024`) and fail closed on canonical ObjC type-form advanced-integration-shard2 command sequencing, evidence-path continuity, or advanced-integration-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced performance workpack (shard 2) governance shall preserve explicit lane-B dependency anchors (`M227-B026`, `M227-B025`) and fail closed on canonical ObjC type-form advanced-performance-shard2 command sequencing, evidence-path continuity, or advanced-performance-shard2 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced core workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B027`, `M227-B026`) and fail closed on canonical ObjC type-form advanced-core-shard3 command sequencing, evidence-path continuity, or advanced-core-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced edge compatibility workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B028`, `M227-B027`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard3 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced diagnostics workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B029`, `M227-B028`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard3 command sequencing, evidence-path continuity, or advanced-diagnostics-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced conformance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B030`, `M227-B029`) and fail closed on canonical ObjC type-form advanced-conformance-shard3 command sequencing, evidence-path continuity, or advanced-conformance-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced integration workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B031`, `M227-B030`) and fail closed on canonical ObjC type-form advanced-integration-shard3 command sequencing, evidence-path continuity, or advanced-integration-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced performance workpack (shard 3) governance shall preserve explicit lane-B dependency anchors (`M227-B032`, `M227-B031`) and fail closed on canonical ObjC type-form advanced-performance-shard3 command sequencing, evidence-path continuity, or advanced-performance-shard3 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced core workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B033`, `M227-B032`) and fail closed on canonical ObjC type-form advanced-core-shard4 command sequencing, evidence-path continuity, or advanced-core-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced edge compatibility workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B034`, `M227-B033`) and fail closed on canonical ObjC type-form advanced-edge-compatibility-shard4 command sequencing, evidence-path continuity, or advanced-edge-compatibility-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced diagnostics workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B035`, `M227-B034`) and fail closed on canonical ObjC type-form advanced-diagnostics-shard4 command sequencing, evidence-path continuity, or advanced-diagnostics-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced conformance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B036`, `M227-B035`) and fail closed on canonical ObjC type-form advanced-conformance-shard4 command sequencing, evidence-path continuity, or advanced-conformance-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced integration workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B037`, `M227-B036`) and fail closed on canonical ObjC type-form advanced-integration-shard4 command sequencing, evidence-path continuity, or advanced-integration-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system advanced performance workpack (shard 4) governance shall preserve explicit lane-B dependency anchors (`M227-B038`, `M227-B037`) and fail closed on canonical ObjC type-form advanced-performance-shard4 command sequencing, evidence-path continuity, or advanced-performance-shard4 continuity drift before semantic compatibility and migration validation advances.
+- type-system integration closeout and gate sign-off governance shall preserve explicit lane-B dependency anchors (`M227-B039`, `M227-B038`) and fail closed on canonical ObjC type-form integration-closeout-and-gate-signoff command sequencing, evidence-path continuity, or integration-closeout-and-gate-signoff continuity drift before semantic compatibility and migration validation advances.
+- typed sema-to-lowering contracts governance shall preserve explicit lane-C typed sema handoff anchors,
+  lane-C dependency anchors (`M227-C001`) and fail closed on typed sema transport or lowering metadata drift
+  before semantic compatibility and runtime-facing metadata validation advances.
+- typed sema-to-lowering modular split scaffolding governance shall preserve explicit
+  lane-C dependency anchors (`M227-C001`) and fail closed on typed sema/lowering modular split handoff drift
+  before semantic compatibility and runtime-facing metadata validation advances.
+- typed sema-to-lowering core feature implementation governance shall preserve explicit lane-C dependency anchors (`M227-C002`) and fail closed on typed sema core-feature case accounting or typed core-feature key continuity drift before semantic compatibility and runtime-facing metadata validation advances.
+- semantic-pass conformance matrix implementation governance shall preserve explicit
+  lane-A dependency anchor (`M227-A009`) and fail closed on parser/sema
+  conformance-matrix or corpus replay drift before conformance expansion
+  validation advances.
+- semantic-pass conformance corpus expansion governance shall preserve explicit
+  lane-A dependency anchor (`M227-A010`) and fail closed on parser/sema
+  conformance-corpus accounting or replay continuity drift before lane-A
+  integration closeout validation advances.
+- semantic-pass performance and quality guardrails governance shall preserve explicit
+  lane-A dependency anchor (`M227-A011`) and fail closed on parser/sema
+  performance-quality guardrail drift before cross-lane synchronization
+  validation advances.
+- semantic conformance lane-E quality-gate contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`),
+  preserve readiness continuity across `check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, and `check:objc3c:m227-d001-lane-d-readiness`,
+  and fail closed when dependency tokens, package readiness hooks, or lane-E gate evidence drift.
+- semantic conformance lane-E modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`),
+  preserve readiness continuity across `check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, and `check:objc3c:m227-d002-lane-d-readiness`,
+  and fail closed when dependency tokens, package readiness hooks, or lane-E modular split/scaffolding evidence drift.
+- semantic conformance lane-E edge-case expansion and robustness wiring shall preserve explicit lane-E dependency anchors (`M227-E005`, `M227-A006`, `M227-B006`, `M227-C006`, and `M227-D006`),
+  preserve readiness continuity across direct `M227-E005` and `M227-A006` checker/test commands plus `check:objc3c:m227-b006-lane-b-readiness`, `check:objc3c:m227-c006-lane-c-readiness`, and `check:objc3c:m227-d006-lane-d-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E edge-case expansion/robustness evidence drift.
+- semantic conformance lane-E diagnostics hardening wiring shall preserve explicit lane-E dependency anchors (`M227-E006`, `M227-A007`, `M227-B007`, `M227-C007`, and `M227-D007`),
+  preserve readiness continuity across direct `M227-E006` and `M227-A007` checker/test commands plus `check:objc3c:m227-b007-lane-b-readiness`, `check:objc3c:m227-c007-lane-c-readiness`, and `check:objc3c:m227-d007-lane-d-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E diagnostics hardening evidence drift.
+- semantic conformance lane-E recovery and determinism hardening wiring shall preserve explicit lane-E dependency anchors (`M227-E007`, `M227-A008`, `M227-B008`, `M227-C008`, and `M227-D008`),
+  preserve readiness continuity across direct `M227-E007` and `M227-A008` checker/test commands plus `check:objc3c:m227-b008-lane-b-readiness`, `check:objc3c:m227-c008-lane-c-readiness`, and `check:objc3c:m227-d008-lane-d-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E recovery and determinism hardening evidence drift.
+- semantic conformance lane-E conformance matrix implementation wiring shall preserve explicit lane-E dependency anchors (`M227-E008`, `M227-A009`, `M227-B018`, `M227-C012`, and `M227-D005`),
+  preserve readiness continuity across direct `M227-E008`, `M227-A009`, and `M227-D005` checker/test commands plus `check:objc3c:m227-b018-lane-b-readiness` and `check:objc3c:m227-c012-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E conformance matrix implementation evidence drift.
+- semantic conformance lane-E conformance corpus expansion wiring shall preserve explicit lane-E dependency anchors (`M227-E009`, `M227-A011`, `M227-B020`, `M227-C013`, and `M227-D006`),
+  preserve readiness continuity across direct `M227-E009`, `M227-A011`, and `M227-D006` checker/test commands plus `check:objc3c:m227-b020-lane-b-readiness` and `check:objc3c:m227-c013-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E conformance corpus expansion evidence drift.
+- semantic conformance lane-E performance and quality guardrails wiring shall preserve explicit lane-E dependency anchors (`M227-E010`, `M227-A012`, `M227-B021`, `M227-C014`, and `M227-D007`),
+  preserve readiness continuity across direct `M227-E010`, `M227-A012`, and `M227-D007` checker/test commands plus `check:objc3c:m227-b021-lane-b-readiness` and `check:objc3c:m227-c014-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E performance and quality guardrails evidence drift.
+- semantic conformance lane-E cross-lane integration sync wiring shall preserve explicit lane-E dependency anchors (`M227-E011`, `M227-A013`, `M227-B023`, `M227-C016`, and `M227-D007`),
+  preserve readiness continuity across direct `M227-E011`, `M227-A013`, and `M227-D007` checker/test commands plus `check:objc3c:m227-b023-lane-b-readiness` and `check:objc3c:m227-c016-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E cross-lane integration sync evidence drift.
+- semantic conformance lane-E docs and operator runbook synchronization wiring shall preserve explicit lane-E dependency anchors (`M227-E012`, `M227-A014`, `M227-B025`, `M227-C017`, and `M227-D008`),
+  preserve readiness continuity across direct `M227-E012`, `M227-A014`, and `M227-D008` checker/test commands plus `check:objc3c:m227-b025-lane-b-readiness` and `check:objc3c:m227-c017-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E docs and operator runbook synchronization evidence drift.
+- semantic conformance lane-E release-candidate and replay dry-run wiring shall preserve explicit lane-E dependency anchors (`M227-E013`, `M227-A015`, `M227-B027`, `M227-C018`, and `M227-D008`),
+  preserve readiness continuity across direct `M227-E013`, `M227-A015`, and `M227-D008` checker/test commands plus `check:objc3c:m227-b027-lane-b-readiness` and `check:objc3c:m227-c018-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E release-candidate and replay dry-run evidence drift.
+- semantic conformance lane-E advanced core workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E014`, `M227-A016`, `M227-B029`, `M227-C020`, and `M227-D009`),
+  preserve readiness continuity across direct `M227-E014`, `M227-A016`, and `M227-D009` checker/test commands plus `check:objc3c:m227-b029-lane-b-readiness` and `check:objc3c:m227-c020-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced core workpack (shard 1) evidence drift.
+- semantic conformance lane-E advanced edge compatibility workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E015`, `M227-A017`, `M227-B031`, `M227-C021`, and `M227-D010`),
+  preserve readiness continuity across direct `M227-E015`, `M227-A017`, and `M227-D010` checker/test commands plus `check:objc3c:m227-b031-lane-b-readiness` and `check:objc3c:m227-c021-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced edge compatibility workpack (shard 1) evidence drift.
+- semantic conformance lane-E advanced diagnostics workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E016`, `M227-A018`, `M227-B033`, `M227-C022`, and `M227-D010`),
+  preserve readiness continuity across direct `M227-E016`, `M227-A018`, and `M227-D010` checker/test commands plus `check:objc3c:m227-b033-lane-b-readiness` and `check:objc3c:m227-c022-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced diagnostics workpack (shard 1) evidence drift.
+- semantic conformance lane-E advanced conformance workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E017`, `M227-A019`, `M227-B035`, `M227-C023`, and `M227-D011`),
+  preserve readiness continuity across direct `M227-E017`, `M227-A019`, and `M227-D011` checker/test commands plus `check:objc3c:m227-b035-lane-b-readiness` and `check:objc3c:m227-c023-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced conformance workpack (shard 1) evidence drift.
+- semantic conformance lane-E advanced integration workpack (shard 1) wiring shall preserve explicit lane-E dependency anchors (`M227-E018`, `M227-A020`, `M227-B037`, `M227-C025`, and `M227-D011`),
+  preserve readiness continuity across direct `M227-E018`, `M227-A020`, and `M227-D011` checker/test commands plus `check:objc3c:m227-b037-lane-b-readiness` and `check:objc3c:m227-c025-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E advanced integration workpack (shard 1) evidence drift.
+- semantic conformance lane-E integration closeout and gate sign-off wiring shall preserve explicit lane-E dependency anchors (`M227-E019`, `M227-A021`, `M227-B039`, `M227-C026`, and `M227-D012`),
+  preserve readiness continuity across direct `M227-E019`, `M227-A021`, and `M227-D012` checker/test commands plus `check:objc3c:m227-b039-lane-b-readiness` and `check:objc3c:m227-c026-lane-c-readiness`,
+  and fail closed when dependency tokens, dependency-reference commands, or lane-E integration closeout and gate sign-off evidence drift.
+- semantic-pass cross-lane integration sync governance shall preserve explicit
+  lane-A dependency anchor (`M227-A012`) and fail closed when semantic-pass
+  lane dependency contracts (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`,
+  `M227-E001`) drift before docs/runbook synchronization validation advances.
+- semantic-pass docs and operator runbook synchronization governance shall
+  preserve explicit lane-A dependency anchor (`M227-A013`) and fail closed when
+  operator command sequencing, dependency contract anchors, or readiness wiring
+  drift before release-candidate replay validation advances.
+- semantic-pass release-candidate and replay dry-run governance shall preserve explicit lane-A dependency anchor (`M227-A014`),
+  preserve deterministic replay artifacts (`module.manifest.json`, `module.diagnostics.json`, `module.ll`, `module.object-backend.txt`),
+  and fail closed when replay evidence, runbook command sequencing, or readiness wiring drifts before advanced shard validation advances.
+- semantic-pass advanced core workpack (shard 1) wiring shall preserve deterministic advanced-core dependency anchors (`M227-A015`)
+  and fail closed when `toolchain_runtime_ga_operations_advanced_core_consistent`,
+  `toolchain_runtime_ga_operations_advanced_core_ready`, or
+  `toolchain_runtime_ga_operations_advanced_core_key` drift before advanced
+  edge/diagnostics/conformance validation advances.
+- semantic-pass advanced edge compatibility workpack (shard 1) wiring shall preserve deterministic
+  edge-compatibility dependency anchors (`M227-A016`)
+  and fail closed when
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent`,
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`, or
+  `toolchain_runtime_ga_operations_advanced_edge_compatibility_key` drift
+  before advanced diagnostics/conformance validation advances.
+- semantic-pass advanced diagnostics workpack (shard 1) wiring shall preserve deterministic
+  diagnostics dependency anchors (`M227-A017`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_diagnostics_consistent`,
+  `toolchain_runtime_ga_operations_advanced_diagnostics_ready`, or
+  `toolchain_runtime_ga_operations_advanced_diagnostics_key` drift before
+  advanced conformance validation advances.
+- semantic-pass advanced conformance workpack (shard 1) wiring shall preserve deterministic
+  conformance dependency anchors (`M227-A018`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_conformance_consistent`,
+  `toolchain_runtime_ga_operations_advanced_conformance_ready`, or
+  `toolchain_runtime_ga_operations_advanced_conformance_key` drift before
+  advanced integration validation advances.
+- semantic-pass advanced integration workpack (shard 1) wiring shall preserve deterministic
+  integration dependency anchors (`M227-A019`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_integration_consistent`,
+  `toolchain_runtime_ga_operations_advanced_integration_ready`, or
+  `toolchain_runtime_ga_operations_advanced_integration_key` drift before
+  advanced performance validation advances.
+- semantic-pass advanced performance workpack (shard 1) wiring shall preserve deterministic
+  performance dependency anchors (`M227-A020`) and fail closed
+  when `toolchain_runtime_ga_operations_advanced_performance_consistent`,
+  `toolchain_runtime_ga_operations_advanced_performance_ready`, or
+  `toolchain_runtime_ga_operations_advanced_performance_key` drift before
+  integration closeout validation advances.
+- semantic-pass integration closeout and gate sign-off wiring shall preserve deterministic
+  sign-off dependency anchors (`M227-A021`) and fail closed
+  when `toolchain_runtime_ga_operations_integration_closeout_signoff_consistent`,
+  `toolchain_runtime_ga_operations_integration_closeout_signoff_ready`, or
+  `toolchain_runtime_ga_operations_integration_closeout_signoff_key` drift before
+  lane-E integration gate validation advances.
+- semantic compatibility and migration checks governance shall preserve explicit
+  lane-B compatibility-mode and migration-assist handoff anchors and fail
+  closed on sema pass-flow or parse/lowering compatibility drift before
+  semantic stability expansion validation advances.
+- semantic compatibility and migration checks modular split scaffolding shall
+  preserve explicit lane-B dependency anchors (`M249-B001`) and fail closed on
+  modular split evidence drift before semantic stability expansion validation
+  advances.
+- lowering/IR portability contracts governance shall preserve explicit
+  lane-C portability and deterministic emission anchors and fail closed on
+  lowering portability drift before runtime execution and conformance
+  validation advances.
+- lowering/IR portability modular split/scaffolding governance shall preserve explicit lane-C dependency anchors (`M245-C001`) and fail closed on modular split evidence drift before runtime portability scaffolding advances.
+- lowering/IR portability contracts core feature implementation shall preserve explicit lane-C dependency anchors (`M245-C001`, `M245-C002`) and fail closed on core-feature evidence drift before runtime portability implementation advances.
+- lowering/IR portability contracts core feature expansion shall preserve explicit lane-C dependency token (`M245-C003`) and fail closed on core-feature expansion evidence drift before runtime portability edge-case compatibility advances.
+- lowering/IR portability contracts edge-case and compatibility completion shall preserve explicit lane-C dependency anchors (`M245-C004`) and fail closed on edge-case and compatibility completion evidence drift before runtime portability robustness validation advances.
+- lowering/IR portability contracts edge-case expansion and robustness shall preserve explicit lane-C dependency anchors (`M245-C005`) and fail closed on edge-case expansion and robustness evidence drift before runtime portability diagnostics-hardening validation advances.
+- lowering/IR portability contracts diagnostics hardening shall preserve explicit lane-C dependency anchors (`M245-C006`) and fail closed on diagnostics hardening evidence drift before runtime portability recovery-and-determinism-hardening validation advances.
+- lowering/IR portability contracts recovery and determinism hardening shall preserve explicit lane-C dependency anchors (`M245-C007`) and fail closed on recovery and determinism hardening evidence drift before runtime portability conformance-matrix validation advances.
+- lowering/IR portability contracts conformance matrix implementation shall preserve explicit lane-C dependency anchors (`M245-C008`) and fail closed on conformance matrix evidence drift before runtime portability conformance-corpus expansion validation advances.
+- lowering/IR portability contracts conformance corpus expansion shall preserve explicit lane-C dependency anchors (`M245-C009`) and fail closed on conformance corpus evidence drift before runtime portability performance-and-quality-guardrails validation advances.
+- lowering/IR portability contracts performance and quality guardrails shall preserve explicit lane-C dependency anchors (`M245-C010`) and fail closed on performance and quality evidence drift before runtime portability cross-lane-integration-sync validation advances.
+- lowering/IR portability contracts cross-lane integration sync shall preserve explicit lane-C dependency anchors (`M245-C011`) and fail closed on cross-lane integration sync evidence drift before runtime portability docs-and-operator-runbook-synchronization validation advances.
+- lowering/IR portability contracts docs and operator runbook synchronization shall preserve explicit lane-C dependency anchors (`M245-C012`) and fail closed on docs and operator runbook synchronization evidence drift before runtime portability release-candidate-and-replay-dry-run validation advances.
+- lowering/IR portability contracts release-candidate and replay dry-run shall preserve explicit lane-C dependency anchors (`M245-C013`) and fail closed on release-candidate and replay dry-run evidence drift before runtime portability advanced-core-workpack validation advances.
+- lowering/IR portability contracts advanced core workpack (shard 1) shall preserve explicit lane-C dependency anchors (`M245-C014`) and fail closed on advanced core workpack evidence drift before runtime portability integration-closeout-and-gate-sign-off validation advances.
+- lowering/IR portability contracts integration closeout and gate sign-off shall preserve explicit lane-C dependency anchors (`M245-C015`) and fail closed on integration closeout and gate sign-off evidence drift before runtime portability milestone closeout validation advances.
+- frontend behavior parity modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M245-A001`) and fail closed on scaffolding evidence drift before parser portability scaffolding advances.
+- frontend behavior parity core feature implementation governance shall preserve explicit lane-A dependency anchors (`M245-A002`) and fail closed on core-feature evidence drift before parser portability implementation advances.
+- frontend behavior parity core feature expansion governance shall preserve explicit
+  lane-A dependency anchors (`M245-A003`) and fail closed on core-feature expansion evidence drift
+  before parser portability edge-case compatibility advances.
+- frontend behavior parity edge-case and compatibility completion governance shall preserve explicit
+  lane-A dependency anchors (`M245-A004`) and fail closed on edge-case and compatibility completion evidence drift
+  before parser portability robustness validation advances.
+- frontend behavior parity edge-case expansion and robustness governance shall preserve explicit
+  lane-A dependency anchors (`M245-A005`) and fail closed on edge-case expansion and robustness evidence drift
+  before parser portability diagnostics-hardening validation advances.
+- frontend behavior parity diagnostics hardening governance shall preserve explicit
+  lane-A dependency anchors (`M245-A006`) and fail closed on diagnostics hardening evidence drift
+  before parser portability recovery-and-determinism-hardening validation advances.
+- frontend behavior parity recovery and determinism hardening governance shall preserve explicit
+  lane-A dependency anchors (`M245-A007`) and fail closed on recovery and determinism hardening evidence drift
+  before parser portability conformance-matrix validation advances.
+- frontend behavior parity conformance matrix implementation governance shall preserve explicit
+  lane-A dependency anchors (`M245-A008`) and fail closed on conformance matrix implementation evidence drift
+  before parser portability conformance-corpus expansion validation advances.
+- frontend behavior parity conformance corpus expansion governance shall preserve explicit
+  lane-A dependency anchors (`M245-A009`) and fail closed on conformance corpus expansion evidence drift
+  before parser portability performance-and-quality-guardrails validation advances.
+- frontend behavior parity integration closeout and gate sign-off governance shall preserve explicit
+  lane-A dependency anchors (`M245-A010`) and fail closed on integration closeout and gate sign-off evidence drift
+  before parser portability cross-lane-integration-sync validation advances.
+- semantic parity and platform constraints core feature implementation shall
+  preserve explicit lane-B dependency anchors (`M245-B002`) and fail closed on core-feature evidence drift
+  before portability gate and semantic stability expansion validation advances.
+- semantic parity and platform constraints core feature expansion shall
+  preserve explicit lane-B dependency anchors (`M245-B003`) and fail closed on core-feature expansion evidence drift
+  before portability gate and semantic stability edge-case compatibility validation advances.
+- semantic parity and platform constraints edge-case and compatibility completion shall
+  preserve explicit lane-B dependency anchors (`M245-B004`) and fail closed on edge-case and compatibility completion evidence drift
+  before portability gate and semantic stability robustness validation advances.
+- semantic parity and platform constraints edge-case expansion and robustness shall
+  preserve explicit lane-B dependency anchors (`M245-B005`) and fail closed on edge-case expansion and robustness evidence drift
+  before portability gate and semantic stability diagnostics-hardening validation advances.
+- semantic parity and platform constraints diagnostics hardening shall
+  preserve explicit lane-B dependency anchors (`M245-B006`) and fail closed on diagnostics hardening evidence drift
+  before portability gate and semantic stability recovery-and-determinism-hardening validation advances.
+- semantic parity and platform constraints recovery and determinism hardening shall
+  preserve explicit lane-B dependency anchors (`M245-B007`) and fail closed on recovery and determinism hardening evidence drift
+  before portability gate and semantic stability conformance-matrix validation advances.
+- semantic parity and platform constraints conformance matrix implementation shall
+  preserve explicit lane-B dependency anchors (`M245-B008`) and fail closed on conformance matrix evidence drift
+  before portability gate and semantic stability conformance-corpus expansion validation advances.
+- semantic parity and platform constraints conformance corpus expansion shall
+  preserve explicit lane-B dependency anchors (`M245-B009`) and fail closed on conformance corpus evidence drift
+  before portability gate and semantic stability performance-and-quality-guardrails validation advances.
+- semantic parity and platform constraints performance and quality guardrails shall
+  preserve explicit lane-B dependency anchors (`M245-B010`) and fail closed on performance and quality evidence drift
+  before portability gate and semantic stability cross-lane-integration-sync validation advances.
+- semantic parity and platform constraints cross-lane integration sync shall
+  preserve explicit lane-B dependency anchors (`M245-B011`) and fail closed on cross-lane integration sync evidence drift
+  before portability gate and semantic stability integration-closeout-and-gate-sign-off validation advances.
+- semantic parity and platform constraints integration closeout and gate sign-off shall
+  preserve explicit lane-B dependency anchors (`M245-B012`) and fail closed on integration closeout and gate sign-off evidence drift
+  before portability gate and semantic stability release integration advances.
+- build/link/runtime reproducibility modular split/scaffolding governance shall preserve explicit
+  lane-D dependency anchors (`M245-D001`) and fail closed on modular split evidence drift
+  before runtime reproducibility scaffolding advances.
+- build/link/runtime reproducibility core feature implementation governance shall preserve explicit
+  lane-D dependency anchors (`M245-D002`) and fail closed on core-feature evidence drift
+  before runtime reproducibility implementation advances.
+- build/link/runtime reproducibility core feature expansion governance shall preserve explicit
+  lane-D dependency anchors (`M245-D003`) and fail closed on core-feature expansion evidence drift
+  before runtime reproducibility edge-compatibility advances.
+- build/link/runtime reproducibility edge-case and compatibility completion governance shall preserve explicit
+  lane-D dependency anchors (`M245-D004`) and fail closed on edge-case and compatibility completion evidence drift
+  before runtime reproducibility robustness validation advances.
+- build/link/runtime reproducibility edge-case expansion and robustness governance shall preserve explicit
+  lane-D dependency anchors (`M245-D005`) and fail closed on edge-case expansion and robustness evidence drift
+  before runtime reproducibility diagnostics-hardening validation advances.
+- build/link/runtime reproducibility diagnostics hardening governance shall preserve explicit
+  lane-D dependency anchors (`M245-D006`) and fail closed on diagnostics hardening evidence drift
+  before runtime reproducibility recovery-and-determinism-hardening validation advances.
+- build/link/runtime reproducibility recovery and determinism hardening governance shall preserve explicit
+  lane-D dependency anchors (`M245-D007`) and fail closed on recovery and determinism hardening evidence drift
+  before runtime reproducibility conformance-matrix validation advances.
+- build/link/runtime reproducibility conformance matrix implementation governance shall preserve explicit
+  lane-D dependency anchors (`M245-D008`) and fail closed on conformance matrix evidence drift
+  before runtime reproducibility conformance-corpus expansion validation advances.
+- build/link/runtime reproducibility conformance corpus expansion governance shall preserve explicit
+  lane-D dependency anchors (`M245-D009`) and fail closed on conformance corpus evidence drift
+  before runtime reproducibility performance-and-quality-guardrails validation advances.
+- build/link/runtime reproducibility performance and quality guardrails governance shall preserve explicit
+  lane-D dependency anchors (`M245-D010`) and fail closed on performance and quality evidence drift
+  before runtime reproducibility cross-lane-integration-sync validation advances.
+- build/link/runtime reproducibility cross-lane integration sync governance shall preserve explicit
+  lane-D dependency anchors (`M245-D011`) and fail closed on cross-lane integration sync evidence drift
+  before runtime reproducibility docs-and-operator-runbook-synchronization validation advances.
+- build/link/runtime reproducibility docs and operator runbook synchronization governance shall preserve explicit
+  lane-D dependency anchors (`M245-D012`) and fail closed on docs and operator runbook synchronization evidence drift
+  before runtime reproducibility release-candidate-and-replay-dry-run validation advances.
+- build/link/runtime reproducibility release-candidate and replay dry-run governance shall preserve explicit
+  lane-D dependency anchors (`M245-D013`) and fail closed on release-candidate and replay dry-run evidence drift
+  before runtime reproducibility advanced-core-workpack validation advances.
+- build/link/runtime reproducibility advanced core workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D014`) and fail closed on advanced core workpack evidence drift
+  before runtime reproducibility advanced-edge-compatibility-workpack validation advances.
+- build/link/runtime reproducibility advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D015`) and fail closed on advanced edge compatibility evidence drift
+  before runtime reproducibility advanced-diagnostics-workpack validation advances.
+- build/link/runtime reproducibility advanced diagnostics workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D016`) and fail closed on advanced diagnostics evidence drift
+  before runtime reproducibility advanced-conformance-workpack validation advances.
+- build/link/runtime reproducibility advanced conformance workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D017`) and fail closed on advanced conformance evidence drift
+  before runtime reproducibility advanced-integration-workpack validation advances.
+- build/link/runtime reproducibility advanced integration workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D018`) and fail closed on advanced integration evidence drift
+  before runtime reproducibility advanced-performance-workpack validation advances.
+- build/link/runtime reproducibility advanced performance workpack (shard 1) governance shall preserve explicit
+  lane-D dependency anchors (`M245-D019`) and fail closed on advanced performance evidence drift
+  before runtime reproducibility milestone closeout validation advances.
+- portability gate/release checklist contract and architecture freeze wiring shall
+  preserve lane-E dependency freeze anchors (`M245-A001`, `M245-B001`,
+  `M245-C001`, and `M245-D001`) and fail closed on lane handoff drift.
+- portability gate/release checklist modular split/scaffolding wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E001`, `M245-A002`, `M245-B002`,
+  `M245-C002`, and `M245-D002`) and fail closed on modular split handoff drift.
+- portability gate/release checklist core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E002`, `M245-A001`, `M245-B001`,
+  `M245-C002`, and `M245-D002`) and fail closed on core-feature handoff drift.
+- portability gate/release checklist core feature expansion wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E003`, `M245-A002`, `M245-B002`,
+  `M245-C002`, and `M245-D003`) and fail closed on core-feature expansion
+  handoff drift.
+- portability gate/release checklist edge-case and compatibility completion wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E004`, `M245-A002`, `M245-B002`,
+  `M245-C003`, and `M245-D004`) and fail closed on edge-case and compatibility completion
+  handoff drift.
+- portability gate/release checklist edge-case expansion and robustness wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E005`, `M245-A002`, `M245-B003`,
+  `M245-C003`, and `M245-D004`) and fail closed on edge-case expansion and robustness
+  handoff drift.
+- portability gate/release checklist diagnostics hardening wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E006`, `M245-A003`, `M245-B003`,
+  `M245-C004`, and `M245-D005`) and fail closed on diagnostics hardening
+  handoff drift.
+- portability gate/release checklist recovery and determinism hardening wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E007`, `M245-A003`, `M245-B004`,
+  `M245-C004`, and `M245-D006`) and fail closed on recovery and determinism hardening
+  handoff drift.
+- portability gate/release checklist conformance matrix implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E008`, `M245-A003`, `M245-B004`,
+  `M245-C005`, and `M245-D007`) and fail closed on conformance matrix
+  handoff drift.
+- portability gate/release checklist conformance corpus expansion wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E009`, `M245-A004`, `M245-B004`,
+  `M245-C006`, and `M245-D007`) and fail closed on conformance corpus
+  handoff drift.
+- portability gate/release checklist performance and quality guardrails wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E010`, `M245-A004`, `M245-B005`,
+  `M245-C006`, and `M245-D008`) and fail closed on performance and quality
+  handoff drift.
+- portability gate/release checklist cross-lane integration sync wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E011`, `M245-A005`, `M245-B005`,
+  `M245-C007`, and `M245-D009`) and fail closed on cross-lane integration sync
+  handoff drift.
+- portability gate/release checklist docs and operator runbook synchronization wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E012`, `M245-A005`, `M245-B006`,
+  `M245-C007`, and `M245-D009`) and fail closed on docs and operator runbook
+  synchronization handoff drift.
+- portability gate/release checklist release-candidate and replay dry-run wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E013`, `M245-A005`, `M245-B006`,
+  `M245-C008`, and `M245-D010`) and fail closed on release-candidate and replay
+  dry-run handoff drift.
+- portability gate/release checklist advanced core workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E014`, `M245-A006`, `M245-B007`,
+  `M245-C008`, and `M245-D011`) and fail closed on advanced core workpack
+  handoff drift.
+- portability gate/release checklist advanced edge compatibility workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E015`, `M245-A006`, `M245-B007`,
+  `M245-C009`, and `M245-D012`) and fail closed on advanced edge compatibility
+  handoff drift.
+- portability gate/release checklist advanced diagnostics workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E016`, `M245-A006`, `M245-B008`,
+  `M245-C009`, and `M245-D012`) and fail closed on advanced diagnostics
+  handoff drift.
+- portability gate/release checklist advanced conformance workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E017`, `M245-A007`, `M245-B008`,
+  `M245-C010`, and `M245-D013`) and fail closed on advanced conformance
+  handoff drift.
+- portability gate/release checklist advanced integration workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E018`, `M245-A007`, `M245-B009`,
+  `M245-C010`, and `M245-D014`) and fail closed on advanced integration
+  handoff drift.
+- portability gate/release checklist advanced performance workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M245-E019`, `M245-A008`, `M245-B009`,
+  `M245-C011`, and `M245-D014`) and fail closed on advanced performance
+  handoff drift.
+- frontend optimization hint capture governance shall preserve explicit
+  deterministic lane-A parser/AST hint-capture anchors and fail closed on optimization hint drift
+  before optimizer pipeline integration and invariants validation advances.
+- frontend optimization hint capture modular split/scaffolding governance shall preserve explicit
+  lane-A dependency anchors (`M246-A001`) and fail closed on scaffolding evidence drift
+  before optimizer pipeline modular split/scaffolding advances.
+- semantic invariants for optimization legality governance shall preserve explicit
+  deterministic lane-B semantic legality anchors and fail closed on optimization legality drift
+  before optimizer pipeline integration and invariants validation advances.
+- semantic invariants for optimization legality modular split/scaffolding governance shall preserve explicit
+  lane-B dependency anchors (`M246-B001`) and fail closed on modular split handoff drift
+  before optimizer semantic legality scaffolding advances.
+- IR optimization pass wiring and validation governance shall preserve explicit
+  deterministic lane-C pass-wiring anchors and fail closed on optimizer IR validation drift
+  before optimizer pipeline integration and invariants validation advances.
+- IR optimization pass wiring and validation modular split/scaffolding governance shall preserve explicit
+  lane-C dependency anchors (`M246-C001`) and fail closed on modular split handoff drift
+  before optimizer pass-wiring scaffolding advances.
+- toolchain integration and optimization controls governance shall preserve explicit
+  deterministic lane-D control anchors and fail closed on toolchain optimization control drift
+  before optimizer pipeline integration and invariants validation advances.
+- optimization gate and perf evidence contract-freeze wiring shall preserve
+  explicit lane-E dependency anchors (`M246-A001`, `M246-B001`, `M246-C002`,
+  and `M246-D001`) and fail closed on contract-freeze handoff drift.
+- optimization gate and perf evidence modular split/scaffolding wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E001`, `M246-A002`, `M246-B002`,
+  `M246-C004`, and `M246-D002`) and fail closed on modular split handoff drift.
+- optimization gate and perf evidence core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E002`, `M246-A002`, `M246-B003`,
+  `M246-C005`, and `M246-D002`) and fail closed on core-feature handoff drift.
+- optimization gate and perf evidence core feature expansion wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E003`, `M246-A003`, `M246-B004`,
+  `M246-C007`, and `M246-D003`) and fail closed on expansion handoff drift.
+- optimization gate and perf evidence edge-case and compatibility completion wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E004`, `M246-A004`, `M246-B005`,
+  `M246-C009`, and `M246-D004`) and fail closed on compatibility-completion handoff drift.
+- optimization gate and perf evidence edge-case expansion and robustness wiring shall preserve
+  explicit lane-E dependency anchors (`M246-E005`, `M246-A005`, `M246-B006`,
+  `M246-C011`, and `M246-D005`) and fail closed on robustness handoff drift.
+- semantic compatibility and migration checks core feature implementation shall
+  preserve explicit lane-B dependency anchors (`M249-B002`) and fail closed on core-feature evidence drift
+  before semantic stability expansion validation advances.
+- replay harness/artifact governance shall preserve explicit lane-C artifact
+  replay anchors and fail closed on replay evidence drift before execution and
+  conformance replay validation advances.
+- replay harness/artifact modular split scaffolding shall preserve explicit
+  lane-C dependency anchors (`M248-C001`) and fail closed on modular split
+  evidence drift before replay readiness advances.
+- IR/object packaging and symbol policy governance shall preserve explicit
+  lane-C object packaging and symbol policy anchors and fail closed on
+  artifact packaging or symbol-policy drift before execution and conformance
+  replay validation advances.
+- IR/object packaging and symbol policy modular split/scaffolding shall preserve explicit
+  lane-C dependency anchors (`M249-C001`) and fail closed on modular split
+  evidence drift before execution and conformance replay validation advances.
+- IR/object packaging and symbol policy core feature implementation shall preserve explicit
+  lane-C dependency anchors (`M249-C001`, `M249-C002`) and fail closed on core-feature
+  evidence drift before execution and conformance replay validation advances.
+- installer/runtime operations and support tooling governance shall preserve
+  explicit lane-D installer/runtime operation anchors and fail closed on
+  support-tooling replay drift before architecture freeze readiness advances.
+- installer/runtime operations and support tooling modular split scaffolding shall
+  preserve explicit lane-D dependency anchors (`M249-D001`) and fail closed on
+  scaffolding evidence drift before architecture freeze readiness advances.
+- installer/runtime operations and support tooling core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M249-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
+- installer/runtime operations and support tooling core feature expansion shall
+  preserve explicit lane-D dependency anchors (`M249-D003`) and fail closed on
+  core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
+- runtime metadata and lookup plumbing governance shall preserve
+  explicit lane-D installer/runtime operation anchors and fail closed on
+  lookup-plumbing replay drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing modular split scaffolding shall
+  preserve explicit lane-D dependency anchors (`M233-D001`) and fail closed on
+  scaffolding evidence drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing core feature implementation shall
+  preserve explicit lane-D dependency anchors (`M233-D002`) and fail closed on
+  core-feature evidence drift before architecture freeze readiness advances.
+- runtime metadata and lookup plumbing core feature expansion shall
+  preserve explicit lane-D dependency anchors (`M233-D003`) and fail closed on
+  core-feature expansion evidence drift before edge-case compatibility completion readiness advances.
+- runtime metadata and lookup plumbing release-candidate replay dry-run governance shall preserve
+  explicit lane-D dependency anchors (`M233-D014`, `M233-D013`) and fail closed on
+  release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced core workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D015`, `M233-D014`) and fail closed on
+  advanced-core evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D016`, `M233-D015`) and fail closed on
+  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced diagnostics workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D017`, `M233-D016`) and fail closed on
+  advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced conformance workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D018`, `M233-D017`) and fail closed on
+  advanced conformance evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced integration workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D019`, `M233-D018`) and fail closed on
+  advanced integration evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced performance workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D020`, `M233-D019`) and fail closed on
+  advanced performance evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D022`, `M233-D021`) and fail closed on
+  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced diagnostics workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D023`, `M233-D022`) and fail closed on
+  advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced conformance workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D024`, `M233-D023`) and fail closed on
+  advanced conformance evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced integration workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D025`, `M233-D024`) and fail closed on
+  advanced integration evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced performance workpack (shard 2) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D026`, `M233-D025`) and fail closed on
+  advanced performance evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing advanced core workpack (shard 3) governance shall preserve
+  explicit lane-D dependency anchors (`M233-D027`, `M233-D026`) and fail closed on
+  advanced core evidence continuity drift before lane-D closeout readiness advances.
+- runtime metadata and lookup plumbing integration closeout and gate sign-off governance shall preserve
+  explicit lane-D dependency anchors (`M233-D028`, `M233-D027`) and fail closed on
+  integration-closeout evidence continuity drift before lane-D completion sign-off.
+- conformance corpus and gate closeout contract and architecture freeze wiring shall preserve
+  explicit lane-E dependency anchors (`M233-A001`, `M233-B001`, `M233-C001`, and
+  `M233-D002`) and fail closed on dependency tokens, package readiness hooks, or
+  lane-E conformance corpus and gate closeout evidence drift.
+- conformance corpus and gate closeout modular split/scaffolding wiring shall preserve
+  explicit lane-E dependency anchors (`M233-E001`, `M233-A001`, `M233-B002`,
+  `M233-C003`, and `M233-D003`) and fail closed on dependency tokens,
+  dependency-reference commands, or lane-E modular split/scaffolding evidence drift.
+- conformance corpus and gate closeout core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M233-E002`, `M233-A002`, `M233-B003`,
+  `M233-C004`, and `M233-D005`) and fail closed on dependency tokens,
+  dependency-reference commands, or lane-E core-feature evidence drift.
+- conformance corpus and gate closeout core feature expansion wiring shall preserve
+  explicit lane-E dependency anchors (`M233-E003`, `M233-A003`, `M233-B004`,
+  `M233-C005`, and `M233-D007`) and fail closed on dependency tokens,
+  dependency-reference commands, or lane-E core-feature expansion evidence drift.
+- installer/runtime operations and support tooling release-candidate replay dry-run governance shall preserve
+  explicit lane-D dependency anchors (`M249-D014`, `M249-D013`) and fail closed on
+  release/replay command sequencing or replay evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced core workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D015`, `M249-D014`) and fail closed on
+  advanced-core evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D016`, `M249-D015`) and fail closed on
+  advanced edge-compatibility evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced diagnostics workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D017`, `M249-D016`) and fail closed on
+  advanced diagnostics evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced conformance workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D018`, `M249-D017`) and fail closed on
+  advanced conformance evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling advanced integration workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M249-D019`, `M249-D018`) and fail closed on
+  advanced integration evidence continuity drift before lane-D closeout readiness advances.
+- installer/runtime operations and support tooling integration closeout and gate sign-off governance shall preserve
+  explicit lane-D dependency anchors (`M249-D020`, `M249-D019`) and fail closed on
+  integration closeout/sign-off evidence continuity drift before lane-D closeout readiness advances.
+- CLI/reporting and output contract integration governance shall preserve
+  explicit lane-D diagnostics UX and fix-it engine reporting anchors and fail
+  closed on summary payload, diagnostics artifact path, or stage-report output
+  contract drift before lane-E integration readiness advances.
+- CLI/reporting and output modular split scaffolding governance shall preserve
+  explicit lane-D dependency anchors (`M243-D001`) and fail closed on
+  scaffold key, summary mode, diagnostics schema, or stage-report output
+  contract drift before lane-E modular split readiness advances.
+- CLI/reporting and output core feature implementation governance shall preserve
+  explicit lane-D dependency anchors (`M243-D002`) and fail closed on
+  core-feature key continuity, diagnostics output path determinism, summary
+  output path determinism, or stage-report output contract drift before lane-E
+  core-feature readiness advances.
+- CLI/reporting and output core feature expansion governance shall preserve
+  explicit lane-D dependency anchors (`M243-D003`) and fail closed on
+  core-feature expansion key continuity, summary/diagnostics output payload
+  consistency, diagnostics emit-prefix filename contract continuity, or
+  stage-report output contract drift before lane-E core-feature expansion
+  readiness advances.
+- CLI/reporting and output edge-case compatibility completion governance shall preserve
+  explicit lane-D dependency anchors (`M243-D004`) and fail closed on
+  edge-case compatibility key continuity, case-folded output-path distinctness,
+  output-path control-character hygiene, or summary/diagnostics compatibility
+  contract drift before lane-E edge-case readiness advances.
+- CLI/reporting and output edge-case expansion and robustness governance shall preserve
+  explicit lane-D dependency anchors (`M243-D005`) and fail closed on
+  edge-case robustness key continuity, output-path length-budget continuity,
+  output-path trailing-space hygiene, or summary/diagnostics expansion
+  continuity drift before lane-E robustness readiness advances.
+- CLI/reporting and output recovery and determinism hardening governance shall preserve
+  explicit lane-D dependency anchors (`M243-D007`) and fail closed on
+  recovery/determinism key continuity, diagnostics-hardening continuity, or
+  summary/diagnostics output replay drift before lane-E recovery readiness
+  advances.
+- CLI/reporting and output conformance matrix implementation governance shall preserve
+  explicit lane-D dependency anchors (`M243-D008`) and fail closed on
+  conformance-matrix key continuity, recovery/determinism continuity, or
+  summary/diagnostics output contract drift before lane-E recovery readiness
+  advances.
+- CLI/reporting and output conformance corpus expansion governance shall preserve
+  explicit lane-D dependency anchors (`M243-D009`) and fail closed on
+  conformance-corpus key continuity, conformance-corpus case-accounting
+  continuity, or summary/diagnostics output contract drift before lane-E
+  recovery readiness advances.
+- CLI/reporting and output performance and quality guardrails governance shall preserve
+  explicit lane-D dependency anchors (`M243-D010`) and fail closed on
+  performance/quality guardrails consistency/readiness, guardrails-key
+  continuity, or summary/diagnostics output contract drift before lane-E
+  recovery readiness advances.
+- CLI/reporting and output cross-lane integration sync governance shall preserve
+  explicit lane-D dependency anchors (`M243-D011`) and fail closed on
+  cross-lane-integration-sync consistency/readiness,
+  cross-lane-integration-sync-key continuity, or summary/diagnostics output
+  contract drift before lane-E recovery readiness advances.
+- CLI/reporting and output docs and operator runbook synchronization governance shall preserve
+  explicit lane-D dependency anchors (`M243-D012`) and fail closed on
+  docs-runbook-synchronization consistency/readiness,
+  docs-runbook-synchronization-key continuity, or summary/diagnostics output
+  contract drift before lane-E recovery readiness advances.
+- release gate/docs/runbooks contract and architecture freeze wiring shall
+  preserve explicit lane-E dependency anchors (`M249-A001`, `M249-B001`,
+  `M249-C001`, `M249-D001`) and fail closed when dependency references,
+  docs/runbook evidence commands, or release gate readiness hooks drift.
+- release gate/docs/runbooks modular split/scaffolding wiring shall preserve
+  explicit lane-E dependency anchors (`M249-E001`, `M249-A002`, `M249-B002`,
+  `M249-C002`, and `M249-D002`) and fail closed when dependency references,
+  docs/runbook modular split/scaffolding evidence commands, or release gate
+  readiness hooks drift.
+- release gate/docs/runbooks core feature implementation wiring shall preserve
+  explicit lane-E dependency anchors (`M249-E002`, `M249-A003`, `M249-B003`,
+  `M249-C003`, and `M249-D003`) and fail closed when dependency references,
+  docs/runbook core-feature evidence commands, or release gate readiness hooks drift.
+- release gate/docs/runbooks advanced core workpack (shard 1) wiring shall preserve
+  explicit lane-E dependency anchors (`M249-E014`, `M249-A006`, `M249-B007`,
+  `M249-C008`, and `M249-D015`) and fail closed when dependency references,
+  docs/runbook advanced-core evidence commands, or release gate readiness hooks drift.
+- release gate/docs/runbooks advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E016`, `M249-E015`) and fail closed on
+  advanced edge-compatibility command sequencing, evidence-path continuity, or
+  release gate/docs/runbooks advanced edge-compatibility continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced diagnostics workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E017`, `M249-E016`, `M249-A007`, `M249-B008`,
+  `M249-C009`, and `M249-D017`) and fail closed on
+  advanced diagnostics command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced diagnostics continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced conformance workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E018`, `M249-E017`, `M249-A007`, `M249-B008`,
+  `M249-C009`, and `M249-D015`) and fail closed on
+  advanced conformance command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced conformance continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced integration workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E019`, `M249-E018`, `M249-A007`, `M249-B009`,
+  `M249-C010`, and `M249-D016`) and fail closed on
+  advanced integration command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced integration continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced performance workpack (shard 1) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E020`, `M249-E019`, `M249-A008`, `M249-B009`,
+  `M249-C010`, and `M249-D017`) and fail closed on
+  advanced performance command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced performance continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced core workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E021`, `M249-E020`, `M249-A008`, `M249-B010`,
+  `M249-C011`, and `M249-D018`) and fail closed on
+  advanced core (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced core (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced edge compatibility workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E022`, `M249-E021`, `M249-A008`, `M249-B010`,
+  `M249-C011`, and `M249-D018`) and fail closed on
+  advanced edge compatibility (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced edge compatibility (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks advanced diagnostics workpack (shard 2) governance shall preserve
+  explicit lane-E dependency anchors (`M249-E023`, `M249-E022`, `M249-A009`, `M249-B011`,
+  `M249-C012`, and `M249-D019`) and fail closed on
+  advanced diagnostics (shard 2) command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks advanced diagnostics (shard 2) continuity drift before lane-E readiness advances.
+- release gate/docs/runbooks integration closeout and gate signoff governance shall preserve
+  explicit lane-E dependency anchors (`M249-E024`, `M249-E023`, `M249-A009`, `M249-B011`,
+  `M249-C012`, and `M249-D020`) and fail closed on
+  integration closeout/gate-signoff command sequencing, dependency evidence continuity, or
+  release gate/docs/runbooks integration closeout/gate-signoff continuity drift before lane-E readiness advances.
+- diagnostics quality gate and replay policy wiring shall preserve explicit
+  lane-E dependency anchors (`M243-A001`, `M243-B001`, `M243-C001`, and
+  `M243-D001`) and fail closed when dependency references,
+  diagnostics/replay evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy modular split/scaffolding wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E001`, `M243-A001`, `M243-B001`, `M243-C001`, and
+  `M243-D001`) and fail closed when dependency references,
+  diagnostics/replay modular split evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy core feature implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and
+  `M243-D002`) and fail closed when dependency references,
+  diagnostics/replay core-feature evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy core feature expansion wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E003`, `M243-A004`, `M243-B004`, `M243-C003`, and
+  `M243-D003`) and fail closed when dependency references,
+  diagnostics/replay core-feature expansion evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy edge-case and compatibility completion wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E004`, `M243-A005`, `M243-B005`, `M243-C005`, and
+  `M243-D005`) and fail closed when dependency references,
+  diagnostics/replay edge-case compatibility evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy edge-case expansion and robustness wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E005`, `M243-A002`, `M243-B003`, `M243-C003`, and
+  `M243-D004`) and fail closed when dependency references,
+  diagnostics/replay edge-case expansion and robustness evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy diagnostics hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E006`, `M243-A003`, `M243-B003`, `M243-C004`, and
+  `M243-D005`) and fail closed when dependency references,
+  diagnostics/replay diagnostics hardening evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy recovery and determinism hardening wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and
+  `M243-D006`) and fail closed when dependency references,
+  diagnostics/replay recovery and determinism hardening evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy conformance matrix implementation wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E008`, `M243-A003`, `M243-B004`, `M243-C005`, and
+  `M243-D006`) and fail closed when dependency references,
+  diagnostics/replay conformance matrix implementation evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy conformance corpus expansion wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E009`, `M243-A004`, `M243-B005`, `M243-C005`, and
+  `M243-D007`) and fail closed when dependency references,
+  diagnostics/replay conformance corpus expansion evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy performance and quality guardrails wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E010`, `M243-A004`, `M243-B005`, `M243-C006`, and
+  `M243-D008`) and fail closed when dependency references,
+  diagnostics/replay performance and quality guardrail evidence commands, or lane-E readiness hooks drift.
+- diagnostics quality gate and replay policy cross-lane integration sync wiring shall preserve explicit
+  lane-E dependency anchors (`M243-E011`, `M243-A012`, `M243-B012`, `M243-C011`, and
+  `M243-D012`) and fail closed when dependency references,
+  diagnostics/replay cross-lane integration sync evidence commands, or lane-E readiness hooks drift.
+- lowering/runtime diagnostics surfacing modular split scaffolding shall
+  preserve explicit lane-C dependency anchors (`M243-C001`) and fail closed on
+  scaffolding evidence drift before diagnostics quality gate and replay policy
+  validation advances.
+- lowering/runtime diagnostics surfacing core feature implementation shall
+  preserve explicit lane-C dependency anchors (`M243-C002`) and fail closed on
+  core-feature evidence drift before diagnostics quality gate and replay policy
+  validation advances.
+- lowering/runtime diagnostics surfacing core feature expansion shall preserve
+  explicit lane-C dependency anchors (`M243-C003`) and fail closed on
+  core-feature expansion evidence drift before diagnostics quality gate and
+  replay policy validation advances.
+- lowering/runtime diagnostics surfacing edge-case compatibility completion shall preserve
+  explicit lane-C dependency anchors (`M243-C004`) and fail closed on
+  compatibility continuity, edge-case surface readiness, or replay-key
+  transport drift before diagnostics quality gate and replay policy validation
+  advances.
+- lowering/runtime diagnostics surfacing edge-case expansion and robustness shall preserve
+  explicit lane-C dependency anchors (`M243-C005`) and fail closed on
+  expansion consistency, robustness readiness, or robustness-key transport
+  drift before diagnostics quality gate and replay policy validation advances.
+- lowering/runtime diagnostics surfacing diagnostics hardening shall preserve
+  explicit lane-C dependency anchors (`M243-C006`) and fail closed on
+  diagnostics-hardening consistency, diagnostics-hardening readiness, or
+  diagnostics-hardening-key continuity drift before diagnostics quality gate
+  and replay policy validation advances.
+- lowering/runtime diagnostics surfacing recovery and determinism hardening shall preserve
+  explicit lane-C dependency anchors (`M243-C007`) and fail closed on
+  recovery-determinism consistency, recovery-determinism readiness, or
+  recovery-determinism-key continuity drift before diagnostics quality gate
+  and replay policy validation advances.
+- lowering/runtime diagnostics surfacing conformance matrix implementation shall preserve
+  explicit lane-C dependency anchors (`M243-C008`) and fail closed on
+  conformance-matrix consistency, conformance-matrix readiness, or
+  conformance-matrix-key continuity drift before diagnostics quality gate and
+  replay policy validation advances.
+- lowering/runtime diagnostics surfacing conformance corpus expansion shall preserve
+  explicit lane-C dependency anchors (`M243-C009`) and fail closed on
+  conformance-corpus consistency, conformance-corpus readiness, or
+  conformance-corpus-key continuity drift before diagnostics quality gate and
+  replay policy validation advances.
+- lowering/runtime diagnostics surfacing performance and quality guardrails shall preserve
+  explicit lane-C dependency anchors (`M243-C010`) and fail closed on
+  performance/quality guardrails consistency/readiness, guardrails-key
+  continuity, or diagnostics surfacing evidence contract drift before lane-C
+  readiness advances.
+- lowering/runtime diagnostics surfacing cross-lane integration sync shall preserve
+  explicit lane-C dependency anchors (`M243-C011`) and fail closed on
+  cross-lane-integration-sync consistency/readiness,
+  cross-lane-integration-sync-key continuity, or diagnostics surfacing
+  evidence contract drift before lane-C readiness advances.
+- diagnostic grammar hooks and source precision recovery and determinism
+  hardening shall preserve lane-A dependency anchors (`M243-A007`) and fail
+  closed on parser diagnostic grammar-hook recovery-determinism consistency,
+  readiness, or replay-key continuity drift before conformance matrix
+  expansions advance.
+- diagnostic grammar hooks and source precision performance and quality guardrails shall preserve lane-A dependency anchors (`M243-A010`)
+  and fail closed on readiness-chain continuity, architecture/spec anchor
+  continuity, or evidence-summary continuity drift before downstream lane-A
+  integration closures advance.
+- diagnostic grammar hooks and source precision integration closeout and gate sign-off shall preserve lane-A dependency anchors (`M243-A011`)
+  and fail closed on readiness-chain continuity, architecture/spec anchor
+  continuity, or sign-off evidence continuity drift before downstream lane-A
+  integration-closeout gates advance.
+- semantic diagnostic taxonomy and fix-it synthesis core feature implementation
+  shall preserve lane-B dependency anchors (`M243-B002`) and fail closed on
+  core-feature evidence drift before diagnostics hardening and conformance
+  expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis core feature expansion
+  shall preserve lane-B dependency anchors (`M243-B003`) and fail closed on
+  typed handoff-key continuity, replay-key readiness, or payload accounting
+  drift before diagnostics hardening and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis edge-case compatibility completion
+  shall preserve lane-B dependency anchors (`M243-B004`) and fail closed on
+  compatibility-handoff continuity, parse edge robustness continuity, or replay
+  determinism drift before diagnostics hardening and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis edge-case expansion and robustness
+  shall preserve lane-B dependency anchors (`M243-B005`) and fail closed on
+  edge-case expansion consistency, robustness readiness, or robustness-key
+  continuity drift before diagnostics hardening and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis diagnostics hardening
+  shall preserve lane-B dependency anchors (`M243-B006`) and fail closed on
+  diagnostics-hardening consistency, diagnostics-hardening readiness, or
+  diagnostics-hardening-key continuity drift before recovery and conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis recovery and determinism hardening
+  shall preserve lane-B dependency anchors (`M243-B007`) and fail closed on
+  recovery-determinism consistency, recovery-determinism readiness, or
+  recovery-determinism-key continuity drift before conformance expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis conformance corpus expansion
+  shall preserve lane-B dependency anchors (`M243-B009`) and fail closed on
+  conformance-corpus consistency, conformance-corpus readiness, or
+  conformance-corpus-key continuity drift before downstream lane-B guardrail
+  expansions advance.
+- semantic diagnostic taxonomy and fix-it synthesis performance and quality guardrails
+  shall preserve lane-B dependency anchors (`M243-B010`) and fail closed on
+  performance-quality-guardrails consistency, performance-quality-guardrails readiness,
+  or performance-quality-guardrails-key continuity drift before downstream lane-B
+  integration closures advance.
+- semantic diagnostic taxonomy and fix-it synthesis cross-lane integration sync
+  shall preserve lane-B dependency anchors (`M243-B011`) and fail closed on
+  cross-lane-integration-sync consistency, cross-lane-integration-sync readiness,
+  or cross-lane-integration-sync-key continuity drift before downstream lane-B
+  integration closures advance.
+- semantic diagnostic taxonomy and fix-it synthesis docs and operator runbook synchronization
+  shall preserve lane-B dependency anchors (`M243-B012`) and fail closed on
+  docs-runbook-synchronization consistency, docs-runbook-synchronization readiness,
+  or docs-runbook-synchronization-key continuity drift before downstream lane-B
+  integration closures advance.
+- semantic diagnostic taxonomy and fix-it synthesis integration closeout and gate sign-off
+  shall preserve lane-B dependency anchors (`M243-B013`) and fail closed on
+  integration-closeout consistency, integration-closeout readiness,
+  integration-closeout-signoff-key continuity, or downstream lane-B readiness
+  chain drift before cross-lane release integration advances.
+- runner/platform operations governance shall preserve explicit lane-D
+  compile-route anchors and fail closed on platform replay drift before
+  performance budget and execution replay validation advances.
+- runner/platform operations modular split scaffolding shall preserve explicit
+  lane-D dependency anchors (`M248-D001`) and fail closed on scaffolding
+  evidence drift before platform replay readiness advances.
+- runner/platform operations core feature implementation shall preserve
+  explicit lane-D dependency anchors (`M248-D002`) and fail closed on
+  nullable-tool-path safety drift before runner/platform lane-D readiness
+  advances.
+- runner/platform operations core feature expansion governance shall preserve explicit lane-D dependency anchors (`M248-D003`)
+  and fail closed on core-feature expansion evidence drift before downstream
+  platform replay and lane-e gate integration advances.
+- runner/platform operations edge-case and compatibility completion governance
+  shall preserve explicit lane-D dependency anchors (`M248-D004`) and fail
+  closed on compatibility completion evidence drift before downstream platform
+  replay and lane-e edge-case hardening advances.
+- runner/platform operations edge-case expansion and robustness governance
+  shall preserve explicit lane-D dependency anchors (`M248-D005`) and fail
+  closed on robustness expansion evidence drift before downstream platform
+  replay and lane-e diagnostics hardening advances.
+- runner/platform operations diagnostics hardening governance
+  shall preserve explicit lane-D dependency anchors (`M248-D006`) and fail
+  closed on diagnostics hardening evidence drift before downstream platform
+  replay and lane-e recovery and determinism hardening advances.
+- runner/platform operations recovery and determinism hardening governance
+  shall preserve explicit lane-D dependency anchors (`M248-D007`) and fail
+  closed on recovery and determinism hardening evidence drift before downstream
+  platform replay and lane-e conformance matrix advances.
+- runner/platform operations conformance matrix implementation governance
+  shall preserve explicit lane-D dependency anchors (`M248-D008`) and fail
+  closed on conformance matrix implementation evidence drift before downstream
+  platform replay and lane-e conformance corpus advances.
+- runner/platform operations conformance corpus expansion governance
+  shall preserve explicit lane-D dependency anchors (`M248-D009`) and fail
+  closed on conformance corpus expansion evidence drift before downstream
+  platform replay and lane-e performance guardrail advances.
+- runner/platform operations performance and quality guardrails governance
+  shall preserve explicit lane-D dependency anchors (`M248-D010`) and fail
+  closed on performance and quality guardrails evidence drift before downstream
+  platform replay and lane-e conformance matrix advances.
+- runner/platform operations cross-lane integration sync governance
+  shall preserve explicit lane-D dependency anchors (`M248-D011`) and fail
+  closed on cross-lane integration sync evidence drift before downstream
+  platform replay and lane-e conformance matrix advances.
+- runner/platform operations docs and operator runbook synchronization governance shall preserve
+  explicit lane-D dependency anchors (`M248-D012`) and fail closed on
+  docs/runbook synchronization evidence drift before downstream platform replay
+  and lane-e conformance matrix advances.
+- runner/platform operations release-candidate replay dry-run governance shall preserve
+  explicit lane-D dependency anchors (`M248-D013`) and fail closed on replay
+  dry-run evidence drift before downstream platform replay and lane-e
+  conformance matrix advances.
+- runner/platform operations advanced core workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M248-D014`) and fail closed on advanced
+  core evidence drift before downstream platform replay and lane-e conformance
+  matrix advances.
+- runner/platform operations advanced edge compatibility workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M248-D015`) and fail closed on advanced
+  edge compatibility evidence drift before downstream platform replay and lane-e
+  conformance matrix advances.
+- runner/platform operations advanced diagnostics workpack (shard 1) governance shall preserve
+  explicit lane-D dependency anchors (`M248-D016`) and fail closed on advanced
+  diagnostics evidence drift before downstream platform replay and lane-e
+  conformance matrix advances.
+
 ### C.3.1 Optional message send `[receiver? ...]` (normative) <a id="c-3-1"></a>
 
 Optional message send semantics are defined in [Part 3](#part-3). Conforming implementations shall lower:
@@ -1021,6 +2817,3885 @@ Implementations are encouraged to provide a conformance suite that includes:
 - correct argument evaluation semantics for optional sends,
 - `throws` propagation behavior in nested `do/catch`,
 - executor hop correctness and actor isolation enforcement across module boundaries.
+
+## C.12 Lane-C Edge-Case Compatibility Governance (implementation anchor) <a id="c-12"></a>
+
+typed sema-to-lowering edge-case and compatibility completion governance shall preserve explicit lane-C dependency anchors (`M227-C005`, `M227-C004`) so readiness stays deterministic and fail-closed when typed handoff and parse/lowering surfaces drift.
+
+typed sema-to-lowering edge-case expansion and robustness governance shall preserve explicit lane-C dependency anchors (`M227-C006`, `M227-C005`) so typed robustness and parse/lowering alignment stay deterministic and fail-closed when expansion continuity drifts.
+
+typed sema-to-lowering diagnostics hardening governance shall preserve explicit lane-C dependency anchors (`M227-C007`, `M227-C006`) so typed diagnostics-hardening and parse/lowering alignment stay deterministic and fail-closed when diagnostics continuity drifts.
+
+typed sema-to-lowering recovery and determinism hardening governance shall preserve explicit lane-C dependency anchors (`M227-C008`, `M227-C007`) so typed recovery/determinism and parse/lowering alignment stay deterministic and fail-closed when replay continuity drifts.
+
+typed sema-to-lowering conformance matrix implementation governance shall preserve explicit lane-C dependency anchors (`M227-C009`, `M227-C008`) so typed conformance-matrix and parse/lowering alignment stay deterministic and fail-closed when matrix continuity drifts.
+
+typed sema-to-lowering conformance corpus expansion governance shall preserve explicit lane-C dependency anchors (`M227-C010`, `M227-C009`) so typed conformance-corpus and parse/lowering alignment stay deterministic and fail-closed when corpus continuity drifts.
+
+typed sema-to-lowering performance/quality guardrails governance shall preserve explicit lane-C dependency anchors (`M227-C011`, `M227-C010`) so typed guardrail accounting and parse/lowering alignment stay deterministic and fail-closed when guardrail continuity drifts.
+
+typed sema-to-lowering cross-lane integration sync governance shall preserve explicit lane-C dependency anchors (`M227-C012`, `M227-C011`) so typed integration-sync continuity and parse/lowering alignment stay deterministic and fail-closed when cross-lane drift occurs.
+
+typed sema-to-lowering docs/runbook synchronization governance shall preserve explicit lane-C dependency anchors (`M227-C013`, `M227-C012`) so typed docs/runbook continuity and parse/lowering alignment stay deterministic and fail-closed when synchronization drift occurs.
+
+typed sema-to-lowering release-candidate and replay dry-run governance shall preserve explicit lane-C dependency anchors (`M227-C014`, `M227-C013`) so typed release-candidate/replay continuity and parse/lowering alignment stay deterministic and fail-closed when dry-run drift occurs.
+
+typed sema-to-lowering advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C015`, `M227-C014`) so typed advanced-core continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C016`, `M227-C015`) so typed advanced-edge compatibility continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C017`, `M227-C016`) so typed advanced-diagnostics continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C018`, `M227-C017`) so typed advanced-conformance continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced integration workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C019`, `M227-C018`) so typed advanced-integration continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced performance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M227-C020`, `M227-C019`) so typed advanced-performance continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced core workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C021`, `M227-C020`) so typed advanced-core-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced edge compatibility workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C022`, `M227-C021`) so typed advanced-edge-compatibility-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced diagnostics workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C023`, `M227-C022`) so typed advanced-diagnostics-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced conformance workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C024`, `M227-C023`) so typed advanced-conformance-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering advanced integration workpack (shard 2) governance shall preserve explicit lane-C dependency anchors (`M227-C025`, `M227-C024`) so typed advanced-integration-shard2 continuity and parse/lowering alignment stay deterministic and fail-closed when shard drift occurs.
+
+typed sema-to-lowering integration closeout and gate sign-off governance shall preserve explicit lane-C dependency anchors (`M227-C026`, `M227-C025`) so typed integration-closeout/sign-off continuity and parse/lowering alignment stay deterministic and fail-closed when sign-off drift occurs.
+
+message send lowering and call emission contract and architecture freeze governance shall preserve explicit lane-C dependency anchors (`M232-C001`) and fail closed on semantic-to-lowering handoff continuity, operator command sequencing, or architecture/spec anchor drift before lane-C expansion workpacks advance.
+
+message send lowering and call emission modular split and scaffolding governance shall preserve explicit lane-C dependency anchors (`M232-C002`, `M232-C001`) and fail closed on modular split/scaffolding continuity, operator command sequencing, or architecture/spec anchor drift before lane-C core-feature workpacks advance.
+
+message send lowering and call emission core feature implementation governance shall preserve explicit lane-C dependency anchors (`M232-C003`, `M232-C002`) and fail closed on core-feature continuity, operator command sequencing, or architecture/spec anchor drift before lane-C expansion workpacks advance.
+
+message send lowering and call emission core feature expansion governance shall preserve explicit lane-C dependency anchors (`M232-C004`, `M232-C003`) and fail closed on core-feature-expansion continuity, operator command sequencing, or architecture/spec anchor drift before lane-C edge-case workpacks advance.
+
+message send lowering and call emission edge-case and compatibility completion governance shall preserve explicit lane-C dependency anchors (`M232-C005`, `M232-C004`) and fail closed on edge-case/compatibility continuity, operator command sequencing, or architecture/spec anchor drift before lane-C robustness workpacks advance.
+
+message send lowering and call emission edge-case expansion and robustness governance shall preserve explicit lane-C dependency anchors (`M232-C006`, `M232-C005`) and fail closed on edge-case expansion/robustness continuity, operator command sequencing, or architecture/spec anchor drift before lane-C diagnostics workpacks advance.
+
+message send lowering and call emission diagnostics hardening governance shall preserve explicit lane-C dependency anchors (`M232-C007`, `M232-C006`) and fail closed on diagnostics-hardening continuity, operator command sequencing, or architecture/spec anchor drift before lane-C recovery workpacks advance.
+
+message send lowering and call emission recovery and determinism hardening governance shall preserve explicit lane-C dependency anchors (`M232-C008`, `M232-C007`) and fail closed on recovery/determinism-hardening continuity, operator command sequencing, or architecture/spec anchor drift before lane-C conformance workpacks advance.
+
+message send lowering and call emission conformance matrix implementation governance shall preserve explicit lane-C dependency anchors (`M232-C009`, `M232-C008`) and fail closed on conformance-matrix continuity, operator command sequencing, or architecture/spec anchor drift before lane-C corpus-expansion workpacks advance.
+
+message send lowering and call emission conformance corpus expansion governance shall preserve explicit lane-C dependency anchors (`M232-C010`, `M232-C009`) and fail closed on conformance-corpus continuity, operator command sequencing, or architecture/spec anchor drift before lane-C guardrail workpacks advance.
+
+message send lowering and call emission performance and quality guardrails governance shall preserve explicit lane-C dependency anchors (`M232-C011`, `M232-C010`) and fail closed on performance/quality continuity, operator command sequencing, or architecture/spec anchor drift before lane-C cross-lane sync workpacks advance.
+
+message send lowering and call emission cross-lane integration sync governance shall preserve explicit lane-C dependency anchors (`M232-C012`, `M232-C011`) and fail closed on cross-lane-sync continuity, operator command sequencing, or architecture/spec anchor drift before lane-C docs/runbook workpacks advance.
+
+message send lowering and call emission docs and operator runbook synchronization governance shall preserve explicit lane-C dependency anchors (`M232-C013`, `M232-C012`) and fail closed on docs/runbook synchronization continuity, operator command sequencing, or architecture/spec anchor drift before lane-C release-replay workpacks advance.
+
+message send lowering and call emission release-candidate and replay dry-run governance shall preserve explicit lane-C dependency anchors (`M232-C014`, `M232-C013`) and fail closed on release/replay continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced workpack stages advance.
+
+message send lowering and call emission advanced core workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C015`, `M232-C014`) and fail closed on advanced-core-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility stages advance.
+
+message send lowering and call emission advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C016`, `M232-C015`) and fail closed on advanced-edge-compatibility-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced edge-compatibility shard-2 stages advance.
+
+message send lowering and call emission advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C017`, `M232-C016`) and fail closed on advanced-diagnostics-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced diagnostics shard-2 stages advance.
+
+message send lowering and call emission advanced conformance workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C018`, `M232-C017`) and fail closed on advanced-conformance-shard1 continuity, operator command sequencing, or architecture/spec anchor drift before lane-C advanced conformance shard-2 stages advance.
+
+property conformance gate and docs contract and architecture freeze wiring shall preserve explicit lane-E dependency anchors (`M234-A001`, `M234-B001`, `M234-C001`, and `M234-D001`) and fail closed when lane-E contract-freeze dependency continuity drifts.
+
+property conformance gate and docs modular split/scaffolding wiring shall preserve explicit lane-E dependency anchors (`M234-E001`, `M234-A002`, `M234-B002`, `M234-C002`, and `M234-D002`) and fail closed when lane-E modular split/scaffolding dependency continuity drifts.
+
+property conformance gate and docs core feature implementation wiring shall preserve explicit lane-E dependency anchors (`M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`) and fail closed when lane-E core feature implementation dependency continuity drifts.
+
+property conformance gate and docs core feature expansion wiring shall preserve explicit lane-E dependency anchors (`M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`) and fail closed when lane-E core feature expansion dependency continuity drifts.
+
+class/protocol/category metadata generation governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on class/protocol/category metadata linkage drift before lane-A modular split/scaffolding workpacks advance.
+
+class/protocol/category metadata generation contract freeze shall preserve deterministic lane-A boundary anchors and fail closed on class/protocol/category metadata linkage drift, parser declaration continuity drift, or typed sema-to-lowering handoff drift before runtime ABI expansion stages advance.
+
+class/protocol/category metadata generation modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M229-A001`) and fail closed on scaffolding evidence drift before lane-A core feature implementation workpacks advance.
+
+class/protocol/category metadata generation core feature implementation governance shall preserve explicit lane-A dependency anchors (`M229-A002`) and fail closed on core-feature evidence drift before lane-A core-feature expansion workpacks advance.
+
+class/protocol/category metadata generation core feature expansion governance shall preserve explicit lane-A dependency anchors (`M229-A003`) and fail closed on core-feature-expansion evidence drift before lane-A edge-case and compatibility workpacks advance.
+
+conformance corpus governance and sharding contract-freeze governance shall preserve explicit lane-A deterministic boundary anchors (`M230-A001`) and fail closed on contract-freeze evidence drift before lane-A modular split/scaffolding workpacks advance.
+
+conformance corpus governance and sharding modular split/scaffolding governance shall preserve explicit lane-A dependency anchors (`M230-A001`) and fail closed on scaffolding evidence drift before lane-A core feature implementation workpacks advance.
+
+conformance corpus governance and sharding core feature implementation governance shall preserve explicit lane-A dependency anchors (`M230-A002`) and fail closed on core-feature evidence drift before lane-A core-feature expansion workpacks advance.
+
+conformance corpus governance and sharding core feature expansion governance shall preserve explicit lane-A dependency anchors (`M230-A003`) and fail closed on core-feature-expansion evidence drift before lane-A edge-case and compatibility workpacks advance.
+
+conformance corpus governance and sharding edge-case and compatibility completion governance shall preserve explicit lane-A dependency anchors (`M230-A004`) and fail closed on edge-case-and-compatibility-completion evidence drift before lane-A robustness workpacks advance.
+
+conformance corpus governance and sharding edge-case expansion and robustness governance shall preserve explicit
+lane-A dependency anchors (`M230-A005`) and fail closed on edge-case-expansion-and-robustness evidence drift
+
+
+conformance corpus governance and sharding diagnostics hardening governance shall preserve explicit
+lane-A dependency anchors (`M230-A006`) and fail closed on diagnostics-hardening evidence drift
+
+
+conformance corpus governance and sharding recovery and determinism hardening governance shall preserve explicit
+lane-A dependency anchors (`M230-A007`) and fail closed on recovery-and-determinism-hardening evidence drift
+
+
+conformance corpus governance and sharding conformance matrix implementation governance shall preserve explicit
+lane-A dependency anchors (`M230-A008`) and fail closed on conformance-matrix-implementation evidence drift
+
+
+conformance corpus governance and sharding conformance corpus expansion governance shall preserve explicit
+lane-A dependency anchors (`M230-A009`) and fail closed on conformance-corpus-expansion evidence drift
+
+
+conformance corpus governance and sharding performance and quality guardrails governance shall preserve explicit
+lane-A dependency anchors (`M230-A010`) and fail closed on performance-and-quality-guardrails evidence drift
+
+
+conformance corpus governance and sharding integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M230-A011`) and fail closed on integration-closeout-and-gate-sign-off evidence drift
+
+
+declaration grammar expansion and normalization contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M231-A001`) and fail closed on contract-freeze evidence drift
+
+
+declaration grammar expansion and normalization modular split/scaffolding governance shall preserve explicit
+lane-A dependency anchors (`M231-A001`) and fail closed on scaffolding evidence drift
+
+
+declaration grammar expansion and normalization core feature implementation governance shall preserve explicit
+lane-A dependency anchors (`M231-A002`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization core feature expansion governance shall preserve explicit
+lane-A dependency anchors (`M231-A003`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization edge-case and compatibility completion governance shall preserve explicit
+lane-A dependency anchors (`M231-A004`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization edge-case expansion and robustness governance shall preserve explicit
+lane-A dependency anchors (`M231-A005`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization diagnostics hardening governance shall preserve explicit
+lane-A dependency anchors (`M231-A006`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization recovery and determinism hardening governance shall preserve explicit
+lane-A dependency anchors (`M231-A007`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization conformance matrix implementation governance shall preserve explicit
+lane-A dependency anchors (`M231-A008`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization conformance corpus expansion governance shall preserve explicit
+lane-A dependency anchors (`M231-A009`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization performance and quality guardrails governance shall preserve explicit
+lane-A dependency anchors (`M231-A010`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization cross-lane integration sync governance shall preserve explicit
+lane-A dependency anchors (`M231-A011`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization docs and operator runbook synchronization governance shall preserve explicit
+lane-A dependency anchors (`M231-A012`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization release-candidate and replay dry-run governance shall preserve explicit
+lane-A dependency anchors (`M231-A013`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced core workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A014`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A015`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced diagnostics workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A016`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced conformance workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A017`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced integration workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A018`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced performance workpack (shard 1) governance shall preserve explicit
+lane-A dependency anchors (`M231-A019`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization advanced core workpack (shard 2) governance shall preserve explicit
+lane-A dependency anchors (`M231-A020`) and fail closed on core-feature evidence drift
+
+
+declaration grammar expansion and normalization integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M231-A021`) and fail closed on core-feature evidence drift
+
+
+message expression grammar and selector forms contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M232-A001`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A002`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A003`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A004`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A005`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A006`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A007`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A008`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A009`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A010`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A011`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A012`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A013`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A014`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A015`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M232-A016`) and fail closed on contract-freeze evidence drift
+
+
+message send lowering and call emission advanced integration workpack (shard 1) governance shall preserve explicit lane-C dependency anchors (`M232-C019`, `M232-C018`)
+
+
+message send lowering and call emission integration closeout and gate sign-off governance shall preserve explicit lane-C dependency anchors (`M232-C020`, `M232-C019`)
+
+
+runtime selector binding integration contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M232-D001`) and fail closed on contract-freeze evidence drift
+
+lane-D deterministic boundary anchors (`M232-D002`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D003`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D004`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D005`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D006`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D007`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D008`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M232-D009`) and fail closed on contract-freeze evidence drift
+
+
+message semantics gate and replay evidence contract-freeze governance shall preserve explicit
+lane-E deterministic boundary anchors (`M232-E001`) and fail closed on contract-freeze evidence drift
+
+lane-E deterministic boundary anchors (`M232-E002`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E003`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E004`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E005`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E006`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E007`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E008`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E009`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E010`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E011`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E012`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E013`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E014`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M232-E015`) and fail closed on contract-freeze evidence drift
+
+
+method lookup and overload semantics contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M232-B001`) and fail closed on contract-freeze evidence drift
+
+lane-B deterministic boundary anchors (`M232-B002`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B015`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B016`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B017`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B018`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B019`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B020`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B021`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B022`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B023`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B024`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B025`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B026`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B027`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B028`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B029`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M232-B030`) and fail closed on contract-freeze evidence drift
+
+
+preprocessor semantic model and expansion rules contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M242-B008`) and fail closed on contract-freeze evidence drift
+
+
+protocol/category grammar and AST shape contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M233-A001`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A002`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A003`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A004`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A005`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A006`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A007`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A008`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A009`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A010`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A011`) and fail closed on contract-freeze evidence drift
+
+
+lane-A deterministic boundary anchors (`M233-A012`) and fail closed on contract-freeze evidence drift
+
+
+conformance checking and diagnostics contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M233-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B002`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B015`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B016`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M233-B017`) and fail closed on contract-freeze evidence drift
+
+
+lowering of protocol/category artifacts contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M233-C001`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C002`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C003`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C004`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C005`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C006`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C007`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C008`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C009`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C010`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C011`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C012`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C013`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C014`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C015`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C016`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C017`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C018`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C019`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C020`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C021`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M233-C022`) and fail closed on contract-freeze evidence drift
+
+
+semantic flow analysis and invariants contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M239-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B015`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B016`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B017`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B018`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M239-B019`) and fail closed on contract-freeze evidence drift
+
+
+IR-emission advanced performance workpack (shard 1) governance shall
+
+
+lane-C dependency anchors (`M228-C020`, `M228-C019`)
+
+
+IR-emission advanced core workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C021`, `M228-C020`)
+
+
+IR-emission advanced edge compatibility workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C022`, `M228-C021`)
+
+
+IR-emission advanced diagnostics workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C023`, `M228-C022`)
+
+
+IR-emission advanced conformance workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C024`, `M228-C023`)
+
+
+IR-emission advanced integration workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C025`, `M228-C024`)
+
+
+IR-emission advanced performance workpack (shard 2) governance shall
+
+
+lane-C dependency anchors (`M228-C026`, `M228-C025`)
+
+
+IR-emission advanced core workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C027`, `M228-C026`)
+
+
+IR-emission advanced edge compatibility workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C028`, `M228-C027`)
+
+
+IR-emission advanced diagnostics workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C029`, `M228-C028`)
+
+
+IR-emission advanced conformance workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C030`, `M228-C029`)
+
+
+IR-emission advanced integration workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C031`, `M228-C030`)
+
+
+IR-emission advanced performance workpack (shard 3) governance shall
+
+
+lane-C dependency anchors (`M228-C032`, `M228-C031`)
+
+
+IR-emission advanced core workpack (shard 4) governance shall
+
+
+lane-C dependency anchors (`M228-C033`, `M228-C032`)
+
+
+IR-emission advanced edge compatibility workpack (shard 4) governance shall
+
+
+lane-C dependency anchors (`M228-C034`, `M228-C033`)
+
+
+IR-emission advanced diagnostics workpack (shard 4) governance shall
+
+
+lane-C dependency anchors (`M228-C035`, `M228-C034`)
+
+
+IR-emission advanced conformance workpack (shard 4) governance shall
+
+
+lane-C dependency anchors (`M228-C036`, `M228-C035`)
+
+
+IR-emission advanced integration workpack (shard 4) governance shall
+
+
+lane-C dependency anchors (`M228-C037`, `M228-C036`)
+
+
+IR-emission integration closeout and gate sign-off governance shall
+
+
+lane-C dependency anchors (`M228-C038`, `M228-C037`)
+
+
+toolchain/runtime cross-lane integration sync shall remain
+
+
+
+toolchain/runtime docs and operator runbook synchronization shall remain
+
+
+
+toolchain/runtime release-candidate and replay dry-run shall remain
+
+
+
+toolchain/runtime advanced core workpack (shard 1) shall remain
+
+
+
+toolchain/runtime integration closeout and gate sign-off shall remain
+
+
+
+replay-proof/performance conformance corpus expansion closeout wiring
+
+
+
+replay-proof/performance performance and quality guardrails closeout wiring
+
+
+
+replay-proof/performance cross-lane integration sync closeout wiring
+
+
+
+replay-proof/performance docs and operator runbook synchronization closeout wiring
+
+
+
+replay-proof/performance release-candidate and replay dry-run closeout wiring
+
+
+
+replay-proof/performance advanced core workpack (shard 1) closeout wiring
+
+
+
+replay-proof/performance advanced edge compatibility workpack (shard 1) closeout wiring
+
+
+
+replay-proof/performance advanced diagnostics workpack (shard 1) closeout wiring
+
+
+
+replay-proof/performance advanced conformance workpack (shard 1) closeout wiring
+
+
+
+replay-proof/performance advanced integration workpack (shard 1) closeout wiring
+
+
+
+replay-proof/performance integration closeout and gate sign-off closeout wiring
+
+
+
+class/protocol/category metadata generation edge-case and compatibility completion governance shall preserve explicit
+lane-A dependency anchors (`M229-A004`) and fail closed on edge-case-and-compatibility-completion evidence drift
+
+
+class/protocol/category metadata generation edge-case expansion and robustness governance shall preserve explicit
+lane-A dependency anchors (`M229-A005`) and fail closed on edge-case-expansion-and-robustness evidence drift
+
+
+class/protocol/category metadata generation diagnostics hardening governance shall preserve explicit
+lane-A dependency anchors (`M229-A006`) and fail closed on diagnostics-hardening evidence drift
+
+
+class/protocol/category metadata generation recovery and determinism hardening governance shall preserve explicit
+lane-A dependency anchors (`M229-A007`) and fail closed on recovery-and-determinism-hardening evidence drift
+
+
+class/protocol/category metadata generation conformance matrix implementation governance shall preserve explicit
+lane-A dependency anchors (`M229-A008`) and fail closed on conformance-matrix-implementation evidence drift
+
+
+class/protocol/category metadata generation conformance corpus expansion governance shall preserve explicit
+lane-A dependency anchors (`M229-A009`) and fail closed on conformance-corpus-expansion evidence drift
+
+
+class/protocol/category metadata generation integration closeout and gate sign-off governance shall preserve explicit
+lane-A dependency anchors (`M229-A010`) and fail closed on integration-closeout-and-gate-sign-off evidence drift
+
+
+dispatch ABI and selector resolution contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M229-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B002`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B015`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B016`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M229-B017`) and fail closed on contract-freeze evidence drift
+
+
+interop boundary ABI handling contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M229-C001`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C002`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C003`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C004`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C005`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C006`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C007`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C008`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C009`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C010`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C011`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C012`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C013`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C014`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C015`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C016`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C017`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C018`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C019`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C020`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C021`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M229-C022`) and fail closed on contract-freeze evidence drift
+
+
+packaging and runtime launch ergonomics contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M229-D001`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D002`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D003`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D004`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D005`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D006`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D007`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D008`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D009`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D010`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D011`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D012`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D013`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D014`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D015`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D016`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D017`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D018`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D019`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D020`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D021`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D022`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D023`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D024`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D025`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D026`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M229-D027`) and fail closed on contract-freeze evidence drift
+
+
+runtime release gate and operational docs contract-freeze governance shall preserve explicit
+lane-E deterministic boundary anchors (`M229-E001`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E002`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E003`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E004`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E005`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E006`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E007`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E008`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E009`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E010`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E011`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E012`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E013`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E014`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E015`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E016`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M229-E017`) and fail closed on contract-freeze evidence drift
+
+
+CI matrix simplification and flake elimination contract-freeze governance shall preserve explicit
+lane-A deterministic boundary anchors (`M230-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B002`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M230-B015`) and fail closed on contract-freeze evidence drift
+
+
+Documentation generation as source-of-truth contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M230-C001`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C002`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C003`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C004`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C005`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C006`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C007`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C008`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C009`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C010`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C011`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C012`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C013`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C014`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C015`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C016`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C017`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M230-C018`) and fail closed on contract-freeze evidence drift
+
+
+Developer CLI and diagnostics ergonomics contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M230-D001`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D002`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D003`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D004`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D005`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D006`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D007`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D008`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D009`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D010`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D011`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D012`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D013`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D014`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D015`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D016`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D017`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D018`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D019`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D020`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D021`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M230-D022`) and fail closed on contract-freeze evidence drift
+
+
+Program control and release readiness governance contract-freeze governance shall preserve explicit
+lane-E deterministic boundary anchors (`M230-E001`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E002`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E003`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E004`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E005`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E006`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E007`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E008`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E009`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E010`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E011`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E012`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E013`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E014`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E015`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E016`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E017`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E018`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E019`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E020`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E021`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E022`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E023`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E024`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E025`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E026`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E027`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E028`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E029`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E030`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M230-E031`) and fail closed on contract-freeze evidence drift
+
+
+Declaration semantic validation rules contract-freeze governance shall preserve explicit
+lane-B deterministic boundary anchors (`M231-B001`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B002`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B003`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B004`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B005`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B006`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B007`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B008`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B014`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B015`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B016`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M231-B017`) and fail closed on contract-freeze evidence drift
+
+
+Declaration lowering contract updates contract-freeze governance shall preserve explicit
+lane-C deterministic boundary anchors (`M231-C001`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C002`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C003`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C004`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C005`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C006`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C007`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C008`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C009`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C010`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C011`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C012`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C013`) and fail closed on contract-freeze evidence drift
+
+
+lane-C deterministic boundary anchors (`M231-C014`) and fail closed on contract-freeze evidence drift
+
+
+Frontend/runtime declaration metadata linkage contract-freeze governance shall preserve explicit
+lane-D deterministic boundary anchors (`M231-D001`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D002`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D003`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D004`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D005`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D006`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D007`) and fail closed on contract-freeze evidence drift
+
+
+lane-D deterministic boundary anchors (`M231-D008`) and fail closed on contract-freeze evidence drift
+
+
+Declaration coverage gate and docs contract-freeze governance shall preserve explicit
+lane-E deterministic boundary anchors (`M231-E001`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E002`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E003`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E004`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E005`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E006`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E007`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E008`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E009`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E010`) and fail closed on contract-freeze evidence drift
+
+
+lane-E deterministic boundary anchors (`M231-E011`) and fail closed on contract-freeze evidence drift
+
+
+property semantic rules and synthesis analysis governance shall preserve
+deterministic lane-B boundary anchors and fail closed on property/ivar semantics drift
+
+
+qualified type lowering and ABI representation edge-case expansion and robustness governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C005`) and fail closed on edge-case expansion and robustness evidence drift
+
+
+qualified type lowering and ABI representation Edge-case expansion and robustness governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C005`) and fail closed on Edge-case expansion and robustness evidence drift
+
+
+qualified type lowering and ABI representation diagnostics hardening governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C006`) and fail closed on diagnostics hardening evidence drift
+
+
+qualified type lowering and ABI representation recovery and determinism hardening governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C007`) and fail closed on recovery and determinism hardening evidence drift
+
+
+qualified type lowering and ABI representation conformance matrix implementation governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C008`) and fail closed on conformance matrix implementation evidence drift
+
+
+qualified type lowering and ABI representation conformance corpus expansion governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C009`) and fail closed on conformance corpus expansion evidence drift
+
+
+qualified type lowering and ABI representation performance and quality guardrails governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C010`) and fail closed on performance and quality guardrails evidence drift
+
+
+qualified type lowering and ABI representation cross-lane integration sync governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C011`) and fail closed on cross-lane integration sync evidence drift
+
+
+qualified type lowering and ABI representation docs and operator runbook synchronization governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C012`) and fail closed on docs and operator runbook synchronization evidence drift
+
+
+qualified type lowering and ABI representation release-candidate and replay dry-run governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C013`) and fail closed on release-candidate and replay dry-run evidence drift
+
+
+qualified type lowering and ABI representation advanced core workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C014`) and fail closed on advanced core workpack (shard 1) evidence drift
+
+
+qualified type lowering and ABI representation advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C015`) and fail closed on advanced edge compatibility workpack (shard 1) evidence drift
+
+
+qualified type lowering and ABI representation advanced diagnostics workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C016`) and fail closed on advanced diagnostics workpack (shard 1) evidence drift
+
+
+qualified type lowering and ABI representation advanced conformance workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C017`) and fail closed on advanced conformance workpack (shard 1) evidence drift
+
+
+qualified type lowering and ABI representation advanced integration workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C018`) and fail closed on advanced integration workpack (shard 1) evidence drift
+
+
+qualified type lowering and ABI representation integration closeout and gate sign-off governance shall preserve explicit
+
+lane-C dependency anchors (`M235-C019`) and fail closed on integration closeout and gate sign-off evidence drift
+
+
+interop behavior for qualified generic APIs edge-case and compatibility completion governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D004`) and fail closed on edge-case and compatibility completion interop evidence drift
+
+
+interop behavior for qualified generic APIs edge-case expansion and robustness governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D005`) and fail closed on edge-case expansion and robustness interop evidence drift
+
+
+interop behavior for qualified generic APIs diagnostics hardening governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D006`) and fail closed on diagnostics hardening interop evidence drift
+
+
+interop behavior for qualified generic APIs recovery and determinism hardening governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D007`) and fail closed on recovery and determinism hardening interop evidence drift
+
+
+interop behavior for qualified generic APIs integration closeout and gate sign-off governance shall preserve explicit
+
+lane-D dependency anchors (`M235-D008`) and fail closed on integration closeout and gate sign-off interop evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B009`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B010`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B011`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B012`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B013`) and fail closed on contract-freeze evidence drift
+
+
+lane-B deterministic boundary anchors (`M242-B014`) and fail closed on contract-freeze evidence drift
+
+
+lowering/runtime diagnostics surfacing docs and operator runbook synchronization shall preserve
+
+lane-C dependency anchors (`M243-C012`)
+
+
+lowering/runtime diagnostics surfacing release-candidate and replay dry-run shall preserve
+
+lane-C dependency anchors (`M243-C013`)
+
+
+lowering/runtime diagnostics surfacing advanced core workpack (shard 1) shall preserve
+
+lane-C dependency anchors (`M243-C014`)
+
+
+lowering/runtime diagnostics surfacing advanced edge compatibility workpack (shard 1) shall preserve
+
+lane-C dependency anchors (`M243-C015`)
+
+
+lowering/runtime diagnostics surfacing integration closeout and gate sign-off shall preserve
+
+lane-C dependency anchors (`M243-C016`)
+
+
+CLI/reporting and output release-candidate and replay dry-run governance shall preserve
+
+
+CLI/reporting and output advanced core workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced edge compatibility workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced diagnostics workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced conformance workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced integration workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced performance workpack (shard 1) governance shall preserve
+
+
+CLI/reporting and output advanced core workpack (shard 2) governance shall preserve
+
+
+CLI/reporting and output integration closeout and gate sign-off governance shall preserve
+
+
+diagnostics quality gate and replay policy docs and operator runbook synchronization wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E012`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy release-candidate and replay dry-run wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E013`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced core workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E014`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E015`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced diagnostics workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E016`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced conformance workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E017`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced integration workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E018`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced performance workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E019`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced core workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E020`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E021`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced diagnostics workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E022`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced conformance workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E023`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced integration workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E024`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced performance workpack (shard 2) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E025`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced core workpack (shard 3) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E026`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 3) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E027`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced diagnostics workpack (shard 3) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E028`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy advanced conformance workpack (shard 3) wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E029`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+diagnostics quality gate and replay policy integration closeout and gate sign-off wiring shall preserve explicit
+
+lane-E dependency anchors (`M243-E030`, `M243-A012`, `M243-B012`, `M243-C011`, and
+
+
+interop semantic/type mediation advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+
+lane-B dependency anchor (`M244-B015`)
+
+
+interop semantic/type mediation advanced diagnostics workpack (shard 1) governance shall preserve explicit
+
+lane-B dependency anchor (`M244-B016`)
+
+
+interop semantic/type mediation advanced conformance workpack (shard 1) governance shall preserve explicit
+
+lane-B dependency anchor (`M244-B017`)
+
+
+interop semantic/type mediation integration closeout and gate sign-off governance shall preserve explicit
+
+lane-B dependency anchor (`M244-B018`)
+
+
+interop lowering and ABI conformance advanced core workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C014`)
+
+
+interop lowering and ABI conformance advanced edge compatibility workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C015`)
+
+
+interop lowering and ABI conformance advanced diagnostics workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C016`)
+
+
+interop lowering and ABI conformance advanced conformance workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C017`)
+
+
+interop lowering and ABI conformance advanced integration workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C018`)
+
+
+interop lowering and ABI conformance advanced performance workpack (shard 1) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C019`)
+
+
+interop lowering and ABI conformance advanced core workpack (shard 2) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C020`)
+
+
+interop lowering and ABI conformance advanced edge compatibility workpack (shard 2) governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C021`)
+
+
+interop lowering and ABI conformance integration closeout and gate sign-off governance shall preserve explicit
+
+lane-C dependency anchor (`M244-C022`)
+
+
+runtime/link bridge-path conformance matrix implementation governance shall preserve explicit lane-D dependency anchors (`M244-D008`)
+
+conformance matrix implementation evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path conformance corpus expansion governance shall preserve explicit lane-D dependency anchors (`M244-D009`)
+
+conformance corpus expansion evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path performance and quality guardrails governance shall preserve explicit lane-D dependency anchors (`M244-D010`)
+
+performance and quality guardrails evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path cross-lane integration sync governance shall preserve explicit lane-D dependency anchors (`M244-D011`)
+
+cross-lane integration sync evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path docs and operator runbook synchronization governance shall preserve explicit lane-D dependency anchors (`M244-D012`)
+
+docs and operator runbook synchronization evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path release-candidate and replay dry-run governance shall preserve explicit lane-D dependency anchors (`M244-D013`)
+
+release-candidate and replay dry-run evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced core workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D014`)
+
+advanced core workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced edge compatibility workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D015`)
+
+advanced edge compatibility workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced diagnostics workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D016`)
+
+advanced diagnostics workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced conformance workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D017`)
+
+advanced conformance workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced integration workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D018`)
+
+advanced integration workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced performance workpack (shard 1) governance shall preserve explicit lane-D dependency anchors (`M244-D019`)
+
+advanced performance workpack (shard 1) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path advanced core workpack (shard 2) governance shall preserve explicit lane-D dependency anchors (`M244-D020`)
+
+advanced core workpack (shard 2) evidence drift before downstream runtime projection and metadata integration advances.
+
+
+runtime/link bridge-path integration closeout and gate sign-off governance shall preserve explicit lane-D dependency anchors (`M244-D021`)
+
+integration closeout and gate sign-off evidence drift before downstream runtime projection and metadata integration advances.
+
+
+interop conformance gate and operations conformance corpus expansion wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E009`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D conformance corpus expansion readiness hooks
+
+or lane-E conformance corpus expansion readiness hooks drift.
+
+
+interop conformance gate and operations performance and quality guardrails wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E010`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D performance and quality guardrails readiness hooks
+
+or lane-E performance and quality guardrails readiness hooks drift.
+
+
+interop conformance gate and operations cross-lane integration sync wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E011`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D cross-lane integration sync readiness hooks
+
+or lane-E cross-lane integration sync readiness hooks drift.
+
+
+interop conformance gate and operations docs and operator runbook synchronization wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E012`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D docs and operator runbook synchronization readiness hooks
+
+or lane-E docs and operator runbook synchronization readiness hooks drift.
+
+
+interop conformance gate and operations release-candidate and replay dry-run wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E013`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D release-candidate and replay dry-run readiness hooks
+
+or lane-E release-candidate and replay dry-run readiness hooks drift.
+
+
+interop conformance gate and operations advanced core workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E014`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D advanced core workpack (shard 1) readiness hooks
+
+or lane-E advanced core workpack (shard 1) readiness hooks drift.
+
+
+interop conformance gate and operations advanced edge compatibility workpack (shard 1) wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E015`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D advanced edge compatibility workpack (shard 1) readiness hooks
+
+or lane-E advanced edge compatibility workpack (shard 1) readiness hooks drift.
+
+
+interop conformance gate and operations integration closeout and gate sign-off wiring shall preserve explicit
+
+lane-E dependency anchors (`M244-E016`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`)
+
+preserve `npm run --if-present` dependency-reference continuity for lane-B/C/D integration closeout and gate sign-off readiness hooks
+
+or lane-E integration closeout and gate sign-off readiness hooks drift.
+
+## M251 runtime metadata source ownership freeze (A001)
+
+Runtime metadata source ownership governance shall preserve deterministic
+lane-A boundary anchors and fail closed on runtime metadata source drift before
+native metadata section emission begins.
+
+The canonical freeze for `M251-A001` is:
+
+- contract id: `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
+- canonical source schema: `objc3-runtime-metadata-source-boundary-v1`
+- class records remain frontend-owned through
+  `Objc3InterfaceDecl` / `Objc3ImplementationDecl`
+- protocol records remain frontend-owned through `Objc3ProtocolDecl`
+- category records remain frontend-owned through category-bearing interface /
+  implementation declarations
+- property and method records remain frontend-owned through
+  `Objc3PropertyDecl` / `Objc3MethodDecl`
+- ivar records remain frontend-owned through property-synthesis ivar binding
+  symbols until native ivar declaration extraction exists
+
+For `M251-A001`, lowering/runtime must treat the emitted boundary as authoritative
+ownership evidence while runtime metadata source records remain not yet ready
+for lowering and the test shim topology remains explicitly non-production.
+
+## M251 runtime metadata source record extraction (A002)
+
+Lane-A runtime metadata extraction shall preserve
+`Objc3RuntimeMetadataSourceRecordSet` as the canonical frontend handoff for
+runtime-owned declaration packets.
+
+`M251-A002` requires:
+
+- deterministic lexicographic vectors for class, protocol, category, property,
+  method, and ivar source records,
+- category owner-name normalization as `Class(Category)`,
+- manifest projection sourced from the extracted record set rather than
+  count-only sema/type summaries,
+- frontend C API runner proof that declaration fixtures stay lex/parse/sema
+  clean before any downstream emit gate is considered.
+
+Current emit-only downstream `O3L300` remains acceptable during `M251-A002`
+because `M251-A003` is responsible for carrying runtime record projection
+through manifest-oriented lowering/emit boundaries.
+
+## M251 runtime record manifest handoff normalization (A003)
+
+Lane-A manifest projection shall preserve runtime-record handoff availability
+before later LLVM IR/object fail-closed diagnostics are surfaced.
+
+`M251-A003` requires:
+
+- explicit frontend emit intent for manifest, IR, and object outputs,
+- deterministic runtime-record manifest projection to remain available when
+  later lowering/runtime readiness is still incomplete,
+- manifest-only frontend runs to succeed without reporting downstream emit
+  failure,
+- full compile/emit workflows to remain fail-closed while still preserving the
+  manifest handoff artifact for downstream consumers.
+
+## M251 runtime export legality freeze (B001)
+
+Lane-B shall freeze a canonical runtime-export legality packet before metadata
+section emission and runtime registration work begin.
+
+`M251-B001` requires:
+
+- `Objc3RuntimeExportLegalityBoundary` to remain the single semantic legality
+  freeze packet for runtime-exported declarations,
+- the packet to be synthesized from deterministic runtime metadata ownership,
+  protocol/category linking, selector normalization, property attribute,
+  object-pointer spelling, symbol-graph, and property-synthesis/ivar-binding
+  surfaces,
+- the packet to be ready while metadata export enforcement remains pending,
+  provided it stays fail-closed and carries the pending enforcement bits for
+  duplicate identities, incomplete declarations, and illegal redeclaration
+  mixes.
+
+## M251 runtime export enforcement semantics (B002)
+
+Lane-B shall promote the frozen runtime-export legality packet into a real
+fail-closed semantic barrier before metadata section emission and runtime
+registration work begin.
+
+`M251-B002` requires:
+
+- `Objc3RuntimeExportEnforcementSummary` to remain the single semantic
+  enforcement packet for runtime-exported declarations,
+- the enforcement packet to be synthesized from deterministic runtime metadata
+  source records plus the B001 legality packet,
+- duplicate runtime identities, incomplete export units, illegal redeclaration
+  mixes, and metadata-shape drift to block lowering when present,
+- forward protocol declarations to remain legal dependency hints rather than
+  incomplete export candidates.
+
+Duplicate runtime identities, incomplete export units, illegal redeclaration
+mixes, and metadata-shape drift must therefore fail closed before lowering
+begins. Forward protocol declarations must remain legal dependency hints rather
+than incomplete export candidates.
+
+## M251 runtime export diagnostic precision (B003)
+
+Lane-B shall preserve the B002 fail-closed blocker code while making incomplete
+runtime export messages precise for class and category interface declarations
+that parse successfully but still cannot participate in runtime export.
+
+`M251-B003` requires:
+
+- deterministic synthesis of source-anchored runtime export blocker diagnostics
+  from runtime metadata source records,
+- interface-only runtime export units to name the missing class
+  `@implementation`,
+- category-interface-only runtime export units to name the missing category
+  `@implementation`,
+- the generic B002 blocker to remain as the fallback when no more precise
+  declaration-specific explanation is available.
+
+B003 shall keep the B002 fail-closed blocker code stable while making incomplete runtime export messages precise so class and category interface declarations that parse successfully but still cannot participate in runtime export fail closed with deterministic explanations.
+
+## M251 runtime metadata section ABI and symbol policy freeze (C001)
+
+Lane-C shall freeze the canonical runtime metadata section ABI and symbol policy
+before LLVM global reservation and physical object-section emission begin.
+
+`M251-C001` requires:
+
+- `Objc3RuntimeMetadataSectionAbiFreezeSummary` to remain the single lane-C
+  freeze packet for runtime metadata section inventory and symbol policy,
+- the logical section inventory to remain frozen for image info, class,
+  protocol, category, property, and ivar metadata descriptors,
+- descriptor and aggregate symbol prefixes, linkage policy, visibility policy,
+  and retention-root policy to remain deterministic and published through
+  manifest/IR surfaces,
+- the boundary to remain fail-closed until the runtime metadata source
+  ownership, legality, and enforcement packets are all ready.
+
+Runtime metadata section ABI and symbol policy governance must therefore remain
+deterministic and fail closed before `M251-C002` starts reserving LLVM globals
+and physical object sections.
+
+## M251 runtime metadata section scaffold emission (C002)
+
+Lane-C shall emit retained placeholder runtime metadata globals and aggregates
+into the canonical logical metadata sections before executable runtime payload
+layouts land.
+
+`M251-C002` requires:
+
+- `Objc3RuntimeMetadataSectionScaffoldSummary` to remain the single lane-C
+  emitted scaffold packet,
+- image info, aggregate section symbols, and per-record descriptor placeholders
+  to be emitted as real LLVM globals rather than manifest-only accounting,
+- `@llvm.used` to retain the scaffolded metadata globals so later object
+  inspection and runtime registration work can observe them,
+- manifest JSON and LLVM IR metadata to publish the same scaffold contract
+  through `runtime_metadata_section_scaffold_contract_id` and
+  `!objc3.objc_runtime_metadata_section_scaffold`,
+- emission to remain fail-closed until the `M251-C001` section ABI and
+  `M251-B002` runtime export enforcement packets are both ready.
+
+Runtime metadata section scaffold governance must therefore remain deterministic
+and fail closed before runtime registration, live lookup, and executable
+object-model payload lowering land.
+
+## M251 runtime metadata object inspection harness (C003)
+
+Lane-C shall publish a deterministic object inspection matrix for emitted
+runtime metadata scaffold objects.
+
+`M251-C003` requires:
+
+- `Objc3RuntimeMetadataObjectInspectionHarnessSummary` to remain the single lane-C inspection matrix packet,
+- manifest JSON and LLVM IR metadata to publish the same inspection contract
+  through `runtime_metadata_object_inspection_contract_id` and
+  `!objc3.objc_runtime_metadata_object_inspection`,
+- the zero-descriptor fixture and emitted object relative path to remain frozen
+  as `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
+  and `module.obj`,
+- matrix rows `zero-descriptor-section-inventory` and
+  `zero-descriptor-symbol-inventory` to remain concrete `llvm-readobj` and
+  `llvm-objdump` commands rather than ad hoc operator guidance,
+- the inspection harness to remain fail-closed until the `M251-C002` scaffold
+  packet is ready.
+
+## M251 native runtime-library surface and build contract (D001)
+
+Lane-D shall freeze the canonical in-tree native runtime-library surface before
+the library skeleton and driver link wiring land.
+
+`M251-D001` requires:
+
+- `Objc3RuntimeSupportLibraryContractSummary` to remain the single lane-D
+  freeze packet for native runtime-library surface and build integration
+  constraints,
+- manifest JSON and LLVM IR metadata to publish the same runtime-library
+  contract through `runtime_support_library_contract_id` and
+  `!objc3.objc_runtime_support_library`,
+- the in-tree runtime-library surface to remain frozen as target
+  `objc3_runtime`, source root `native/objc3c/src/runtime`, public header
+  `native/objc3c/src/runtime/objc3_runtime.h`, and static archive basename
+  `objc3_runtime`,
+- the exported entrypoint family to remain frozen as
+  `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
+  `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
+- compiler ownership to remain limited to emitted metadata while runtime
+  ownership remains limited to registration, lookup, and dispatch state,
+- the driver link mode to remain fail-closed as `not-linked-until-m251-d003`
+  until the runtime library is actually wired in.
+
+Runtime-library surface governance must therefore remain deterministic and fail
+closed before `M251-D002` lands the library skeleton and `M251-D003` rewires
+the driver to consume it.
+
+Runtime metadata object inspection governance must therefore remain
+deterministic and fail closed before runtime registration, live lookup, and
+executable object-model payload lowering land.
+
+## M251 native runtime-library core feature (D002)
+
+Lane-D shall instantiate the frozen D001 surface as a real in-tree native
+runtime library artifact before D003 links the driver against it.
+
+`M251-D002` requires:
+
+- `Objc3RuntimeSupportLibraryCoreFeatureSummary` to publish the real native
+  runtime-library skeleton independently from the frozen D001 packet,
+- manifest JSON and LLVM IR metadata to publish the same D002 contract through
+  `runtime_support_library_core_feature_contract_id` and
+  `!objc3.objc_runtime_support_library_core_feature`,
+- `native/objc3c/src/runtime/objc3_runtime.cpp` to implement
+  `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
+  `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
+- `npm run build:objc3c-native` to emit `artifacts/lib/objc3_runtime.lib`,
+- `objc3_runtime_dispatch_i32` to preserve the deterministic
+  `objc3_msgsend_i32` arithmetic formula while driver link mode remains
+  `not-linked-until-m251-d003`,
+- `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp` to link against
+  the real archive and prove registration, selector lookup, dispatch, and
+  reset-for-testing on the happy path.
+
+D002 therefore proves the native runtime library exists as an executable
+artifact without claiming driver-link integration or full object-model runtime
+registration have landed yet.
+
+## M251 native runtime-library link wiring (D003)
+
+Lane-D shall wire emitted-object execution consumers to the real native runtime
+library without mutating the frozen D001 surface or the D002 implementation
+packet.
+
+`M251-D003` requires:
+
+- `Objc3RuntimeSupportLibraryLinkWiringSummary` to publish the canonical
+  emitted-object runtime-consumption contract,
+- manifest JSON and emitted LLVM IR metadata to publish the same D003 contract
+  through `runtime_support_library_link_wiring_contract_id` and
+  `!objc3.objc_runtime_support_library_link_wiring`,
+- emitted-object runtime link mode to become
+  `emitted-object-links-against-objc3_runtime-lib`,
+- `native/objc3c/src/runtime/objc3_runtime.cpp` to export the compatibility
+  bridge symbol `objc3_msgsend_i32` while keeping
+  `objc3_runtime_dispatch_i32` canonical,
+- `scripts/check_objc3c_native_execution_smoke.ps1` to consume the emitted
+  manifest/runtime archive contract and link runtime-requiring fixtures against
+  `artifacts/lib/objc3_runtime.lib`,
+- negative unresolved-symbol coverage to remain fail closed by omitting the
+  runtime library on link-failure fixtures.
+
+D003 therefore proves emitted objects can consume the real runtime archive in
+deterministic smoke/checker paths without yet claiming metadata registration,
+class realization, or property/category runtime execution are complete.
+
+## M251 runnable-runtime foundation gate and evidence contract (E001)
+
+Lane-E shall freeze one aggregate foundation gate over the completed M251
+runtime-foundation tranche.
+
+`M251-E001` requires:
+
+- the canonical upstream evidence set to remain explicit:
+  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
+- `M251-A003` to remain the canonical manifest/runtime-record handoff proof,
+- `M251-B003` to remain the canonical fail-closed runtime-export diagnostic
+  proof,
+- `M251-C003` to remain the canonical object-file inspection proof for runtime
+  metadata sections and retained symbols,
+- `M251-D003` to remain the canonical emitted-object runtime-link proof,
+- the D003 smoke summary to remain `PASS` while reporting
+  `runtime_library = artifacts/lib/objc3_runtime.lib`,
+- `artifacts/lib/objc3_runtime.lib` to exist when the gate runs.
+
+E001 therefore freezes the aggregate foundation proof that `M252+` must
+preserve without claiming startup registration, class realization, property
+execution, blocks, ARC, or cross-module runtime support are complete.
+
+## M251 cross-lane runtime-foundation gate and bootstrap proof (E002)
+
+Lane-E shall add the first integrated runtime-foundation gate over the finished
+M251 lane outputs.
+
+`M251-E002` requires:
+
+- `M251-E001` to remain the canonical aggregate dependency contract,
+- the gate to exercise the real native toolchain path through
+  `artifacts/bin/objc3c-native.exe`,
+- a metadata-rich native compile probe to preserve `module.manifest.json` and
+  `runtime_metadata_source_records` on the integrated path,
+- an incomplete runtime-export probe to fail closed with the precise `O3S260`
+  diagnostic,
+- a zero-descriptor object-emission probe to succeed and prove the runtime
+  metadata sections/symbols through `llvm-readobj --sections` and
+  `llvm-objdump --syms`,
+- a fresh execution-smoke run to report `status = PASS` and
+  `runtime_library = artifacts/lib/objc3_runtime.lib` under run id
+  `m251_e002_cross_lane_runtime_foundation_gate`.
+
+E002 therefore proves the source-record, semantic-diagnostic,
+metadata-section-scaffold, and runtime-library execution layers line up on the
+same native toolchain path before M251 publishes operator runbooks in E003.
+
+## M251 developer runbooks and environment publication for runtime foundation (E003)
+
+Lane-E shall publish one canonical runtime-foundation runbook at
+`docs/runbooks/m251_runtime_foundation_developer_runbook.md`.
+
+`M251-E003` requires:
+
+- the documented build command `npm run build:objc3c-native`,
+- the documented native object-emission command through
+  `.\artifacts\bin\objc3c-native.exe`,
+- the documented object-inspection commands through `llvm-readobj.exe` and
+  `llvm-objdump.exe`,
+- the documented execution-smoke replay under run id
+  `m251_e003_runtime_foundation_runbook_smoke`,
+- the dependency summary
+  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`
+  to remain `ok = true`,
+- the documented command path to keep producing the published runtime archive,
+  object-inspection artifacts, and smoke summary without hidden setup drift.
+
+E003 therefore publishes the operator-facing build/inspection/smoke path for a
+fresh clone on this machine without claiming new runtime feature coverage.
+
+## M252 executable metadata source graph freeze (A001)
+
+Lane-A shall freeze one canonical source-graph contract before metadata
+semantic closure work begins.
+
+`M252-A001` requires:
+
+- one deterministic executable metadata source graph contract id:
+  `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`,
+- one owner-identity model:
+  `semantic-link-symbol-lexicographic-owner-identity`,
+- one metaclass policy:
+  `metaclass-nodes-derived-from-resolved-interface-symbols`,
+- parser/semantic/pipeline anchors to preserve class, metaclass, protocol,
+  category, property, ivar, and method graph coverage,
+- lexicographic owner/edge ordering to remain frozen and fail closed before
+  `M252-A002` graph-completion work begins.
+
+A001 therefore freezes the executable metadata source graph boundary and
+evidence only. It does not claim semantic closure, lowering readiness, runtime
+ingest packaging, or startup registration are complete.
+
+## M252 executable metadata graph completeness (A002)
+
+`M252-A002` promotes the executable metadata graph into one real frontend
+packet with:
+
+- contract id `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- first-class interface, implementation, class, and metaclass node entries,
+- canonical runtime owner identities on `class:` / `metaclass:` surfaces,
+- deterministic owner-edge ordering on `lexicographic-kind-source-target`,
+- explicit superclass and super-metaclass edges,
+- fail-closed `ready_for_semantic_closure == true` and
+  `ready_for_lowering == false` on the happy path.
+
+`M252-A002` does not complete protocol/category/property/ivar graph closure,
+semantic ambiguity diagnostics, or lowering/runtime ingest readiness.
+
+## M252 executable metadata export graph completion (A003)
+
+`M252-A003` extends the executable metadata graph closure with:
+
+- explicit `protocol_node_entries`,
+- explicit `category_node_entries`,
+- explicit `property_node_entries`,
+- explicit `method_node_entries`,
+- explicit `ivar_node_entries`,
+- canonical category node owners on `category:Class(Category)`,
+- declaration-owner versus export-owner separation for member nodes,
+- deterministic protocol-inheritance, category-attachment, property/method
+  ownership, and ivar/property binding edges,
+- fail-closed `source_graph_complete == true`,
+  `ready_for_semantic_closure == true`, and
+  `ready_for_lowering == false` on class/protocol/property/ivar and
+  category/protocol/property happy-path fixtures.
+
+`M252-A003` still does not claim semantic ambiguity diagnostics, lowering
+readiness, runtime ingest packaging, or startup registration are complete.
+
+## M252 executable metadata semantic consistency freeze (B001)
+
+`M252-B001` freezes one canonical lane-B semantic-consistency packet:
+
+- contract id `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+- packet type `Objc3ExecutableMetadataSemanticConsistencyBoundary`,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`,
+- deterministic dependence on the ready executable metadata source graph and
+  deterministic protocol/category, class-linking, selector, property, and
+  scope-resolution handoffs,
+- explicit pending enforcement bits for semantic conflict diagnostics,
+  duplicate export-owner enforcement, and lowering admission.
+
+`M252-B001` is allowed to be `ready=true` while those enforcement lanes remain
+pending, as long as the boundary is frozen, fail-closed, and
+`lowering_admission_ready == false`.
+
+## M252 inheritance override protocol composition validation (B002)
+
+`M252-B002` adds one executable-metadata semantic-validation packet:
+
+- contract id `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+- packet type `Objc3ExecutableMetadataSemanticValidationSurface`,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`,
+- graph-backed `method-to-overridden-method` owner edges for legal
+  class-interface overrides,
+- deterministic validation of inheritance chains, override legality,
+  protocol-composition accounting, and metaclass relationships.
+
+`M252-B002` must remain fail-closed and `lowering_admission_ready == false`
+even when the happy path is fully ready.
+
+## M252 category attachment duplication ambiguity diagnostics (B003)
+
+`M252-B003` hardens the existing runtime metadata export blocker with
+deterministic category conflict diagnostics:
+
+- `O3S261` for category attachment collisions,
+- `O3S262` for duplicate runtime members,
+- `O3S263` for ambiguous runtime metadata graph resolution.
+
+The expansion must preserve the valid class-plus-category happy path, keep
+`O3S260` for incomplete declarations, and remain fail-closed without claiming
+lowering admission or runtime ingest readiness.
+
+## M252 property ivar export legality and synthesis preconditions (B004)
+
+`M252-B004` freezes the property/ivar export legality surface so the
+property-synthesis/ivar-binding lowering contract is built from
+`Objc3SemaParityContractSurface` instead of the older property-attribute
+fallback.
+
+The packet-free hardening must preserve:
+
+- one canonical property-synthesis/ivar-binding summary published through
+  `frontend.pipeline.sema_pass_manager`,
+- the same counts under
+  `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface`,
+- and a lowering replay key derived from those same counts.
+
+The expansion must keep missing interface properties and incompatible property
+signatures fail-closed under `O3S206`, and category-only property export keep
+the synthesis counters at zero.
+
+## M252 metadata graph lowering handoff freeze (C001)
+
+`M252-C001` freezes one canonical lane-C lowering-handoff packet:
+`Objc3ExecutableMetadataLoweringHandoffSurface`.
+
+The frozen packet must preserve:
+
+- contract id `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- deterministic dependence on the ready executable metadata source graph,
+  semantic-consistency boundary, and semantic-validation surface,
+- deterministic dependence on typed sema metadata, protocol/category,
+  class/protocol/category linking, selector normalization, property attribute,
+  symbol-graph/scope resolution, and property-synthesis/ivar-binding handoffs,
+- manifest publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`,
+- typed/parse projection of
+  `executable_metadata_lowering_handoff_ready`,
+  `executable_metadata_lowering_handoff_deterministic`, and
+  `executable_metadata_lowering_handoff_key`,
+- fail-closed `ready_for_lowering == false`.
+
+`M252-C001` does not emit object metadata sections, perform runtime ingest
+packaging, or claim executable metadata programs are globally lowering-ready.
+
+## M252 typed metadata graph handoff and manifest schema (C002)
+
+`M252-C002` promotes the frozen C001 boundary into one concrete lowering-ready
+packet:
+`Objc3ExecutableMetadataTypedLoweringHandoff`.
+
+The packet must preserve:
+
+- contract id `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- dependency continuity with:
+  - `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+  - `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+  - `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+  - `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- manifest schema ordering model
+  `contract-header-then-source-graph-payload-v1`,
+- publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- direct typed payload publication of the ordered metadata graph under
+  `source_graph`,
+- parse/lowering projection of
+  `executable_metadata_typed_lowering_handoff_ready`,
+  `executable_metadata_typed_lowering_handoff_deterministic`, and
+  `executable_metadata_typed_lowering_handoff_key`,
+- fail-closed `ready_for_lowering == true` on the typed handoff packet.
+
+`M252-C002` does not emit object-file metadata sections yet, but it does freeze
+the lowering-ready payload schema that those later section-emission issues must
+consume.
+
+## M252 metadata debug projection and replay anchors (C003)
+
+`M252-C003` publishes the canonical lane-C metadata inspection matrix:
+`Objc3ExecutableMetadataDebugProjectionSummary`.
+
+The packet must preserve:
+
+- contract id `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- typed-handoff dependency continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- IR named-metadata publication under
+  `!objc3.objc_executable_metadata_debug_projection`,
+- deterministic matrix rows:
+  - `class-protocol-property-ivar-manifest-projection`,
+  - `category-protocol-property-manifest-projection`,
+  - `hello-ir-named-metadata-anchor`,
+- replay-anchor continuity between the debug-projection packet and the active
+  C002 typed handoff whenever the current input actually materializes a typed
+  metadata payload.
+
+`M252-C003` intentionally proves the manifest/debug projection on the
+metadata-rich fixtures and the IR named-metadata anchor on the runnable hello
+fixture before runtime section emission and runtime ingest packaging land.
+
+## M252 runtime ingest packaging for metadata graphs (D001)
+
+`M252-D001` freezes the canonical lane-D runtime-ingest packaging boundary:
+`Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary`.
+
+The packet must preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- typed-handoff dependency continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- debug-projection dependency continuity with
+  `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`,
+- payload model `typed-handoff-plus-debug-projection-manifest-v1`,
+- transport artifact `module.manifest.json`,
+- replay-key continuity with both the active C002 typed handoff and the C003
+  debug-projection packet,
+- fail-closed non-goals declaring that runtime section emission, startup
+  registration, and runtime-loader registration have not landed yet.
+
+`M252-D001` does not implement the binary section payload or startup
+registration path. It freezes the manifest transport contract that those later
+lane-D and M253 milestones must preserve.
+
+## M252 artifact packaging and binary boundary for metadata payloads (D002)
+
+`M252-D002` materializes the canonical lane-D runtime-ingest binary boundary:
+`Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary`.
+
+The packet must preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-binary-boundary/m252-d002-v1`,
+- packaging-contract continuity with
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- typed-handoff continuity with
+  `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- debug-projection continuity with
+  `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest semantic-surface publication under
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary`,
+- emitted artifact `module.runtime-metadata.bin`,
+- binary envelope format `objc3-runtime-metadata-envelope-v1`,
+- binary magic `OBJC3RM1`,
+- deterministic chunk set:
+  - `runtime_ingest_packaging_contract`,
+  - `typed_lowering_handoff`,
+  - `debug_projection`,
+- replay-key continuity with the active D001/C002/C003 packets,
+- fail-closed readiness for later section-emission/bootstrap handoff.
+
+`M252-D002` still stops short of object-file section emission and startup
+registration. It lands the standalone runtime-facing binary artifact that those
+later milestones must consume.
+
+## M252 metadata semantic-closure gate (E001)
+
+`M252-E001` freezes the aggregate lane-E metadata semantic-closure gate:
+`Objc3ExecutableMetadataSemanticClosureGateSummary`.
+
+The gate must preserve:
+
+- contract id
+  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`,
+- upstream closure proofs
+  `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002`,
+- evidence that the executable metadata source graph is complete while
+  property/ivar export legality, debug/replay projection, and runtime-facing
+  binary packaging all remain deterministic and fail closed,
+- the stable evidence path
+  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`,
+- the requirement that the aggregate boundary remains synchronized before
+  `M253-A001` section emission begins.
+
+`M252-E001` still does not implement object-file section emission, startup
+registration, or runtime metadata loader bootstrap. It freezes the aggregate
+pre-section-emission proof that the next implementation issue must preserve.
+
+## M252 conformance corpus and docs sync for metadata graph closure (E002)
+
+`M252-E002` adds the first representative integrated corpus gate for metadata
+graph closure on the real frontend runner path.
+
+The gate must preserve:
+
+- contract id
+  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`,
+- dependency continuity through `M252-E001`,
+- representative cases
+  `class-protocol-property-ivar-runtime-graph`,
+  `category-protocol-property-runtime-graph`,
+  `class-property-synthesis-ready`,
+  `category-property-export-only`,
+  `missing-interface-property-diagnostic`, and
+  `incompatible-property-signature-diagnostic`,
+- a direct readiness runner that exercises the real frontend runner path rather
+  than recursively nesting the whole lane stack,
+- evidence path
+  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.
+
+## M253 emitted metadata inventory freeze (A001)
+
+`M253-A001` freezes the emitted runtime metadata inventory boundary before the
+lane-A completeness matrix and later real payload work land.
+
+The freeze must preserve:
+
+- contract id
+  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`,
+- the canonical emitted inventory families:
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and
+  `objc3.runtime.ivar_descriptors`,
+- the frozen symbol policies:
+  `__objc3_meta_`,
+  `__objc3_sec_`,
+  `__objc3_image_info`,
+  descriptor linkage `private`,
+  aggregate linkage `internal`,
+  metadata visibility `hidden`,
+  retention root `llvm.used`,
+- the requirement that lowering-boundary replay keys and backend object
+  emission preserve this inventory rather than inferring or rewriting another
+  metadata layout,
+- the stable evidence path
+  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`.
+
+`M253-A001` does not yet publish the source-to-section completeness matrix,
+does not introduce concrete descriptor layouts, and does not add standalone
+method/selector/string-pool emitted sections.
+
+## M253 source-to-section mapping completeness matrix (A002)
+
+`M253-A002` publishes the deterministic completeness matrix that maps every
+currently supported executable metadata graph node kind to its emitted runtime
+metadata section payload, symbol family, relocation behavior, and proof anchor.
+
+The matrix must preserve:
+
+- contract id
+  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`,
+- manifest surface
+  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`,
+- source-graph node kind ordering
+  `interface`, `implementation`, `class`, `metaclass`, `protocol`, `category`,
+  `property`, `method`, `ivar`,
+- concrete emitted rows for:
+  `class`, `protocol`, `category`, `property`, and `ivar`,
+- explicit no-standalone-emission rows for:
+  `interface`, `implementation`, `metaclass`, and `method`,
+- the frozen relocation model
+  `zero-sentinel-or-count-plus-pointer-vector` for emitted descriptor families,
+- proof binding to metadata-rich source fixtures plus emitted object inspection
+  commands,
+- evidence path
+  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`.
+
+`M253-A002` still does not introduce real descriptor payload layouts, startup
+registration, runtime loader bootstrap, or standalone emitted
+method/selector/string-pool sections.
+
+## M253 layout ordering and visibility policy freeze (B001)
+
+`M253-B001` freezes one emitted metadata layout/visibility policy surface
+before semantic finalization and object-format expansion land.
+
+The freeze must preserve:
+
+- contract id
+  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`,
+- family ordering model
+  `image-info-then-class-protocol-category-property-ivar`,
+- within-family ordering model
+  `ascending-descriptor-ordinal-then-family-aggregate`,
+- relocation model
+  `zero-sentinel-or-count-plus-pointer-vector`,
+- COMDAT policy `disabled`,
+- visibility spelling policy
+  `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`,
+- object-format policy model `object-format-neutral-until-m253-b003`,
+- the requirement that lowering replay keys and llvm-direct object emission do
+  not infer or rewrite another ordering/visibility model.
+
+`M253-B001` does not yet implement semantic finalization of layout decisions;
+semantic finalization of layout decisions remains deferred to `M253-B002`.
+It also does not add COFF/ELF/Mach-O policy variants; that remains deferred to
+`M253-B003`.
+
+## M253 deterministic ordering, visibility, and relocation semantics (B002)
+
+`M253-B002` normalizes one metadata layout policy before IR emission so the
+emitter consumes a shared lowering decision instead of re-hardcoding order and
+relocation locally.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-layout-policy/m253-b002-v1`,
+- normalized layout-policy packets in `lower/objc3_lowering_contract.h`,
+- fail-closed builder logic in `lower/objc3_lowering_contract.cpp`,
+- named metadata `!objc3.objc_runtime_metadata_layout_policy`,
+- metadata node `!55`,
+- replay comment `; runtime_metadata_layout_policy = ...`,
+- family order `image-info`, `class`, `protocol`, `category`, `property`,
+  `ivar`,
+- relocation model `zero-sentinel-or-count-plus-pointer-vector`,
+- visibility spelling policy `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`.
+
+`M253-B002` still does not add COFF/ELF/Mach-O policy variants; that remains
+`M253-B003`.
+
+## M253 COFF, ELF, and Mach-O metadata policy surface (B003)
+
+`M253-B003` expands the normalized `M253-B002` packet into one explicit
+host-format mapping surface while preserving the existing logical metadata ABI.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`,
+- explicit host-format mapping surface for `coff`, `elf`, and `mach-o`,
+- explicit section-spelling models
+  `coff-logical-section-spellings`,
+  `elf-logical-section-spellings`, and
+  `mach-o-data-segment-comma-section-spellings`,
+- explicit retention-anchor models
+  `llvm.used-appending-global+coff-timestamp-normalization`,
+  `llvm.used-appending-global+elf-stable-sections`, and
+  `llvm.used-appending-global+mach-o-data-segment-sections`,
+- layout-policy fields that carry logical and emitted section names,
+- emitter consumption of emitted section spellings rather than logical section
+  names directly,
+- process-level produced-object detection before post-write determinism.
+
+`M253-B003` does not add new metadata families, runtime registration, or
+bootstrap. It only expands the lowering-side emitted-format surface.
+
+## M253 metadata section emission freeze (C001)
+
+`M253-C001` freezes the current real-section emission boundary so later lane-C
+implementation issues can replace placeholder bytes without reopening the
+contract question.
+
+The implementation must preserve:
+
+- contract id `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`,
+- payload model `scaffold-placeholder-payloads-until-m253-c002`,
+- inventory model
+  `image-info-plus-class-protocol-category-property-ivar-sections`,
+- image-info payload model
+  `internal-{i32,i32}-zeroinitializer-image-info`,
+- descriptor payload model
+  `private-[1xi8]-zeroinitializer-per-descriptor`,
+- aggregate payload model
+  `i64-count-plus-pointer-vector-aggregates`,
+- the emitted IR comment
+  `; runtime_metadata_section_emission_boundary = ...`,
+- fail-closed non-goals:
+  no method, selector, or string-pool payload emission yet.
+
+## M253 class and metaclass data emission (C002)
+
+Lane-C shall replace the class-family placeholder byte model with real
+class/metaclass descriptor bundles while preserving the frozen emitted
+inventory, ordering, visibility, object-format, and scaffold boundaries.
+
+`M253-C002` requires:
+
+- contract id `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`,
+- payload model
+  `class-source-record-descriptor-bundles-with-inline-metaclass-records`,
+- name model `shared-class-name-cstring-per-bundle`,
+- super-link model `nullable-super-source-record-bundle-pointer`,
+- method-list reference model
+  `count-plus-owner-identity-pointer-method-list-ref`,
+- emitted IR publication through
+  `; runtime_metadata_class_metaclass_emission = ...` and
+  `!objc3.objc_runtime_class_metaclass_emission`,
+- metadata-only IR admission on ready metadata fixtures so native IR/object
+  emission no longer depends on the older global parse/lowering gate for this
+  payload family,
+- declaration-owner-ordered bundle emission over the current typed metadata
+  handoff, runtime-export class accounting, and scaffold class-descriptor
+  counts,
+- llvm-direct object emission preserving the inline bundle payloads verbatim.
+
+`M253-C002` does not add standalone metaclass sections, selector/string-pool
+payloads, standalone method/property/ivar list sections, or runtime
+registration/bootstrap. The class family alone advances from scaffold
+placeholders to real bundle payloads in this issue.
+
+## M253 protocol and category data emission (C003)
+
+Lane-C shall replace the protocol/category placeholder byte model with real
+protocol/category descriptor bundles while preserving the frozen emitted
+inventory, ordering, visibility, object-format, and scaffold boundaries.
+
+`M253-C003` requires:
+
+- contract id `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`,
+- protocol payload model
+  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`,
+- category payload model
+  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`,
+- protocol-reference model
+  `count-plus-descriptor-pointer-protocol-ref-lists`,
+- category-attachment model
+  `count-plus-owner-identity-pointer-attachment-lists`,
+- emitted IR publication through
+  `; runtime_metadata_protocol_category_emission = ...` and
+  `!objc3.objc_runtime_protocol_category_emission`,
+- fail-closed bundle emission over the current typed metadata handoff, protocol
+  source graph, runtime-export protocol/category accounting, and scaffold
+  protocol/category descriptor counts,
+- expansion of one combined category graph node into explicit
+  interface/implementation record bundles before emission,
+- llvm-direct object emission preserving the inline protocol/category payloads
+  verbatim.
+
+`M253-C003` does not add selector/string-pool payloads, standalone
+property/ivar payload sections, or runtime registration/bootstrap. The
+protocol/category families alone advance from scaffold placeholders to real
+bundle payloads in this issue.
+
+## M253 method/property/ivar payload emission (C004)
+
+Lane-C shall emit deterministic owner-scoped method tables plus real property
+and ivar descriptor payload families while preserving the frozen class,
+protocol, and category descriptor shapes established in `M253-C002` and
+`M253-C003`.
+
+`M253-C004` requires:
+
+- contract id `objc3c-runtime-member-table-emission/m253-c004-v1`,
+- method-list payload model
+  `owner-scoped-method-table-globals-with-inline-entry-records`,
+- method-list grouping model
+  `declaration-owner-plus-class-kind-lexicographic`,
+- property payload model
+  `property-descriptor-records-with-accessor-and-binding-strings`,
+- ivar payload model
+  `ivar-descriptor-records-with-property-binding-strings`,
+- emitted IR publication through
+  `; runtime_metadata_member_table_emission = ...` and
+  `!objc3.objc_runtime_member_table_emission`,
+- fail-closed emission over the current typed metadata handoff, property/ivar
+  runtime-export accounting, method graph expansion, and scaffold
+  property/ivar descriptor counts,
+- deterministic lexicographic ordering of:
+  - method list bundles by owner family, declaration-owner identity, and list kind,
+  - method entries by selector, owner identity, parameter count, return type,
+    and body presence,
+  - property/ivar descriptor records by declaration-owner identity, property
+    name, and owner identity,
+- llvm-direct object emission preserving adjacent owner-scoped method table
+  bytes plus the standalone property/ivar descriptor payload sections verbatim.
+
+`M253-C004` does not add selector pools, runtime registration/bootstrap, or
+runtime consumption/dispatch over the emitted member tables. It advances the
+method/property/ivar families from scaffolds/placeholders to real payload
+records only.
+
+## M253 selector/string pool emission (C005)
+
+Lane-C shall replace the older selector-only global scheme with canonical
+selector and runtime string pool sections while preserving the frozen class,
+protocol, category, property, and ivar descriptor payload contracts from
+`M253-C002` through `M253-C004`.
+
+`M253-C005` requires:
+
+- contract id `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`,
+- selector pool payload model
+  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`,
+- string pool payload model
+  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`,
+- emitted IR publication through
+  `; runtime_metadata_selector_string_pool_emission = ...` and
+  `!objc3.objc_runtime_selector_string_pool_emission`,
+- deterministic lexicographic canonicalization of pooled selector cstrings and
+  pooled runtime strings,
+- retained aggregate globals `@__objc3_sec_selector_pool` and
+  `@__objc3_sec_string_pool`,
+- message-send lowering sourcing selector pointers from the canonical selector
+  pool instead of the older `@.objc3.sel.*` global family,
+- llvm-direct object emission preserving `objc3.runtime.selector_pool` and
+  `objc3.runtime.string_pool` verbatim.
+
+`M253-C005` does not rewire existing descriptor bundles to pooled string
+pointers, nor does it add runtime registration/bootstrap or mutable runtime
+interning tables. It introduces canonical selector/string pool families only.
+
+## M253 binary inspection harness for emitted metadata (C006)
+
+Lane-C shall freeze one shared emitted-metadata inspection corpus so object-file
+structure is asserted against the current section families instead of inferred
+from earlier scaffold-only probes.
+
+`M253-C006` requires:
+
+- contract id `objc3c-runtime-binary-inspection-harness/m253-c006-v1`,
+- positive corpus model
+  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`,
+- negative corpus model
+  `negative-compile-failure-gating-with-no-object-inspection`,
+- emitted IR publication through
+  `; runtime_metadata_binary_inspection_harness = ...` and
+  `!objc3.objc_runtime_binary_inspection_harness`,
+- shared inspection commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`,
+- a positive corpus spanning scaffold-only, class-heavy, category-heavy, and
+  selector-pool-heavy emitted objects,
+- a fail-closed negative compile case that produces diagnostics but no
+  `module.obj` and no `module.manifest.json`,
+- section-family assertions covering
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`,
+  `objc3.runtime.ivar_descriptors`,
+  `objc3.runtime.selector_pool`, and
+  `objc3.runtime.string_pool`,
+- aggregate symbol assertions covering the corresponding `__objc3_*` section
+  anchors and zero/nonzero offsets where applicable.
+
+`M253-C006` does not add new metadata families, runtime registration/bootstrap,
+or descriptor-family rewiring. It expands binary inspection evidence only.
+
+## M253 object packaging and retention boundary (D001)
+
+Lane-D shall freeze the current produced-object handoff so later archive, link,
+and startup-registration work extends one explicit module.obj boundary rather
+than redefining retention and discoverability anchors.
+
+`M253-D001` requires:
+
+- contract id `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`,
+- boundary model
+  `current-object-file-boundary-with-retained-metadata-section-aggregates`,
+- retention-anchor model `llvm.used-plus-aggregate-section-symbols`,
+- emitted IR publication through
+  `; runtime_metadata_object_packaging_retention = ...` and
+  `!objc3.objc_runtime_object_packaging_retention`,
+- frozen current object artifact `module.obj`,
+- frozen aggregate symbol prefix `__objc3_sec_`,
+- shared discovery commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`,
+- one positive proof over the current metadata-rich emitted object path, and
+- one fail-closed negative proof that compile failure emits diagnostics but no
+  manifest/object/backend marker.
+
+`M253-D001` does not add archive packaging, link-registration, or startup
+registration/bootstrap behavior. It freezes the current produced-object
+boundary only.
+
+## M253 linker retention anchors and dead-strip resistance (D002)
+
+Lane-D shall keep emitted metadata discoverable after the object is packaged
+into one library/archive by publishing one public linker anchor, one public
+discovery root, and one deterministic driver response-file payload for the
+current object format.
+
+`M253-D002` requires:
+
+- contract id
+  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`,
+- anchor model `public-linker-anchor-rooted-in-discovery-table`,
+- discovery model `public-discovery-root-over-retained-metadata-aggregates`,
+- emitted IR publication through
+  `; runtime_metadata_linker_retention = ...` and
+  `!objc3.objc_runtime_linker_retention`,
+- one hashed public linker-anchor symbol
+  `objc3_runtime_metadata_link_anchor_<hash>`,
+- one hashed public discovery-root symbol
+  `objc3_runtime_metadata_discovery_root_<hash>`,
+- one emitted response artifact
+  `module.runtime-metadata-linker-options.rsp`,
+- one emitted discovery artifact
+  `module.runtime-metadata-discovery.json`,
+- current-format driver linker flag models:
+  - COFF: `-Wl,/include:<symbol>`
+  - ELF: `-Wl,--undefined=<symbol>`
+  - Mach-O: `-Wl,-u,_<symbol>`,
+- one happy-path proof that static-library packaging drops metadata without the
+  response file and retains metadata with it, and
+- one fail-closed negative proof that compile failure produces no object,
+  backend marker, linker response file, or discovery artifact.
+
+`M253-D002` does not yet claim multi-archive fan-in or cross-translation-unit
+anchor-merging behavior. Those edge cases stay deferred to `M253-D003`.
+
+## M253 archive/static-link metadata discovery behavior (D003)
+
+Lane-D shall close the remaining archive/static-link metadata discovery gaps by
+making public linker/discovery symbols translation-unit-stable, by keeping
+metadata-only library objects from exporting a colliding public `objc3c_entry`,
+and by standardizing one merged discovery/response artifact pair for
+multi-archive static-link fan-in.
+
+`M253-D003` requires:
+
+- contract id
+  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`,
+- anchor-seed model
+  `module-and-metadata-replay-plus-translation-unit-identity`,
+- translation-unit identity model
+  `input-path-plus-parse-and-lowering-replay`,
+- merge model `deduplicated-driver-flag-fan-in`,
+- emitted IR publication through
+  `; runtime_metadata_archive_static_link_discovery = ...` and
+  `!objc3.objc_runtime_archive_static_link_discovery`,
+- object-level discovery JSON fields
+  `translation_unit_identity_model` and
+  `translation_unit_identity_key`,
+- canonical merged artifacts
+  `module.merged.runtime-metadata-linker-options.rsp` and
+  `module.merged.runtime-metadata-discovery.json`,
+- one positive proof that identical module/metadata source compiled from
+  distinct translation units yields distinct public anchor/discovery symbols,
+- one positive proof that multi-archive plain link drops metadata while the
+  merged response artifact retains it, and
+- one fail-closed negative proof that malformed or colliding discovery inputs
+  do not produce a false-success merged artifact.
+
+`M253-D003` does not add runtime registration or startup bootstrap behavior.
+
+## M253 metadata emission gate (E001)
+
+Lane-E shall freeze one fail-closed evidence gate over the implemented
+source-to-section matrix, object-format policy, binary inspection corpus, and
+archive/static-link discovery proof before `M253-E002` cross-lane closeout
+begins.
+
+`M253-E001` requires:
+
+- contract id `objc3c-runtime-metadata-emission-gate/m253-e001-v1`,
+- evidence model `a002-b003-c006-d003-summary-chain`,
+- failure model `fail-closed-on-upstream-summary-drift`,
+- emitted IR publication through
+  `; runtime_metadata_emission_gate = ...` and
+  `!objc3.objc_runtime_metadata_emission_gate`,
+- direct validation of the canonical upstream summaries:
+  - `M253-A002`
+  - `M253-B003`
+  - `M253-C006`
+  - `M253-D003`,
+- one checker/test pair that rejects drift in any upstream evidence file, and
+- an explicit handoff that `M253-E002` is the next closeout issue.
+
+`M253-E001` does not add new object-emission behavior or runtime registration.
+
+## M253 cross-lane object-emission gate and closeout (E002)
+
+Lane-E shall close the emitted-metadata tranche by replaying one integrated
+native object-emission gate over the canonical `M253-E001` summary plus fresh
+class/category/message-send object probes before `M254` startup registration
+work begins.
+
+`M253-E002` requires:
+
+- contract id
+  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`,
+- evidence model
+  `e001-summary-plus-integrated-native-object-emission-probes`,
+- failure model `fail-closed-on-summary-or-integrated-probe-drift`,
+- emitted IR publication through
+  `; runtime_metadata_object_emission_closeout = ...` and
+  `!objc3.objc_runtime_metadata_object_emission_closeout`,
+- direct validation of the canonical upstream summaries:
+  - `M253-A002`
+  - `M253-B003`
+  - `M253-C006`
+  - `M253-D003`
+  - `M253-E001`,
+- integrated native object probes over class, category, and message-send cases
+  that keep source graph closure, object-format policy, binary-inspection
+  inventories, and linker/discovery artifacts aligned on the same outputs, and
+- one fail-closed negative compile case that preserves `O3S206` diagnostics and
+  blocks object/discovery emission.
+
+`M253-E002` is a closeout gate only; it adds no runtime startup registration,
+class registration, or new metadata section families.
+
+## M254 translation-unit registration surface freeze (A001)
+
+`M254-A001` freezes one manifest-published preregistration boundary over the
+already-emitted metadata/object artifacts.
+
+- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`
+- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
+- canonical runtime-owned payload inventory:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor-root ownership model
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- reserved constructor root `__objc3_runtime_register_image_ctor`
+- runtime-owned registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+Non-goals:
+
+- no constructor-root emission yet
+- no startup registration yet
+- no runtime bootstrap yet
+
+`M254-A002` must preserve this contract while materializing registration
+manifests and constructor-root ownership.
+
+## M254 translation-unit registration manifest implementation (A002)
+
+`M254-A002` turns the frozen `M254-A001` preregistration boundary into one real
+emitted translation-unit registration manifest artifact.
+
+- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`
+- payload model `translation-unit-registration-manifest-json-v1`
+- emitted registration-manifest artifact
+  `module.runtime-registration-manifest.json`
+- preserved runtime-owned payload inventory:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor-root ownership model
+  `compiler-emits-constructor-root-runtime-owns-registration-state`
+- manifest authority model
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- init-stub ownership model
+  `lowering-emits-init-stub-from-registration-manifest`
+- constructor priority policy `deferred-until-m254-c001`
+- runtime-owned registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+Non-goals:
+
+- no init-stub emission yet
+- no constructor-root emission yet
+- no automatic startup registration yet
+- no runtime bootstrap execution yet
+
+## M254 startup bootstrap invariants (B001)
+
+`M254-B001` freezes the semantic invariants that later startup-registration and
+runtime-bootstrap implementation must preserve.
+
+- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`
+- upstream manifest contract id
+  `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization scope
+  `runtime-owned-image-local-registration-state`
+- constructor-root uniqueness policy
+  `one-startup-root-per-translation-unit-identity`
+- constructor-root consumption model
+  `startup-root-consumes-registration-manifest`
+- startup execution mode `deferred-until-m254-c001`
+
+Non-goals:
+
+- no live startup execution yet
+- no duplicate-registration enforcement yet
+- no image-local realization/runtime bootstrap execution yet
+
+## M254 live startup bootstrap semantics (B002)
+
+`M254-B002` lands the first live runtime-side startup/bootstrap enforcement
+surface while constructor-root emission is still deferred to `M254-C001`.
+
+- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- runtime result model `zero-success-negative-fail-closed`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- registration order ordinal model
+  `strictly-monotonic-positive-registration-order-ordinal`
+
+Required behavior:
+
+- duplicate translation-unit identity keys are rejected with status `-2`
+- non-monotonic registration ordinals are rejected with status `-3`
+- invalid descriptors are rejected with status `-1`
+- failed registrations do not partially commit runtime-owned state
+- emitted `module.runtime-registration-manifest.json` payloads carry the same
+  status-code and policy surface consumed by the native runtime probe
+
+## M254 bootstrap lowering freeze (C001)
+
+`M254-C001` freezes the lowering boundary that later startup materialization
+must implement from the emitted registration manifest plus the live
+`M254-B002` bootstrap semantics packet.
+
+- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- boundary model
+  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
+- constructor root symbol `__objc3_runtime_register_image_ctor`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- registration-table symbol prefix `__objc3_runtime_registration_table_`
+- future global-ctor list model `llvm.global_ctors-single-root-priority-65535`
+- constructor-root emission state `deferred-until-m254-c002`
+- init-stub emission state `deferred-until-m254-c002`
+- registration-table emission state `deferred-until-m254-c002`
+
+Non-goals:
+
+- no emitted `@llvm.global_ctors` yet
+- no emitted constructor-root global yet
+- no emitted init-stub global yet
+- no emitted registration-table global yet
+
+## M254 constructor and init-stub emission (C002)
+
+`M254-C002` materializes the first real lowering-owned startup registration
+path from the emitted registration manifest plus the live `M254-B002`
+semantics surface.
+
+- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
+- emitted ctor root `__objc3_runtime_register_image_ctor`
+- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- emitted registration-table prefix `__objc3_runtime_registration_table_`
+- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
+- emitted `@llvm.global_ctors` model
+  `llvm.global_ctors-single-root-priority-65535`
+- init stub calls `objc3_runtime_register_image`
+- non-zero registration status fails closed through `abort()`
+- emitted registration manifest must publish the exact derived init-stub and
+  registration-table symbols
+- COFF object emission must materialize the startup constructor path in
+  `.CRT$XCU`
+
+## M254 registration-table emission and image-local initialization (C003)
+
+`M254-C003` expands the lowering-owned startup path so later runtime image
+walks consume one self-describing per-image registration boundary.
+
+- contract id
+  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
+- registration-table layout model
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+- image-local init-state prefix
+  `__objc3_runtime_image_local_init_state_`
+- registration-table ABI version `1`
+- registration-table pointer-field count `11`
+- emitted init stub guards startup with the image-local init-state cell before
+  runtime registration
+- emitted registration tables now include section-root and pool-root pointers
+  for later runtime image-walk stages
+
+## M254 runtime bootstrap API freeze (D001)
+
+`M254-D001` freezes the runtime-owned bootstrap API surface that later
+registrar/image-walk and deterministic-reset work must preserve.
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- public header path `native/objc3c/src/runtime/objc3_runtime.h`
+- archive path `artifacts/lib/objc3_runtime.lib`
+- registration status enum type `objc3_runtime_registration_status_code`
+- image descriptor type `objc3_runtime_image_descriptor`
+- selector handle type `objc3_runtime_selector_handle`
+- registration snapshot type `objc3_runtime_registration_state_snapshot`
+- preserved entrypoints:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- startup invocation model
+  `generated-init-stub-calls-runtime-register-image`
+- runtime locking model `process-global-mutex-serialized-runtime-state`
+
+Non-goals:
+
+- no emitted-metadata image walk yet
+- no class/protocol/category realization graph yet
+
+## M254 registrar implementation and image walk (D002)
+
+`M254-D002` lands the private registrar/image-walk bridge that preserves the
+frozen D001 public runtime API while letting emitted startup code stage and walk
+the live registration table.
+
+- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
+- private bootstrap header
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- private stage-registration symbol
+  `objc3_runtime_stage_registration_table_for_bootstrap`
+- private image-walk snapshot symbol
+  `objc3_runtime_copy_image_walk_state_for_testing`
+- image-walk model
+  `registration-table-roots-validated-and-staged-before-realization`
+- discovery-root validation model
+  `linker-anchor-must-point-at-discovery-root`
+- selector-pool interning model
+  `canonical-selector-pool-preinterned-during-startup-image-walk`
+- realization staging model
+  `registration-table-roots-retained-for-later-realization`
+- no expanded deterministic reset coverage beyond the current runtime-owned
+  testing hooks
+## M254 realization sequencing and deterministic reset hooks (D003)
+
+`M254-D003` preserves the frozen public runtime bootstrap API while extending
+the private bootstrap boundary with deterministic same-process reset/replay:
+
+- contract id `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_reset_contract`
+- private replay hook
+  `objc3_runtime_replay_registered_images_for_testing`
+- private reset/replay snapshot hook
+  `objc3_runtime_copy_reset_replay_state_for_testing`
+- reset lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- replay order model
+  `replay-re-registers-retained-images-in-original-registration-order`
+
+## M254 driver, link, and runtime launch integration (D004)
+
+`M254-D004` keeps the emitted bootstrap/runtime registration surface unchanged
+while freezing the operator launch contract consumed by compile, proof, and
+smoke:
+
+- contract id `objc3c-runtime-launch-integration/m254-d004-v1`
+- emitted authority remains
+  `module.runtime-registration-manifest.json`
+- runtime archive resolution model
+  `registration-manifest-runtime-archive-path-is-authoritative`
+- linker-flag consumption model
+  `registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands`
+- compile wrapper script `scripts/objc3c_native_compile.ps1`
+- compile proof script `scripts/run_objc3c_native_compile_proof.ps1`
+- execution smoke script `scripts/check_objc3c_native_execution_smoke.ps1`
+- launch integration ready flag `launch_integration_ready`
+
+## M254 startup registration gate (E001)
+
+`M254-E001` introduces one fail-closed lane-E gate over the live startup
+registration/bootstrap evidence chain without adding new runtime behavior:
+
+- contract id `objc3c-runtime-startup-registration-gate/m254-e001-v1`
+- evidence model `a002-b002-c003-d003-d004-summary-chain`
+- failure model `fail-closed-on-bootstrap-evidence-drift`
+- upstream evidence must stay rooted in the canonical summaries for `M254-A002`,
+  `M254-B002`, `M254-C003`, `M254-D003`, and `M254-D004`
+- any drift in manifest authority, bootstrap status codes, registration-table
+  realization, deterministic reset/replay, or launch integration must fail
+  closed before `M254-E002`
+
+## M254 replay and bootstrap proof plus runbook closeout (E002)
+
+`M254-E002` closes the milestone by composing the already-landed `M254-E001`
+gate with one published operator runbook and one live smoke replay of that
+runbook:
+
+- contract id `objc3c-runtime-replay-bootstrap-closeout/m254-e002-v1`
+- closeout model `e001-gate-plus-live-operator-runbook-smoke`
+- canonical runbook
+  `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
+- canonical closeout evidence
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+## M255 dispatch surface classification (A001)
+
+`M255-A001` freezes the live dispatch taxonomy without widening runtime
+behavior yet:
+
+- contract id `objc3c-dispatch-surface-classification/m255-a001-v1`
+- instance/class/super/dynamic dispatch remain classified against the live
+  runtime family
+  `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
+- direct dispatch remains a reserved non-goal in `M255-A001`
+- the freeze exists to hand off a deterministic starting point to `M255-A002`
+
+## M255 dispatch-site modeling implementation (A002)
+
+`M255-A002` materializes the frozen dispatch taxonomy into one real frontend,
+semantic, and lowering handoff for the current native path:
+
+- known-class identifiers plus implicit `self`/`super` must be normalized before
+  semantic validation and LLVM lowering
+- semantic surface `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
+  publishes the live dispatch counts and entrypoint families
+- lowering handoff `lowering_dispatch_surface_classification` must replay the
+  same contract state into IR emission
+- the canonical proof fixture
+  `tests/tooling/fixtures/native/m255_dispatch_surface_modeling.objc3` must
+  produce instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
+- `objc3c-native` must emit the textual profile line
+  `frontend_objc_dispatch_surface_classification_profile` and named metadata
+  `!objc3.objc_dispatch_surface_classification`
+- the live lowering handoff contract remains
+  `objc3c-dispatch-surface-classification/m255-a001-v1`
+
+## M255 dispatch legality and selector resolution (B001)
+
+`M255-B001` freezes the live legality and selector-resolution rules that the
+current native dispatch path consumes:
+
+- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
+- boundary model
+  `selector-normalized-arity-checked-receiver-required-no-overload`
+- ambiguity policy
+  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
+- selector forms stay normalized unary/keyword selectors only
+- receiver presence remains mandatory before dispatch lowering consumes the site
+- direct dispatch remains reserved
+- this freeze exists to hand off one deterministic legality packet to
+  `M255-B002`
+
+## M255 selector resolution and ambiguity implementation (B002)
+
+`M255-B002` implements the first live selector-resolution rules that sit between
+dispatch-site classification and runtime dispatch emission:
+
+- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
+- concrete receiver policy
+  `self-super-known-class-receivers-resolve-concretely`
+- dynamic fallback policy
+  `non-concrete-receivers-remain-runtime-dynamic`
+- overload policy
+  `no-overload-recovery-exact-signature-or-fail-closed`
+- concrete `self`, `super`, and known-class receivers now resolve against the
+  semantic surface before lowering continues
+- missing concrete selectors emit `O3S216`
+- incompatible concrete interface/implementation signatures emit `O3S217`
+- lowering still uses the live runtime dispatch family and does not add a
+  second overload-recovery pass
+
+## M255 super/direct/dynamic legality and method-family expansion (B003)
+
+`M255-B003` closes the remaining legality/runtime-rule edges that sit between
+dispatch-site classification and live runtime dispatch lowering:
+
+- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
+- super legality policy
+  `super-requires-enclosing-method-and-real-superclass`
+- direct dispatch policy
+  `direct-dispatch-remains-reserved-non-goal`
+- dynamic dispatch policy
+  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
+- runtime-visible method-family policy
+  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
+- super outside an implementation method fails closed with `O3S216`
+- root-class `super` dispatch also fails closed with `O3S216`
+- admitted super/dynamic sites continue to lower through the live runtime
+  entrypoint family rather than inventing a second direct-dispatch path
+
+## M255 dispatch lowering ABI freeze (C001)
+
+`M255-C001` freezes the lane-C lowering boundary that will later switch native
+IR off the compatibility bridge and onto the canonical runtime ABI:
+
+- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
+- canonical runtime entrypoint `objc3_runtime_dispatch_i32`
+- compatibility bridge entrypoint `objc3_msgsend_i32`
+- selector lookup symbol `objc3_runtime_lookup_selector`
+- selector handle type `objc3_runtime_selector_handle`
+- receiver/result ABI remain `i32`
+- selector operand remains a lowered cstring pointer until `M255-C002`
+- fixed argument marshalling remains `4` `i32` slots with zero padding
+- default lowering target remains the compatibility bridge until `M255-C002`
+- `super`, nil, and direct runtime-entrypoint cutover stay deferred until
+  `M255-C003`
+
+## M255 runtime call ABI generation for instance and class sends (C002)
+
+`M255-C002` applies the frozen lane-C ABI to real emitted call sites:
+
+- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
+- normalized instance sends lower to `objc3_runtime_dispatch_i32`
+- normalized class sends lower to `objc3_runtime_dispatch_i32`
+- normalized super/dynamic/deferred sends stay on `objc3_msgsend_i32` until
+  `M255-C003`
+- selector operands remain lowered cstring pointers
+- the fixed four-slot `i32` argument vector is preserved unchanged
+
+## M255 super, nil, and direct runtime call ABI cutover (C003)
+
+`M255-C003` continues the lane-C cutover while keeping dynamic compatibility
+separate:
+
+- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
+- normalized super sends now lower to `objc3_runtime_dispatch_i32`
+- canonical nil-receiver sends no longer lower to local IR elision; they lower
+  through `objc3_runtime_dispatch_i32`, which owns the nil `0` result
+- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- reserved direct-dispatch surfaces fail closed if they reach IR emission
+
+## M255 live dispatch cutover and shim-removal boundary (C004)
+
+`M255-C004` removes the final live compatibility-bridge dependency:
+
+- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
+- normalized dynamic sends now lower to `objc3_runtime_dispatch_i32`
+- all supported live sends lower to `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
+  is no longer emitted by live-path IR
+- reserved direct-dispatch surfaces remain fail closed
+
+## M255 lookup and dispatch runtime freeze (D001)
+
+`M255-D001` freezes the runtime-owned boundary that later selector interning,
+lookup-table, cache, and slow-path issues must preserve:
+
+- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+- canonical selector lookup symbol `objc3_runtime_lookup_selector`
+- canonical dispatch symbol `objc3_runtime_dispatch_i32`
+- canonical selector handle type `objc3_runtime_selector_handle`
+- selector interning model
+  `process-global-selector-intern-table-stable-id-per-canonical-selector-spelling`
+- metadata-backed selector lookup tables remain deferred to `M255-D002`
+- method-cache and runtime slow-path lookup remain deferred to `M255-D003`
+- protocol/category-aware method resolution remains deferred to `M255-D004`
+- unsupported runtime-resolution surfaces remain fail closed until later lane-D
+  implementation issues materialize them explicitly
+
+## M255 selector interning and lookup tables (D002)
+
+`M255-D002` materializes the first runtime-owned selector table built from
+registration-table selector pools while preserving the frozen D001 public ABI:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- selector table state snapshot symbol
+  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+- per-selector lookup entry snapshot symbol
+  `objc3_runtime_copy_selector_lookup_entry_for_testing`
+- interning model
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- merge model
+  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
+- dynamic fallback model
+  `unknown-selector-lookups-remain-dynamic-until-m255-d003`
+- replay model
+  `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`
+
+## M255 method-cache and slow-path lookup (D003)
+
+`M255-D003` turns runtime dispatch into a live method-cache surface backed by
+registered class/metaclass records and emitted callable method tables:
+
+- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- method cache state snapshot symbol
+  `objc3_runtime_copy_method_cache_state_for_testing`
+- method cache entry snapshot symbol
+  `objc3_runtime_copy_method_cache_entry_for_testing`
+- receiver normalization model
+  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
+- slow-path resolution model
+  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
+- cache model
+  `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
+- fallback model
+  `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`
+
+## M255 protocol and category-aware method resolution (D004)
+
+`M255-D004` extends the D003 live runtime path beyond class/metaclass bodies:
+
+- contract id `objc3c-runtime-protocol-category-method-resolution/m255-d004-v1`
+- preserved dependencies:
+  - `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+  - `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+  - `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- category resolution model
+  `class-bodies-win-first-category-implementation-records-supply-next-live-method-tier`
+- protocol declaration model
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution`
+- fallback model
+  `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
+- runtime snapshots stay on the preserved D003 boundary:
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+
+## M255 live dispatch gate (E001)
+
+`M255-E001` freezes one fail-closed lane-E gate over the already-landed live
+dispatch path:
+
+- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
+- evidence model `a002-b003-c004-d004-summary-chain`
+- shim boundary model
+  `live-runtime-dispatch-required-compatibility-shim-evidence-only`
+- failure model `fail-closed-on-live-dispatch-evidence-drift`
+- the gate requires `M255-C004` to keep all supported live sends on
+  `objc3_runtime_dispatch_i32`
+- the gate requires `M255-D004` to keep live category-backed resolution and
+  protocol-backed negative lookup evidence on the runtime-owned slow path
+- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
+  is not an acceptable substitute for live-dispatch proof
+- `M255-E002` is the explicit handoff for replacing shim-based smoke and
+  closeout gates with integrated live-dispatch evidence
+
+## M255 live dispatch smoke and replay closeout (E002)
+
+`M255-E002` closes the live-dispatch tranche by making the integrated smoke and
+replay proof authoritative:
+
+- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
+- execution smoke now publishes `requires_live_runtime_dispatch`
+- the canonical live smoke summary path is
+  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
+- execution replay proof now canonicalizes `runtime_library`,
+  `compatibility_runtime_shim`, and `live_runtime_dispatch_default_symbol`
+- supported message-send and runtime-dispatch negative fixtures now assert
+  `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains compatibility/test evidence only and is not an
+  acceptable substitute for live smoke/replay proof
+
+## M256 executable class/protocol/category source closure (A001)
+
+`M256-A001` freezes the parser/sema/IR source-closure boundary that later
+realization work must preserve:
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- parser-owned interface/implementation/category identities remain canonical
+  for:
+  - superclass inheritance input
+  - metaclass derivation input
+  - adopted protocol composition ordering
+  - category attachment ownership
+- sema must preserve one deterministic closure over:
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- IR must continue to publish
+  `!objc3.objc_interface_implementation`,
+  `!objc3.objc_protocol_category`, and
+  `!objc3.objc_class_protocol_category_linking`
+  as the canonical proof surface for this frozen source boundary
+- this issue is freeze/evidence only and therefore does not claim:
+  - runtime class realization
+  - category merge semantics
+  - protocol conformance runtime enforcement
+  - instance storage/layout behavior
+  - executable method binding
+- the next implementation issue is `M256-A002`
+
+## M256 class/metaclass declaration completeness plus inheritance modeling (A002)
+
+`M256-A002` upgrades the source closure from the earlier freeze into a
+runtime-facing declaration model:
+
+- contract id
+  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - class object identities
+  - metaclass object identities
+  - superclass and super-metaclass identities
+  - instance/class method-owner identities
+- IR republishes the same closure through
+  `; executable_class_metaclass_source_closure = ...`
+- the canonical identity models are:
+  - `declaration-owned-class-parent-plus-metaclass-parent-identities`
+  - `declaration-owned-instance-class-method-owner-identities`
+  - `declaration-owned-class-and-metaclass-object-identities`
+- this issue remains source-model work only and therefore does not yet claim:
+  - live runtime class realization
+  - root-class bootstrapping
+  - category merge or protocol conformance runtime behavior
+- the next implementation issue is `M256-A003`
+
+## M256 protocol/category source-surface completion for executable runtime (A003)
+
+`M256-A003` upgrades the source closure into a runtime-facing
+protocol/category declaration model:
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - protocol inheritance identities
+  - category attachment identities
+  - adopted-protocol conformance identities
+- IR republishes the same closure through
+  `; executable_protocol_category_source_closure = ...`
+- the canonical identity models are:
+  - `protocol-declaration-owned-inherited-protocol-identities`
+  - `category-declaration-owned-class-interface-implementation-attachment-identities`
+  - `category-declaration-owned-adopted-protocol-conformance-identities`
+- this issue remains source-model work only and therefore does not yet claim:
+  - live runtime protocol conformance enforcement
+  - category merge behavior
+  - object-model semantic rule enforcement
+- the next implementation issue is `M256-B001`
+
+## M256 object-model semantic rules (B001)
+
+`M256-B001` freezes the semantic-rule boundary consumed by later executable
+class/protocol/category runtime work:
+
+- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
+- sema remains authoritative for:
+  - realization legality
+  - inheritance legality
+  - override compatibility
+  - declared protocol conformance policy
+  - deterministic category merge policy
+- parser remains source-only for superclass, adoption, and category-owner
+  identities
+- IR remains proof-only for the frozen semantic boundary and does not yet claim
+  executable enforcement
+- the frozen semantic models are:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+- `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- the next implementation issue is `M256-B002`
+
+## M256 protocol conformance and required/optional member enforcement (B002)
+
+`M256-B002` implements the first live protocol-conformance legality pass over
+the frozen M256 source graph:
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- parser owns required/optional partitioning for protocol methods and
+  properties
+- sema owns required-member closure construction and conformance enforcement
+- required methods and required properties are enforced
+- optional members remain non-blocking
+- inherited protocol requirements fail closed on incompatible required members
+- deterministic conformance diagnostics use `O3S218`
+- IR remains a downstream proof consumer of the sema-owned conformance result
+
+## M256 category merge and conflict semantics (B003)
+
+`M256-B003` turns category attachment on realized classes into a live semantic
+surface:
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- parser preserves category attachment order/identity for sema-owned merge
+  ordering
+- sema owns deterministic merge-surface construction for realized classes only
+- concrete message resolution consumes the merged category surface before base
+  class fallback
+- declared protocol conformance consumes the same merged category surface
+- realized-class category interface/implementation pairs fail closed when one
+  side is missing
+- incompatible attached category members fail closed with `O3S219`
+- IR remains a downstream proof consumer of the sema-owned merge legality
+
+## M256 inheritance, override, and realization legality (B004)
+
+`M256-B004` turns the remaining realized-class inheritance and override rules
+into a live semantic surface:
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- parser preserves raw superclass spellings and member identities only
+- sema owns live fail-closed legality for:
+  - missing superclass interfaces on realized classes
+  - superclass cycles on realized classes
+  - missing realized superclass implementation closure
+  - inherited method override compatibility
+  - selector-kind drift across superclass chains
+  - inherited property compatibility
+- deterministic failures collapse onto `O3S220`
+- IR remains a downstream proof consumer of the sema-owned realized-class
+  legality result and must not reinterpret superclass closure or override
+  compatibility
+
+## M256 executable object artifact lowering (C001)
+
+`M256-C001` freezes the lane-C lowering boundary that binds realized-object
+metadata records to executable method bodies already emitted by the native
+frontend:
+
+- contract id `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- parser preserves raw implementation method bodies, selectors, and owner
+  identities only
+- sema preserves realization legality and canonical owner identities only
+- IR/object lowering binds:
+  - implementation-owned method entries to LLVM definition symbols by owner
+    identity
+  - class/metaclass descriptor bundles to owner-scoped method-list refs
+  - category descriptor bundles to owner-scoped method-list refs
+- fail-closed model
+  `no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families`
+- non-goals:
+  - no new descriptor payload families
+  - no bootstrap/runtime-registration rebinding
+  - no protocol executable-realization path
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -1081,6 +6756,1588 @@ A conforming implementation shall preserve, for all exported declarations:
 6. **Provenance**:
    - the owning module of each exported declaration ([Part 2](#part-2)),
    - API partition membership (public/SPI/private) if the toolchain supports it ([Part 2](#part-2)).
+
+7. **Lowering pass-graph replay anchors**:
+   - deterministic replay keys for lowering-boundary normalization and runtime dispatch declaration synthesis used by direct IR emission,
+   - explicit pass-graph core-feature readiness flag and replay key suitable for IR metadata emission,
+   - explicit pass-graph core-feature expansion readiness flag and expansion key suitable for IR metadata emission and replay-proof closeout,
+   - deterministic ownership-aware lowering replay keys for ownership qualifier,
+     retain/release, autoreleasepool, and ARC diagnostics/fixit contracts,
+   - ownership-aware lowering modular split scaffold readiness keys proving
+     lane-contract replay-key determinism before lowering/emit handoff,
+    - ownership-aware lowering core-feature implementation readiness markers
+      proving fail-closed ownership-lowering replay-key determinism and
+      milestone optimization improvements before direct IR emission hardening,
+    - ownership-aware lowering core-feature expansion readiness/key markers
+      proving weak/unowned expansion-accounting consistency and deterministic
+      replay-proof key transport before direct IR emission,
+    - direct IR-emission completeness metadata keys for pass-graph core/expansion
+      readiness suitable for replay-proof closeout evidence,
+   - deterministic IR-emission completeness modular split scaffold key/ready
+     anchors linking pass-graph core, expansion, and edge compatibility replay
+     evidence,
+   - deterministic IR-emission core-feature implementation readiness/key anchors
+     proving modular split transport and direct-IR boundary handoff stability,
+   - deterministic object-emission backend route keys and output markers for
+     clang/llvm-direct compile routing reliability evidence,
+    - deterministic toolchain/runtime modular split scaffold keys for backend
+      selection, backend capability availability, and IR/object compile-route
+      readiness evidence,
+    - deterministic toolchain/runtime core-feature implementation keys for
+      backend dispatch consistency and backend-output marker path/payload
+      readiness evidence,
+    - deterministic edge-case compatibility readiness/key anchors for lowering
+      compatibility handoff and pragma-order gating evidence,
+    - deterministic edge-case expansion/robustness readiness/key anchors for
+      lowering pass-graph robustness evidence,
+    - deterministic diagnostics hardening readiness/key anchors for lowering
+      pass-graph diagnostics-hardening evidence,
+    - deterministic recovery and determinism readiness/key anchors for lowering
+      pass-graph recovery-determinism evidence,
+    - deterministic conformance-matrix readiness/key anchors for lowering
+      pass-graph conformance-matrix evidence,
+   - deterministic conformance-corpus readiness/key anchors for lowering
+     pass-graph conformance-corpus evidence,
+    - deterministic performance-quality guardrails readiness/key anchors for
+      lowering pass-graph performance-quality evidence,
+    - deterministic cross-lane integration sync anchors for `A011`, `B007`,
+      `C005`, `D006`, and `E006` dependency continuity evidence,
+   - deterministic docs/operator runbook synchronization anchors for `A011`,
+     `B007`, `C005`, `D006`, `E006`, and `A012` documentation continuity
+     evidence,
+   - deterministic lane-A release-candidate replay dry-run anchors for
+     `A013`, wrapper replay artifact continuity, and lowering replay-proof
+     evidence continuity,
+   - deterministic lane-A advanced core workpack (shard 1) anchors for
+     `A014`, toolchain/runtime GA advanced-core consistency/readiness, and
+     advanced-core-key continuity evidence,
+   - deterministic lane-A integration closeout and gate sign-off anchors for
+     `A015`, toolchain/runtime GA integration-closeout sign-off
+     consistency/readiness, and integration-closeout sign-off key continuity
+     evidence,
+   - deterministic ownership-aware lowering edge-case compatibility
+     consistency/readiness and compatibility-key anchors for lane-B closeout
+     evidence,
+   - deterministic ownership-aware lowering edge-case robustness
+     expansion/readiness and robustness-key anchors for lane-B expansion
+     evidence,
+   - deterministic ownership-aware lowering diagnostics hardening
+     consistency/readiness and diagnostics-key anchors for lane-B B007
+     diagnostics hardening evidence,
+   - deterministic ownership-aware lowering recovery and determinism
+     consistency/readiness and recovery-key anchors for lane-B B008 recovery and determinism
+     hardening evidence,
+   - deterministic ownership-aware lowering conformance matrix
+     consistency/readiness and conformance-matrix-key anchors for lane-B B009
+     conformance matrix implementation evidence,
+   - deterministic ownership-aware lowering conformance corpus
+     consistency/readiness and conformance-corpus-key anchors for lane-B B010
+     conformance corpus expansion evidence,
+   - deterministic ownership-aware lowering performance and quality guardrails
+     consistency/readiness, performance-quality-key, and parse-lowering
+     performance/quality accounting anchors for lane-B B011 evidence,
+   - deterministic ownership-aware lowering cross-lane integration
+     consistency/readiness and cross-lane-integration-key anchors for lane-B
+     B012 evidence linking ownership-aware guardrails with lane-A pass-graph
+     conformance/performance continuity,
+   - deterministic lane-B ownership-aware lowering docs/operator runbook
+     synchronization metadata anchors for `M228-B013` plus explicit
+     `M228-B012` dependency continuity so docs/runbook synchronization drift
+     fails closed,
+   - deterministic lane-B ownership-aware lowering release-candidate/replay
+     metadata anchors for `M228-B014` plus explicit `M228-B013` dependency
+     continuity so release/replay drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-core-shard1
+     metadata anchors for `M228-B015` plus explicit `M228-B014` dependency
+     continuity so advanced-core-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering
+     advanced-edge-compatibility-shard1 metadata anchors for `M228-B016` plus
+     explicit `M228-B015` dependency continuity so
+     advanced-edge-compatibility-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-diagnostics-shard1
+     metadata anchors for `M228-B017` plus explicit `M228-B016` dependency
+     continuity so advanced-diagnostics-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-conformance-shard1
+     metadata anchors for `M228-B018` plus explicit `M228-B017` dependency
+     continuity so advanced-conformance-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-integration-shard1
+     metadata anchors for `M228-B019` plus explicit `M228-B018` dependency
+     continuity so advanced-integration-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-performance-shard1
+     metadata anchors for `M228-B020` plus explicit `M228-B019` dependency
+     continuity so advanced-performance-shard1 drift fails closed,
+   - deterministic lane-B ownership-aware lowering advanced-core-shard2
+     metadata anchors for `M228-B021` plus explicit `M228-B020` dependency
+     continuity so advanced-core-shard2 drift fails closed,
+   - deterministic lane-B ownership-aware lowering integration-closeout-signoff
+     metadata anchors for `M228-B022` plus explicit `M228-B021` dependency
+     continuity so integration-closeout-signoff drift fails closed,
+   - deterministic IR-emission core-feature expansion readiness/key anchors for
+     lane-C expansion evidence continuity,
+   - deterministic IR-emission edge-case compatibility completion
+     consistency/readiness and compatibility-key anchors for lane-C closeout
+     evidence continuity,
+    - deterministic IR-emission recovery and determinism hardening
+      consistency/readiness and recovery-determinism-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic IR-emission conformance matrix implementation
+      consistency/readiness and conformance-matrix-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic IR-emission conformance corpus expansion
+      consistency/readiness and conformance-corpus-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic IR-emission performance-quality guardrails
+      consistency/readiness and performance-quality-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic IR-emission cross-lane integration sync
+      consistency/readiness and cross-lane-integration-key anchors for lane-C
+      fail-closed evidence continuity,
+    - deterministic lane-C IR-emission docs/operator runbook
+      synchronization metadata anchors for `M228-C013` plus explicit
+      `M228-C012` dependency continuity so docs/runbook synchronization drift
+      fails closed before release-candidate dry-run closure,
+    - deterministic lane-C IR-emission release-candidate/replay
+      metadata anchors for `M228-C014` plus explicit `M228-C013` dependency
+      continuity so release/replay drift fails closed,
+    - deterministic lane-C IR-emission advanced-core-shard1 metadata anchors
+      for `M228-C015` plus explicit `M228-C014` dependency continuity so
+      advanced-core-shard1 drift fails closed,
+    - deterministic lane-C IR-emission advanced-edge-compatibility-shard1 metadata anchors
+      for `M228-C016` plus explicit `M228-C015` dependency continuity so
+      advanced-edge-compatibility-shard1 drift fails closed,
+    - deterministic lane-C IR-emission advanced-diagnostics-shard1 metadata anchors
+      for `M228-C017` plus explicit `M228-C016` dependency continuity so
+      advanced-diagnostics-shard1 drift fails closed,
+    - deterministic lane-C IR-emission advanced-conformance-shard1 metadata anchors
+      for `M228-C018` plus explicit `M228-C017` dependency continuity so
+      advanced-conformance-shard1 drift fails closed,
+    - deterministic lane-C IR-emission advanced-integration-shard1 metadata anchors
+      for `M228-C019` plus explicit `M228-C018` dependency continuity so
+      advanced-integration-shard1 drift fails closed,
+    - deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`
+      with canonical reference type-form order, runtime dispatch default symbol
+      continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
+      handoff evidence continuity,
+    - deterministic lane-D runtime-facing type metadata modular split/scaffolding metadata anchors for `M227-D002`
+      with explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed,
+    - deterministic lane-D runtime-facing type metadata edge-case expansion and robustness metadata anchors for `M227-D006`
+      with explicit `M227-D005` dependency continuity and fail-closed evidence continuity so edge-case expansion/robustness evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata diagnostics hardening metadata anchors for `M227-D007`
+      with explicit `M227-D006` dependency continuity and fail-closed diagnostics-hardening evidence continuity so diagnostics-hardening evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata recovery/determinism hardening metadata anchors for `M227-D008`
+      with explicit `M227-D007` dependency continuity and fail-closed recovery-determinism evidence continuity so recovery/determinism evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata conformance matrix implementation metadata anchors for `M227-D009`
+      with explicit `M227-D008` dependency continuity and fail-closed conformance-matrix evidence continuity so conformance-matrix evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata conformance corpus expansion metadata anchors for `M227-D010`
+      with explicit `M227-D009` dependency continuity and fail-closed conformance-corpus evidence continuity so conformance-corpus evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata performance and quality guardrails metadata anchors for `M227-D011`
+      with explicit `M227-D010` dependency continuity and fail-closed performance-quality evidence continuity so performance-quality evidence drift fails closed,
+    - deterministic lane-D runtime-facing type metadata integration closeout and gate sign-off metadata anchors for `M227-D012`
+      with explicit `M227-D011` dependency continuity and fail-closed integration-closeout-signoff evidence continuity so integration-closeout/sign-off evidence drift fails closed,
+    - deterministic lane-D toolchain/runtime edge-case compatibility
+      consistency/readiness and compatibility-key anchors for closeout evidence,
+   - deterministic lane-D toolchain/runtime edge-case robustness
+     consistency/readiness and robustness-key anchors for expansion evidence
+     continuity,
+   - deterministic lane-D toolchain/runtime recovery and determinism
+     consistency/readiness and recovery-determinism-key anchors for fail-closed
+     evidence continuity,
+   - deterministic lane-D toolchain/runtime conformance matrix
+     consistency/readiness and conformance-matrix-key anchors for fail-closed
+     evidence continuity,
+   - deterministic lane-D toolchain/runtime conformance corpus
+     consistency/readiness and conformance-corpus-key anchors for fail-closed
+     evidence continuity,
+   - deterministic lane-D toolchain/runtime performance and quality guardrails
+     consistency/readiness and performance-quality-key anchors for fail-closed
+     evidence continuity,
+   - enough stage-handoff state (`lex -> parse -> sema -> lower -> emit`) to
+     fail closed when lowering/emit routing is inconsistent,
+   - deterministic lane-E closeout dependency anchors for `M228-A001`, `M228-B001`,
+     `M228-C002`, and `M228-D001`, including pending-lane tokens needed to keep
+     replay-proof/performance gate evidence fail-closed before C002 asset seeding.
+   - deterministic lane-E modular split/scaffolding closeout dependency anchors for `M228-E001`, `M228-A002`,
+     `M228-B002`, `M228-C004`, and `M228-D002`, including pending-lane tokens needed to keep replay-proof/performance
+     modular split/scaffolding gate evidence fail-closed before C004 asset seeding.
+   - deterministic lane-E core-feature closeout dependency anchors for `M228-E002`, `M228-A003`,
+     `M228-B003`, `M228-C003`, and `M228-D003`, including cross-lane core-feature readiness tokens
+     needed to keep replay-proof/performance core-feature gate evidence fail-closed.
+   - deterministic lane-E core-feature expansion dependency anchors for `M228-E003`, `M228-A003`,
+     `M228-B004`, `M228-C003`, `M228-D003`, and pending token `M228-C008`,
+     including cross-lane expansion-readiness continuity needed to keep
+     replay-proof/performance core-feature expansion gate evidence fail-closed.
+   - deterministic lane-E edge-case compatibility completion dependency anchors for
+     `M228-E004`, `M228-A004`, `M228-B006`, `M228-C004`, `M228-D005`, and
+     pending token `M228-C010`, including pending-token continuity needed to
+     keep replay-proof/performance closeout evidence fail-closed.
+   - deterministic lane-E E006 edge-case expansion/robustness dependency
+     anchors for `M228-E005`, `M228-A006`, `M228-B006`, `M228-C006`, and
+     `M228-D006`, including cross-lane robustness-readiness continuity needed
+     to keep replay-proof/performance closeout evidence fail-closed.
+   - deterministic lane-E diagnostics hardening dependency anchors for
+     `M228-E006`, `M228-A007`, `M228-B007`, `M228-D007`, and pending token
+     `M228-C007`, including pending-token continuity needed to keep
+     replay-proof/performance diagnostics-hardening closeout evidence
+     fail-closed while lane-C diagnostics assets are pending.
+    - deterministic lane-E recovery and determinism hardening dependency anchors
+      for `M228-E007`, `M228-A008`, `M228-B008`, `M228-D008`, and pending token
+      `M228-C008`, including pending-token continuity needed to keep
+      replay-proof/performance recovery/determinism closeout evidence fail-closed
+      while lane-C recovery/determinism assets are pending.
+    - deterministic lane-E conformance matrix implementation dependency anchors
+      for `M228-E008`, `M228-A009`, `M228-B009`, `M228-C008`, `M228-D009`, and
+      pending tokens `M228-A007`, `M228-B010`, `M228-C017`, `M228-D007`,
+      including pending-token continuity needed to keep replay-proof/performance
+      conformance-matrix closeout evidence fail-closed while issue dependency
+      continuity tokens remain pending.
+    - deterministic toolchain/runtime core-feature expansion readiness/key markers for
+      backend marker-path and marker payload-to-route consistency evidence.
+   - deterministic lane-C lowering/codegen cost profiling and controls metadata anchors for `M247-C001`
+     with explicit dependency token (`none`) and fail-closed cost-profile evidence continuity so
+     lane-C contract-freeze governance remains deterministic before modular split stages advance.
+   - deterministic lane-C lowering/codegen modular split/scaffolding metadata anchors for `M247-C002`
+     with explicit `M247-C001` dependency continuity and fail-closed modular split evidence continuity so
+     lane-C modular split/scaffolding governance remains deterministic before core-feature implementation stages advance.
+   - deterministic lane-C lowering/codegen core feature implementation metadata anchors for `M247-C003`
+     with explicit `M247-C002` dependency continuity and fail-closed core feature evidence continuity so
+     lane-C core feature implementation governance remains deterministic before core-feature expansion stages advance.
+   - deterministic lane-C lowering/codegen core feature expansion metadata anchors for `M247-C004`
+     with explicit `M247-C003` dependency continuity and fail-closed core feature expansion evidence continuity so
+     lane-C core feature expansion governance remains deterministic before edge-case compatibility stages advance.
+    - deterministic lane-C lowering/codegen edge-case and compatibility completion metadata anchors for `M247-C005`
+      with explicit `M247-C004` dependency continuity and fail-closed edge-case compatibility evidence continuity so
+      lane-C edge-case compatibility governance remains deterministic before robustness expansion stages advance.
+    - deterministic lane-C lowering/codegen edge-case expansion and robustness metadata anchors for `M247-C006`
+      with explicit `M247-C005` dependency continuity and fail-closed edge-case compatibility evidence continuity so
+      lane-C edge-case robustness governance remains deterministic before diagnostics-hardening stages advance.
+    - deterministic lane-C lowering/codegen diagnostics hardening metadata anchors for `M247-C007`
+      with explicit `M247-C006` dependency continuity and fail-closed edge-case robustness evidence continuity so
+      lane-C diagnostics-hardening governance remains deterministic before recovery/determinism stages advance.
+     - deterministic lane-C lowering/codegen recovery and determinism hardening metadata anchors for `M247-C008`
+       with explicit `M247-C007` dependency continuity and fail-closed diagnostics hardening evidence continuity so
+       lane-C recovery/determinism governance remains deterministic before conformance matrix stages advance.
+     - deterministic lane-C lowering/codegen conformance matrix implementation metadata anchors for `M247-C009`
+       with explicit `M247-C008` dependency continuity and fail-closed recovery/determinism evidence continuity so
+       lane-C conformance matrix governance remains deterministic before conformance corpus stages advance.
+    - deterministic lane-E performance SLO dependency anchors for `M247-A001`, `M247-B001`,
+      `M247-C001`, and `M247-D001`, including pending-lane tokens needed to keep
+     compile/perf-budget governance evidence fail-closed before lane A-D contract
+     assets are seeded.
+     - deterministic lane-E performance SLO modular split dependency anchors for `M247-E001`,
+       `M247-A002`, `M247-B002`, `M247-C002`, and `M247-D002`, including
+       pending-lane tokens needed to keep modular split governance evidence
+       fail-closed before lane A-D modular split assets are seeded.
+     - deterministic lane-E performance SLO core feature implementation dependency anchors for `M247-E002`,
+       `M247-A003`, `M247-B003`, `M247-C003`, and `M247-D002`, including
+       pending-lane tokens needed to keep core feature implementation governance
+       evidence fail-closed while lane A/B/C/D seeds remain pending.
+     - deterministic lane-E performance SLO edge-case expansion/robustness metadata anchors for `M247-E006`
+       with explicit `M247-E005`, `M247-A006`, `M247-B007`, `M247-C006`, and
+       `M247-D005` dependency continuity so lane-E robustness contract-gating
+       evidence remains fail-closed before diagnostics-hardening assets are seeded.
+     - deterministic lane-E performance SLO diagnostics-hardening metadata anchors for `M247-E007`
+       with explicit `M247-E006`, `M247-A007`, `M247-B007`, `M247-C007`, and
+       `M247-D007` dependency continuity so lane-E diagnostics-hardening contract-gating
+       evidence remains fail-closed before recovery/determinism assets are seeded.
+     - deterministic lane-B semantic hot-path analysis/budgeting metadata anchors for `M247-B008`
+       with explicit pending token `M247-B007` continuity so lane-B
+       recovery/determinism contract-gating evidence remains fail-closed before
+      diagnostics hardening assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting conformance matrix metadata anchors for `M247-B009`
+      with explicit `M247-B008` dependency continuity so lane-B
+      conformance matrix contract-gating evidence remains fail-closed before
+      conformance corpus assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting conformance corpus metadata anchors for `M247-B010`
+      with explicit `M247-B009` dependency continuity so lane-B
+      conformance corpus contract-gating evidence remains fail-closed before
+      performance-quality guardrail assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting cross-lane integration metadata anchors for `M247-B012`
+      with explicit `M247-B011` dependency continuity so lane-B
+      cross-lane integration contract-gating evidence remains fail-closed before
+      docs/runbook synchronization assets are seeded.
+    - deterministic lane-B semantic hot-path analysis/budgeting docs/operator runbook synchronization metadata anchors for `M247-B013`
+      with explicit `M247-B012` dependency continuity so lane-B docs/runbook synchronization contract-gating evidence remains fail-closed.
+    - deterministic lane-B semantic hot-path analysis/budgeting release-candidate/replay dry-run metadata anchors for `M247-B014`
+      with explicit `M247-B013` dependency continuity so lane-B release-candidate/replay dry-run contract-gating evidence remains fail-closed.
+    - deterministic lane-B semantic hot-path analysis/budgeting advanced core workpack (shard 1) metadata anchors for `M247-B015`
+      with explicit `M247-B014` dependency continuity so lane-B advanced core workpack (shard 1) contract-gating evidence remains fail-closed.
+    - deterministic lane-A frontend profiling and hot-path decomposition contract-freeze metadata anchors for `M247-A001`
+      with explicit dependency token (`none`) so parser/AST profiling and hot-path decomposition evidence and compile-time budget continuity remain fail-closed before lane-A modular split stages advance.
+    - deterministic lane-A frontend profiling and hot-path decomposition modular split metadata anchors for `M247-A002`
+      with explicit `M247-A001` dependency continuity so profiling/hot-path modular split drift fails closed before lane-A core-feature implementation stages advance.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      edge-case expansion/robustness metadata anchors for `M247-A006` with
+      explicit `M247-A005` dependency continuity so parser-boundary profiling
+      contract-gating evidence remains fail-closed before lane-A A005 assets
+      are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      diagnostics-hardening metadata anchors for `M247-A007` with explicit
+      `M247-A006` dependency continuity so profiling diagnostics and
+      compile-time budget contract-gating evidence remains fail-closed before
+      lane-A A006 assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      recovery/determinism metadata anchors for `M247-A008` with explicit
+      `M247-A007` dependency continuity so recovery replay determinism and
+      compile-time budget contract-gating evidence remains fail-closed before
+      lane-A A007 assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      conformance matrix metadata anchors for `M247-A009` with explicit
+      `M247-A008` dependency continuity so conformance matrix
+      contract-gating evidence remains fail-closed before conformance corpus
+      assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      conformance corpus metadata anchors for `M247-A010` with explicit
+      `M247-A009` dependency continuity so conformance corpus
+      contract-gating evidence remains fail-closed before performance and
+      quality guardrail assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      performance and quality guardrails metadata anchors for `M247-A011` with explicit
+      `M247-A010` dependency continuity so performance and quality guardrails
+      contract-gating evidence remains fail-closed before cross-lane integration assets are seeded.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      cross-lane integration sync metadata anchors for `M247-A012` with explicit
+      `M247-A011` dependency continuity so cross-lane synchronization
+      contract-gating evidence remains fail-closed while pending cross-lane
+      dependency continuity (`M247-B012`, `M247-C012`, `M247-D012`, `M247-E012`)
+      is tracked explicitly.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      docs and operator runbook synchronization metadata anchors for `M247-A013`
+      with explicit `M247-A012` dependency continuity so docs/runbook
+      synchronization contract-gating evidence remains fail-closed while pending
+      cross-lane dependency continuity (`M247-B013`, `M247-C013`, `M247-D013`,
+      `M247-E013`) is tracked explicitly.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      release-candidate/replay dry-run metadata anchors for `M247-A014`
+      with explicit `M247-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
+    - deterministic lane-A frontend profiling and hot-path decomposition
+      advanced edge compatibility workpack (shard 1) metadata anchors for `M247-A016`
+      with explicit `M247-A015` dependency continuity so lane-A advanced edge compatibility workpack (shard 1) contract-gating evidence remains fail-closed.
+    - deterministic lane-D runtime/link/build throughput optimization core
+      feature expansion metadata anchors for `M247-D004` with explicit pending
+      dependency token continuity for `M247-D003` so throughput
+      contract-gating evidence remains fail-closed before lane-D core-feature
+      implementation assets are seeded.
+    - deterministic lane-D runtime/link/build throughput optimization edge-case and compatibility completion metadata anchors for `M247-D005`
+      with explicit `M247-D004` dependency continuity and fail-closed compatibility evidence continuity so
+      throughput edge-case governance remains fail-closed before lane-D compatibility closure is promoted.
+    - deterministic lane-D runtime/link/build throughput optimization conformance matrix implementation metadata anchors for `M247-D009`
+      with explicit `M247-D008` dependency continuity and fail-closed conformance matrix evidence continuity so
+      throughput conformance matrix governance remains fail-closed before lane-D conformance-corpus assets are promoted.
+   - deterministic lane-A interop surface syntax/declaration-form metadata anchors for `M244-A001`
+      with explicit dependency tokens (`none`) and fail-closed evidence continuity
+      so interop declaration-form metadata drift fails closed.
+    - deterministic lane-A interop surface modular split metadata anchors for `M244-A002`
+      with explicit `M244-A001` dependency continuity and fail-closed evidence
+      so interop modular split scaffolding drift fails closed.
+    - deterministic lane-A interop surface core-feature implementation metadata anchors for `M244-A003`
+      with explicit `M244-A002` dependency continuity and fail-closed evidence
+      so interop core-feature implementation drift fails closed.
+    - deterministic lane-A interop surface core-feature expansion metadata anchors for `M244-A004`
+      with explicit `M244-A003` dependency continuity and fail-closed evidence
+      so interop core-feature expansion drift fails closed.
+    - deterministic lane-A interop surface edge-case and compatibility completion metadata anchors for `M244-A005`
+      with explicit `M244-A004` dependency continuity and fail-closed evidence
+      so interop edge-case compatibility drift fails closed.
+    - deterministic lane-A interop surface edge-case expansion and robustness metadata anchors for `M244-A006`
+      with explicit `M244-A005` dependency continuity and fail-closed evidence
+      so interop edge-case expansion drift fails closed.
+    - deterministic lane-A interop surface diagnostics hardening metadata anchors for `M244-A007`
+      with explicit `M244-A006` dependency continuity and fail-closed evidence
+      so interop diagnostics hardening drift fails closed.
+    - deterministic lane-A interop surface recovery and determinism hardening metadata anchors for `M244-A008`
+      with explicit `M244-A007` dependency continuity and fail-closed evidence
+      so interop recovery and determinism hardening drift fails closed.
+    - deterministic lane-A interop surface conformance matrix implementation metadata anchors for `M244-A009`
+      with explicit `M244-A008` dependency continuity and fail-closed evidence
+      so interop conformance matrix drift fails closed.
+    - deterministic lane-A interop surface conformance corpus expansion metadata anchors for `M244-A010`
+      with explicit `M244-A009` dependency continuity and fail-closed evidence
+      so interop conformance corpus drift fails closed.
+    - deterministic lane-A interop surface performance and quality guardrails metadata anchors for `M244-A011`
+      with explicit `M244-A010` dependency continuity and fail-closed evidence
+      so interop performance/quality drift fails closed.
+    - deterministic lane-A interop surface cross-lane integration sync metadata anchors for `M244-A012`
+      with explicit `M244-A011`/`M244-B007`/`M244-C007`/`M244-D004`/`M244-E006` dependency continuity and fail-closed evidence
+      so interop integration drift fails closed.
+    - deterministic lane-A interop surface integration closeout and gate sign-off metadata anchors for `M244-A013`
+      with explicit `M244-A012` dependency continuity and fail-closed evidence
+      so interop integration closeout drift fails closed.
+   - deterministic lane-C interop lowering/ABI conformance metadata anchors for `M244-C001`
+     with explicit dependency tokens (`none`) and fail-closed evidence continuity
+     so lowering/ABI conformance metadata drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance modular split metadata anchors for `M244-C002`
+      with explicit `M244-C001` dependency continuity and fail-closed evidence
+      so lowering/ABI modular split scaffolding drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance core-feature metadata anchors for `M244-C003`
+      with explicit `M244-C002` dependency continuity and fail-closed evidence
+      so lowering/ABI core-feature implementation drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance core-feature expansion metadata anchors for `M244-C004`
+      with explicit `M244-C003` dependency continuity and fail-closed evidence
+      so lowering/ABI core-feature expansion drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance edge-case and compatibility completion metadata anchors for `M244-C005`
+      with explicit `M244-C004` dependency continuity and fail-closed evidence
+      so lowering/ABI edge-case compatibility drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance edge-case expansion and robustness metadata anchors for `M244-C006`
+      with explicit `M244-C005` dependency continuity and fail-closed evidence
+      so lowering/ABI edge-case expansion drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance diagnostics hardening metadata anchors for `M244-C007`
+      with explicit `M244-C006` dependency continuity and fail-closed evidence
+      so lowering/ABI diagnostics hardening drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance recovery and determinism hardening metadata anchors for `M244-C008`
+      with explicit `M244-C007` dependency continuity and fail-closed evidence
+      so lowering/ABI recovery and determinism hardening drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance conformance matrix implementation metadata anchors for `M244-C009`
+      with explicit `M244-C008` dependency continuity and fail-closed evidence
+      so lowering/ABI conformance matrix implementation drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance conformance corpus expansion metadata anchors for `M244-C010`
+      with explicit `M244-C009` dependency continuity and fail-closed evidence
+      so lowering/ABI conformance corpus expansion drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance performance and quality guardrails metadata anchors for `M244-C011`
+      with explicit `M244-C010` dependency continuity and fail-closed evidence
+      so lowering/ABI performance and quality guardrail drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance cross-lane integration sync metadata anchors for `M244-C012`
+      with explicit `M244-C011` dependency continuity and fail-closed evidence
+      so lowering/ABI cross-lane integration sync drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance docs/operator runbook synchronization metadata anchors for `M244-C013`
+      with explicit `M244-C012` dependency continuity and fail-closed evidence
+      so lowering/ABI docs/runbook synchronization drift fails closed.
+    - deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C014`
+      with explicit `M244-C013` dependency continuity and fail-closed evidence
+      so lowering/ABI release-candidate/replay dry-run drift fails closed.
+    - deterministic lane-D runtime/link bridge-path metadata anchors for `M244-D001`
+      with explicit dependency tokens (`M244-A001`) and fail-closed evidence continuity
+      so runtime/link bridge-path metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path modular split metadata anchors for `M244-D002`
+      with explicit `M244-D001` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path modular split metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path core feature implementation metadata anchors for `M244-D003`
+      with explicit `M244-D002` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path core feature implementation metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path core feature expansion metadata anchors for `M244-D004`
+      with explicit `M244-D003` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path core feature expansion metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path edge-case and compatibility completion metadata anchors for `M244-D005`
+      with explicit `M244-D004` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path edge-case and compatibility completion metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path edge-case expansion and robustness metadata anchors for `M244-D006`
+      with explicit `M244-D005` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path edge-case expansion and robustness metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path diagnostics hardening metadata anchors for `M244-D007`
+      with explicit `M244-D006` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path diagnostics hardening metadata drift fails closed.
+    - deterministic lane-D runtime/link bridge-path recovery and determinism hardening metadata anchors for `M244-D008`
+      with explicit `M244-D007` dependency continuity and fail-closed evidence continuity
+      so runtime/link bridge-path recovery and determinism hardening metadata drift fails closed.
+   - deterministic lane-B interop semantic/type mediation metadata anchors for `M244-B001`
+     with semantic integration + typed handoff determinism evidence, explicit dependency tokens (`none`),
+     and fail-closed evidence continuity so interop semantic/type mediation drift fails closed.
+   - deterministic lane-B interop semantic/type mediation modular split metadata anchors for `M244-B002`
+     with explicit `M244-B001` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation modular split scaffolding drift fails closed.
+   - deterministic lane-B interop semantic/type mediation core-feature metadata anchors for `M244-B003`
+     with explicit `M244-B002` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation core-feature implementation drift fails closed.
+   - deterministic lane-B interop semantic/type mediation core-feature expansion metadata anchors for `M244-B004`
+     with explicit `M244-B003` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation core-feature expansion drift fails closed.
+   - deterministic lane-B interop semantic/type mediation edge-case and compatibility completion metadata anchors for `M244-B005`
+     with explicit `M244-B004` dependency continuity and fail-closed evidence
+     so interop semantic/type mediation edge-case and compatibility completion drift fails closed.
+    - deterministic lane-B interop semantic/type mediation edge-case expansion and robustness metadata anchors for `M244-B006`
+      with explicit `M244-B005` dependency continuity and fail-closed evidence
+      so interop semantic/type mediation edge-case expansion and robustness drift fails closed.
+    - deterministic lane-B interop semantic/type mediation cross-lane integration sync metadata anchors for `M244-B012`
+      with explicit `M244-B011` dependency continuity and fail-closed evidence
+      so interop semantic/type mediation cross-lane integration sync drift fails closed.
+    - deterministic lane-B interop semantic/type mediation docs/operator runbook synchronization metadata anchors for `M244-B013`
+      with explicit `M244-B012` dependency continuity and fail-closed evidence
+      so interop semantic/type mediation docs/runbook synchronization drift fails closed.
+    - deterministic lane-B interop semantic/type mediation advanced core workpack (shard 1) metadata anchors for `M244-B015`
+      with explicit `M244-B014` dependency continuity and fail-closed evidence
+      so interop semantic/type mediation advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-E interop conformance gate and operations dependency anchors for
+       `M244-A001`, `M244-B001`, `M244-C001`, and `M244-D001`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift without requiring pending lane-B/C/D artifacts before they land.
+    - deterministic lane-E interop conformance gate and operations modular split/scaffolding dependency anchors for
+      `M244-E001`, `M244-A002`, `M244-B002`, `M244-C002`, and `M244-D002`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D modular split assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations core-feature implementation dependency anchors for
+      `M244-E002`, `M244-A002`, `M244-B003`, `M244-C004`, and `M244-D004`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D core-feature assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations core-feature expansion dependency anchors for
+      `M244-E003`, `M244-A003`, `M244-B004`, `M244-C005`, and `M244-D005`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D core-feature expansion assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations edge-case and compatibility completion dependency anchors for
+      `M244-E004`, `M244-A004`, `M244-B006`, `M244-C007`, and `M244-D006`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D edge-case and compatibility completion assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations edge-case expansion and robustness dependency anchors for
+      `M244-E005`, `M244-A005`, `M244-B007`, `M244-C008`, and `M244-D008`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D edge-case expansion and robustness assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations diagnostics hardening dependency anchors for
+      `M244-E006`, `M244-A005`, `M244-B008`, `M244-C009`, and `M244-D009`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D diagnostics hardening assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations recovery and determinism hardening dependency anchors for
+      `M244-E007`, `M244-A006`, `M244-B009`, `M244-C011`, and `M244-D010`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D recovery and determinism hardening assets remain pending GH seed.
+    - deterministic lane-E interop conformance gate and operations conformance matrix implementation dependency anchors for
+      `M244-E008`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`, including dependency-reference tokens
+      wired through `npm run --if-present` readiness hooks so governance evidence stays fail-closed
+      on token/reference drift while staged lane-B/C/D conformance matrix implementation assets remain pending GH seed.
+    - deterministic lane-A suite partitioning metadata anchors for `M248-A001`
+      with fixture ownership boundary evidence and parser replay-budget continuity
+      so CI sharding partition drift fails closed.
+    - deterministic lane-A suite partitioning modular split metadata anchors for
+      `M248-A002` with explicit `M248-A001` dependency continuity so fixture
+      scaffolding drift fails closed.
+    - deterministic lane-A suite partitioning and fixture ownership recovery and determinism hardening metadata anchors for `M248-A008`
+      with explicit `M248-A007` dependency continuity and fail-closed recovery/determinism evidence continuity.
+    - deterministic lane-A frontend behavior parity metadata anchors for `M245-A001`
+      with toolchain portability evidence and parser replay-budget continuity
+      so frontend portability drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion metadata anchors for `M234-A001`
+      with property/ivar semantics evidence and parser replay-budget continuity
+      so synthesized accessor surface drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M235-A001`
+      with nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+      so qualifier and generic grammar surface drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference metadata anchors for `M235-B001`
+      with nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+      so qualifier and generic semantic-inference mediation drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M235-C001`
+      with qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+      so qualified-type lowering and ABI representation drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation modular split/scaffolding metadata anchors for `M235-C002`
+      with explicit `M235-C001` dependency continuity so modular split/scaffolding lowering and ABI drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation core feature implementation metadata anchors for `M235-C003`
+      with explicit `M235-C002` dependency continuity so core feature implementation lowering and ABI drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation core feature expansion metadata anchors for `M235-C004`
+      with explicit `M235-C003` dependency continuity so core feature expansion lowering and ABI drift fails closed.
+    - deterministic lane-C qualified type lowering and ABI representation edge-case and compatibility completion metadata anchors for `M235-C005`
+      with explicit `M235-C004` dependency continuity so edge-case and compatibility completion lowering and ABI drift fails closed.
+    - deterministic lane-D interop behavior for qualified generic APIs metadata anchors for `M235-D001`
+      with explicit `M235-C001` dependency continuity so interop contract and architecture drift fails closed.
+    - deterministic lane-D interop behavior for qualified generic APIs modular split/scaffolding metadata anchors for `M235-D002`
+      with explicit `M235-D001` dependency continuity so modular split/scaffolding interop drift fails closed.
+    - deterministic lane-D interop behavior for qualified generic APIs core feature implementation metadata anchors for `M235-D003`
+      with explicit `M235-D002` dependency continuity so core feature implementation interop drift fails closed.
+    - deterministic lane-D interop behavior for qualified generic APIs core feature expansion metadata anchors for `M235-D004`
+      with explicit `M235-D003` dependency continuity so core feature expansion interop drift fails closed.
+    - deterministic lane-E qualifier/generic conformance gate metadata anchors for `M235-E001`
+      with explicit `M235-A001`/`M235-B001`/`M235-C001` dependency continuity so lane-E freeze drift fails closed.
+    - deterministic lane-E qualifier/generic conformance gate modular split/scaffolding metadata anchors for `M235-E002`
+      with explicit `M235-E001`/`M235-A002`/`M235-B004`/`M235-C003`/`M235-D001` dependency continuity so lane-E modular split/scaffolding drift fails closed.
+    - deterministic lane-E qualifier/generic conformance gate core feature implementation metadata anchors for `M235-E003`
+      with explicit `M235-E002`/`M235-A003`/`M235-B006`/`M235-C004`/`M235-D002` dependency continuity so lane-E core feature implementation drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference modular split metadata anchors for `M235-B002`
+      with explicit `M235-B001` dependency continuity so nullability/generics/qualifier semantic-inference scaffolding drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference core feature metadata anchors for `M235-B003`
+      with explicit `M235-B002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference core feature expansion metadata anchors for `M235-B004`
+      with explicit `M235-B003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference edge-case and compatibility completion metadata anchors for `M235-B005`
+      with explicit `M235-B004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference edge-case expansion and robustness metadata anchors for `M235-B006`
+      with explicit `M235-B005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference diagnostics hardening metadata anchors for `M235-B007`
+      with explicit `M235-B006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference recovery and determinism hardening metadata anchors for `M235-B008`
+      with explicit `M235-B007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference conformance matrix implementation metadata anchors for `M235-B009`
+      with explicit `M235-B008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference conformance corpus expansion metadata anchors for `M235-B010`
+      with explicit `M235-B009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference performance and quality guardrails metadata anchors for `M235-B011`
+      with explicit `M235-B010` dependency continuity so performance and quality guardrails drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference cross-lane integration sync metadata anchors for `M235-B012`
+      with explicit `M235-B011` dependency continuity so cross-lane integration sync drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference docs and operator runbook synchronization metadata anchors for `M235-B013`
+      with explicit `M235-B012` dependency continuity so docs and operator runbook synchronization drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference release-candidate and replay dry-run metadata anchors for `M235-B014`
+      with explicit `M235-B013` dependency continuity so release-candidate and replay dry-run drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced core workpack (shard 1) metadata anchors for `M235-B015`
+      with explicit `M235-B014` dependency continuity so advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced edge compatibility workpack (shard 1) metadata anchors for `M235-B016`
+      with explicit `M235-B015` dependency continuity so advanced edge compatibility workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced diagnostics workpack (shard 1) metadata anchors for `M235-B017`
+      with explicit `M235-B016` dependency continuity so advanced diagnostics workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced conformance workpack (shard 1) metadata anchors for `M235-B018`
+      with explicit `M235-B017` dependency continuity so advanced conformance workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced integration workpack (shard 1) metadata anchors for `M235-B019`
+      with explicit `M235-B018` dependency continuity so advanced integration workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced performance workpack (shard 1) metadata anchors for `M235-B020`
+      with explicit `M235-B019` dependency continuity so advanced performance workpack (shard 1) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced core workpack (shard 2) metadata anchors for `M235-B021`
+      with explicit `M235-B020` dependency continuity so advanced core workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced edge compatibility workpack (shard 2) metadata anchors for `M235-B022`
+      with explicit `M235-B021` dependency continuity so advanced edge compatibility workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced diagnostics workpack (shard 2) metadata anchors for `M235-B023`
+      with explicit `M235-B022` dependency continuity so advanced diagnostics workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced conformance workpack (shard 2) metadata anchors for `M235-B024`
+      with explicit `M235-B023` dependency continuity so advanced conformance workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced integration workpack (shard 2) metadata anchors for `M235-B025`
+      with explicit `M235-B024` dependency continuity so advanced integration workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced performance workpack (shard 2) metadata anchors for `M235-B026`
+      with explicit `M235-B025` dependency continuity so advanced performance workpack (shard 2) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced core workpack (shard 3) metadata anchors for `M235-B027`
+      with explicit `M235-B026` dependency continuity so advanced core workpack (shard 3) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced edge compatibility workpack (shard 3) metadata anchors for `M235-B028`
+      with explicit `M235-B027` dependency continuity so advanced edge compatibility workpack (shard 3) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference advanced diagnostics workpack (shard 3) metadata anchors for `M235-B029`
+      with explicit `M235-B028` dependency continuity so advanced diagnostics workpack (shard 3) drift fails closed.
+    - deterministic lane-B qualifier/generic semantic inference integration closeout and gate sign-off metadata anchors for `M235-B030`
+      with explicit `M235-B029` dependency continuity so integration closeout and gate sign-off drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization modular split metadata anchors for `M235-A002`
+      with explicit `M235-A001` dependency continuity so nullability/generics/qualifier scaffolding drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization core feature metadata anchors for `M235-A003`
+      with explicit `M235-A002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization core feature expansion metadata anchors for `M235-A004`
+      with explicit `M235-A003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization edge-case and compatibility completion metadata anchors for `M235-A005`
+      with explicit `M235-A004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization edge-case expansion and robustness metadata anchors for `M235-A006`
+      with explicit `M235-A005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization diagnostics hardening metadata anchors for `M235-A007`
+      with explicit `M235-A006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization recovery and determinism hardening metadata anchors for `M235-A008`
+      with explicit `M235-A007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization conformance matrix implementation metadata anchors for `M235-A009`
+      with explicit `M235-A008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization conformance corpus expansion metadata anchors for `M235-A010`
+      with explicit `M235-A009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization performance and quality guardrails metadata anchors for `M235-A011`
+      with explicit `M235-A010` dependency continuity so performance and quality guardrails drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization cross-lane integration sync metadata anchors for `M235-A012`
+      with explicit `M235-A011` dependency continuity so cross-lane integration sync drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization docs and operator runbook synchronization metadata anchors for `M235-A013`
+      with explicit `M235-A012` dependency continuity so docs/runbook synchronization drift fails closed.
+    - deterministic lane-A qualifier/generic grammar normalization release-candidate/replay dry-run metadata anchors for `M235-A014`
+      with explicit `M235-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
+    - deterministic lane-A qualifier/generic grammar normalization advanced edge compatibility workpack (shard 1) metadata anchors for `M235-A016`
+      with explicit `M235-A015` dependency continuity so lane-A advanced edge compatibility workpack (shard 1) contract-gating evidence remains fail-closed.
+    - deterministic lane-A qualifier/generic grammar normalization integration closeout and gate sign-off metadata anchors for `M235-A017`
+      with explicit `M235-A016` dependency continuity so lane-A integration closeout and gate sign-off contract-gating evidence remains fail-closed.
+    - deterministic lane-C accessor and ivar lowering metadata anchors for `M234-C001`
+      with property/ivar lowering evidence and lowering replay-budget continuity
+      so accessor/ivar lowering surface drift fails closed.
+    - deterministic lane-C accessor and ivar lowering modular split metadata anchors for `M234-C002`
+      with explicit `M234-C001` dependency continuity so accessor/ivar lowering scaffolding drift fails closed.
+    - deterministic lane-C accessor and ivar lowering core-feature metadata anchors for `M234-C003`
+      with explicit `M234-C001` and `M234-C002` dependency continuity so accessor/ivar lowering
+      core-feature implementation drift fails closed.
+    - deterministic lane-C accessor and ivar lowering core-feature expansion metadata anchors for `M234-C004`
+      with explicit `M234-C003` dependency continuity and fail-closed core-feature expansion evidence continuity
+      so accessor/ivar lowering core-feature expansion drift fails closed.
+    - deterministic lane-C accessor and ivar lowering edge-case and compatibility completion metadata anchors for `M234-C005`
+      with explicit `M234-C004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-C accessor and ivar lowering edge-case expansion and robustness metadata anchors for `M234-C006`
+      with explicit `M234-C005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-C accessor and ivar lowering diagnostics hardening metadata anchors for `M234-C007`
+      with explicit `M234-C006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-C accessor and ivar lowering recovery and determinism hardening metadata anchors for `M234-C008`
+      with explicit `M234-C007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-C accessor and ivar lowering conformance matrix implementation metadata anchors for `M234-C009`
+      with explicit `M234-C008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-C accessor and ivar lowering conformance corpus expansion metadata anchors for `M234-C010`
+      with explicit `M234-C009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-C accessor and ivar lowering performance and quality guardrails metadata anchors for `M234-C011`
+      with explicit `M234-C010` dependency continuity so performance and quality guardrails drift fails closed.
+    - deterministic lane-C accessor and ivar lowering cross-lane integration sync metadata anchors for `M234-C012`
+      with explicit `M234-C011` dependency continuity so cross-lane integration sync drift fails closed.
+    - deterministic lane-C accessor and ivar lowering docs and operator runbook synchronization metadata anchors for `M234-C013`
+      with explicit `M234-C012` dependency continuity so docs and operator runbook synchronization drift fails closed.
+    - deterministic lane-C accessor and ivar lowering release-candidate and replay dry-run metadata anchors for `M234-C014`
+      with explicit `M234-C013` dependency continuity so release-candidate and replay dry-run drift fails closed.
+    - deterministic lane-C accessor and ivar lowering advanced core workpack (shard 1) metadata anchors for `M234-C015`
+      with explicit `M234-C014` dependency continuity so advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-C accessor and ivar lowering advanced edge compatibility workpack (shard 1) metadata anchors for `M234-C016`
+      with explicit `M234-C015` dependency continuity so advanced edge compatibility workpack (shard 1) drift fails closed.
+    - deterministic lane-C accessor and ivar lowering integration closeout and gate sign-off metadata anchors for `M234-C017`
+      with explicit `M234-C016` dependency continuity so integration closeout and gate sign-off drift fails closed.
+    - deterministic lane-D runtime property metadata integration metadata anchors for `M234-D001`
+      with runtime property metadata evidence and metadata replay-budget continuity
+      so runtime property metadata integration drift fails closed.
+    - deterministic lane-D runtime property metadata integration modular split metadata anchors for
+      `M234-D002` with explicit `M234-D001` dependency continuity so runtime property metadata
+      modular split/scaffolding drift fails closed.
+    - deterministic lane-D runtime property metadata integration core feature metadata anchors for `M234-D003`
+      with explicit `M234-D002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-D runtime property metadata integration core feature expansion metadata anchors for `M234-D004`
+      with explicit `M234-D003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion modular split metadata anchors for `M234-A002`
+      with explicit `M234-A001` dependency continuity so property/ivar scaffolding drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion core feature metadata anchors for `M234-A003`
+      with explicit `M234-A002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion core feature metadata anchors for `M234-A004`
+      with explicit `M234-A003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion edge-case and compatibility completion metadata anchors for `M234-A005`
+      with explicit `M234-A004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion edge-case expansion and robustness metadata anchors for `M234-A006`
+      with explicit `M234-A005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion diagnostics hardening metadata anchors for `M234-A007`
+      with explicit `M234-A006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion recovery and determinism hardening metadata anchors for `M234-A008`
+      with explicit `M234-A007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion conformance matrix implementation metadata anchors for `M234-A009`
+      with explicit `M234-A008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion conformance corpus expansion metadata anchors for `M234-A010`
+      with explicit `M234-A009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion performance and quality guardrails metadata anchors for `M234-A011`
+      with explicit `M234-A010` dependency continuity so guardrail drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion cross-lane integration sync metadata anchors for `M234-A012`
+      with explicit `M234-A011` dependency continuity so cross-lane drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion docs and operator runbook synchronization metadata anchors for `M234-A013`
+      with explicit `M234-A012` dependency continuity so docs/runbook drift fails closed.
+    - deterministic lane-A property and ivar syntax surface completion release-candidate/replay dry-run metadata anchors for `M234-A014`
+      with explicit `M234-A013` dependency continuity so lane-A release-candidate/replay dry-run contract-gating evidence remains fail-closed.
+    - deterministic lane-A property and ivar syntax surface completion advanced core workpack (shard 1) metadata anchors for `M234-A015`
+      with explicit `M234-A014` dependency continuity so advanced-core-shard1 evidence remains fail-closed.
+    - deterministic lane-A property and ivar syntax surface completion integration closeout and gate sign-off metadata anchors for `M234-A016`
+      with explicit `M234-A015` dependency continuity so lane-A integration closeout and gate sign-off contract-gating evidence remains fail-closed.
+    - deterministic lane-A frontend behavior parity modular split metadata anchors for `M245-A002`
+      with explicit `M245-A001` dependency continuity so compatibility scaffolding drift fails closed.
+    - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A003`
+      with explicit `M245-A002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-A frontend behavior parity core feature metadata anchors for `M245-A004`
+      with explicit `M245-A003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-A frontend behavior parity edge-case and compatibility completion metadata anchors for `M245-A005`
+      with explicit `M245-A004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-A frontend behavior parity edge-case expansion and robustness metadata anchors for `M245-A006`
+      with explicit `M245-A005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-A frontend behavior parity diagnostics hardening metadata anchors for `M245-A007`
+      with explicit `M245-A006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-A frontend behavior parity recovery and determinism hardening metadata anchors for `M245-A008`
+      with explicit `M245-A007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-A frontend behavior parity conformance matrix implementation metadata anchors for `M245-A009`
+      with explicit `M245-A008` dependency continuity so conformance matrix implementation drift fails closed.
+    - deterministic lane-A frontend behavior parity conformance corpus expansion metadata anchors for `M245-A010`
+      with explicit `M245-A009` dependency continuity so conformance corpus expansion drift fails closed.
+    - deterministic lane-A frontend behavior parity integration closeout and gate sign-off metadata anchors for `M245-A011`
+      with explicit `M245-A010` dependency continuity so integration closeout and gate sign-off drift fails closed.
+    - deterministic lane-A feature packaging metadata anchors for `M249-A001`
+      with release packaging compatibility evidence and parser replay-budget continuity
+      so distribution surface drift fails closed.
+   - deterministic lane-A feature packaging modular split metadata anchors for `M249-A002`
+     with explicit `M249-A001` dependency continuity so compatibility scaffolding drift fails closed.
+   - deterministic lane-A feature packaging core feature metadata anchors for `M249-A003`
+     with explicit `M249-A002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-B semantic/lowering metadata anchors for `M248-B001`
+      with semantic fixture ownership evidence and lowering replay continuity so
+      CI sharding semantic drift fails closed.
+    - deterministic lane-B type-system completeness for ObjC3 forms metadata anchors for `M227-B001`
+      with canonical reference/message/bridge-top form evidence and semantic-pass fail-closed continuity
+      so canonical ObjC type-form drift fails closed.
+    - deterministic lane-B type-system diagnostics hardening metadata anchors for `M227-B007`
+      with canonical type-form diagnostics consistency/readiness and diagnostics-key continuity evidence,
+      plus explicit `M227-B006` dependency continuity so diagnostics drift fails closed.
+    - deterministic lane-B type-system recovery/determinism hardening metadata anchors for `M227-B008`
+      with canonical type-form recovery consistency/readiness and recovery-key continuity evidence,
+      plus explicit `M227-B007` dependency continuity so recovery drift fails closed.
+    - deterministic lane-B type-system conformance matrix metadata anchors for `M227-B009`
+      with canonical type-form conformance matrix consistency/readiness and conformance-matrix-key continuity evidence,
+      plus explicit `M227-B008` dependency continuity so conformance matrix drift fails closed.
+    - deterministic lane-B type-system conformance corpus metadata anchors for `M227-B010`
+      with canonical type-form conformance corpus consistency/readiness, case-accounting continuity,
+      and conformance-corpus-key continuity evidence, plus explicit `M227-B009` dependency continuity
+      so conformance corpus drift fails closed.
+    - deterministic lane-B type-system performance and quality guardrails metadata anchors for `M227-B011`
+      with canonical type-form performance/quality guardrail accounting, consistency/readiness, and
+      performance-quality-key continuity evidence, plus explicit `M227-B010` dependency continuity so
+      guardrail drift fails closed.
+    - deterministic lane-B type-system docs/operator runbook synchronization metadata anchors for `M227-B013`
+      with lane-B operator command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B012` dependency continuity so docs/runbook synchronization drift fails closed.
+    - deterministic lane-B type-system release-candidate replay dry-run metadata anchors for `M227-B014`
+      with lane-B release/replay command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B013` dependency continuity so release-candidate/replay dry-run drift fails closed.
+    - deterministic lane-B type-system advanced core workpack (shard 1) metadata anchors for `M227-B015`
+      with lane-B advanced-core command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B014` dependency continuity so advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced edge compatibility workpack (shard 1) metadata anchors for `M227-B016`
+      with lane-B advanced-edge-compatibility command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B015` dependency continuity so advanced edge compatibility workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced diagnostics workpack (shard 1) metadata anchors for `M227-B017`
+      with lane-B advanced-diagnostics command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B016` dependency continuity so advanced diagnostics workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced conformance workpack (shard 1) metadata anchors for `M227-B018`
+      with lane-B advanced-conformance command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B017` dependency continuity so advanced conformance workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced integration workpack (shard 1) metadata anchors for `M227-B019`
+      with lane-B advanced-integration command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B018` dependency continuity so advanced integration workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced performance workpack (shard 1) metadata anchors for `M227-B020`
+      with lane-B advanced-performance command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B019` dependency continuity so advanced performance workpack (shard 1) drift fails closed.
+    - deterministic lane-B type-system advanced core workpack (shard 2) metadata anchors for `M227-B021`
+      with lane-B advanced-core-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B020` dependency continuity so advanced core workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced edge compatibility workpack (shard 2) metadata anchors for `M227-B022`
+      with lane-B advanced-edge-compatibility-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B021` dependency continuity so advanced edge compatibility workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced diagnostics workpack (shard 2) metadata anchors for `M227-B023`
+      with lane-B advanced-diagnostics-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B022` dependency continuity so advanced diagnostics workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced conformance workpack (shard 2) metadata anchors for `M227-B024`
+      with lane-B advanced-conformance-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B023` dependency continuity so advanced conformance workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced integration workpack (shard 2) metadata anchors for `M227-B025`
+      with lane-B advanced-integration-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B024` dependency continuity so advanced integration workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced performance workpack (shard 2) metadata anchors for `M227-B026`
+      with lane-B advanced-performance-shard2 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B025` dependency continuity so advanced performance workpack (shard 2) drift fails closed.
+    - deterministic lane-B type-system advanced core workpack (shard 3) metadata anchors for `M227-B027`
+      with lane-B advanced-core-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B026` dependency continuity so advanced core workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced edge compatibility workpack (shard 3) metadata anchors for `M227-B028`
+      with lane-B advanced-edge-compatibility-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B027` dependency continuity so advanced edge compatibility workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced diagnostics workpack (shard 3) metadata anchors for `M227-B029`
+      with lane-B advanced-diagnostics-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B028` dependency continuity so advanced diagnostics workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced conformance workpack (shard 3) metadata anchors for `M227-B030`
+      with lane-B advanced-conformance-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B029` dependency continuity so advanced conformance workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced integration workpack (shard 3) metadata anchors for `M227-B031`
+      with lane-B advanced-integration-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B030` dependency continuity so advanced integration workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced performance workpack (shard 3) metadata anchors for `M227-B032`
+      with lane-B advanced-performance-shard3 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B031` dependency continuity so advanced performance workpack (shard 3) drift fails closed.
+    - deterministic lane-B type-system advanced core workpack (shard 4) metadata anchors for `M227-B033`
+      with lane-B advanced-core-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B032` dependency continuity so advanced core workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system advanced edge compatibility workpack (shard 4) metadata anchors for `M227-B034`
+      with lane-B advanced-edge-compatibility-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B033` dependency continuity so advanced edge compatibility workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system advanced diagnostics workpack (shard 4) metadata anchors for `M227-B035`
+      with lane-B advanced-diagnostics-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B034` dependency continuity so advanced diagnostics workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system advanced conformance workpack (shard 4) metadata anchors for `M227-B036`
+      with lane-B advanced-conformance-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B035` dependency continuity so advanced conformance workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system advanced integration workpack (shard 4) metadata anchors for `M227-B037`
+      with lane-B advanced-integration-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B036` dependency continuity so advanced integration workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system advanced performance workpack (shard 4) metadata anchors for `M227-B038`
+      with lane-B advanced-performance-shard4 command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B037` dependency continuity so advanced performance workpack (shard 4) drift fails closed.
+    - deterministic lane-B type-system integration closeout and gate sign-off metadata anchors for `M227-B039`
+      with lane-B integration-closeout-and-gate-signoff command/evidence continuity in `docs/runbooks/m227_wave_execution_runbook.md`,
+      plus explicit `M227-B038` dependency continuity so integration closeout and gate sign-off drift fails closed.
+    - deterministic lane-C typed sema-to-lowering metadata anchors for `M227-C001`
+      with typed sema handoff evidence and lowering metadata continuity so
+      sema-to-lowering contract drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission metadata anchors for `M232-C001`
+      with operator runbook/packet/checker continuity and fail-closed semantic-to-lowering
+      contract evidence so message-send lowering contract drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission modular split/scaffolding metadata anchors for `M232-C002`
+      with explicit `M232-C001` dependency continuity and fail-closed modular split/scaffolding
+      evidence so message-send lowering modular split/scaffolding drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission core-feature metadata anchors for `M232-C003`
+      with explicit `M232-C002` dependency continuity and fail-closed core-feature
+      evidence so message-send lowering core-feature drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission core-feature expansion metadata anchors for `M232-C004`
+      with explicit `M232-C003` dependency continuity and fail-closed core-feature expansion
+      evidence so message-send lowering core-feature-expansion drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission edge-case/compatibility metadata anchors for `M232-C005`
+      with explicit `M232-C004` dependency continuity and fail-closed edge-case/compatibility
+      evidence so message-send lowering edge-case/compatibility drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission edge-case expansion/robustness metadata anchors for `M232-C006`
+      with explicit `M232-C005` dependency continuity and fail-closed edge-case expansion/robustness
+      evidence so message-send lowering edge-case expansion/robustness drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission diagnostics hardening metadata anchors for `M232-C007`
+      with explicit `M232-C006` dependency continuity and fail-closed diagnostics-hardening
+      evidence so message-send lowering diagnostics-hardening drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission recovery and determinism hardening metadata anchors for `M232-C008`
+      with explicit `M232-C007` dependency continuity and fail-closed recovery and determinism hardening
+      evidence so message-send lowering recovery and determinism hardening drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission conformance matrix implementation metadata anchors for `M232-C009`
+      with explicit `M232-C008` dependency continuity and fail-closed conformance-matrix implementation
+      evidence so message-send lowering conformance-matrix implementation drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission conformance corpus expansion metadata anchors for `M232-C010`
+      with explicit `M232-C009` dependency continuity and fail-closed conformance-corpus expansion
+      evidence so message-send lowering conformance-corpus expansion drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission performance and quality guardrails metadata anchors for `M232-C011`
+      with explicit `M232-C010` dependency continuity and fail-closed performance and quality guardrails
+      evidence so message-send lowering performance and quality guardrails drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission cross-lane integration sync metadata anchors for `M232-C012`
+      with explicit `M232-C011` dependency continuity and fail-closed cross-lane integration sync
+      evidence so message-send lowering cross-lane integration sync drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission docs and operator runbook synchronization metadata anchors for `M232-C013`
+      with explicit `M232-C012` dependency continuity and fail-closed docs and operator runbook synchronization
+      evidence so message-send lowering docs and operator runbook synchronization drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission release-candidate and replay dry-run metadata anchors for `M232-C014`
+      with explicit `M232-C013` dependency continuity and fail-closed release-candidate and replay dry-run
+      evidence so message-send lowering release-candidate and replay dry-run drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission advanced core workpack (shard 1) metadata anchors for `M232-C015`
+      with explicit `M232-C014` dependency continuity and fail-closed advanced core workpack (shard 1)
+      evidence so message-send lowering advanced core workpack (shard 1) drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission advanced edge compatibility workpack (shard 1) metadata anchors for `M232-C016`
+      with explicit `M232-C015` dependency continuity and fail-closed advanced edge compatibility workpack (shard 1)
+      evidence so message-send lowering advanced edge compatibility workpack (shard 1) drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission advanced diagnostics workpack (shard 1) metadata anchors for `M232-C017`
+      with explicit `M232-C016` dependency continuity and fail-closed advanced diagnostics workpack (shard 1)
+      evidence so message-send lowering advanced diagnostics workpack (shard 1) drift fails closed.
+    - deterministic lane-C message-send lowering and call-emission advanced conformance workpack (shard 1) metadata anchors for `M232-C018`
+      with explicit `M232-C017` dependency continuity and fail-closed advanced conformance workpack (shard 1)
+      evidence so message-send lowering advanced conformance workpack (shard 1) drift fails closed.
+    - deterministic lane-C typed sema-to-lowering modular split metadata anchors for `M227-C002`
+      with explicit `M227-C001` dependency continuity so modular split handoff drift fails closed.
+    - deterministic lane-C typed sema-to-lowering core feature metadata anchors for `M227-C003`
+      with explicit `M227-C002` dependency continuity so typed core-feature handoff drift fails closed.
+    - deterministic lane-A semantic-pass conformance matrix metadata anchors for `M227-A009`
+      with parser/sema conformance-matrix evidence and corpus replay continuity
+      so parser/sema conformance-matrix drift fails closed.
+    - deterministic lane-A semantic-pass conformance corpus metadata anchors for `M227-A010`
+      with parser/sema conformance-corpus replay evidence and fail-closed continuity
+      so parser/sema conformance-corpus drift fails closed.
+    - deterministic lane-A semantic-pass performance and quality guardrails metadata anchors for `M227-A011`
+      with parser/sema performance-quality guardrails evidence and fail-closed continuity
+      so parser/sema performance-quality drift fails closed.
+    - deterministic lane-E semantic conformance quality-gate dependency anchors for `M227-A001`, `M227-B002`, `M227-C001`, and `M227-D001`
+      with fail-closed readiness continuity (`check:objc3c:m227-a001-lane-a-readiness`, `check:objc3c:m227-b002-lane-b-readiness`, `check:objc3c:m227-c001-lane-c-readiness`, `check:objc3c:m227-d001-lane-d-readiness`)
+      so semantic conformance lane-E quality-gate metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance modular split/scaffolding dependency anchors for `M227-E001`, `M227-A002`, `M227-B004`, `M227-C003`, and `M227-D002`
+      with fail-closed readiness continuity (`check:objc3c:m227-e001-lane-e-quality-gate-readiness`, `check:objc3c:m227-a002-lane-a-readiness`, `check:objc3c:m227-b004-lane-b-readiness`, `check:objc3c:m227-c003-lane-c-readiness`, `check:objc3c:m227-d002-lane-d-readiness`)
+      so semantic conformance lane-E modular split/scaffolding metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance edge-case expansion and robustness dependency anchors for `M227-E005`, `M227-A006`, `M227-B006`, `M227-C006`, and `M227-D006`
+      with fail-closed readiness continuity (`check:objc3c:m227-e006-lane-e-readiness`)
+      so semantic conformance lane-E edge-case expansion/robustness metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance diagnostics hardening dependency anchors for `M227-E006`, `M227-A007`, `M227-B007`, `M227-C007`, and `M227-D007`
+      with fail-closed readiness continuity (`check:objc3c:m227-e007-lane-e-readiness`)
+      so semantic conformance lane-E diagnostics hardening metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance recovery and determinism hardening dependency anchors for `M227-E007`, `M227-A008`, `M227-B008`, `M227-C008`, and `M227-D008`
+      with fail-closed readiness continuity (`check:objc3c:m227-e008-lane-e-readiness`)
+      so semantic conformance lane-E recovery and determinism hardening metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance matrix implementation dependency anchors for `M227-E008`, `M227-A009`, `M227-B018`, `M227-C012`, and `M227-D005`
+      with fail-closed readiness continuity (`check:objc3c:m227-e009-lane-e-readiness`)
+      so semantic conformance lane-E conformance matrix implementation metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance corpus expansion dependency anchors for `M227-E009`, `M227-A011`, `M227-B020`, `M227-C013`, and `M227-D006`
+      with fail-closed readiness continuity (`check:objc3c:m227-e010-lane-e-readiness`)
+      so semantic conformance lane-E conformance corpus expansion metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance performance and quality guardrails dependency anchors for `M227-E010`, `M227-A012`, `M227-B021`, `M227-C014`, and `M227-D007`
+      with fail-closed readiness continuity (`check:objc3c:m227-e011-lane-e-readiness`)
+      so semantic conformance lane-E performance and quality guardrails metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance cross-lane integration sync dependency anchors for `M227-E011`, `M227-A013`, `M227-B023`, `M227-C016`, and `M227-D007`
+      with fail-closed readiness continuity (`check:objc3c:m227-e012-lane-e-readiness`)
+      so semantic conformance lane-E cross-lane integration sync metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance docs and operator runbook synchronization dependency anchors for `M227-E012`, `M227-A014`, `M227-B025`, `M227-C017`, and `M227-D008`
+      with fail-closed readiness continuity (`check:objc3c:m227-e013-lane-e-readiness`)
+      so semantic conformance lane-E docs and operator runbook synchronization metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance release-candidate and replay dry-run dependency anchors for `M227-E013`, `M227-A015`, `M227-B027`, `M227-C018`, and `M227-D008`
+      with fail-closed readiness continuity (`check:objc3c:m227-e014-lane-e-readiness`)
+      so semantic conformance lane-E release-candidate and replay dry-run metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance advanced core workpack (shard 1) dependency anchors for `M227-E014`, `M227-A016`, `M227-B029`, `M227-C020`, and `M227-D009`
+      with fail-closed readiness continuity (`check:objc3c:m227-e015-lane-e-readiness`)
+      so semantic conformance lane-E advanced core workpack (shard 1) metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance advanced edge compatibility workpack (shard 1) dependency anchors for `M227-E015`, `M227-A017`, `M227-B031`, `M227-C021`, and `M227-D010`
+      with fail-closed readiness continuity (`check:objc3c:m227-e016-lane-e-readiness`)
+      so semantic conformance lane-E advanced edge compatibility workpack (shard 1) metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance advanced diagnostics workpack (shard 1) dependency anchors for `M227-E016`, `M227-A018`, `M227-B033`, `M227-C022`, and `M227-D010`
+      with fail-closed readiness continuity (`check:objc3c:m227-e017-lane-e-readiness`)
+      so semantic conformance lane-E advanced diagnostics workpack (shard 1) metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance advanced conformance workpack (shard 1) dependency anchors for `M227-E017`, `M227-A019`, `M227-B035`, `M227-C023`, and `M227-D011`
+      with fail-closed readiness continuity (`check:objc3c:m227-e018-lane-e-readiness`)
+      so semantic conformance lane-E advanced conformance workpack (shard 1) metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance advanced integration workpack (shard 1) dependency anchors for `M227-E018`, `M227-A020`, `M227-B037`, `M227-C025`, and `M227-D011`
+      with fail-closed readiness continuity (`check:objc3c:m227-e019-lane-e-readiness`)
+      so semantic conformance lane-E advanced integration workpack (shard 1) metadata governance drift fails closed.
+    - deterministic lane-E semantic conformance integration closeout and gate sign-off dependency anchors for `M227-E019`, `M227-A021`, `M227-B039`, `M227-C026`, and `M227-D012`
+      with fail-closed readiness continuity (`check:objc3c:m227-e020-lane-e-readiness`)
+      so semantic conformance lane-E integration closeout and gate sign-off metadata governance drift fails closed.
+    - deterministic lane-A semantic-pass cross-lane integration sync metadata anchors for `M227-A012`
+      with lane dependency contract evidence (`M227-A011`, `M227-B007`, `M227-C002`, `M227-D001`, `M227-E001`)
+      so semantic-pass cross-lane dependency drift fails closed.
+    - deterministic lane-A semantic-pass docs/operator runbook synchronization metadata anchors for `M227-A013`
+      with operator command-sequencing and dependency-anchor continuity evidence
+      so semantic-pass runbook drift fails closed.
+    - deterministic lane-A semantic-pass release-candidate replay dry-run metadata anchors for `M227-A014`
+      with replay artifact evidence (`module.manifest.json`, `module.diagnostics.json`, `module.ll`, `module.object-backend.txt`)
+      and fail-closed readiness continuity so semantic-pass release replay drift fails closed.
+    - deterministic lane-A semantic-pass advanced core workpack (shard 1) metadata anchors for `M227-A015`
+      with advanced-core consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_core_consistent`,
+      `toolchain_runtime_ga_operations_advanced_core_ready`,
+      `toolchain_runtime_ga_operations_advanced_core_key`) so advanced-core
+      shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced edge compatibility workpack (shard 1) metadata anchors for `M227-A016` with edge-compatibility
+      consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent`,
+      `toolchain_runtime_ga_operations_advanced_edge_compatibility_ready`,
+      `toolchain_runtime_ga_operations_advanced_edge_compatibility_key`) so
+      advanced edge-compatibility shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced diagnostics workpack (shard 1) metadata anchors for `M227-A017`
+      with diagnostics consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_diagnostics_consistent`,
+      `toolchain_runtime_ga_operations_advanced_diagnostics_ready`,
+      `toolchain_runtime_ga_operations_advanced_diagnostics_key`) so advanced
+      diagnostics shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced conformance workpack (shard 1) metadata anchors for `M227-A018`
+      with conformance consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_conformance_consistent`,
+      `toolchain_runtime_ga_operations_advanced_conformance_ready`,
+      `toolchain_runtime_ga_operations_advanced_conformance_key`) so advanced
+      conformance shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced integration workpack (shard 1) metadata anchors for `M227-A019`
+      with integration consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_integration_consistent`,
+      `toolchain_runtime_ga_operations_advanced_integration_ready`,
+      `toolchain_runtime_ga_operations_advanced_integration_key`) so advanced
+      integration shard1 drift fails closed.
+    - deterministic lane-A semantic-pass advanced performance workpack (shard 1) metadata anchors for `M227-A020`
+      with performance consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_advanced_performance_consistent`,
+      `toolchain_runtime_ga_operations_advanced_performance_ready`,
+      `toolchain_runtime_ga_operations_advanced_performance_key`) so advanced
+      performance shard1 drift fails closed.
+    - deterministic lane-A semantic-pass integration closeout and gate sign-off metadata anchors for `M227-A021`
+      with closeout/sign-off consistency/readiness/key evidence
+      (`toolchain_runtime_ga_operations_integration_closeout_signoff_consistent`,
+      `toolchain_runtime_ga_operations_integration_closeout_signoff_ready`,
+      `toolchain_runtime_ga_operations_integration_closeout_signoff_key`) so
+      integration closeout/sign-off drift fails closed.
+    - deterministic lane-B semantic/lowering modular split metadata anchors for
+      `M248-B002` with explicit `M248-B001` dependency continuity so semantic
+      scaffolding drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints core feature metadata anchors for
+     `M245-B003` with explicit `M245-B002` dependency continuity so core feature implementation drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints core feature expansion metadata anchors for
+     `M245-B004` with explicit `M245-B003` dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints edge-case and compatibility completion metadata anchors for
+     `M245-B005` with explicit `M245-B004` dependency continuity so edge-case and compatibility completion drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints edge-case expansion and robustness metadata anchors for
+     `M245-B006` with explicit `M245-B005` dependency continuity so edge-case expansion and robustness drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints diagnostics hardening metadata anchors for
+     `M245-B007` with explicit `M245-B006` dependency continuity so diagnostics hardening drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints recovery and determinism hardening metadata anchors for
+     `M245-B008` with explicit `M245-B007` dependency continuity so recovery and determinism hardening drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints conformance matrix implementation metadata anchors for
+     `M245-B009` with explicit `M245-B008` dependency continuity so conformance matrix drift fails closed.
+   - deterministic lane-B semantic parity/platform constraints conformance corpus expansion metadata anchors for
+     `M245-B010` with explicit `M245-B009` dependency continuity so conformance corpus drift fails closed.
+    - deterministic lane-B semantic parity/platform constraints performance and quality guardrails metadata anchors for
+      `M245-B011` with explicit `M245-B010` dependency continuity so performance/quality drift fails closed.
+     - deterministic lane-B semantic parity/platform constraints cross-lane integration sync metadata anchors for
+       `M245-B012` with explicit `M245-B011` dependency continuity so cross-lane integration sync drift fails closed.
+     - deterministic lane-B semantic parity/platform constraints integration closeout and gate sign-off metadata anchors for
+       `M245-B013` with explicit `M245-B012` dependency continuity so integration closeout and gate sign-off drift fails closed.
+   - deterministic lane-B semantic compatibility/migration metadata anchors for `M249-B001`
+     with sema pass-flow compatibility evidence and parse/lowering compatibility handoff continuity
+     so migration drift fails closed.
+   - deterministic lane-B semantic compatibility/migration modular split metadata anchors for
+     `M249-B002` with explicit `M249-B001` dependency continuity so migration
+     scaffolding drift fails closed.
+    - deterministic lane-B semantic compatibility/migration core feature metadata anchors for `M249-B003` with explicit `M249-B002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-C replay metadata anchors for `M248-C001` with artifact
+      contract evidence and execution replay continuity so CI replay drift fails
+      closed.
+    - deterministic lane-C replay modular split metadata anchors for `M248-C002`
+      with explicit `M248-C001` dependency continuity so modular split replay
+      drift fails closed.
+    - deterministic lane-C lowering/IR portability metadata anchors for `M245-C001`
+      with lowering portability evidence and IR emission continuity so runtime
+      portability drift fails closed.
+    - deterministic lane-C lowering/IR portability modular split metadata anchors for `M245-C002`
+      with explicit `M245-C001` dependency continuity so portability scaffolding drift fails closed.
+    - deterministic lane-C lowering/IR portability core-feature metadata anchors for `M245-C003`
+      with explicit `M245-C001` and `M245-C002` dependency continuity so portability
+      core-feature drift fails closed.
+    - deterministic lane-C lowering/IR portability core-feature expansion metadata anchors for `M245-C004`
+      with explicit `M245-C003` dependency continuity and fail-closed core-feature expansion evidence continuity so
+      portability expansion drift fails closed.
+    - deterministic lane-C lowering/IR portability edge-case and compatibility completion metadata anchors for `M245-C005`
+      with explicit `M245-C004` dependency continuity and fail-closed edge-case compatibility continuity so
+      portability edge-case and compatibility completion drift fails closed.
+    - deterministic lane-C lowering/IR portability edge-case expansion and robustness metadata anchors for `M245-C006`
+      with explicit `M245-C005` dependency continuity and fail-closed edge-case robustness continuity so
+      portability edge-case expansion and robustness drift fails closed.
+    - deterministic lane-C lowering/IR portability diagnostics hardening metadata anchors for `M245-C007`
+      with explicit `M245-C006` dependency continuity and fail-closed diagnostics hardening continuity so
+      portability diagnostics hardening drift fails closed.
+    - deterministic lane-C lowering/IR portability recovery and determinism hardening metadata anchors for `M245-C008`
+      with explicit `M245-C007` dependency continuity and fail-closed recovery/determinism continuity so
+      portability recovery and determinism hardening drift fails closed.
+    - deterministic lane-C lowering/IR portability conformance matrix implementation metadata anchors for `M245-C009`
+      with explicit `M245-C008` dependency continuity and fail-closed conformance-matrix continuity so
+      portability conformance matrix implementation drift fails closed.
+    - deterministic lane-C lowering/IR portability conformance corpus expansion metadata anchors for `M245-C010`
+      with explicit `M245-C009` dependency continuity and fail-closed conformance-corpus continuity so
+      portability conformance corpus expansion drift fails closed.
+    - deterministic lane-C lowering/IR portability performance and quality guardrails metadata anchors for `M245-C011`
+      with explicit `M245-C010` dependency continuity and fail-closed performance/quality continuity so
+      portability performance and quality guardrail drift fails closed.
+     - deterministic lane-C lowering/IR portability cross-lane integration sync metadata anchors for `M245-C012`
+       with explicit `M245-C011` dependency continuity and fail-closed cross-lane continuity so
+       portability cross-lane integration sync drift fails closed.
+     - deterministic lane-C lowering/IR portability docs and operator runbook synchronization metadata anchors for `M245-C013`
+       with explicit `M245-C012` dependency continuity and fail-closed docs/runbook continuity so
+       portability docs and operator runbook synchronization drift fails closed.
+     - deterministic lane-C lowering/IR portability release-candidate and replay dry-run metadata anchors for `M245-C014`
+       with explicit `M245-C013` dependency continuity and fail-closed release/replay continuity so
+       portability release-candidate and replay dry-run drift fails closed.
+     - deterministic lane-C lowering/IR portability advanced core workpack (shard 1) metadata anchors for `M245-C015`
+       with explicit `M245-C014` dependency continuity and fail-closed advanced-core continuity so
+       portability advanced core workpack drift fails closed.
+     - deterministic lane-C lowering/IR portability integration closeout and gate sign-off metadata anchors for `M245-C016`
+       with explicit `M245-C015` dependency continuity and fail-closed integration-closeout continuity so
+       portability integration closeout and gate sign-off drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility modular split metadata anchors for `M245-D002`
+      with explicit `M245-D001` dependency continuity so reproducibility scaffolding drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility core feature metadata anchors for `M245-D003`
+      with explicit `M245-D002` dependency continuity so core feature implementation drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility core feature expansion metadata anchors for `M245-D004`
+      with explicit `M245-D003` dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility edge-case and compatibility completion metadata anchors for `M245-D005`
+      with explicit `M245-D004` dependency continuity so edge-case and compatibility completion drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility edge-case expansion and robustness metadata anchors for `M245-D006`
+      with explicit `M245-D005` dependency continuity so edge-case expansion and robustness drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility diagnostics hardening metadata anchors for `M245-D007`
+      with explicit `M245-D006` dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility recovery and determinism hardening metadata anchors for `M245-D008`
+      with explicit `M245-D007` dependency continuity so recovery and determinism hardening drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility conformance matrix implementation metadata anchors for `M245-D009`
+      with explicit `M245-D008` dependency continuity so conformance matrix drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility conformance corpus expansion metadata anchors for `M245-D010`
+      with explicit `M245-D009` dependency continuity so conformance corpus drift fails closed.
+    - deterministic lane-D build/link/runtime reproducibility performance and quality guardrails metadata anchors for `M245-D011`
+      with explicit `M245-D010` dependency continuity so performance/quality drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility cross-lane integration sync metadata anchors for `M245-D012`
+       with explicit `M245-D011` dependency continuity so cross-lane integration sync drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility docs and operator runbook synchronization metadata anchors for `M245-D013`
+       with explicit `M245-D012` dependency continuity so docs/runbook synchronization drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility release-candidate and replay dry-run metadata anchors for `M245-D014`
+       with explicit `M245-D013` dependency continuity so release/replay drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced core workpack (shard 1) metadata anchors for `M245-D015`
+       with explicit `M245-D014` dependency continuity so advanced-core drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced edge compatibility workpack (shard 1) metadata anchors for `M245-D016`
+       with explicit `M245-D015` dependency continuity so advanced-edge drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced diagnostics workpack (shard 1) metadata anchors for `M245-D017`
+       with explicit `M245-D016` dependency continuity so advanced-diagnostics drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced conformance workpack (shard 1) metadata anchors for `M245-D018`
+       with explicit `M245-D017` dependency continuity so advanced-conformance drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced integration workpack (shard 1) metadata anchors for `M245-D019`
+       with explicit `M245-D018` dependency continuity so advanced-integration drift fails closed.
+     - deterministic lane-D build/link/runtime reproducibility advanced performance workpack (shard 1) metadata anchors for `M245-D020`
+       with explicit `M245-D019` dependency continuity so advanced-performance drift fails closed.
+    - deterministic lane-E portability gate/release checklist dependency anchors for
+      `M245-A001`, `M245-B001`, `M245-C001`, and `M245-D001` so lane
+      integration freeze evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist modular split/scaffolding dependency anchors for
+      `M245-E001`, `M245-A002`, `M245-B002`, `M245-C002`, and `M245-D002` so lane
+      split continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist core feature implementation dependency anchors for
+      `M245-E002`, `M245-A001`, `M245-B001`, `M245-C002`, and `M245-D002` so lane
+      implementation continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist core feature expansion dependency anchors for
+      `M245-E003`, `M245-A002`, `M245-B002`, `M245-C002`, and `M245-D003` so lane
+      expansion continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist edge-case and compatibility completion dependency anchors for
+      `M245-E004`, `M245-A002`, `M245-B002`, `M245-C003`, and `M245-D004` so lane
+      edge-case and compatibility completion continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist edge-case expansion and robustness dependency anchors for
+      `M245-E005`, `M245-A002`, `M245-B003`, `M245-C003`, and `M245-D004` so lane
+      edge-case expansion and robustness continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist diagnostics hardening dependency anchors for
+      `M245-E006`, `M245-A003`, `M245-B003`, `M245-C004`, and `M245-D005` so lane
+      diagnostics hardening continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist recovery and determinism hardening dependency anchors for
+      `M245-E007`, `M245-A003`, `M245-B004`, `M245-C004`, and `M245-D006` so lane
+      recovery and determinism hardening continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist conformance matrix implementation dependency anchors for
+      `M245-E008`, `M245-A003`, `M245-B004`, `M245-C005`, and `M245-D007` so lane
+      conformance matrix continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist conformance corpus expansion dependency anchors for
+      `M245-E009`, `M245-A004`, `M245-B004`, `M245-C006`, and `M245-D007` so lane
+      conformance corpus continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E portability gate/release checklist performance and quality guardrails dependency anchors for
+      `M245-E010`, `M245-A004`, `M245-B005`, `M245-C006`, and `M245-D008` so lane
+      performance/quality continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist cross-lane integration sync dependency anchors for
+       `M245-E011`, `M245-A005`, `M245-B005`, `M245-C007`, and `M245-D009` so lane
+       cross-lane integration sync continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist docs and operator runbook synchronization dependency anchors for
+       `M245-E012`, `M245-A005`, `M245-B006`, `M245-C007`, and `M245-D009` so lane
+       docs/runbook synchronization continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist release-candidate and replay dry-run dependency anchors for
+       `M245-E013`, `M245-A005`, `M245-B006`, `M245-C008`, and `M245-D010` so lane
+       release/replay continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced core workpack (shard 1) dependency anchors for
+       `M245-E014`, `M245-A006`, `M245-B007`, `M245-C008`, and `M245-D011` so lane
+       advanced-core continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced edge compatibility workpack (shard 1) dependency anchors for
+       `M245-E015`, `M245-A006`, `M245-B007`, `M245-C009`, and `M245-D012` so lane
+       advanced-edge continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced diagnostics workpack (shard 1) dependency anchors for
+       `M245-E016`, `M245-A006`, `M245-B008`, `M245-C009`, and `M245-D012` so lane
+       advanced-diagnostics continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced conformance workpack (shard 1) dependency anchors for
+       `M245-E017`, `M245-A007`, `M245-B008`, `M245-C010`, and `M245-D013` so lane
+       advanced-conformance continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced integration workpack (shard 1) dependency anchors for
+       `M245-E018`, `M245-A007`, `M245-B009`, `M245-C010`, and `M245-D014` so lane
+       advanced-integration continuity evidence remains deterministic and fail-closed.
+     - deterministic lane-E portability gate/release checklist advanced performance workpack (shard 1) dependency anchors for
+       `M245-E019`, `M245-A008`, `M245-B009`, `M245-C011`, and `M245-D014` so lane
+       advanced-performance continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-A frontend optimization hint metadata anchors for `M246-A001`
+      with parser/AST hint-capture evidence and optimizer budget continuity so optimization
+      hint-capture drift fails closed.
+    - deterministic lane-A frontend optimization hint modular split metadata anchors for `M246-A002`
+      with explicit `M246-A001` dependency continuity so hint-capture scaffolding drift fails closed.
+    - deterministic lane-B semantic invariants for optimization legality metadata anchors for `M246-B001`
+      with semantic legality evidence and optimizer replay-budget continuity so legality
+      drift fails closed.
+    - deterministic lane-B semantic invariants for optimization legality modular split metadata anchors for `M246-B002`
+      with explicit `M246-B001` dependency continuity so modular split drift fails closed.
+    - deterministic lane-C IR optimization pass wiring metadata anchors for `M246-C001`
+      with IR pass-wiring evidence and optimizer replay-budget continuity so IR validation
+      drift fails closed.
+    - deterministic lane-C IR optimization pass wiring modular split metadata anchors for `M246-C002`
+      with explicit `M246-C001` dependency continuity so modular split drift fails closed.
+    - deterministic lane-D toolchain integration and optimization controls metadata anchors for `M246-D001`
+      with toolchain-control evidence and optimizer replay-budget continuity so control
+      drift fails closed.
+    - deterministic lane-E optimization gate and perf evidence contract-freeze dependency anchors for
+      `M246-A001`, `M246-B001`, `M246-C002`, and `M246-D001` so gate
+      continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence modular split/scaffolding dependency anchors for
+      `M246-E001`, `M246-A002`, `M246-B002`, `M246-C004`, and `M246-D002` so gate
+      split continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence core feature implementation dependency anchors for
+      `M246-E002`, `M246-A002`, `M246-B003`, `M246-C005`, and `M246-D002` so gate
+      core-feature continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence core feature expansion dependency anchors for
+      `M246-E003`, `M246-A003`, `M246-B004`, `M246-C007`, and `M246-D003` so gate
+      expansion continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence edge-case and compatibility completion dependency anchors for
+      `M246-E004`, `M246-A004`, `M246-B005`, `M246-C009`, and `M246-D004` so gate
+      compatibility continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-E optimization gate and perf evidence edge-case expansion and robustness dependency anchors for
+      `M246-E005`, `M246-A005`, `M246-B006`, `M246-C011`, and `M246-D005` so gate
+      robustness continuity evidence remains deterministic and fail-closed.
+    - deterministic lane-C IR/object packaging metadata anchors for `M249-C001`
+      with symbol policy evidence and object package continuity so CI artifact
+     packaging drift fails closed.
+   - deterministic lane-C IR/object packaging modular split metadata anchors for `M249-C002`
+     with explicit `M249-C001` dependency continuity so symbol-policy scaffolding drift fails closed.
+   - deterministic lane-C IR/object packaging core-feature metadata anchors for `M249-C003`
+     with explicit `M249-C001` and `M249-C002` dependency continuity so symbol-policy
+     core-feature drift fails closed.
+   - deterministic lane-D installer/runtime operations metadata anchors for `M249-D001`
+     with runtime-route evidence and support-tooling continuity so installer/runtime
+     drift fails closed.
+   - deterministic lane-D installer/runtime operations modular split metadata anchors for
+     `M249-D002` with explicit `M249-D001` dependency continuity so support-tooling
+     scaffolding drift fails closed.
+   - deterministic lane-D installer/runtime operations core feature metadata anchors for `M249-D003`
+     with explicit `M249-D002` dependency continuity so core feature implementation drift fails closed.
+   - deterministic lane-D installer/runtime operations core feature expansion metadata anchors for `M249-D004`
+     with explicit `M249-D003` dependency continuity so core feature expansion drift fails closed.
+- deterministic lane-D runtime metadata and lookup plumbing metadata anchors for `M233-D001`
+     with runtime-route evidence and lookup-plumbing continuity so installer/runtime
+     drift fails closed.
+   - deterministic lane-D runtime metadata and lookup plumbing modular split metadata anchors for
+     `M233-D002` with explicit `M233-D001` dependency continuity so lookup-plumbing
+     scaffolding drift fails closed.
+   - deterministic lane-D runtime metadata and lookup plumbing core feature metadata anchors for `M233-D003`
+     with explicit `M233-D002` dependency continuity so core feature implementation drift fails closed.
+   - deterministic lane-D runtime metadata and lookup plumbing core feature expansion metadata anchors for `M233-D004`
+     with explicit `M233-D003` dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-D runtime metadata and lookup plumbing release-candidate replay dry-run metadata anchors for `M233-D014`
+     with explicit `M233-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced core workpack (shard 1) metadata anchors for `M233-D015`
+     with explicit `M233-D014` dependency continuity and fail-closed advanced core evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 1) metadata anchors for `M233-D016`
+     with explicit `M233-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced diagnostics workpack (shard 1) metadata anchors for `M233-D017`
+     with explicit `M233-D016` dependency continuity and fail-closed advanced diagnostics evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced conformance workpack (shard 1) metadata anchors for `M233-D018`
+     with explicit `M233-D017` dependency continuity and fail-closed advanced conformance evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced integration workpack (shard 1) metadata anchors for `M233-D019`
+     with explicit `M233-D018` dependency continuity and fail-closed advanced integration evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced performance workpack (shard 1) metadata anchors for `M233-D020`
+     with explicit `M233-D019` dependency continuity and fail-closed advanced performance workpack (shard 1)/sign-off evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced edge compatibility workpack (shard 2) metadata anchors for `M233-D022`
+     with explicit `M233-D021` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced diagnostics workpack (shard 2) metadata anchors for `M233-D023`
+     with explicit `M233-D022` dependency continuity and fail-closed advanced diagnostics evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced conformance workpack (shard 2) metadata anchors for `M233-D024`
+     with explicit `M233-D023` dependency continuity and fail-closed advanced conformance evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced integration workpack (shard 2) metadata anchors for `M233-D025`
+     with explicit `M233-D024` dependency continuity and fail-closed advanced integration evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced performance workpack (shard 2) metadata anchors for `M233-D026`
+     with explicit `M233-D025` dependency continuity and fail-closed advanced performance evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing advanced core workpack (shard 3) metadata anchors for `M233-D027`
+     with explicit `M233-D026` dependency continuity and fail-closed advanced core evidence continuity.
+   - deterministic lane-D runtime metadata and lookup plumbing integration closeout and gate sign-off metadata anchors for `M233-D028`
+     with explicit `M233-D027` dependency continuity and fail-closed integration closeout and gate sign-off evidence continuity.
+   - deterministic lane-E conformance corpus and gate closeout dependency anchors for
+     `M233-A001`, `M233-B001`, `M233-C001`, and `M233-D002` so lane-E metadata governance drift fails closed.
+   - deterministic lane-E conformance corpus and gate closeout modular split/scaffolding dependency anchors for
+     `M233-E001`, `M233-A001`, `M233-B002`, `M233-C003`, and `M233-D003` so lane-E modular split/scaffolding metadata governance drift fails closed.
+   - deterministic lane-E conformance corpus and gate closeout core feature implementation dependency anchors for
+     `M233-E002`, `M233-A002`, `M233-B003`, `M233-C004`, and `M233-D005` so lane-E core-feature metadata governance drift fails closed.
+   - deterministic lane-E conformance corpus and gate closeout core feature expansion dependency anchors for
+     `M233-E003`, `M233-A003`, `M233-B004`, `M233-C005`, and `M233-D007` so lane-E core-feature expansion metadata governance drift fails closed.
+   - deterministic lane-D installer/runtime operations and support tooling release-candidate replay dry-run metadata anchors for `M249-D014`
+     with explicit `M249-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced core workpack (shard 1) metadata anchors for `M249-D015`
+     with explicit `M249-D014` dependency continuity and fail-closed advanced core evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced edge compatibility workpack (shard 1) metadata anchors for `M249-D016`
+     with explicit `M249-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced diagnostics workpack (shard 1) metadata anchors for `M249-D017`
+     with explicit `M249-D016` dependency continuity and fail-closed advanced diagnostics evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced conformance workpack (shard 1) metadata anchors for `M249-D018`
+     with explicit `M249-D017` dependency continuity and fail-closed advanced conformance evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling advanced integration workpack (shard 1) metadata anchors for `M249-D019`
+     with explicit `M249-D018` dependency continuity and fail-closed advanced integration evidence continuity.
+   - deterministic lane-D installer/runtime operations and support tooling integration closeout and gate sign-off metadata anchors for `M249-D020`
+     with explicit `M249-D019` dependency continuity and fail-closed integration closeout/sign-off evidence continuity.
+   - deterministic lane-D CLI/reporting output metadata anchors for `M243-D001`
+     with diagnostics artifact and summary payload continuity so diagnostics UX
+     and fix-it engine output contract drift fails closed.
+   - deterministic lane-D CLI/reporting output modular split scaffold metadata anchors for `M243-D002`
+     with explicit `M243-D001` dependency continuity so diagnostics UX and
+     fix-it engine output contract scaffolding drift fails closed.
+   - deterministic lane-D CLI/reporting output core feature metadata anchors for `M243-D003`
+     with explicit `M243-D002` dependency continuity so core feature implementation drift fails closed.
+  - deterministic lane-D CLI/reporting output core feature expansion metadata anchors for `M243-D004`
+    with explicit `M243-D003` dependency continuity so core feature expansion drift fails closed.
+  - deterministic lane-D CLI/reporting output edge-case compatibility completion metadata anchors for `M243-D005`
+    with explicit `M243-D004` dependency continuity so edge-case compatibility drift fails closed.
+  - deterministic lane-D CLI/reporting output edge-case expansion and robustness metadata anchors for `M243-D006`
+    with explicit `M243-D005` dependency continuity so edge-case expansion drift fails closed.
+  - deterministic lane-D CLI/reporting output recovery and determinism hardening metadata anchors for `M243-D008`
+    with explicit `M243-D007` dependency continuity so recovery and determinism drift fails closed.
+  - deterministic lane-D CLI/reporting output conformance matrix implementation metadata anchors for `M243-D009`
+    with explicit `M243-D008` dependency continuity so conformance matrix drift fails closed.
+  - deterministic lane-D CLI/reporting output conformance corpus expansion metadata anchors for `M243-D010`
+    with explicit `M243-D009` dependency continuity so conformance corpus drift fails closed.
+  - deterministic lane-D CLI/reporting output performance and quality guardrails metadata anchors for `M243-D011`
+    with explicit `M243-D010` dependency continuity so performance/quality guardrail drift fails closed.
+  - deterministic lane-D CLI/reporting output cross-lane integration sync metadata anchors for `M243-D012`
+    with explicit `M243-D011` dependency continuity so cross-lane integration sync drift fails closed.
+  - deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D013`
+    with explicit `M243-D012` dependency continuity so docs/runbook synchronization drift fails closed.
+  - deterministic lane-C lowering/runtime diagnostics surfacing modular split
+    metadata anchors for `M243-C002` with explicit `M243-C001` dependency
+    continuity so diagnostics surfacing scaffold drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing core feature
+      metadata anchors for `M243-C003` with explicit `M243-C002` dependency
+      continuity so core feature implementation drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing core feature
+      expansion metadata anchors for `M243-C004` with explicit `M243-C003`
+      dependency continuity so core feature expansion drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing edge-case
+      compatibility completion metadata anchors for `M243-C005` with explicit
+      `M243-C004` dependency continuity so edge-case compatibility drift fails
+      closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing edge-case
+      expansion and robustness metadata anchors for `M243-C006` with explicit
+      `M243-C005` dependency continuity so edge-case expansion drift fails
+      closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing diagnostics hardening metadata anchors for `M243-C007` with explicit `M243-C006`
+      dependency continuity so diagnostics hardening drift fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing recovery and determinism hardening metadata anchors for `M243-C008` with explicit
+      `M243-C007` dependency continuity so recovery and determinism drift fails
+      closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing conformance matrix implementation metadata anchors for `M243-C009` with explicit
+      `M243-C008` dependency continuity so conformance matrix drift fails
+      closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing conformance corpus expansion metadata anchors for `M243-C010` with explicit
+      `M243-C009` dependency continuity so conformance corpus drift fails
+      closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing performance and quality guardrails metadata anchors for `M243-C011` with explicit
+      `M243-C010` dependency continuity so performance/quality guardrail drift
+      fails closed.
+    - deterministic lane-C lowering/runtime diagnostics surfacing cross-lane integration sync metadata anchors for `M243-C012` with explicit
+      `M243-C011` dependency continuity so cross-lane integration sync drift
+      fails closed.
+   - deterministic lane-A diagnostic grammar hooks/source precision recovery
+     and determinism hardening metadata anchors for `M243-A008` with explicit
+     `M243-A007` dependency continuity so parser diagnostic replay hardening
+     drift fails closed.
+   - deterministic lane-A diagnostic grammar hooks/source precision performance and quality guardrails metadata anchors for `M243-A011` with explicit `M243-A010` dependency continuity
+     so parser diagnostic grammar-hook readiness-chain and evidence metadata
+     drift fail closed.
+   - deterministic lane-A diagnostic grammar hooks/source precision integration closeout and gate sign-off metadata anchors for `M243-A012` with explicit `M243-A011` dependency continuity
+     so parser diagnostic grammar-hook closeout-sign-off metadata drift fails
+     closed.
+    - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
+      feature metadata anchors for `M243-B003` with explicit `M243-B002`
+      dependency continuity so core feature implementation drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis core
+     feature expansion metadata anchors for `M243-B004` with explicit `M243-B003`
+     dependency continuity so core feature expansion drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     edge-case compatibility completion metadata anchors for `M243-B005` with
+     explicit `M243-B004` dependency continuity so edge-case compatibility
+     completion drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     edge-case expansion and robustness metadata anchors for `M243-B006` with
+     explicit `M243-B005` dependency continuity so edge-case expansion
+     robustness drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     diagnostics hardening metadata anchors for `M243-B007` with
+     explicit `M243-B006` dependency continuity so diagnostics hardening
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     recovery and determinism hardening metadata anchors for `M243-B008` with
+     explicit `M243-B007` dependency continuity so recovery determinism
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     conformance corpus expansion metadata anchors for `M243-B010` with
+     explicit `M243-B009` dependency continuity so conformance corpus
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     performance and quality guardrails metadata anchors for `M243-B011` with
+     explicit `M243-B010` dependency continuity so performance/quality guardrails
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     cross-lane integration sync metadata anchors for `M243-B012` with
+     explicit `M243-B011` dependency continuity so cross-lane integration sync
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis
+     docs/operator runbook synchronization metadata anchors for `M243-B013` with
+     explicit `M243-B012` dependency continuity so docs/runbook synchronization
+     drift fails closed.
+   - deterministic lane-B semantic diagnostic taxonomy/fix-it synthesis integration closeout and gate sign-off metadata anchors for `M243-B014` with explicit `M243-B013` dependency continuity
+     so integration closeout/gate-sign-off readiness metadata drift fails closed.
+   - deterministic lane-E release gate/docs/runbooks dependency anchors for
+     `M249-A001`, `M249-B001`, `M249-C001`, and `M249-D001`, including
+      pending-lane tokens needed to keep release-gate documentation/runbook
+      governance evidence fail-closed before lane A-D contract assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks modular split/scaffolding dependency anchors for
+     `M249-E001`, `M249-A002`, `M249-B002`, `M249-C002`, and `M249-D002`,
+     including pending-lane tokens needed to keep release-gate documentation/runbook modular split/scaffolding
+     governance evidence fail-closed before lane A-D modular split/scaffolding assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks core feature implementation dependency anchors for
+     `M249-E002`, `M249-A003`, `M249-B003`, `M249-C003`, and `M249-D003`,
+     including pending-lane tokens needed to keep release-gate documentation/runbook core feature implementation
+     governance evidence fail-closed before lane A-D core feature assets are seeded.
+   - deterministic lane-E release gate/docs/runbooks advanced core workpack (shard 1) dependency anchors for
+     `M249-E014`, `M249-A006`, `M249-B007`, `M249-C008`, and `M249-D015`,
+     including advanced-core continuity tokens needed to keep release-gate
+     documentation/runbook advanced-core governance evidence fail-closed while
+     shard-1 dependency readiness remains staged.
+   - deterministic lane-E release gate/docs/runbooks advanced edge compatibility workpack (shard 1) metadata anchors for `M249-E016`
+     with explicit `M249-E015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced diagnostics workpack (shard 1) metadata anchors for `M249-E017`
+    with explicit `M249-E016`, `M249-A007`, `M249-B008`, `M249-C009`, and `M249-D017` dependency continuity
+    and fail-closed advanced diagnostics evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced conformance workpack (shard 1) metadata anchors for `M249-E018`
+    with explicit `M249-E017`, `M249-A007`, `M249-B008`, `M249-C009`, and `M249-D015` dependency continuity
+    and fail-closed advanced conformance evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced integration workpack (shard 1) metadata anchors for `M249-E019`
+    with explicit `M249-E018`, `M249-A007`, `M249-B009`, `M249-C010`, and `M249-D016` dependency continuity
+    and fail-closed advanced integration evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced performance workpack (shard 1) metadata anchors for `M249-E020`
+    with explicit `M249-E019`, `M249-A008`, `M249-B009`, `M249-C010`, and `M249-D017` dependency continuity
+    and fail-closed advanced performance evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced core workpack (shard 2) metadata anchors for `M249-E021`
+    with explicit `M249-E020`, `M249-A008`, `M249-B010`, `M249-C011`, and `M249-D018` dependency continuity
+    and fail-closed advanced core (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced edge compatibility workpack (shard 2) metadata anchors for `M249-E022`
+    with explicit `M249-E021`, `M249-A008`, `M249-B010`, `M249-C011`, and `M249-D018` dependency continuity
+    and fail-closed advanced edge compatibility (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks advanced diagnostics workpack (shard 2) metadata anchors for `M249-E023`
+    with explicit `M249-E022`, `M249-A009`, `M249-B011`, `M249-C012`, and `M249-D019` dependency continuity
+    and fail-closed advanced diagnostics (shard 2) evidence continuity.
+  - deterministic lane-E release gate/docs/runbooks integration closeout and gate signoff metadata anchors for `M249-E024`
+    with explicit `M249-E023`, `M249-A009`, `M249-B011`, `M249-C012`, and `M249-D020` dependency continuity
+    and fail-closed integration closeout/gate-signoff evidence continuity.
+  - deterministic lane-E diagnostics quality gate and replay policy dependency anchors for
+    `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
+    pending-lane tokens needed to keep diagnostics quality gate/replay-policy
+    governance evidence fail-closed before lane C-D contract-freeze assets are seeded.
+   - deterministic lane-E diagnostics quality gate and replay policy modular split/scaffolding dependency anchors for
+     `M243-E001`, `M243-A001`, `M243-B001`, `M243-C001`, and `M243-D001`, including
+     pending-lane tokens needed to keep diagnostics quality gate/replay-policy modular split/scaffolding
+     governance evidence fail-closed while dependency tokens remain pending GH seed.
+   - deterministic lane-E diagnostics quality gate and replay policy core feature implementation dependency anchors for
+     `M243-E002`, `M243-A003`, `M243-B003`, `M243-C002`, and `M243-D002`, including
+     mixed-lane maturity tokens needed to keep diagnostics quality gate/replay-policy core feature
+     implementation governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy core feature expansion dependency anchors for
+     `M243-E003`, `M243-A004`, `M243-B004`, `M243-C003`, and `M243-D003`, including
+     cross-lane expansion maturity tokens needed to keep diagnostics quality gate/replay-policy core feature
+     expansion governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy edge-case and compatibility completion dependency anchors for
+     `M243-E004`, `M243-A005`, `M243-B005`, `M243-C005`, and `M243-D005`, including
+     cross-lane compatibility maturity tokens needed to keep diagnostics quality gate/replay-policy edge-case and
+     compatibility completion governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy edge-case expansion and robustness dependency anchors for
+     `M243-E005`, `M243-A002`, `M243-B003`, `M243-C003`, and `M243-D004`, including
+     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy edge-case expansion and
+     robustness governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy diagnostics hardening dependency anchors for
+     `M243-E006`, `M243-A003`, `M243-B003`, `M243-C004`, and `M243-D005`, including
+     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy diagnostics hardening
+     governance evidence fail-closed while lane readiness remains staged.
+   - deterministic lane-E diagnostics quality gate and replay policy recovery and determinism hardening dependency anchors for
+     `M243-E007`, `M243-A003`, `M243-B004`, `M243-C004`, and `M243-D006`, including
+     mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy recovery and determinism
+     hardening governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy conformance matrix implementation dependency anchors for
+    `M243-E008`, `M243-A003`, `M243-B004`, `M243-C005`, and `M243-D006`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy conformance matrix
+    implementation governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy conformance corpus expansion dependency anchors for
+    `M243-E009`, `M243-A004`, `M243-B005`, `M243-C005`, and `M243-D007`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy conformance corpus
+    expansion governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy performance and quality guardrails dependency anchors for
+    `M243-E010`, `M243-A004`, `M243-B005`, `M243-C006`, and `M243-D008`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy performance and quality
+    guardrails governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-E diagnostics quality gate and replay policy cross-lane integration sync dependency anchors for
+    `M243-E011`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`, including
+    mixed-lane dependency maturity tokens needed to keep diagnostics quality gate/replay-policy cross-lane integration
+    sync governance evidence fail-closed while lane readiness remains staged.
+  - deterministic lane-D runner operations metadata anchors for `M248-D001`
+    with compile-route evidence and perf-budget continuity so platform
+    operation drift fails closed.
+  - deterministic lane-D runner modular split metadata anchors for `M248-D002`
+     with explicit `M248-D001` dependency continuity so platform scaffolding
+     drift fails closed.
+  - deterministic lane-D runner core feature metadata anchors for `M248-D003`
+    with explicit `M248-D002` dependency continuity so nullable-tool-path core feature drift fails closed.
+  - deterministic lane-D runner/platform operations core feature expansion metadata anchors for `M248-D004`
+    with explicit `M248-D003` dependency continuity and fail-closed expansion evidence continuity.
+  - deterministic lane-D runner/platform operations edge-case and compatibility completion metadata anchors for `M248-D005`
+    with explicit `M248-D004` dependency continuity and fail-closed compatibility evidence continuity.
+  - deterministic lane-D runner/platform operations edge-case expansion and robustness metadata anchors for `M248-D006`
+    with explicit `M248-D005` dependency continuity and fail-closed robustness evidence continuity.
+  - deterministic lane-D runner/platform operations diagnostics hardening metadata anchors for `M248-D007`
+    with explicit `M248-D006` dependency continuity and fail-closed diagnostics evidence continuity.
+  - deterministic lane-D runner/platform operations recovery and determinism hardening metadata anchors for `M248-D008`
+    with explicit `M248-D007` dependency continuity and fail-closed recovery/determinism evidence continuity.
+  - deterministic lane-D runner/platform operations conformance matrix implementation metadata anchors for `M248-D009`
+    with explicit `M248-D008` dependency continuity and fail-closed conformance matrix evidence continuity.
+  - deterministic lane-D runner/platform operations conformance corpus expansion metadata anchors for `M248-D010`
+    with explicit `M248-D009` dependency continuity and fail-closed conformance corpus evidence continuity.
+  - deterministic lane-D runner/platform operations performance and quality guardrails metadata anchors for `M248-D011`
+    with explicit `M248-D010` dependency continuity and fail-closed performance and quality evidence continuity.
+  - deterministic lane-D runner/platform operations cross-lane integration sync metadata anchors for `M248-D012`
+    with explicit `M248-D011` dependency continuity and fail-closed cross-lane integration evidence continuity.
+  - deterministic lane-D runner/platform operations docs/operator runbook synchronization metadata anchors for `M248-D013`
+    with explicit `M248-D012` dependency continuity and fail-closed docs/runbook synchronization evidence continuity.
+  - deterministic lane-D runner/platform operations release-candidate replay dry-run metadata anchors for `M248-D014`
+    with explicit `M248-D013` dependency continuity and fail-closed replay dry-run evidence continuity.
+  - deterministic lane-D runner/platform operations advanced core workpack (shard 1) metadata anchors for `M248-D015`
+    with explicit `M248-D014` dependency continuity and fail-closed advanced core evidence continuity.
+  - deterministic lane-D runner/platform operations advanced edge compatibility workpack (shard 1) metadata anchors for `M248-D016`
+    with explicit `M248-D015` dependency continuity and fail-closed advanced edge compatibility evidence continuity.
+  - deterministic lane-D runner/platform operations advanced diagnostics workpack (shard 1) metadata anchors for `M248-D017`
+    with explicit `M248-D016` dependency continuity and fail-closed advanced diagnostics evidence continuity.
 
 ### D.2.1 Metadata encoding/version header (normative) <a id="d-2-1"></a>
 
@@ -1299,6 +8556,5150 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - unknown required OCI-1 fields/capabilities trigger hard errors,
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
+
+## D.5 Lane-C Typed Edge-Case Metadata Anchors (implementation anchor) <a id="d-5"></a>
+
+deterministic lane-C typed sema-to-lowering edge-case compatibility metadata anchors for `M227-C005` must remain synchronized across typed handoff keys, parse-artifact replay keys, and readiness gating metadata surfaces before lane-C closeout can pass.
+
+deterministic lane-C typed sema-to-lowering edge-case expansion and robustness metadata anchors for `M227-C006` must remain synchronized across typed robustness keys, parse-artifact robustness keys, and readiness alignment metadata surfaces before lane-C robustness closure can pass.
+
+deterministic lane-C typed sema-to-lowering diagnostics-hardening metadata anchors for `M227-C007` must remain synchronized across typed diagnostics-hardening keys, parse diagnostics-hardening keys, and readiness alignment metadata surfaces before lane-C diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering recovery/determinism metadata anchors for `M227-C008` must remain synchronized across typed recovery keys, parse recovery keys, and readiness alignment metadata surfaces before lane-C recovery closure can pass.
+
+deterministic lane-C typed sema-to-lowering conformance matrix metadata anchors for `M227-C009` must remain synchronized across typed matrix keys, parse matrix keys, and readiness alignment metadata surfaces before lane-C matrix closure can pass.
+
+deterministic lane-C typed sema-to-lowering conformance corpus metadata anchors for `M227-C010` must remain synchronized across typed corpus keys, parse corpus keys, and readiness alignment metadata surfaces before lane-C corpus closure can pass.
+
+deterministic lane-C typed sema-to-lowering performance/quality guardrails metadata anchors for `M227-C011` must remain synchronized across typed guardrail keys, parse guardrail keys, and readiness alignment metadata surfaces before lane-C guardrail closure can pass.
+
+deterministic lane-C typed sema-to-lowering cross-lane integration metadata anchors for `M227-C012` must remain synchronized across typed integration-sync keys, parse integration-sync keys, and readiness alignment metadata surfaces before lane-C integration-sync closure can pass.
+
+deterministic lane-C typed sema-to-lowering docs/runbook synchronization metadata anchors for `M227-C013` must remain synchronized across typed docs/runbook keys, parse docs/runbook keys, and readiness alignment metadata surfaces before lane-C docs/runbook closure can pass.
+
+deterministic lane-C typed sema-to-lowering release-candidate/replay metadata anchors for `M227-C014` must remain synchronized across typed dry-run keys, parse dry-run keys, and readiness alignment metadata surfaces before lane-C dry-run closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-core-shard1 metadata anchors for `M227-C015` must remain synchronized across typed shard-1 keys, parse shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-edge-compatibility-shard1 metadata anchors for `M227-C016` must remain synchronized across typed edge-compatibility shard-1 keys, parse edge-compatibility shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 edge compatibility closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard1 metadata anchors for `M227-C017` must remain synchronized across typed diagnostics shard-1 keys, parse diagnostics shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-conformance-shard1 metadata anchors for `M227-C018` must remain synchronized across typed conformance shard-1 keys, parse conformance shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 conformance closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-integration-shard1 metadata anchors for `M227-C019` must remain synchronized across typed integration shard-1 keys, parse integration shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 integration closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-performance-shard1 metadata anchors for `M227-C020` must remain synchronized across typed performance shard-1 keys, parse performance shard-1 keys, and readiness alignment metadata surfaces before lane-C shard-1 performance closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-core-shard2 metadata anchors for `M227-C021` must remain synchronized across typed core-shard2 keys, parse core-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 core closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-edge-compatibility-shard2 metadata anchors for `M227-C022` must remain synchronized across typed edge-compatibility-shard2 keys, parse edge-compatibility-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 edge compatibility closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-diagnostics-shard2 metadata anchors for `M227-C023` must remain synchronized across typed diagnostics-shard2 keys, parse diagnostics-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 diagnostics closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-conformance-shard2 metadata anchors for `M227-C024` must remain synchronized across typed conformance-shard2 keys, parse conformance-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 conformance closure can pass.
+
+deterministic lane-C typed sema-to-lowering advanced-integration-shard2 metadata anchors for `M227-C025` must remain synchronized across typed integration-shard2 keys, parse integration-shard2 keys, and readiness alignment metadata surfaces before lane-C shard-2 integration closure can pass.
+
+deterministic lane-C typed sema-to-lowering integration-closeout-signoff metadata anchors for `M227-C026` must remain synchronized across typed integration-closeout keys, parse integration-closeout keys, and readiness alignment metadata surfaces before lane-C sign-off closure can pass.
+
+deterministic property conformance gate and docs dependency anchors for `M234-E001` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-A001`, `M234-B001`, `M234-C001`, and `M234-D001`.
+
+deterministic property conformance gate and docs modular split/scaffolding dependency anchors for `M234-E002` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E001`, `M234-A002`, `M234-B002`, `M234-C002`, and `M234-D002`.
+
+deterministic property conformance gate and docs core feature implementation dependency anchors for `M234-E003` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E002`, `M234-A003`, `M234-B003`, `M234-C003`, and `M234-D002`.
+
+deterministic property conformance gate and docs core feature expansion dependency anchors for `M234-E004` must remain synchronized across lane-E governance metadata and dependency continuity surfaces, including `M234-E003`, `M234-A004`, `M234-B004`, `M234-C004`, and `M234-D003`.
+
+deterministic lane-A class/protocol/category metadata generation anchors for `M229-A001` must remain synchronized across parser declaration metadata, semantic linking summaries, typed handoff surfaces, and IR frontend metadata profiles.
+
+deterministic lane-A class/protocol/category metadata generation metadata anchors for `M229-A001` must preserve class/protocol/category metadata evidence and parser replay-budget continuity so runtime ABI metadata linkage drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation modular split anchors for `M229-A002` must preserve explicit `M229-A001` dependency continuity so class/protocol/category metadata scaffolding drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation core feature anchors for `M229-A003` must preserve explicit `M229-A002` dependency continuity so class/protocol/category metadata core-feature drift fails closed.
+
+deterministic lane-A class/protocol/category metadata generation core feature expansion anchors for `M229-A004` must preserve explicit `M229-A003` dependency continuity so class/protocol/category metadata core-feature-expansion drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding contract-freeze anchors for `M230-A001` must preserve explicit lane-A contract-freeze metadata continuity so conformance corpus governance/sharding drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding modular split anchors for `M230-A002` must preserve explicit `M230-A001` dependency continuity so conformance corpus governance/sharding scaffolding drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding core feature anchors for `M230-A003` must preserve explicit `M230-A002` dependency continuity so conformance corpus governance/sharding core-feature drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding core feature expansion anchors for `M230-A004` must preserve explicit `M230-A003` dependency continuity so conformance corpus governance/sharding core-feature-expansion drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding edge-case and compatibility completion anchors for `M230-A005` must preserve explicit `M230-A004` dependency continuity so conformance corpus governance/sharding edge-case-and-compatibility-completion drift fails closed.
+
+deterministic lane-A conformance corpus governance and sharding edge-case expansion and robustness anchors for `M230-A006`
+explicit `M230-A005` dependency continuity so conformance corpus governance/sharding edge-case-expansion-and-robustness drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding diagnostics hardening anchors for `M230-A007`
+explicit `M230-A006` dependency continuity so conformance corpus governance/sharding diagnostics-hardening drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding recovery and determinism hardening anchors for `M230-A008`
+explicit `M230-A007` dependency continuity so conformance corpus governance/sharding recovery-and-determinism-hardening drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding conformance matrix implementation anchors for `M230-A009`
+explicit `M230-A008` dependency continuity so conformance corpus governance/sharding conformance-matrix-implementation drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding conformance corpus expansion anchors for `M230-A010`
+explicit `M230-A009` dependency continuity so conformance corpus governance/sharding conformance-corpus-expansion drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding performance and quality guardrails anchors for `M230-A011`
+explicit `M230-A010` dependency continuity so conformance corpus governance/sharding performance-and-quality-guardrails drift fails closed
+
+
+deterministic lane-A conformance corpus governance and sharding integration closeout and gate sign-off anchors for `M230-A012`
+explicit `M230-A011` dependency continuity so conformance corpus governance/sharding integration-closeout-and-gate-sign-off drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization contract-freeze anchors for `M231-A001`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization modular split anchors for `M231-A002`
+explicit `M231-A001` dependency continuity so declaration grammar expansion/normalization scaffolding drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A003`
+explicit `M231-A002` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A004`
+explicit `M231-A003` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A005`
+explicit `M231-A004` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A006`
+explicit `M231-A005` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A007`
+explicit `M231-A006` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A008`
+explicit `M231-A007` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A009`
+explicit `M231-A008` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A010`
+explicit `M231-A009` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A011`
+explicit `M231-A010` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A012`
+explicit `M231-A011` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A013`
+explicit `M231-A012` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A014`
+explicit `M231-A013` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A015`
+explicit `M231-A014` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A016`
+explicit `M231-A015` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A017`
+explicit `M231-A016` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A018`
+explicit `M231-A017` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A019`
+explicit `M231-A018` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A020`
+explicit `M231-A019` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A021`
+explicit `M231-A020` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A declaration grammar expansion and normalization core feature anchors for `M231-A022`
+explicit `M231-A021` dependency continuity so declaration grammar expansion/normalization core-feature drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A001`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A002`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A003`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A004`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A005`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A006`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A007`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A008`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A009`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A010`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A011`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A012`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A013`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A014`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A015`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-A message expression grammar and selector forms contract-freeze anchors for `M232-A016`
+explicit lane-A contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+- deterministic lane-C message-send lowering and call-emission advanced integration workpack (shard 1) metadata anchors for `M232-C019`
+
+
+- deterministic lane-C message-send lowering and call-emission integration closeout and gate sign-off metadata anchors for `M232-C020`
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D001`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D002`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D003`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D004`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D005`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D006`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D007`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D008`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-D runtime selector binding integration contract-freeze anchors for `M232-D009`
+explicit lane-D contract-freeze metadata continuity so runtime selector binding integration drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E001`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E002`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E003`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E004`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E005`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E006`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E007`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E008`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E009`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E010`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E011`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E012`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E013`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E014`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-E message semantics gate and replay evidence contract-freeze anchors for `M232-E015`
+explicit lane-E contract-freeze metadata continuity so message semantics gate and replay evidence drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B001`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B002`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B003`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B004`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B005`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B006`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B007`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B008`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B009`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B010`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B011`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B012`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B013`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B014`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B015`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B016`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B017`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B018`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B019`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B020`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B021`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B022`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B023`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B024`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B025`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B026`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B027`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B028`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B029`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B method lookup and overload semantics contract-freeze anchors for `M232-B030`
+explicit lane-B contract-freeze metadata continuity so method lookup and overload semantics drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B008`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A001`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A002`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A003`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A004`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A005`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A006`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A007`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A008`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A009`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A010`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A011`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-A protocol/category grammar and AST shape contract-freeze anchors for `M233-A012`
+explicit lane-A contract-freeze metadata continuity so protocol/category grammar and AST shape drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B001`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B002`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B003`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B004`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B005`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B006`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B007`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B008`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B009`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B010`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B011`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B012`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B013`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B014`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B015`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B016`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-B conformance checking and diagnostics contract-freeze anchors for `M233-B017`
+explicit lane-B contract-freeze metadata continuity so conformance checking and diagnostics drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C001`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C002`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C003`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C004`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C005`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C006`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C007`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C008`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C009`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C010`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C011`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C012`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C013`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C014`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C015`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C016`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C017`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C018`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C019`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C020`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C021`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-C lowering of protocol/category artifacts contract-freeze anchors for `M233-C022`
+explicit lane-C contract-freeze metadata continuity so lowering of protocol/category artifacts drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B003`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B004`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B005`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B006`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B007`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B008`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B009`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B010`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B011`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B012`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B013`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B014`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B015`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B016`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B017`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B018`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-B semantic flow analysis and invariants contract-freeze anchors for `M239-B019`
+explicit lane-B contract-freeze metadata continuity so semantic flow analysis and invariants drift fails closed
+
+
+deterministic lane-D toolchain/runtime cross-lane integration sync
+
+
+
+deterministic lane-D toolchain/runtime docs and operator runbook synchronization
+
+
+
+deterministic lane-D toolchain/runtime release-candidate and replay dry-run
+
+
+
+deterministic lane-D toolchain/runtime advanced core workpack (shard 1)
+
+
+
+deterministic lane-D toolchain/runtime integration closeout and gate sign-off
+
+
+
+deterministic lane-E conformance corpus expansion dependency anchors
+
+
+
+deterministic lane-E performance and quality guardrails dependency anchors
+
+
+
+deterministic lane-E cross-lane integration sync dependency anchors
+
+
+
+deterministic lane-E docs and operator runbook synchronization dependency anchors
+
+
+
+deterministic lane-E release-candidate and replay dry-run dependency anchors
+
+
+
+deterministic lane-E advanced core workpack (shard 1) dependency anchors
+
+
+
+deterministic lane-E advanced edge compatibility workpack (shard 1) dependency anchors
+
+
+
+deterministic lane-E advanced diagnostics workpack (shard 1) dependency anchors
+
+
+
+deterministic lane-E advanced conformance workpack (shard 1) dependency anchors
+
+
+
+deterministic lane-E advanced integration workpack (shard 1) dependency anchors
+
+
+
+deterministic lane-E integration closeout and gate sign-off dependency anchors
+
+
+
+deterministic lane-A class/protocol/category metadata generation edge-case and compatibility completion anchors for `M229-A005`
+explicit `M229-A004` dependency continuity so class/protocol/category metadata edge-case-and-compatibility-completion drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation edge-case expansion and robustness anchors for `M229-A006`
+explicit `M229-A005` dependency continuity so class/protocol/category metadata edge-case-expansion-and-robustness drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation diagnostics hardening anchors for `M229-A007`
+explicit `M229-A006` dependency continuity so class/protocol/category metadata diagnostics-hardening drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation recovery and determinism hardening anchors for `M229-A008`
+explicit `M229-A007` dependency continuity so class/protocol/category metadata recovery-and-determinism-hardening drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation conformance matrix implementation anchors for `M229-A009`
+explicit `M229-A008` dependency continuity so class/protocol/category metadata conformance-matrix-implementation drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation conformance corpus expansion anchors for `M229-A010`
+explicit `M229-A009` dependency continuity so class/protocol/category metadata conformance-corpus-expansion drift fails closed
+
+
+deterministic lane-A class/protocol/category metadata generation integration closeout and gate sign-off anchors for `M229-A011`
+explicit `M229-A010` dependency continuity so class/protocol/category metadata integration-closeout-and-gate-sign-off drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B001`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B002`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B003`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B004`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B005`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B006`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B007`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B008`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B009`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B010`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B011`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B012`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B013`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B014`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B015`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B016`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-B dispatch ABI and selector resolution contract-freeze anchors for `M229-B017`
+explicit lane-B contract-freeze metadata continuity so dispatch ABI and selector resolution drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C001`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C002`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C003`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C004`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C005`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C006`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C007`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C008`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C009`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C010`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C011`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C012`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C013`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C014`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C015`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C016`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C017`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C018`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C019`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C020`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C021`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-C interop boundary ABI handling contract-freeze anchors for `M229-C022`
+explicit lane-C contract-freeze metadata continuity so interop boundary ABI handling drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D001`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D002`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D003`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D004`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D005`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D006`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D007`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D008`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D009`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D010`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D011`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D012`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D013`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D014`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D015`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D016`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D017`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D018`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D019`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D020`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D021`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D022`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D023`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D024`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D025`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D026`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-D packaging and runtime launch ergonomics contract-freeze anchors for `M229-D027`
+explicit lane-D contract-freeze metadata continuity so packaging and runtime launch ergonomics drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E001`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E002`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E003`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E004`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E005`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E006`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E007`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E008`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E009`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E010`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E011`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E012`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E013`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E014`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E015`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E016`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-E runtime release gate and operational docs contract-freeze anchors for `M229-E017`
+explicit lane-E contract-freeze metadata continuity so runtime release gate and operational docs drift fails closed
+
+
+deterministic lane-A CI matrix simplification and flake elimination contract-freeze anchors for `M230-B001`
+explicit lane-A contract-freeze metadata continuity so conformance corpus governance/sharding drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B001`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B002`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B003`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B004`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B005`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B006`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B007`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B008`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B009`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B010`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B011`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B012`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B013`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B014`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-B CI matrix simplification and flake elimination contract-freeze anchors for `M230-B015`
+explicit lane-B contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C001`
+explicit lane-C contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C002`
+explicit lane-C contract-freeze metadata continuity so CI matrix simplification/flake elimination drift fails closed
+
+
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C003`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C004`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C005`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C006`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C007`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C008`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C009`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C010`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C011`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C012`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C013`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C014`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C015`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C016`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C017`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-C Documentation generation as source-of-truth contract-freeze anchors for `M230-C018`
+explicit lane-C contract-freeze metadata continuity so Documentation generation as source-of-truth drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D001`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D002`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D003`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D004`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D005`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D006`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D007`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D008`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D009`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D010`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D011`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D012`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D013`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D014`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D015`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D016`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D017`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D018`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D019`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D020`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D021`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-D Developer CLI and diagnostics ergonomics contract-freeze anchors for `M230-D022`
+explicit lane-D contract-freeze metadata continuity so Developer CLI and diagnostics ergonomics drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E001`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E002`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E003`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E004`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E005`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E006`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E007`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E008`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E009`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E010`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E011`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E012`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E013`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E014`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E015`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E016`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E017`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E018`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E019`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E020`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E021`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E022`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E023`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E024`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E025`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E026`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E027`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E028`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E029`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E030`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-E Program control and release readiness governance contract-freeze anchors for `M230-E031`
+explicit lane-E contract-freeze metadata continuity so Program control and release readiness governance drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B001`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B002`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B003`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B004`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B005`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B006`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B007`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B008`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B009`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B010`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B011`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B012`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B013`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B014`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B015`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B016`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B Declaration semantic validation rules contract-freeze anchors for `M231-B017`
+explicit lane-B contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C001`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C002`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C003`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C004`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C005`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C006`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C007`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C008`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C009`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C010`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C011`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C012`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C013`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-C Declaration lowering contract updates contract-freeze anchors for `M231-C014`
+explicit lane-C contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D001`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D002`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D003`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D004`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D005`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D006`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D007`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-D Frontend/runtime declaration metadata linkage contract-freeze anchors for `M231-D008`
+explicit lane-D contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E001`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E002`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E003`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E004`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E005`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E006`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E007`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E008`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E009`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E010`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-E Declaration coverage gate and docs contract-freeze anchors for `M231-E011`
+explicit lane-E contract-freeze metadata continuity so declaration grammar expansion/normalization drift fails closed
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B001`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B002`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B003`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B004`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B005`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B006`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B007`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B008`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B009`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B010`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B011`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B012`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B013`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B014`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B015`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B016`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B property semantic rules and synthesis analysis metadata anchors for `M234-B017`
+property/ivar semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation edge-case expansion and robustness metadata anchors for `M235-C006`
+
+with explicit `M235-C005` dependency continuity so edge-case expansion and robustness lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation Edge-case expansion and robustness metadata anchors for `M235-C006`
+
+with explicit `M235-C005` dependency continuity so Edge-case expansion and robustness lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation diagnostics hardening metadata anchors for `M235-C007`
+
+with explicit `M235-C006` dependency continuity so diagnostics hardening lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation recovery and determinism hardening metadata anchors for `M235-C008`
+
+with explicit `M235-C007` dependency continuity so recovery and determinism hardening lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation conformance matrix implementation metadata anchors for `M235-C009`
+
+with explicit `M235-C008` dependency continuity so conformance matrix implementation lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation conformance corpus expansion metadata anchors for `M235-C010`
+
+with explicit `M235-C009` dependency continuity so conformance corpus expansion lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation performance and quality guardrails metadata anchors for `M235-C011`
+
+with explicit `M235-C010` dependency continuity so performance and quality guardrails lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation cross-lane integration sync metadata anchors for `M235-C012`
+
+with explicit `M235-C011` dependency continuity so cross-lane integration sync lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation docs and operator runbook synchronization metadata anchors for `M235-C013`
+
+with explicit `M235-C012` dependency continuity so docs and operator runbook synchronization lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation release-candidate and replay dry-run metadata anchors for `M235-C014`
+
+with explicit `M235-C013` dependency continuity so release-candidate and replay dry-run lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation advanced core workpack (shard 1) metadata anchors for `M235-C015`
+
+with explicit `M235-C014` dependency continuity so advanced core workpack (shard 1) lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation advanced edge compatibility workpack (shard 1) metadata anchors for `M235-C016`
+
+with explicit `M235-C015` dependency continuity so advanced edge compatibility workpack (shard 1) lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation advanced diagnostics workpack (shard 1) metadata anchors for `M235-C017`
+
+with explicit `M235-C016` dependency continuity so advanced diagnostics workpack (shard 1) lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation advanced conformance workpack (shard 1) metadata anchors for `M235-C018`
+
+with explicit `M235-C017` dependency continuity so advanced conformance workpack (shard 1) lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation advanced integration workpack (shard 1) metadata anchors for `M235-C019`
+
+with explicit `M235-C018` dependency continuity so advanced integration workpack (shard 1) lowering and ABI drift fails closed.
+
+
+deterministic lane-C qualified type lowering and ABI representation integration closeout and gate sign-off metadata anchors for `M235-C020`
+
+with explicit `M235-C019` dependency continuity so integration closeout and gate sign-off lowering and ABI drift fails closed.
+
+
+deterministic lane-D interop behavior for qualified generic APIs edge-case and compatibility completion metadata anchors for `M235-D005`
+
+with explicit `M235-D004` dependency continuity so edge-case and compatibility completion interop drift fails closed.
+
+
+deterministic lane-D interop behavior for qualified generic APIs edge-case expansion and robustness metadata anchors for `M235-D006`
+
+with explicit `M235-D005` dependency continuity so edge-case expansion and robustness interop drift fails closed.
+
+
+deterministic lane-D interop behavior for qualified generic APIs diagnostics hardening metadata anchors for `M235-D007`
+
+with explicit `M235-D006` dependency continuity so diagnostics hardening interop drift fails closed.
+
+
+deterministic lane-D interop behavior for qualified generic APIs recovery and determinism hardening metadata anchors for `M235-D008`
+
+with explicit `M235-D007` dependency continuity so recovery and determinism hardening interop drift fails closed.
+
+
+deterministic lane-D interop behavior for qualified generic APIs integration closeout and gate sign-off metadata anchors for `M235-D009`
+
+with explicit `M235-D008` dependency continuity so integration closeout and gate sign-off interop drift fails closed.
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A012`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A013`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A014`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M236-A015`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B008`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B009`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B010`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B011`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B012`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B013`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B014`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B015`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B016`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B017`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B018`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B019`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B020`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M236-B021`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C018`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C019`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C020`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C021`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C022`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C023`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C024`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C025`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C026`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C027`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C028`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C029`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C030`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C031`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C032`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C033`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C034`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M236-C035`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M237-A012`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B008`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B009`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B010`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B011`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B012`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B013`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B014`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B015`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B016`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B017`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M237-B018`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C018`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C019`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C020`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C021`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C022`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C023`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C024`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C025`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C026`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C027`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C028`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C029`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M237-C030`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M238-A012`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B008`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B009`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B010`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B011`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B012`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B013`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B014`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B015`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M238-B016`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C018`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C019`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C020`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C021`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C022`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C023`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C024`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C025`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C026`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C027`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M238-C028`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A012`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M239-A013`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M239-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M239-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C018`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C019`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C020`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C021`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C022`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C023`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C024`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C025`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C026`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C027`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C028`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C029`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C030`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C031`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M239-C032`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M240-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B008`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B009`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B010`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B011`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B012`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B013`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B014`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B015`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M240-B016`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C018`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C019`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M240-C020`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M241-A012`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B008`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B009`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B010`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B011`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B012`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B013`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B014`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M241-B015`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C017`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M241-C018`
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A001`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A002`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A003`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A004`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A005`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A006`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A007`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A008`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A009`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A010`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-A qualifier/generic grammar normalization metadata anchors for `M242-A011`
+nullability/generics/qualifier semantics evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B001`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B002`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B003`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B004`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B005`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B006`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B qualifier/generic semantic inference metadata anchors for `M242-B007`
+nullability/generics/qualifier semantic-inference evidence and parser replay-budget continuity
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B009`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B010`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B011`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B012`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B013`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-B preprocessor semantic model and expansion rules contract-freeze anchors for `M242-B014`
+explicit lane-B contract-freeze metadata continuity so preprocessor semantic model and expansion rules drift fails closed
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C001`
+qualified-type lowering and ABI representation evidence and lowering replay-budget continuity
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C002`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C003`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C004`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C005`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C006`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C007`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C008`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C009`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C010`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C011`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C012`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C013`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C014`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C015`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C016`
+
+
+deterministic lane-C qualified type lowering and ABI representation metadata anchors for `M242-C017`
+
+
+deterministic lane-C lowering/runtime diagnostics surfacing docs and operator runbook synchronization metadata anchors for `M243-C013` with explicit
+
+`M243-C012` dependency continuity
+
+
+deterministic lane-C lowering/runtime diagnostics surfacing release-candidate and replay dry-run metadata anchors for `M243-C014` with explicit
+
+`M243-C013` dependency continuity
+
+
+deterministic lane-C lowering/runtime diagnostics surfacing advanced core workpack (shard 1) metadata anchors for `M243-C015` with explicit
+
+`M243-C014` dependency continuity
+
+
+deterministic lane-C lowering/runtime diagnostics surfacing advanced edge compatibility workpack (shard 1) metadata anchors for `M243-C016` with explicit
+
+`M243-C015` dependency continuity
+
+
+deterministic lane-C lowering/runtime diagnostics surfacing integration closeout and gate sign-off metadata anchors for `M243-C017` with explicit
+
+`M243-C016` dependency continuity
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D014`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D015`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D016`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D017`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D018`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D019`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D020`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D021`
+
+
+deterministic lane-D CLI/reporting output docs/operator runbook synchronization metadata anchors for `M243-D022`
+
+
+deterministic lane-E diagnostics quality gate and replay policy docs and operator runbook synchronization dependency anchors for
+
+`M243-E012`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy release-candidate and replay dry-run dependency anchors for
+
+`M243-E013`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced core workpack (shard 1) dependency anchors for
+
+`M243-E014`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 1) dependency anchors for
+
+`M243-E015`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced diagnostics workpack (shard 1) dependency anchors for
+
+`M243-E016`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced conformance workpack (shard 1) dependency anchors for
+
+`M243-E017`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced integration workpack (shard 1) dependency anchors for
+
+`M243-E018`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced performance workpack (shard 1) dependency anchors for
+
+`M243-E019`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced core workpack (shard 2) dependency anchors for
+
+`M243-E020`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 2) dependency anchors for
+
+`M243-E021`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced diagnostics workpack (shard 2) dependency anchors for
+
+`M243-E022`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced conformance workpack (shard 2) dependency anchors for
+
+`M243-E023`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced integration workpack (shard 2) dependency anchors for
+
+`M243-E024`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced performance workpack (shard 2) dependency anchors for
+
+`M243-E025`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced core workpack (shard 3) dependency anchors for
+
+`M243-E026`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced edge compatibility workpack (shard 3) dependency anchors for
+
+`M243-E027`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced diagnostics workpack (shard 3) dependency anchors for
+
+`M243-E028`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy advanced conformance workpack (shard 3) dependency anchors for
+
+`M243-E029`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-E diagnostics quality gate and replay policy integration closeout and gate sign-off dependency anchors for
+
+`M243-E030`, `M243-A012`, `M243-B012`, `M243-C011`, and `M243-D012`
+
+
+deterministic lane-B interop semantic/type mediation advanced edge compatibility workpack (shard 1) metadata anchors for `M244-B016`
+
+with explicit `M244-B015` dependency continuity and fail-closed evidence
+
+
+deterministic lane-B interop semantic/type mediation advanced diagnostics workpack (shard 1) metadata anchors for `M244-B017`
+
+with explicit `M244-B016` dependency continuity and fail-closed evidence
+
+
+deterministic lane-B interop semantic/type mediation advanced conformance workpack (shard 1) metadata anchors for `M244-B018`
+
+with explicit `M244-B017` dependency continuity and fail-closed evidence
+
+
+deterministic lane-B interop semantic/type mediation integration closeout and gate sign-off metadata anchors for `M244-B019`
+
+with explicit `M244-B018` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C015`
+
+with explicit `M244-C014` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C016`
+
+with explicit `M244-C015` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C017`
+
+with explicit `M244-C016` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C018`
+
+with explicit `M244-C017` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C019`
+
+with explicit `M244-C018` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C020`
+
+with explicit `M244-C019` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C021`
+
+with explicit `M244-C020` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C022`
+
+with explicit `M244-C021` dependency continuity and fail-closed evidence
+
+
+deterministic lane-C interop lowering/ABI conformance release-candidate/replay dry-run metadata anchors for `M244-C023`
+
+with explicit `M244-C022` dependency continuity and fail-closed evidence
+
+
+deterministic lane-D runtime/link bridge-path conformance matrix implementation metadata anchors for `M244-D009`
+
+explicit `M244-D008` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path conformance corpus expansion metadata anchors for `M244-D010`
+
+explicit `M244-D009` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path performance and quality guardrails metadata anchors for `M244-D011`
+
+explicit `M244-D010` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path cross-lane integration sync metadata anchors for `M244-D012`
+
+explicit `M244-D011` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path docs and operator runbook synchronization metadata anchors for `M244-D013`
+
+explicit `M244-D012` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path release-candidate and replay dry-run metadata anchors for `M244-D014`
+
+explicit `M244-D013` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced core workpack (shard 1) metadata anchors for `M244-D015`
+
+explicit `M244-D014` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced edge compatibility workpack (shard 1) metadata anchors for `M244-D016`
+
+explicit `M244-D015` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced diagnostics workpack (shard 1) metadata anchors for `M244-D017`
+
+explicit `M244-D016` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced conformance workpack (shard 1) metadata anchors for `M244-D018`
+
+explicit `M244-D017` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced integration workpack (shard 1) metadata anchors for `M244-D019`
+
+explicit `M244-D018` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced performance workpack (shard 1) metadata anchors for `M244-D020`
+
+explicit `M244-D019` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path advanced core workpack (shard 2) metadata anchors for `M244-D021`
+
+explicit `M244-D020` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-D runtime/link bridge-path integration closeout and gate sign-off metadata anchors for `M244-D022`
+
+explicit `M244-D021` dependency continuity and fail-closed evidence continuity
+
+
+deterministic lane-E interop conformance gate and operations conformance corpus expansion dependency anchors for
+
+`M244-E009`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations performance and quality guardrails dependency anchors for
+
+`M244-E010`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations cross-lane integration sync dependency anchors for
+
+`M244-E011`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations docs and operator runbook synchronization dependency anchors for
+
+`M244-E012`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations release-candidate and replay dry-run dependency anchors for
+
+`M244-E013`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations advanced core workpack (shard 1) dependency anchors for
+
+`M244-E014`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations advanced edge compatibility workpack (shard 1) dependency anchors for
+
+`M244-E015`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+
+deterministic lane-E interop conformance gate and operations integration closeout and gate sign-off dependency anchors for
+
+`M244-E016`, `M244-A007`, `M244-B010`, `M244-C012`, and `M244-D012`
+
+## M251 runtime metadata source ownership metadata anchors (A001)
+
+Deterministic lane-A runtime metadata ownership metadata anchors for
+`M251-A001` shall preserve:
+
+- contract id `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
+- canonical source schema `objc3-runtime-metadata-source-boundary-v1`
+- record-count evidence for classes, protocols, category interfaces,
+  category implementations, properties, methods, and ivar source packets
+- explicit booleans for frontend ownership, fail-closed status, lowering
+  readiness, native runtime library presence, and test-shim-only topology
+
+Runtime metadata ownership evidence and parser/sema source-boundary continuity
+must remain deterministic before metadata section ABI work begins.
+
+## M251 runtime metadata source record set metadata anchors (A002)
+
+Deterministic lane-A runtime metadata source record extraction for `M251-A002`
+shall preserve:
+
+- `interfaces` / `implementations` manifest arrays derived from
+  `classes_lexicographic` filtered by `record_kind`,
+- `protocols` manifest arrays derived from `protocols_lexicographic`,
+- `categories` manifest arrays derived from `categories_lexicographic`,
+- `runtime_metadata_source_records` object payloads carrying:
+  - `deterministic`,
+  - `properties`,
+  - `methods`,
+  - `ivars`,
+- property records carrying owner kind/name, property name, type, getter,
+  setter, and `ivar_binding_symbol`,
+- method records carrying owner kind/name, selector, class-method bit,
+  body-presence bit, parameter count, and return-type name,
+- ivar records carrying owner kind/name, property name, ivar binding symbol,
+  and source model `property-synthesis-ivar-binding-symbols`.
+
+Runtime metadata source-record extraction and manifest projection continuity
+must remain deterministic before native metadata section/object emission begins.
+
+## M251 runtime record manifest handoff normalization metadata anchors (A003)
+
+Deterministic lane-A runtime record manifest handoff for `M251-A003` shall
+preserve:
+
+- runtime-record manifest projection even when later LLVM IR/object emit work
+  remains fail-closed,
+- non-empty manifest paths for manifest-only frontend runs,
+- emit-stage summary state showing `attempted=false` and `skipped=true` when
+  IR/object emission was not requested,
+- preserved runtime-record manifest artifacts for fail-closed CLI/native full
+  compile runs.
+
+Runtime-record manifest handoff continuity must remain deterministic before
+native metadata section/object emission and runtime registration work begins.
+
+## M251 runtime export legality metadata anchors (B001)
+
+Deterministic lane-B runtime export legality for `M251-B001` shall preserve:
+
+- `!objc3.objc_runtime_export_legality` in emitted LLVM IR frontend metadata,
+- class, protocol, category, property, method, and ivar record inventory
+  together with invalid-composition and legality-drift counters,
+- explicit pending enforcement flags for duplicate-runtime-identity,
+  incomplete-declaration, and illegal-redeclaration blocking,
+- a fail-closed legality packet that can be `ready=true` without claiming that
+  metadata export enforcement already exists.
+
+Runtime export legality anchors must remain deterministic before native
+metadata section emission, runtime registration, and executable object-model
+enforcement land.
+
+## M251 runtime export enforcement metadata anchors (B002)
+
+Deterministic lane-B runtime export enforcement for `M251-B002` shall preserve:
+
+- `!objc3.objc_runtime_export_enforcement` in emitted LLVM IR frontend
+  metadata,
+- an enforcement packet that preserves duplicate, incomplete,
+  illegal-redeclaration, and metadata-shape-drift counters,
+- a fail-closed ready bit that only becomes `true` when those counters remain
+  zero,
+- forward protocol declarations being excluded from incomplete export
+  accounting when they are only dependency hints.
+
+The enforcement packet must preserve duplicate, incomplete,
+illegal-redeclaration, and metadata-shape-drift counters while remaining
+deterministic.
+
+Runtime export enforcement anchors must remain deterministic before native
+metadata section emission, runtime registration, and executable object-model
+enforcement land.
+
+## M251 runtime metadata section ABI and symbol policy metadata anchors (C001)
+
+Deterministic lane-C runtime metadata section ABI and symbol policy anchors for
+`M251-C001` shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-section-abi-symbol-policy-freeze/m251-c001-v1`,
+- logical section inventory entries for `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`, `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and `objc3.runtime.ivar_descriptors`,
+- descriptor prefix `__objc3_meta_`, aggregate prefix `__objc3_sec_`, and
+  image info symbol `__objc3_image_info`,
+- descriptor linkage `private`, aggregate linkage `internal`, metadata
+  visibility `hidden`, and retention root `llvm.used`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_section_abi`.
+
+Runtime metadata section ABI and symbol policy anchors must remain
+deterministic and fail closed before native metadata section emission and
+runtime registration land.
+
+## M251 runtime metadata section scaffold metadata anchors (C002)
+
+Deterministic lane-C runtime metadata section scaffold anchors for `M251-C002`
+shall preserve:
+
+- contract id `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- image info symbol `__objc3_image_info`,
+- aggregate symbols `__objc3_sec_class_descriptors`,
+  `__objc3_sec_protocol_descriptors`, `__objc3_sec_category_descriptors`,
+  `__objc3_sec_property_descriptors`, and `__objc3_sec_ivar_descriptors`,
+- descriptor placeholder globals using the canonical prefix `__objc3_meta_`,
+- retention through `@llvm.used`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_section_scaffold`.
+
+Runtime metadata section scaffold anchors must remain deterministic and fail
+closed before runtime registration, live lookup, and executable object-model
+payload lowering land.
+
+## M251 runtime metadata object inspection harness metadata anchors (C003)
+
+Deterministic lane-C runtime metadata object inspection harness anchors for
+`M251-C003` shall preserve:
+
+- contract id `objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1`,
+- scaffold contract id `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- fixture path
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+- emitted object relative path `module.obj`,
+- row keys `zero-descriptor-section-inventory` and `zero-descriptor-symbol-inventory`,
+- commands `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- named LLVM IR metadata `!objc3.objc_runtime_metadata_object_inspection`.
+
+Runtime metadata object inspection anchors must remain deterministic and fail
+closed before runtime registration, live lookup, and executable object-model
+payload lowering land.
+
+## M251 native runtime-library surface and build contract metadata anchors (D001)
+
+Deterministic lane-D native runtime-library surface anchors for `M251-D001`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1`,
+- scaffold dependency contract id
+  `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- target name `objc3_runtime`,
+- source root `native/objc3c/src/runtime`,
+- public header `native/objc3c/src/runtime/objc3_runtime.h`,
+- library kind `static` and archive basename `objc3_runtime`,
+- exported entrypoints `objc3_runtime_register_image`,
+  `objc3_runtime_lookup_selector`, `objc3_runtime_dispatch_i32`, and
+  `objc3_runtime_reset_for_testing`,
+- driver link mode `not-linked-until-m251-d003`,
+- named LLVM IR metadata `!objc3.objc_runtime_support_library`.
+
+Native runtime-library surface anchors must remain deterministic and fail
+closed before the library skeleton, bootstrap registrar, and live dispatch
+runtime land.
+
+## M251 native runtime-library core feature metadata anchors (D002)
+
+Deterministic lane-D native runtime-library core feature anchors for
+`M251-D002` shall preserve:
+
+- contract id `objc3c-runtime-support-library-core-feature/m251-d002-v1`,
+- dependency ids
+  `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1` and
+  `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
+- implementation source
+  `native/objc3c/src/runtime/objc3_runtime.cpp`,
+- archive output `artifacts/lib/objc3_runtime.lib`,
+- runtime probe source
+  `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`,
+- exported entrypoints `objc3_runtime_register_image`,
+  `objc3_runtime_lookup_selector`, `objc3_runtime_dispatch_i32`, and
+  `objc3_runtime_reset_for_testing`,
+- driver link mode `not-linked-until-m251-d003`,
+- named LLVM IR metadata
+  `!objc3.objc_runtime_support_library_core_feature`.
+
+Native runtime-library core feature anchors must remain deterministic and fail
+closed while the real archive exists but before driver-link integration claims
+are made.
+
+## M251 native runtime-library link wiring metadata anchors (D003)
+
+Deterministic lane-D native runtime-library link wiring anchors for
+`M251-D003` shall preserve:
+
+- contract id `objc3c-runtime-support-library-link-wiring/m251-d003-v1`,
+- named LLVM IR metadata `!objc3.objc_runtime_support_library_link_wiring`,
+- manifest keys `runtime_support_library_link_wiring_contract_id`,
+  `runtime_support_library_link_wiring_archive_relative_path`,
+  `runtime_support_library_link_wiring_compatibility_dispatch_symbol`, and
+  `runtime_support_library_link_wiring_driver_link_mode`,
+- archive relative path `artifacts/lib/objc3_runtime.lib`,
+- compatibility dispatch symbol `objc3_msgsend_i32`,
+- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`,
+- execution smoke script path `scripts/check_objc3c_native_execution_smoke.ps1`,
+- driver link mode `emitted-object-links-against-objc3_runtime-lib`.
+
+Native runtime-library link wiring anchors must remain deterministic and fail
+closed before metadata registration/startup claims are made.
+
+## M251 runnable-runtime foundation gate metadata anchors (E001)
+
+Deterministic lane-E runnable-runtime foundation gate anchors for `M251-E001`
+shall preserve:
+
+- contract id `objc3c-runnable-runtime-foundation-gate-evidence-contract/m251-e001-v1`,
+- upstream evidence paths:
+  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
+  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
+  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
+  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
+  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
+- canonical runtime archive path `artifacts/lib/objc3_runtime.lib`,
+- upstream issue anchors `M251-A003`, `M251-B003`, `M251-C003`, and
+  `M251-D003`,
+- fail-closed aggregate proof that the runtime archive, metadata handoff,
+  diagnostics, and object inspection evidence remain synchronized.
+
+Runnable-runtime foundation gate anchors must remain deterministic and fail
+closed before M252 metadata semantic-closure work begins.
+
+## M251 cross-lane runtime-foundation gate metadata anchors (E002)
+
+Deterministic lane-E cross-lane runtime-foundation gate anchors for `M251-E002`
+shall preserve:
+
+- contract id `objc3c-cross-lane-runtime-foundation-gate-bootstrap-proof/m251-e002-v1`,
+- dependency summary path
+  `tmp/reports/m251/M251-E001/runnable_runtime_foundation_gate_contract_summary.json`,
+- probe root `tmp/artifacts/compilation/objc3c-native/m251/cross-lane-runtime-foundation-gate`,
+- smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m251_e002_cross_lane_runtime_foundation_gate/summary.json`,
+- canonical runtime archive path `artifacts/lib/objc3_runtime.lib`,
+- dependency issue anchors `M251-A003`, `M251-B003`, `M251-C003`, `M251-D003`,
+  and `M251-E001`.
+
+Cross-lane runtime-foundation gate anchors must remain deterministic and fail
+closed before M251-E003 publishes operator runbooks and before M252 begins
+registration work.
+
+## M251 developer runbook and environment publication metadata anchors (E003)
+
+Deterministic lane-E runbook-publication anchors for `M251-E003` shall
+preserve:
+
+- contract id `objc3c-runtime-foundation-developer-runbook-environment-publication/m251-e003-v1`,
+- runbook path `docs/runbooks/m251_runtime_foundation_developer_runbook.md`,
+- object-inspection output root
+  `tmp/artifacts/compilation/objc3c-native/m251/runbook/object_inspection`,
+- smoke run id `m251_e003_runtime_foundation_runbook_smoke`,
+- smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m251_e003_runtime_foundation_runbook_smoke/summary.json`,
+- dependency summary path
+  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`.
+
+Runbook-publication anchors must remain deterministic and fail closed before
+M252 startup registration and runtime metadata realization work begins.
+
+## M252 executable metadata source graph metadata anchors (A001)
+
+Deterministic lane-A executable metadata source graph anchors for `M252-A001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`,
+- manifest node `objc_executable_metadata_source_graph`,
+- owner identity model `semantic-link-symbol-lexicographic-owner-identity`,
+- metaclass node policy
+  `metaclass-nodes-derived-from-resolved-interface-symbols`,
+- evidence path
+  `tmp/reports/m252/M252-A001/executable_metadata_source_graph_contract_summary.json`.
+
+Executable metadata source graph anchors must remain deterministic and fail
+closed before `M252-A002` and `M252-A003` complete semantic closure and edge
+inventory work.
+
+## M252 executable metadata graph completeness metadata anchors (A002)
+
+Deterministic lane-A executable metadata graph completeness for `M252-A002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- manifest node `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`,
+- explicit `interface_node_entries`,
+- explicit `implementation_node_entries`,
+- explicit `class_node_entries`,
+- explicit `metaclass_node_entries`,
+- explicit `owner_edges`,
+- evidence path
+  `tmp/reports/m252/M252-A002/executable_metadata_graph_completeness_summary.json`.
+
+The graph must remain deterministic and fail closed before `M252-A003`,
+lane-B semantic ambiguity work, lowering handoff, and runtime ingest packaging
+land.
+
+## M252 executable metadata export graph completion metadata anchors (A003)
+
+Deterministic lane-A executable metadata export graph completion for `M252-A003`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-export-graph-completion/m252-a003-v1`,
+- existing packet contract id
+  `objc3c-executable-metadata-source-graph-completeness/m252-a002-v1`,
+- manifest node `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`,
+- explicit `protocol_node_entries`,
+- explicit `category_node_entries`,
+- explicit `property_node_entries`,
+- explicit `method_node_entries`,
+- explicit `ivar_node_entries`,
+- explicit owner edges for protocol inheritance, category attachment, member
+  declaration/export ownership, and ivar/property bindings,
+- evidence path
+  `tmp/reports/m252/M252-A003/executable_metadata_export_graph_completion_summary.json`.
+
+The graph must remain deterministic and fail closed before lane-B semantic
+closure, lowering handoff, and runtime ingest packaging land.
+
+## M252 executable metadata semantic consistency metadata anchors (B001)
+
+Deterministic lane-B executable metadata semantic consistency for `M252-B001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`,
+- explicit pending-enforcement bits for semantic conflict diagnostics,
+  duplicate export-owner enforcement, and lowering admission,
+- evidence path
+  `tmp/reports/m252/M252-B001/executable_metadata_semantic_consistency_summary.json`.
+
+The boundary must remain deterministic and fail closed before lane-B
+diagnostics/enforcement work, lowering admission, and runtime ingest packaging
+land.
+
+## M252 inheritance override protocol composition validation metadata anchors (B002)
+
+Deterministic lane-B executable metadata semantic validation for `M252-B002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-semantic-validation/m252-b002-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`,
+- graph owner edge kind `method-to-overridden-method`,
+- evidence path
+  `tmp/reports/m252/M252-B002/executable_metadata_semantic_validation_summary.json`.
+
+The packet must remain graph-backed, deterministic, fail-closed, and not
+lowering-ready before category ambiguity diagnostics, export blocking, lowering
+handoff, and runtime ingest packaging land.
+
+## M252 category attachment duplication ambiguity diagnostics metadata anchors (B003)
+
+Deterministic lane-B runtime export diagnostic hardening for `M252-B003` shall
+preserve:
+
+- the runtime export blocker diagnostics `O3S261`, `O3S262`, and `O3S263`,
+- canonical `Root(Extras)`-style category owner spelling in diagnostics,
+- manifest-backed replay evidence from the existing semantic surfaces, and
+- evidence path
+  `tmp/reports/m252/M252-B003/category_attachment_duplication_ambiguity_diagnostics_summary.json`.
+
+The expansion must keep the happy path manifest-producing, reject category
+attachment collisions and duplicate runtime members deterministically, and avoid
+introducing a second runtime export packet.
+
+## M252 property ivar export legality metadata anchors (B004)
+
+Deterministic lane-B property and ivar export legality hardening for `M252-B004`
+shall preserve:
+
+- manifest-backed `property_synthesis_sites`, explicit/default ivar-binding
+  counts, and resolved/missing/conflict totals from the canonical sema
+  property-synthesis summary,
+- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`,
+- `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.replay_key`,
+- lowering replay key derived from the same canonical sema
+  property-synthesis summary, and
+- evidence path
+  `tmp/reports/m252/M252-B004/property_ivar_export_legality_synthesis_preconditions_summary.json`.
+
+The hardening must keep category-only property export at zero synthesis counts
+and reject missing-interface or incompatible implementation properties under
+`O3S206`.
+
+## M252 metadata graph lowering handoff metadata anchors (C001)
+
+Deterministic lane-C metadata graph lowering handoff anchors for `M252-C001`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`,
+- parse/lowering projection fields
+  `executable_metadata_lowering_handoff_ready`,
+  `executable_metadata_lowering_handoff_deterministic`, and
+  `executable_metadata_lowering_handoff_key`,
+- typed-handoff continuity through the canonical metadata graph lowering
+  handoff key, and
+- evidence path
+  `tmp/reports/m252/M252-C001/metadata_graph_lowering_handoff_contract_summary.json`.
+
+Metadata graph lowering handoff anchors must remain deterministic and fail
+closed before lane-C lowering admission, real metadata section emission,
+runtime ingest packaging, and startup registration land.
+
+## M252 typed metadata graph handoff metadata anchors (C002)
+
+Deterministic lane-C typed metadata graph handoff anchors for `M252-C002`
+shall preserve:
+
+- contract id `objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- manifest schema ordering model
+  `contract-header-then-source-graph-payload-v1`,
+- nested `source_graph` payload continuity with the canonical A003 executable
+  metadata graph packet,
+- parse/lowering projection fields
+  `executable_metadata_typed_lowering_handoff_ready`,
+  `executable_metadata_typed_lowering_handoff_deterministic`, and
+  `executable_metadata_typed_lowering_handoff_key`,
+- evidence path
+  `tmp/reports/m252/M252-C002/typed_metadata_graph_handoff_and_manifest_schema_summary.json`.
+
+Typed metadata graph handoff anchors must remain deterministic and fail closed
+before lane-C debug projection, D-lane runtime-ingest packaging, and M253
+object-section emission land.
+
+## M252 metadata debug projection metadata anchors (C003)
+
+Deterministic lane-C metadata debug-projection anchors for `M252-C003` shall
+preserve:
+
+- contract id `objc3c-executable-metadata-debug-projection/m252-c003-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- named LLVM metadata
+  `!objc3.objc_executable_metadata_debug_projection`,
+- matrix rows
+  `class-protocol-property-ivar-manifest-projection`,
+  `category-protocol-property-manifest-projection`, and
+  `hello-ir-named-metadata-anchor`,
+- active typed-handoff replay-key carry-through whenever the current input
+  actually materializes the C002 typed handoff packet,
+- evidence path
+  `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`.
+
+## M252 runtime ingest packaging metadata anchors (D001)
+
+Deterministic lane-D runtime-ingest packaging anchors for `M252-D001` shall
+preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`,
+- typed handoff node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`,
+- debug projection node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`,
+- payload model `typed-handoff-plus-debug-projection-manifest-v1`,
+- transport artifact `module.manifest.json`,
+- replay-key continuity with both upstream lane-C packets,
+- evidence path
+  `tmp/reports/m252/M252-D001/runtime_ingest_packaging_for_metadata_graphs_contract_summary.json`.
+
+## M252 runtime ingest binary boundary metadata anchors (D002)
+
+Deterministic lane-D runtime-ingest binary anchors for `M252-D002` shall
+preserve:
+
+- contract id
+  `objc3c-executable-metadata-runtime-ingest-binary-boundary/m252-d002-v1`,
+- manifest node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary`,
+- packaging node
+  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`,
+- emitted artifact `module.runtime-metadata.bin`,
+- envelope format `objc3-runtime-metadata-envelope-v1`,
+- binary magic `OBJC3RM1`,
+- chunk names
+  `runtime_ingest_packaging_contract`,
+  `typed_lowering_handoff`, and
+  `debug_projection`,
+- replay-key continuity with the D001/C002/C003 packets,
+- evidence path
+  `tmp/reports/m252/M252-D002/artifact_packaging_and_binary_boundary_for_metadata_payloads_summary.json`.
+
+## M252 metadata semantic-closure gate metadata anchors (E001)
+
+Deterministic lane-E aggregate semantic-closure anchors for `M252-E001` shall
+preserve:
+
+- contract id
+  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`,
+- upstream proof set
+  `M252-A003`, `M252-B004`, `M252-C003`, and `M252-D002`,
+- evidence that graph completeness, legality diagnostics, debug projection,
+  and runtime-facing binary packaging remain synchronized before
+  `M253-A001` begins,
+- evidence path
+  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`.
+
+## M252 metadata closure conformance corpus metadata anchors (E002)
+
+Deterministic lane-E integrated corpus anchors for `M252-E002` shall preserve:
+
+- contract id
+  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`,
+- dependency continuity with `M252-E001`,
+- representative case ids
+  `class-protocol-property-ivar-runtime-graph`,
+  `category-protocol-property-runtime-graph`,
+  `class-property-synthesis-ready`,
+  `category-property-export-only`,
+  `missing-interface-property-diagnostic`, and
+  `incompatible-property-signature-diagnostic`,
+- evidence path
+  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`.
+
+## M253 emitted metadata inventory metadata anchors (A001)
+
+Deterministic lane-A emitted inventory anchors for `M253-A001` shall preserve:
+
+- contract id
+  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`,
+- the canonical logical sections
+  `objc3.runtime.image_info`,
+  `objc3.runtime.class_descriptors`,
+  `objc3.runtime.protocol_descriptors`,
+  `objc3.runtime.category_descriptors`,
+  `objc3.runtime.property_descriptors`, and
+  `objc3.runtime.ivar_descriptors`,
+- symbol families and policies
+  `__objc3_meta_`,
+  `__objc3_sec_`,
+  `__objc3_image_info`,
+  descriptor linkage `private`,
+  aggregate linkage `internal`,
+  metadata visibility `hidden`,
+  retention root `llvm.used`,
+- object-inspection command anchors
+  `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- evidence path
+  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`.
+
+## M253 source-to-section completeness matrix metadata anchors (A002)
+
+Deterministic lane-A source-to-section completeness anchors for `M253-A002`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`,
+- manifest surface
+  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`,
+- row ordering model
+  `source-graph-node-kind-order-v1`,
+- concrete emitted rows for `class`, `protocol`, `category`, `property`, and
+  `ivar` bound to their canonical logical sections and aggregate symbols,
+- explicit no-standalone-emission rows for `interface`, `implementation`,
+  `metaclass`, and `method`,
+- proof fixture anchors
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`,
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+  and
+  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
+- object-inspection command anchors
+  `llvm-readobj --sections module.obj` and
+  `llvm-objdump --syms module.obj`,
+- evidence path
+  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`.
+
+## M253 layout ordering and visibility policy metadata anchors (B001)
+
+Deterministic lane-B layout/visibility anchors for `M253-B001` shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`,
+- family ordering model
+  `image-info-then-class-protocol-category-property-ivar`,
+- within-family ordering model
+  `ascending-descriptor-ordinal-then-family-aggregate`,
+- relocation model
+  `zero-sentinel-or-count-plus-pointer-vector`,
+- COMDAT policy `disabled`,
+- visibility spelling policy
+  `local-linkage-omits-explicit-ir-visibility`,
+- retention ordering `llvm.used-emission-order`,
+- object-format policy model `object-format-neutral-until-m253-b003`,
+- evidence path
+  `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`.
+
+## M253 normalized metadata layout policy anchors (B002)
+
+Deterministic lane-B semantic-finalization anchors for `M253-B002` shall
+preserve:
+
+- contract id `objc3c-runtime-metadata-layout-policy/m253-b002-v1`,
+- named metadata `!objc3.objc_runtime_metadata_layout_policy`,
+- metadata node `!55`,
+- replay comment `; runtime_metadata_layout_policy =`,
+- replay comment `; runtime_metadata_layout_policy = ...`,
+- fail-closed normalization of descriptor linkage `private`, aggregate linkage
+  `internal`, metadata visibility `hidden`, and retention root `llvm.used`,
+- evidence path
+  `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`.
+
+## M253 object-format metadata policy anchors (B003)
+
+Deterministic lane-B object-format anchors for `M253-B003` shall preserve:
+
+- contract id `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`,
+- explicit host-format tokens `coff`, `elf`, and `mach-o`,
+- explicit section-spelling models
+  `coff-logical-section-spellings`,
+  `elf-logical-section-spellings`, and
+  `mach-o-data-segment-comma-section-spellings`,
+- explicit retention-anchor models
+  `llvm.used-appending-global+coff-timestamp-normalization`,
+  `llvm.used-appending-global+elf-stable-sections`, and
+  `llvm.used-appending-global+mach-o-data-segment-sections`,
+- logical metadata ABI section names remaining the source-of-truth surface,
+- emitted section spellings being lowering-derived host-format materialization,
+- evidence path
+  `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`.
+
+## M253 metadata section emission anchors (C001)
+
+Deterministic lane-C emission anchors for `M253-C001` shall preserve:
+
+- contract id `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`,
+- payload model `scaffold-placeholder-payloads-until-m253-c002`,
+- inventory model
+  `image-info-plus-class-protocol-category-property-ivar-sections`,
+- image-info payload model
+  `internal-{i32,i32}-zeroinitializer-image-info`,
+- descriptor payload model
+  `private-[1xi8]-zeroinitializer-per-descriptor`,
+- aggregate payload model
+  `i64-count-plus-pointer-vector-aggregates`,
+- evidence path
+  `tmp/reports/m253/M253-C001/metadata_section_emission_contract_summary.json`.
+
+## M251 runtime export diagnostic precision metadata anchors (B003)
+
+Deterministic lane-B runtime export diagnostic precision for `M251-B003` shall
+preserve:
+
+- the existing B002 runtime export enforcement packet and metadata anchors
+  without introducing a second export-enforcement summary node,
+- source-anchored deterministic diagnostics for interface-only and
+  category-interface-only runtime export units,
+- fallback continuity with the generic B002 runtime export blocker when a
+  declaration-specific explanation is not available.
+
+No new metadata node is introduced for B003; the precision change is diagnostic-surface only.
+This means runtime export diagnostic precision must remain source-anchored and deterministic before native metadata section emission, runtime registration, and executable object-model enforcement land.
+
+## M253 class and metaclass data emission metadata anchors (C002)
+
+Deterministic lane-C class/metaclass emission anchors for `M253-C002` shall
+preserve:
+
+- contract id `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_class_metaclass_emission`,
+- payload model
+  `class-source-record-descriptor-bundles-with-inline-metaclass-records`,
+- name model `shared-class-name-cstring-per-bundle`,
+- super-link model `nullable-super-source-record-bundle-pointer`,
+- method-list reference model
+  `count-plus-owner-identity-pointer-method-list-ref`,
+- emitted class-family payload symbols:
+  - `__objc3_meta_class_0000`
+  - `__objc3_meta_class_0003`
+  - `__objc3_meta_class_owner_identity_0000`
+  - `__objc3_meta_class_owner_identity_0003`
+  - `__objc3_sec_class_descriptors`,
+- metadata-rich proof fixture
+  `tests/tooling/fixtures/native/m252_executable_metadata_graph_class_metaclass.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C002/class_and_metaclass_data_emission_summary.json`.
+
+Class/metaclass emission anchors must remain deterministic and fail closed
+before later issues add protocol/category/property/ivar payload expansion,
+selector/string pools, or runtime registration/bootstrap.
+
+## M253 protocol and category data emission metadata anchors (C003)
+
+Deterministic lane-C protocol/category emission anchors for `M253-C003` shall
+preserve:
+
+- contract id `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_protocol_category_emission`,
+- protocol payload model
+  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`,
+- category payload model
+  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`,
+- protocol-reference model
+  `count-plus-descriptor-pointer-protocol-ref-lists`,
+- category-attachment model
+  `count-plus-owner-identity-pointer-attachment-lists`,
+- emitted protocol/category payload symbols:
+  - `__objc3_meta_protocol_inherited_protocol_refs_0001`
+  - `__objc3_meta_category_adopted_protocol_refs_0000`
+  - `__objc3_meta_category_attachments_0001`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`,
+- metadata-rich proof fixture
+  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C003/protocol_and_category_data_emission_summary.json`.
+
+Protocol/category emission anchors must remain deterministic and fail closed
+before later issues add selector/string pools, standalone property/ivar payload
+sections, or runtime registration/bootstrap.
+
+## M253 method/property/ivar payload metadata anchors (C004)
+
+Deterministic lane-C member-table emission anchors for `M253-C004` shall
+preserve:
+
+- contract id `objc3c-runtime-member-table-emission/m253-c004-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_member_table_emission`,
+- method-list payload model
+  `owner-scoped-method-table-globals-with-inline-entry-records`,
+- method-list grouping model
+  `declaration-owner-plus-class-kind-lexicographic`,
+- property payload model
+  `property-descriptor-records-with-accessor-and-binding-strings`,
+- ivar payload model
+  `ivar-descriptor-records-with-property-binding-strings`,
+- emitted member-table payload symbols:
+  - `__objc3_meta_class_instance_methods_0001`
+  - `__objc3_meta_protocol_instance_methods_0004`
+  - `__objc3_meta_category_instance_methods_0000`
+  - `__objc3_meta_property_0000`
+  - `__objc3_meta_property_0001`
+  - `__objc3_meta_ivar_0000`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`,
+- metadata-rich proof fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`,
+- evidence path
+  `tmp/reports/m253/M253-C004/method_property_and_ivar_list_emission_summary.json`.
+
+Method/property/ivar payload emission anchors must remain deterministic and fail
+closed before later issues add selector pooling, runtime registration, or live
+runtime consumption of the emitted member tables.
+
+## M253 selector/string pool metadata anchors (C005)
+
+Deterministic lane-C selector/string pool anchors for `M253-C005` shall
+preserve:
+
+- contract id `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_selector_string_pool_emission`,
+- selector pool payload model
+  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`,
+- string pool payload model
+  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`,
+- emitted pool aggregate symbols:
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- emitted pool entry symbols:
+  - `__objc3_sel_pool_0000`
+  - `__objc3_str_pool_0000`
+- host object sections:
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+- validation fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
+- evidence path
+  `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`.
+
+Selector/string pool anchors must remain deterministic and fail closed before
+later issues add runtime registration, mutable runtime interning, or descriptor
+family rewiring to pooled pointers.
+
+## M253 binary inspection harness metadata anchors (C006)
+
+Deterministic lane-C emitted-metadata binary inspection anchors for `M253-C006`
+shall preserve:
+
+- contract id `objc3c-runtime-binary-inspection-harness/m253-c006-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_binary_inspection_harness`,
+- positive corpus model
+  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`,
+- negative corpus model
+  `negative-compile-failure-gating-with-no-object-inspection`,
+- shared object inspection commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`
+- emitted aggregate symbols:
+  - `__objc3_image_info`
+  - `__objc3_sec_class_descriptors`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- host object sections:
+  - `objc3.runtime.image_info`
+  - `objc3.runtime.class_descriptors`
+  - `objc3.runtime.protocol_descriptors`
+  - `objc3.runtime.category_descriptors`
+  - `objc3.runtime.property_descriptors`
+  - `objc3.runtime.ivar_descriptors`
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+- validation fixtures:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
+  - `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`
+- evidence path
+  `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`.
+
+Binary inspection harness anchors must remain deterministic and fail closed
+without claiming runtime registration, metadata-family expansion, or selector
+and descriptor rewiring beyond the already-closed `M253-C005` surface.
+
+## M253 object packaging and retention metadata anchors (D001)
+
+Deterministic lane-D object packaging and retention anchors for `M253-D001`
+shall preserve:
+
+- contract id `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_object_packaging_retention`,
+- boundary model
+  `current-object-file-boundary-with-retained-metadata-section-aggregates`,
+- retention-anchor model `llvm.used-plus-aggregate-section-symbols`,
+- current object artifact `module.obj`,
+- aggregate symbol prefix `__objc3_sec_`,
+- aggregate symbols:
+  - `__objc3_image_info`
+  - `__objc3_sec_class_descriptors`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`
+  - `__objc3_sec_selector_pool`
+  - `__objc3_sec_string_pool`
+- discovery commands:
+  - `llvm-readobj --sections module.obj`
+  - `llvm-objdump --syms module.obj`
+- evidence path
+  `tmp/reports/m253/M253-D001/object_packaging_and_retention_contract_summary.json`.
+
+Object packaging and retention anchors must remain deterministic and fail
+closed without claiming archive packaging, link registration, or startup
+bootstrap behavior in `M253-D001`.
+
+## M253 linker retention and dead-strip resistance metadata anchors (D002)
+
+Deterministic lane-D linker-retention/dead-strip-resistance anchors for
+`M253-D002` shall preserve:
+
+- contract id
+  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_linker_retention`,
+- anchor model `public-linker-anchor-rooted-in-discovery-table`,
+- discovery model `public-discovery-root-over-retained-metadata-aggregates`,
+- logical linker-anchor section `objc3.runtime.linker_anchor`,
+- logical discovery-root section `objc3.runtime.discovery_root`,
+- one hashed public linker-anchor symbol
+  `objc3_runtime_metadata_link_anchor_<hash>`,
+- one hashed public discovery-root symbol
+  `objc3_runtime_metadata_discovery_root_<hash>`,
+- emitted response artifact
+  `module.runtime-metadata-linker-options.rsp`,
+- emitted discovery artifact
+  `module.runtime-metadata-discovery.json`,
+- current-format driver linker flags:
+  - COFF: `-Wl,/include:<symbol>`
+  - ELF: `-Wl,--undefined=<symbol>`
+  - Mach-O: `-Wl,-u,_<symbol>`,
+- a happy-path archive/static-link proof that metadata sections are absent
+  without the response artifact and present with it, and
+- evidence path
+  `tmp/reports/m253/M253-D002/linker_retention_and_dead_strip_resistance_summary.json`.
+
+`M253-D002` must remain fail closed and bounded to the single-library retention
+proof without claiming multi-archive or cross-translation-unit behavior.
+
+## M253 archive/static-link metadata discovery behavior (D003)
+
+Deterministic lane-D archive/static-link discovery behavior for `M253-D003`
+shall preserve:
+
+- contract id
+  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`,
+- emitted LLVM metadata
+  `!objc3.objc_runtime_archive_static_link_discovery`,
+- anchor-seed model
+  `module-and-metadata-replay-plus-translation-unit-identity`,
+- translation-unit identity model
+  `input-path-plus-parse-and-lowering-replay`,
+- merge model `deduplicated-driver-flag-fan-in`,
+- object-level discovery JSON fields
+  `translation_unit_identity_model` and
+  `translation_unit_identity_key`,
+- merged response artifact
+  `module.merged.runtime-metadata-linker-options.rsp`,
+- merged discovery artifact
+  `module.merged.runtime-metadata-discovery.json`,
+- a positive cross-translation-unit proof that identical metadata surfaces from
+  distinct source paths produce distinct public linker/discovery symbols,
+- a positive multi-archive proof that merged-response linking retains more
+  metadata than the single-archive retained baseline, and
+- evidence path
+  `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`.
+
+`M253-D003` closes archive/static-link discovery behavior without claiming
+runtime registration/startup bootstrap.
+
+## M253 metadata emission gate (E001)
+
+Deterministic lane-E metadata emission gate behavior for `M253-E001` shall
+preserve:
+
+- contract id `objc3c-runtime-metadata-emission-gate/m253-e001-v1`,
+- emitted LLVM metadata `!objc3.objc_runtime_metadata_emission_gate`,
+- evidence model `a002-b003-c006-d003-summary-chain`,
+- failure model `fail-closed-on-upstream-summary-drift`,
+- canonical upstream evidence paths:
+  - `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
+  - `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
+  - `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
+  - `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`,
+- next-closeout handoff `M253-E002`, and
+- evidence path
+  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`.
+
+`M253-E001` is an aggregate gate only; it adds no new metadata section family
+and no runtime registration behavior.
+
+## M253 cross-lane object-emission closeout metadata anchors (E002)
+
+Deterministic lane-E cross-lane object-emission closeout behavior for
+`M253-E002` shall preserve:
+
+- contract id
+  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`,
+- emitted LLVM metadata
+  `!objc3.objc_runtime_metadata_object_emission_closeout`,
+- evidence model
+  `e001-summary-plus-integrated-native-object-emission-probes`,
+- failure model `fail-closed-on-summary-or-integrated-probe-drift`,
+- canonical dependency evidence path
+  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`,
+- integrated case ids:
+  - `class-protocol-property-ivar-object-closeout`
+  - `category-protocol-property-object-closeout`
+  - `message-send-object-closeout`
+  - `negative-missing-interface-property-closeout`
+  - `fanin-distinct-linker-discovery-closeout`, and
+- evidence path
+  `tmp/reports/m253/M253-E002/cross_lane_object_emission_gate_and_closeout_summary.json`.
+
+`M253-E002` closes emitted-object trust for the current tranche only; it does
+not claim runtime startup registration or executable class registration.
+
+## M254 translation-unit registration metadata anchors (A001)
+
+`M254-A001` publishes the preregistration translation-unit surface at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`.
+
+Frozen metadata/runtime anchors:
+
+- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
+- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
+- runtime-owned payload artifacts:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor root `__objc3_runtime_register_image_ctor`
+- registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+This freeze does not emit the constructor root or execute bootstrap logic yet.
+
+## M254 translation-unit registration manifest metadata anchors (A002)
+
+`M254-A002` publishes the first real translation-unit registration manifest at
+`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- payload model `translation-unit-registration-manifest-json-v1`
+- emitted manifest artifact `module.runtime-registration-manifest.json`
+- runtime-owned payload artifacts:
+  - `module.runtime-metadata.bin`
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.runtime-metadata-discovery.json`
+- constructor root `__objc3_runtime_register_image_ctor`
+- manifest authority model
+  `registration-manifest-authoritative-for-constructor-root-shape`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- runtime archive path `artifacts/lib/objc3_runtime.lib`
+- registration entrypoint `objc3_runtime_register_image`
+- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
+
+This implementation still defers emitted init-stub and bootstrap behavior to
+later `M254` issues.
+
+## M254 startup bootstrap metadata anchors (B001)
+
+`M254-B001` publishes the startup/bootstrap semantic freeze at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
+- upstream manifest contract id
+  `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- image-local initialization scope
+  `runtime-owned-image-local-registration-state`
+- constructor-root uniqueness policy
+  `one-startup-root-per-translation-unit-identity`
+- constructor-root symbol `__objc3_runtime_register_image_ctor`
+- registration entrypoint `objc3_runtime_register_image`
+
+This freeze does not execute bootstrap logic yet; it defines the canonical
+semantic packet later `M254` startup work must preserve.
+
+## M254 live startup bootstrap metadata anchors (B002)
+
+`M254-B002` publishes the live startup/bootstrap runtime packet at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- duplicate-registration policy
+  `fail-closed-by-translation-unit-identity-key`
+- realization-order policy
+  `constructor-root-then-registration-manifest-order`
+- failure mode
+  `abort-before-user-main-no-partial-registration-commit`
+- runtime result model `zero-success-negative-fail-closed`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- duplicate-registration status code `-2`
+- out-of-order status code `-3`
+- registration-manifest ordinal field `translation_unit_registration_order_ordinal`
+
+The emitted `module.runtime-registration-manifest.json` payload now carries
+this same runtime-facing policy and status-code surface so runtime probes can
+detect drift between emitted metadata and realized behavior.
+
+## M254 bootstrap lowering metadata anchors (C001)
+
+`M254-C001` publishes the lowering freeze packet at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
+- boundary model
+  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
+- constructor root symbol `__objc3_runtime_register_image_ctor`
+- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
+- registration-table symbol prefix `__objc3_runtime_registration_table_`
+- future global-ctor list model `llvm.global_ctors-single-root-priority-65535`
+- constructor-root emission state `deferred-until-m254-c002`
+- init-stub emission state `deferred-until-m254-c002`
+- registration-table emission state `deferred-until-m254-c002`
+
+The emitted `module.runtime-registration-manifest.json` payload now also
+carries this lowering contract so later ctor-root materialization consumes one
+authoritative manifest packet instead of reconstructing bootstrap anchors from
+loosely related sidecars.
+
+## M254 constructor and init-stub emission metadata anchors (C002)
+
+`M254-C002` turns the frozen lowering packet into live emitted startup
+artifacts.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
+- emitted ctor root `__objc3_runtime_register_image_ctor`
+- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
+- emitted registration-table prefix `__objc3_runtime_registration_table_`
+- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
+- emitted `@llvm.global_ctors` model
+  `llvm.global_ctors-single-root-priority-65535`
+- emitted registration manifest field `bootstrap_registration_table_symbol`
+- COFF startup constructor section `.CRT$XCU`
+
+`M254-C003` expands that startup boundary with one self-describing
+registration-table layout for later runtime image walks.
+
+- contract id
+  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
+- emitted image-local init-state prefix
+  `__objc3_runtime_image_local_init_state_`
+- registration-table layout model
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+- registration-table ABI version `1`
+- registration-table pointer-field count `11`
+- emitted registration manifest field
+  `bootstrap_image_local_init_state_symbol`
+
+## M254 runtime bootstrap API metadata anchors (D001)
+
+`M254-D001` freezes the runtime-owned bootstrap API contract and publishes it in
+both the emitted semantic surface and the runtime registration manifest.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+- emitted registration manifest field `bootstrap_runtime_api_contract_id`
+- emitted registration manifest field `bootstrap_runtime_api_public_header_path`
+- emitted registration manifest field
+  `bootstrap_runtime_api_archive_relative_path`
+- emitted registration manifest field
+  `bootstrap_runtime_api_registration_entrypoint_symbol`
+- emitted registration manifest field
+  `bootstrap_runtime_api_state_snapshot_symbol`
+- emitted registration manifest field
+  `bootstrap_runtime_api_reset_for_testing_symbol`
+
+## M254 registrar/image-walk metadata anchors (D002)
+
+`M254-D002` publishes the private registrar/image-walk bridge in both the
+frontend semantic surface and the emitted runtime registration manifest.
+
+Canonical metadata/runtime anchors:
+
+- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
+- emitted registration manifest field `bootstrap_registrar_contract_id`
+- emitted registration manifest field
+  `bootstrap_registrar_internal_header_path`
+- emitted registration manifest field
+  `bootstrap_registrar_stage_registration_table_symbol`
+- emitted registration manifest field
+  `bootstrap_registrar_image_walk_snapshot_symbol`
+- emitted registration manifest field `bootstrap_registrar_image_walk_model`
+## M254 reset/replay metadata anchors (D003)
+
+`module.runtime-registration-manifest.json` now carries the deterministic
+bootstrap reset/replay handoff fields:
+
+- `bootstrap_reset_contract_id`
+- `bootstrap_reset_internal_header_path`
+- `bootstrap_reset_replay_registered_images_symbol`
+- `bootstrap_reset_reset_replay_state_snapshot_symbol`
+- `bootstrap_reset_lifecycle_model`
+- `bootstrap_reset_replay_order_model`
+- `bootstrap_reset_image_local_init_state_reset_model`
+- `bootstrap_reset_bootstrap_catalog_retention_model`
+
+## M254 launch integration metadata anchors (D004)
+
+`module.runtime-registration-manifest.json` and the flattened main manifest now
+carry the operator launch-contract fields consumed by compile, proof, and
+smoke:
+
+- `launch_integration_contract_id`
+- `runtime_library_resolution_model`
+- `driver_linker_flag_consumption_model`
+- `compile_wrapper_command_surface`
+- `compile_proof_command_surface`
+- `execution_smoke_command_surface`
+- `launch_integration_ready`
+
+## M254 startup registration gate metadata anchors (E001)
+
+`M254-E001` freezes one replay-stable bootstrap evidence chain over the emitted
+startup-registration metadata and its runtime/operator proofs. The gate remains
+summary-chain based, but the metadata anchors it trusts are still concrete:
+
+- `module.runtime-registration-manifest.json`
+- `translation_unit_registration_order_ordinal`
+- `bootstrap_registration_table_symbol`
+- `bootstrap_image_local_init_state_symbol`
+- `launch_integration_contract_id`
+- `driver_linker_flags`
+
+## M254 replay/bootstrap closeout metadata anchors (E002)
+
+`M254-E002` keeps the same emitted bootstrap metadata authoritative while
+closing the milestone on one published operator runbook and one live smoke
+replay:
+
+- emitted launch authority remains `module.runtime-registration-manifest.json`
+- runbook smoke evidence path remains
+  `tmp/artifacts/objc3c-native/execution-smoke/m254_e002_bootstrap_runbook_closeout/summary.json`
+- closeout evidence remains
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+## M255 dispatch/runtime metadata anchors (A001)
+
+`M255-A001` keeps the dispatch/runtime ABI anchor set narrow and explicit while
+the live runtime family is frozen:
+
+- current selector/message-send compatibility entrypoint `objc3_msgsend_i32`
+- current live runtime dispatch family anchor `objc3_runtime_dispatch_i32`
+- no additional direct-dispatch metadata anchors are introduced in `M255-A001`
+
+## M255 dispatch/runtime metadata anchors (A002)
+
+`M255-A002` promotes the frozen taxonomy into one live semantic/lowering/IR
+anchor set:
+
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
+- lowering handoff path `lowering_dispatch_surface_classification`
+- IR textual profile anchor `frontend_objc_dispatch_surface_classification_profile`
+- IR named metadata anchor `!objc3.objc_dispatch_surface_classification`
+- canonical proof counts remain instance `2`, class `2`, super `1`, direct `0`,
+  dynamic `1`
+- direct dispatch stays explicitly zero/reserved until a later syntax/binding
+  issue materializes it
+
+## M255 dispatch/runtime metadata anchors (B001)
+
+`M255-B001` adds the canonical legality/selector-resolution metadata anchors
+that later semantic/runtime implementation issues must preserve:
+
+- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
+- legality boundary model
+  `selector-normalized-arity-checked-receiver-required-no-overload`
+- ambiguity policy
+  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
+- supported selector forms `unary-and-keyword-selectors`
+- no new direct-dispatch metadata anchors are introduced in `M255-B001`
+
+## M255 selector-resolution metadata anchors (B002)
+
+`M255-B002` adds the live lane-B selector-resolution metadata anchors that the
+runtime dispatch path now consumes:
+
+- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
+- concrete receiver policy
+  `self-super-known-class-receivers-resolve-concretely`
+- dynamic fallback policy
+  `non-concrete-receivers-remain-runtime-dynamic`
+- overload policy
+  `no-overload-recovery-exact-signature-or-fail-closed`
+- diagnostic anchors `O3S216` and `O3S217`
+- the metadata story does not add new direct-dispatch anchors; it only narrows
+  which live dispatch sites are admitted as concrete before runtime emission
+
+## M255 super/direct/dynamic legality metadata anchors (B003)
+
+`M255-B003` adds the live legality/runtime-rule metadata anchors for preserved
+super/dynamic dispatch evidence while direct dispatch remains reserved:
+
+- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
+- super legality policy
+  `super-requires-enclosing-method-and-real-superclass`
+- direct dispatch policy
+  `direct-dispatch-remains-reserved-non-goal`
+- dynamic dispatch policy
+  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
+- runtime-visible method-family policy
+  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
+- negative legality diagnostic anchor `O3S216`
+- metadata evidence now expects `super` and dynamic site counts to stay visible
+  in the same manifest/handoff family that feeds runtime-shim host-link checks
+
+## M255 dispatch lowering ABI metadata anchors (C001)
+
+`M255-C001` adds the lane-C metadata anchors for the runtime-dispatch lowering
+cutover boundary without changing code generation yet:
+
+- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_dispatch_lowering_abi_contract`
+- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`
+- compatibility bridge symbol `objc3_msgsend_i32`
+- selector lookup symbol `objc3_runtime_lookup_selector`
+- selector handle type `objc3_runtime_selector_handle`
+- receiver ABI `i32`
+- selector ABI `ptr`
+- fixed argument ABI `i32[4]`
+- result ABI `i32`
+- compatibility bridge remains the default lowering target until `M255-C002`
+
+## M255 runtime call ABI metadata anchors (C002)
+
+`M255-C002` adds the emitted-call-site metadata boundary for the first live
+runtime cutover:
+
+- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
+- normalized instance/class sends now lower directly to
+  `objc3_runtime_dispatch_i32`
+- normalized super/dynamic/deferred sends remain on `objc3_msgsend_i32` until
+  `M255-C003`
+- the issue-local lane-C proof keeps selector operands as lowered cstring
+  pointers and preserves the fixed `i32[4]` ABI while verifying executable
+  happy-path behavior
+
+## M255 super/nil runtime call ABI metadata anchors (C003)
+
+`M255-C003` extends the emitted-call-site boundary with a second live cutover:
+
+- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
+- normalized super sends now lower directly to `objc3_runtime_dispatch_i32`
+- canonical nil-receiver surfaces now lower through
+  `objc3_runtime_dispatch_i32` instead of lowering-side elision
+- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- reserved direct-dispatch surfaces fail closed if they reach live IR emission
+
+## M255 live dispatch cutover metadata anchors (C004)
+
+`M255-C004` closes the lane-C live dispatch ABI surface:
+
+- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
+- normalized dynamic sends now lower directly to `objc3_runtime_dispatch_i32`
+- all supported live sends lower directly to `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains exported but is not emitted on the live path
+- reserved direct-dispatch surfaces remain fail closed
+
+## M255 lookup/dispatch runtime metadata anchors (D001)
+
+`M255-D001` freezes the runtime-owned lookup/dispatch anchor set without
+claiming later method-cache or protocol/category-aware resolution work:
+
+- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+- canonical selector lookup symbol `objc3_runtime_lookup_selector`
+- canonical dispatch symbol `objc3_runtime_dispatch_i32`
+- canonical selector handle type `objc3_runtime_selector_handle`
+- selector interning model
+  `process-global-selector-intern-table-stable-id-per-canonical-selector-spelling`
+- metadata-backed selector lookup tables remain deferred to `M255-D002`
+- method-cache and runtime slow-path lookup remain deferred to `M255-D003`
+- protocol/category-aware method resolution remains deferred to `M255-D004`
+
+## M255 selector lookup table metadata anchors (D002)
+
+`M255-D002` promotes selector pools from passive metadata payloads into the
+runtime-owned selector table consumed during registration and replay:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- selector pool registration model
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- selector pool merge model
+  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
+- runtime selector table snapshot symbol
+  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+- runtime selector entry snapshot symbol
+  `objc3_runtime_copy_selector_lookup_entry_for_testing`
+
+## M255 method-cache / slow-path metadata anchors (D003)
+
+`M255-D003` promotes emitted class/metaclass method tables into the runtime
+lookup surface consumed by live dispatch:
+
+- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- receiver normalization model
+  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
+- slow-path resolution model
+  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
+- runtime method-cache state snapshot symbol
+  `objc3_runtime_copy_method_cache_state_for_testing`
+- runtime method-cache entry snapshot symbol
+  `objc3_runtime_copy_method_cache_entry_for_testing`
+
+## M255 protocol/category-aware resolution metadata anchors (D004)
+
+`M255-D004` promotes protocol/category method-list refs from passive metadata
+into runtime-consumed lookup tiers:
+
+- contract id `objc3c-runtime-protocol-category-method-resolution/m255-d004-v1`
+- category method-list refs now carry emitted list-local counts for:
+  - `instance_method_list_ref`
+  - `class_method_list_ref`
+- protocol method-list refs now carry emitted list-local counts for:
+  - `instance_method_list_ref`
+  - `class_method_list_ref`
+- runtime method-cache snapshots continue to expose:
+  - `last_category_probe_count`
+  - `last_protocol_probe_count`
+  - cached `category_probe_count`
+  - cached `protocol_probe_count`
+
+## M255 live dispatch gate metadata anchors (E001)
+
+`M255-E001` freezes the metadata/evidence anchors proving the live runtime path
+is authoritative:
+
+- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
+- evidence model `a002-b003-c004-d004-summary-chain`
+- canonical live-dispatch summary
+  `tmp/reports/m255/M255-E001/live_dispatch_gate_summary.json`
+- live-path proof requires:
+  - `tmp/reports/m255/M255-C004/live_dispatch_cutover_summary.json`
+  - `tmp/reports/m255/M255-D004/protocol_category_method_resolution_summary.json`
+- upstream taxonomy/legality continuity remains rooted in:
+  - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
+  - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
+- `objc3_msgsend_i32` remains an exported compatibility/test symbol and not the
+  authoritative live-dispatch proof surface
+
+## M255 live dispatch smoke/replay metadata anchors (E002)
+
+`M255-E002` freezes the metadata/evidence anchors for the integrated live
+smoke/replay closeout surface:
+
+- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
+- smoke summaries now publish:
+  - `requires_live_runtime_dispatch`
+  - `runtime_dispatch_symbol`
+  - `runtime_library`
+  - `compatibility_runtime_shim`
+  - `live_runtime_dispatch_default_symbol`
+- canonical live smoke summary path
+  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
+- canonical issue closeout summary path
+  `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`
+
+## M256 executable class/protocol/category source-closure metadata anchors (A001)
+
+`M256-A001` freezes the metadata/evidence anchors for the runnable
+class/protocol/category source surface before realization:
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- canonical parser-owned source anchors remain:
+  - superclass names
+  - adopted protocol lists in lexicographic semantic-link order
+  - canonical interface/implementation/category owner identities
+- canonical semantic closure summaries remain:
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- canonical IR metadata anchors remain:
+  - `!objc3.objc_interface_implementation`
+  - `!objc3.objc_protocol_category`
+  - `!objc3.objc_class_protocol_category_linking`
+- canonical lane-A summary path
+  `tmp/reports/m256/M256-A001/executable_class_protocol_category_source_closure_contract_summary.json`
+
+## M256 class/metaclass declaration completeness metadata anchors (A002)
+
+`M256-A002` upgrades the runnable metadata source closure for class realization:
+
+- contract id
+  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
+- canonical source-graph metadata anchors now include:
+  - `class_metaclass_source_closure_contract_id`
+  - `class_metaclass_parent_identity_model`
+  - `class_metaclass_method_owner_identity_model`
+  - `class_metaclass_object_identity_model`
+  - `class_metaclass_declaration_closure_complete`
+  - `class_metaclass_parent_identity_closure_complete`
+  - `class_metaclass_method_owner_identity_closure_complete`
+  - `class_metaclass_object_identity_closure_complete`
+- canonical declaration entries now carry:
+  - `super_metaclass_owner_identity`
+  - `instance_method_owner_identity`
+  - `class_method_owner_identity`
+  - `declaration_complete`
+- canonical class entries now carry:
+  - `super_metaclass_owner_identity`
+  - `instance_method_owner_identity`
+  - `class_method_owner_identity`
+  - `realization_identity_complete`
+- canonical IR summary anchor:
+  `; executable_class_metaclass_source_closure = ...`
+- canonical lane-A summary path
+  `tmp/reports/m256/M256-A002/class_metaclass_declaration_completeness_and_inheritance_modeling_summary.json`
+
+## M256 protocol/category source-surface completion metadata anchors (A003)
+
+`M256-A003` upgrades the runnable metadata source closure for protocols and
+categories:
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- canonical source-graph metadata anchors now include:
+  - `protocol_category_source_closure_contract_id`
+  - `protocol_inheritance_identity_model`
+  - `category_attachment_identity_model`
+  - `protocol_category_conformance_identity_model`
+  - `protocol_category_declaration_closure_complete`
+  - `protocol_inheritance_identity_closure_complete`
+  - `category_attachment_identity_closure_complete`
+  - `protocol_category_conformance_identity_closure_complete`
+- canonical protocol entries now carry:
+  - `declaration_complete`
+  - `inherited_protocol_identity_complete`
+- canonical category entries now carry:
+  - `declaration_complete`
+  - `attachment_identity_complete`
+  - `conformance_identity_complete`
+- canonical IR summary anchor:
+  `; executable_protocol_category_source_closure = ...`
+- canonical lane-A summary path
+  `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+
+## M256 object-model semantic-rule metadata anchors (B001)
+
+`M256-B001` does not introduce new executable metadata records. It freezes the
+semantic interpretation boundary over the already-emitted M256 source graph:
+
+- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
+- parser-owned anchors remain:
+  - raw superclass spellings
+  - protocol adoption spellings
+  - canonical category owner identities
+- sema-owned rule anchors are:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- IR anchor remains proof-only commentary over the same source-closure metadata
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
+
+## M256 protocol-conformance metadata anchors (B002)
+
+`M256-B002` still does not add new emitted runtime metadata records. It makes
+the semantic legality boundary executable and publishes the proof surface around
+that decision:
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- parser-owned anchors remain:
+  - required/optional partitioning for protocol methods
+  - required/optional partitioning for protocol properties
+- sema-owned rule anchors are:
+  - required methods and required properties are enforced
+  - optional members remain non-blocking
+  - inherited protocol requirements fail closed on incompatible required members
+  - conformance diagnostics collapse onto `O3S218`
+- IR anchor remains proof-only commentary over the same conformance result
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`
+
+## M256 category-merge metadata anchors (B003)
+
+`M256-B003` still does not add new emitted runtime metadata records. It makes
+the realized-class category legality boundary executable and publishes proof of
+that deterministic merge decision:
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- parser-owned anchors remain:
+  - category attachment identity
+  - category declaration order
+- sema-owned rule anchors are:
+  - realized-class category merge surfaces are deterministic
+  - concrete resolution and protocol conformance consume the merged surface
+  - missing interface/implementation category pairs fail closed
+  - incompatible attached category members collapse onto `O3S219`
+- IR anchor remains proof-only commentary over the same merge decision
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
+
+## M256 inheritance/override realization metadata anchors (B004)
+
+`M256-B004` still does not add new emitted runtime metadata records. It makes
+the realized-class inheritance legality boundary executable and publishes proof
+of that deterministic decision:
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- parser-owned anchors remain:
+  - raw superclass spellings
+  - deterministic member identities
+- sema-owned rule anchors are:
+  - missing superclass interfaces fail closed
+  - superclass cycles fail closed
+  - missing realized superclass implementation fails closed
+  - incompatible inherited method overrides fail closed
+  - selector-kind drift fails closed
+  - incompatible inherited properties fail closed
+  - all realized-class inheritance legality failures collapse onto `O3S220`
+- IR anchor remains proof-only commentary over the same realized-class
+  legality result
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+
+## M256 executable object artifact lowering metadata anchors (C001)
+
+`M256-C001` still does not add new metadata section families. It freezes the
+artifact-binding boundary across the already-emitted executable object surface:
+
+- contract id `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- parser-owned anchors remain:
+  - raw implementation method bodies
+  - selectors
+  - canonical method owner identities
+- sema-owned anchors remain:
+  - realization legality
+  - inheritance/category-merge legality results
+  - canonical owner identities consumed by lowering
+- IR/object-binding anchors are:
+  - implementation-owned method entries bind to LLVM definitions by owner
+    identity
+  - class/metaclass descriptor bundles point to owner-scoped method-list refs
+  - category descriptor bundles point to owner-scoped method-list refs
+  - method entry payload model
+    `selector-owner-return-arity-implementation-symbol-has-body`
+- canonical lane-C summary path
+  `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---

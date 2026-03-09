@@ -1,33 +1,16 @@
-name: Planning Lint
+name: Planning Lint (Legacy Manual)
 
 on:
-  pull_request:
-  push:
-    branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  planning-lint:
+  legacy-planning-note:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Enforce generated-only objc3c-native docs drift contract
-        run: python scripts/build_objc3c_native_docs.py --check
-      - name: Enforce generated-only site index drift contract
-        run: python scripts/build_site_index.py --check
-      - name: Enforce M135 direct-LLVM packet/docs contract
-        run: python scripts/check_m135_direct_llvm_contract.py
-      - name: Enforce M137 lexer token packet/docs contract
-        run: python scripts/check_m137_lexer_contract.py
-      - name: Enforce M138 parser and AST packet/docs contract
-        run: python scripts/check_m138_parser_ast_contract.py
-      - name: Enforce M139 sema pass-manager and diagnostics bus packet/docs contract
-        run: python scripts/check_m139_sema_pass_manager_contract.py
-      - name: Run planning-scope lint
-        run: python scripts/planning_lint.py
+      - name: Explain legacy workflow status
+        run: |
+          echo "This legacy local-planning workflow is manual-only."
+          echo "Planning source of truth now lives primarily in GitHub milestones and issues."

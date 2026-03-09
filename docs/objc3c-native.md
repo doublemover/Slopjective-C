@@ -22,7 +22,7 @@ objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] 
 - Default `--objc3-migration-assist`: `off`
 - Default `--objc3-ir-object-backend`: `llvm-direct`
 - Default `--objc3-max-message-args`: `4`
-- Default `--objc3-runtime-dispatch-symbol`: `objc3_runtime_dispatch_i32`
+- Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
 - Native frontend language-version support is currently fail-closed to Objective-C `3` only; other version values return usage error exit `2`.
 
 ## C API parity runner usage (M142-E001)
@@ -54,1459 +54,6 @@ objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] [-
 - `--llvm-capabilities-summary <path>` points CLI routing to a deterministic capability summary packet.
 - `--objc3-route-backend-from-capabilities` derives `--objc3-ir-object-backend` from summary capabilities (uses `llvm-direct` only when `llc --filetype=obj` is available).
 - Capability probes are captured with `npm run check:objc3c:llvm-capabilities` into `tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json`.
-
-## Runtime metadata source ownership freeze (M251-A001)
-
-- Contract ID:
-  `objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1`
-- Canonical source schema:
-  `objc3-runtime-metadata-source-boundary-v1`
-- The frontend now emits an explicit runtime metadata source ownership boundary
-  into manifest and LLVM IR metadata.
-- Source ownership is fail-closed and remains frontend-owned for:
-  - class records via `Objc3InterfaceDecl` / `Objc3ImplementationDecl`
-  - protocol records via `Objc3ProtocolDecl`
-  - category records via `has_category` interface/implementation declarations
-  - property records via `Objc3PropertyDecl`
-  - method records via `Objc3MethodDecl`
-  - ivar records via property synthesis / `ivar_binding_symbol` packets
-- Non-goals for A001:
-  - no native runtime library is present yet,
-  - no runtime metadata section emission exists yet,
-  - runtime metadata source records are not lowering-ready yet,
-  - the deterministic `objc3_msgsend_i32` shim remains test-only evidence.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-A001/runtime_metadata_source_ownership_contract_summary.json`
-
-## Runtime metadata source-record extraction (M251-A002)
-
-- Canonical packet:
-  `Objc3RuntimeMetadataSourceRecordSet`
-- The frontend now extracts deterministic runtime metadata source records for:
-  - class interfaces and implementations,
-  - protocols,
-  - categories,
-  - properties,
-  - methods,
-  - ivar-binding source packets.
-- Category owner names are normalized as `Class(Category)`.
-- Manifest projection now sources runtime metadata inventories from the
-  extracted record set rather than count-only sema/type summaries:
-  - `interfaces`
-  - `implementations`
-  - `protocols`
-  - `categories`
-  - `runtime_metadata_source_records.properties`
-  - `runtime_metadata_source_records.methods`
-  - `runtime_metadata_source_records.ivars`
-- Current fixture proof uses `objc3c-frontend-c-api-runner.exe` on:
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-- The A002 frontend contract requires lex/parse/sema clean acceptance for those
-  fixtures. Current emit-only downstream `O3L300` remains acceptable until
-  `M251-A003` decouples manifest-oriented runtime record projection from later
-  lowering readiness gates.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-A002/runtime_metadata_source_record_extraction_contract_summary.json`
-
-## Runtime record manifest handoff normalization (M251-A003)
-
-- Frontend emit intent is now explicit through:
-  - `emit_manifest`
-  - `emit_ir`
-  - `emit_object`
-- Runtime-record manifest projection is built before later lowering/object
-  fail-closed diagnostics are surfaced.
-- `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object` now
-  succeeds for the A002 runtime-record fixtures, writes a manifest path, and
-  marks the emit stage skipped.
-- `objc3c-native` full compile still fails closed while later runtime/lowering
-  work is incomplete, but preserves `module.manifest.json` so runtime metadata
-  handoff consumers can use the projected record set without reparsing.
-- Manifest projection continues to carry:
-  - `interfaces`
-  - `implementations`
-  - `protocols`
-  - `categories`
-  - `runtime_metadata_source_records`
-- Validation/evidence path:
-  `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
-
-## Runtime export legality freeze (M251-B001)
-
-- Lane-B now freezes a canonical semantic legality packet:
-  `Objc3RuntimeExportLegalityBoundary`.
-- The legality packet is synthesized from the existing runtime metadata source
-  ownership boundary plus deterministic sema/linking surfaces for:
-  - protocol/category export
-  - class/protocol/category linking
-  - selector normalization
-  - property attributes
-  - object-pointer/nullability/generics spelling
-  - symbol-graph/scope resolution
-  - property synthesis and ivar binding
-- Manifest-only runtime-record probes now report the legality packet as:
-  - `runtime_export_semantic_boundary_frozen=true`
-  - `runtime_export_fail_closed=true`
-  - `runtime_export_boundary_ready=true`
-- The packet is also forwarded into emitted LLVM IR as
-  `!objc3.objc_runtime_export_legality`.
-- Duplicate-runtime-identity, incomplete-declaration, and illegal-redeclaration
-  blocking remain pending for `M251-B002`; `M251-B001` freezes that boundary
-  without pretending enforcement is implemented.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-B001/object_model_abi_invariants_and_legality_contract_summary.json`
-
-## Runtime export enforcement semantics (M251-B002)
-
-- Lane-B now promotes the frozen legality boundary into a real fail-closed
-  enforcement packet: `Objc3RuntimeExportEnforcementSummary`.
-- Manifest-only happy-path runtime metadata probes now report:
-  - `runtime_export_metadata_completeness_enforced=true`
-  - `runtime_export_duplicate_runtime_identity_suppression_enforced=true`
-  - `runtime_export_illegal_redeclaration_mix_blocking_enforced=true`
-  - `runtime_export_metadata_shape_drift_blocking_enforced=true`
-  - `runtime_export_ready_for_runtime_export=true`
-- Forward `@protocol` declarations remain legal dependency hints and do not
-  block export readiness on their own; forward `@protocol` declarations remain
-  legal dependency hints and do not block export readiness.
-- Interface-only runtime export units now fail closed before lowering with
-  `O3S260`.
-- Duplicate runtime identities continue to fail closed with existing semantic
-  diagnostics such as `O3S200`.
-- Illegal runtime-visible redeclaration drift, including incompatible
-  interface/implementation property signatures, continues to fail closed with
-  semantic diagnostics such as `O3S206`.
-- Emitted LLVM IR now carries `!objc3.objc_runtime_export_enforcement`.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-B002/metadata_completeness_and_duplicate_suppression_semantics_summary.json`
-
-## Runtime export diagnostic precision (M251-B003)
-
-- Lane-B now preserves the B002 fail-closed export gate while making the
-  incomplete-declaration diagnostics precise and source-anchored for runtime
-  export units that parse successfully.
-- Interface-only runtime export units now fail closed with
-  `O3S260: runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'Widget' is missing a matching @implementation`.
-- Category-interface-only runtime export units now fail closed with
-  `O3S260: runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: category 'Widget(Tracing)' is missing a matching @implementation`.
-- Existing duplicate and incompatible redeclaration diagnostics remain
-  authoritative; B003 only sharpens the broad B002 blocker when class/category
-  source records are sufficient to explain the exact missing declaration.
-- No new runtime metadata packet is introduced for B003; the change is confined
-  to deterministic diagnostic synthesis in the frontend pipeline.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
-
-## Runtime metadata section ABI and symbol policy freeze (M251-C001)
-
-- Lane-C now freezes a canonical metadata section ABI packet:
-  `Objc3RuntimeMetadataSectionAbiFreezeSummary`.
-- The logical runtime metadata section inventory is frozen as:
-  - `objc3.runtime.image_info`
-  - `objc3.runtime.class_descriptors`
-  - `objc3.runtime.protocol_descriptors`
-  - `objc3.runtime.category_descriptors`
-  - `objc3.runtime.property_descriptors`
-  - `objc3.runtime.ivar_descriptors`
-- The symbol policy is frozen as:
-  - descriptor prefix `__objc3_meta_`
-  - aggregate prefix `__objc3_sec_`
-  - image info symbol `__objc3_image_info`
-- The initial linkage/visibility/retention policy is frozen as:
-  - descriptor linkage `private`
-  - aggregate linkage `internal`
-  - metadata visibility `hidden`
-  - retention root `llvm.used`
-- The contract is published through manifest JSON and emitted LLVM IR metadata as
-  `!objc3.objc_runtime_metadata_section_abi`.
-- C001 does not emit physical object-file sections yet; it freezes the boundary
-  that `M251-C002` must preserve when LLVM globals and section scaffolds land.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-C001/runtime_metadata_section_abi_and_symbol_policy_contract_summary.json`
-
-## LLVM global and section scaffold for runtime metadata payloads (M251-C002)
-
-- Lane-C now emits a canonical runtime metadata scaffold packet:
-  `Objc3RuntimeMetadataSectionScaffoldSummary`.
-- The native IR path emits retained placeholder globals directly into the
-  logical runtime metadata sections frozen by `M251-C001`.
-- The scaffold always emits `@__objc3_image_info` and retained aggregate symbols:
-  - `@__objc3_sec_class_descriptors`
-  - `@__objc3_sec_protocol_descriptors`
-  - `@__objc3_sec_category_descriptors`
-  - `@__objc3_sec_property_descriptors`
-  - `@__objc3_sec_ivar_descriptors`
-- Per-record descriptor placeholders use the canonical descriptor prefix
-  `@__objc3_meta_...` and remain retained through `@llvm.used`.
-- The scaffold contract is published through manifest JSON and emitted LLVM IR
-  metadata as `!objc3.objc_runtime_metadata_section_scaffold`.
-- Object emission now carries real runtime metadata scaffold sections even though
-  the full executable object-model payload layouts have not landed yet.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-C002/runtime_metadata_section_scaffold_summary.json`
-
-## Metadata object inspection harness (M251-C003)
-
-- Lane-C now publishes a canonical object inspection matrix packet:
-  `Objc3RuntimeMetadataObjectInspectionHarnessSummary`.
-- Manifest JSON and emitted LLVM IR now publish the same inspection contract
-  through `runtime_metadata_object_inspection_contract_id` and
-  `!objc3.objc_runtime_metadata_object_inspection`.
-- The canonical zero-descriptor fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`.
-- The inspection matrix currently publishes two operator rows:
-  - `zero-descriptor-section-inventory` -> `llvm-readobj --sections module.obj`
-  - `zero-descriptor-symbol-inventory` -> `llvm-objdump --syms module.obj`
-- The harness proves emitted objects carry the six scaffold metadata sections
-  and the six retained scaffold symbols preserved by `M251-C002`.
-- C003 is structural object inspection only; it does not claim runtime
-  registration, live lookup, or executable object-model payload lowering yet.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
-
-## Native runtime-library surface and build contract (M251-D001)
-
-- Lane-D now freezes a canonical runtime-library contract packet:
-  `Objc3RuntimeSupportLibraryContractSummary`.
-- Manifest JSON and emitted LLVM IR now publish the same contract through
-  `runtime_support_library_contract_id` and
-  `!objc3.objc_runtime_support_library`.
-- The reserved in-tree runtime-library surface is:
-  - `objc3_runtime`
-  - `native/objc3c/src/runtime`
-  - `native/objc3c/src/runtime/objc3_runtime.h`
-  - `static`
-  - `objc3_runtime`
-- The frozen exported entrypoints are:
-  - `objc3_runtime_register_image`
-  - `objc3_runtime_lookup_selector`
-  - `objc3_runtime_dispatch_i32`
-  - `objc3_runtime_reset_for_testing`
-- Ownership is frozen as:
-  - compiler emits runtime metadata and does not hand source-record ownership to
-    the runtime
-  - runtime owns registration, selector lookup, and dispatch state
-- Driver link mode remains `not-linked-until-m251-d003`, and the deterministic
-  `objc3_msgsend_i32` shim remains explicit non-canonical evidence only.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-D001/runtime_support_library_contract_summary.json`
-
-## Native runtime-library core feature (M251-D002)
-
-- Lane-D now publishes a real implementation packet:
-  `Objc3RuntimeSupportLibraryCoreFeatureSummary`.
-- Manifest JSON and emitted LLVM IR publish the same D002 contract through
-  `runtime_support_library_core_feature_contract_id` and
-  `!objc3.objc_runtime_support_library_core_feature`.
-- `npm run build:objc3c-native` now emits:
-  - `artifacts/bin/objc3c-native.exe`
-  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
-  - `artifacts/lib/objc3_runtime.lib`
-- The in-tree runtime library implementation is:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- The runtime probe is:
-  - `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp`
-- `objc3_runtime_dispatch_i32` intentionally mirrors the deterministic
-  `objc3_msgsend_i32` arithmetic formula so D003 can swap driver linkage
-  without semantic drift.
-- Driver link mode still remains `not-linked-until-m251-d003`, so D002 proves
-  the real library archive and entrypoints exist without claiming driver-link
-  integration has landed yet.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-D002/runtime_support_library_core_feature_summary.json`
-
-## Native runtime-library link wiring (M251-D003)
-
-- Lane-D now publishes the runtime-consumption packet:
-  `Objc3RuntimeSupportLibraryLinkWiringSummary`.
-- Manifest JSON and emitted LLVM IR publish the same D003 contract through
-  `runtime_support_library_link_wiring_contract_id` and
-  `!objc3.objc_runtime_support_library_link_wiring`.
-- Emitted-object runtime link mode is now
-  `emitted-object-links-against-objc3_runtime-lib`.
-- `scripts/check_objc3c_native_execution_smoke.ps1` resolves the runtime
-  archive from emitted manifest data and links runtime-requiring fixtures
-  against `artifacts/lib/objc3_runtime.lib`.
-- `native/objc3c/src/runtime/objc3_runtime.cpp` exports
-  `objc3_msgsend_i32` as a compatibility bridge to
-  `objc3_runtime_dispatch_i32`, so existing emitted objects link without
-  lowering-surface drift.
-- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
-  evidence for negative unresolved-symbol coverage and formula parity.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
-
-## Runnable-runtime foundation gate and evidence contract (M251-E001)
-
-- Lane-E freezes the aggregate foundation gate for the completed M251
-  runtime-foundation tranche.
-- The gate treats the following upstream evidence as mandatory and fail closed:
-  - `tmp/reports/m251/M251-A003/runtime_record_manifest_handoff_contract_summary.json`
-  - `tmp/reports/m251/M251-B003/illegal_runtime_exposed_declaration_diagnostics_summary.json`
-  - `tmp/reports/m251/M251-C003/runtime_metadata_object_inspection_harness_summary.json`
-  - `tmp/reports/m251/M251-D003/runtime_support_library_link_wiring_summary.json`
-  - `tmp/artifacts/objc3c-native/execution-smoke/m251_d003_runtime_library_link_wiring/summary.json`
-- The D003 smoke summary must remain `PASS` and must continue to report
-  `runtime_library = artifacts/lib/objc3_runtime.lib` for runtime-linked
-  positive execution fixtures.
-- The gate remains fail closed unless:
-  - manifest/runtime-record publication remains preserved by `M251-A003`
-  - runtime-export diagnostics remain preserved by `M251-B003`
-  - object-file inspection evidence remains preserved by `M251-C003`
-  - emitted-object runtime-link wiring remains preserved by `M251-D003`
-- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
-  evidence and must not be reframed as the canonical runtime library.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-E001/runnable_runtime_foundation_gate_contract_summary.json`
-
-## Cross-lane runtime-foundation gate and bootstrap proof (M251-E002)
-
-- Lane-E now publishes the first real integrated runtime-foundation gate over
-  `M251-A003`, `M251-B003`, `M251-C003`, `M251-D003`, and `M251-E001`.
-- The gate exercises real `objc3c-native` commands rather than mock-only
-  summary inputs:
-  - a metadata-rich native compile that preserves `module.manifest.json` and
-    `runtime_metadata_source_records`
-  - a fail-closed native compile that emits the precise `O3S260` incomplete
-    runtime-export diagnostic
-  - a native object-emission probe whose object is inspected with
-    `llvm-readobj --sections` and `llvm-objdump --syms`
-  - a fresh execution-smoke run proving the runtime-linked path still targets
-    `artifacts/lib/objc3_runtime.lib`
-- The gate remains fail closed unless source-record handoff, semantic
-  diagnostics, object-section scaffolds, and runtime-library execution all
-  align on the same native toolchain path.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-E002/cross_lane_runtime_foundation_gate_summary.json`
-
-## Developer runbooks and environment publication for runtime foundation (M251-E003)
-
-- Lane-E now publishes the canonical operator runbook for the current runnable
-  runtime-foundation tranche at
-  `docs/runbooks/m251_runtime_foundation_developer_runbook.md`.
-- The runbook freezes the exact local command families for:
-  - `npm run build:objc3c-native`
-  - native object emission through `.\artifacts\bin\objc3c-native.exe`
-  - object inspection through `llvm-readobj.exe` and `llvm-objdump.exe`
-  - execution smoke replay under run id
-    `m251_e003_runtime_foundation_runbook_smoke`
-- The runbook remains fail closed unless those commands reproduce the published
-  evidence artifacts and remain aligned with the integrated E002 gate.
-- Validation/evidence path:
-  `tmp/reports/m251/M251-E003/runtime_foundation_developer_runbook_summary.json`
-
-## Executable metadata source graph freeze (M252-A001)
-
-- Lane-A now freezes the canonical executable metadata source graph boundary for
-  the next runtime-metadata tranche.
-- The frozen manifest/document contract is
-  `objc3c-executable-metadata-source-graph-freeze/m252-a001-v1`.
-- The graph keeps owner identities on the existing
-  `semantic-link-symbol-lexicographic-owner-identity` model and freezes
-  metaclass nodes as
-  `metaclass-nodes-derived-from-resolved-interface-symbols` until semantic
-  closure work lands in `M252-A002+`.
-- The manifest now publishes `objc_executable_metadata_source_graph` evidence
-  for class, metaclass, protocol, category, property, ivar, and method node
-  counts while remaining fail closed and not yet lowering-ready.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-A001/executable_metadata_source_graph_contract_summary.json`
-
-## Interface implementation class metaclass graph completeness (M252-A002)
-
-- Lane-A now materializes the executable metadata source graph as a real
-  frontend packet instead of a count-only freeze.
-- The canonical packet type is `Objc3ExecutableMetadataSourceGraph`.
-- The manifest path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph`.
-- Interface and implementation declaration nodes keep parser semantic-link
-  owner identities while runtime nodes publish canonical `class:` and
-  `metaclass:` owners plus deterministic owner edges.
-- `M252-A002` proves explicit `interface_node_entries`,
-  `implementation_node_entries`, `class_node_entries`,
-  `metaclass_node_entries`, and `owner_edges` on a happy-path superclass
-  fixture while remaining not yet lowering-ready.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-A002/executable_metadata_graph_completeness_summary.json`
-
-## Protocol category property ivar graph completion (M252-A003)
-
-- Lane-A now extends the executable metadata source graph from class-only
-  closure to explicit protocol, category, property, method, and ivar node
-  packets.
-- Protocol nodes publish canonical `protocol:` owner identities plus inherited
-  protocol targets.
-- Category nodes publish canonical `category:Class(Category)` owner identities
-  alongside declaration owners (`interface:` / `implementation:`) and the
-  runtime class attach point.
-- Property, method, and ivar nodes now publish:
-  - declaration-owner identities,
-  - export-owner identities,
-  - deterministic node-owner identities,
-  - explicit owner edges for export closure.
-- The manifest now publishes explicit:
-  - `protocol_node_entries`,
-  - `category_node_entries`,
-  - `property_node_entries`,
-  - `method_node_entries`,
-  - `ivar_node_entries`.
-- `M252-A003` proves `source_graph_complete == true` and
-  `ready_for_semantic_closure == true` on both:
-  - the class/protocol/property/ivar fixture, and
-  - the category/protocol/property fixture.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-A003/executable_metadata_export_graph_completion_summary.json`
-
-## Metadata semantic consistency freeze (M252-B001)
-
-- Lane-B now freezes one canonical semantic-consistency packet for executable
-  metadata graph admission:
-  `Objc3ExecutableMetadataSemanticConsistencyBoundary`.
-- The boundary consumes the ready A003 graph plus deterministic protocol/
-  category, linking, selector, property, and scope-resolution handoffs.
-- The manifest now publishes
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_consistency_boundary`.
-- The boundary is allowed to be `ready=true` while:
-  - semantic conflict diagnostics remain pending,
-  - duplicate export-owner enforcement remains pending,
-  - lowering admission remains pending.
-- The boundary must remain frozen, fail-closed, and not lowering-ready on both
-  the class/protocol/property/ivar fixture and the category/protocol/property
-  fixture.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-B001/executable_metadata_semantic_consistency_summary.json`
-
-## Inheritance override protocol composition validation (M252-B002)
-
-- Lane-B now publishes one graph-backed semantic-validation packet:
-  `Objc3ExecutableMetadataSemanticValidationSurface`.
-- The manifest now publishes
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_semantic_validation_surface`.
-- The executable metadata graph now carries
-  `method-to-overridden-method` owner edges for legal class-interface
-  overrides discovered through superclass chains.
-- The B002 happy-path fixture proves:
-  - class inheritance validation,
-  - protocol inheritance validation,
-  - metaclass super-edge validation,
-  - override legality without conflicts,
-  - protocol-composition validation without invalid sites.
-- The validation packet must remain `ready=true`, fail-closed, and
-  `lowering_admission_ready == false`.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-B002/executable_metadata_semantic_validation_summary.json`
-
-## Category attachment duplication ambiguity diagnostics (M252-B003)
-
-- Lane-B now hardens the existing runtime metadata export blocker instead of
-  adding a second export-enforcement packet.
-- Valid class-plus-category programs no longer collapse into duplicate class
-  interface or implementation diagnostics.
-- The blocker now emits:
-  - `O3S261` for category attachment collisions,
-  - `O3S262` for duplicate runtime members,
-  - `O3S263` for ambiguous runtime metadata graph resolution,
-  while preserving `O3S260` for incomplete declarations.
-- The B003 fixtures prove:
-  - one valid class-plus-category manifest-only accept case,
-  - one duplicate category interface reject case,
-  - one duplicate category implementation plus runtime member ambiguity reject
-    case.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-B003/category_attachment_duplication_ambiguity_diagnostics_summary.json`
-
-## Property ivar export legality and synthesis preconditions (M252-B004)
-
-- Lane-B now freezes property and ivar export legality around the canonical
-  sema property-synthesis/ivar-binding summary.
-- `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
-  and
-  `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.replay_key`
-  are both derived from the same canonical sema summary rather than generic
-  property-declaration totals.
-- The B004 fixtures prove:
-  - one class implementation property success case with exactly one resolved
-    default ivar binding,
-  - one category-only property success case with zero synthesis and ivar-binding
-    sites,
-  - one missing-interface-property reject case with `O3S206`,
-  - one incompatible-property-signature reject case with `O3S206`.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-B004/property_ivar_export_legality_synthesis_preconditions_summary.json`
-
-## Metadata graph lowering handoff freeze (M252-C001)
-
-- Lane-C now freezes one canonical typed lowering-handoff packet for the
-  executable metadata graph:
-  `Objc3ExecutableMetadataLoweringHandoffSurface`.
-- The semantic-surface manifest path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_lowering_handoff_surface`.
-- The packet is assembled from the ready executable metadata source graph, the
-  semantic-consistency boundary, the semantic-validation surface, and the
-  deterministic sema/linking summaries that later lowering must consume without
-  reparsing declaration containers.
-- Typed and parse/lowering projections now publish:
-  - `executable_metadata_lowering_handoff_ready`
-  - `executable_metadata_lowering_handoff_deterministic`
-  - `executable_metadata_lowering_handoff_key`
-- `M252-C001` is intentionally fail-closed:
-  - `ready == true`
-  - `fail_closed == true`
-  - `ready_for_lowering == false`
-- Non-goals:
-  - no object-file metadata section emission yet,
-  - no runtime ingest packaging yet,
-  - no global lowering admission for metadata-driven programs yet.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-C001/metadata_graph_lowering_handoff_contract_summary.json`
-
-## Typed metadata graph handoff and manifest schema (M252-C002)
-
-- Lane-C now materializes the concrete lowering-ready metadata graph packet:
-  `Objc3ExecutableMetadataTypedLoweringHandoff`.
-- The semantic-surface manifest path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`.
-- The packet keeps the C001 freeze packet intact while carrying the ordered
-  metadata graph payload itself under `source_graph` with the schema ordering
-  model `contract-header-then-source-graph-payload-v1`.
-- Parse/lowering readiness now projects:
-  - `executable_metadata_typed_lowering_handoff_ready`
-  - `executable_metadata_typed_lowering_handoff_deterministic`
-  - `executable_metadata_typed_lowering_handoff_key`
-- The lowering-ready packet now requires:
-  - C001 freeze readiness,
-  - A003 graph closure,
-  - B004 canonical sema/property-ivar replay alignment,
-  - exact graph-count continuity between the C001 freeze counters and the
-    typed payload.
-- `M252-C002` intentionally promotes the packet itself to
-  `ready_for_lowering == true` while the nested `source_graph` evidence remains
-  the pre-lowering A003 packet.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-C002/typed_metadata_graph_handoff_and_manifest_schema_summary.json`
-
-## Metadata debug projection and replay anchors (M252-C003)
-
-- Lane-C now publishes the canonical metadata debug-projection packet:
-  `Objc3ExecutableMetadataDebugProjectionSummary`.
-- The manifest semantic-surface path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`.
-- The IR-facing named metadata anchor is
-  `!objc3.objc_executable_metadata_debug_projection`.
-- The matrix currently publishes three deterministic rows:
-  - `class-protocol-property-ivar-manifest-projection`
-  - `category-protocol-property-manifest-projection`
-  - `hello-ir-named-metadata-anchor`
-- The two metadata-rich fixtures prove manifest/debug projection on the real
-  typed handoff payload, while the runnable `hello.objc3` fixture proves the
-  IR named-metadata anchor that operators will inspect before runtime section
-  emission lands.
-- Metadata-rich fixtures also publish the active C002 typed-handoff replay key
-  through the debug-projection packet, so manifest inspection stays tied to the
-  concrete lowering-ready payload when it is present.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-C003/metadata_debug_projection_and_replay_anchors_summary.json`
-
-## Runtime ingest packaging boundary (M252-D001)
-
-- Lane-D now freezes the canonical runtime-ingest packaging packet:
-  `Objc3ExecutableMetadataRuntimeIngestPackagingContractSummary`.
-- The manifest semantic-surface path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_packaging_contract`.
-- The boundary is defined over:
-  - the C002 typed handoff packet
-    `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`
-  - the C003 debug-projection packet
-    `frontend.pipeline.semantic_surface.objc_executable_metadata_debug_projection`
-- The frozen payload model is
-  `typed-handoff-plus-debug-projection-manifest-v1`.
-- The frozen transport artifact is `module.manifest.json`.
-- The boundary is intentionally manifest-only in `M252-D001`:
-  - no runtime section emission yet,
-  - no startup registration yet,
-  - no runtime loader registration yet.
-- Replay continuity is now explicit through:
-  - `typed_lowering_handoff_replay_key`
-  - `debug_projection_replay_key`
-  - `replay_key`
-- Validation/evidence path:
-  `tmp/reports/m252/M252-D001/runtime_ingest_packaging_for_metadata_graphs_contract_summary.json`
-
-## Runtime ingest binary boundary (M252-D002)
-
-- Lane-D now materializes the canonical runtime-ingest binary packet:
-  `Objc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary`.
-- The manifest semantic-surface path is
-  `frontend.pipeline.semantic_surface.objc_executable_metadata_runtime_ingest_binary_boundary`.
-- The emitted runtime-facing artifact is `module.runtime-metadata.bin`.
-- The binary envelope format is `objc3-runtime-metadata-envelope-v1`.
-- The envelope preserves exactly three deterministic chunks:
-  - `runtime_ingest_packaging_contract`
-  - `typed_lowering_handoff`
-  - `debug_projection`
-- The binary boundary is driven from the frozen D001/C002/C003 packets rather
-  than a second ad hoc source-model traversal, so later section emission and
-  bootstrap work can consume one canonical artifact boundary without reparsing
-  manifest JSON.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-D002/artifact_packaging_and_binary_boundary_for_metadata_payloads_summary.json`
-
-## Metadata semantic-closure gate (M252-E001)
-
-- Lane-E now freezes the aggregate semantic-closure gate:
-  `Objc3ExecutableMetadataSemanticClosureGateSummary`.
-- Contract id:
-  `objc3c-executable-metadata-semantic-closure-gate/m252-e001-v1`.
-- The aggregate gate remains explicitly synchronized over:
-  - `M252-A003` graph completeness,
-  - `M252-B004` property/ivar export legality and deterministic `O3S206`
-    diagnostics,
-  - `M252-C003` manifest/IR debug projection and replay anchors,
-  - `M252-D002` runtime-facing `module.runtime-metadata.bin` packaging.
-- The next implementation issue `M253-A001` must preserve this boundary while
-  landing real metadata section emission.
-- The gate remains evidence-only in `M252-E001`:
-  - no object-file section emission yet,
-  - no startup registration yet,
-  - no runtime loader bootstrap yet.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-E001/metadata_semantic_closure_gate_summary.json`
-
-## Conformance corpus and docs sync for metadata graph closure (M252-E002)
-
-- Lane-E now adds the first representative metadata-closure corpus sync gate on
-  the real frontend runner path:
-  `artifacts/bin/objc3c-frontend-c-api-runner.exe`.
-- Contract id:
-  `objc3c-metadata-graph-closure-conformance-corpus-doc-sync/m252-e002-v1`.
-- Representative integrated corpus cases now remain explicit in docs and the
-  checker:
-  - `class-protocol-property-ivar-runtime-graph`
-  - `category-protocol-property-runtime-graph`
-  - `class-property-synthesis-ready`
-  - `category-property-export-only`
-  - `missing-interface-property-diagnostic`
-  - `incompatible-property-signature-diagnostic`
-- `scripts/run_m252_e002_lane_e_readiness.py` executes the direct integrated
-  path once, rather than recursively re-entering every upstream lane readiness
-  script.
-- Validation/evidence path:
-  `tmp/reports/m252/M252-E002/conformance_corpus_and_docs_sync_for_metadata_graph_closure_summary.json`
-
-## Emitted metadata inventory freeze (M253-A001)
-
-- Lane-A now freezes the emitted runtime metadata inventory boundary that later
-  section-emission issues must preserve.
-- Contract id:
-  `objc3c-emitted-metadata-inventory-freeze/m253-a001-v1`.
-- The currently supported emitted inventory is explicitly limited to:
-  - `objc3.runtime.image_info` via `__objc3_image_info`,
-  - `objc3.runtime.class_descriptors`,
-  - `objc3.runtime.protocol_descriptors`,
-  - `objc3.runtime.category_descriptors`,
-  - `objc3.runtime.property_descriptors`,
-  - `objc3.runtime.ivar_descriptors`.
-- Symbol and retention policy remain frozen to:
-  - descriptor symbol prefix `__objc3_meta_`,
-  - aggregate symbol prefix `__objc3_sec_`,
-  - descriptor linkage `private`,
-  - aggregate linkage `internal`,
-  - metadata visibility policy `hidden`,
-  - retention root `llvm.used`.
-- The freeze explicitly binds three surfaces together:
-  - constant declarations in `ast/objc3_ast.h`,
-  - ABI/scaffold/object-inspection summaries in
-    `pipeline/objc3_frontend_types.h`,
-  - concrete LLVM IR emission in `ir/objc3_ir_emitter.cpp`.
-- Explicit non-goals in `M253-A001`:
-  - no source-to-section completeness matrix yet,
-  - no concrete descriptor payload layout yet beyond the scaffold,
-  - no startup registration yet,
-  - no standalone emitted method/selector/string-pool sections yet.
-- The next implementation issue `M253-A002` must preserve this inventory while
-  publishing the node-to-section completeness matrix.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-A001/emitted_metadata_inventory_contract_summary.json`
-
-## Source-to-section mapping completeness matrix (M253-A002)
-
-- Lane-A now publishes the canonical source-to-section completeness matrix over
-  the executable metadata graph and the frozen emitted inventory boundary.
-- Contract id:
-  `objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1`.
-- The canonical manifest surface is
-  `frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix`.
-- Row ordering is frozen to source-graph node kind order:
-  `interface`, `implementation`, `class`, `metaclass`, `protocol`, `category`,
-  `property`, `method`, `ivar`.
-- Concrete emitted rows remain limited to:
-  - `class` -> `objc3.runtime.class_descriptors` /
-    `__objc3_meta_class_####` / `__objc3_sec_class_descriptors`,
-  - `protocol` -> `objc3.runtime.protocol_descriptors` /
-    `__objc3_meta_protocol_####` / `__objc3_sec_protocol_descriptors`,
-  - `category` -> `objc3.runtime.category_descriptors` /
-    `__objc3_meta_category_####` / `__objc3_sec_category_descriptors`,
-  - `property` -> `objc3.runtime.property_descriptors` /
-    `__objc3_meta_property_####` / `__objc3_sec_property_descriptors`,
-  - `ivar` -> `objc3.runtime.ivar_descriptors` /
-    `__objc3_meta_ivar_####` / `__objc3_sec_ivar_descriptors`.
-- Current non-standalone rows remain explicit and fail closed:
-  - `interface`,
-  - `implementation`,
-  - `metaclass`,
-  - `method`.
-- Concrete emitted rows all preserve the same relocation model today:
-  `zero-sentinel-or-count-plus-pointer-vector`.
-- Proof binding remains concrete per row:
-  - metadata-rich graph rows bind to
-    `m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-    or
-    `m251_runtime_metadata_source_records_category_protocol_property.objc3`,
-  - emitted section/symbol rows bind to
-    `m251_runtime_metadata_object_inspection_zero_descriptor.objc3`,
-    `llvm-readobj --sections module.obj`, and
-    `llvm-objdump --syms module.obj`.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
-
-## Layout ordering and visibility policy freeze (M253-B001)
-
-- Lane-B now freezes the current emitted metadata layout/visibility policy so
-  `M253-B002` can semantic-finalize one known boundary instead of inferring a
-  second model.
-- Contract id:
-  `objc3c-runtime-metadata-layout-ordering-visibility-policy-freeze/m253-b001-v1`.
-- The frozen emitted policy remains:
-  - family ordering model
-    `image-info-then-class-protocol-category-property-ivar`,
-  - family order `image-info`, `class`, `protocol`, `category`, `property`,
-    `ivar`,
-  - within-family ordering
-    `ascending-descriptor-ordinal-then-family-aggregate`,
-  - aggregate relocation model
-    `zero-sentinel-or-count-plus-pointer-vector`,
-  - COMDAT policy `disabled`,
-  - visibility spelling policy
-    `local-linkage-omits-explicit-ir-visibility`,
-  - retention ordering `llvm.used-emission-order`,
-  - object-format policy model `object-format-neutral-until-m253-b003`.
-- The real emitted scaffold remains synchronized to that policy today:
-  - `@__objc3_image_info` emits first,
-  - aggregate section families follow class/protocol/category/property/ivar
-    order,
-  - metadata globals stay local-linkage-only,
-  - `@llvm.used` preserves emission order,
-  - no COMDAT is introduced.
-- Explicit non-goals in `M253-B001`:
-  - no semantic finalization of layout decisions yet; that lands in
-    `M253-B002`,
-  - no COFF/ELF/Mach-O-specific variants yet; that lands in `M253-B003`,
-  - no new emitted method/selector/string-pool sections.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-B001/layout_ordering_and_visibility_policy_contract_summary.json`
-
-## Deterministic ordering, visibility, and relocation semantics (M253-B002)
-
-- Lane-B now turns the frozen `M253-B001` policy into one real normalized
-  lowering capability before `M253-B003` expands object-format variants.
-- Contract id:
-  `objc3c-runtime-metadata-layout-policy/m253-b002-v1`.
-- The normalized policy is published directly in emitted IR through:
-  - named metadata `!objc3.objc_runtime_metadata_layout_policy`,
-  - node `!55`,
-  - replay comment `; runtime_metadata_layout_policy =`,
-  - replay line `; runtime_metadata_layout_policy = ...`.
-- `lower/objc3_lowering_contract.cpp` now builds one fail-closed layout policy
-  from the canonical ABI/scaffold inputs:
-  - descriptor linkage `private`,
-  - aggregate linkage `internal`,
-  - metadata visibility `hidden`,
-  - retention root `llvm.used`,
-  - family order `class`, `protocol`, `category`, `property`, `ivar`,
-  - retained-global count equal to descriptor inventory plus image-info and
-    family aggregates.
-- `ir/objc3_ir_emitter.cpp` now consumes the normalized plan directly instead
-  of hardcoding five repeated family emission calls.
-- `io/objc3_process.cpp` keeps llvm-direct object emission explicit about
-  preserving that semantic-finalization boundary.
-- Readiness command:
-  `check:objc3c:m253-b002-lane-b-readiness`
-- Validation/evidence path:
-  `tmp/reports/m253/M253-B002/deterministic_ordering_visibility_and_relocation_semantics_core_feature_implementation_summary.json`
-
-## COFF, ELF, and Mach-O metadata policy surface (M253-B003)
-
-- Lane-B now preserves the normalized `M253-B002` packet while expanding it
-  into one explicit host-format mapping surface for COFF, ELF, and Mach-O.
-- Contract id:
-  `objc3c-runtime-metadata-object-format-policy/m253-b003-v1`.
-- The frontend ABI remains logical and format-neutral; lowering now owns:
-  - object-format token `coff`, `elf`, or `mach-o`,
-  - section-spelling model
-    `coff-logical-section-spellings`,
-    `elf-logical-section-spellings`, or
-    `mach-o-data-segment-comma-section-spellings`,
-  - retention-anchor model
-    `llvm.used-appending-global+coff-timestamp-normalization`,
-    `llvm.used-appending-global+elf-stable-sections`, or
-    `llvm.used-appending-global+mach-o-data-segment-sections`,
-  - emitted section spellings for image-info and descriptor families.
-- `lower/objc3_lowering_contract.cpp` now maps logical metadata sections into
-  host-format emitted section names fail-closed.
-- `ir/objc3_ir_emitter.cpp` now emits image-info and family globals from the
-  policy-owned emitted section names instead of reusing logical names directly.
-- `io/objc3_process.cpp` now detects produced object-file format before
-  applying post-write determinism, so COFF timestamp normalization is explicit
-  rather than assumed for all object files.
-- Readiness command:
-  `check:objc3c:m253-b003-lane-b-readiness`
-- Validation/evidence path:
-  `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
-
-## Metadata section emission freeze (M253-C001)
-
-- Lane-C now freezes the current real-section emission boundary before payload
-  implementation issues start replacing placeholder bytes with encoded metadata
-  records.
-- Contract id:
-  `objc3c-runtime-metadata-section-emission-freeze/m253-c001-v1`.
-- The frozen boundary is:
-  - payload model
-    `scaffold-placeholder-payloads-until-m253-c002`,
-  - inventory model
-    `image-info-plus-class-protocol-category-property-ivar-sections`,
-  - image-info payload model
-    `internal-{i32,i32}-zeroinitializer-image-info`,
-  - descriptor payload model
-    `private-[1xi8]-zeroinitializer-per-descriptor`,
-  - aggregate payload model
-    `i64-count-plus-pointer-vector-aggregates`.
-- `ir/objc3_ir_emitter.cpp` now publishes the boundary directly through:
-  - `; runtime_metadata_section_emission_boundary = ...`
-  - the existing scaffold globals under the current layout/object-format policy.
-- This freeze does not claim method, selector, or string-pool payload emission,
-  and it does not claim startup registration/bootstrap.
-- Readiness command:
-  `check:objc3c:m253-c001-lane-c-readiness`
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C001/metadata_section_emission_contract_summary.json`
-
-## Class and metaclass data emission (M253-C002)
-
-- Lane-C now emits the first real executable metadata payload family:
-  `Objc3RuntimeMetadataClassMetaclassEmissionSummary`.
-- Contract id:
-  `objc3c-runtime-class-metaclass-data-emission/m253-c002-v1`.
-- The class family payload model is now
-  `class-source-record-descriptor-bundles-with-inline-metaclass-records`.
-- Each emitted class bundle carries:
-  - one shared class-name cstring,
-  - one declaration-owner identity cstring,
-  - one instance-method-list reference `{ i64, ptr }`,
-  - one inline metaclass-method-list reference `{ i64, ptr }`,
-  - one class record and one inline metaclass record.
-- The happy-path metadata fixture is
-  `tests/tooling/fixtures/native/m252_executable_metadata_graph_class_metaclass.objc3`.
-- The emitted IR now carries:
-  - `!objc3.objc_runtime_class_metaclass_emission`
-  - `@__objc3_meta_class_0000`
-  - `@__objc3_meta_class_0003`
-  - `@__objc3_meta_class_owner_identity_0000`
-  - `@__objc3_meta_class_owner_identity_0003`
-  - `@__objc3_sec_class_descriptors = internal global { i64, [4 x ptr] } ...`
-- The emitted object now proves `objc3.runtime.class_descriptors` is a real
-  object section with nontrivial bytes/relocations on the `llvm-direct` path.
-- C002 remains deliberately bounded:
-  - no standalone metaclass section,
-  - no selector/string-pool sections,
-  - no standalone method/property/ivar list payload sections,
-  - no runtime registration/bootstrap.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C002/class_and_metaclass_data_emission_summary.json`
-
-## Protocol and category data emission (M253-C003)
-
-- Lane-C now emits the next real executable metadata payload families through
-  `Objc3RuntimeMetadataProtocolCategoryEmissionSummary`.
-- Contract id:
-  `objc3c-runtime-protocol-category-data-emission/m253-c003-v1`.
-- The protocol payload model is now
-  `protocol-descriptor-bundles-with-inherited-protocol-ref-lists`.
-- The category payload model is now
-  `category-descriptor-bundles-with-attachment-and-protocol-ref-lists`.
-- Protocol bundles now carry:
-  - one protocol-name cstring,
-  - one declaration-owner identity cstring,
-  - one inherited-protocol-ref list global,
-  - one descriptor record with property/method counts and forward-declaration state.
-- Category bundles now carry:
-  - one class-name cstring,
-  - one category-name cstring,
-  - one record-kind cstring,
-  - one record-owner identity cstring,
-  - one category-owner identity cstring,
-  - one class-owner identity cstring,
-  - one owner-identity attachment list,
-  - one adopted-protocol-ref list,
-  - one descriptor record with property/instance-method/class-method counts.
-- The happy-path metadata fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`.
-- The emitted IR now carries:
-  - `!objc3.objc_runtime_protocol_category_emission`
-  - `@__objc3_meta_protocol_inherited_protocol_refs_0001`
-  - `@__objc3_meta_category_adopted_protocol_refs_0000`
-  - `@__objc3_meta_category_attachments_0001`
-  - `@__objc3_sec_protocol_descriptors = internal global { i64, [2 x ptr] } ...`
-  - `@__objc3_sec_category_descriptors = internal global { i64, [2 x ptr] } ...`
-- The emitted object now proves `objc3.runtime.protocol_descriptors` and
-  `objc3.runtime.category_descriptors` are real object sections with
-  nontrivial bytes/relocations on the `llvm-direct` path.
-- C003 remains deliberately bounded:
-  - no selector/string-pool sections,
-  - no standalone property/ivar payload sections,
-  - no runtime registration/bootstrap.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C003/protocol_and_category_data_emission_summary.json`
-
-## Method, property, and ivar payload emission (M253-C004)
-
-- Lane-C now emits the next executable metadata payload families through
-  `Objc3RuntimeMetadataMemberTableEmissionSummary`.
-- Contract id:
-  `objc3c-runtime-member-table-emission/m253-c004-v1`.
-- The method-list payload model is now
-  `owner-scoped-method-table-globals-with-inline-entry-records`.
-- The method-list grouping model is now
-  `declaration-owner-plus-class-kind-lexicographic`.
-- The property payload model is now
-  `property-descriptor-records-with-accessor-and-binding-strings`.
-- The ivar payload model is now
-  `ivar-descriptor-records-with-property-binding-strings`.
-- The class/protocol/property/ivar metadata fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
-- The category/protocol/property metadata fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`.
-- The emitted IR now carries:
-  - `!objc3.objc_runtime_member_table_emission`
-  - owner-scoped method tables such as
-    `@__objc3_meta_class_instance_methods_0001`,
-    `@__objc3_meta_protocol_instance_methods_0004`, and
-    `@__objc3_meta_category_instance_methods_0000`
-  - real property descriptor globals such as `@__objc3_meta_property_0000` and
-    `@__objc3_meta_property_0001`
-  - real ivar descriptor globals such as `@__objc3_meta_ivar_0000`
-  - real aggregate families
-    `@__objc3_sec_property_descriptors = internal global { i64, [N x ptr] } ...`
-    and
-    `@__objc3_sec_ivar_descriptors = internal global { i64, [N x ptr] } ...`
-- The emitted object now proves:
-  - `objc3.runtime.property_descriptors` is a real object section with payload
-    bytes and relocations,
-  - `objc3.runtime.ivar_descriptors` is a real object section with payload bytes
-    and relocations,
-  - class/protocol/category sections retain adjacent method-table payload bytes on
-    the `llvm-direct` path.
-- `C004` remains deliberately bounded:
-  - no selector string pool,
-  - no runtime metadata registration/bootstrap,
-  - no runtime dispatch consumption of the new member tables yet.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C004/method_property_and_ivar_list_emission_summary.json`
-
-## Selector and string pool emission (M253-C005)
-
-- Lane-C now emits canonical selector and runtime string pool sections through
-  `Objc3RuntimeMetadataSelectorStringPoolEmissionSummary`.
-- Contract id:
-  `objc3c-runtime-selector-string-pool-emission/m253-c005-v1`.
-- The selector pool payload model is now
-  `canonical-selector-cstring-pool-with-stable-ordinal-aggregate`.
-- The string pool payload model is now
-  `canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate`.
-- The metadata-rich proof fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
-- The message-send proof fixture is
-  `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`.
-- The emitted IR now carries:
-  - `!objc3.objc_runtime_selector_string_pool_emission`
-  - `@__objc3_sec_selector_pool`
-  - `@__objc3_sec_string_pool`
-  - canonical pool entries such as `@__objc3_sel_pool_0000` and
-    `@__objc3_str_pool_0000`
-  - no remaining `@.objc3.sel.` legacy selector-only globals on the happy path
-- The emitted object now proves:
-  - `objc3.runtime.selector_pool` is a real object section with payload bytes
-    and relocations,
-  - `objc3.runtime.string_pool` is a real object section with payload bytes and
-    relocations,
-  - message-send lowering consumes pooled selector cstrings directly from the
-    canonical selector pool.
-- `C005` remains deliberately bounded:
-  - descriptor families are not rewired to pooled string pointers yet,
-  - no runtime registration/bootstrap,
-  - no live runtime mutation of selector/string pool tables.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`
-
-## Binary inspection harness for emitted metadata (M253-C006)
-
-- Lane-C now freezes one emitted-metadata binary inspection corpus through
-  `Objc3RuntimeMetadataBinaryInspectionHarnessSummary`.
-- Contract id:
-  `objc3c-runtime-binary-inspection-harness/m253-c006-v1`.
-- The positive corpus model is
-  `positive-structural-section-and-symbol-corpus-with-case-specific-absence-checks`.
-- The negative corpus model is
-  `negative-compile-failure-gating-with-no-object-inspection`.
-- The emitted IR now carries:
-  - `; runtime_metadata_binary_inspection_harness = ...`
-  - `!objc3.objc_runtime_binary_inspection_harness`
-- The positive corpus covers:
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
-- The negative corpus covers:
-  - `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`
-- The binary inspection harness proves object-file structure through:
-  - `llvm-readobj --sections module.obj`
-  - `llvm-objdump --syms module.obj`
-  - section-family presence and absence checks across
-    `objc3.runtime.image_info`,
-    `objc3.runtime.class_descriptors`,
-    `objc3.runtime.protocol_descriptors`,
-    `objc3.runtime.category_descriptors`,
-    `objc3.runtime.property_descriptors`,
-    `objc3.runtime.ivar_descriptors`,
-    `objc3.runtime.selector_pool`, and
-    `objc3.runtime.string_pool`
-  - aggregate symbol offsets for `__objc3_image_info`,
-    `__objc3_sec_class_descriptors`,
-    `__objc3_sec_protocol_descriptors`,
-    `__objc3_sec_category_descriptors`,
-    `__objc3_sec_property_descriptors`,
-    `__objc3_sec_ivar_descriptors`,
-    `__objc3_sec_selector_pool`, and
-    `__objc3_sec_string_pool`
-- `C006` remains bounded:
-  - no new metadata families,
-  - no runtime registration/bootstrap,
-  - no reopening of descriptor-family or selector/string-pool non-goals already
-    closed in `C002` through `C005`.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
-
-## Object packaging and retention boundary (M253-D001)
-
-- Lane-D now freezes the current object-packaging handoff through
-  `Objc3RuntimeMetadataObjectPackagingRetentionSummary`.
-- Contract id:
-  `objc3c-runtime-object-packaging-retention-boundary/m253-d001-v1`.
-- The boundary model is
-  `current-object-file-boundary-with-retained-metadata-section-aggregates`.
-- The retention-anchor model is
-  `llvm.used-plus-aggregate-section-symbols`.
-- The emitted IR now carries:
-  - `; runtime_metadata_object_packaging_retention = ...`
-  - `!objc3.objc_runtime_object_packaging_retention`
-- The current object handoff is frozen as:
-  - object artifact `module.obj`
-  - aggregate symbol prefix `__objc3_sec_`
-  - section inventory command `llvm-readobj --sections module.obj`
-  - symbol inventory command `llvm-objdump --syms module.obj`
-- The positive proof fixture is
-  `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`.
-- The negative proof fixture is
-  `tests/tooling/fixtures/native/m252_b004_missing_interface_property.objc3`.
-- `D001` remains deliberately bounded:
-  - no archive packaging contract yet,
-  - no link-registration contract yet,
-  - no startup registration/bootstrap yet.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-D001/object_packaging_and_retention_contract_summary.json`
-
-## Linker retention anchors and dead-strip resistance (M253-D002)
-
-- Lane-D now publishes a real linker-retention/discovery handoff through
-  `Objc3RuntimeMetadataLinkerRetentionSummary`.
-- Contract id:
-  `objc3c-runtime-linker-retention-and-dead-strip-resistance/m253-d002-v1`.
-- The anchor model is
-  `public-linker-anchor-rooted-in-discovery-table`.
-- The discovery model is
-  `public-discovery-root-over-retained-metadata-aggregates`.
-- The emitted IR now carries:
-  - `; runtime_metadata_linker_retention = ...`
-  - `!objc3.objc_runtime_linker_retention`
-- Successful object emission now also writes:
-  - `module.runtime-metadata-linker-options.rsp`
-  - `module.runtime-metadata-discovery.json`
-- The response artifact is driver-friendly and emits exactly one force-retain
-  flag for the current object format:
-  - COFF: `-Wl,/include:<symbol>`
-  - ELF: `-Wl,--undefined=<symbol>`
-  - Mach-O: `-Wl,-u,_<symbol>`
-- The object now exports one hashed public linker anchor symbol
-  `objc3_runtime_metadata_link_anchor_<hash>` and one hashed public discovery
-  root symbol `objc3_runtime_metadata_discovery_root_<hash>`.
-- The positive proof packages `module.obj` into a static library, shows that a
-  plain link drops the metadata, then re-links with the emitted response file
-  and proves the metadata sections survive in the final executable.
-- The negative proof remains fail-closed: compile failure emits no object,
-  backend marker, linker response file, or discovery JSON.
-- `D002` still remains deliberately bounded:
-  - no multi-archive fan-in proof yet,
-  - no cross-translation-unit anchor-merging proof yet,
-  - no startup registration/bootstrap yet.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-D002/linker_retention_and_dead_strip_resistance_summary.json`
-
-## Archive and static-link metadata discovery behavior (M253-D003)
-
-- Lane-D now closes the deferred archive/static-link discovery path through
-  `Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary`.
-- Contract id:
-  `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`.
-- The anchor-seed model is
-  `module-and-metadata-replay-plus-translation-unit-identity`.
-- The translation-unit identity model is
-  `input-path-plus-parse-and-lowering-replay`.
-- The merge model is `deduplicated-driver-flag-fan-in`.
-- The emitted IR now also carries:
-  - `; runtime_metadata_archive_static_link_discovery = ...`
-  - `!objc3.objc_runtime_archive_static_link_discovery`
-- Object-level discovery JSON now also publishes:
-  - `translation_unit_identity_model`
-  - `translation_unit_identity_key`
-- The canonical merged artifacts are:
-  - `module.merged.runtime-metadata-linker-options.rsp`
-  - `module.merged.runtime-metadata-discovery.json`
-- Metadata-only translation units without a source `main` now keep
-  `objc3c_entry` internal so multi-archive metadata retention does not fail on
-  duplicate public entry symbols.
-- The positive proof covers:
-  - same-module metadata-only translation units from distinct source paths
-    yielding distinct public linker/discovery symbols,
-  - multi-archive plain link dropping metadata,
-  - merged-response link retaining metadata,
-  - merged retained metadata exceeding the single-archive retained baseline.
-- The merge utility remains fail closed on malformed or colliding discovery
-  inputs.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`
-
-## Metadata emission gate (M253-E001)
-
-- Lane-E now freezes the emitted-metadata evidence gate through
-  `Objc3RuntimeMetadataEmissionGateSummary`.
-- Contract id:
-  `objc3c-runtime-metadata-emission-gate/m253-e001-v1`.
-- The evidence model is `a002-b003-c006-d003-summary-chain`.
-- The failure model is `fail-closed-on-upstream-summary-drift`.
-- The emitted IR now also carries:
-  - `; runtime_metadata_emission_gate = ...`
-  - `!objc3.objc_runtime_metadata_emission_gate`
-- The gate consumes the canonical upstream evidence:
-  - `tmp/reports/m253/M253-A002/source_to_section_mapping_completeness_matrix_summary.json`
-  - `tmp/reports/m253/M253-B003/coff_elf_and_mach_o_metadata_policy_surface_core_feature_expansion_summary.json`
-  - `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`
-  - `tmp/reports/m253/M253-D003/archive_and_static_link_metadata_discovery_behavior_summary.json`
-- The gate remains fail closed if any upstream summary disappears, stops
-  reporting `ok: true`, or drops the case-level invariants that define the
-  current object-emission boundary.
-- This freeze is the prerequisite for `M253-E002` cross-lane closeout.
-- Validation/evidence path:
-  `tmp/reports/m253/M253-E001/metadata_emission_gate_summary.json`
-
-## Cross-lane object-emission gate and closeout (M253-E002)
-
-- Lane-E now freezes integrated object-emission closeout through
-  `Objc3RuntimeMetadataObjectEmissionCloseoutSummary`.
-- Contract id:
-  `objc3c-runtime-cross-lane-object-emission-closeout/m253-e002-v1`.
-- The evidence model is
-  `e001-summary-plus-integrated-native-object-emission-probes`.
-- The failure model is `fail-closed-on-summary-or-integrated-probe-drift`.
-- The emitted IR now also carries:
-  - `; runtime_metadata_object_emission_closeout = ...`
-  - `!objc3.objc_runtime_metadata_object_emission_closeout`
-- The closeout replays the real native object-emission path over:
-  - `class-protocol-property-ivar-object-closeout`
-  - `category-protocol-property-object-closeout`
-  - `message-send-object-closeout`
-  - `negative-missing-interface-property-closeout`
-  - `fanin-distinct-linker-discovery-closeout`
-- Positive cases must keep manifest graph closure, `llvm-direct` object
-  emission, binary-inspection section inventories, and linker-response /
-  discovery artifacts aligned on the same output directory.
-- Negative cases must fail closed before object emission and preserve
-  deterministic `O3S206` diagnostics without synthesizing object-side artifacts.
-- Validation/readiness runner:
-  `scripts/run_m253_e002_lane_e_readiness.py`
-- Validation/evidence path:
-  `tmp/reports/m253/M253-E002/cross_lane_object_emission_gate_and_closeout_summary.json`
-
-## Translation-unit registration surface freeze (M254-A001)
-
-`M254-A001` freezes the preregistration translation-unit contract at
-`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract`.
-
-The canonical handoff is:
-
-- contract id `objc3c-translation-unit-registration-surface-freeze/m254-a001-v1`
-- payload model `runtime-metadata-binary-plus-linker-retention-sidecars-v1`
-- runtime-owned payload inventory:
-  - `module.runtime-metadata.bin`
-  - `module.runtime-metadata-linker-options.rsp`
-  - `module.runtime-metadata-discovery.json`
-- reserved constructor root `__objc3_runtime_register_image_ctor`
-- constructor-root ownership model
-  `compiler-emits-constructor-root-runtime-owns-registration-state`
-- runtime-owned registration entrypoint `objc3_runtime_register_image`
-- translation-unit identity model `input-path-plus-parse-and-lowering-replay`
-
-Non-goals remain explicit in `M254-A001`:
-
-- no constructor-root emission yet
-- no startup registration yet
-- no runtime bootstrap yet
-
-`M254-A002` must preserve this surface while materializing the first real
-registration manifest and constructor-root ownership path.
-
-## Registration manifests and constructor-root ownership (M254-A002)
-
-`M254-A002` materializes the first real startup-registration artifact at
-`frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_manifest`.
-
-The canonical emitted handoff is:
-
-- contract id `objc3c-translation-unit-registration-manifest/m254-a002-v1`
-- payload model `translation-unit-registration-manifest-json-v1`
-- emitted registration-manifest artifact
-  `module.runtime-registration-manifest.json`
-- runtime-owned payload continuity:
-  - `module.runtime-metadata.bin`
-  - `module.runtime-metadata-linker-options.rsp`
-  - `module.runtime-metadata-discovery.json`
-- manifest authority model
-  `registration-manifest-authoritative-for-constructor-root-shape`
-- init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
-- init-stub ownership model
-  `lowering-emits-init-stub-from-registration-manifest`
-- constructor priority policy `deferred-until-m254-c001`
-- runtime archive path `artifacts/lib/objc3_runtime.lib`
-
-`M254-A002` still does not emit the init stub, constructor root, or startup
-bootstrap logic. It publishes the authoritative manifest that later lowering
-and bootstrap lanes must consume directly.
-
-Validation/evidence path:
-`tmp/reports/m254/M254-A002/registration_manifests_and_constructor_root_ownership_summary.json`
-
-## Bootstrap invariants (M254-B001)
-
-`M254-B001` freezes the semantic boundary that later startup/bootstrap work
-must preserve:
-
-- contract id `objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1`
-- surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_invariants`
-- duplicate-registration policy
-  `fail-closed-by-translation-unit-identity-key`
-- realization-order policy
-  `constructor-root-then-registration-manifest-order`
-- failure mode
-  `abort-before-user-main-no-partial-registration-commit`
-- image-local initialization scope
-  `runtime-owned-image-local-registration-state`
-- constructor-root uniqueness policy
-  `one-startup-root-per-translation-unit-identity`
-- constructor-root consumption model
-  `startup-root-consumes-registration-manifest`
-- startup execution mode `deferred-until-m254-c001`
-
-`M254-B001` is a freeze only. It does not add live bootstrap calls, duplicate
-registration enforcement, or image-local realization code yet.
-
-Validation/evidence path:
-`tmp/reports/m254/M254-B001/bootstrap_invariants_contract_summary.json`
-
-## Live bootstrap semantics (M254-B002)
-
-`M254-B002` turns the frozen `M254-B001` packet into a live runtime/bootstrap
-semantic surface at
-`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`.
-
-The canonical runtime contract is:
-
-- contract id `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
-- duplicate-registration policy
-  `fail-closed-by-translation-unit-identity-key`
-- realization-order policy
-  `constructor-root-then-registration-manifest-order`
-- failure mode
-  `abort-before-user-main-no-partial-registration-commit`
-- runtime result model `zero-success-negative-fail-closed`
-- runtime state snapshot symbol
-  `objc3_runtime_copy_registration_state_for_testing`
-- duplicate status code `-2`
-- out-of-order status code `-3`
-- canonical registration order ordinal `1`
-
-`M254-B002` also expands `module.runtime-registration-manifest.json` so the
-emitted artifact carries the same runtime duplicate/order/failure contract and
-status-code model the native runtime probe executes against.
-
-Validation/evidence path:
-`tmp/reports/m254/M254-B002/bootstrap_semantics_summary.json`
-
-## Bootstrap lowering freeze (M254-C001)
-
-`M254-C001` freezes the lowering-owned boundary for startup bootstrap
-materialization without emitting the constructor root, init stub, or
-registration table yet.
-
-- contract id `objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1`
-- surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
-- boundary model
-  `registration-manifest-driven-constructor-root-init-stub-and-registration-table-lowering`
-- preserved constructor root symbol `__objc3_runtime_register_image_ctor`
-- preserved init-stub symbol prefix `__objc3_runtime_register_image_init_stub_`
-- reserved registration-table symbol prefix
-  `__objc3_runtime_registration_table_`
-- future global-ctor list model
-  `llvm.global_ctors-single-root-priority-65535`
-- current constructor-root emission state `deferred-until-m254-c002`
-- current init-stub emission state `deferred-until-m254-c002`
-- current registration-table emission state `deferred-until-m254-c002`
-
-`M254-C001` also expands `module.runtime-registration-manifest.json` so the
-manifest carries the same lowering contract that the future ctor-root
-materialization issue must consume directly.
-
-Non-goals:
-
-- no emitted `@llvm.global_ctors` yet
-- no emitted constructor-root global yet
-- no emitted init-stub globals yet
-- no emitted registration-table globals yet
-
-Evidence:
-
-`tmp/reports/m254/M254-C001/bootstrap_lowering_contract_summary.json`
-
-## Constructor and init-stub emission (M254-C002)
-
-`M254-C002` turns the frozen `M254-C001` lowering boundary into a live emitted
-startup path.
-
-- contract id `objc3c-runtime-constructor-init-stub-emission/m254-c002-v1`
-- emitted ctor root `__objc3_runtime_register_image_ctor`
-- emitted init-stub prefix `__objc3_runtime_register_image_init_stub_`
-- emitted registration-table prefix `__objc3_runtime_registration_table_`
-- emitted image descriptor prefix `__objc3_runtime_image_descriptor_`
-- emitted `@llvm.global_ctors` list model
-  `llvm.global_ctors-single-root-priority-65535`
-- init stub calls `objc3_runtime_register_image`
-- non-zero registration status fails closed through `abort()`
-- COFF object output carries the startup constructor list in `.CRT$XCU`
-- `module.runtime-registration-manifest.json` publishes the exact derived
-  init-stub and registration-table symbols for the emitted translation unit
-
-Evidence:
-
-`tmp/reports/m254/M254-C002/constructor_init_stub_emission_summary.json`
-
-## Registration table emission and image-local initialization (M254-C003)
-
-`M254-C003` expands the live startup path with one self-describing
-registration table and one image-local init-state cell per emitted
-translation unit.
-
-- contract id
-  `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
-- registration-table layout model
-  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
-- image-local init-state prefix
-  `__objc3_runtime_image_local_init_state_`
-- registration-table ABI version `1`
-- registration-table pointer-field count `11`
-- emitted init stub now guards startup with the image-local init-state cell
-  before calling `objc3_runtime_register_image`
-- emitted registration tables now carry the class/protocol/category/property/
-  ivar section roots plus selector/string pool roots
-- `module.runtime-registration-manifest.json` publishes the layout model,
-  pointer/ABI counts, and the exact derived image-local init-state symbol
-
-Evidence:
-
-`tmp/reports/m254/M254-C003/registration_table_image_local_initialization_summary.json`
-
-## Runtime bootstrap API freeze (M254-D001)
-
-`M254-D001` freezes the runtime-owned bootstrap API surface that later
-registrar/image-walk and deterministic-reset issues must preserve.
-
-- contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
-- semantic surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
-- public header path `native/objc3c/src/runtime/objc3_runtime.h`
-- archive path `artifacts/lib/objc3_runtime.lib`
-- registration status enum type `objc3_runtime_registration_status_code`
-- image descriptor type `objc3_runtime_image_descriptor`
-- selector handle type `objc3_runtime_selector_handle`
-- registration snapshot type `objc3_runtime_registration_state_snapshot`
-- preserved entrypoints:
-  - `objc3_runtime_register_image`
-  - `objc3_runtime_lookup_selector`
-  - `objc3_runtime_dispatch_i32`
-  - `objc3_runtime_copy_registration_state_for_testing`
-  - `objc3_runtime_reset_for_testing`
-- startup invocation model
-  `generated-init-stub-calls-runtime-register-image`
-- runtime locking model `process-global-mutex-serialized-runtime-state`
-- image walk remains deferred to `M254-D002`
-- deterministic reset expansion remains deferred to `M254-D003`
-
-Evidence:
-
-`tmp/reports/m254/M254-D001/runtime_bootstrap_api_contract_summary.json`
-
-## Registrar implementation and image walk (M254-D002)
-
-`M254-D002` lands the private registrar/image-walk bridge that extends the
-emitted startup path without widening the frozen D001 public runtime API.
-
-- contract id `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
-- semantic surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract`
-- private bootstrap header
-  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
-- private staging hook symbol
-  `objc3_runtime_stage_registration_table_for_bootstrap`
-- private image-walk snapshot symbol
-  `objc3_runtime_copy_image_walk_state_for_testing`
-- image-walk model
-  `registration-table-roots-validated-and-staged-before-realization`
-- discovery-root validation model
-  `linker-anchor-must-point-at-discovery-root`
-- selector-pool interning model
-  `canonical-selector-pool-preinterned-during-startup-image-walk`
-- realization staging model
-  `registration-table-roots-retained-for-later-realization`
-
-The emitted init stub now stages the live registration table before calling the
-frozen D001 `objc3_runtime_register_image` entrypoint, and the runtime walks the
-emitted roots, validates the discovery/linker relationship, and preinterns the
-selector pool during startup.
-
-Evidence:
-
-`tmp/reports/m254/M254-D002/registrar_image_walk_summary.json`
 
 ## Driver shell split boundaries (M136-E001)
 
@@ -7856,7 +6403,7 @@ Native `.objc3` IR emission now includes deterministic frontend-profile metadata
 Operator replay check (from repo root):
 
 ```powershell
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata --emit-prefix module
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m223/lowering-metadata --emit-prefix module
 ```
 
 Then inspect:
@@ -7909,7 +6456,7 @@ Lowering/runtime debug-info fidelity is captured as a deterministic packet roote
 
 Debug-info fidelity capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/abi-ir-anchors.txt`
 3. `rg -n "source_filename =|\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.ll tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.manifest.json tmp/artifacts/compilation/objc3c-native/m213/lowering-runtime-debug-info-fidelity/module.diagnostics.json > tmp/reports/objc3c-native/m213/lowering-runtime-debug-info-fidelity/debug-metadata-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m213_lowering_debug_fidelity_contract.py -q`
@@ -7960,7 +6507,7 @@ Lowering/runtime evidence for the refactor/code-action engine is captured as a d
 
 Code-action capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.ll tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json > tmp/reports/objc3c-native/m212/lowering-runtime-code-action/abi-ir-anchors.txt`
 3. `@("@@ rewrite_scope:module") | Set-Content tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt; rg -n "\"source\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.manifest.json tmp/artifacts/compilation/objc3c-native/m212/lowering-runtime-code-action/module.diagnostics.json >> tmp/reports/objc3c-native/m212/lowering-runtime-code-action/rewrite-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m212_lowering_code_action_contract.py -q`
@@ -8024,7 +6571,7 @@ Lowering/runtime semantic token and symbol-navigation evidence is captured as a 
 
 LSP semantic profile capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.ll tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json > tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/abi-ir-anchors.txt`
 3. `@("@@ lsp_profile:semantic_tokens_navigation") | Set-Content tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt; rg -n "\"semantic_surface\":|\"declared_globals\":|\"declared_functions\":|\"resolved_global_symbols\":|\"resolved_function_symbols\":|\"globals\":|\"functions\":|\"name\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":" tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.manifest.json tmp/artifacts/compilation/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/module.diagnostics.json >> tmp/reports/objc3c-native/m211/lowering-runtime-lsp-semantic-profile/symbol-navigation-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m211_lowering_lsp_contract.py -q`
@@ -8098,7 +6645,7 @@ Lowering/runtime canonical optimization stage-1 evidence is captured as determin
 
 Canonical optimization stage-1 capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1 --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1 --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.ll tmp/artifacts/compilation/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/module.manifest.json > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/abi-ir-anchors.txt`
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|manifest_functions\.reserve\(program\.functions\.size\(\)\)|manifest_function_names|function_signature_surface|scalar_return_i32|scalar_return_bool|scalar_return_void|scalar_param_i32|scalar_param_bool|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m206/lowering-runtime-canonical-optimization-stage-1/canonical-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m206_lowering_canonical_optimization_contract.py -q`
@@ -8182,7 +6729,7 @@ Lowering/runtime macro diagnostics and provenance evidence is captured as determ
 
 Macro diagnostics/provenance capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m204/lowering-runtime-macro-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/abi-ir-anchors.txt`
 3. `rg -n "MakeDiag\(|error:|ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|O3L005|O3L006|O3L007|O3L008|first_line|first_column|last_line|last_column|ParseDiagSortKey\(|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m204/lowering-runtime-macro-diagnostics/macro-diagnostics-provenance-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m204_lowering_macro_diagnostics_contract.py -q`
@@ -8253,7 +6800,7 @@ Lowering/runtime compile-time evaluation engine evidence is captured as determin
 
 Compile-time evaluation engine capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.ll tmp/artifacts/compilation/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/module.manifest.json > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/abi-ir-anchors.txt`
 3. `rg -n "TryGetCompileTimeI32ExprInContext|IsCompileTimeNilReceiverExprInContext|IsCompileTimeKnownNonNilExprInContext|has_assigned_const_value|has_assigned_nil_value|has_clause_const_value|has_let_const_value|const_value_ptrs|nil_bound_ptrs|nonzero_bound_ptrs|global_proofs_invalidated|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m203/lowering-runtime-compile-time-eval-engine/compile-time-eval-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m203_lowering_compile_time_eval_contract.py -q`
@@ -8325,7 +6872,7 @@ Lowering/runtime derive/synthesis pipeline evidence is captured as deterministic
 
 Derive/synthesis pipeline capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.ll tmp/artifacts/compilation/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/module.manifest.json > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticIntegrationSurface|BuildSemanticTypeMetadataHandoff|IsDeterministicSemanticTypeMetadataHandoff|global_names_lexicographic|functions_lexicographic|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|semantic_surface|resolved_global_symbols|resolved_function_symbols|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering|declare i32 @" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m202/lowering-runtime-derive-synthesis-pipeline/derive-synthesis-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m202_lowering_derive_synthesis_contract.py -q`
@@ -8383,7 +6930,7 @@ Lowering/runtime SIMD/vector type-lowering evidence is captured as deterministic
 
 SIMD/vector type-lowering capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|simd_vector_lowering|simd_vector_function_signatures|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"|\"lowering_vector_abi\"|\"vector_signature_surface\"" tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.ll tmp/artifacts/compilation/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/module.manifest.json > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/abi-ir-anchors.txt`
 3. `rg -n "kObjc3SimdVectorLaneContract|kObjc3SimdVectorBaseI32|kObjc3SimdVectorBaseBool|IsSupportedObjc3SimdVectorLaneCount|TryBuildObjc3SimdVectorLLVMType|Objc3SimdVectorTypeLoweringReplayKey|CountVectorSignatureFunctions|simd_vector_lowering|simd_vector_function_signatures|vector_signature_surface|lowering_vector_abi|lane_contract" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m193/lowering-runtime-simd-vector-type-lowering/simd-vector-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m193_lowering_simd_vector_lowering_contract.py -q`
@@ -8453,7 +7000,7 @@ Lowering/runtime atomics memory-order mapping evidence is captured as determinis
 
 Atomics memory-order capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.ll tmp/artifacts/compilation/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/module.manifest.json > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/abi-ir-anchors.txt`
 3. `rg -n "kObjc3AtomicMemoryOrderRelaxed|kObjc3AtomicMemoryOrderAcquire|kObjc3AtomicMemoryOrderRelease|kObjc3AtomicMemoryOrderAcqRel|kObjc3AtomicMemoryOrderSeqCst|enum class Objc3AtomicMemoryOrder|TryParseObjc3AtomicMemoryOrder|Objc3AtomicMemoryOrderToLLVMOrdering|Objc3AtomicMemoryOrderMappingReplayKey|acquire_release|monotonic|acq_rel|seq_cst|Objc3LoweringIRBoundaryReplayKey\\(|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/lower/objc3_lowering_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m194/lowering-runtime-atomics-memory-order-mapping/atomic-memory-order-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m194_lowering_atomics_memory_order_contract.py -q`
@@ -8516,7 +7063,7 @@ Lowering/runtime system-extension conformance/policy evidence is captured as det
 
 System-extension conformance/policy capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.ll tmp/artifacts/compilation/objc3c-native/m195/lowering-runtime-system-extension-policy/module.manifest.json > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/abi-ir-anchors.txt`
 3. `rg -n "ValidateSupportedLanguageVersion|ValidateSupportedCompatibilityMode|TryNormalizeObjc3LoweringContract|kRuntimeDispatchDefaultArgs = 4|kRuntimeDispatchMaxArgs = 16|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\"|output_dir = \\\"tmp/artifacts/compilation/objc3c-native\\\"|frontend_options\\.lowering\\.max_message_send_args = options\\.max_message_send_args;|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m195/lowering-runtime-system-extension-policy/system-extension-policy-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m195_lowering_system_extension_policy_contract.py -q`
@@ -8583,7 +7130,7 @@ Lowering/runtime C interop header and ABI-alignment evidence is captured as dete
 
 C interop header ABI-alignment capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.ll tmp/artifacts/compilation/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/module.manifest.json > tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/abi-ir-anchors.txt`
 3. `rg -n "Optional C ABI shim for non-C\\+\\+ embedding environments\\.|OBJC3C_FRONTEND_C_API_ABI_VERSION|c_compile_options_t, objc3c_frontend_compile_options_t|objc3c_frontend_is_abi_compatible\\(requested_abi_version\\)|Public embedding ABI contract|Reserved struct fields are for forward ABI growth|ABI evolution policy for exposed structs/enums is additive|OBJC3C_FRONTEND_ABI_VERSION|OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|compile_options\\.runtime_dispatch_symbol = runtime_symbol;|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\";|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"" native/objc3c/src/libobjc3c_frontend/c_api.h native/objc3c/src/libobjc3c_frontend/c_api.cpp native/objc3c/src/libobjc3c_frontend/api.h native/objc3c/src/libobjc3c_frontend/version.h native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m196/lowering-runtime-c-interop-headers-abi-alignment/c-interop-header-abi-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m196_lowering_c_interop_headers_abi_contract.py -q`
@@ -8640,7 +7187,7 @@ Lowering/runtime C++ interop shim strategy evidence is captured as deterministic
 
 C++ interop shim strategy capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.ll tmp/artifacts/compilation/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/module.manifest.json > tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/abi-ir-anchors.txt`
 3. `rg -n "Optional C ABI shim for non-C\\+\\+ embedding environments\\.|OBJC3C_FRONTEND_C_API_ABI_VERSION == 1u|return objc3c_frontend_compile_file\\(context, options, result\\);|frontend_options\\.lowering\\.runtime_dispatch_symbol = options\\.runtime_dispatch_symbol;|compile_options\\.runtime_dispatch_symbol = runtime_symbol;|kRuntimeDispatchDefaultSymbol = \\\"objc3_msgsend_i32\\\";|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol=|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"|int objc3_msgsend_i32\\(|static const int64_t kModulus = 2147483629LL;" native/objc3c/src/libobjc3c_frontend/c_api.h native/objc3c/src/libobjc3c_frontend/c_api.cpp native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/pipeline/frontend_pipeline_contract.h native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp tests/tooling/runtime/objc3_msgsend_i32_shim.c > tmp/reports/objc3c-native/m197/lowering-runtime-cpp-interop-shim-strategy/cpp-interop-shim-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m197_lowering_cpp_interop_shim_contract.py -q`
@@ -8704,7 +7251,7 @@ Lowering/runtime Swift metadata-bridge evidence is captured as deterministic pac
 
 Swift metadata bridge capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.ll tmp/artifacts/compilation/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/module.manifest.json > tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/abi-ir-anchors.txt`
 3. `rg -n "BuildSemanticTypeMetadataHandoff|param_has_invalid_type_suffix|deterministic_type_metadata_handoff|type_metadata_global_entries|type_metadata_function_entries|Objc3IRFrontendMetadata|EmitObjc3IRText|frontend_profile|!objc3.frontend|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/sema/objc3_semantic_passes.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m198/lowering-runtime-swift-metadata-bridge/swift-metadata-bridge-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m198_lowering_swift_metadata_bridge_contract.py -q`
@@ -8768,7 +7315,7 @@ Lowering/runtime foreign-type import diagnostics evidence is captured as determi
 
 Foreign-type import diagnostics capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.ll tmp/artifacts/compilation/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/module.manifest.json > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/abi-ir-anchors.txt`
 3. `rg -n "FormatDiagnostic\\(|NormalizeDiagnostics\\(|WriteDiagnosticsArtifacts\\(|FlattenStageDiagnostics\\(|ParseDiagSortKey\\(|\\\"severity\\\":|\\\"line\\\":|\\\"column\\\":|\\\"code\\\":|\\\"message\\\":|\\\"raw\\\":|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_objectivec_path.cpp native/objc3c/src/diag/objc3_diag_utils.cpp native/objc3c/src/io/objc3_diagnostics_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m199/lowering-runtime-foreign-type-import-diagnostics/foreign-type-import-diagnostics-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m199_lowering_foreign_type_diagnostics_contract.py -q`
@@ -8810,7 +7357,7 @@ Lowering/runtime interop integration-suite and packaging evidence is captured as
 
 Interop integration-suite/packaging capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m200/lowering-runtime-interop-integration-packaging/module.manifest.json > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/abi-ir-anchors.txt`
 3. `rg -n "options\.lowering\.runtime_dispatch_symbol = cli_options\.runtime_dispatch_symbol;|frontend_options\.lowering\.runtime_dispatch_symbol = options\.runtime_dispatch_symbol;|compile_options\.runtime_dispatch_symbol = runtime_symbol;|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol=|lowering_ir_boundary =|declare i32 @|\\\"lowering\\\":{\\\"runtime_dispatch_symbol\\\":\\\"|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/driver/objc3_frontend_options.cpp native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m200/lowering-runtime-interop-integration-packaging/interop-packaging-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m200_lowering_interop_packaging_contract.py -q`
@@ -8885,7 +7432,7 @@ Lowering/runtime macro-expansion architecture and isolation evidence is captured
 
 Macro-expansion architecture/isolation capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.ll tmp/artifacts/compilation/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/module.manifest.json > tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/abi-ir-anchors.txt`
 3. `rg -n "migration_hints_.legacy_yes_count|migration_hints_.legacy_no_count|migration_hints_.legacy_null_count|language_version_pragma_contract_.directive_count|result.migration_hints.legacy_yes_count|result.migration_hints.legacy_no_count|result.migration_hints.legacy_null_count|result.language_version_pragma_contract.seen|sema_input.migration_hints.legacy_yes_count|sema_input.migration_hints.legacy_no_count|sema_input.migration_hints.legacy_null_count|append_for_literal\\(input.migration_hints.legacy_yes_count|append_for_literal\\(input.migration_hints.legacy_no_count|append_for_literal\\(input.migration_hints.legacy_null_count|migration_hints|language_version_pragma_contract|ir_frontend_metadata\\.migration_legacy_yes|ir_frontend_metadata\\.migration_legacy_no|ir_frontend_metadata\\.migration_legacy_null|frontend_profile|!objc3\\.frontend|Objc3LoweringIRBoundaryReplayKey\\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/sema/objc3_sema_pass_manager.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m201/lowering-runtime-macro-expansion-isolation/macro-expansion-isolation-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m201_lowering_macro_expansion_contract.py -q`
@@ -8949,7 +7496,7 @@ Lowering/runtime macro-security policy enforcement evidence is captured as deter
 
 Macro-security capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.ll tmp/artifacts/compilation/objc3c-native/m205/lowering-runtime-macro-security/module.manifest.json > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/abi-ir-anchors.txt`
 3. `rg -n "ConsumeLanguageVersionPragmas\(diagnostics\)|ConsumeLanguageVersionPragmaDirective\(|LanguageVersionPragmaPlacement::kNonLeading|O3L005|O3L006|O3L007|O3L008|language_version_pragma_contract|directive_count|duplicate|non_leading|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/lex/objc3_lexer.cpp native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m205/lowering-runtime-macro-security/macro-security-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m205_lowering_macro_security_contract.py -q`
@@ -9012,7 +7559,7 @@ Lowering/runtime dispatch-specific optimization pass evidence is captured as det
 
 Dispatch optimization capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.ll tmp/artifacts/compilation/objc3c-native/m207/lowering-runtime-dispatch-optimizations/module.manifest.json > tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/abi-ir-anchors.txt`
 3. `rg -n "runtime_dispatch_call_emitted_|receiver_is_compile_time_zero|receiver_is_compile_time_nonzero|msg_nil_|msg_dispatch_|phi i32 \[0, %|FunctionMayHaveGlobalSideEffects|call_may_have_global_side_effects|global_proofs_invalidated|Objc3LoweringIRBoundaryReplayKey\(|runtime_dispatch_symbol|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp > tmp/reports/objc3c-native/m207/lowering-runtime-dispatch-optimizations/dispatch-optimization-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m207_lowering_dispatch_optimizations_contract.py -q`
@@ -9064,7 +7611,7 @@ Lowering/runtime whole-module optimization (WMO) controls are captured as determ
 
 WMO control capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.ll tmp/artifacts/compilation/objc3c-native/m208/lowering-runtime-wmo-controls/module.manifest.json > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/abi-ir-anchors.txt`
 3. `rg -n "manifest_functions\\.reserve\\(program\\.functions\\.size\\(\\)\\)|manifest_function_names|max_message_send_args|semantic_surface|declared_functions|resolved_function_symbols|runtime_dispatch_arg_slots|selector_global_ordering" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp > tmp/reports/objc3c-native/m208/lowering-runtime-wmo-controls/wmo-control-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m208_lowering_wmo_contract.py -q`
@@ -9114,7 +7661,7 @@ Lowering/runtime LLVM profile-guided optimization (PGO) hook evidence is capture
 
 PGO hook capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|!0 = !{|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.ll tmp/artifacts/compilation/objc3c-native/m209/lowering-runtime-pgo-hooks/module.manifest.json > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/abi-ir-anchors.txt`
 3. `rg -n "Objc3IRFrontendMetadata ir_frontend_metadata;|ir_frontend_metadata\\.language_version = options\\.language_version;|ir_frontend_metadata\\.compatibility_mode = CompatibilityModeName\\(options\\.compatibility_mode\\);|ir_frontend_metadata\\.migration_assist = options\\.migration_assist;|ir_frontend_metadata\\.migration_legacy_yes = pipeline_result\\.migration_hints\\.legacy_yes_count;|ir_frontend_metadata\\.migration_legacy_no = pipeline_result\\.migration_hints\\.legacy_no_count;|ir_frontend_metadata\\.migration_legacy_null = pipeline_result\\.migration_hints\\.legacy_null_count;|Objc3LoweringIRBoundaryReplayKey\\(|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|runtime_dispatch_arg_slots=|selector_global_ordering=lexicographic" native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp native/objc3c/src/ir/objc3_ir_emitter.cpp native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m209/lowering-runtime-pgo-hooks/pgo-hook-source-anchors.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m209_lowering_pgo_contract.py -q`
@@ -9170,7 +7717,7 @@ Lowering/LLVM/runtime perf regression evidence is captured as a deterministic pa
 
 Performance-budget capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression --emit-prefix module`
 2. `npm run test:objc3c:perf-budget`
 3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.ll tmp/artifacts/compilation/objc3c-native/m210/lowering-runtime-perf-regression/module.manifest.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/abi-ir-anchors.txt`
 4. `rg -n "tmp/artifacts/objc3c-native/perf-budget|summary.json|defaultMaxElapsedMs|defaultPerFixtureBudgetMs|cache_hit=|dispatch_fixture_count|max_elapsed_ms|total_elapsed_ms|budget_breached|cache_proof|status" scripts/check_objc3c_native_perf_budget.ps1 tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json > tmp/reports/objc3c-native/m210/lowering-runtime-perf-regression/perf-regression-gates.txt`
@@ -9218,8 +7765,8 @@ Lowering/runtime daemon/watch mode evidence is captured as deterministic packet 
 
 Daemonized capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001 --emit-prefix module`
-2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002 --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001 --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002 --emit-prefix module`
 3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-001/module.manifest.json tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.ll tmp/artifacts/compilation/objc3c-native/m214/lowering-runtime-daemonized-compiler/cycle-002/module.manifest.json > tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/abi-ir-anchors.txt`
 4. `@("@@ cycle:cycle-001", "@@ cycle:cycle-002") | Set-Content tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt; rg -n "\"incremental_cycle_id\":|\"run1_sha256\":|\"run2_sha256\":" tmp/artifacts/objc3c-native/perf-budget/<run_id>/summary.json tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json >> tmp/reports/objc3c-native/m214/lowering-runtime-daemonized-compiler/incremental-replay-markers.txt`
 5. `python -m pytest tests/tooling/test_objc3c_m214_lowering_daemonized_contract.py -q`
@@ -9276,7 +7823,7 @@ Lowering/runtime SDK packaging evidence is captured as a deterministic packet fo
 
 SDK packaging capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.ll tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/abi-ir-anchors.txt`
 3. `rg -n "\"schema_version\":|\"diagnostics\":|\"severity\":|\"line\":|\"column\":|\"code\":|\"message\":|\"raw\":|\"module\":|\"frontend\":|\"lowering\":|\"globals\":|\"functions\":|\"runtime_dispatch_symbol\":|\"runtime_dispatch_arg_slots\":|clang|llvm-direct" tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.diagnostics.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.manifest.json tmp/artifacts/compilation/objc3c-native/m215/lowering-runtime-sdk-packaging/module.object-backend.txt > tmp/reports/objc3c-native/m215/lowering-runtime-sdk-packaging/ide-consumable-artifact-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m215_lowering_sdk_packaging_contract.py -q`
@@ -9316,7 +7863,7 @@ Lowering/runtime conformance suite evidence is captured as deterministic packet 
 
 Conformance suite capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite --emit-prefix module`
 2. `npm run test:objc3c:m145-direct-llvm-matrix:lane-d`
 3. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @|\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.ll tmp/artifacts/compilation/objc3c-native/m216/lowering-runtime-conformance-suite/module.manifest.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/abi-ir-anchors.txt`
 4. `rg -n "\"suite\":|\"status\":|\"matrix\":|\"total_cases\":|\"failed_cases\":|\"spec_section_map\"" tmp/artifacts/conformance-suite/<target>/summary.json > tmp/reports/objc3c-native/m216/lowering-runtime-conformance-suite/conformance-matrix-markers.txt`
@@ -9360,9 +7907,9 @@ Lowering/runtime differential parity is captured as a deterministic packet versu
 
 Differential parity capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native --emit-prefix module`
-2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang --emit-prefix module --cli-ir-object-backend clang`
-3. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct --emit-prefix module --cli-ir-object-backend llvm-direct`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native --emit-prefix module`
+2. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-clang --emit-prefix module --cli-ir-object-backend clang`
+3. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/baseline-llvm-direct --emit-prefix module --cli-ir-object-backend llvm-direct`
 4. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.ll > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/ir-diff-markers.txt`
 5. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m217/lowering-runtime-differential-parity/native/module.manifest.json > tmp/reports/objc3c-native/m217/lowering-runtime-differential-parity/manifest-diff-markers.txt`
 6. `python -m pytest tests/tooling/test_objc3c_m217_lowering_differential_contract.py -q`
@@ -9398,7 +7945,7 @@ Release-candidate lowering/runtime provenance is captured as a deterministic pac
 
 RC provenance capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.ll > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
 3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m218/lowering-runtime-rc-provenance/module.manifest.json >> tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/replay-markers.txt`
 4. `rg -n "Objc3LoweringIRBoundaryReplayKey|invalid lowering contract runtime_dispatch_symbol|runtime_dispatch_symbol=|selector_global_ordering=lexicographic" native/objc3c/src/lower/objc3_lowering_contract.cpp > tmp/reports/objc3c-native/m218/lowering-runtime-rc-provenance/attestation-markers.txt`
@@ -9437,7 +7984,7 @@ Cross-platform lowering/runtime parity evidence is captured as deterministic pac
 
 Cross-platform capture commands (run per platform worker):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform> --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform> --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.ll > tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
 3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>/module.manifest.json >> tmp/reports/objc3c-native/m219/lowering-runtime-cross-platform-parity/<platform>-replay-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m219_lowering_cross_platform_contract.py -q`
@@ -9468,7 +8015,7 @@ Public-beta lowering/runtime triage must ship as deterministic packet evidence r
 
 Public-beta triage capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.ll > tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
 3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m220/lowering-runtime-public-beta-triage/module.manifest.json >> tmp/reports/objc3c-native/m220/lowering-runtime-public-beta-triage/replay-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m220_lowering_public_beta_contract.py -q`
@@ -9497,7 +8044,7 @@ GA-blocker burn-down evidence for lowering/runtime should be captured as a deter
 
 Burn-down capture commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown --emit-prefix module`
 2. `rg -n "lowering_ir_boundary|frontend_profile|!objc3.frontend|declare i32 @" tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.ll > tmp/reports/objc3c-native/m221/lowering-ga-blocker-burndown/replay-markers.txt`
 3. `rg -n "\"lowering\":{\"runtime_dispatch_symbol\"" tmp/artifacts/compilation/objc3c-native/m221/lowering-ga-blocker-burndown/module.manifest.json >> tmp/reports/objc3c-native/m221/lowering-ga-blocker-burndown/replay-markers.txt`
 4. `python -m pytest tests/tooling/test_objc3c_m221_lowering_ga_blocker_contract.py -q`
@@ -9524,7 +8071,7 @@ Operator evidence sequence:
 1. Generate artifacts in a deterministic tmp root:
 
 ```powershell
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness --emit-prefix module
 ```
 
 1. Validate marker alignment in `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.ll` and `tmp/artifacts/compilation/objc3c-native/m224/lowering-release-readiness/module.manifest.json`.
@@ -9549,7 +8096,7 @@ Post-1.0 backlog seeding for lowering/runtime 1.1/1.2 should record deterministi
 
 Roadmap-seeding commands (lowering/runtime lane):
 
-1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding --emit-prefix module`
+1. `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/m225/lowering-roadmap-seeding --emit-prefix module`
 2. `python -m pytest tests/tooling/test_objc3c_m225_lowering_roadmap_seed_contract.py -q`
 
 ## Recovery fixture layout (`tests/tooling/fixtures/native/recovery`)
@@ -9764,8 +8311,8 @@ Use one `.objc3` input and one non-`.objc3` Objective-C input to validate both s
 
 ```powershell
 npm run build:objc3c-native
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 -- --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objc3 --emit-prefix module_objc3
-npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m -- --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objectivec --emit-prefix module_objc
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objc3 --emit-prefix module_objc3
+npm run compile:objc3c -- tests/tooling/fixtures/native/recovery/positive/lowering_dispatch/msgsend_lookup_basic.m --out-dir tmp/artifacts/objc3c-native/m136-driver-shell/objectivec --emit-prefix module_objc
 ```
 
 Expected success surface:
@@ -16620,574 +15167,3 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
-## Realization sequencing and deterministic reset hooks (M254-D003)
-
-`M254-D003` keeps the frozen public bootstrap runtime API intact while adding
-private same-process reset/replay hooks to the runtime bootstrap boundary:
-
-- private replay hook `objc3_runtime_replay_registered_images_for_testing`
-- private reset/replay snapshot hook
-  `objc3_runtime_copy_reset_replay_state_for_testing`
-- reset lifecycle model
-  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
-- replay order model
-  `replay-re-registers-retained-images-in-original-registration-order`
-- bootstrap catalog retention model
-  `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
-
-## Driver, link, and runtime launch integration (M254-D004)
-
-`M254-D004` hardens the operator surfaces around that bootstrap path so the
-native compile wrapper, compile-proof script, and execution-smoke script all
-consume the same emitted runtime launch contract:
-
-- contract id `objc3c-runtime-launch-integration/m254-d004-v1`
-- emitted authority remains `module.runtime-registration-manifest.json`
-- runtime archive resolution model
-  `registration-manifest-runtime-archive-path-is-authoritative`
-- linker-flag consumption model
-  `registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands`
-- canonical command surfaces:
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/run_objc3c_native_compile_proof.ps1`
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-- emitted manifest fields:
-  - `launch_integration_contract_id`
-  - `compile_wrapper_command_surface`
-  - `compile_proof_command_surface`
-  - `execution_smoke_command_surface`
-  - `launch_integration_ready`
-
-## Startup registration gate (M254-E001)
-
-`M254-E001` freezes one lane-E closeout gate over the already-landed startup
-registration/bootstrap evidence chain:
-
-- contract id `objc3c-runtime-startup-registration-gate/m254-e001-v1`
-- evidence model `a002-b002-c003-d003-d004-summary-chain`
-- fail-closed model `fail-closed-on-bootstrap-evidence-drift`
-- canonical evidence output
-  `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
-- upstream proof chain:
-  - `M254-A002` registration-manifest ownership
-  - `M254-B002` live bootstrap semantics
-  - `M254-C003` registration-table realization and image-local init
-  - `M254-D003` deterministic reset/replay
-  - `M254-D004` operator launch integration
-- explicit handoff issue `M254-E002`
-
-## Replay and bootstrap proof plus runbook closeout (M254-E002)
-
-`M254-E002` closes the milestone on top of that same implemented evidence chain
-while publishing the operator runbook that exercises the real integrated path:
-
-- contract id `objc3c-runtime-replay-bootstrap-closeout/m254-e002-v1`
-- closeout model `e001-gate-plus-live-operator-runbook-smoke`
-- authoritative upstream gate remains
-  `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
-- canonical runbook
-  `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
-- canonical closeout evidence
-  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
-
-## Dispatch surface classification (M255-A001)
-
-`M255-A001` freezes the live dispatch taxonomy before the runtime dispatch lane
-starts expanding actual entrypoint behavior:
-
-- contract id `objc3c-dispatch-surface-classification/m255-a001-v1`
-- live runtime entrypoint family
-  `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
-- instance, class, super, and dynamic dispatch all remain bound to that live
-  runtime family in the current native path
-- direct dispatch remains reserved for later work and is an explicit non-goal
-  in `M255-A001`
-
-## Dispatch-site modeling (M255-A002)
-
-`M255-A002` turns the frozen taxonomy into one real frontend/sema/lowering
-implementation for the currently supported native LLVM path:
-
-- parser message sends now carry explicit dispatch-surface state and normalization
-  completion flags
-- normalization classifies identifier receivers against implicit method-context
-  `self`, implicit method-context `super`, and known class symbols before sema
-- semantic validation seeds `self`, `super`, and known class names so method
-  bodies no longer fail closed as unresolved identifiers during lowering
-- semantic surface path
-  `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
-- lowering handoff path
-  `lowering_dispatch_surface_classification`
-- canonical proof fixture
-  `tests/tooling/fixtures/native/m255_dispatch_surface_modeling.objc3`
-- live proof counts: instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
-- `objc3c-native` now compiles that fixture through `llvm-direct`, and
-  `module.ll` emits `!objc3.objc_dispatch_surface_classification`
-
-## Dispatch legality and selector resolution (M255-B001)
-
-`M255-B001` freezes the live selector-resolution legality boundary before lane-B
-widens actual dispatch semantics:
-
-- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
-- boundary model
-  `selector-normalized-arity-checked-receiver-required-no-overload`
-- ambiguity policy
-  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
-- supported selector forms `unary-and-keyword-selectors`
-- every live message send must keep an explicit receiver and a normalized
-  selector shape before lowering consumes it
-- overload-style recovery remains a non-goal and direct dispatch remains
-
-## Selector resolution and ambiguity rejection (M255-B002)
-
-`M255-B002` turns the frozen legality packet into live lane-B behavior for the
-currently supported runtime-dispatch path:
-
-- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
-- concrete receiver policy
-  `self-super-known-class-receivers-resolve-concretely`
-- dynamic fallback policy
-  `non-concrete-receivers-remain-runtime-dynamic`
-- overload policy
-  `no-overload-recovery-exact-signature-or-fail-closed`
-- missing concrete selector diagnostic `O3S216`
-- ambiguous concrete selector diagnostic `O3S217`
-- canonical fixtures:
-  - `tests/tooling/fixtures/native/m255_selector_resolution_positive.objc3`
-  - `tests/tooling/fixtures/native/m255_selector_resolution_missing_selector.objc3`
-  - `tests/tooling/fixtures/native/m255_selector_resolution_ambiguous_signature.objc3`
-- happy-path proof includes `[self ping]`, `[super ping]`, and `[Widget shared]`
-  resolving as concrete selectors with method-return typing
-- dynamic receivers such as `[local ping]` remain on the runtime-dynamic path
-
-## Super, dynamic, and method-family legality expansion (M255-B003)
-
-`M255-B003` closes the remaining lane-B dispatch legality edges without
-enabling any new direct-dispatch surface:
-
-- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
-- super legality policy
-  `super-requires-enclosing-method-and-real-superclass`
-- direct dispatch policy
-  `direct-dispatch-remains-reserved-non-goal`
-- dynamic dispatch policy
-  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
-- runtime-visible method-family policy
-  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
-- canonical fixtures:
-  - `tests/tooling/fixtures/native/m255_super_dynamic_method_family_edges.objc3`
-  - `tests/tooling/fixtures/native/m255_super_outside_method.objc3`
-  - `tests/tooling/fixtures/native/m255_super_root_dispatch.objc3`
-- positive proof now emits `super` dispatch sites `4`, dynamic dispatch sites
-  `3`, direct dispatch sites `0`, and the preserved method-family totals
-  `init=1 copy=2 mutableCopy=1 new=2 none=1`
-- negative proof fails closed with `O3S216` for both `super` outside an
-  implementation method and `super` dispatch from a root implementation
-  reserved for later work
-
-## Dispatch lowering ABI freeze (M255-C001)
-
-`M255-C001` freezes the lane-C runtime-dispatch ABI boundary before the live
-call cutover lands:
-
-- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
-- semantic surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_dispatch_lowering_abi_contract`
-- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`
-- compatibility bridge symbol `objc3_msgsend_i32`
-- selector lookup symbol `objc3_runtime_lookup_selector`
-- selector handle type `objc3_runtime_selector_handle`
-- receiver ABI type `i32`
-- selector ABI type `ptr`
-- fixed argument ABI type `i32`
-- fixed argument slot count `4`
-- result ABI type `i32`
-- selector operand model
-  `selector-cstring-pointer-remains-lowered-operand-until-m255-c002`
-- selector handle model
-  `runtime-lookup-produces-selector-handle-before-live-dispatch`
-- default lowering target model
-  `default-lowering-target-remains-compatibility-bridge-until-m255-c002`
-- compatibility bridge role model
-  `compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi`
-- deferred cases model
-  `super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003`
-- default native IR still lowers through `@objc3_msgsend_i32`; this issue
-  freezes the migration boundary rather than changing the executable path yet
-
-## Runtime call ABI generation for instance and class sends (M255-C002)
-
-`M255-C002` turns the frozen lane-C ABI into real code generation for the
-non-deferred happy path:
-
-- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
-- normalized instance/class sends lower directly to
-  `@objc3_runtime_dispatch_i32`
-- deferred super/dynamic/direct handling stays on `@objc3_msgsend_i32` until
-  `M255-C003`
-- selector operands remain lowered cstring pointers and the fixed `i32[4]`
-  argument ABI remains unchanged from `M255-C001`
-- the issue-local positive probe proves both IR emission and executable
-  behavior for one instance send and one class send in the same native fixture
-
-## Super, nil, and direct runtime call ABI cutover (M255-C003)
-
-`M255-C003` extends the live lane-C call path without widening the whole
-dispatch surface:
-
-- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
-- normalized super sends now lower directly to `@objc3_runtime_dispatch_i32`
-- canonical nil-receiver sends stop compile-time eliding in IR and instead call
-  `@objc3_runtime_dispatch_i32`, which now returns `0` for nil receivers
-- normalized dynamic sends remain on `@objc3_msgsend_i32` until `M255-C004`
-- reserved direct-dispatch surfaces fail closed if they survive into IR
-  lowering
-- the issue-local evidence chain proves nil execution on a linked native binary
-  and proves mixed super/dynamic IR call-family counts on the existing method
-  family corpus
-
-## Live dispatch cutover and shim-removal boundary (M255-C004)
-
-`M255-C004` removes the last live-path compatibility-bridge assumption:
-
-- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
-- normalized dynamic sends now also lower directly to
-  `@objc3_runtime_dispatch_i32`
-- all supported live sends now lower through the canonical runtime entrypoint
-  (`instance`, `class`, `super`, and `dynamic`)
-- `@objc3_msgsend_i32` remains exported only as compatibility/test evidence and
-  is no longer emitted by the live lowering path
-- reserved direct-dispatch surfaces remain fail-closed
-- the issue-local evidence chain proves executable dynamic dispatch and proves
-  zero compatibility-call emission on the mixed super/dynamic corpus
-
-## Lookup and dispatch runtime freeze (M255-D001)
-
-`M255-D001` freezes the runtime-owned lookup/dispatch boundary that the live
-lane-C call ABI now targets:
-
-- contract id `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
-- canonical selector lookup symbol `objc3_runtime_lookup_selector`
-- canonical dispatch symbol `objc3_runtime_dispatch_i32`
-- selector handle type `objc3_runtime_selector_handle`
-- selector interning model
-  `process-global-selector-intern-table-stable-id-per-canonical-selector-spelling`
-- metadata-backed selector lookup tables remain deferred to `M255-D002`
-- method-cache and runtime slow-path lookup remain deferred to `M255-D003`
-- protocol/category-aware method resolution remains deferred to `M255-D004`
-- `@objc3_msgsend_i32` remains compatibility/test evidence only and is not the
-  authoritative live runtime lookup/dispatch implementation
-
-## Selector interning and lookup tables (M255-D002)
-
-`M255-D002` turns the deferred selector-table boundary into a real runtime
-capability backed by emitted startup metadata:
-
-- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
-- metadata-backed selector table symbol
-  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
-- per-selector snapshot symbol
-  `objc3_runtime_copy_selector_lookup_entry_for_testing`
-- selector interning model
-  `registered-selector-pools-materialize-process-global-stable-id-table`
-- merge model
-  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
-- dynamic fallback model
-  `unknown-selector-lookups-remain-dynamic-until-m255-d003`
-- replay model
-  `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`
-
-## Method cache and slow-path lookup (M255-D003)
-
-`M255-D003` turns the deferred runtime slow path into a live method-cache lookup
-surface backed by emitted class/metaclass records and callable implementation
-pointers:
-
-- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
-- method cache state snapshot symbol
-  `objc3_runtime_copy_method_cache_state_for_testing`
-- method cache entry snapshot symbol
-  `objc3_runtime_copy_method_cache_entry_for_testing`
-- receiver normalization model
-  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
-- slow-path resolution model
-  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
-- cache model
-  `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
-- fallback model
-  `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`
-
-## Protocol and category-aware method resolution (M255-D004)
-
-`M255-D004` extends the live runtime path so category implementation records
-become the next callable method tier after class/metaclass bodies, while
-adopted and inherited protocol method lists provide declaration-aware negative
-resolution evidence:
-
-- contract id `objc3c-runtime-protocol-category-method-resolution/m255-d004-v1`
-- preserved dependencies
-  - `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
-  - `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
-  - `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
-- category resolution model
-  `class-bodies-win-first-category-implementation-records-supply-next-live-method-tier`
-- protocol declaration model
-  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution`
-- fallback model
-  `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
-- runtime snapshots continue to flow through:
-  - `objc3_runtime_copy_method_cache_state_for_testing`
-  - `objc3_runtime_copy_method_cache_entry_for_testing`
-
-## Live dispatch gate (M255-E001)
-
-`M255-E001` freezes one fail-closed lane-E evidence boundary proving supported
-message sends execute through the live runtime path rather than the
-compatibility shim:
-
-- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
-- evidence model `a002-b003-c004-d004-summary-chain`
-- shim boundary model
-  `live-runtime-dispatch-required-compatibility-shim-evidence-only`
-- failure model `fail-closed-on-live-dispatch-evidence-drift`
-- upstream evidence remains rooted in:
-  - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
-  - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
-  - `tmp/reports/m255/M255-C004/live_dispatch_cutover_summary.json`
-  - `tmp/reports/m255/M255-D004/protocol_category_method_resolution_summary.json`
-- the canonical lane-E summary path is
-  `tmp/reports/m255/M255-E001/live_dispatch_gate_summary.json`
-- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
-  compatibility evidence and is not authoritative proof of live execution
-- `M255-E002` is the next issue allowed to replace shim-based smoke and
-  closeout assumptions with integrated live-dispatch evidence
-
-## Live dispatch smoke and replay closeout (M255-E002)
-
-`M255-E002` replaces the last shim-era execution-smoke and replay-proof
-assumptions with canonical live runtime dispatch evidence:
-
-- contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
-- smoke/replay now publish `requires_live_runtime_dispatch`
-- the canonical smoke summary path is
-  `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
-- replay proof must preserve identical canonical hashes across two live smoke
-  runs
-- `compatibility_runtime_shim` remains published only as non-authoritative
-  evidence metadata
-- supported message-send fixtures and runtime-dispatch unresolved-symbol
-  negatives now assert `objc3_runtime_dispatch_i32`
-- the canonical lane-E closeout summary path is
-  `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`
-
-## Executable class/protocol/category source closure (M256-A001)
-
-`M256-A001` freezes the source-surface subset that later `M256` work will make
-truly runnable:
-
-- contract id
-  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
-- parser-owned interface records remain the canonical source surface for:
-  - inheritance via explicit superclass names
-  - metaclass derivation from resolved interface identities
-  - adopted protocol lists in lexicographic semantic-link order
-  - category attachments through canonical `class(category)` identities
-- sema remains authoritative for the deterministic closure summaries:
-  - `interface_implementation_summary`
-  - `protocol_category_composition_summary`
-  - `class_protocol_category_linking_summary`
-- IR remains authoritative only for publishing the same class/protocol/category
-  source-closure metadata surface; runnable realization records and live object
-  behavior remain later `M256` issues
-- explicit non-goals for this freeze:
-  - runtime class realization
-  - category merge behavior
-  - protocol conformance enforcement
-  - executable object allocation or instance layout
-  - method-body binding to runnable class metadata
-- the next implementation issue is `M256-A002`
-- the canonical lane-A summary path is
-  `tmp/reports/m256/M256-A001/executable_class_protocol_category_source_closure_contract_summary.json`
-
-## Class/metaclass declaration completeness plus inheritance modeling (M256-A002)
-
-`M256-A002` upgrades the runnable source model for class realization:
-
-- contract id
-  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
-- the executable metadata source graph now carries explicit declaration-owned:
-  - class object identities
-  - metaclass object identities
-  - superclass and super-metaclass identities
-  - instance-method owner identities
-  - class-method owner identities
-- interface and implementation declaration nodes now fail closed unless those
-  identities are complete for the declaration surface they own
-- class nodes now publish the same realization identity closure so later runtime
-  work can consume one canonical parent/method-owner model
-- IR now republishes the same closure through the
-  `; executable_class_metaclass_source_closure = ...` summary line
-- this issue still does not claim:
-  - live runtime class realization
-  - root-class bootstrapping
-  - category merge behavior
-  - protocol conformance enforcement
-- the next implementation issue is `M256-A003`
-- the canonical lane-A summary path is
-  `tmp/reports/m256/M256-A002/class_metaclass_declaration_completeness_and_inheritance_modeling_summary.json`
-
-## Protocol and category source-surface completion for executable runtime (M256-A003)
-
-`M256-A003` upgrades the runnable source model for protocols and categories:
-
-- contract id
-  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
-- the executable metadata source graph now carries explicit declaration-owned:
-  - protocol inheritance identities
-  - category attachment identities
-  - adopted-protocol conformance identities
-- protocol nodes now fail closed unless declaration and inherited-protocol
-  identity closure is complete
-- category nodes now fail closed unless declaration, attachment, and
-  adopted-protocol conformance identity closure is complete
-- IR now republishes the same closure through the
-  `; executable_protocol_category_source_closure = ...` summary line
-- the canonical identity models are:
-  - `protocol-declaration-owned-inherited-protocol-identities`
-  - `category-declaration-owned-class-interface-implementation-attachment-identities`
-  - `category-declaration-owned-adopted-protocol-conformance-identities`
-- this issue still does not claim:
-  - live runtime protocol conformance enforcement
-  - category merge behavior
-  - object-model semantic rule enforcement
-- the next implementation issue is `M256-B001`
-- the canonical lane-A summary path is
-  `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
-
-## Object-model semantic rules (M256-B001)
-
-`M256-B001` freezes the semantic-rule boundary that later lane-B runtime work
-must implement without reinterpreting the already-frozen source graph:
-
-- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
-- sema remains authoritative for:
-  - realization legality
-  - inheritance legality
-  - override compatibility
-  - declared protocol conformance policy
-  - deterministic category merge policy
-- parser remains limited to raw superclass, protocol-adoption, and category-owner
-  source identities and does not decide legality
-- IR remains proof-only for this boundary and does not yet claim executable
-  enforcement of these rules
-- the frozen semantic models are:
-  - `interface-plus-implementation-pair-required-before-runtime-realization`
-  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
-  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
-  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
-  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
-- this issue is freeze/evidence only and therefore does not yet implement:
-  - live realization enforcement
-  - callable override validation
-  - protocol member checking
-  - category conflict resolution at runtime
-- the next implementation issue is `M256-B002`
-- the canonical lane-B summary path is
-  `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
-
-## Protocol conformance and required/optional member enforcement (M256-B002)
-
-`M256-B002` implements the first live executable protocol-conformance rule set
-over the frozen `M256-A003`/`M256-B001` source and semantic boundaries:
-
-- contract id
-  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
-- parser owns required/optional partitioning for protocol methods and
-  properties
-- sema now enforces required methods and required properties for interfaces and
-  category interfaces
-- optional members remain non-blocking
-- inherited protocol requirements are closed transitively and fail closed on
-  incompatible required members
-- deterministic conformance diagnostics use `O3S218` for:
-  - missing required selector
-  - incompatible required selector
-  - missing required property
-  - incompatible required property
-- IR remains a proof-only consumer of the sema-owned conformance result and
-  does not reinterpret legality
-- the canonical lane-B summary path is
-  `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`
-
-## Category merge and conflict semantics (M256-B003)
-
-`M256-B003` makes realized-class category attachment executable in sema rather
-than leaving it as a metadata-only shape:
-
-- contract id
-  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
-- parser preserves category attachment order and identity as the source of
-  truth for deterministic merge order
-- sema builds one merged category surface per realized class
-- concrete message resolution now consults the merged category surface before
-  falling back to the base class/super chain
-- declared protocol conformance now also consults the merged category surface
-- realized-class category interfaces and implementations must pair cleanly
-- incompatible attached category members fail closed with `O3S219`
-- deterministic conflict reporting preserves prior attached-category ownership
-- IR remains downstream proof only and does not reinterpret category legality
-- the canonical lane-B summary path is
-  `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
-
-## Inheritance, override, and realization legality (M256-B004)
-
-`M256-B004` extends the live lane-B object-model surface from category-merge
-legality into realized-class inheritance and override legality:
-
-- contract id
-  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
-- parser still owns raw superclass spellings and deterministic member
-  identities only
-- sema now enforces for realized classes:
-  - missing superclass interfaces fail closed
-  - superclass cycles fail closed
-  - missing realized superclass implementation fails closed
-  - incompatible inherited method overrides fail closed
-  - selector-kind drift across superclass chains fails closed
-  - incompatible inherited properties fail closed
-- deterministic inheritance/override/realization diagnostics collapse onto
-  `O3S220`
-- IR remains downstream proof only and does not reinterpret the legality
-  result
-- the canonical lane-B summary path is
-  `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
-
-## Executable object artifact lowering (M256-C001)
-
-`M256-C001` freezes the lane-C lowering boundary that binds executable method
-bodies and realized object records into emitted metadata artifacts:
-
-- contract id
-  `objc3c-executable-object-artifact-lowering/m256-c001-v1`
-- parser still owns raw implementation method bodies, selectors, and canonical
-  owner identities only
-- sema still owns realization legality, inheritance/category-merge decisions,
-  and the canonical owner identities consumed by lowering
-- IR/object lowering now preserves one explicit binding surface:
-  - implementation-owned method-list entries bind by owner identity to concrete
-    `@objc3_method_*` LLVM definitions
-  - class/metaclass descriptor bundles point to owner-scoped method-list refs
-  - category descriptor bundles point to owner-scoped method-list refs
-- fail-closed rules:
-  - no synthetic implementation symbols
-  - no rebinding of sema legality in IR
-  - no new metadata section families
-  - no bootstrap/runtime-registration reinterpretation
-- this issue is freeze-only and therefore does not yet:
-  - change descriptor payload shapes
-  - make protocol records executable realization records
-  - add new bootstrap/runtime dispatch behavior
-- the next implementation issue is `M256-C002`
-- the canonical lane-C summary path is
-  `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`

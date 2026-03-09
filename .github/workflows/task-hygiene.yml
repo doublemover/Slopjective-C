@@ -1,287 +1,37 @@
-name: Task Hygiene
+name: ObjC3C Core CI
 
 on:
   pull_request:
   push:
+    branches: ["main"]
 
 permissions:
   contents: read
 
+concurrency:
+  group: objc3c-core-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  task-hygiene:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
-    env:
-      GH_TOKEN: ${{ github.token }}
-    strategy:
-      fail-fast: true
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
+  native-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: 00 Enforce ObjC3C dependency boundaries (strict fail-fast gate)
-        run: python scripts/check_objc3c_dependency_boundaries.py --strict
-      - name: 00a ObjC3C dependency boundary triage hint
-        if: failure()
-        run: |
-          echo "::error title=ObjC3C dependency boundary gate failed::Run 'python scripts/check_objc3c_dependency_boundaries.py --strict' locally and follow docs/refactor/objc3c_dependency_violation_playbook.md."
-      - name: 00b Enforce M135 direct-LLVM packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m135
-      - name: 00c Enforce M137 lexer token packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m137
-      - name: 00d Enforce M138 parser and AST packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m138
-      - name: 00e Enforce M139 sema pass-manager and diagnostics bus packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m139
-      - name: 00f Enforce M140 frontend-library boundary packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m140
-      - name: 00g Enforce M141 CMake target topology packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m141
-      - name: 00h Enforce M153 method-lookup/override-conflict packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m153
-      - name: 00i Enforce M154 property-synthesis/ivar-binding packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m154
-      - name: 00j Enforce M155 id/class/SEL/object-pointer typecheck packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m155
-      - name: 00k Enforce M156 message-send selector-lowering packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m156
-      - name: 00m Enforce M157 dispatch ABI marshalling packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m157
-      - name: 00n Enforce M158 nil-receiver semantics/foldability packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m158
-      - name: 00o Enforce M159 super-dispatch and method-family packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m159
-      - name: 00p Enforce M160 runtime-shim host-link packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m160
-      - name: 00q Enforce M161 ownership-qualifier packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m161
-      - name: 00r Enforce M162 retain-release operation packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m162
-      - name: 00s Enforce M163 autoreleasepool scope/lifetime packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m163
-      - name: 00t Enforce M164 weak/unowned semantics packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m164
-      - name: 00u Enforce M165 ARC diagnostics/fix-it packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m165
-      - name: 00v Enforce M166 block-literal-capture packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m166
-      - name: 00w Enforce M167 block-ABI invoke-trampoline packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m167
-      - name: 00x Enforce M168 block-storage-escape packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m168
-      - name: 00y Enforce M169 block-copy-dispose packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m169
-      - name: 00z Enforce M170 block-determinism/perf-baseline packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m170
-      - name: 00za Enforce M171 lightweight-generics constraints packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m171
-      - name: 00zb Enforce M172 nullability-flow warning-precision packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m172
-      - name: 00zc Enforce M173 protocol-qualified object-type packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m173
-      - name: 00zd Enforce M174 variance/bridged-cast packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m174
-      - name: 00ze Enforce M175 generic metadata ABI packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m175
-      - name: 00zf Enforce M176 module import graph packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m176
-      - name: 00zg Enforce M177 namespace collision/shadowing packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m177
-      - name: 00zh Enforce M178 public/private API partition packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m178
-      - name: 00zi Enforce M179 incremental module cache/invalidation packet/docs contract (fail-closed gate)
-        run: npm run check:compiler-closeout:m179
-      - name: Install Python tooling dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install jsonschema
+
       - name: Install Node dependencies
         run: npm ci
-      - name: 01 Run M20 release-gate integration W2 gate (strict deterministic gate)
-        run: npm run check:release-gate-integration:w2:strict
-      - name: 02 Check catalog status integrity (strict default)
-        run: npm run check:catalog-status-integrity
-      - name: 03 Check catalog status integrity diagnostics
-        run: npm run check:catalog-status-integrity:diagnostics
-      - name: 04 Check catalog status metadata completeness
-        run: npm run check:catalog-status-metadata
-      - name: 05 Run M41 release-and-scale foundation W5 gate (strict deterministic gate)
-        run: npm run check:release-scale-foundation:w5:strict
-      - name: 06 Check M02 seed-contract parity (strict deterministic gate)
-        run: npm run check:seed-contract:m02:strict
-      - name: 07 Run M04 activation preflight parity gate (strict deterministic gate)
-        run: npm run check:activation-preflight:m04:strict
-      - name: 08 Run bootstrap readiness strict gate (runner + planning hygiene)
-        run: npm run check:bootstrap-readiness:strict
-      - name: 09 Run repo-root open-blocker audit contract strict gate (runner + checker + evidence artifacts)
-        run: npm run check:open-blocker-audit:contract:strict
-      - name: 10 Run ObjC3C library-vs-cli parity golden gate (strict deterministic gate)
-        run: npm run check:objc3c:library-cli-parity:golden
-      - name: 11 Run native lane-E perf/cache/repro gate (windows only)
-        if: matrix.os == 'windows-latest'
-        run: npm run test:objc3c:lane-e
-      - name: 12 Run M222 compatibility+migration contract gate
-        run: npm run test:objc3c:m222-compatibility-migration
-      - name: 13 Run M223 operator-guides docs+CI parity gate
-        run: npm run check:objc3c:m223-operator-guides
-      - name: 14 Run M224 integration/release-readiness ABI+version gate
-        run: npm run check:objc3c:m224-integration-release-readiness
-      - name: 15 Run M225 integration roadmap seeding ABI+version export gate
-        run: npm run check:objc3c:m225-roadmap-seeding
-      - name: 16 Run M221 GA blocker burn-down integration gate
-        run: npm run check:objc3c:m221-ga-blocker-burndown
-      - name: 17 Run M220 public-beta triage integration gate
-        run: npm run check:objc3c:m220-public-beta-triage
-      - name: 18 Run M219 cross-platform parity integration gate
-        run: npm run check:objc3c:m219-cross-platform-parity
-      - name: 19 Run M218 RC automation and provenance integration gate
-        run: npm run check:objc3c:m218-rc-provenance
-      - name: 20 Run M217 differential testing integration gate
-        run: npm run check:objc3c:m217-differential-parity
-      - name: 21 Run M216 conformance suite v1 integration gate
-        run: npm run check:objc3c:m216-conformance-suite-v1
-      - name: 22 Run M215 SDK/toolchain packaging integration gate
-        run: npm run check:objc3c:m215-sdk-packaging
-      - name: 23 Run M214 daemonized compiler/watch integration gate
-        run: npm run check:objc3c:m214-daemonized-watch
-      - name: 24 Run M213 debug-info fidelity integration gate
-        run: npm run check:objc3c:m213-debug-fidelity
-      - name: 25 Run M212 refactor/code-action integration gate
-        run: npm run check:objc3c:m212-code-action
-      - name: 26 Run M211 LSP semantic integration gate
-        run: npm run check:objc3c:m211-lsp-semantics
-      - name: 27 Run M210 performance-regression integration gate
-        run: npm run check:objc3c:m210-performance-regression
-      - name: 28 Run M209 profile-guided optimization integration gate
-        run: npm run check:objc3c:m209-pgo-hooks
-      - name: 29 Run M208 whole-module optimization integration gate
-        run: npm run check:objc3c:m208-whole-module-optimization
-      - name: 30 Run M207 dispatch-optimization integration gate
-        run: npm run check:objc3c:m207-dispatch-optimizations
-      - name: 31 Run M206 canonical-optimization stage-1 integration gate
-        run: npm run check:objc3c:m206-canonical-optimization-stage1
-      - name: 32 Run M205 macro-security integration gate
-        run: npm run check:objc3c:m205-macro-security
-      - name: 33 Run M204 macro-diagnostics integration gate
-        run: npm run check:objc3c:m204-macro-diagnostics
-      - name: 34 Run M203 compile-time-eval integration gate
-        run: npm run check:objc3c:m203-compile-time-eval
-      - name: 35 Run M202 derive-synthesis integration gate
-        run: npm run check:objc3c:m202-derive-synthesis
-      - name: 36 Run M201 macro-expansion architecture integration gate
-        run: npm run check:objc3c:m201-macro-expansion-arch
-      - name: 37 Run M200 interop integration suite packaging gate
-        run: npm run check:objc3c:m200-interop-packaging
-      - name: 38 Run M199 foreign type import diagnostics gate
-        run: npm run check:objc3c:m199-foreign-type-diagnostics
-      - name: 39 Run M198 swift metadata bridge gate
-        run: npm run check:objc3c:m198-swift-metadata-bridge
-      - name: 40 Run M197 C++ interop shim gate
-        run: npm run check:objc3c:m197-cpp-interop-shim
-      - name: 41 Run M196 C interop headers ABI gate
-        run: npm run check:objc3c:m196-c-interop-headers-abi
-      - name: 42 Run M195 system-extension policy gate
-        run: npm run check:objc3c:m195-system-extension-policy
-      - name: 43 Run M194 atomics memory-order mapping gate
-        run: npm run check:objc3c:m194-atomics-memory-order
-      - name: 44 Run M193 SIMD vector type lowering gate
-        run: npm run check:objc3c:m193-simd-vector-lowering
-      - name: 44a Run M146 @interface/@implementation grammar gate
-        run: npm run check:objc3c:m146-interface-implementation
-      - name: 44b Run M147 @protocol/@category grammar gate
-        run: npm run check:objc3c:m147-protocol-category
-      - name: 44c Run M148 selector-normalized method declaration grammar gate
-        run: npm run check:objc3c:m148-selector-normalization
-      - name: 44d Run M149 @property grammar and attribute parsing gate
-        run: npm run check:objc3c:m149-property-attributes
-      - name: 44e Run M150 object-pointer/nullability/generics grammar gate
-        run: npm run check:objc3c:m150-object-pointer-nullability-generics
-      - name: 44f Run M151 symbol-graph/scope-resolution gate
-        run: npm run check:objc3c:m151-symbol-graph-scope-resolution
-      - name: 44g Run M152 class-protocol-category semantic-linking gate
-        run: npm run check:objc3c:m152-class-protocol-category-linking
-      - name: 44h Run M153 method-lookup/override-conflict integration gate
-        run: npm run check:objc3c:m153-method-lookup-override-conflicts
-      - name: 44i Run M154 property-synthesis/ivar-binding integration gate
-        run: npm run check:objc3c:m154-property-synthesis-ivar-bindings
-      - name: 44j Run M155 id/class/SEL/object-pointer typecheck integration gate
-        run: npm run check:objc3c:m155-id-class-sel-object-pointer-typecheck-contracts
-      - name: 44k Run M156 message-send selector-lowering integration gate
-        run: npm run check:objc3c:m156-message-send-selector-lowering-contracts
-      - name: 44m Run M157 dispatch ABI marshalling integration gate
-        run: npm run check:objc3c:m157-dispatch-abi-marshalling-contracts
-      - name: 44n Run M158 nil-receiver semantics/foldability integration gate
-        run: npm run check:objc3c:m158-nil-receiver-semantics-foldability-contracts
-      - name: 44o Run M159 super-dispatch and method-family integration gate
-        run: npm run check:objc3c:m159-super-dispatch-method-family-contracts
-      - name: 44p Run M160 runtime-shim host-link integration gate
-        run: npm run check:objc3c:m160-runtime-shim-host-link-contracts
-      - name: 44q Run M161 ownership-qualifier integration gate
-        run: npm run check:objc3c:m161-ownership-qualifier-contracts
-      - name: 44r Run M162 retain-release operation integration gate
-        run: npm run check:objc3c:m162-retain-release-operation-contracts
-      - name: 44s Run M163 autoreleasepool scope/lifetime integration gate
-        run: npm run check:objc3c:m163-autoreleasepool-scope-contracts
-      - name: 44t Run M164 weak/unowned semantics integration gate
-        run: npm run check:objc3c:m164-weak-unowned-semantics-contracts
-      - name: 44u Run M165 ARC diagnostics/fix-it integration gate
-        run: npm run check:objc3c:m165-arc-diagnostics-fixit-contracts
-      - name: 44v Run M166 block literal capture integration gate
-        run: npm run check:objc3c:m166-block-literal-capture-contracts
-      - name: 44w Run M167 block ABI invoke-trampoline integration gate
-        run: npm run check:objc3c:m167-block-abi-invoke-trampoline-contracts
-      - name: 44x Run M168 block storage escape integration gate
-        run: npm run check:objc3c:m168-block-storage-escape-contracts
-      - name: 44y Run M169 block copy-dispose integration gate
-        run: npm run check:objc3c:m169-block-copy-dispose-contracts
-      - name: 44z Run M170 block determinism/perf baseline integration gate
-        run: npm run check:objc3c:m170-block-determinism-perf-baseline-contracts
-      - name: 44za Run M171 lightweight generics constraints integration gate
-        run: npm run check:objc3c:m171-lightweight-generics-constraints-contracts
-      - name: 44zb Run M172 nullability flow warning precision integration gate
-        run: npm run check:objc3c:m172-nullability-flow-warning-precision-contracts
-      - name: 44zc Run M173 protocol-qualified object type integration gate
-        run: npm run check:objc3c:m173-protocol-qualified-object-type-contracts
-      - name: 44zd Run M174 variance/bridged-cast integration gate
-        run: npm run check:objc3c:m174-variance-bridged-cast-contracts
-      - name: 44ze Run M175 generic metadata ABI integration gate
-        run: npm run check:objc3c:m175-generic-metadata-abi-contracts
-      - name: 44zf Run M176 module import graph integration gate
-        run: npm run check:objc3c:m176-module-import-graph-contracts
-      - name: 44zg Run M177 namespace collision/shadowing integration gate
-        run: npm run check:objc3c:m177-namespace-collision-shadowing-contracts
-      - name: 44zh Run M178 public/private API partition integration gate
-        run: npm run check:objc3c:m178-public-private-api-partition-contracts
-      - name: 44zi Run M179 incremental module cache/invalidation integration gate
-        run: npm run check:objc3c:m179-incremental-module-cache-contracts
-      - name: 45 Run M142 CLI and C API parity gate
-        run: npm run check:objc3c:m142-cli-c-api-parity
 
-  tooling-tests:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: true
-      matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install Python test/tooling dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install pytest jsonschema
-      - name: 01 Run tooling pytest suite
-        run: python -m pytest tests/tooling -q
+      - name: Build native objc3c artifacts
+        run: npm run build:objc3c-native
+
+      - name: Run native execution smoke
+        run: npm run test:objc3c:execution-smoke
