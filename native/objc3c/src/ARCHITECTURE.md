@@ -8711,3 +8711,20 @@ lookup:
   lookup evidence when no callable body exists
 - conflicting category/protocol outcomes fail closed to the preserved
   compatibility arithmetic path
+
+## M255 live dispatch gate (E001)
+
+`M255-E001` freezes one lane-E evidence gate over the already-landed live
+dispatch stack:
+
+- `M255-A002` remains the canonical dispatch-site taxonomy handoff
+- `M255-B003` remains the canonical legality/method-family handoff, including
+  the last preserved shim-era smoke assumptions that E002 must replace
+- `M255-C004` proves live IR emits `objc3_runtime_dispatch_i32` for all
+  supported sends and does not emit `objc3_msgsend_i32`
+- `M255-D004` proves live runtime resolution reaches category bodies and emits
+  protocol-backed negative lookup evidence
+- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains exported only as
+  compatibility/test evidence and is not authoritative proof of live execution
+- `M255-E002` is the first issue allowed to replace shim-based smoke and
+  closeout gates with one integrated live-dispatch evidence path

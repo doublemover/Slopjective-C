@@ -7151,6 +7151,11 @@ class Objc3IREmitter {
       // for canonical surfaces stay runtime-owned, the compatibility symbol is
       // retained only as a non-emitted alias/test surface, and reserved direct
       // dispatch surfaces still fail closed before IR emission.
+      // M255-E001 live-dispatch gate anchor: supported live sends must
+      // continue to emit only objc3_runtime_dispatch_i32 calls here. The
+      // compatibility shim remains exported only as evidence/test surface, and
+      // E002 is the first issue allowed to replace shim-based smoke/closeout
+      // assumptions with the integrated live-dispatch gate.
       // M255-D001 lookup/dispatch runtime freeze anchor: emitted IR still
       // targets only the canonical lookup/dispatch boundary and does not
       // materialize runtime selector-table, method-cache, or slow-path helper

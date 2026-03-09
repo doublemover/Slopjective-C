@@ -10220,6 +10220,11 @@ class Objc3Parser {
     // the normalized selector text, receiver family, and protocol/category
     // declaration surface that the runtime now consumes for deterministic
     // category-backed live lookup and protocol-backed negative lookup evidence.
+    // M255-E001 live-dispatch gate anchor: parser still only publishes the
+    // normalized selector/receiver classification surface. Proof that sends
+    // execute through the live runtime path rather than the compatibility shim
+    // remains a lane-E evidence responsibility rooted in C004/D004 and handed
+    // off to E002 for smoke/closeout replacement.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

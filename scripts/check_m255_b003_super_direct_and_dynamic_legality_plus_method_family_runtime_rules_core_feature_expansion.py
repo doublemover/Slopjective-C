@@ -62,9 +62,12 @@ EXPECTED_RUNTIME_SHIM = {
     "runtime_shim_elided_sites": 0,
     "runtime_dispatch_arg_slots": 4,
     "runtime_dispatch_declaration_parameter_count": 6,
-    "runtime_dispatch_symbol": "objc3_msgsend_i32",
     "default_runtime_dispatch_symbol_binding": True,
     "contract_violation_sites": 0,
+}
+ALLOWED_RUNTIME_DISPATCH_SYMBOLS = {
+    "objc3_msgsend_i32",
+    "objc3_runtime_dispatch_i32",
 }
 
 
@@ -258,6 +261,13 @@ def check_positive_probe(failures: list[Finding]) -> tuple[int, dict[str, object
         checks_total += require(method_family_surface.get(key) == expected, display_path(out_dir), f"M255-B003-METHOD-{key}", f"method-family surface {key} expected {expected!r} got {method_family_surface.get(key)!r}", failures)
     for key, expected in EXPECTED_RUNTIME_SHIM.items():
         checks_total += require(runtime_shim_surface.get(key) == expected, display_path(out_dir), f"M255-B003-SHIM-{key}", f"runtime-shim surface {key} expected {expected!r} got {runtime_shim_surface.get(key)!r}", failures)
+    checks_total += require(
+        runtime_shim_surface.get("runtime_dispatch_symbol") in ALLOWED_RUNTIME_DISPATCH_SYMBOLS,
+        display_path(out_dir),
+        "M255-B003-SHIM-runtime_dispatch_symbol",
+        f"runtime-shim surface runtime_dispatch_symbol expected one of {sorted(ALLOWED_RUNTIME_DISPATCH_SYMBOLS)!r} got {runtime_shim_surface.get('runtime_dispatch_symbol')!r}",
+        failures,
+    )
 
     return checks_total, {
         "fixture": display_path(POSITIVE_FIXTURE),

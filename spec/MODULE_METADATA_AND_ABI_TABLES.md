@@ -6774,3 +6774,21 @@ into runtime-consumed lookup tiers:
   - `last_protocol_probe_count`
   - cached `category_probe_count`
   - cached `protocol_probe_count`
+
+## M255 live dispatch gate metadata anchors (E001)
+
+`M255-E001` freezes the metadata/evidence anchors proving the live runtime path
+is authoritative:
+
+- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
+- evidence model `a002-b003-c004-d004-summary-chain`
+- canonical live-dispatch summary
+  `tmp/reports/m255/M255-E001/live_dispatch_gate_summary.json`
+- live-path proof requires:
+  - `tmp/reports/m255/M255-C004/live_dispatch_cutover_summary.json`
+  - `tmp/reports/m255/M255-D004/protocol_category_method_resolution_summary.json`
+- upstream taxonomy/legality continuity remains rooted in:
+  - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
+  - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
+- `objc3_msgsend_i32` remains an exported compatibility/test symbol and not the
+  authoritative live-dispatch proof surface

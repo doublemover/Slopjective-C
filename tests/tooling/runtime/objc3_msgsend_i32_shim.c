@@ -62,6 +62,11 @@ M255-D003 method-cache / slow-path lookup: positive and negative method-cache
 entries plus emitted class/metaclass slow-path resolution now live behind the
 native `objc3_runtime_dispatch_i32` surface. This shim remains explicit
 compatibility evidence only and does not own live cache behavior.
+M255-E001 live-dispatch gate: lane-E now freezes one fail-closed evidence
+boundary over A002/B003/C004/D004 proving supported sends execute through the
+live runtime path rather than this shim. This shim remains exported only for
+formula-parity / compatibility evidence and must not be treated as
+authoritative live-dispatch proof.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

@@ -220,6 +220,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel =
         "conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch";
+// M255-E001 live-dispatch gate anchor: lane-E now freezes one fail-closed
+// evidence boundary proving supported message sends execute through the live
+// runtime path rather than the compatibility shim. The upstream gate chain
+// stays rooted on A002/B003/C004/D004, the compatibility shim remains
+// exported only as evidence/test surface, and E002 is the next issue allowed
+// to replace shim-based smoke/closeout assumptions with the integrated gate.
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateContractId =
+    "objc3c-runtime-live-dispatch-gate/m255-e001-v1";
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateEvidenceModel =
+    "a002-b003-c004-d004-summary-chain";
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateShimBoundaryModel =
+    "live-runtime-dispatch-required-compatibility-shim-evidence-only";
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
+    "fail-closed-on-live-dispatch-evidence-drift";
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
+    "M255-E002";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info

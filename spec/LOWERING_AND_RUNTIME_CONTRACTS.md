@@ -5741,3 +5741,22 @@ registered class/metaclass records and emitted callable method tables:
 - runtime snapshots stay on the preserved D003 boundary:
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
+
+## M255 live dispatch gate (E001)
+
+`M255-E001` freezes one fail-closed lane-E gate over the already-landed live
+dispatch path:
+
+- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
+- evidence model `a002-b003-c004-d004-summary-chain`
+- shim boundary model
+  `live-runtime-dispatch-required-compatibility-shim-evidence-only`
+- failure model `fail-closed-on-live-dispatch-evidence-drift`
+- the gate requires `M255-C004` to keep all supported live sends on
+  `objc3_runtime_dispatch_i32`
+- the gate requires `M255-D004` to keep live category-backed resolution and
+  protocol-backed negative lookup evidence on the runtime-owned slow path
+- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
+  is not an acceptable substitute for live-dispatch proof
+- `M255-E002` is the explicit handoff for replacing shim-based smoke and
+  closeout gates with integrated live-dispatch evidence

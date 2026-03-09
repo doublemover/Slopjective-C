@@ -16939,3 +16939,26 @@ resolution evidence:
 - runtime snapshots continue to flow through:
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
+
+## Live dispatch gate (M255-E001)
+
+`M255-E001` freezes one fail-closed lane-E evidence boundary proving supported
+message sends execute through the live runtime path rather than the
+compatibility shim:
+
+- contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
+- evidence model `a002-b003-c004-d004-summary-chain`
+- shim boundary model
+  `live-runtime-dispatch-required-compatibility-shim-evidence-only`
+- failure model `fail-closed-on-live-dispatch-evidence-drift`
+- upstream evidence remains rooted in:
+  - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
+  - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
+  - `tmp/reports/m255/M255-C004/live_dispatch_cutover_summary.json`
+  - `tmp/reports/m255/M255-D004/protocol_category_method_resolution_summary.json`
+- the canonical lane-E summary path is
+  `tmp/reports/m255/M255-E001/live_dispatch_gate_summary.json`
+- `tests/tooling/runtime/objc3_msgsend_i32_shim.c` remains explicit test-only
+  compatibility evidence and is not authoritative proof of live execution
+- `M255-E002` is the next issue allowed to replace shim-based smoke and
+  closeout assumptions with integrated live-dispatch evidence
