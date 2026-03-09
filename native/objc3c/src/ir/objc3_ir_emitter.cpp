@@ -2014,6 +2014,10 @@ class Objc3IREmitter {
     // M256-B003 category-merge implementation anchor: IR remains downstream of
     // the sema-owned realized-class category merge/conflict decision and must
     // not reinterpret attachment legality or concrete message resolution.
+    // M256-B004 inheritance/override legality anchor: IR remains downstream of
+    // the sema-owned realized-class inheritance and override legality result
+    // and must not reinterpret superclass cycles, missing realization closure,
+    // or inherited member compatibility.
     if (frontend_metadata_.executable_protocol_category_source_closure_ready) {
       out << "; executable_protocol_category_source_closure = contract="
           << frontend_metadata_

@@ -8874,3 +8874,27 @@ category attachment legality for realized classes:
   - `spec/planning/compiler/m256/m256_b003_category_merge_and_conflict_semantics_core_feature_implementation_packet.md`
   - `check:objc3c:m256-b003-category-merge-and-conflict-semantics`
   - `check:objc3c:m256-b003-lane-b-readiness`
+
+## M256 inheritance, override, and realization legality (B004)
+
+`M256-B004` extends the live lane-B object-model surface from category-merge
+legality into realized-class inheritance legality:
+
+- parser continues to own raw superclass spellings and deterministic member
+  identities only
+- sema now owns live enforcement for:
+  - missing superclass interfaces on realized classes
+  - superclass cycles on realized classes
+  - missing realized superclass implementation closure
+  - incompatible inherited method overrides
+  - selector-kind drift across superclass chains
+  - incompatible inherited properties
+- deterministic inheritance/override/realization failures collapse onto
+  `O3S220`
+- IR remains proof-only and must not reinterpret the sema-owned realized-class
+  legality result
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_inheritance_override_and_realization_legality_core_feature_expansion_b004_expectations.md`
+  - `spec/planning/compiler/m256/m256_b004_inheritance_override_and_realization_legality_core_feature_expansion_packet.md`
+  - `check:objc3c:m256-b004-inheritance-override-and-realization-legality`
+  - `check:objc3c:m256-b004-lane-b-readiness`

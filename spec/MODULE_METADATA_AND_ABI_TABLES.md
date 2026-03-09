@@ -6949,3 +6949,27 @@ that deterministic merge decision:
 - IR anchor remains proof-only commentary over the same merge decision
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
+
+## M256 inheritance/override realization metadata anchors (B004)
+
+`M256-B004` still does not add new emitted runtime metadata records. It makes
+the realized-class inheritance legality boundary executable and publishes proof
+of that deterministic decision:
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- parser-owned anchors remain:
+  - raw superclass spellings
+  - deterministic member identities
+- sema-owned rule anchors are:
+  - missing superclass interfaces fail closed
+  - superclass cycles fail closed
+  - missing realized superclass implementation fails closed
+  - incompatible inherited method overrides fail closed
+  - selector-kind drift fails closed
+  - incompatible inherited properties fail closed
+  - all realized-class inheritance legality failures collapse onto `O3S220`
+- IR anchor remains proof-only commentary over the same realized-class
+  legality result
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`

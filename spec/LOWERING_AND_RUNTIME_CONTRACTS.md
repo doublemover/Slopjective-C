@@ -5911,3 +5911,23 @@ surface:
   side is missing
 - incompatible attached category members fail closed with `O3S219`
 - IR remains a downstream proof consumer of the sema-owned merge legality
+
+## M256 inheritance, override, and realization legality (B004)
+
+`M256-B004` turns the remaining realized-class inheritance and override rules
+into a live semantic surface:
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- parser preserves raw superclass spellings and member identities only
+- sema owns live fail-closed legality for:
+  - missing superclass interfaces on realized classes
+  - superclass cycles on realized classes
+  - missing realized superclass implementation closure
+  - inherited method override compatibility
+  - selector-kind drift across superclass chains
+  - inherited property compatibility
+- deterministic failures collapse onto `O3S220`
+- IR remains a downstream proof consumer of the sema-owned realized-class
+  legality result and must not reinterpret superclass closure or override
+  compatibility

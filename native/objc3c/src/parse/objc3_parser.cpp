@@ -7508,6 +7508,10 @@ class Objc3Parser {
     // superclass/adopted-protocol spellings remain raw inputs only; semantic
     // legality for realization, overrides, conformance, and category merge
     // stays outside parser policy.
+    // M256-B004 inheritance-legality source anchor: parser still preserves raw
+    // superclass spellings plus deterministic member identities only; realized
+    // inheritance/override legality now fails closed in sema rather than being
+    // inferred or normalized here.
     // M252-B003 diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.

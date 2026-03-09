@@ -1,0 +1,21 @@
+module inheritanceOverrideBadProperty;
+
+@interface Root
+@property (readonly) i32 token;
+@end
+
+@implementation Root
+@property (readonly) i32 token;
+@end
+
+@interface Widget : Root
+@property (readonly) bool token;
+@end
+
+@implementation Widget
+@property (readonly) bool token;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

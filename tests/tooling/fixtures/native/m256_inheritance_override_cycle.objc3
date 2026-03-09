@@ -1,0 +1,25 @@
+module inheritanceOverrideCycle;
+
+@interface Alpha : Beta
+- (i32) alpha;
+@end
+
+@implementation Alpha
+- (i32) alpha {
+  return 1;
+}
+@end
+
+@interface Beta : Alpha
+- (i32) beta;
+@end
+
+@implementation Beta
+- (i32) beta {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

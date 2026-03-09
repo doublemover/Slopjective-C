@@ -17139,3 +17139,26 @@ than leaving it as a metadata-only shape:
 - IR remains downstream proof only and does not reinterpret category legality
 - the canonical lane-B summary path is
   `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
+
+## Inheritance, override, and realization legality (M256-B004)
+
+`M256-B004` extends the live lane-B object-model surface from category-merge
+legality into realized-class inheritance and override legality:
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- parser still owns raw superclass spellings and deterministic member
+  identities only
+- sema now enforces for realized classes:
+  - missing superclass interfaces fail closed
+  - superclass cycles fail closed
+  - missing realized superclass implementation fails closed
+  - incompatible inherited method overrides fail closed
+  - selector-kind drift across superclass chains fails closed
+  - incompatible inherited properties fail closed
+- deterministic inheritance/override/realization diagnostics collapse onto
+  `O3S220`
+- IR remains downstream proof only and does not reinterpret the legality
+  result
+- the canonical lane-B summary path is
+  `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`

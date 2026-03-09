@@ -1,0 +1,19 @@
+module inheritanceOverrideUnrealizedSuperclass;
+
+@interface Root
+- (i32) ping;
+@end
+
+@interface Widget : Root
+- (i32) ping;
+@end
+
+@implementation Widget
+- (i32) ping {
+  return 1;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

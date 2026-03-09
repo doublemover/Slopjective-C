@@ -1,0 +1,25 @@
+module inheritanceOverrideBadKind;
+
+@interface Root
+- (i32) ping;
+@end
+
+@implementation Root
+- (i32) ping {
+  return 1;
+}
+@end
+
+@interface Widget : Root
++ (i32) ping;
+@end
+
+@implementation Widget
++ (i32) ping {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

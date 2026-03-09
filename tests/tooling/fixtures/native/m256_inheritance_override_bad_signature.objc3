@@ -1,0 +1,25 @@
+module inheritanceOverrideBadSignature;
+
+@interface Root
+- (i32) ping;
+@end
+
+@implementation Root
+- (i32) ping {
+  return 1;
+}
+@end
+
+@interface Widget : Root
+- (bool) ping;
+@end
+
+@implementation Widget
+- (bool) ping {
+  return 1;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}
