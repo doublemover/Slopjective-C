@@ -1035,3 +1035,146 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   manifest_json = out.str();
   return true;
 }
+
+bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
+    const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
+    std::string &descriptor_json,
+    std::string &error) {
+  descriptor_json.clear();
+  error.clear();
+  if (inputs.contract_id.empty() ||
+      inputs.registration_manifest_contract_id.empty() ||
+      inputs.source_surface_contract_id.empty() ||
+      inputs.payload_model.empty() ||
+      inputs.artifact_relative_path.empty() || inputs.authority_model.empty() ||
+      inputs.translation_unit_identity_model.empty() ||
+      inputs.payload_ownership_model.empty() ||
+      inputs.runtime_support_library_archive_relative_path.empty() ||
+      inputs.registration_entrypoint_symbol.empty() ||
+      inputs.registration_descriptor_pragma_name.empty() ||
+      inputs.image_root_pragma_name.empty() || inputs.module_identity_source.empty() ||
+      inputs.registration_descriptor_identifier.empty() ||
+      inputs.registration_descriptor_identity_source.empty() ||
+      inputs.image_root_identifier.empty() ||
+      inputs.image_root_identity_source.empty() ||
+      inputs.bootstrap_visible_metadata_ownership_model.empty() ||
+      inputs.constructor_root_symbol.empty() ||
+      inputs.constructor_init_stub_symbol_prefix.empty() ||
+      inputs.bootstrap_registration_table_symbol_prefix.empty() ||
+      inputs.bootstrap_image_local_init_state_symbol_prefix.empty() ||
+      inputs.total_descriptor_count !=
+          inputs.class_descriptor_count + inputs.protocol_descriptor_count +
+              inputs.category_descriptor_count +
+              inputs.property_descriptor_count + inputs.ivar_descriptor_count ||
+      inputs.translation_unit_registration_order_ordinal == 0 ||
+      inputs.object_artifact_relative_path.empty() ||
+      inputs.backend_artifact_relative_path.empty() ||
+      linker_retention_artifacts.translation_unit_identity_key.empty() ||
+      linker_retention_artifacts.object_format.empty() ||
+      linker_retention_artifacts.linker_anchor_symbol.empty() ||
+      linker_retention_artifacts.discovery_root_symbol.empty()) {
+    error =
+        "runtime registration descriptor artifact inputs incomplete for " +
+        inputs.artifact_relative_path;
+    return false;
+  }
+
+  const std::string safe_identity_suffix =
+      MakeIdentifierSafeSuffix(linker_retention_artifacts.translation_unit_identity_key);
+  const std::string constructor_init_stub_symbol =
+      inputs.constructor_init_stub_symbol_prefix + safe_identity_suffix;
+  const std::string bootstrap_registration_table_symbol =
+      inputs.bootstrap_registration_table_symbol_prefix + safe_identity_suffix;
+  const std::string bootstrap_image_local_init_state_symbol =
+      inputs.bootstrap_image_local_init_state_symbol_prefix + safe_identity_suffix;
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
+      << "\",\n"
+      << "  \"registration_manifest_contract_id\": \""
+      << EscapeJsonString(inputs.registration_manifest_contract_id)
+      << "\",\n"
+      << "  \"source_surface_contract_id\": \""
+      << EscapeJsonString(inputs.source_surface_contract_id) << "\",\n"
+      << "  \"payload_model\": \""
+      << EscapeJsonString(inputs.payload_model) << "\",\n"
+      << "  \"artifact\": \""
+      << EscapeJsonString(inputs.artifact_relative_path) << "\",\n"
+      << "  \"authority_model\": \""
+      << EscapeJsonString(inputs.authority_model) << "\",\n"
+      << "  \"translation_unit_identity_model\": \""
+      << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
+      << "  \"translation_unit_identity_key\": \""
+      << EscapeJsonString(linker_retention_artifacts.translation_unit_identity_key)
+      << "\",\n"
+      << "  \"payload_ownership_model\": \""
+      << EscapeJsonString(inputs.payload_ownership_model) << "\",\n"
+      << "  \"runtime_support_library_archive_relative_path\": \""
+      << EscapeJsonString(inputs.runtime_support_library_archive_relative_path)
+      << "\",\n"
+      << "  \"registration_entrypoint_symbol\": \""
+      << EscapeJsonString(inputs.registration_entrypoint_symbol) << "\",\n"
+      << "  \"registration_descriptor_pragma_name\": \""
+      << EscapeJsonString(inputs.registration_descriptor_pragma_name)
+      << "\",\n"
+      << "  \"image_root_pragma_name\": \""
+      << EscapeJsonString(inputs.image_root_pragma_name) << "\",\n"
+      << "  \"module_identity_source\": \""
+      << EscapeJsonString(inputs.module_identity_source) << "\",\n"
+      << "  \"registration_descriptor_identifier\": \""
+      << EscapeJsonString(inputs.registration_descriptor_identifier)
+      << "\",\n"
+      << "  \"registration_descriptor_identity_source\": \""
+      << EscapeJsonString(inputs.registration_descriptor_identity_source)
+      << "\",\n"
+      << "  \"image_root_identifier\": \""
+      << EscapeJsonString(inputs.image_root_identifier) << "\",\n"
+      << "  \"image_root_identity_source\": \""
+      << EscapeJsonString(inputs.image_root_identity_source) << "\",\n"
+      << "  \"bootstrap_visible_metadata_ownership_model\": \""
+      << EscapeJsonString(inputs.bootstrap_visible_metadata_ownership_model)
+      << "\",\n"
+      << "  \"constructor_root_symbol\": \""
+      << EscapeJsonString(inputs.constructor_root_symbol) << "\",\n"
+      << "  \"constructor_init_stub_symbol\": \""
+      << EscapeJsonString(constructor_init_stub_symbol) << "\",\n"
+      << "  \"bootstrap_registration_table_symbol\": \""
+      << EscapeJsonString(bootstrap_registration_table_symbol) << "\",\n"
+      << "  \"bootstrap_image_local_init_state_symbol\": \""
+      << EscapeJsonString(bootstrap_image_local_init_state_symbol)
+      << "\",\n"
+      << "  \"class_descriptor_count\": "
+      << inputs.class_descriptor_count << ",\n"
+      << "  \"protocol_descriptor_count\": "
+      << inputs.protocol_descriptor_count << ",\n"
+      << "  \"category_descriptor_count\": "
+      << inputs.category_descriptor_count << ",\n"
+      << "  \"property_descriptor_count\": "
+      << inputs.property_descriptor_count << ",\n"
+      << "  \"ivar_descriptor_count\": " << inputs.ivar_descriptor_count
+      << ",\n"
+      << "  \"total_descriptor_count\": " << inputs.total_descriptor_count
+      << ",\n"
+      << "  \"translation_unit_registration_order_ordinal\": "
+      << inputs.translation_unit_registration_order_ordinal << ",\n"
+      << "  \"object_artifact\": \""
+      << EscapeJsonString(inputs.object_artifact_relative_path) << "\",\n"
+      << "  \"backend_artifact\": \""
+      << EscapeJsonString(inputs.backend_artifact_relative_path) << "\",\n"
+      << "  \"object_format\": \""
+      << EscapeJsonString(linker_retention_artifacts.object_format)
+      << "\",\n"
+      << "  \"linker_anchor_symbol\": \""
+      << EscapeJsonString(linker_retention_artifacts.linker_anchor_symbol)
+      << "\",\n"
+      << "  \"discovery_root_symbol\": \""
+      << EscapeJsonString(linker_retention_artifacts.discovery_root_symbol)
+      << "\",\n"
+      << "  \"ready_for_descriptor_artifact_emission\": true,\n"
+      << "  \"ready_for_registration_descriptor_lowering\": true\n"
+      << "}\n";
+  descriptor_json = out.str();
+  return true;
+}

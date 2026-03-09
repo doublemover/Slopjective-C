@@ -2686,6 +2686,180 @@ std::string BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeRegistrationDescriptorFrontendClosureReplayKey(
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source_surface_contract_id=" << summary.source_surface_contract_id
+      << ";registration_manifest_contract_id="
+      << summary.registration_manifest_contract_id
+      << ";payload_model=" << summary.payload_model
+      << ";artifact_relative_path=" << summary.artifact_relative_path
+      << ";authority_model=" << summary.authority_model
+      << ";translation_unit_identity_model="
+      << summary.translation_unit_identity_model
+      << ";payload_ownership_model=" << summary.payload_ownership_model
+      << ";registration_descriptor_identifier="
+      << summary.registration_descriptor_identifier
+      << ";image_root_identifier=" << summary.image_root_identifier
+      << ";registration_descriptor_identity_source="
+      << summary.registration_descriptor_identity_source
+      << ";image_root_identity_source="
+      << summary.image_root_identity_source
+      << ";bootstrap_visible_metadata_ownership_model="
+      << summary.bootstrap_visible_metadata_ownership_model
+      << ";class_descriptor_count=" << summary.class_descriptor_count
+      << ";protocol_descriptor_count=" << summary.protocol_descriptor_count
+      << ";category_descriptor_count=" << summary.category_descriptor_count
+      << ";property_descriptor_count=" << summary.property_descriptor_count
+      << ";ivar_descriptor_count=" << summary.ivar_descriptor_count
+      << ";total_descriptor_count=" << summary.total_descriptor_count
+      << ";translation_unit_registration_order_ordinal="
+      << summary.translation_unit_registration_order_ordinal
+      << ";source_surface_replay_key=" << summary.source_surface_replay_key
+      << ";registration_manifest_replay_key="
+      << summary.registration_manifest_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+BuildRuntimeRegistrationDescriptorFrontendClosureSummary(
+    const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
+        &source_surface_summary,
+    const Objc3RuntimeTranslationUnitRegistrationManifestSummary
+        &registration_manifest_summary) {
+  Objc3RuntimeRegistrationDescriptorFrontendClosureSummary summary;
+  summary.fail_closed = true;
+  summary.source_surface_contract_ready =
+      IsReadyObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
+          source_surface_summary);
+  summary.registration_manifest_contract_ready =
+      IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
+          registration_manifest_summary);
+  summary.descriptor_frontend_surface_published = true;
+  summary.descriptor_artifact_template_published = true;
+  summary.registration_descriptor_identifier =
+      source_surface_summary.registration_descriptor_identifier;
+  summary.image_root_identifier = source_surface_summary.image_root_identifier;
+  summary.registration_descriptor_identity_source =
+      source_surface_summary.registration_descriptor_identity_source;
+  summary.image_root_identity_source =
+      source_surface_summary.image_root_identity_source;
+  summary.bootstrap_visible_metadata_ownership_model =
+      source_surface_summary.bootstrap_visible_metadata_ownership_model;
+  summary.class_descriptor_count =
+      registration_manifest_summary.class_descriptor_count;
+  summary.protocol_descriptor_count =
+      registration_manifest_summary.protocol_descriptor_count;
+  summary.category_descriptor_count =
+      registration_manifest_summary.category_descriptor_count;
+  summary.property_descriptor_count =
+      registration_manifest_summary.property_descriptor_count;
+  summary.ivar_descriptor_count =
+      registration_manifest_summary.ivar_descriptor_count;
+  summary.total_descriptor_count =
+      registration_manifest_summary.total_descriptor_count;
+  summary.translation_unit_registration_order_ordinal =
+      registration_manifest_summary.translation_unit_registration_order_ordinal;
+  summary.descriptor_fields_resolved =
+      !summary.registration_descriptor_identifier.empty() &&
+      !summary.image_root_identifier.empty();
+  summary.ready_for_descriptor_artifact_emission =
+      summary.source_surface_contract_ready &&
+      summary.registration_manifest_contract_ready &&
+      summary.descriptor_fields_resolved;
+  summary.ready_for_registration_descriptor_lowering =
+      summary.ready_for_descriptor_artifact_emission;
+  if (summary.source_surface_contract_ready) {
+    summary.source_surface_replay_key = source_surface_summary.replay_key;
+  }
+  if (summary.registration_manifest_contract_ready) {
+    summary.registration_manifest_replay_key =
+        registration_manifest_summary.replay_key;
+  }
+  if (summary.ready_for_registration_descriptor_lowering) {
+    summary.replay_key =
+        BuildRuntimeRegistrationDescriptorFrontendClosureReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(
+          summary)) {
+    summary.failure_reason =
+        "registration descriptor frontend closure summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeRegistrationDescriptorFrontendClosureSummaryJson(
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"registration_manifest_contract_id\":\""
+      << EscapeJsonString(summary.registration_manifest_contract_id)
+      << "\",\"source_surface_contract_id\":\""
+      << EscapeJsonString(summary.source_surface_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"payload_model\":\""
+      << EscapeJsonString(summary.payload_model)
+      << "\",\"artifact_relative_path\":\""
+      << EscapeJsonString(summary.artifact_relative_path)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"translation_unit_identity_model\":\""
+      << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"payload_ownership_model\":\""
+      << EscapeJsonString(summary.payload_ownership_model)
+      << "\",\"registration_descriptor_identifier\":\""
+      << EscapeJsonString(summary.registration_descriptor_identifier)
+      << "\",\"image_root_identifier\":\""
+      << EscapeJsonString(summary.image_root_identifier)
+      << "\",\"registration_descriptor_identity_source\":\""
+      << EscapeJsonString(summary.registration_descriptor_identity_source)
+      << "\",\"image_root_identity_source\":\""
+      << EscapeJsonString(summary.image_root_identity_source)
+      << "\",\"bootstrap_visible_metadata_ownership_model\":\""
+      << EscapeJsonString(summary.bootstrap_visible_metadata_ownership_model)
+      << "\",\"ready\":"
+      << (IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"source_surface_contract_ready\":"
+      << (summary.source_surface_contract_ready ? "true" : "false")
+      << ",\"registration_manifest_contract_ready\":"
+      << (summary.registration_manifest_contract_ready ? "true" : "false")
+      << ",\"descriptor_frontend_surface_published\":"
+      << (summary.descriptor_frontend_surface_published ? "true" : "false")
+      << ",\"descriptor_artifact_template_published\":"
+      << (summary.descriptor_artifact_template_published ? "true" : "false")
+      << ",\"descriptor_fields_resolved\":"
+      << (summary.descriptor_fields_resolved ? "true" : "false")
+      << ",\"ready_for_descriptor_artifact_emission\":"
+      << (summary.ready_for_descriptor_artifact_emission ? "true" : "false")
+      << ",\"ready_for_registration_descriptor_lowering\":"
+      << (summary.ready_for_registration_descriptor_lowering ? "true" : "false")
+      << ",\"class_descriptor_count\":" << summary.class_descriptor_count
+      << ",\"protocol_descriptor_count\":"
+      << summary.protocol_descriptor_count
+      << ",\"category_descriptor_count\":"
+      << summary.category_descriptor_count
+      << ",\"property_descriptor_count\":"
+      << summary.property_descriptor_count
+      << ",\"ivar_descriptor_count\":" << summary.ivar_descriptor_count
+      << ",\"total_descriptor_count\":" << summary.total_descriptor_count
+      << ",\"translation_unit_registration_order_ordinal\":"
+      << summary.translation_unit_registration_order_ordinal
+      << ",\"source_surface_replay_key\":\""
+      << EscapeJsonString(summary.source_surface_replay_key)
+      << "\",\"registration_manifest_replay_key\":\""
+      << EscapeJsonString(summary.registration_manifest_replay_key)
+      << "\",\"replay_key\":\""
+      << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeBootstrapApiReplayKey(
     const Objc3RuntimeBootstrapApiSummary &summary) {
   std::ostringstream out;
@@ -4906,6 +5080,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
               program,
               pipeline_result.bootstrap_registration_source_pragma_contract,
+              runtime_translation_unit_registration_manifest);
+  const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+      runtime_registration_descriptor_frontend_closure =
+          BuildRuntimeRegistrationDescriptorFrontendClosureSummary(
+              runtime_registration_descriptor_image_root_source_surface,
               runtime_translation_unit_registration_manifest);
   const Objc3RuntimeStartupBootstrapInvariantSummary
       runtime_startup_bootstrap_invariants =
@@ -7146,6 +7325,113 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                  runtime_registration_descriptor_image_root_source_surface
                      .failure_reason)
           << "\""
+          << ",\"runtime_registration_descriptor_frontend_closure_contract_id\":\""
+          << EscapeJsonString(
+                 runtime_registration_descriptor_frontend_closure.contract_id)
+          << "\",\"runtime_registration_descriptor_frontend_closure_source_surface_contract_id\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .source_surface_contract_id)
+          << "\",\"runtime_registration_descriptor_frontend_closure_payload_model\":\""
+          << EscapeJsonString(
+                 runtime_registration_descriptor_frontend_closure.payload_model)
+          << "\",\"runtime_registration_descriptor_frontend_closure_artifact_relative_path\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .artifact_relative_path)
+          << "\",\"runtime_registration_descriptor_frontend_closure_authority_model\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .authority_model)
+          << "\",\"runtime_registration_descriptor_frontend_closure_translation_unit_identity_model\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .translation_unit_identity_model)
+          << "\",\"runtime_registration_descriptor_frontend_closure_payload_ownership_model\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .payload_ownership_model)
+          << "\",\"runtime_registration_descriptor_frontend_closure_registration_descriptor_identifier\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .registration_descriptor_identifier)
+          << "\",\"runtime_registration_descriptor_frontend_closure_image_root_identifier\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .image_root_identifier)
+          << "\",\"runtime_registration_descriptor_frontend_closure_registration_descriptor_identity_source\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .registration_descriptor_identity_source)
+          << "\",\"runtime_registration_descriptor_frontend_closure_image_root_identity_source\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .image_root_identity_source)
+          << "\",\"runtime_registration_descriptor_frontend_closure_bootstrap_visible_metadata_ownership_model\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .bootstrap_visible_metadata_ownership_model)
+          << "\",\"runtime_registration_descriptor_frontend_closure_class_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .class_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_protocol_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .protocol_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_category_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .category_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_property_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .property_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_ivar_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .ivar_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_total_descriptor_count\":"
+          << runtime_registration_descriptor_frontend_closure.total_descriptor_count
+          << ",\"runtime_registration_descriptor_frontend_closure_translation_unit_registration_order_ordinal\":"
+          << runtime_registration_descriptor_frontend_closure
+                 .translation_unit_registration_order_ordinal
+          << ",\"runtime_registration_descriptor_frontend_closure_fail_closed\":"
+          << (runtime_registration_descriptor_frontend_closure.fail_closed ? "true"
+                                                                          : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_source_surface_contract_ready\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .source_surface_contract_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_registration_manifest_contract_ready\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .registration_manifest_contract_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_descriptor_frontend_surface_published\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .descriptor_frontend_surface_published
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_descriptor_artifact_template_published\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .descriptor_artifact_template_published
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_descriptor_fields_resolved\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .descriptor_fields_resolved
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_ready_for_descriptor_artifact_emission\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .ready_for_descriptor_artifact_emission
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_ready_for_registration_descriptor_lowering\":"
+          << (runtime_registration_descriptor_frontend_closure
+                      .ready_for_registration_descriptor_lowering
+                  ? "true"
+                  : "false")
+          << ",\"runtime_registration_descriptor_frontend_closure_source_surface_replay_key\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .source_surface_replay_key)
+          << "\",\"runtime_registration_descriptor_frontend_closure_registration_manifest_replay_key\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .registration_manifest_replay_key)
+          << "\",\"runtime_registration_descriptor_frontend_closure_replay_key\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .replay_key)
+          << "\",\"runtime_registration_descriptor_frontend_closure_failure_reason\":\""
+          << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                  .failure_reason)
+          << "\""
           << ",\"runtime_bootstrap_api_contract_id\":\""
           << EscapeJsonString(runtime_bootstrap_api.contract_id)
           << "\",\"runtime_bootstrap_api_public_header_path\":\""
@@ -8285,6 +8571,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_registration_descriptor_image_root_source_surface\":"
            << BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummaryJson(
                   runtime_registration_descriptor_image_root_source_surface)
+           // M263-A002 registration-descriptor frontend-closure anchor: lane-A
+           // now publishes the owned descriptor-artifact boundary that later
+           // lowering and runtime bootstrap work consume directly.
+           << ",\"objc_runtime_registration_descriptor_frontend_closure\":"
+           << BuildRuntimeRegistrationDescriptorFrontendClosureSummaryJson(
+                  runtime_registration_descriptor_frontend_closure)
            // M254-D001 runtime-bootstrap-api anchor: lane-D freezes the
            // runtime-owned bootstrap header/archive/entrypoint/reset surface as
            // one canonical packet that later image-walk and reset-expansion
@@ -9488,6 +9780,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
   bundle.runtime_registration_descriptor_image_root_source_surface_summary =
       runtime_registration_descriptor_image_root_source_surface;
+  bundle.runtime_registration_descriptor_frontend_closure_summary =
+      runtime_registration_descriptor_frontend_closure;
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
   bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;

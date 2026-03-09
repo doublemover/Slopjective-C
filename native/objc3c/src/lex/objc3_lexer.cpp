@@ -365,6 +365,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
 }
 
 void Objc3Lexer::ConsumePreludePragmas(std::vector<std::string> &diagnostics) {
+  // M263-A002 frontend-closure anchor: bootstrap registration pragmas must be
+  // consumed in the file-scope prelude so the emitted registration-descriptor
+  // artifact keeps one deterministic identity boundary.
   while (true) {
     SkipTrivia(diagnostics);
     if (ConsumeLanguageVersionPragmaDirective(

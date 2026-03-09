@@ -101,10 +101,12 @@ struct Objc3LexToken {
 
 using Objc3LexTokenStream = std::vector<Objc3LexToken>;
 
-// M263-A001 source-surface anchor: bootstrap registration descriptor and
-// image-root identifiers are file-scope prelude pragmas rather than new parser
-// tokens so later frontend/lowering/runtime work can extend one deterministic
-// source contract without widening the base token stream.
+// M263-A001/A002 source-surface/frontend-closure anchor: bootstrap
+// registration descriptor and image-root identifiers are file-scope prelude
+// pragmas rather than new parser tokens so later frontend/lowering/runtime
+// work can extend one deterministic source contract and emitted
+// registration-descriptor artifact boundary without widening the base token
+// stream.
 inline constexpr const char *kObjc3BootstrapRegistrationDescriptorPragmaName =
     "objc_registration_descriptor";
 inline constexpr const char *kObjc3BootstrapImageRootPragmaName =

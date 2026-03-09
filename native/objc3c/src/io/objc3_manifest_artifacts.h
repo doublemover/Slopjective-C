@@ -18,6 +18,9 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
@@ -37,3 +40,7 @@ void WriteRuntimeRegistrationManifestArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &manifest_json);
+void WriteRuntimeRegistrationDescriptorArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &descriptor_json);

@@ -759,6 +759,28 @@ inline constexpr const char
         "_registration_descriptor";
 inline constexpr const char
     *kObjc3RuntimeBootstrapImageRootDefaultSuffix = "_image_root";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendClosureContractId =
+        "objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendClosureSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_runtime_registration_descriptor_frontend_closure";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendClosurePayloadModel =
+        "runtime-registration-descriptor-json-v1";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix =
+        ".runtime-registration-descriptor.json";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactRelativePath =
+        "module.runtime-registration-descriptor.json";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorFrontendAuthorityModel =
+        "registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorPayloadOwnershipModel =
+        "compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity";
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,

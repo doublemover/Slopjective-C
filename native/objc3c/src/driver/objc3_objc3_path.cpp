@@ -144,6 +144,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                            .runtime_registration_descriptor_image_root_source_surface_summary)) {
           compile_status = 125;
           std::cerr << "registration descriptor/image-root source surface not ready\n";
+        } else if (!IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(
+                       artifacts
+                           .runtime_registration_descriptor_frontend_closure_summary)) {
+          compile_status = 125;
+          std::cerr << "registration descriptor frontend closure not ready\n";
         } else {
           Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs
               manifest_inputs;
@@ -152,6 +157,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           const auto &registration_descriptor_source_surface_summary =
               artifacts
                   .runtime_registration_descriptor_image_root_source_surface_summary;
+          const auto &registration_descriptor_frontend_closure_summary =
+              artifacts.runtime_registration_descriptor_frontend_closure_summary;
           const auto &runtime_bootstrap_api_summary =
               artifacts.runtime_bootstrap_api_summary;
           const auto &runtime_bootstrap_semantics_summary =
@@ -419,6 +426,105 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 cli_options.out_dir,
                 cli_options.emit_prefix,
                 registration_manifest_json);
+
+            Objc3RuntimeRegistrationDescriptorArtifactInputs descriptor_inputs;
+            descriptor_inputs.contract_id =
+                registration_descriptor_frontend_closure_summary.contract_id;
+            descriptor_inputs.registration_manifest_contract_id =
+                registration_descriptor_frontend_closure_summary
+                    .registration_manifest_contract_id;
+            descriptor_inputs.source_surface_contract_id =
+                registration_descriptor_frontend_closure_summary
+                    .source_surface_contract_id;
+            descriptor_inputs.payload_model =
+                registration_descriptor_frontend_closure_summary.payload_model;
+            descriptor_inputs.artifact_relative_path =
+                registration_descriptor_frontend_closure_summary
+                    .artifact_relative_path;
+            descriptor_inputs.authority_model =
+                registration_descriptor_frontend_closure_summary.authority_model;
+            descriptor_inputs.translation_unit_identity_model =
+                registration_descriptor_frontend_closure_summary
+                    .translation_unit_identity_model;
+            descriptor_inputs.payload_ownership_model =
+                registration_descriptor_frontend_closure_summary
+                    .payload_ownership_model;
+            descriptor_inputs.runtime_support_library_archive_relative_path =
+                registration_manifest_summary
+                    .runtime_support_library_archive_relative_path;
+            descriptor_inputs.registration_entrypoint_symbol =
+                registration_manifest_summary.registration_entrypoint_symbol;
+            descriptor_inputs.registration_descriptor_pragma_name =
+                registration_descriptor_source_surface_summary
+                    .registration_descriptor_pragma_name;
+            descriptor_inputs.image_root_pragma_name =
+                registration_descriptor_source_surface_summary.image_root_pragma_name;
+            descriptor_inputs.module_identity_source =
+                registration_descriptor_source_surface_summary.module_identity_source;
+            descriptor_inputs.registration_descriptor_identifier =
+                registration_descriptor_frontend_closure_summary
+                    .registration_descriptor_identifier;
+            descriptor_inputs.registration_descriptor_identity_source =
+                registration_descriptor_frontend_closure_summary
+                    .registration_descriptor_identity_source;
+            descriptor_inputs.image_root_identifier =
+                registration_descriptor_frontend_closure_summary
+                    .image_root_identifier;
+            descriptor_inputs.image_root_identity_source =
+                registration_descriptor_frontend_closure_summary
+                    .image_root_identity_source;
+            descriptor_inputs.bootstrap_visible_metadata_ownership_model =
+                registration_descriptor_frontend_closure_summary
+                    .bootstrap_visible_metadata_ownership_model;
+            descriptor_inputs.constructor_root_symbol =
+                registration_manifest_summary.constructor_root_symbol;
+            descriptor_inputs.constructor_init_stub_symbol_prefix =
+                registration_manifest_summary.constructor_init_stub_symbol_prefix;
+            descriptor_inputs.bootstrap_registration_table_symbol_prefix =
+                runtime_bootstrap_lowering_summary
+                    .registration_table_symbol_prefix;
+            descriptor_inputs.bootstrap_image_local_init_state_symbol_prefix =
+                runtime_bootstrap_lowering_summary
+                    .image_local_init_state_symbol_prefix;
+            descriptor_inputs.class_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .class_descriptor_count;
+            descriptor_inputs.protocol_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .protocol_descriptor_count;
+            descriptor_inputs.category_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .category_descriptor_count;
+            descriptor_inputs.property_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .property_descriptor_count;
+            descriptor_inputs.ivar_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .ivar_descriptor_count;
+            descriptor_inputs.total_descriptor_count =
+                registration_descriptor_frontend_closure_summary
+                    .total_descriptor_count;
+            descriptor_inputs.translation_unit_registration_order_ordinal =
+                registration_descriptor_frontend_closure_summary
+                    .translation_unit_registration_order_ordinal;
+            descriptor_inputs.object_artifact_relative_path =
+                object_out.filename().generic_string();
+            descriptor_inputs.backend_artifact_relative_path =
+                backend_out.filename().generic_string();
+
+            std::string registration_descriptor_json;
+            std::string registration_descriptor_error;
+            if (!TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
+                    descriptor_inputs, linker_retention_artifacts,
+                    registration_descriptor_json,
+                    registration_descriptor_error)) {
+              compile_status = 125;
+              std::cerr << registration_descriptor_error << "\n";
+            } else {
+              WriteRuntimeRegistrationDescriptorArtifact(
+                  cli_options.out_dir, cli_options.emit_prefix,
+                  registration_descriptor_json);
+            }
           }
         }
       }

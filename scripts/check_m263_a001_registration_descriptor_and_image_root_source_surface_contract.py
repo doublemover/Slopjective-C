@@ -112,7 +112,7 @@ STATIC_SNIPPETS: dict[Path, tuple[SnippetCheck, ...]] = {
         SnippetCheck("M263-A001-LEX-05", "O3L011"),
     ),
     PARSER_CPP: (
-        SnippetCheck("M263-A001-PARSE-01", "M263-A001 registration-descriptor/image-root source-surface anchor"),
+        SnippetCheck("M263-A001-PARSE-01", "M263-A001/A002 registration-descriptor/image-root source-surface and"),
         SnippetCheck("M263-A001-PARSE-02", "module identity remains parser-owned here"),
     ),
     FRONTEND_TYPES: (

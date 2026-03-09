@@ -15192,3 +15192,29 @@ residual startup/runtime work that remains after `M254`.
   contract id, source path, pragma names, resolved registration descriptor
   identifier, resolved image-root identifier, identity-source classification,
   and ownership model.
+
+## Registration manifest and descriptor frontend closure (M263-A002)
+
+`M263-A002` extends the frozen `M263-A001` naming surface into one real emitted
+frontend artifact that later lowering and runtime work can consume directly.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_frontend_closure`
+- emitted artifact
+  `module.runtime-registration-descriptor.json`
+- payload model
+  `runtime-registration-descriptor-json-v1`
+- authority model
+  `registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest`
+- payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`
+- emitted descriptor artifact preserves:
+  - resolved registration descriptor identifier
+  - resolved image-root identifier
+  - identity-source classification
+  - bootstrap-visible ownership model
+  - registration entrypoint symbol
+  - runtime-support archive path
+  - constructor-root, init-stub, registration-table, and image-local-init symbols

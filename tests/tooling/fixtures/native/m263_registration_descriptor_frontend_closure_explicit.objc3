@@ -1,0 +1,6 @@
+#pragma objc_language_version(3)
+#pragma objc_registration_descriptor(FrontendDescriptorRegistration)
+#pragma objc_image_root(FrontendDescriptorImageRoot)
+
+module DescriptorFrontendExplicit;
+fn main() { return 0; }

@@ -8670,6 +8670,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state` so
   later M263 frontend closure and lowering work extends one deterministic
   bootstrap naming boundary.
+- M263 lane-A A002 extends that frozen source surface into one emitted
+  `module.runtime-registration-descriptor.json` artifact through
+  `pipeline/objc3_frontend_types.h`, `pipeline/objc3_frontend_artifacts.cpp`,
+  `io/objc3_manifest_artifacts.h`, `io/objc3_manifest_artifacts.cpp`,
+  `io/objc3_process.h`, `io/objc3_process.cpp`,
+  `driver/objc3_objc3_path.cpp`, and
+  `libobjc3c_frontend/frontend_anchor.cpp`. The descriptor artifact now
+  deterministically carries the resolved bootstrap identities, identity-source
+  classification, bootstrap-visible ownership model, runtime archive and
+  registration entrypoint linkage, and the derived constructor/init-stub/
+  registration-table/image-local-init symbols under the payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`.
 ## M255 lookup and dispatch runtime freeze (D001)
 
 `M255-D001` freezes the runtime-owned selector interning and dispatch boundary

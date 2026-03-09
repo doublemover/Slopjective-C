@@ -39,6 +39,14 @@ std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
           kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix);
 }
 
+std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir /
+         (emit_prefix +
+          kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix);
+}
+
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
                            const std::string &manifest_json) {
@@ -74,4 +82,12 @@ void WriteRuntimeRegistrationManifestArtifact(
     const std::string &manifest_json) {
   WriteText(BuildRuntimeRegistrationManifestArtifactPath(out_dir, emit_prefix),
             manifest_json);
+}
+
+void WriteRuntimeRegistrationDescriptorArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &descriptor_json) {
+  WriteText(BuildRuntimeRegistrationDescriptorArtifactPath(out_dir, emit_prefix),
+            descriptor_json);
 }

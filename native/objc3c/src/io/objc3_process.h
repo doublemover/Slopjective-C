@@ -118,6 +118,40 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string backend_artifact_relative_path;
 };
 
+struct Objc3RuntimeRegistrationDescriptorArtifactInputs {
+  std::string contract_id;
+  std::string registration_manifest_contract_id;
+  std::string source_surface_contract_id;
+  std::string payload_model;
+  std::string artifact_relative_path;
+  std::string authority_model;
+  std::string translation_unit_identity_model;
+  std::string payload_ownership_model;
+  std::string runtime_support_library_archive_relative_path;
+  std::string registration_entrypoint_symbol;
+  std::string registration_descriptor_pragma_name;
+  std::string image_root_pragma_name;
+  std::string module_identity_source;
+  std::string registration_descriptor_identifier;
+  std::string registration_descriptor_identity_source;
+  std::string image_root_identifier;
+  std::string image_root_identity_source;
+  std::string bootstrap_visible_metadata_ownership_model;
+  std::string constructor_root_symbol;
+  std::string constructor_init_stub_symbol_prefix;
+  std::string bootstrap_registration_table_symbol_prefix;
+  std::string bootstrap_image_local_init_state_symbol_prefix;
+  std::size_t class_descriptor_count = 0;
+  std::size_t protocol_descriptor_count = 0;
+  std::size_t category_descriptor_count = 0;
+  std::size_t property_descriptor_count = 0;
+  std::size_t ivar_descriptor_count = 0;
+  std::size_t total_descriptor_count = 0;
+  std::uint64_t translation_unit_registration_order_ordinal = 0;
+  std::string object_artifact_relative_path;
+  std::string backend_artifact_relative_path;
+};
+
 int RunProcess(const std::string &executable, const std::vector<std::string> &args);
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
@@ -144,4 +178,9 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
     const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
     std::size_t runtime_metadata_binary_byte_count,
     std::string &manifest_json,
+    std::string &error);
+bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
+    const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
+    std::string &descriptor_json,
     std::string &error);

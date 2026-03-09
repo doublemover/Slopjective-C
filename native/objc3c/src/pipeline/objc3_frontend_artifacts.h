@@ -15,6 +15,8 @@ struct Objc3FrontendArtifactBundle {
   std::string runtime_metadata_binary;
   Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
       runtime_registration_descriptor_image_root_source_surface_summary;
+  Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+      runtime_registration_descriptor_frontend_closure_summary;
   Objc3RuntimeTranslationUnitRegistrationManifestSummary
       runtime_translation_unit_registration_manifest_summary;
   Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api_summary;

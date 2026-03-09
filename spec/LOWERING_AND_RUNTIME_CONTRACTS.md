@@ -5983,3 +5983,28 @@ Non-goals:
 
 `M263-A002` must preserve this contract while broadening frontend closure and
 registration-manifest consumption.
+
+## M263 registration manifest and descriptor frontend closure (A002)
+
+`M263-A002` turns the frozen `M263-A001` source packet into one emitted
+frontend-owned descriptor artifact that is derived from the already-emitted
+`M254` registration manifest.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_frontend_closure`
+- emitted artifact
+  `module.runtime-registration-descriptor.json`
+- payload model
+  `runtime-registration-descriptor-json-v1`
+- authority model
+  `registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest`
+- payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`
+
+Non-goals:
+
+- no bootstrap-table lowering yet
+- no multi-image replay behavior yet
+- no runtime bootstrap execution yet

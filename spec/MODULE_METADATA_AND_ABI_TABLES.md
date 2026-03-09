@@ -7027,3 +7027,29 @@ Frozen metadata/runtime anchors:
   - identity-source classification
 
 This freeze does not lower bootstrap descriptors or execute runtime replay yet.
+
+## M263 registration descriptor frontend artifact metadata anchors (A002)
+
+`M263-A002` publishes the emitted frontend descriptor artifact at
+`module.runtime-registration-descriptor.json` and binds it to
+`frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_frontend_closure`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- payload model
+  `runtime-registration-descriptor-json-v1`
+- authority model
+  `registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest`
+- payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`
+- emitted descriptor fields include:
+  - `registration_descriptor_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identifier`
+  - `image_root_identity_source`
+  - `constructor_root_symbol`
+  - `constructor_init_stub_symbol`
+  - `bootstrap_registration_table_symbol`
+  - `bootstrap_image_local_init_state_symbol`
