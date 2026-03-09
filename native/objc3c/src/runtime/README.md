@@ -153,3 +153,16 @@ slow-path resolution surface:
   snapshots for the live method-cache proof surface
 - unresolved or unsupported lookup continues to fall back through
   `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`
+
+`M255-D004` then extends that same runtime surface across protocol/category
+metadata:
+
+- category implementation records provide the next live lookup tier after class
+  bodies under
+  `class-bodies-win-first-category-implementation-records-supply-next-live-method-tier`
+- adopted/inherited protocol method lists provide declaration-aware negative
+  lookup evidence under
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution`
+- probe and cache snapshots now record category/protocol traversal counts
+- conflicting category/protocol outcomes fail closed through
+  `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`

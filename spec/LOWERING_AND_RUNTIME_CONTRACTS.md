@@ -5722,3 +5722,22 @@ registered class/metaclass records and emitted callable method tables:
   `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
 - fallback model
   `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`
+
+## M255 protocol and category-aware method resolution (D004)
+
+`M255-D004` extends the D003 live runtime path beyond class/metaclass bodies:
+
+- contract id `objc3c-runtime-protocol-category-method-resolution/m255-d004-v1`
+- preserved dependencies:
+  - `objc3c-runtime-lookup-dispatch-freeze/m255-d001-v1`
+  - `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+  - `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- category resolution model
+  `class-bodies-win-first-category-implementation-records-supply-next-live-method-tier`
+- protocol declaration model
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution`
+- fallback model
+  `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
+- runtime snapshots stay on the preserved D003 boundary:
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`

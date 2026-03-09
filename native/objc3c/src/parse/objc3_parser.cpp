@@ -10215,6 +10215,11 @@ class Objc3Parser {
     // methods from class metadata or own cache behavior. It preserves the
     // normalized selector text plus receiver-family classification that the
     // runtime now consumes for deterministic class/metaclass slow-path lookup.
+    // M255-D004 protocol/category-aware resolution anchor: parser still does
+    // not resolve category tiers or protocol declaration graphs. It preserves
+    // the normalized selector text, receiver family, and protocol/category
+    // declaration surface that the runtime now consumes for deterministic
+    // category-backed live lookup and protocol-backed negative lookup evidence.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

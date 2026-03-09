@@ -89,6 +89,8 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t fallback_dispatch_count;
   uint64_t last_selector_stable_id;
   uint64_t last_normalized_receiver_identity;
+  uint64_t last_category_probe_count;
+  uint64_t last_protocol_probe_count;
   int last_dispatch_used_cache;
   int last_dispatch_resolved_live_method;
   int last_dispatch_fell_back;
@@ -104,6 +106,8 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   uint64_t normalized_receiver_identity;
   uint64_t selector_stable_id;
   uint64_t parameter_count;
+  uint64_t category_probe_count;
+  uint64_t protocol_probe_count;
   const char *selector;
   const char *resolved_class_name;
   const char *resolved_owner_identity;

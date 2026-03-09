@@ -6756,3 +6756,21 @@ lookup surface consumed by live dispatch:
   `objc3_runtime_copy_method_cache_state_for_testing`
 - runtime method-cache entry snapshot symbol
   `objc3_runtime_copy_method_cache_entry_for_testing`
+
+## M255 protocol/category-aware resolution metadata anchors (D004)
+
+`M255-D004` promotes protocol/category method-list refs from passive metadata
+into runtime-consumed lookup tiers:
+
+- contract id `objc3c-runtime-protocol-category-method-resolution/m255-d004-v1`
+- category method-list refs now carry emitted list-local counts for:
+  - `instance_method_list_ref`
+  - `class_method_list_ref`
+- protocol method-list refs now carry emitted list-local counts for:
+  - `instance_method_list_ref`
+  - `class_method_list_ref`
+- runtime method-cache snapshots continue to expose:
+  - `last_category_probe_count`
+  - `last_protocol_probe_count`
+  - cached `category_probe_count`
+  - cached `protocol_probe_count`

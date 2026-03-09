@@ -204,6 +204,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeMethodCacheSlowPathFallbackModel =
         "unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula";
+// M255-D004 protocol/category-aware resolution anchor: lane-D extends the live
+// runtime slow path to consume emitted category method tables plus adopted and
+// inherited protocol metadata while preserving the frozen D001 public runtime
+// API and D003 cache/selector-table surfaces.
+inline constexpr const char
+    *kObjc3RuntimeProtocolCategoryMethodResolutionContractId =
+        "objc3c-runtime-protocol-category-method-resolution/m255-d004-v1";
+inline constexpr const char
+    *kObjc3RuntimeProtocolCategoryMethodResolutionCategoryModel =
+        "class-bodies-win-first-category-implementation-records-supply-next-live-method-tier";
+inline constexpr const char
+    *kObjc3RuntimeProtocolCategoryMethodResolutionProtocolModel =
+        "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution";
+inline constexpr const char
+    *kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel =
+        "conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info

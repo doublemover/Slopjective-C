@@ -164,11 +164,11 @@ CATEGORY_PLACEHOLDER_RE = re.compile(
     re.MULTILINE,
 )
 PROTOCOL_BUNDLE_RE = re.compile(
-    r'^@__objc3_meta_protocol_\d{4} = private global \{ ptr, ptr, ptr, i64, i64, i1 \}',
+    r'^@__objc3_meta_protocol_\d{4} = private global \{ ptr, ptr, ptr(?:, ptr, ptr)?, i64, i64, i1 \}',
     re.MULTILINE,
 )
 CATEGORY_BUNDLE_RE = re.compile(
-    r'^@__objc3_meta_category_\d{4} = private global \{ ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 \}',
+    r'^@__objc3_meta_category_\d{4} = private global \{ ptr, ptr, ptr, ptr, ptr, ptr(?:, ptr, ptr)?, i64, i64, i64 \}',
     re.MULTILINE,
 )
 INHERITED_REFS_RE = re.compile(

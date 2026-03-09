@@ -1,0 +1,31 @@
+module liveProtocolCategoryDispatch;
+
+@protocol BaseTrace
+- (i32) protocolDeclaredOnly;
+@end
+
+@protocol TraceWorker<BaseTrace>
+- (i32) tracedValue;
++ (i32) tracerClassValue;
+@end
+
+@interface Widget
+@end
+
+@implementation Widget
+@end
+
+@interface Widget (Tracing)<TraceWorker>
+- (i32) tracedValue;
++ (i32) tracerClassValue;
+@end
+
+@implementation Widget (Tracing)
+- (i32) tracedValue {
+  return 33;
+}
+
++ (i32) tracerClassValue {
+  return 44;
+}
+@end

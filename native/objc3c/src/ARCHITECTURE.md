@@ -8699,3 +8699,15 @@ class/metaclass graph:
 - repeat dispatches reuse deterministic positive and negative cache entries
 - unresolved or unsupported runtime resolution surfaces fall back to the
   preserved compatibility arithmetic path until `M255-D004`
+
+## M255 protocol and category-aware method resolution (D004)
+
+`M255-D004` makes the next metadata tier executable after class/metaclass
+lookup:
+
+- class/metaclass bodies still win first
+- preferred category implementation records provide the next live dispatch tier
+- adopted and inherited protocol records provide declaration-aware negative
+  lookup evidence when no callable body exists
+- conflicting category/protocol outcomes fail closed to the preserved
+  compatibility arithmetic path

@@ -21,6 +21,7 @@ class Objc3IREmitter {
   struct MethodDefinition {
     std::string symbol;
     std::string implementation_name;
+    std::string method_owner_identity;
     std::string superclass_name;
     const Objc3MethodDecl *method = nullptr;
   };
@@ -70,7 +71,10 @@ class Objc3IREmitter {
             super_it == implementation_superclass_names.end() ? std::string()
                                                               : super_it->second;
         method_definitions_.push_back(
-            MethodDefinition{symbol, implementation.name, superclass_name,
+            MethodDefinition{symbol,
+                             implementation.name,
+                             method.scope_path_symbol,
+                             superclass_name,
                              &method});
       }
     }
@@ -201,6 +205,14 @@ class Objc3IREmitter {
         << kObjc3RuntimeMethodCacheSlowPathCacheModel
         << ", fallback_model="
         << kObjc3RuntimeMethodCacheSlowPathFallbackModel << "\n";
+    out << "; runtime_protocol_category_method_resolution = contract="
+        << kObjc3RuntimeProtocolCategoryMethodResolutionContractId
+        << ", category_model="
+        << kObjc3RuntimeProtocolCategoryMethodResolutionCategoryModel
+        << ", protocol_model="
+        << kObjc3RuntimeProtocolCategoryMethodResolutionProtocolModel
+        << ", fallback_model="
+        << kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel << "\n";
     if (!frontend_metadata_
              .executable_metadata_debug_projection_contract_id.empty()) {
       out << "; executable_metadata_debug_projection = "
@@ -5177,20 +5189,19 @@ class Objc3IREmitter {
                                           const std::string &list_kind) {
       return owner_family_kind + "|" + owner_identity + "|" + list_kind;
     };
-    const auto build_implementation_method_key =
-        [](const std::string &implementation_name, const std::string &selector,
-           bool is_class_method) {
-          return implementation_name + "|" +
-                 (is_class_method ? "class" : "instance") + "|" + selector;
-        };
     std::unordered_map<std::string, std::string> method_list_symbols_by_key;
+    std::unordered_map<std::string, std::size_t> method_list_entry_counts_by_key;
     std::unordered_map<std::string, std::string>
-        implementation_method_symbols_by_key;
+        implementation_method_symbols_by_owner_identity;
     if (emit_member_table_payloads) {
       method_list_symbols_by_key.reserve(
           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
               .size());
-      implementation_method_symbols_by_key.reserve(method_definitions_.size());
+      method_list_entry_counts_by_key.reserve(
+          frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
+              .size());
+      implementation_method_symbols_by_owner_identity.reserve(
+          method_definitions_.size());
       for (std::size_t i = 0;
            i <
            frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
@@ -5206,15 +5217,19 @@ class Objc3IREmitter {
             BuildRuntimeMetadataAuxiliarySymbol(
                 layout_policy.descriptor_symbol_prefix, bundle.owner_family_kind,
                 bundle.list_kind + "_methods", i));
+        method_list_entry_counts_by_key.emplace(
+            build_method_list_key(bundle.owner_family_kind,
+                                  bundle.declaration_owner_identity,
+                                  bundle.list_kind),
+            bundle.entries_lexicographic.size());
       }
       for (const MethodDefinition &method_def : method_definitions_) {
-        if (method_def.method == nullptr) {
+        if (method_def.method == nullptr ||
+            method_def.method_owner_identity.empty()) {
           continue;
         }
-        implementation_method_symbols_by_key.emplace(
-            build_implementation_method_key(
-                method_def.implementation_name, method_def.method->selector,
-                method_def.method->is_class_method),
+        implementation_method_symbols_by_owner_identity.emplace(
+            method_def.method_owner_identity,
             "@" + method_def.symbol);
       }
     }
@@ -5335,18 +5350,24 @@ class Objc3IREmitter {
                   bundle_ordinal + "_" + entry_ordinal;
               std::string implementation_symbol = "null";
               if (entry.has_body &&
-                  bundle.owner_kind == "class-implementation") {
+                  (bundle.owner_kind == "class-implementation" ||
+                   bundle.owner_kind == "category-implementation")) {
+                // M255-D003/M255-D004 slow-path anchor: class and category
+                // implementation method-table entries now carry callable
+                // implementation pointers from registered metadata.
                 // M255-D003 slow-path anchor: class-implementation method-table
-                // entries now carry a callable implementation pointer so the
-                // runtime can resolve real emitted method bodies from
-                // registered class/metaclass records.
+                // entries now carry callable implementation pointers so the
+                // runtime can resolve live class/metaclass bodies from
+                // registered metadata.
+                // M255-D004 slow-path anchor: category-implementation
+                // method-table entries now carry callable implementation
+                // pointers so the runtime can resolve live category bodies from
+                // registered metadata.
                 const auto implementation_it =
-                    implementation_method_symbols_by_key.find(
-                        build_implementation_method_key(
-                            bundle.owner_name, entry.selector,
-                            bundle.list_kind == "class"));
+                    implementation_method_symbols_by_owner_identity.find(
+                        entry.owner_identity);
                 if (implementation_it !=
-                    implementation_method_symbols_by_key.end()) {
+                    implementation_method_symbols_by_owner_identity.end()) {
                   implementation_symbol = implementation_it->second;
                 }
               }
@@ -5712,12 +5733,29 @@ class Objc3IREmitter {
             if (instance_method_list_it != method_list_symbols_by_key.end()) {
               instance_method_list_symbol = instance_method_list_it->second;
             }
+            std::size_t instance_method_list_entry_count = 0;
+            const auto instance_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "instance"));
+            if (instance_method_count_it != method_list_entry_counts_by_key.end()) {
+              instance_method_list_entry_count =
+                  instance_method_count_it->second;
+            }
             std::string metaclass_method_list_symbol = "null";
             const auto metaclass_method_list_it = method_list_symbols_by_key.find(
                 build_method_list_key(family.kind, bundle.owner_identity,
                                       "class"));
             if (metaclass_method_list_it != method_list_symbols_by_key.end()) {
               metaclass_method_list_symbol = metaclass_method_list_it->second;
+            }
+            std::size_t metaclass_method_list_entry_count = 0;
+            const auto metaclass_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "class"));
+            if (metaclass_method_count_it !=
+                method_list_entry_counts_by_key.end()) {
+              metaclass_method_list_entry_count =
+                  metaclass_method_count_it->second;
             }
             std::string super_bundle_symbol = "null";
             if (bundle.has_super) {
@@ -5745,14 +5783,14 @@ class Objc3IREmitter {
                 << "\", align 1\n";
             out << instance_method_list_ref_symbol
                 << " = private global { i64, ptr, ptr } { i64 "
-                << bundle.instance_method_count << ", ptr "
+                << instance_method_list_entry_count << ", ptr "
                 << owner_identity_symbol << ", ptr "
                 << instance_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             out << metaclass_method_list_ref_symbol
                 << " = private global { i64, ptr, ptr } { i64 "
-                << bundle.class_method_count << ", ptr "
+                << metaclass_method_list_entry_count << ", ptr "
                 << owner_identity_symbol << ", ptr "
                 << metaclass_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
@@ -5820,6 +5858,43 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
                     "inherited_protocol_refs", i);
+            const std::string instance_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "instance_method_list_ref", i);
+            const std::string class_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "class_method_list_ref", i);
+            std::string instance_method_list_symbol = "null";
+            const auto instance_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "instance"));
+            if (instance_method_list_it != method_list_symbols_by_key.end()) {
+              instance_method_list_symbol = instance_method_list_it->second;
+            }
+            std::size_t instance_method_list_entry_count = 0;
+            const auto instance_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "instance"));
+            if (instance_method_count_it != method_list_entry_counts_by_key.end()) {
+              instance_method_list_entry_count =
+                  instance_method_count_it->second;
+            }
+            std::string class_method_list_symbol = "null";
+            const auto class_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "class"));
+            if (class_method_list_it != method_list_symbols_by_key.end()) {
+              class_method_list_symbol = class_method_list_it->second;
+            }
+            std::size_t class_method_list_entry_count = 0;
+            const auto class_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "class"));
+            if (class_method_count_it != method_list_entry_counts_by_key.end()) {
+              class_method_list_entry_count = class_method_count_it->second;
+            }
             const std::size_t name_storage_len = bundle.protocol_name.size() + 1u;
             const std::size_t owner_identity_storage_len =
                 bundle.owner_identity.size() + 1u;
@@ -5866,11 +5941,26 @@ class Objc3IREmitter {
             }
             out << ", section \"" << family.emitted_section_name
                 << "\", align 8\n";
+            out << instance_method_list_ref_symbol
+                << " = private global { i64, ptr, ptr } { i64 "
+                << instance_method_list_entry_count << ", ptr "
+                << owner_identity_symbol
+                << ", ptr " << instance_method_list_symbol << " }, section \""
+                << family.emitted_section_name << "\", align 8\n";
+            out << class_method_list_ref_symbol
+                << " = private global { i64, ptr, ptr } { i64 "
+                << class_method_list_entry_count << ", ptr "
+                << owner_identity_symbol << ", ptr " << class_method_list_symbol
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, i64, i64, i1 } { ptr "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, i64, i64, i1 } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
-                << inherited_refs_symbol << ", i64 " << bundle.property_count
-                << ", i64 " << bundle.method_count << ", i1 "
+                << inherited_refs_symbol << ", ptr "
+                << instance_method_list_ref_symbol << ", ptr "
+                << class_method_list_ref_symbol << ", i64 "
+                << bundle.property_count << ", i64 " << bundle.method_count
+                << ", i1 "
                 << (bundle.is_forward_declaration ? 1 : 0) << " }, section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(descriptor_symbol);
@@ -5951,6 +6041,43 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
                     "adopted_protocol_refs", i);
+            const std::string instance_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "instance_method_list_ref", i);
+            const std::string class_method_list_ref_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "class_method_list_ref", i);
+            std::string instance_method_list_symbol = "null";
+            const auto instance_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "instance"));
+            if (instance_method_list_it != method_list_symbols_by_key.end()) {
+              instance_method_list_symbol = instance_method_list_it->second;
+            }
+            std::size_t instance_method_list_entry_count = 0;
+            const auto instance_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "instance"));
+            if (instance_method_count_it != method_list_entry_counts_by_key.end()) {
+              instance_method_list_entry_count =
+                  instance_method_count_it->second;
+            }
+            std::string class_method_list_symbol = "null";
+            const auto class_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "class"));
+            if (class_method_list_it != method_list_symbols_by_key.end()) {
+              class_method_list_symbol = class_method_list_it->second;
+            }
+            std::size_t class_method_list_entry_count = 0;
+            const auto class_method_count_it =
+                method_list_entry_counts_by_key.find(build_method_list_key(
+                    family.kind, bundle.owner_identity, "class"));
+            if (class_method_count_it != method_list_entry_counts_by_key.end()) {
+              class_method_list_entry_count = class_method_count_it->second;
+            }
             descriptor_symbols.push_back(descriptor_symbol);
 
             out << class_name_symbol << " = private constant ["
@@ -6027,15 +6154,29 @@ class Objc3IREmitter {
             }
             out << ", section \"" << family.emitted_section_name
                 << "\", align 8\n";
+            out << instance_method_list_ref_symbol
+                << " = private global { i64, ptr, ptr } { i64 "
+                << instance_method_list_entry_count << ", ptr "
+                << owner_identity_symbol << ", ptr "
+                << instance_method_list_symbol << " }, section \""
+                << family.emitted_section_name << "\", align 8\n";
+            out << class_method_list_ref_symbol
+                << " = private global { i64, ptr, ptr } { i64 "
+                << class_method_list_entry_count << ", ptr "
+                << owner_identity_symbol << ", ptr "
+                << class_method_list_symbol << " }, section \""
+                << family.emitted_section_name << "\", align 8\n";
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 } "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 } "
                    "{ ptr "
                 << class_name_symbol << ", ptr " << category_name_symbol
                 << ", ptr " << record_kind_symbol << ", ptr "
                 << owner_identity_symbol << ", ptr "
                 << attachment_list_symbol << ", ptr "
-                << adopted_protocol_refs_symbol << ", i64 "
+                << adopted_protocol_refs_symbol << ", ptr "
+                << instance_method_list_ref_symbol << ", ptr "
+                << class_method_list_ref_symbol << ", i64 "
                 << bundle.property_count << ", i64 "
                 << bundle.instance_method_count << ", i64 "
                 << bundle.class_method_count

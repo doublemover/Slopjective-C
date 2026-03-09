@@ -243,3 +243,12 @@ cutover:
 - positive cache entries are reused for repeat live dispatch
 - negative cache entries are reused for unresolved selectors while preserving
   the compatibility fallback result
+
+`M255-D004` adds the protocol/category-aware proof surface:
+
+- category-backed instance dispatch resolves live category implementation bodies
+- category-backed class dispatch resolves live category class methods
+- protocol-declared but body-less selectors stay negative while reporting
+  category/protocol probe counts
+- cache snapshots preserve category/protocol probe counts across repeat
+  dispatches
