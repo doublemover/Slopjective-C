@@ -5,6 +5,7 @@
 #include <cctype>
 #include <iomanip>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -20,6 +21,7 @@ class Objc3IREmitter {
   struct MethodDefinition {
     std::string symbol;
     std::string implementation_name;
+    std::string superclass_name;
     const Objc3MethodDecl *method = nullptr;
   };
 
@@ -43,6 +45,14 @@ class Objc3IREmitter {
         function_definitions_.push_back(&fn);
       }
     }
+    std::unordered_map<std::string, std::string> implementation_superclass_names;
+    for (const auto &interface_decl : program_.interfaces) {
+      if (interface_decl.has_category) {
+        continue;
+      }
+      implementation_superclass_names.emplace(interface_decl.name,
+                                              interface_decl.super_name);
+    }
     std::unordered_map<std::string, std::size_t> method_symbol_counts;
     for (const auto &implementation : program_.implementations) {
       for (const auto &method : implementation.methods) {
@@ -54,10 +64,18 @@ class Objc3IREmitter {
         const std::size_t ordinal = method_symbol_counts[base_symbol]++;
         const std::string symbol =
             ordinal == 0 ? base_symbol : base_symbol + "_" + std::to_string(ordinal + 1u);
-        method_definitions_.push_back(MethodDefinition{symbol, implementation.name, &method});
+        const auto super_it =
+            implementation_superclass_names.find(implementation.name);
+        const std::string superclass_name =
+            super_it == implementation_superclass_names.end() ? std::string()
+                                                              : super_it->second;
+        method_definitions_.push_back(
+            MethodDefinition{symbol, implementation.name, superclass_name,
+                             &method});
       }
     }
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
+    CollectKnownClassReceiverConstants();
     CollectCanonicalPoolLiterals();
     CollectMutableGlobalSymbols();
     CollectFunctionEffects();
@@ -118,7 +136,7 @@ class Objc3IREmitter {
       if (method_def.method == nullptr) {
         continue;
       }
-      EmitMethod(*method_def.method, method_def.symbol, body);
+      EmitMethod(method_def, body);
       body << "\n";
     }
 
@@ -767,6 +785,33 @@ class Objc3IREmitter {
         << ", total_typecheck_sites=" << frontend_metadata_.id_class_sel_object_pointer_typecheck_sites_total
         << ", deterministic_id_class_sel_object_pointer_typecheck_handoff="
         << (frontend_metadata_.deterministic_id_class_sel_object_pointer_typecheck_handoff ? "true" : "false")
+        << "\n";
+    out << "; frontend_objc_dispatch_surface_classification_profile = instance_dispatch_sites="
+        << frontend_metadata_.dispatch_surface_classification_instance_sites
+        << ", class_dispatch_sites="
+        << frontend_metadata_.dispatch_surface_classification_class_sites
+        << ", super_dispatch_sites="
+        << frontend_metadata_.dispatch_surface_classification_super_sites
+        << ", direct_dispatch_sites="
+        << frontend_metadata_.dispatch_surface_classification_direct_sites
+        << ", dynamic_dispatch_sites="
+        << frontend_metadata_.dispatch_surface_classification_dynamic_sites
+        << ", instance_entrypoint_family="
+        << frontend_metadata_
+               .dispatch_surface_classification_instance_entrypoint_family
+        << ", class_entrypoint_family="
+        << frontend_metadata_.dispatch_surface_classification_class_entrypoint_family
+        << ", super_entrypoint_family="
+        << frontend_metadata_.dispatch_surface_classification_super_entrypoint_family
+        << ", direct_entrypoint_family="
+        << frontend_metadata_.dispatch_surface_classification_direct_entrypoint_family
+        << ", dynamic_entrypoint_family="
+        << frontend_metadata_
+               .dispatch_surface_classification_dynamic_entrypoint_family
+        << ", deterministic_dispatch_surface_classification_handoff="
+        << (frontend_metadata_.deterministic_dispatch_surface_classification_handoff
+                ? "true"
+                : "false")
         << "\n";
     out << "; frontend_objc_message_send_selector_lowering_profile = message_send_sites="
         << frontend_metadata_.message_send_selector_lowering_sites
@@ -1639,6 +1684,8 @@ class Objc3IREmitter {
     bool receiver_is_compile_time_nonzero = false;
     std::vector<std::string> args;
     std::string selector;
+    std::string dispatch_surface_family;
+    std::string dispatch_surface_entrypoint_family;
   };
 
   struct ControlLabels {
@@ -1655,6 +1702,7 @@ class Objc3IREmitter {
     std::unordered_set<std::string> nil_bound_ptrs;
     std::unordered_set<std::string> nonzero_bound_ptrs;
     std::unordered_map<std::string, int> const_value_ptrs;
+    std::unordered_map<std::string, int> immediate_identifiers;
     ValueType return_type = ValueType::I32;
     int temp_counter = 0;
     int label_counter = 0;
@@ -1910,6 +1958,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_object_pointer_nullability_generics = !{!5}\n";
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
+    out << "!objc3.objc_dispatch_surface_classification = !{!66}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -2940,6 +2989,46 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel)
         << "\"}\n";
+    out << "!66 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_surface_classification_instance_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_surface_classification_class_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_surface_classification_super_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_surface_classification_direct_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.dispatch_surface_classification_dynamic_sites)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .dispatch_surface_classification_instance_entrypoint_family)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .dispatch_surface_classification_class_entrypoint_family)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .dispatch_surface_classification_super_entrypoint_family)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .dispatch_surface_classification_direct_entrypoint_family)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .dispatch_surface_classification_dynamic_entrypoint_family)
+        << "\", i1 "
+        << (frontend_metadata_.deterministic_dispatch_surface_classification_handoff
+                ? 1
+                : 0)
+        << "}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "
@@ -6136,6 +6225,62 @@ class Objc3IREmitter {
     return "";
   }
 
+  int LookupImmediateIdentifierValue(const FunctionContext &ctx,
+                                     const std::string &name) const {
+    const auto value_it = ctx.immediate_identifiers.find(name);
+    if (value_it == ctx.immediate_identifiers.end()) {
+      return 0;
+    }
+    return value_it->second;
+  }
+
+  static int NextNonZeroReceiverIdentityValue(std::size_t ordinal, int salt) {
+    constexpr int kBase = 1024;
+    constexpr int kStride = 17;
+    return kBase + static_cast<int>(ordinal * kStride) + salt;
+  }
+
+  void CollectKnownClassReceiverConstants() {
+    std::set<std::string> class_names;
+    for (const auto &interface_decl : program_.interfaces) {
+      if (!interface_decl.has_category && !interface_decl.name.empty()) {
+        class_names.insert(interface_decl.name);
+      }
+    }
+    for (const auto &implementation : program_.implementations) {
+      if (!implementation.has_category && !implementation.name.empty()) {
+        class_names.insert(implementation.name);
+      }
+    }
+    std::size_t ordinal = 0;
+    for (const std::string &class_name : class_names) {
+      class_receiver_constants_[class_name] =
+          NextNonZeroReceiverIdentityValue(ordinal++, 0);
+    }
+  }
+
+  int LookupClassReceiverIdentityValue(const std::string &class_name) const {
+    const auto value_it = class_receiver_constants_.find(class_name);
+    if (value_it == class_receiver_constants_.end()) {
+      return 0;
+    }
+    return value_it->second;
+  }
+
+  static int BuildInstanceReceiverIdentityValue(int class_identity) {
+    return class_identity == 0 ? 0 : class_identity + 1;
+  }
+
+  static int BuildClassReceiverIdentityValue(int class_identity) {
+    return class_identity == 0 ? 0 : class_identity + 2;
+  }
+
+  void SeedKnownClassReceiverBindings(FunctionContext &ctx) const {
+    for (const auto &entry : class_receiver_constants_) {
+      ctx.immediate_identifiers.emplace(entry.first, entry.second);
+    }
+  }
+
   std::string CoerceI32ToBoolI1(const std::string &i32_value, FunctionContext &ctx) const {
     const std::string bool_i1 = NewTemp(ctx);
     ctx.code_lines.push_back("  " + bool_i1 + " = icmp ne i32 " + i32_value + ", 0");
@@ -6317,7 +6462,7 @@ class Objc3IREmitter {
     }
     const std::string ptr = LookupVarPtr(ctx, expr->ident);
     if (ptr.empty()) {
-      return false;
+      return LookupImmediateIdentifierValue(ctx, expr->ident) == 0;
     }
     if (ctx.nil_bound_ptrs.find(ptr) != ctx.nil_bound_ptrs.end()) {
       return true;
@@ -6374,6 +6519,12 @@ class Objc3IREmitter {
     if (expr->kind == Expr::Kind::Identifier) {
       const std::string ptr = LookupVarPtr(ctx, expr->ident);
       if (ptr.empty()) {
+        const int immediate_value =
+            LookupImmediateIdentifierValue(ctx, expr->ident);
+        if (immediate_value != 0) {
+          value = immediate_value;
+          return true;
+        }
         return false;
       }
       auto value_it = ctx.const_value_ptrs.find(ptr);
@@ -6718,6 +6869,9 @@ class Objc3IREmitter {
     lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);
     lowered.receiver = EmitExpr(expr->receiver.get(), ctx);
     lowered.selector = expr->selector;
+    lowered.dispatch_surface_family = expr->dispatch_surface_family_symbol;
+    lowered.dispatch_surface_entrypoint_family =
+        expr->dispatch_surface_entrypoint_family_symbol;
     for (std::size_t i = 0; i < expr->args.size() && i < lowered.args.size(); ++i) {
       lowered.args[i] = EmitExpr(expr->args[i].get(), ctx);
     }
@@ -6810,6 +6964,11 @@ class Objc3IREmitter {
           const std::string tmp = NewTemp(ctx);
           ctx.code_lines.push_back("  " + tmp + " = load i32, ptr @" + expr->ident + ", align 4");
           return tmp;
+        }
+        const int immediate_value =
+            LookupImmediateIdentifierValue(ctx, expr->ident);
+        if (immediate_value != 0) {
+          return std::to_string(immediate_value);
         }
         return EmitUnsupportedI32Value("unresolved identifier '" + expr->ident + "' during IR lowering");
       }
@@ -7462,6 +7621,7 @@ class Objc3IREmitter {
     FunctionContext ctx;
     ctx.return_type = fn.return_type;
     ctx.scopes.push_back({});
+    SeedKnownClassReceiverBindings(ctx);
 
     for (std::size_t i = 0; i < fn.params.size(); ++i) {
       const auto &param = fn.params[i];
@@ -7496,7 +7656,9 @@ class Objc3IREmitter {
     out << "}\n";
   }
 
-  void EmitMethod(const Objc3MethodDecl &method, const std::string &symbol, std::ostringstream &out) const {
+  void EmitMethod(const MethodDefinition &method_def,
+                  std::ostringstream &out) const {
+    const Objc3MethodDecl &method = *method_def.method;
     std::ostringstream signature;
     for (std::size_t i = 0; i < method.params.size(); ++i) {
       if (i != 0) {
@@ -7505,12 +7667,32 @@ class Objc3IREmitter {
       signature << LLVMScalarType(method.params[i].type) << " %arg" << i;
     }
 
-    out << "define " << LLVMScalarType(method.return_type) << " @" << symbol << "(" << signature.str() << ") {\n";
+    out << "define " << LLVMScalarType(method.return_type) << " @"
+        << method_def.symbol << "(" << signature.str() << ") {\n";
     out << "entry:\n";
 
     FunctionContext ctx;
     ctx.return_type = method.return_type;
     ctx.scopes.push_back({});
+    SeedKnownClassReceiverBindings(ctx);
+    const int implementation_class_identity =
+        LookupClassReceiverIdentityValue(method_def.implementation_name);
+    const int self_identity =
+        method.is_class_method
+            ? BuildClassReceiverIdentityValue(implementation_class_identity)
+            : BuildInstanceReceiverIdentityValue(implementation_class_identity);
+    if (self_identity != 0) {
+      ctx.immediate_identifiers["self"] = self_identity;
+    }
+    const int super_class_identity =
+        LookupClassReceiverIdentityValue(method_def.superclass_name);
+    const int super_identity =
+        method.is_class_method
+            ? BuildClassReceiverIdentityValue(super_class_identity)
+            : BuildInstanceReceiverIdentityValue(super_class_identity);
+    if (super_identity != 0) {
+      ctx.immediate_identifiers["super"] = super_identity;
+    }
 
     for (std::size_t i = 0; i < method.params.size(); ++i) {
       const auto &param = method.params[i];
@@ -7630,6 +7812,7 @@ class Objc3IREmitter {
   std::map<std::string, LoweredFunctionSignature> function_signatures_;
   std::map<std::string, std::string> selector_pool_globals_;
   std::map<std::string, std::string> runtime_string_pool_globals_;
+  std::unordered_map<std::string, int> class_receiver_constants_;
   std::size_t vector_signature_function_count_ = 0;
   mutable bool runtime_dispatch_call_emitted_ = false;
   mutable bool fail_open_fallback_triggered_ = false;

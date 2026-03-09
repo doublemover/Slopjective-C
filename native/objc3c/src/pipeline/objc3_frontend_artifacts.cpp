@@ -2837,6 +2837,179 @@ void AccumulateMessageSendSelectorLoweringStmt(
   }
 }
 
+void AccumulateDispatchSurfaceClassificationExpr(
+    const Expr *expr,
+    Objc3DispatchSurfaceClassificationContract &contract);
+
+void AccumulateDispatchSurfaceClassificationStmt(
+    const Stmt *stmt,
+    Objc3DispatchSurfaceClassificationContract &contract) {
+  if (stmt == nullptr) {
+    return;
+  }
+
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      AccumulateDispatchSurfaceClassificationExpr(stmt->let_stmt->value.get(),
+                                                  contract);
+      return;
+    case Stmt::Kind::Assign:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->assign_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::Return:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->return_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::Expr:
+      AccumulateDispatchSurfaceClassificationExpr(stmt->expr_stmt->value.get(),
+                                                  contract);
+      return;
+    case Stmt::Kind::If:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->if_stmt->condition.get(), contract);
+      for (const auto &nested : stmt->if_stmt->then_body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      for (const auto &nested : stmt->if_stmt->else_body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      for (const auto &nested : stmt->do_while_stmt->body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->do_while_stmt->condition.get(), contract);
+      return;
+    case Stmt::Kind::For:
+      AccumulateDispatchSurfaceClassificationExpr(stmt->for_stmt->init.value.get(),
+                                                  contract);
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->for_stmt->condition.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(stmt->for_stmt->step.value.get(),
+                                                  contract);
+      for (const auto &nested : stmt->for_stmt->body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Switch:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->switch_stmt->condition.get(), contract);
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        for (const auto &nested : case_stmt.body) {
+          AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      AccumulateDispatchSurfaceClassificationExpr(
+          stmt->while_stmt->condition.get(), contract);
+      for (const auto &nested : stmt->while_stmt->body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Block:
+      for (const auto &nested : stmt->block_stmt->body) {
+        AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+void AccumulateDispatchSurfaceClassificationExpr(
+    const Expr *expr,
+    Objc3DispatchSurfaceClassificationContract &contract) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  switch (expr->kind) {
+    case Expr::Kind::MessageSend: {
+      if (!expr->dispatch_surface_is_normalized) {
+        contract.deterministic = false;
+      }
+      switch (expr->dispatch_surface_kind) {
+        case Expr::DispatchSurfaceKind::Instance:
+          ++contract.instance_dispatch_sites;
+          break;
+        case Expr::DispatchSurfaceKind::Class:
+          ++contract.class_dispatch_sites;
+          break;
+        case Expr::DispatchSurfaceKind::Super:
+          ++contract.super_dispatch_sites;
+          break;
+        case Expr::DispatchSurfaceKind::Direct:
+          ++contract.direct_dispatch_sites;
+          break;
+        case Expr::DispatchSurfaceKind::Dynamic:
+          ++contract.dynamic_dispatch_sites;
+          break;
+        case Expr::DispatchSurfaceKind::Unclassified:
+        default:
+          ++contract.dynamic_dispatch_sites;
+          contract.deterministic = false;
+          break;
+      }
+      AccumulateDispatchSurfaceClassificationExpr(expr->receiver.get(), contract);
+      for (const auto &arg : expr->args) {
+        AccumulateDispatchSurfaceClassificationExpr(arg.get(), contract);
+      }
+      return;
+    }
+    case Expr::Kind::Binary:
+      AccumulateDispatchSurfaceClassificationExpr(expr->left.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(expr->right.get(), contract);
+      return;
+    case Expr::Kind::Conditional:
+      AccumulateDispatchSurfaceClassificationExpr(expr->left.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(expr->right.get(), contract);
+      AccumulateDispatchSurfaceClassificationExpr(expr->third.get(), contract);
+      return;
+    case Expr::Kind::Call:
+      AccumulateDispatchSurfaceClassificationExpr(expr->receiver.get(), contract);
+      for (const auto &arg : expr->args) {
+        AccumulateDispatchSurfaceClassificationExpr(arg.get(), contract);
+      }
+      return;
+    case Expr::Kind::BlockLiteral:
+      return;
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+    case Expr::Kind::Identifier:
+      return;
+  }
+}
+
+Objc3DispatchSurfaceClassificationContract BuildDispatchSurfaceClassificationContract(
+    const Objc3Program &program) {
+  Objc3DispatchSurfaceClassificationContract contract;
+  for (const auto &global : program.globals) {
+    AccumulateDispatchSurfaceClassificationExpr(global.value.get(), contract);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      AccumulateDispatchSurfaceClassificationStmt(stmt.get(), contract);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (!method_decl.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method_decl.body) {
+        AccumulateDispatchSurfaceClassificationStmt(stmt.get(), contract);
+      }
+    }
+  }
+  return contract;
+}
+
 Objc3MessageSendSelectorLoweringContract BuildMessageSendSelectorLoweringContract(const Objc3Program &program) {
   Objc3MessageSendSelectorLoweringContract contract;
   std::unordered_set<std::string> selector_literals;
@@ -4410,6 +4583,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string id_class_sel_object_pointer_typecheck_replay_key =
       Objc3IdClassSelObjectPointerTypecheckReplayKey(id_class_sel_object_pointer_typecheck_contract);
+  const Objc3DispatchSurfaceClassificationContract dispatch_surface_classification_contract =
+      BuildDispatchSurfaceClassificationContract(program);
+  if (!IsValidObjc3DispatchSurfaceClassificationContract(
+          dispatch_surface_classification_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid dispatch-surface classification contract");
+  }
+  const std::string dispatch_surface_classification_replay_key =
+      Objc3DispatchSurfaceClassificationReplayKey(
+          dispatch_surface_classification_contract);
   const Objc3MessageSendSelectorLoweringContract message_send_selector_lowering_contract =
       BuildMessageSendSelectorLoweringContract(program);
   if (!IsValidObjc3MessageSendSelectorLoweringContract(message_send_selector_lowering_contract)) {
@@ -7630,6 +7814,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_dispatch_surface_classification_surface\":{\"instance_dispatch_sites\":"
+           << dispatch_surface_classification_contract.instance_dispatch_sites
+           << ",\"class_dispatch_sites\":"
+           << dispatch_surface_classification_contract.class_dispatch_sites
+           << ",\"super_dispatch_sites\":"
+           << dispatch_surface_classification_contract.super_dispatch_sites
+           << ",\"direct_dispatch_sites\":"
+           << dispatch_surface_classification_contract.direct_dispatch_sites
+           << ",\"dynamic_dispatch_sites\":"
+           << dispatch_surface_classification_contract.dynamic_dispatch_sites
+           << ",\"instance_entrypoint_family\":\""
+           << dispatch_surface_classification_contract.instance_entrypoint_family
+           << "\",\"class_entrypoint_family\":\""
+           << dispatch_surface_classification_contract.class_entrypoint_family
+           << "\",\"super_entrypoint_family\":\""
+           << dispatch_surface_classification_contract.super_entrypoint_family
+           << "\",\"direct_entrypoint_family\":\""
+           << dispatch_surface_classification_contract.direct_entrypoint_family
+           << "\",\"dynamic_entrypoint_family\":\""
+           << dispatch_surface_classification_contract.dynamic_entrypoint_family
+           << "\",\"replay_key\":\""
+           << dispatch_surface_classification_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (dispatch_surface_classification_contract.deterministic ? "true"
+                                                                     : "false")
+           << "}"
            << ",\"objc_message_send_selector_lowering_surface\":{\"message_send_sites\":"
            << message_send_selector_lowering_contract.message_send_sites
            << ",\"unary_selector_sites\":"
@@ -8283,6 +8493,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (id_class_sel_object_pointer_typecheck_contract.deterministic ? "true" : "false")
            << "},\n";
+  manifest << "  \"lowering_dispatch_surface_classification\":{\"replay_key\":\""
+           << dispatch_surface_classification_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3DispatchSurfaceClassificationContractId
+           << "\",\"deterministic_handoff\":"
+           << (dispatch_surface_classification_contract.deterministic ? "true"
+                                                                     : "false")
+           << "},\n";
   manifest << "  \"lowering_message_send_selector_lowering\":{\"replay_key\":\""
            << message_send_selector_lowering_replay_key
            << "\",\"lane_contract\":\"" << kObjc3MessageSendSelectorLoweringLaneContract
@@ -8700,6 +8918,28 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       id_class_sel_object_pointer_typecheck_contract.object_pointer_typecheck_sites;
   ir_frontend_metadata.id_class_sel_object_pointer_typecheck_sites_total =
       id_class_sel_object_pointer_typecheck_contract.total_typecheck_sites;
+  ir_frontend_metadata.lowering_dispatch_surface_classification_replay_key =
+      dispatch_surface_classification_replay_key;
+  ir_frontend_metadata.dispatch_surface_classification_instance_sites =
+      dispatch_surface_classification_contract.instance_dispatch_sites;
+  ir_frontend_metadata.dispatch_surface_classification_class_sites =
+      dispatch_surface_classification_contract.class_dispatch_sites;
+  ir_frontend_metadata.dispatch_surface_classification_super_sites =
+      dispatch_surface_classification_contract.super_dispatch_sites;
+  ir_frontend_metadata.dispatch_surface_classification_direct_sites =
+      dispatch_surface_classification_contract.direct_dispatch_sites;
+  ir_frontend_metadata.dispatch_surface_classification_dynamic_sites =
+      dispatch_surface_classification_contract.dynamic_dispatch_sites;
+  ir_frontend_metadata.dispatch_surface_classification_instance_entrypoint_family =
+      dispatch_surface_classification_contract.instance_entrypoint_family;
+  ir_frontend_metadata.dispatch_surface_classification_class_entrypoint_family =
+      dispatch_surface_classification_contract.class_entrypoint_family;
+  ir_frontend_metadata.dispatch_surface_classification_super_entrypoint_family =
+      dispatch_surface_classification_contract.super_entrypoint_family;
+  ir_frontend_metadata.dispatch_surface_classification_direct_entrypoint_family =
+      dispatch_surface_classification_contract.direct_entrypoint_family;
+  ir_frontend_metadata.dispatch_surface_classification_dynamic_entrypoint_family =
+      dispatch_surface_classification_contract.dynamic_entrypoint_family;
   ir_frontend_metadata.lowering_message_send_selector_lowering_replay_key =
       message_send_selector_lowering_replay_key;
   ir_frontend_metadata.message_send_selector_lowering_sites =
@@ -10296,6 +10536,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_support_library_link_wiring.driver_link_mode;
   ir_frontend_metadata.deterministic_id_class_sel_object_pointer_typecheck_handoff =
       id_class_sel_object_pointer_typecheck_contract.deterministic;
+  ir_frontend_metadata.deterministic_dispatch_surface_classification_handoff =
+      dispatch_surface_classification_contract.deterministic;
   ir_frontend_metadata.deterministic_message_send_selector_lowering_handoff =
       message_send_selector_lowering_contract.deterministic;
   ir_frontend_metadata.deterministic_dispatch_abi_marshalling_handoff =

@@ -16702,3 +16702,24 @@ starts expanding actual entrypoint behavior:
   runtime family in the current native path
 - direct dispatch remains reserved for later work and is an explicit non-goal
   in `M255-A001`
+
+## Dispatch-site modeling (M255-A002)
+
+`M255-A002` turns the frozen taxonomy into one real frontend/sema/lowering
+implementation for the currently supported native LLVM path:
+
+- parser message sends now carry explicit dispatch-surface state and normalization
+  completion flags
+- normalization classifies identifier receivers against implicit method-context
+  `self`, implicit method-context `super`, and known class symbols before sema
+- semantic validation seeds `self`, `super`, and known class names so method
+  bodies no longer fail closed as unresolved identifiers during lowering
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
+- lowering handoff path
+  `lowering_dispatch_surface_classification`
+- canonical proof fixture
+  `tests/tooling/fixtures/native/m255_dispatch_surface_modeling.objc3`
+- live proof counts: instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
+- `objc3c-native` now compiles that fixture through `llvm-direct`, and
+  `module.ll` emits `!objc3.objc_dispatch_surface_classification`

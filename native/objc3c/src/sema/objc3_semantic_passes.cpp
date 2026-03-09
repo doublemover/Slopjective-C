@@ -13095,6 +13095,13 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::unordered_map<std::string, ValueType> body_globals = surface.globals;
+  for (const auto &interface_decl : ast.interfaces) {
+    body_globals.try_emplace(interface_decl.name, ValueType::ObjCClass);
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    body_globals.try_emplace(implementation_decl.name, ValueType::ObjCClass);
+  }
   StaticScalarBindings global_static_bindings;
   std::unordered_set<std::string> assigned_identifier_names;
   for (const auto &fn : ast.functions) {
@@ -13137,7 +13144,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     if (!fn.is_prototype) {
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
-      ValidateStatements(fn.body, scopes, surface.globals, surface.functions, expected_return_type, fn.name, diagnostics,
+      ValidateStatements(fn.body, scopes, body_globals, surface.functions, expected_return_type, fn.name, diagnostics,
                          0, 0, options.max_message_send_args);
       // Legacy extraction anchor retained for contract tests:
       // ValidateStatements(fn.body, scopes, surface.globals, surface.functions, fn.return_type, fn.name, diagnostics,
@@ -13157,6 +13164,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
       std::vector<SemanticScope> scopes;
       scopes.push_back({});
+      scopes.back().emplace("self",
+                            method.is_class_method
+                                ? MakeScalarSemanticType(ValueType::ObjCClass)
+                                : MakeScalarSemanticType(ValueType::ObjCId));
+      scopes.back().emplace("super",
+                            method.is_class_method
+                                ? MakeScalarSemanticType(ValueType::ObjCClass)
+                                : MakeScalarSemanticType(ValueType::ObjCId));
       for (const auto &param : method.params) {
         if (scopes.back().find(param.name) != scopes.back().end()) {
           diagnostics.push_back(MakeDiag(param.line, param.column, "O3S201", "duplicate parameter '" + param.name + "'"));
@@ -13168,7 +13183,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
-      ValidateStatements(method.body, scopes, surface.globals, surface.functions, expected_return_type, method_context,
+      ValidateStatements(method.body, scopes, body_globals, surface.functions, expected_return_type, method_context,
                          diagnostics, 0, 0, options.max_message_send_args);
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(method.body, &global_static_bindings)) {

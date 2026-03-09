@@ -1,0 +1,46 @@
+module dispatchSurfaceModeling;
+
+@interface Root
+- (id) ping;
+@end
+
+@implementation Root
+- (id) ping {
+  return 1;
+}
+@end
+
+@interface Widget : Root
++ (id) shared;
++ (id) sharedFromSelf;
+- (id) ping;
+- (id) sample;
+@end
+
+@implementation Widget
++ (id) shared {
+  return 2;
+}
+
++ (id) sharedFromSelf {
+  return [self shared];
+}
+
+- (id) ping {
+  return 3;
+}
+
+- (id) sample {
+  let local = 7;
+  let toggle = 1;
+  [self ping];
+  [super ping];
+  [Widget shared];
+  [local ping];
+  return [(toggle ? local : 0) ping];
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -10173,8 +10173,11 @@ class Objc3Parser {
     message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(
         message->nil_receiver_foldable, message->nil_receiver_requires_runtime_dispatch, message->message_send_form);
     message->nil_receiver_semantics_is_normalized = true;
-    // M255-A001 dispatch-surface classification anchor: bracket sends remain
-    // live dynamic sites; super receivers stay explicit while direct dispatch remains reserved.
+    // M255-A001 dispatch-surface classification anchor: super receivers stay explicit while direct dispatch remains reserved.
+    // M255-A002 dispatch-site modeling anchor: parsing preserves raw receiver
+    // spelling only; whole-program frontend normalization classifies
+    // instance/class/super/direct/dynamic families before sema consumes the
+    // message send.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(
@@ -10199,6 +10202,10 @@ class Objc3Parser {
         message->dispatch_abi_runtime_arg_slots, message->runtime_shim_host_link_declaration_parameter_count,
         message->runtime_dispatch_bridge_symbol, message->message_send_form);
     message->runtime_shim_host_link_is_normalized = true;
+    message->dispatch_surface_kind = Expr::DispatchSurfaceKind::Unclassified;
+    message->dispatch_surface_family_symbol.clear();
+    message->dispatch_surface_entrypoint_family_symbol.clear();
+    message->dispatch_surface_is_normalized = false;
 
     if (!Match(TokenKind::RBracket)) {
       const Token &token = Peek();

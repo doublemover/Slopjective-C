@@ -399,6 +399,18 @@ struct Objc3IRFrontendMetadata {
   std::size_t object_pointer_typecheck_sites = 0;
   std::size_t id_class_sel_object_pointer_typecheck_sites_total = 0;
   bool deterministic_id_class_sel_object_pointer_typecheck_handoff = false;
+  std::string lowering_dispatch_surface_classification_replay_key;
+  std::size_t dispatch_surface_classification_instance_sites = 0;
+  std::size_t dispatch_surface_classification_class_sites = 0;
+  std::size_t dispatch_surface_classification_super_sites = 0;
+  std::size_t dispatch_surface_classification_direct_sites = 0;
+  std::size_t dispatch_surface_classification_dynamic_sites = 0;
+  std::string dispatch_surface_classification_instance_entrypoint_family;
+  std::string dispatch_surface_classification_class_entrypoint_family;
+  std::string dispatch_surface_classification_super_entrypoint_family;
+  std::string dispatch_surface_classification_direct_entrypoint_family;
+  std::string dispatch_surface_classification_dynamic_entrypoint_family;
+  bool deterministic_dispatch_surface_classification_handoff = false;
   std::string lowering_message_send_selector_lowering_replay_key;
   std::size_t message_send_selector_lowering_sites = 0;
   std::size_t message_send_selector_lowering_unary_sites = 0;

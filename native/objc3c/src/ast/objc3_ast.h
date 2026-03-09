@@ -46,6 +46,14 @@ struct Expr {
     BlockLiteral
   };
   enum class MessageSendForm { None, Unary, Keyword };
+  enum class DispatchSurfaceKind {
+    Unclassified,
+    Instance,
+    Class,
+    Super,
+    Direct,
+    Dynamic
+  };
   struct MessageSendSelectorPiece {
     std::string keyword;
     bool has_argument = false;
@@ -91,6 +99,10 @@ struct Expr {
   std::string runtime_dispatch_bridge_symbol;
   std::string runtime_shim_host_link_symbol;
   bool runtime_shim_host_link_is_normalized = false;
+  DispatchSurfaceKind dispatch_surface_kind = DispatchSurfaceKind::Unclassified;
+  std::string dispatch_surface_family_symbol;
+  std::string dispatch_surface_entrypoint_family_symbol;
+  bool dispatch_surface_is_normalized = false;
   std::vector<std::string> block_parameter_names_lexicographic;
   std::size_t block_parameter_count = 0;
   std::vector<std::string> block_capture_names_lexicographic;

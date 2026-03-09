@@ -5541,3 +5541,23 @@ behavior yet:
   `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
 - direct dispatch remains a reserved non-goal in `M255-A001`
 - the freeze exists to hand off a deterministic starting point to `M255-A002`
+
+## M255 dispatch-site modeling implementation (A002)
+
+`M255-A002` materializes the frozen dispatch taxonomy into one real frontend,
+semantic, and lowering handoff for the current native path:
+
+- known-class identifiers plus implicit `self`/`super` must be normalized before
+  semantic validation and LLVM lowering
+- semantic surface `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
+  publishes the live dispatch counts and entrypoint families
+- lowering handoff `lowering_dispatch_surface_classification` must replay the
+  same contract state into IR emission
+- the canonical proof fixture
+  `tests/tooling/fixtures/native/m255_dispatch_surface_modeling.objc3` must
+  produce instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
+- `objc3c-native` must emit the textual profile line
+  `frontend_objc_dispatch_surface_classification_profile` and named metadata
+  `!objc3.objc_dispatch_surface_classification`
+- the live lowering handoff contract remains
+  `objc3c-dispatch-surface-classification/m255-a001-v1`

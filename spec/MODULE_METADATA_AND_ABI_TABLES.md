@@ -6596,3 +6596,18 @@ the live runtime family is frozen:
 - current selector/message-send compatibility entrypoint `objc3_msgsend_i32`
 - current live runtime dispatch family anchor `objc3_runtime_dispatch_i32`
 - no additional direct-dispatch metadata anchors are introduced in `M255-A001`
+
+## M255 dispatch/runtime metadata anchors (A002)
+
+`M255-A002` promotes the frozen taxonomy into one live semantic/lowering/IR
+anchor set:
+
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_dispatch_surface_classification_surface`
+- lowering handoff path `lowering_dispatch_surface_classification`
+- IR textual profile anchor `frontend_objc_dispatch_surface_classification_profile`
+- IR named metadata anchor `!objc3.objc_dispatch_surface_classification`
+- canonical proof counts remain instance `2`, class `2`, super `1`, direct `0`,
+  dynamic `1`
+- direct dispatch stays explicitly zero/reserved until a later syntax/binding
+  issue materializes it

@@ -1021,6 +1021,10 @@ bool IsValidObjc3IdClassSelObjectPointerTypecheckContract(
     const Objc3IdClassSelObjectPointerTypecheckContract &contract);
 std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
     const Objc3IdClassSelObjectPointerTypecheckContract &contract);
+bool IsValidObjc3DispatchSurfaceClassificationContract(
+    const Objc3DispatchSurfaceClassificationContract &contract);
+std::string Objc3DispatchSurfaceClassificationReplayKey(
+    const Objc3DispatchSurfaceClassificationContract &contract);
 bool IsValidObjc3MessageSendSelectorLoweringContract(
     const Objc3MessageSendSelectorLoweringContract &contract);
 std::string Objc3MessageSendSelectorLoweringReplayKey(

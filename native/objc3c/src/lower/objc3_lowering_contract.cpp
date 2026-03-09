@@ -919,6 +919,34 @@ std::string Objc3IdClassSelObjectPointerTypecheckReplayKey(
          ";lane_contract=" + kObjc3IdClassSelObjectPointerTypecheckLaneContract;
 }
 
+bool IsValidObjc3DispatchSurfaceClassificationContract(
+    const Objc3DispatchSurfaceClassificationContract &contract) {
+  const bool live_runtime_bindings_ok =
+      contract.instance_entrypoint_family == kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily &&
+      contract.class_entrypoint_family == kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily &&
+      contract.super_entrypoint_family == kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily &&
+      contract.dynamic_entrypoint_family == kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily;
+  return live_runtime_bindings_ok &&
+         contract.direct_entrypoint_family == kObjc3DispatchSurfaceDirectDispatchBinding;
+}
+
+std::string Objc3DispatchSurfaceClassificationReplayKey(
+    const Objc3DispatchSurfaceClassificationContract &contract) {
+  return std::string("instance_dispatch_sites=") +
+             std::to_string(contract.instance_dispatch_sites) +
+         ";class_dispatch_sites=" + std::to_string(contract.class_dispatch_sites) +
+         ";super_dispatch_sites=" + std::to_string(contract.super_dispatch_sites) +
+         ";direct_dispatch_sites=" + std::to_string(contract.direct_dispatch_sites) +
+         ";dynamic_dispatch_sites=" + std::to_string(contract.dynamic_dispatch_sites) +
+         ";instance_entrypoint_family=" + contract.instance_entrypoint_family +
+         ";class_entrypoint_family=" + contract.class_entrypoint_family +
+         ";super_entrypoint_family=" + contract.super_entrypoint_family +
+         ";direct_entrypoint_family=" + contract.direct_entrypoint_family +
+         ";dynamic_entrypoint_family=" + contract.dynamic_entrypoint_family +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";contract_id=" + kObjc3DispatchSurfaceClassificationContractId;
+}
+
 bool IsValidObjc3MessageSendSelectorLoweringContract(
     const Objc3MessageSendSelectorLoweringContract &contract) {
   if (contract.unary_selector_sites + contract.keyword_selector_sites != contract.message_send_sites) {
