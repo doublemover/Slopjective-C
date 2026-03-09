@@ -37,6 +37,7 @@ std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
   // M263-E001 bootstrap-completion gate anchor: the registration manifest is
   // one half of the canonical emitted artifact pair consumed by the lane-E bootstrap completion gate
   // for single-image and multi-image evidence.
+  // M263-E002 bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix);
@@ -48,6 +49,7 @@ std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
   // M263-E001 bootstrap-completion gate anchor: the registration descriptor is
   // the other half of the canonical emitted artifact pair consumed by the
   // lane-E bootstrap completion gate.
+  // M263-E002 bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix);

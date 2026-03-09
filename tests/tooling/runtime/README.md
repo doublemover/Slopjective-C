@@ -208,6 +208,16 @@ with one published operator runbook:
 - canonical closeout evidence
   `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
 
+`M263-E002` closes the bootstrap-hardening milestone with one published operator runbook
+and one runnable bootstrap matrix:
+
+- `docs/runbooks/m263_bootstrap_matrix_operator_runbook.md`
+- `scripts/check_objc3c_bootstrap_matrix.ps1`
+- canonical matrix summary
+  `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`
+- canonical closeout evidence
+  `tmp/reports/m263/M263-E002/bootstrap_matrix_closeout_summary.json`
+
 `M255-D001` freezes the next runtime-owned boundary after the live dispatch
 cutover:
 

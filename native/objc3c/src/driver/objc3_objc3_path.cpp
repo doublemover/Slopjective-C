@@ -426,6 +426,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // emitted registration manifest plus the A002/B003/C003/D003 proof chain
             // to decide whether current single-image and multi-image bootstrap
             // completion is satisfied.
+            // M263-E002 bootstrap-matrix closeout anchor: the published operator runbook and matrix proof
+            // consume this same manifest authority without
+            // inventing a separate startup source of truth.
             WriteRuntimeRegistrationManifestArtifact(
                 cli_options.out_dir,
                 cli_options.emit_prefix,
@@ -529,6 +532,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               // registration descriptor and registration manifest as one
               // canonical emitted artifact pair rather than reconstructing
               // descriptor authority from ad hoc sidecars.
+              // M263-E002 bootstrap-matrix closeout anchor: the published
+              // operator runbook and matrix proof consume this same canonical pair.
               WriteRuntimeRegistrationDescriptorArtifact(
                   cli_options.out_dir, cli_options.emit_prefix,
                   registration_descriptor_json);

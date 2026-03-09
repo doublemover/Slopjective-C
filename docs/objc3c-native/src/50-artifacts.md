@@ -271,6 +271,25 @@ live restart hardening proof from `M263-D003`.
 - canonical evidence path:
   - `tmp/reports/m263/M263-E001/bootstrap_completion_conformance_gate_summary.json`
 
+## Runnable multi-image bootstrap matrix (M263-E002)
+
+`M263-E002` closes the bootstrap-hardening milestone with one published
+operator runbook and one stable bootstrap matrix summary rooted on the live
+single-image and archive-backed startup paths.
+
+- contract id
+  `objc3c-runtime-runnable-bootstrap-matrix-closeout/m263-e002-v1`
+- closeout model
+  `e001-gate-plus-published-bootstrap-matrix-runbook`
+- published operator runbook:
+  - `docs/runbooks/m263_bootstrap_matrix_operator_runbook.md`
+- operator matrix script:
+  - `scripts/check_objc3c_bootstrap_matrix.ps1`
+- canonical matrix summary:
+  - `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`
+- canonical closeout evidence:
+  - `tmp/reports/m263/M263-E002/bootstrap_matrix_closeout_summary.json`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:

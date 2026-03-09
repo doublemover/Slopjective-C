@@ -7325,3 +7325,17 @@ called bootstrap-complete for single-image and multi-image retained-link flows.
   - `tmp/reports/m263/M263-B003/bootstrap_failure_restart_semantics_summary.json`
   - `tmp/reports/m263/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json`
   - `tmp/reports/m263/M263-D003/live_restart_hardening_summary.json`
+
+## M263 runnable bootstrap matrix metadata anchors (E002)
+
+`M263-E002` does not add new metadata families. It closes the milestone on the
+same emitted descriptor/manifest pair while publishing one operator matrix over
+the already-live startup paths.
+
+- contract id
+  `objc3c-runtime-runnable-bootstrap-matrix-closeout/m263-e002-v1`
+- canonical emitted artifact pair:
+  - `module.runtime-registration-descriptor.json`
+  - `module.runtime-registration-manifest.json`
+- operator matrix summary:
+  - `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`

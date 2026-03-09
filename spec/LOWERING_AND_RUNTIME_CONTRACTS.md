@@ -6280,3 +6280,21 @@ bootstrap tranche is actually complete for runnable native programs.
   - single-image restart semantics stay deterministic and replay-safe
   - plain archive links omit bootstrap images while retained single/merged links replay them deterministically
   - repeated live reset/replay cycles remain idempotence-safe across restart generations
+
+## M263 runnable multi-image bootstrap matrix closeout (E002)
+
+`M263-E002` closes the milestone by binding the `M263-E001` gate to one
+published operator runbook and one stable bootstrap matrix summary.
+
+- contract id
+  `objc3c-runtime-runnable-bootstrap-matrix-closeout/m263-e002-v1`
+- closeout model
+  `e001-gate-plus-published-bootstrap-matrix-runbook`
+- required matrix cases:
+  - `single-image-default`
+  - `single-image-explicit`
+  - `archive-backed-plain`
+  - `archive-backed-single-retained`
+  - `archive-backed-merged-retained`
+- canonical operator script:
+  - `scripts/check_objc3c_bootstrap_matrix.ps1`
