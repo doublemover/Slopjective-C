@@ -6658,3 +6658,21 @@ super/dynamic dispatch evidence while direct dispatch remains reserved:
 - negative legality diagnostic anchor `O3S216`
 - metadata evidence now expects `super` and dynamic site counts to stay visible
   in the same manifest/handoff family that feeds runtime-shim host-link checks
+
+## M255 dispatch lowering ABI metadata anchors (C001)
+
+`M255-C001` adds the lane-C metadata anchors for the runtime-dispatch lowering
+cutover boundary without changing code generation yet:
+
+- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_dispatch_lowering_abi_contract`
+- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`
+- compatibility bridge symbol `objc3_msgsend_i32`
+- selector lookup symbol `objc3_runtime_lookup_selector`
+- selector handle type `objc3_runtime_selector_handle`
+- receiver ABI `i32`
+- selector ABI `ptr`
+- fixed argument ABI `i32[4]`
+- result ABI `i32`
+- compatibility bridge remains the default lowering target until `M255-C002`

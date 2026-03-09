@@ -6910,6 +6910,11 @@ class Objc3IREmitter {
       // continues to route admitted super/dynamic sites through the live
       // runtime family, preserves their normalized method-family metadata, and
       // never synthesizes a reserved direct-dispatch entrypoint.
+      // M255-C001 dispatch lowering ABI freeze anchor: lowering still emits
+      // the compatibility bridge symbol as the default call target while the
+      // frozen lane-C ABI records the canonical runtime entrypoint,
+      // selector-lookup surface, i32 receiver/result ABI, and fixed four-slot
+      // argument vector that M255-C002 will cut over to explicitly.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;

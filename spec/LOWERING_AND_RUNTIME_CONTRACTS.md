@@ -5615,3 +5615,20 @@ dispatch-site classification and live runtime dispatch lowering:
 - root-class `super` dispatch also fails closed with `O3S216`
 - admitted super/dynamic sites continue to lower through the live runtime
   entrypoint family rather than inventing a second direct-dispatch path
+
+## M255 dispatch lowering ABI freeze (C001)
+
+`M255-C001` freezes the lane-C lowering boundary that will later switch native
+IR off the compatibility bridge and onto the canonical runtime ABI:
+
+- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
+- canonical runtime entrypoint `objc3_runtime_dispatch_i32`
+- compatibility bridge entrypoint `objc3_msgsend_i32`
+- selector lookup symbol `objc3_runtime_lookup_selector`
+- selector handle type `objc3_runtime_selector_handle`
+- receiver/result ABI remain `i32`
+- selector operand remains a lowered cstring pointer until `M255-C002`
+- fixed argument marshalling remains `4` `i32` slots with zero padding
+- default lowering target remains the compatibility bridge until `M255-C002`
+- `super`, nil, and direct runtime-entrypoint cutover stay deferred until
+  `M255-C003`

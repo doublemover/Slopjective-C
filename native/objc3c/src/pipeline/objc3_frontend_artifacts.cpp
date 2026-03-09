@@ -3308,6 +3308,36 @@ Objc3RuntimeShimHostLinkContract BuildRuntimeShimHostLinkContract(
   return contract;
 }
 
+Objc3RuntimeDispatchLoweringAbiContract BuildRuntimeDispatchLoweringAbiContract(
+    const Objc3DispatchAbiMarshallingContract &dispatch_abi_marshalling_contract,
+    const Objc3RuntimeShimHostLinkContract &runtime_shim_host_link_contract,
+    const Objc3RuntimeBootstrapApiSummary &runtime_bootstrap_api_summary) {
+  Objc3RuntimeDispatchLoweringAbiContract contract;
+  contract.message_send_sites = dispatch_abi_marshalling_contract.message_send_sites;
+  contract.fixed_argument_slot_count =
+      runtime_shim_host_link_contract.runtime_dispatch_arg_slots;
+  contract.runtime_dispatch_parameter_count =
+      runtime_shim_host_link_contract
+          .runtime_dispatch_declaration_parameter_count;
+  contract.canonical_runtime_dispatch_symbol =
+      runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
+  contract.compatibility_runtime_dispatch_symbol =
+      runtime_bootstrap_api_summary.compatibility_dispatch_symbol;
+  contract.default_lowering_target_symbol =
+      runtime_shim_host_link_contract.runtime_dispatch_symbol;
+  contract.selector_lookup_symbol =
+      runtime_bootstrap_api_summary.selector_lookup_symbol;
+  contract.selector_handle_type =
+      runtime_bootstrap_api_summary.selector_handle_type;
+  contract.fail_closed =
+      IsReadyObjc3RuntimeBootstrapApiSummary(runtime_bootstrap_api_summary);
+  contract.deterministic =
+      dispatch_abi_marshalling_contract.deterministic &&
+      runtime_shim_host_link_contract.deterministic &&
+      !runtime_bootstrap_api_summary.replay_key.empty();
+  return contract;
+}
+
 Objc3OwnershipQualifierLoweringContract BuildOwnershipQualifierLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3OwnershipQualifierLoweringContract contract;
@@ -4658,6 +4688,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string runtime_shim_host_link_replay_key =
       Objc3RuntimeShimHostLinkReplayKey(runtime_shim_host_link_contract);
+  // M255-C001 dispatch lowering ABI freeze anchor: lane-C now publishes the
+  // canonical runtime-dispatch cutover boundary separately from the historical
+  // shim-host-link packet so C002 can swap call emission over without
+  // redefining the selector lookup/handle or argument-slot ABI ad hoc.
+  const Objc3RuntimeDispatchLoweringAbiContract
+      runtime_dispatch_lowering_abi_contract =
+          BuildRuntimeDispatchLoweringAbiContract(
+              dispatch_abi_marshalling_contract, runtime_shim_host_link_contract,
+              runtime_bootstrap_api);
+  if (!IsValidObjc3RuntimeDispatchLoweringAbiContract(
+          runtime_dispatch_lowering_abi_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid runtime dispatch lowering ABI contract");
+  }
+  const std::string runtime_dispatch_lowering_abi_replay_key =
+      Objc3RuntimeDispatchLoweringAbiReplayKey(
+          runtime_dispatch_lowering_abi_contract);
   const Objc3OwnershipQualifierLoweringContract ownership_qualifier_lowering_contract =
       BuildOwnershipQualifierLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3OwnershipQualifierLoweringContract(ownership_qualifier_lowering_contract)) {
@@ -7977,6 +8025,58 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_runtime_dispatch_lowering_abi_contract\":{\"message_send_sites\":"
+           << runtime_dispatch_lowering_abi_contract.message_send_sites
+           << ",\"fixed_argument_slot_count\":"
+           << runtime_dispatch_lowering_abi_contract.fixed_argument_slot_count
+           << ",\"runtime_dispatch_parameter_count\":"
+           << runtime_dispatch_lowering_abi_contract
+                  .runtime_dispatch_parameter_count
+           << ",\"lowering_boundary_model\":\""
+           << runtime_dispatch_lowering_abi_contract.lowering_boundary_model
+           << "\",\"canonical_runtime_dispatch_symbol\":\""
+           << runtime_dispatch_lowering_abi_contract
+                  .canonical_runtime_dispatch_symbol
+           << "\",\"compatibility_runtime_dispatch_symbol\":\""
+           << runtime_dispatch_lowering_abi_contract
+                  .compatibility_runtime_dispatch_symbol
+           << "\",\"default_lowering_target_symbol\":\""
+           << runtime_dispatch_lowering_abi_contract.default_lowering_target_symbol
+           << "\",\"selector_lookup_symbol\":\""
+           << runtime_dispatch_lowering_abi_contract.selector_lookup_symbol
+           << "\",\"selector_handle_type\":\""
+           << runtime_dispatch_lowering_abi_contract.selector_handle_type
+           << "\",\"receiver_abi_type\":\""
+           << runtime_dispatch_lowering_abi_contract.receiver_abi_type
+           << "\",\"selector_abi_type\":\""
+           << runtime_dispatch_lowering_abi_contract.selector_abi_type
+           << "\",\"argument_abi_type\":\""
+           << runtime_dispatch_lowering_abi_contract.argument_abi_type
+           << "\",\"result_abi_type\":\""
+           << runtime_dispatch_lowering_abi_contract.result_abi_type
+           << "\",\"selector_operand_model\":\""
+           << runtime_dispatch_lowering_abi_contract.selector_operand_model
+           << "\",\"selector_handle_model\":\""
+           << runtime_dispatch_lowering_abi_contract.selector_handle_model
+           << "\",\"argument_padding_model\":\""
+           << runtime_dispatch_lowering_abi_contract.argument_padding_model
+           << "\",\"default_lowering_target_model\":\""
+           << runtime_dispatch_lowering_abi_contract
+                  .default_lowering_target_model
+           << "\",\"compatibility_bridge_role_model\":\""
+           << runtime_dispatch_lowering_abi_contract
+                  .compatibility_bridge_role_model
+           << "\",\"deferred_cases_model\":\""
+           << runtime_dispatch_lowering_abi_contract.deferred_cases_model
+           << "\",\"replay_key\":\""
+           << runtime_dispatch_lowering_abi_replay_key
+           << "\",\"fail_closed\":"
+           << (runtime_dispatch_lowering_abi_contract.fail_closed ? "true"
+                                                                  : "false")
+           << ",\"deterministic_handoff\":"
+           << (runtime_dispatch_lowering_abi_contract.deterministic ? "true"
+                                                                    : "false")
+           << "}"
            << ",\"objc_ownership_qualifier_lowering_surface\":{\"ownership_qualifier_sites\":"
            << ownership_qualifier_lowering_contract.ownership_qualifier_sites
            << ",\"invalid_ownership_qualifier_sites\":"
@@ -10733,6 +10833,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     bundle.ir_text.clear();
     return bundle;
   }
+  bundle.ir_text =
+      std::string("; runtime_dispatch_lowering_abi_boundary = ") +
+      Objc3RuntimeDispatchLoweringAbiBoundarySummary(
+          runtime_dispatch_lowering_abi_contract) +
+      "\n" + bundle.ir_text;
 
   return bundle;
 }

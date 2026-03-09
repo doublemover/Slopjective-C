@@ -16785,3 +16785,33 @@ enabling any new direct-dispatch surface:
 - negative proof fails closed with `O3S216` for both `super` outside an
   implementation method and `super` dispatch from a root implementation
   reserved for later work
+
+## Dispatch lowering ABI freeze (M255-C001)
+
+`M255-C001` freezes the lane-C runtime-dispatch ABI boundary before the live
+call cutover lands:
+
+- contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
+- semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_dispatch_lowering_abi_contract`
+- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`
+- compatibility bridge symbol `objc3_msgsend_i32`
+- selector lookup symbol `objc3_runtime_lookup_selector`
+- selector handle type `objc3_runtime_selector_handle`
+- receiver ABI type `i32`
+- selector ABI type `ptr`
+- fixed argument ABI type `i32`
+- fixed argument slot count `4`
+- result ABI type `i32`
+- selector operand model
+  `selector-cstring-pointer-remains-lowered-operand-until-m255-c002`
+- selector handle model
+  `runtime-lookup-produces-selector-handle-before-live-dispatch`
+- default lowering target model
+  `default-lowering-target-remains-compatibility-bridge-until-m255-c002`
+- compatibility bridge role model
+  `compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi`
+- deferred cases model
+  `super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003`
+- default native IR still lowers through `@objc3_msgsend_i32`; this issue
+  freezes the migration boundary rather than changing the executable path yet

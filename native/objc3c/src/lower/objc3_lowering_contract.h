@@ -49,6 +49,48 @@ inline constexpr const char *kObjc3DynamicDispatchMethodFamilyPolicy =
     "dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting";
 inline constexpr const char *kObjc3RuntimeVisibleMethodFamilyPolicy =
     "super-and-dynamic-sites-preserve-method-family-runtime-visibility";
+// M255-C001 dispatch lowering ABI freeze anchor: lane-C freezes the
+// compiler-to-runtime dispatch boundary without switching code generation yet.
+// The canonical runtime entrypoint is objc3_runtime_dispatch_i32, selector
+// handles come from objc3_runtime_lookup_selector, receiver/result ABI stays
+// i32, the fixed argument-slot vector stays i32[4] with zero padding, and the
+// default lowering target remains the compatibility bridge until M255-C002
+// changes it explicitly.
+inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiContractId =
+    "objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiBoundaryModel =
+    "compatibility-bridge-default-target-before-live-runtime-dispatch-cutover";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol =
+        "objc3_runtime_dispatch_i32";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol =
+        "objc3_msgsend_i32";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorLookupSymbol =
+    "objc3_runtime_lookup_selector";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorHandleType =
+    "objc3_runtime_selector_handle";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringReceiverAbiType =
+    "i32";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorAbiType =
+    "ptr";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringArgumentAbiType =
+    "i32";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringResultAbiType =
+    "i32";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorOperandModel =
+    "selector-cstring-pointer-remains-lowered-operand-until-m255-c002";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorHandleModel =
+    "runtime-lookup-produces-selector-handle-before-live-dispatch";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringArgumentPaddingModel =
+    "zero-pad-to-fixed-runtime-arg-slot-count";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringDefaultTargetModel =
+    "default-lowering-target-remains-compatibility-bridge-until-m255-c002";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLoweringCompatibilityRoleModel =
+        "compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi";
+inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
+    "super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
@@ -616,6 +658,41 @@ struct Objc3RuntimeShimHostLinkContract {
   bool deterministic = true;
 };
 
+struct Objc3RuntimeDispatchLoweringAbiContract {
+  std::size_t message_send_sites = 0;
+  std::size_t fixed_argument_slot_count = kObjc3RuntimeDispatchDefaultArgs;
+  std::size_t runtime_dispatch_parameter_count = 0;
+  std::string lowering_boundary_model =
+      kObjc3RuntimeDispatchLoweringAbiBoundaryModel;
+  std::string canonical_runtime_dispatch_symbol =
+      kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol;
+  std::string compatibility_runtime_dispatch_symbol =
+      kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;
+  std::string default_lowering_target_symbol = kObjc3RuntimeDispatchSymbol;
+  std::string selector_lookup_symbol =
+      kObjc3RuntimeDispatchLoweringSelectorLookupSymbol;
+  std::string selector_handle_type =
+      kObjc3RuntimeDispatchLoweringSelectorHandleType;
+  std::string receiver_abi_type = kObjc3RuntimeDispatchLoweringReceiverAbiType;
+  std::string selector_abi_type = kObjc3RuntimeDispatchLoweringSelectorAbiType;
+  std::string argument_abi_type = kObjc3RuntimeDispatchLoweringArgumentAbiType;
+  std::string result_abi_type = kObjc3RuntimeDispatchLoweringResultAbiType;
+  std::string selector_operand_model =
+      kObjc3RuntimeDispatchLoweringSelectorOperandModel;
+  std::string selector_handle_model =
+      kObjc3RuntimeDispatchLoweringSelectorHandleModel;
+  std::string argument_padding_model =
+      kObjc3RuntimeDispatchLoweringArgumentPaddingModel;
+  std::string default_lowering_target_model =
+      kObjc3RuntimeDispatchLoweringDefaultTargetModel;
+  std::string compatibility_bridge_role_model =
+      kObjc3RuntimeDispatchLoweringCompatibilityRoleModel;
+  std::string deferred_cases_model =
+      kObjc3RuntimeDispatchLoweringDeferredCasesModel;
+  bool fail_closed = true;
+  bool deterministic = true;
+};
+
 struct Objc3OwnershipQualifierLoweringContract {
   std::size_t ownership_qualifier_sites = 0;
   std::size_t invalid_ownership_qualifier_sites = 0;
@@ -1075,6 +1152,12 @@ bool IsValidObjc3RuntimeShimHostLinkContract(
     const Objc3RuntimeShimHostLinkContract &contract);
 std::string Objc3RuntimeShimHostLinkReplayKey(
     const Objc3RuntimeShimHostLinkContract &contract);
+bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract);
+std::string Objc3RuntimeDispatchLoweringAbiReplayKey(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract);
+std::string Objc3RuntimeDispatchLoweringAbiBoundarySummary(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract);
 bool IsValidObjc3OwnershipQualifierLoweringContract(
     const Objc3OwnershipQualifierLoweringContract &contract);
 std::string Objc3OwnershipQualifierLoweringReplayKey(

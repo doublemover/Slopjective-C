@@ -1141,6 +1141,125 @@ std::string Objc3RuntimeShimHostLinkReplayKey(
          ";lane_contract=" + kObjc3RuntimeShimHostLinkLaneContract;
 }
 
+// M255-C001 dispatch lowering ABI freeze anchor: lane-C publishes the
+// compiler-to-runtime cutover boundary here without changing executable call
+// emission yet. Validation must keep the canonical runtime symbol, selector
+// lookup/handle surface, i32 receiver/result ABI, and fixed four-slot padding
+// model synchronized with the compatibility-bridge default target.
+bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract) {
+  if (contract.fixed_argument_slot_count > kObjc3RuntimeDispatchMaxArgs) {
+    return false;
+  }
+  if (contract.runtime_dispatch_parameter_count !=
+      contract.fixed_argument_slot_count + 2u) {
+    return false;
+  }
+  if (contract.lowering_boundary_model !=
+      kObjc3RuntimeDispatchLoweringAbiBoundaryModel) {
+    return false;
+  }
+  if (contract.canonical_runtime_dispatch_symbol !=
+      kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol) {
+    return false;
+  }
+  if (contract.compatibility_runtime_dispatch_symbol !=
+      kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol) {
+    return false;
+  }
+  if (!IsValidRuntimeDispatchSymbol(contract.default_lowering_target_symbol)) {
+    return false;
+  }
+  if (contract.default_lowering_target_symbol !=
+      contract.compatibility_runtime_dispatch_symbol) {
+    return false;
+  }
+  if (contract.selector_lookup_symbol !=
+      kObjc3RuntimeDispatchLoweringSelectorLookupSymbol) {
+    return false;
+  }
+  if (contract.selector_handle_type !=
+      kObjc3RuntimeDispatchLoweringSelectorHandleType) {
+    return false;
+  }
+  if (contract.receiver_abi_type != kObjc3RuntimeDispatchLoweringReceiverAbiType ||
+      contract.selector_abi_type != kObjc3RuntimeDispatchLoweringSelectorAbiType ||
+      contract.argument_abi_type != kObjc3RuntimeDispatchLoweringArgumentAbiType ||
+      contract.result_abi_type != kObjc3RuntimeDispatchLoweringResultAbiType) {
+    return false;
+  }
+  if (contract.selector_operand_model !=
+          kObjc3RuntimeDispatchLoweringSelectorOperandModel ||
+      contract.selector_handle_model !=
+          kObjc3RuntimeDispatchLoweringSelectorHandleModel ||
+      contract.argument_padding_model !=
+          kObjc3RuntimeDispatchLoweringArgumentPaddingModel ||
+      contract.default_lowering_target_model !=
+          kObjc3RuntimeDispatchLoweringDefaultTargetModel ||
+      contract.compatibility_bridge_role_model !=
+          kObjc3RuntimeDispatchLoweringCompatibilityRoleModel ||
+      contract.deferred_cases_model !=
+          kObjc3RuntimeDispatchLoweringDeferredCasesModel) {
+    return false;
+  }
+  return contract.fail_closed;
+}
+
+std::string Objc3RuntimeDispatchLoweringAbiReplayKey(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract) {
+  return std::string("message_send_sites=") +
+         std::to_string(contract.message_send_sites) +
+         ";fixed_argument_slot_count=" +
+         std::to_string(contract.fixed_argument_slot_count) +
+         ";runtime_dispatch_parameter_count=" +
+         std::to_string(contract.runtime_dispatch_parameter_count) +
+         ";lowering_boundary_model=" + contract.lowering_boundary_model +
+         ";canonical_runtime_dispatch_symbol=" +
+         contract.canonical_runtime_dispatch_symbol +
+         ";compatibility_runtime_dispatch_symbol=" +
+         contract.compatibility_runtime_dispatch_symbol +
+         ";default_lowering_target_symbol=" +
+         contract.default_lowering_target_symbol +
+         ";selector_lookup_symbol=" + contract.selector_lookup_symbol +
+         ";selector_handle_type=" + contract.selector_handle_type +
+         ";receiver_abi_type=" + contract.receiver_abi_type +
+         ";selector_abi_type=" + contract.selector_abi_type +
+         ";argument_abi_type=" + contract.argument_abi_type +
+         ";result_abi_type=" + contract.result_abi_type +
+         ";selector_operand_model=" + contract.selector_operand_model +
+         ";selector_handle_model=" + contract.selector_handle_model +
+         ";argument_padding_model=" + contract.argument_padding_model +
+         ";default_lowering_target_model=" +
+         contract.default_lowering_target_model +
+         ";compatibility_bridge_role_model=" +
+         contract.compatibility_bridge_role_model +
+         ";deferred_cases_model=" + contract.deferred_cases_model +
+         ";fail_closed=" + BoolToken(contract.fail_closed) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";contract_id=" + kObjc3RuntimeDispatchLoweringAbiContractId;
+}
+
+std::string Objc3RuntimeDispatchLoweringAbiBoundarySummary(
+    const Objc3RuntimeDispatchLoweringAbiContract &contract) {
+  return std::string("contract=") + kObjc3RuntimeDispatchLoweringAbiContractId +
+         ";canonical_runtime_dispatch_symbol=" +
+         contract.canonical_runtime_dispatch_symbol +
+         ";compatibility_runtime_dispatch_symbol=" +
+         contract.compatibility_runtime_dispatch_symbol +
+         ";default_lowering_target_symbol=" +
+         contract.default_lowering_target_symbol +
+         ";selector_lookup_symbol=" + contract.selector_lookup_symbol +
+         ";selector_handle_type=" + contract.selector_handle_type +
+         ";receiver_abi_type=" + contract.receiver_abi_type +
+         ";argument_abi_type=" + contract.argument_abi_type +
+         ";fixed_argument_slot_count=" +
+         std::to_string(contract.fixed_argument_slot_count) +
+         ";result_abi_type=" + contract.result_abi_type +
+         ";default_lowering_target_model=" +
+         contract.default_lowering_target_model +
+         ";deferred_cases_model=" + contract.deferred_cases_model;
+}
+
 bool IsValidObjc3OwnershipQualifierLoweringContract(
     const Objc3OwnershipQualifierLoweringContract &contract) {
   return contract.invalid_ownership_qualifier_sites <= contract.ownership_qualifier_sites &&

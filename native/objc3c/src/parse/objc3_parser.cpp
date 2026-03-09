@@ -10189,6 +10189,11 @@ class Objc3Parser {
     // does not invent direct-dispatch syntax or alternate receiver forms;
     // lane-B sema now owns rejecting illegal `super` sites while preserving the
     // same raw dynamic receiver spellings for runtime method-family accounting.
+    // M255-C001 dispatch lowering ABI freeze anchor: parser continues to hand
+    // selector text through as lowered cstring material only. Selector-handle
+    // lookup and canonical runtime-dispatch cutover stay in lane-C lowering,
+    // with the compatibility bridge remaining the default call target until
+    // M255-C002.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(
