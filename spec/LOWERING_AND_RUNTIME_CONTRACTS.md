@@ -5703,3 +5703,22 @@ registration-table selector pools while preserving the frozen D001 public ABI:
   `unknown-selector-lookups-remain-dynamic-until-m255-d003`
 - replay model
   `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`
+
+## M255 method-cache and slow-path lookup (D003)
+
+`M255-D003` turns runtime dispatch into a live method-cache surface backed by
+registered class/metaclass records and emitted callable method tables:
+
+- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- method cache state snapshot symbol
+  `objc3_runtime_copy_method_cache_state_for_testing`
+- method cache entry snapshot symbol
+  `objc3_runtime_copy_method_cache_entry_for_testing`
+- receiver normalization model
+  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
+- slow-path resolution model
+  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
+- cache model
+  `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
+- fallback model
+  `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`

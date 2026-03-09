@@ -183,6 +183,27 @@ inline constexpr const char
     *kObjc3RuntimeSelectorLookupTablesReplayModel =
         "reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
+// M255-D003 method-cache / slow-path anchor: lane-D now turns registered class
+// and metaclass metadata into real runtime dispatch targets while preserving
+// the frozen D001 public runtime API. Selector tables remain the authoritative
+// stable-id source from D002, class-known and class-self receivers normalize
+// onto one metaclass lookup family, and unresolved or ambiguous runtime
+// lookups still fail closed back to the compatibility arithmetic model until
+// later protocol/category-aware resolution lands in M255-D004.
+inline constexpr const char *kObjc3RuntimeMethodCacheSlowPathContractId =
+    "objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1";
+inline constexpr const char
+    *kObjc3RuntimeMethodCacheSlowPathReceiverNormalizationModel =
+        "known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key";
+inline constexpr const char
+    *kObjc3RuntimeMethodCacheSlowPathResolutionModel =
+        "registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution";
+inline constexpr const char
+    *kObjc3RuntimeMethodCacheSlowPathCacheModel =
+        "normalized-receiver-plus-selector-stable-id-positive-and-negative-cache";
+inline constexpr const char
+    *kObjc3RuntimeMethodCacheSlowPathFallbackModel =
+        "unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info

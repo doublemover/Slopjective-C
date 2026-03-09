@@ -10211,6 +10211,10 @@ class Objc3Parser {
     // boundary for lane-D to extend later.
     // M255-D002 selector-table anchor: metadata-backed selector lookup tables
     // are now runtime-owned behind that preserved boundary.
+    // M255-D003 method-cache / slow-path anchor: parser still does not resolve
+    // methods from class metadata or own cache behavior. It preserves the
+    // normalized selector text plus receiver-family classification that the
+    // runtime now consumes for deterministic class/metaclass slow-path lookup.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

@@ -8686,3 +8686,16 @@ This freeze is intentionally narrow:
 - replay rebuilds the same metadata-backed selector table deterministically
 - dynamic selector creation remains available only for selectors that are not
   present in emitted metadata, pending `M255-D003`
+
+## M255 method cache and slow-path lookup (D003)
+
+`M255-D003` makes live runtime dispatch executable through the emitted
+class/metaclass graph:
+
+- class-self receivers and known-class receivers normalize onto one metaclass
+  cache key
+- the first live dispatch walks registered class/metaclass records and emitted
+  method tables to resolve one callable implementation body
+- repeat dispatches reuse deterministic positive and negative cache entries
+- unresolved or unsupported runtime resolution surfaces fall back to the
+  preserved compatibility arithmetic path until `M255-D004`

@@ -1,5 +1,6 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -48,6 +49,86 @@ struct RegisteredImageMetadata {
   bool used_staged_registration_table = false;
 };
 
+enum class DispatchFamily {
+  Invalid = 0,
+  Instance = 1,
+  Class = 2,
+};
+
+struct MethodCacheKey {
+  std::uint64_t normalized_receiver_identity = 0;
+  std::uint64_t selector_stable_id = 0;
+
+  bool operator==(const MethodCacheKey &other) const {
+    return normalized_receiver_identity == other.normalized_receiver_identity &&
+           selector_stable_id == other.selector_stable_id;
+  }
+};
+
+struct MethodCacheKeyHash {
+  std::size_t operator()(const MethodCacheKey &key) const {
+    return std::hash<std::uint64_t>{}(key.normalized_receiver_identity) ^
+           (std::hash<std::uint64_t>{}(key.selector_stable_id) << 1u);
+  }
+};
+
+struct MethodCacheEntry {
+  bool resolved = false;
+  bool dispatch_family_is_class = false;
+  std::string selector_storage;
+  std::string class_name;
+  std::string owner_identity;
+  std::uint64_t normalized_receiver_identity = 0;
+  std::uint64_t selector_stable_id = 0;
+  std::uint64_t parameter_count = 0;
+  const void *implementation = nullptr;
+};
+
+struct SlowPathResolution {
+  bool resolved = false;
+  bool ambiguous = false;
+  bool dispatch_family_is_class = false;
+  std::string selector_storage;
+  std::string class_name;
+  std::string owner_identity;
+  std::uint64_t normalized_receiver_identity = 0;
+  std::uint64_t selector_stable_id = 0;
+  std::uint64_t parameter_count = 0;
+  const void *implementation = nullptr;
+};
+
+struct EmittedMethodListRef {
+  std::uint64_t count;
+  const char *owner_identity;
+  const void *method_list;
+};
+
+struct EmittedMethodListHeader {
+  std::uint64_t count;
+  const char *declaration_owner_identity;
+  const char *export_owner_identity;
+};
+
+struct EmittedMethodListEntry {
+  const char *selector;
+  const char *owner_identity;
+  const char *return_type_name;
+  std::uint64_t parameter_count;
+  const void *implementation;
+  std::uint64_t has_body;
+};
+
+struct EmittedClassRecord {
+  const char *class_name;
+  const void *super_bundle;
+  const EmittedMethodListRef *method_list_ref;
+};
+
+struct EmittedClassBundle {
+  EmittedClassRecord class_record;
+  EmittedClassRecord metaclass_record;
+};
+
 struct RuntimeState {
   std::mutex mutex;
   std::uint64_t registered_image_count = 0;
@@ -77,6 +158,21 @@ struct RuntimeState {
   std::uint64_t last_materialized_registration_order_ordinal = 0;
   std::uint64_t last_materialized_selector_pool_index = 0;
   bool last_materialized_from_metadata = false;
+  std::unordered_map<MethodCacheKey, MethodCacheEntry, MethodCacheKeyHash>
+      method_cache;
+  std::uint64_t method_cache_hit_count = 0;
+  std::uint64_t method_cache_miss_count = 0;
+  std::uint64_t slow_path_lookup_count = 0;
+  std::uint64_t live_dispatch_count = 0;
+  std::uint64_t fallback_dispatch_count = 0;
+  std::string last_dispatch_selector;
+  std::uint64_t last_dispatch_selector_stable_id = 0;
+  std::uint64_t last_dispatch_normalized_receiver_identity = 0;
+  bool last_dispatch_used_cache = false;
+  bool last_dispatch_resolved_live_method = false;
+  bool last_dispatch_fell_back = false;
+  std::string last_resolved_class_name;
+  std::string last_resolved_owner_identity;
   const objc3_runtime_registration_table *staged_registration_table = nullptr;
   std::uint64_t walked_image_count = 0;
   std::uint64_t last_discovery_root_entry_count = 0;
@@ -105,17 +201,324 @@ RuntimeState &State() {
   return state;
 }
 
+const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
+                           std::uint64_t index);
+
 void RefreshSelectorHandlePointersUnlocked(RuntimeState &state) {
   for (SelectorSlot &slot : state.selector_slots) {
     slot.handle.selector = slot.spelling_storage.c_str();
   }
 }
 
+void ClearMethodCacheStateUnlocked(RuntimeState &state) {
+  state.method_cache.clear();
+  state.method_cache_hit_count = 0;
+  state.method_cache_miss_count = 0;
+  state.slow_path_lookup_count = 0;
+  state.live_dispatch_count = 0;
+  state.fallback_dispatch_count = 0;
+  state.last_dispatch_selector.clear();
+  state.last_dispatch_selector_stable_id = 0;
+  state.last_dispatch_normalized_receiver_identity = 0;
+  state.last_dispatch_used_cache = false;
+  state.last_dispatch_resolved_live_method = false;
+  state.last_dispatch_fell_back = false;
+  state.last_resolved_class_name.clear();
+  state.last_resolved_owner_identity.clear();
+}
+
+const EmittedMethodListEntry *MethodListEntries(
+    const EmittedMethodListHeader *header) {
+  return header == nullptr
+             ? nullptr
+             : reinterpret_cast<const EmittedMethodListEntry *>(header + 1);
+}
+
+bool IsImplementationOwnerIdentity(const char *owner_identity) {
+  if (owner_identity == nullptr) {
+    return false;
+  }
+  static constexpr char kImplementationPrefix[] = "implementation:";
+  return std::string(owner_identity).rfind(kImplementationPrefix, 0) == 0;
+}
+
+bool IsSupportedRuntimeI32ReturnType(const char *return_type_name) {
+  if (return_type_name == nullptr) {
+    return false;
+  }
+  const std::string type_name = return_type_name;
+  return type_name != "void" && type_name != "bool";
+}
+
+bool DecodeReceiverIdentity(int receiver,
+                            std::uint64_t &base_identity,
+                            DispatchFamily &family,
+                            std::uint64_t &normalized_receiver_identity) {
+  if (receiver <= 0) {
+    return false;
+  }
+  static constexpr std::int64_t kBase = 1024;
+  static constexpr std::int64_t kStride = 17;
+  const std::int64_t signed_receiver = receiver;
+  if (signed_receiver < kBase) {
+    return false;
+  }
+  const std::int64_t delta = signed_receiver - kBase;
+  const std::int64_t ordinal = delta / kStride;
+  const std::int64_t salt = delta % kStride;
+  if (ordinal < 0) {
+    return false;
+  }
+  base_identity = static_cast<std::uint64_t>(kBase + ordinal * kStride);
+  switch (salt) {
+    case 0:
+    case 2:
+      family = DispatchFamily::Class;
+      normalized_receiver_identity = base_identity + 2u;
+      return true;
+    case 1:
+      family = DispatchFamily::Instance;
+      normalized_receiver_identity = base_identity + 1u;
+      return true;
+    default:
+      return false;
+  }
+}
+
+std::vector<const RegisteredImageMetadata *> OrderedRegisteredImages(
+    const RuntimeState &state) {
+  std::vector<const RegisteredImageMetadata *> ordered;
+  ordered.reserve(state.registered_image_metadata_by_identity_key.size());
+  for (const auto &entry : state.registered_image_metadata_by_identity_key) {
+    ordered.push_back(&entry.second);
+  }
+  std::sort(
+      ordered.begin(), ordered.end(),
+      [](const RegisteredImageMetadata *lhs, const RegisteredImageMetadata *rhs) {
+        if (lhs->registration_order_ordinal != rhs->registration_order_ordinal) {
+          return lhs->registration_order_ordinal < rhs->registration_order_ordinal;
+        }
+        return lhs->translation_unit_identity_key < rhs->translation_unit_identity_key;
+      });
+  return ordered;
+}
+
+bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
+                                  std::vector<std::string> &class_names) {
+  std::unordered_set<std::string> seen;
+  seen.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        AggregateEntry(record.class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        bundle->class_record.class_name[0] == '\0') {
+      return false;
+    }
+    seen.insert(bundle->class_record.class_name);
+  }
+  class_names.assign(seen.begin(), seen.end());
+  std::sort(class_names.begin(), class_names.end());
+  return true;
+}
+
+bool ResolveReceiverClassNameUnlocked(const RuntimeState &state,
+                                      std::uint64_t base_identity,
+                                      std::string &class_name,
+                                      bool &ambiguous) {
+  ambiguous = false;
+  static constexpr std::uint64_t kBase = 1024;
+  static constexpr std::uint64_t kStride = 17;
+  if (base_identity < kBase || ((base_identity - kBase) % kStride) != 0) {
+    return false;
+  }
+  const std::uint64_t ordinal = (base_identity - kBase) / kStride;
+  bool found_any = false;
+  for (const RegisteredImageMetadata *record : OrderedRegisteredImages(state)) {
+    std::vector<std::string> class_names;
+    if (!CollectSortedImageClassNames(*record, class_names)) {
+      return false;
+    }
+    if (ordinal >= class_names.size()) {
+      continue;
+    }
+    if (!found_any) {
+      class_name = class_names[ordinal];
+      found_any = true;
+      continue;
+    }
+    if (class_name != class_names[ordinal]) {
+      ambiguous = true;
+      return false;
+    }
+  }
+  return found_any;
+}
+
+std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name) {
+  std::vector<const EmittedClassBundle *> implementation_bundles;
+  std::vector<const EmittedClassBundle *> fallback_bundles;
+  implementation_bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  fallback_bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
+    const auto *bundle = static_cast<const EmittedClassBundle *>(
+        AggregateEntry(record.class_descriptor_root, index));
+    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
+        class_name != bundle->class_record.class_name) {
+      continue;
+    }
+    const bool implementation_backed =
+        bundle->class_record.method_list_ref != nullptr &&
+        IsImplementationOwnerIdentity(bundle->class_record.method_list_ref->owner_identity);
+    if (implementation_backed) {
+      implementation_bundles.push_back(bundle);
+    } else {
+      fallback_bundles.push_back(bundle);
+    }
+  }
+  return implementation_bundles.empty() ? fallback_bundles
+                                        : implementation_bundles;
+}
+
+bool TryResolveMethodFromBundleChainUnlocked(
+    RuntimeState &state, const EmittedClassBundle *start_bundle,
+    DispatchFamily family, std::uint64_t normalized_receiver_identity,
+    std::uint64_t selector_stable_id, const char *selector_spelling,
+    SlowPathResolution &resolution, bool &ambiguous) {
+  std::unordered_set<const EmittedClassBundle *> visited;
+  const EmittedClassBundle *bundle = start_bundle;
+  while (bundle != nullptr && visited.insert(bundle).second) {
+    const EmittedClassRecord &record =
+        family == DispatchFamily::Class ? bundle->metaclass_record
+                                        : bundle->class_record;
+    const EmittedMethodListRef *method_list_ref = record.method_list_ref;
+    if (method_list_ref != nullptr && method_list_ref->count != 0 &&
+        method_list_ref->method_list != nullptr) {
+      const auto *header =
+          static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
+      if (header == nullptr || header->count != method_list_ref->count) {
+        return false;
+      }
+      const EmittedMethodListEntry *entries = MethodListEntries(header);
+      for (std::uint64_t index = 0; index < header->count; ++index) {
+        const EmittedMethodListEntry &entry = entries[index];
+        if (entry.selector == nullptr || entry.owner_identity == nullptr ||
+            entry.return_type_name == nullptr) {
+          return false;
+        }
+        bool selector_matches = false;
+        if (selector_stable_id != 0) {
+          const auto selector_it = state.selector_index_by_name.find(entry.selector);
+          if (selector_it != state.selector_index_by_name.end()) {
+            selector_matches =
+                state.selector_slots[selector_it->second].handle.stable_id ==
+                selector_stable_id;
+          }
+        }
+        if (!selector_matches && selector_spelling != nullptr) {
+          selector_matches = std::string(entry.selector) == selector_spelling;
+        }
+        if (!selector_matches || entry.has_body == 0 || entry.implementation == nullptr ||
+            !IsSupportedRuntimeI32ReturnType(entry.return_type_name) ||
+            entry.parameter_count > 4) {
+          continue;
+        }
+        if (resolution.resolved &&
+            (resolution.implementation != entry.implementation ||
+             resolution.parameter_count != entry.parameter_count ||
+             resolution.owner_identity != entry.owner_identity ||
+             resolution.class_name != record.class_name)) {
+          ambiguous = true;
+          return true;
+        }
+        resolution.resolved = true;
+        resolution.dispatch_family_is_class = family == DispatchFamily::Class;
+        resolution.selector_storage = selector_spelling != nullptr ? selector_spelling : "";
+        resolution.class_name = record.class_name != nullptr ? record.class_name : "";
+        resolution.owner_identity = entry.owner_identity;
+        resolution.normalized_receiver_identity = normalized_receiver_identity;
+        resolution.selector_stable_id = selector_stable_id;
+        resolution.parameter_count = entry.parameter_count;
+        resolution.implementation = entry.implementation;
+      }
+    }
+    bundle = static_cast<const EmittedClassBundle *>(record.super_bundle);
+  }
+  return true;
+}
+
+SlowPathResolution ResolveMethodSlowPathUnlocked(
+    RuntimeState &state, std::uint64_t base_identity,
+    std::uint64_t normalized_receiver_identity, DispatchFamily family,
+    std::uint64_t selector_stable_id, const char *selector_spelling) {
+  // M255-D003: live lookup walks the emitted class/metaclass graph that came
+  // through startup registration, resolves one deterministic class family for
+  // the receiver identity, and then records the outcome in the method cache.
+  SlowPathResolution resolution;
+  resolution.selector_storage = selector_spelling != nullptr ? selector_spelling : "";
+  resolution.normalized_receiver_identity = normalized_receiver_identity;
+  resolution.selector_stable_id = selector_stable_id;
+
+  bool receiver_ambiguous = false;
+  std::string resolved_class_name;
+  if (!ResolveReceiverClassNameUnlocked(state, base_identity, resolved_class_name,
+                                        receiver_ambiguous)) {
+    resolution.ambiguous = receiver_ambiguous;
+    return resolution;
+  }
+
+  for (const RegisteredImageMetadata *record : OrderedRegisteredImages(state)) {
+    const auto bundles =
+        CollectPreferredClassBundlesForImage(*record, resolved_class_name);
+    for (const EmittedClassBundle *bundle : bundles) {
+      bool method_ambiguous = false;
+      if (!TryResolveMethodFromBundleChainUnlocked(
+              state, bundle, family, normalized_receiver_identity,
+              selector_stable_id, selector_spelling, resolution,
+              method_ambiguous)) {
+        return SlowPathResolution{};
+      }
+      if (method_ambiguous) {
+        resolution = SlowPathResolution{};
+        resolution.ambiguous = true;
+        resolution.selector_storage =
+            selector_spelling != nullptr ? selector_spelling : "";
+        resolution.normalized_receiver_identity = normalized_receiver_identity;
+        resolution.selector_stable_id = selector_stable_id;
+        return resolution;
+      }
+    }
+  }
+  return resolution;
+}
+
+int InvokeResolvedMethod(const void *implementation, std::uint64_t parameter_count,
+                         int a0, int a1, int a2, int a3) {
+  switch (parameter_count) {
+    case 0:
+      return reinterpret_cast<int (*)()>(const_cast<void *>(implementation))();
+    case 1:
+      return reinterpret_cast<int (*)(int)>(const_cast<void *>(implementation))(a0);
+    case 2:
+      return reinterpret_cast<int (*)(int, int)>(
+          const_cast<void *>(implementation))(a0, a1);
+    case 3:
+      return reinterpret_cast<int (*)(int, int, int)>(
+          const_cast<void *>(implementation))(a0, a1, a2);
+    case 4:
+      return reinterpret_cast<int (*)(int, int, int, int)>(
+          const_cast<void *>(implementation))(a0, a1, a2, a3);
+    default:
+      return 0;
+  }
+}
+
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
   // M255-D002 selector-table anchor: metadata-backed selector pools now
   // materialize the canonical runtime selector table, while direct lookup of
-  // non-emitted selectors remains a dynamic fallback until M255-D003 lands
-  // cache and slow-path lookup on top of the same public API.
+  // non-emitted selectors remains a dynamic fallback. M255-D003 layers
+  // method-cache and class/metaclass slow-path dispatch on top of the same
+  // preserved public lookup/dispatch surface.
   if (selector == nullptr) {
     return nullptr;
   }
@@ -224,9 +627,10 @@ std::int64_t ComputeSelectorScore(const char *selector) {
 int ComputeDispatchResult(int receiver, const char *selector, int a0, int a1,
                           int a2, int a3) {
   // M255-D001 lookup-dispatch-runtime anchor: live dispatch still preserves the
-  // deterministic formula while lane-D freezes the runtime-owned boundary. Real
-  // method-cache and metadata-backed slow-path lookup arrive in later M255
-  // lane-D issues without changing the canonical dispatch entrypoint.
+  // deterministic formula as the fail-closed fallback. M255-D003 now routes
+  // supported class/metaclass resolutions through emitted method bodies first
+  // and returns to this arithmetic path only for unresolved or unsupported
+  // runtime lookups without changing the canonical dispatch entrypoint.
   std::int64_t value = 41;
   value += static_cast<std::int64_t>(receiver) * 97;
   value += static_cast<std::int64_t>(a0) * 7;
@@ -416,6 +820,7 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_materialized_registration_order_ordinal = 0;
   state.last_materialized_selector_pool_index = 0;
   state.last_materialized_from_metadata = false;
+  ClearMethodCacheStateUnlocked(state);
   state.staged_registration_table = nullptr;
   state.walked_image_count = 0;
   ClearImageWalkSnapshotUnlocked(state);
@@ -633,6 +1038,7 @@ int RegisterImageUnlocked(
   state.registration_order_by_identity_key.emplace(
       image->translation_unit_identity_key, image->registration_order_ordinal);
   ClearRejectedRegistrationUnlocked(state);
+  ClearMethodCacheStateUnlocked(state);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -786,6 +1192,90 @@ int objc3_runtime_copy_selector_lookup_entry_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_method_cache_state_for_testing(
+    objc3_runtime_method_cache_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->cache_entry_count =
+      static_cast<std::uint64_t>(state.method_cache.size());
+  snapshot->cache_hit_count = state.method_cache_hit_count;
+  snapshot->cache_miss_count = state.method_cache_miss_count;
+  snapshot->slow_path_lookup_count = state.slow_path_lookup_count;
+  snapshot->live_dispatch_count = state.live_dispatch_count;
+  snapshot->fallback_dispatch_count = state.fallback_dispatch_count;
+  snapshot->last_selector_stable_id = state.last_dispatch_selector_stable_id;
+  snapshot->last_normalized_receiver_identity =
+      state.last_dispatch_normalized_receiver_identity;
+  snapshot->last_dispatch_used_cache = state.last_dispatch_used_cache ? 1 : 0;
+  snapshot->last_dispatch_resolved_live_method =
+      state.last_dispatch_resolved_live_method ? 1 : 0;
+  snapshot->last_dispatch_fell_back = state.last_dispatch_fell_back ? 1 : 0;
+  snapshot->last_selector = StableCString(state.last_dispatch_selector);
+  snapshot->last_resolved_class_name =
+      StableCString(state.last_resolved_class_name);
+  snapshot->last_resolved_owner_identity =
+      StableCString(state.last_resolved_owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_method_cache_entry_for_testing(
+    int receiver, const char *selector,
+    objc3_runtime_method_cache_entry_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->found = 0;
+  snapshot->resolved = 0;
+  snapshot->dispatch_family_is_class = 0;
+  snapshot->normalized_receiver_identity = 0;
+  snapshot->selector_stable_id = 0;
+  snapshot->parameter_count = 0;
+  snapshot->selector = nullptr;
+  snapshot->resolved_class_name = nullptr;
+  snapshot->resolved_owner_identity = nullptr;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  std::uint64_t base_identity = 0;
+  std::uint64_t normalized_receiver_identity = 0;
+  DispatchFamily family = DispatchFamily::Invalid;
+  if (!DecodeReceiverIdentity(receiver, base_identity, family,
+                              normalized_receiver_identity)) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  if (selector == nullptr || selector[0] == '\0') {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const auto selector_it = state.selector_index_by_name.find(selector);
+  if (selector_it == state.selector_index_by_name.end()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const MethodCacheKey key{normalized_receiver_identity,
+                           state.selector_slots[selector_it->second]
+                               .handle.stable_id};
+  const auto cache_it = state.method_cache.find(key);
+  if (cache_it == state.method_cache.end()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const MethodCacheEntry &entry = cache_it->second;
+  snapshot->found = 1;
+  snapshot->resolved = entry.resolved ? 1 : 0;
+  snapshot->dispatch_family_is_class =
+      entry.dispatch_family_is_class ? 1 : 0;
+  snapshot->normalized_receiver_identity = entry.normalized_receiver_identity;
+  snapshot->selector_stable_id = entry.selector_stable_id;
+  snapshot->parameter_count = entry.parameter_count;
+  snapshot->selector = StableCString(entry.selector_storage);
+  snapshot->resolved_class_name = StableCString(entry.class_name);
+  snapshot->resolved_owner_identity = StableCString(entry.owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -852,15 +1342,97 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   RuntimeState &state = State();
+  const void *resolved_implementation = nullptr;
+  std::uint64_t resolved_parameter_count = 0;
+  bool resolved_live_method = false;
   {
     std::lock_guard<std::mutex> lock(state.mutex);
-    (void)LookupSelectorUnlocked(selector);
+    const objc3_runtime_selector_handle *selector_handle =
+        LookupSelectorUnlocked(selector);
+    state.last_dispatch_selector = selector != nullptr ? selector : "";
+    state.last_dispatch_selector_stable_id =
+        selector_handle != nullptr ? selector_handle->stable_id : 0;
+    state.last_dispatch_normalized_receiver_identity = 0;
+    state.last_dispatch_used_cache = false;
+    state.last_dispatch_resolved_live_method = false;
+    state.last_dispatch_fell_back = false;
+    state.last_resolved_class_name.clear();
+    state.last_resolved_owner_identity.clear();
+
+    if (receiver != 0 && selector_handle != nullptr) {
+      std::uint64_t base_identity = 0;
+      std::uint64_t normalized_receiver_identity = 0;
+      DispatchFamily family = DispatchFamily::Invalid;
+      if (DecodeReceiverIdentity(receiver, base_identity, family,
+                                 normalized_receiver_identity)) {
+        state.last_dispatch_normalized_receiver_identity =
+            normalized_receiver_identity;
+        const MethodCacheKey cache_key{normalized_receiver_identity,
+                                       selector_handle->stable_id};
+        const auto cache_it = state.method_cache.find(cache_key);
+        if (cache_it != state.method_cache.end()) {
+          const MethodCacheEntry &entry = cache_it->second;
+          ++state.method_cache_hit_count;
+          state.last_dispatch_used_cache = true;
+          state.last_dispatch_resolved_live_method = entry.resolved;
+          state.last_dispatch_fell_back = !entry.resolved;
+          state.last_resolved_class_name = entry.class_name;
+          state.last_resolved_owner_identity = entry.owner_identity;
+          if (entry.resolved) {
+            resolved_live_method = true;
+            resolved_implementation = entry.implementation;
+            resolved_parameter_count = entry.parameter_count;
+            ++state.live_dispatch_count;
+          } else {
+            ++state.fallback_dispatch_count;
+          }
+        } else {
+          ++state.method_cache_miss_count;
+          ++state.slow_path_lookup_count;
+          SlowPathResolution resolution = ResolveMethodSlowPathUnlocked(
+              state, base_identity, normalized_receiver_identity, family,
+              selector_handle->stable_id, selector_handle->selector);
+          MethodCacheEntry cache_entry;
+          cache_entry.resolved = resolution.resolved;
+          cache_entry.dispatch_family_is_class =
+              resolution.dispatch_family_is_class;
+          cache_entry.selector_storage = resolution.selector_storage;
+          cache_entry.class_name = resolution.class_name;
+          cache_entry.owner_identity = resolution.owner_identity;
+          cache_entry.normalized_receiver_identity =
+              normalized_receiver_identity;
+          cache_entry.selector_stable_id = selector_handle->stable_id;
+          cache_entry.parameter_count = resolution.parameter_count;
+          cache_entry.implementation = resolution.implementation;
+          state.method_cache.emplace(cache_key, std::move(cache_entry));
+          state.last_dispatch_resolved_live_method = resolution.resolved;
+          state.last_dispatch_fell_back = !resolution.resolved;
+          state.last_resolved_class_name = resolution.class_name;
+          state.last_resolved_owner_identity = resolution.owner_identity;
+          if (resolution.resolved) {
+            resolved_live_method = true;
+            resolved_implementation = resolution.implementation;
+            resolved_parameter_count = resolution.parameter_count;
+            ++state.live_dispatch_count;
+          } else {
+            ++state.fallback_dispatch_count;
+          }
+        }
+      } else {
+        ++state.fallback_dispatch_count;
+        state.last_dispatch_fell_back = true;
+      }
+    }
   }
   // M255-C003 runtime call ABI generation anchor: canonical runtime dispatch
   // owns nil-receiver semantics for lowered instance/class/super surfaces, so
   // a zero receiver returns zero without requiring lowering-side elision.
   if (receiver == 0) {
     return 0;
+  }
+  if (resolved_live_method && resolved_implementation != nullptr) {
+    return InvokeResolvedMethod(resolved_implementation, resolved_parameter_count,
+                                a0, a1, a2, a3);
   }
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }

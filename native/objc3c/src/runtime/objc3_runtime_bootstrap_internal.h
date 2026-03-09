@@ -80,6 +80,35 @@ typedef struct objc3_runtime_selector_lookup_entry_snapshot {
   const char *canonical_selector;
 } objc3_runtime_selector_lookup_entry_snapshot;
 
+typedef struct objc3_runtime_method_cache_state_snapshot {
+  uint64_t cache_entry_count;
+  uint64_t cache_hit_count;
+  uint64_t cache_miss_count;
+  uint64_t slow_path_lookup_count;
+  uint64_t live_dispatch_count;
+  uint64_t fallback_dispatch_count;
+  uint64_t last_selector_stable_id;
+  uint64_t last_normalized_receiver_identity;
+  int last_dispatch_used_cache;
+  int last_dispatch_resolved_live_method;
+  int last_dispatch_fell_back;
+  const char *last_selector;
+  const char *last_resolved_class_name;
+  const char *last_resolved_owner_identity;
+} objc3_runtime_method_cache_state_snapshot;
+
+typedef struct objc3_runtime_method_cache_entry_snapshot {
+  int found;
+  int resolved;
+  int dispatch_family_is_class;
+  uint64_t normalized_receiver_identity;
+  uint64_t selector_stable_id;
+  uint64_t parameter_count;
+  const char *selector;
+  const char *resolved_class_name;
+  const char *resolved_owner_identity;
+} objc3_runtime_method_cache_entry_snapshot;
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
@@ -95,6 +124,11 @@ int objc3_runtime_copy_selector_lookup_table_state_for_testing(
 int objc3_runtime_copy_selector_lookup_entry_for_testing(
     const char *selector,
     objc3_runtime_selector_lookup_entry_snapshot *snapshot);
+int objc3_runtime_copy_method_cache_state_for_testing(
+    objc3_runtime_method_cache_state_snapshot *snapshot);
+int objc3_runtime_copy_method_cache_entry_for_testing(
+    int receiver, const char *selector,
+    objc3_runtime_method_cache_entry_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

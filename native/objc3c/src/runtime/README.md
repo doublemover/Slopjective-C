@@ -137,3 +137,19 @@ live lane-C call ABI now targets:
   `objc3_runtime_copy_selector_lookup_entry_for_testing` expose deterministic
   snapshots for the emitted-selector-table proof surface
 - unknown selector lookups stay dynamic until `M255-D003`
+
+`M255-D003` then turns live dispatch into a method-cache plus deterministic
+slow-path resolution surface:
+
+- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- receiver normalization model
+  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
+- emitted class/metaclass records drive slow-path resolution through
+  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
+- positive and negative cache entries are stored through
+  `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
+- `objc3_runtime_copy_method_cache_state_for_testing` and
+  `objc3_runtime_copy_method_cache_entry_for_testing` expose deterministic
+  snapshots for the live method-cache proof surface
+- unresolved or unsupported lookup continues to fall back through
+  `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`

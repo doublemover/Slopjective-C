@@ -58,6 +58,10 @@ and metadata-backed lookup tables now live behind the native
 `objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface, while
 method caches and other slow-path runtime behavior remain there for later
 issues.
+M255-D003 method-cache / slow-path lookup: positive and negative method-cache
+entries plus emitted class/metaclass slow-path resolution now live behind the
+native `objc3_runtime_dispatch_i32` surface. This shim remains explicit
+compatibility evidence only and does not own live cache behavior.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

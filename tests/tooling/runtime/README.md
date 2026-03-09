@@ -230,3 +230,16 @@ cutover:
 - duplicate selector spellings inside one selector pool fail closed
 - duplicate selector spellings across images merge onto one canonical stable ID
 - unknown selectors remain dynamic until `M255-D003`
+
+`M255-D003` adds the live method-cache / slow-path proof surface:
+
+- runtime snapshots:
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+- known class receivers and class self receivers normalize onto one metaclass
+  cache identity
+- emitted class/metaclass method tables resolve live callable bodies during the
+  first slow-path lookup
+- positive cache entries are reused for repeat live dispatch
+- negative cache entries are reused for unresolved selectors while preserving
+  the compatibility fallback result

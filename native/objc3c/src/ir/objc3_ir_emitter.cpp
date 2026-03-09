@@ -191,6 +191,16 @@ class Objc3IREmitter {
         << kObjc3RuntimeSelectorLookupTablesMergeModel
         << ", fallback_model="
         << kObjc3RuntimeSelectorLookupTablesFallbackModel << "\n";
+    out << "; runtime_method_cache_slow_path_lookup = contract="
+        << kObjc3RuntimeMethodCacheSlowPathContractId
+        << ", receiver_normalization_model="
+        << kObjc3RuntimeMethodCacheSlowPathReceiverNormalizationModel
+        << ", resolution_model="
+        << kObjc3RuntimeMethodCacheSlowPathResolutionModel
+        << ", cache_model="
+        << kObjc3RuntimeMethodCacheSlowPathCacheModel
+        << ", fallback_model="
+        << kObjc3RuntimeMethodCacheSlowPathFallbackModel << "\n";
     if (!frontend_metadata_
              .executable_metadata_debug_projection_contract_id.empty()) {
       out << "; executable_metadata_debug_projection = "
@@ -5167,11 +5177,20 @@ class Objc3IREmitter {
                                           const std::string &list_kind) {
       return owner_family_kind + "|" + owner_identity + "|" + list_kind;
     };
+    const auto build_implementation_method_key =
+        [](const std::string &implementation_name, const std::string &selector,
+           bool is_class_method) {
+          return implementation_name + "|" +
+                 (is_class_method ? "class" : "instance") + "|" + selector;
+        };
     std::unordered_map<std::string, std::string> method_list_symbols_by_key;
+    std::unordered_map<std::string, std::string>
+        implementation_method_symbols_by_key;
     if (emit_member_table_payloads) {
       method_list_symbols_by_key.reserve(
           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
               .size());
+      implementation_method_symbols_by_key.reserve(method_definitions_.size());
       for (std::size_t i = 0;
            i <
            frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
@@ -5187,6 +5206,16 @@ class Objc3IREmitter {
             BuildRuntimeMetadataAuxiliarySymbol(
                 layout_policy.descriptor_symbol_prefix, bundle.owner_family_kind,
                 bundle.list_kind + "_methods", i));
+      }
+      for (const MethodDefinition &method_def : method_definitions_) {
+        if (method_def.method == nullptr) {
+          continue;
+        }
+        implementation_method_symbols_by_key.emplace(
+            build_implementation_method_key(
+                method_def.implementation_name, method_def.method->selector,
+                method_def.method->is_class_method),
+            "@" + method_def.symbol);
       }
     }
 
@@ -5304,6 +5333,23 @@ class Objc3IREmitter {
                   "@" + layout_policy.descriptor_symbol_prefix + family.kind +
                   "_" + bundle.list_kind + "_method_return_type_" +
                   bundle_ordinal + "_" + entry_ordinal;
+              std::string implementation_symbol = "null";
+              if (entry.has_body &&
+                  bundle.owner_kind == "class-implementation") {
+                // M255-D003 slow-path anchor: class-implementation method-table
+                // entries now carry a callable implementation pointer so the
+                // runtime can resolve real emitted method bodies from
+                // registered class/metaclass records.
+                const auto implementation_it =
+                    implementation_method_symbols_by_key.find(
+                        build_implementation_method_key(
+                            bundle.owner_name, entry.selector,
+                            bundle.list_kind == "class"));
+                if (implementation_it !=
+                    implementation_method_symbols_by_key.end()) {
+                  implementation_symbol = implementation_it->second;
+                }
+              }
 
               out << selector_symbol << " = private constant ["
                   << (entry.selector.size() + 1u) << " x i8] c\""
@@ -5321,11 +5367,12 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
               std::ostringstream entry_initializer;
-              entry_initializer << "{ ptr, ptr, ptr, i64, i1 } { ptr "
+              entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64 } { ptr "
                                 << selector_symbol << ", ptr "
                                 << entry_owner_identity_symbol << ", ptr "
                                 << return_type_symbol << ", i64 "
-                                << entry.parameter_count << ", i1 "
+                                << entry.parameter_count << ", ptr "
+                                << implementation_symbol << ", i64 "
                                 << (entry.has_body ? 1 : 0) << " }";
               entry_initializers.push_back(entry_initializer.str());
             }
@@ -5335,12 +5382,12 @@ class Objc3IREmitter {
                   << ", ptr " << export_owner_identity_symbol << " }";
             } else {
               out << "{ i64, ptr, ptr, [" << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, i1 }] } { i64 "
+                  << " x { ptr, ptr, ptr, i64, ptr, i64 }] } { i64 "
                   << entry_initializers.size() << ", ptr "
                   << owner_identity_symbol << ", ptr "
                   << export_owner_identity_symbol << ", ["
                   << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, i1 }] [";
+                  << " x { ptr, ptr, ptr, i64, ptr, i64 }] [";
               for (std::size_t entry_index = 0;
                    entry_index < entry_initializers.size(); ++entry_index) {
                 if (entry_index != 0) {
@@ -5658,6 +5705,20 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, "metaclass",
                     "method_list_ref", i);
+            std::string instance_method_list_symbol = "null";
+            const auto instance_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "instance"));
+            if (instance_method_list_it != method_list_symbols_by_key.end()) {
+              instance_method_list_symbol = instance_method_list_it->second;
+            }
+            std::string metaclass_method_list_symbol = "null";
+            const auto metaclass_method_list_it = method_list_symbols_by_key.find(
+                build_method_list_key(family.kind, bundle.owner_identity,
+                                      "class"));
+            if (metaclass_method_list_it != method_list_symbols_by_key.end()) {
+              metaclass_method_list_symbol = metaclass_method_list_it->second;
+            }
             std::string super_bundle_symbol = "null";
             if (bundle.has_super) {
               const auto super_it =
@@ -5683,15 +5744,17 @@ class Objc3IREmitter {
                 << "\\00\", section \"" << family.emitted_section_name
                 << "\", align 1\n";
             out << instance_method_list_ref_symbol
-                << " = private global { i64, ptr } { i64 "
+                << " = private global { i64, ptr, ptr } { i64 "
                 << bundle.instance_method_count << ", ptr "
-                << owner_identity_symbol
+                << owner_identity_symbol << ", ptr "
+                << instance_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             out << metaclass_method_list_ref_symbol
-                << " = private global { i64, ptr } { i64 "
+                << " = private global { i64, ptr, ptr } { i64 "
                 << bundle.class_method_count << ", ptr "
-                << owner_identity_symbol
+                << owner_identity_symbol << ", ptr "
+                << metaclass_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             out << descriptor_symbol

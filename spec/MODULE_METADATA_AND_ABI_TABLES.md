@@ -6741,3 +6741,18 @@ runtime-owned selector table consumed during registration and replay:
   `objc3_runtime_copy_selector_lookup_table_state_for_testing`
 - runtime selector entry snapshot symbol
   `objc3_runtime_copy_selector_lookup_entry_for_testing`
+
+## M255 method-cache / slow-path metadata anchors (D003)
+
+`M255-D003` promotes emitted class/metaclass method tables into the runtime
+lookup surface consumed by live dispatch:
+
+- contract id `objc3c-runtime-method-cache-slow-path-lookup/m255-d003-v1`
+- receiver normalization model
+  `known-class-and-class-self-receivers-normalize-to-one-metaclass-cache-key`
+- slow-path resolution model
+  `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
+- runtime method-cache state snapshot symbol
+  `objc3_runtime_copy_method_cache_state_for_testing`
+- runtime method-cache entry snapshot symbol
+  `objc3_runtime_copy_method_cache_entry_for_testing`

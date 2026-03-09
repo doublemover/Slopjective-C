@@ -1,0 +1,30 @@
+module liveMethodDispatch;
+
+@interface Widget
+- (i32) currentValue;
+- (i32) callCurrentValue;
++ (i32) shared;
++ (i32) callSharedThroughSelf;
+@end
+
+@implementation Widget
+- (i32) currentValue {
+  return 11;
+}
+
+- (i32) callCurrentValue {
+  return [self currentValue];
+}
+
++ (i32) shared {
+  return 22;
+}
+
++ (i32) callSharedThroughSelf {
+  return [self shared];
+}
+@end
+
+fn callSharedThroughKnownClass() -> i32 {
+  return [Widget shared];
+}
