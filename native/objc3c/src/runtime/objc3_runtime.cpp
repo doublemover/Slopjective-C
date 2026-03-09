@@ -1141,6 +1141,11 @@ bool TryWalkRegistrationTableUnlocked(
     const objc3_runtime_registration_table *registration_table,
     const objc3_runtime_image_descriptor *image,
     RegisteredImageMetadata &record) {
+  // M263-D001 runtime-bootstrap-table-consumption anchor: staged registration
+  // tables must match the image descriptor exactly, discovery-root membership
+  // must close over every descriptor family before image state is published,
+  // and the walked image snapshot is derived from this validated table rather
+  // than from sidecar manifests or replay-only bookkeeping.
   if (registration_table == nullptr ||
       registration_table->abi_version != 1 ||
       registration_table->pointer_field_count != 11 ||
@@ -1276,6 +1281,10 @@ int RegisterImageUnlocked(
     RuntimeState &state, const objc3_runtime_image_descriptor *image,
     const objc3_runtime_registration_table *staged_registration_table,
     bool retain_bootstrap_record, bool mark_image_local_init_state) {
+  // M263-D001 runtime-bootstrap-table-consumption anchor: duplicate identity
+  // rejection and out-of-order rejection happen before live counters advance,
+  // while successful staged-table consumption is the only path allowed to
+  // publish bootstrap-visible image-walk state.
   if (image == nullptr || image->module_name == nullptr ||
       image->module_name[0] == '\0' ||
       image->translation_unit_identity_key == nullptr ||
@@ -1370,6 +1379,8 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
   std::lock_guard<std::mutex> lock(state.mutex);
   const objc3_runtime_registration_table *const staged_registration_table =
       state.staged_registration_table;
+  // M263-D001 runtime-bootstrap-table-consumption anchor: staging is one-shot
+  // and is consumed by the next public registration call only.
   state.staged_registration_table = nullptr;
   return RegisterImageUnlocked(state, image, staged_registration_table, true,
                                false);

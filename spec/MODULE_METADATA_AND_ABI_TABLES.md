@@ -7221,3 +7221,33 @@ Metadata/runtime anchors:
 - runtime replay linkage:
   - `objc3_runtime_replay_registered_images_for_testing`
   - `objc3_runtime_copy_reset_replay_state_for_testing`
+
+## M263 runtime bootstrap table consumption anchors (D001)
+
+`M263-D001` publishes the runtime bootstrap-table consumption freeze over the
+already-live staged registrar bridge.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+- manifest proof fields:
+  - `bootstrap_table_consumption_contract_id`
+  - `bootstrap_table_consumption_model`
+  - `bootstrap_table_deduplication_model`
+  - `bootstrap_table_image_state_publication_model`
+  - `bootstrap_table_stage_registration_table_symbol`
+  - `bootstrap_table_image_walk_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+- published image-state fields:
+  - `last_walked_module_name`
+  - `last_walked_translation_unit_identity_key`
+  - `last_walked_class_descriptor_count`
+  - `last_walked_protocol_descriptor_count`
+  - `last_walked_category_descriptor_count`
+  - `last_walked_property_descriptor_count`
+  - `last_walked_ivar_descriptor_count`
+  - `last_registration_used_staged_table`

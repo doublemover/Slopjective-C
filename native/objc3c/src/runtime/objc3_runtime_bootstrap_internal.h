@@ -116,6 +116,11 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
+// M263-D001 runtime-bootstrap-table-consumption anchor: the next public
+// `objc3_runtime_register_image` call consumes the staged registration table at
+// most once, duplicate identity rejection happens before live state advances,
+// and `objc3_runtime_copy_image_walk_state_for_testing` remains the canonical
+// bootstrap-visible image-state publication surface for runtime probes.
 void objc3_runtime_stage_registration_table_for_bootstrap(
     const objc3_runtime_registration_table *registration_table);
 int objc3_runtime_copy_image_walk_state_for_testing(

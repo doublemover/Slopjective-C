@@ -6506,6 +6506,31 @@ linked binaries.
   - `objc3_runtime_replay_registered_images_for_testing`
   - `objc3_runtime_copy_reset_replay_state_for_testing`
 
+## Runtime bootstrap table consumption freeze (M263-D001)
+
+`M263-D001` freezes the already-live runtime-side bridge that consumes emitted
+registration tables, rejects duplicate translation-unit identities before
+advancing bootstrap state, and publishes one bootstrap-visible image-walk
+snapshot for probes and closeout evidence.
+
+- contract id
+  `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+- consumption model
+  `next-public-register-call-consumes-staged-registration-table-once`
+- deduplication model
+  `translation-unit-identity-key-rejection-before-registration-state-advance`
+- image state publication model
+  `image-walk-snapshot-publishes-module-identity-root-counts-and-staged-table-usage`
+- canonical runtime bridge:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+- manifest proof fields:
+  - `bootstrap_table_consumption_contract_id`
+  - `bootstrap_table_consumption_model`
+  - `bootstrap_table_deduplication_model`
+  - `bootstrap_table_image_state_publication_model`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:

@@ -6173,3 +6173,32 @@ one live bootstrap replay corpus over linked binaries.
   - one `runtime_bootstrap_archive_static_link_replay_corpus` line in `module.ll`
   - merged response/discovery artifacts retain archive-linked bootstrap objects
   - replay probes prove retained images register on startup and re-register after reset
+
+## M263 runtime bootstrap table consumption freeze (D001)
+
+`M263-D001` freezes the runtime-side bridge that consumes emitted registration
+tables, rejects duplicate image identities before advancing bootstrap state,
+and publishes one authoritative image-walk snapshot for runtime probes.
+
+- contract id
+  `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+- upstream runtime/lowering contracts:
+  - `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+  - `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- canonical models:
+  - table consumption
+    `next-public-register-call-consumes-staged-registration-table-once`
+  - deduplication
+    `translation-unit-identity-key-rejection-before-registration-state-advance`
+  - image state publication
+    `image-walk-snapshot-publishes-module-identity-root-counts-and-staged-table-usage`
+- canonical runtime bridge:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+- frozen invariants:
+  - staged tables must descriptor-match the runtime image before state is published
+  - discovery root must close over every descriptor family before the image-walk
+    snapshot is committed
+  - duplicate registration must fail closed without incrementing registered-image
+    counters or next-expected ordinal

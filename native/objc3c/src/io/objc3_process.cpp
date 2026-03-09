@@ -29,6 +29,16 @@ enum class ProducedObjectFormat : std::uint8_t {
   kMachO = 3,
 };
 
+inline constexpr const char *kObjc3RuntimeBootstrapTableConsumptionContractId =
+    "objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1";
+inline constexpr const char *kObjc3RuntimeBootstrapTableConsumptionModel =
+    "next-public-register-call-consumes-staged-registration-table-once";
+inline constexpr const char *kObjc3RuntimeBootstrapTableDeduplicationModel =
+    "translation-unit-identity-key-rejection-before-registration-state-advance";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapTableImageStatePublicationModel =
+        "image-walk-snapshot-publishes-module-identity-root-counts-and-staged-table-usage";
+
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
     case 0x014c:  // IMAGE_FILE_MACHINE_I386
@@ -934,6 +944,27 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(
              inputs.bootstrap_registrar_realization_staging_model)
       << "\",\n"
+      << "  \"bootstrap_table_consumption_contract_id\": \""
+      << EscapeJsonString(kObjc3RuntimeBootstrapTableConsumptionContractId)
+      << "\",\n"
+      << "  \"bootstrap_table_consumption_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBootstrapTableConsumptionModel)
+      << "\",\n"
+      << "  \"bootstrap_table_deduplication_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBootstrapTableDeduplicationModel)
+      << "\",\n"
+      << "  \"bootstrap_table_image_state_publication_model\": \""
+      << EscapeJsonString(
+             kObjc3RuntimeBootstrapTableImageStatePublicationModel)
+      << "\",\n"
+      << "  \"bootstrap_table_stage_registration_table_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_stage_registration_table_symbol)
+      << "\",\n"
+      << "  \"bootstrap_table_image_walk_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_registrar_image_walk_snapshot_symbol)
+      << "\",\n"
       << "  \"bootstrap_reset_contract_id\": \""
       << EscapeJsonString(inputs.bootstrap_reset_contract_id) << "\",\n"
       << "  \"bootstrap_reset_internal_header_path\": \""
@@ -1030,7 +1061,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"launch_integration_ready\": true,\n"
       << "  \"ready_for_lowering_init_stub_emission\": true,\n"
       << "  \"ready_for_bootstrap_lowering_materialization\": true,\n"
-      << "  \"ready_for_runtime_bootstrap_enforcement\": true\n"
+      << "  \"ready_for_runtime_bootstrap_enforcement\": true,\n"
+      << "  \"ready_for_runtime_bootstrap_table_consumption\": true\n"
       << "}\n";
   manifest_json = out.str();
   return true;
