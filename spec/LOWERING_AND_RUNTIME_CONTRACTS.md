@@ -5684,3 +5684,22 @@ lookup-table, cache, and slow-path issues must preserve:
 - protocol/category-aware method resolution remains deferred to `M255-D004`
 - unsupported runtime-resolution surfaces remain fail closed until later lane-D
   implementation issues materialize them explicitly
+
+## M255 selector interning and lookup tables (D002)
+
+`M255-D002` materializes the first runtime-owned selector table built from
+registration-table selector pools while preserving the frozen D001 public ABI:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- selector table state snapshot symbol
+  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+- per-selector lookup entry snapshot symbol
+  `objc3_runtime_copy_selector_lookup_entry_for_testing`
+- interning model
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- merge model
+  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
+- dynamic fallback model
+  `unknown-selector-lookups-remain-dynamic-until-m255-d003`
+- replay model
+  `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`

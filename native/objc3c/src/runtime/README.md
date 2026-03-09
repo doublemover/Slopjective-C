@@ -125,3 +125,15 @@ live lane-C call ABI now targets:
 - protocol/category-aware method resolution remains deferred to `M255-D004`
 - the compatibility shim remains test-only evidence and is not the
   authoritative runtime-owned lookup/dispatch implementation
+
+`M255-D002` then turns selector pools into a real runtime-owned selector table:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- selector pool registrations materialize stable IDs through
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- duplicate selector spellings inside one selector pool fail closed
+- duplicate selector spellings across images merge onto one canonical stable ID
+- `objc3_runtime_copy_selector_lookup_table_state_for_testing` and
+  `objc3_runtime_copy_selector_lookup_entry_for_testing` expose deterministic
+  snapshots for the emitted-selector-table proof surface
+- unknown selector lookups stay dynamic until `M255-D003`

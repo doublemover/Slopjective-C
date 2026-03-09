@@ -16878,3 +16878,22 @@ lane-C call ABI now targets:
 - protocol/category-aware method resolution remains deferred to `M255-D004`
 - `@objc3_msgsend_i32` remains compatibility/test evidence only and is not the
   authoritative live runtime lookup/dispatch implementation
+
+## Selector interning and lookup tables (M255-D002)
+
+`M255-D002` turns the deferred selector-table boundary into a real runtime
+capability backed by emitted startup metadata:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- metadata-backed selector table symbol
+  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+- per-selector snapshot symbol
+  `objc3_runtime_copy_selector_lookup_entry_for_testing`
+- selector interning model
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- merge model
+  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
+- dynamic fallback model
+  `unknown-selector-lookups-remain-dynamic-until-m255-d003`
+- replay model
+  `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`

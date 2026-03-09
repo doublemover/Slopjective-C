@@ -163,6 +163,25 @@ inline constexpr const char *kObjc3RuntimeLookupDispatchCompatibilityModel =
     "compatibility-shim-remains-test-only-non-authoritative-runtime-surface";
 inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
     "runtime-lookup-and-dispatch-fail-closed-on-unmaterialized-resolution";
+// M255-D002 selector lookup table anchor: lane-D now materializes the selector
+// table from emitted registration-table selector pools while preserving the
+// frozen D001 public runtime entrypoints. Method-cache / slow-path resolution
+// remains deferred to M255-D003, and unknown selector lookups stay dynamic
+// until that path exists.
+inline constexpr const char *kObjc3RuntimeSelectorLookupTablesContractId =
+    "objc3c-runtime-selector-lookup-tables/m255-d002-v1";
+inline constexpr const char
+    *kObjc3RuntimeSelectorLookupTablesInterningModel =
+        "registered-selector-pools-materialize-process-global-stable-id-table";
+inline constexpr const char
+    *kObjc3RuntimeSelectorLookupTablesMergeModel =
+        "per-image-selector-pools-deduplicated-and-merged-across-registration-order";
+inline constexpr const char
+    *kObjc3RuntimeSelectorLookupTablesFallbackModel =
+        "unknown-selector-lookups-remain-dynamic-until-m255-d003";
+inline constexpr const char
+    *kObjc3RuntimeSelectorLookupTablesReplayModel =
+        "reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory

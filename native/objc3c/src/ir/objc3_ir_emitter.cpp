@@ -183,6 +183,14 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_object_inspection_contract_id
           << "\n";
     }
+    out << "; runtime_selector_lookup_tables = contract="
+        << kObjc3RuntimeSelectorLookupTablesContractId
+        << ", interning_model="
+        << kObjc3RuntimeSelectorLookupTablesInterningModel
+        << ", merge_model="
+        << kObjc3RuntimeSelectorLookupTablesMergeModel
+        << ", fallback_model="
+        << kObjc3RuntimeSelectorLookupTablesFallbackModel << "\n";
     if (!frontend_metadata_
              .executable_metadata_debug_projection_contract_id.empty()) {
       out << "; executable_metadata_debug_projection = "

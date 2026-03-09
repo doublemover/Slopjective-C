@@ -10209,6 +10209,8 @@ class Objc3Parser {
     // slow-path runtime resolution. It hands normalized selector text and
     // receiver form through to the canonical runtime-owned lookup/dispatch
     // boundary for lane-D to extend later.
+    // M255-D002 selector-table anchor: metadata-backed selector lookup tables
+    // are now runtime-owned behind that preserved boundary.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

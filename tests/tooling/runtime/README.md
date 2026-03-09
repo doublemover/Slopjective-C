@@ -220,3 +220,13 @@ cutover:
 - method-cache / slow-path resolution remain deferred to `M255-D003`
 - protocol/category-aware resolution remains deferred to `M255-D004`
 - `objc3_msgsend_i32` remains compatibility/test evidence only
+
+`M255-D002` adds the selector-table proof surface:
+
+- runtime snapshots:
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+- emitted selector pools are consumed during startup registration and replay
+- duplicate selector spellings inside one selector pool fail closed
+- duplicate selector spellings across images merge onto one canonical stable ID
+- unknown selectors remain dynamic until `M255-D003`

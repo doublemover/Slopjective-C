@@ -8674,3 +8674,15 @@ This freeze is intentionally narrow:
 - protocol/category-aware method resolution is deferred to `M255-D004`
 - the compatibility shim remains test-only evidence, not the authoritative live
   runtime lookup/dispatch surface
+
+## M255 selector interning and lookup tables (D002)
+
+`M255-D002` makes selector pooling executable in the runtime layer:
+
+- emitted selector pools now materialize the canonical runtime selector table
+- duplicate selector spellings inside one image fail closed during registration
+- duplicate selector spellings across images merge onto one stable ID while
+  preserving provider counts and registration-order provenance
+- replay rebuilds the same metadata-backed selector table deterministically
+- dynamic selector creation remains available only for selectors that are not
+  present in emitted metadata, pending `M255-D003`

@@ -56,6 +56,30 @@ typedef struct objc3_runtime_reset_replay_state_snapshot {
   const char *last_replayed_translation_unit_identity_key;
 } objc3_runtime_reset_replay_state_snapshot;
 
+typedef struct objc3_runtime_selector_lookup_table_state_snapshot {
+  uint64_t selector_table_entry_count;
+  uint64_t metadata_backed_selector_count;
+  uint64_t dynamic_selector_count;
+  uint64_t metadata_provider_edge_count;
+  const char *last_materialized_selector;
+  uint64_t last_materialized_stable_id;
+  uint64_t last_materialized_registration_order_ordinal;
+  uint64_t last_materialized_selector_pool_index;
+  int last_materialized_from_metadata;
+} objc3_runtime_selector_lookup_table_state_snapshot;
+
+typedef struct objc3_runtime_selector_lookup_entry_snapshot {
+  int found;
+  int metadata_backed;
+  uint64_t stable_id;
+  uint64_t metadata_provider_count;
+  uint64_t first_registration_order_ordinal;
+  uint64_t last_registration_order_ordinal;
+  uint64_t first_selector_pool_index;
+  uint64_t last_selector_pool_index;
+  const char *canonical_selector;
+} objc3_runtime_selector_lookup_entry_snapshot;
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
@@ -66,6 +90,11 @@ int objc3_runtime_copy_image_walk_state_for_testing(
 int objc3_runtime_replay_registered_images_for_testing(void);
 int objc3_runtime_copy_reset_replay_state_for_testing(
     objc3_runtime_reset_replay_state_snapshot *snapshot);
+int objc3_runtime_copy_selector_lookup_table_state_for_testing(
+    objc3_runtime_selector_lookup_table_state_snapshot *snapshot);
+int objc3_runtime_copy_selector_lookup_entry_for_testing(
+    const char *selector,
+    objc3_runtime_selector_lookup_entry_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

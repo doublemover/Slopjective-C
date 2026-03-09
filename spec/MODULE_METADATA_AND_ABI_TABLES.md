@@ -6726,3 +6726,18 @@ claiming later method-cache or protocol/category-aware resolution work:
 - metadata-backed selector lookup tables remain deferred to `M255-D002`
 - method-cache and runtime slow-path lookup remain deferred to `M255-D003`
 - protocol/category-aware method resolution remains deferred to `M255-D004`
+
+## M255 selector lookup table metadata anchors (D002)
+
+`M255-D002` promotes selector pools from passive metadata payloads into the
+runtime-owned selector table consumed during registration and replay:
+
+- contract id `objc3c-runtime-selector-lookup-tables/m255-d002-v1`
+- selector pool registration model
+  `registered-selector-pools-materialize-process-global-stable-id-table`
+- selector pool merge model
+  `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
+- runtime selector table snapshot symbol
+  `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+- runtime selector entry snapshot symbol
+  `objc3_runtime_copy_selector_lookup_entry_for_testing`

@@ -53,6 +53,11 @@ lookup tables, method caches, and runtime slow paths remain owned by the native
 `objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface. This
 shim stays test-only compatibility evidence and is not the authoritative live
 runtime lookup/dispatch implementation.
+M255-D002 selector lookup table boundary: metadata-backed selector interning
+and metadata-backed lookup tables now live behind the native
+`objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface, while
+method caches and other slow-path runtime behavior remain there for later
+issues.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;
