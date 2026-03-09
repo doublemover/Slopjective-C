@@ -6640,3 +6640,21 @@ runtime dispatch path now consumes:
 - diagnostic anchors `O3S216` and `O3S217`
 - the metadata story does not add new direct-dispatch anchors; it only narrows
   which live dispatch sites are admitted as concrete before runtime emission
+
+## M255 super/direct/dynamic legality metadata anchors (B003)
+
+`M255-B003` adds the live legality/runtime-rule metadata anchors for preserved
+super/dynamic dispatch evidence while direct dispatch remains reserved:
+
+- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
+- super legality policy
+  `super-requires-enclosing-method-and-real-superclass`
+- direct dispatch policy
+  `direct-dispatch-remains-reserved-non-goal`
+- dynamic dispatch policy
+  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
+- runtime-visible method-family policy
+  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
+- negative legality diagnostic anchor `O3S216`
+- metadata evidence now expects `super` and dynamic site counts to stay visible
+  in the same manifest/handoff family that feeds runtime-shim host-link checks

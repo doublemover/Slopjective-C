@@ -31,6 +31,10 @@ M255-B002 selector-resolution implementation: concrete self/super/known-class
 receivers are now resolved and type-checked before this shim is called; the
 shim still does not perform selector lookup, ambiguity recovery, or overload
 selection itself.
+M255-B003 super/direct/dynamic legality expansion: admitted super and dynamic
+sites still reach this runtime compatibility entrypoint with preserved
+method-family accounting, while illegal `super` sites fail closed before the
+shim and direct dispatch remains reserved/non-goal.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

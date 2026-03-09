@@ -3022,6 +3022,19 @@ Objc3MessageSendSelectorLoweringContract BuildMessageSendSelectorLoweringContrac
       AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract, selector_literals);
     }
   }
+  // M255-B003 parity-expansion anchor: lowering-side selector accounting must
+  // walk implementation methods too or runtime legality/method-family evidence
+  // drifts from the sema-owned site surface.
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (!method_decl.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method_decl.body) {
+        AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract, selector_literals);
+      }
+    }
+  }
 
   contract.selector_literal_entries = selector_literals.size();
   for (const auto &selector : selector_literals) {
@@ -3191,6 +3204,19 @@ Objc3DispatchAbiMarshallingContract BuildDispatchAbiMarshallingContract(
   for (const auto &function : program.functions) {
     for (const auto &stmt : function.body) {
       AccumulateDispatchAbiMarshallingStmt(stmt.get(), runtime_dispatch_arg_slots, contract);
+    }
+  }
+  // M255-B003 parity-expansion anchor: ABI marshalling counts must include
+  // implementation method bodies so runtime-shim host-link validation stays in
+  // lockstep with live super/dynamic dispatch sites.
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (!method_decl.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method_decl.body) {
+        AccumulateDispatchAbiMarshallingStmt(stmt.get(), runtime_dispatch_arg_slots, contract);
+      }
     }
   }
 

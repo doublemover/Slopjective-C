@@ -39,6 +39,16 @@ inline constexpr const char *kObjc3SelectorResolutionMissingSelectorDiagnostic =
     "O3S216";
 inline constexpr const char *kObjc3SelectorResolutionAmbiguousSelectorDiagnostic =
     "O3S217";
+inline constexpr const char *kObjc3SuperDynamicMethodFamilyContractId =
+    "objc3c-super-dynamic-method-family/m255-b003-v1";
+inline constexpr const char *kObjc3SuperDispatchLegalityPolicy =
+    "super-requires-enclosing-method-and-real-superclass";
+inline constexpr const char *kObjc3DirectDispatchReservationPolicy =
+    "direct-dispatch-remains-reserved-non-goal";
+inline constexpr const char *kObjc3DynamicDispatchMethodFamilyPolicy =
+    "dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting";
+inline constexpr const char *kObjc3RuntimeVisibleMethodFamilyPolicy =
+    "super-and-dynamic-sites-preserve-method-family-runtime-visibility";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory

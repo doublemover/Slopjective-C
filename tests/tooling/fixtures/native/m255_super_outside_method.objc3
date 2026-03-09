@@ -1,0 +1,6 @@
+module superOutsideMethod;
+
+fn main() -> i32 {
+  [super ping];
+  return 0;
+}

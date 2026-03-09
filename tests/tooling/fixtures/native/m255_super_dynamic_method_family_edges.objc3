@@ -1,0 +1,57 @@
+module superDynamicMethodFamilyEdges;
+
+@interface Root
+- (instancetype) init;
+- (id) copy;
+- (id) mutableCopy;
++ (id) new;
+- (i32) marker;
+@end
+
+@implementation Root
+- (instancetype) init {
+  return self;
+}
+
+- (id) copy {
+  return 1;
+}
+
+- (id) mutableCopy {
+  return 2;
+}
+
++ (id) new {
+  return 3;
+}
+
+- (i32) marker {
+  return 4;
+}
+@end
+
+@interface Widget : Root
+- (i32) useEdges:(id)local;
++ (id) classNewFromSuper;
+@end
+
+@implementation Widget
+- (i32) useEdges:(id)local {
+  let toggle = 1;
+  [super init];
+  [super copy];
+  [super mutableCopy];
+  [(toggle ? local : 0) copy];
+  [(toggle ? local : 0) new];
+  [(toggle ? local : 0) marker];
+  return 0;
+}
+
++ (id) classNewFromSuper {
+  return [super new];
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

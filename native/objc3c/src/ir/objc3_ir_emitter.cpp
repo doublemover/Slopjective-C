@@ -6906,6 +6906,10 @@ class Objc3IREmitter {
       // emits the same live runtime entrypoint family and relies on the
       // fail-closed exact-signature result instead of performing its own
       // overload recovery.
+      // M255-B003 super/direct/dynamic legality expansion anchor: lowering
+      // continues to route admitted super/dynamic sites through the live
+      // runtime family, preserves their normalized method-family metadata, and
+      // never synthesizes a reserved direct-dispatch entrypoint.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;

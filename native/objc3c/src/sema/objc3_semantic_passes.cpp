@@ -1814,6 +1814,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
     case Expr::Kind::NilLiteral:
       return MakeScalarSemanticType(ValueType::ObjCId);
     case Expr::Kind::Identifier: {
+      if (expr->ident == "super" && !message_send_context.inside_method) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S216",
+            "selector resolution failed: 'super' is only valid inside an implementation method"));
+        return MakeScalarSemanticType(ValueType::Unknown);
+      }
       const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
       if (!IsUnknownSemanticType(local_type)) {
         return local_type;
@@ -2063,10 +2069,40 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 std::vector<std::string> &diagnostics,
                                                 std::size_t max_message_send_args,
                                                 const Objc3MessageSendResolutionContext &message_send_context) {
+  const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
+  // M255-B003 super/direct/dynamic legality expansion anchor: lane-B rejects
+  // illegal `super` sites before concrete resolution, keeps direct dispatch
+  // reserved/non-goal, and leaves admitted dynamic sites on the runtime path
+  // with their normalized method-family metadata intact.
+  if (expr->dispatch_surface_is_normalized &&
+      expr->dispatch_surface_kind == Expr::DispatchSurfaceKind::Direct) {
+    diagnostics.push_back(MakeDiag(
+        expr->line, expr->column, "O3S216",
+        "selector resolution failed: direct dispatch remains reserved for selector '" +
+            selector + "'"));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (expr->dispatch_surface_is_normalized &&
+      expr->dispatch_surface_kind == Expr::DispatchSurfaceKind::Super) {
+    if (!message_send_context.inside_method ||
+        message_send_context.current_implementation_name.empty()) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S216",
+          "selector resolution failed: 'super' dispatch requires an enclosing implementation method"));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    if (message_send_context.current_super_name.empty()) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S216",
+          "selector resolution failed: implementation '" +
+              message_send_context.current_implementation_name +
+              "' does not provide a superclass for 'super' dispatch"));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+  }
   const SemanticTypeInfo receiver_type = ValidateExpr(
       expr->receiver.get(), scopes, globals, functions, diagnostics,
       max_message_send_args, message_send_context);
-  const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
   if (!IsUnknownSemanticType(receiver_type) && !IsMessageCompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column = expr->receiver != nullptr ? expr->receiver->column : expr->column;
@@ -6822,6 +6858,18 @@ BuildMessageSendSelectorLoweringSiteMetadataLexicographic(const Objc3Program &as
   }
   for (const auto &fn : ast.functions) {
     CollectMessageSendSelectorLoweringSiteMetadataFromStatements(fn.body, sites);
+  }
+  // M255-B003 method-family/runtime evidence anchor: implementation method
+  // bodies must contribute selector-lowering sites so super/dynamic legality
+  // and runtime-shim host-link summaries stay aligned with sema parity.
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (!method.has_body) {
+        continue;
+      }
+      CollectMessageSendSelectorLoweringSiteMetadataFromStatements(method.body,
+                                                                   sites);
+    }
   }
   std::sort(sites.begin(), sites.end(), IsMessageSendSelectorLoweringSiteMetadataLess);
   return sites;

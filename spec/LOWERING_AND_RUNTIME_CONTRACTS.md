@@ -5596,3 +5596,22 @@ dispatch-site classification and runtime dispatch emission:
 - incompatible concrete interface/implementation signatures emit `O3S217`
 - lowering still uses the live runtime dispatch family and does not add a
   second overload-recovery pass
+
+## M255 super/direct/dynamic legality and method-family expansion (B003)
+
+`M255-B003` closes the remaining legality/runtime-rule edges that sit between
+dispatch-site classification and live runtime dispatch lowering:
+
+- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
+- super legality policy
+  `super-requires-enclosing-method-and-real-superclass`
+- direct dispatch policy
+  `direct-dispatch-remains-reserved-non-goal`
+- dynamic dispatch policy
+  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
+- runtime-visible method-family policy
+  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
+- super outside an implementation method fails closed with `O3S216`
+- root-class `super` dispatch also fails closed with `O3S216`
+- admitted super/dynamic sites continue to lower through the live runtime
+  entrypoint family rather than inventing a second direct-dispatch path

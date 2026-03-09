@@ -1,0 +1,16 @@
+module superRootDispatch;
+
+@interface Root
+- (i32) sample;
+@end
+
+@implementation Root
+- (i32) sample {
+  [super ping];
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -10185,6 +10185,10 @@ class Objc3Parser {
     // one normalized selector spelling plus explicit receiver syntax only;
     // lane-B sema is now responsible for exact concrete self/super/known-class
     // resolution and fail-closed ambiguity diagnostics.
+    // M255-B003 super/direct/dynamic legality expansion anchor: parser still
+    // does not invent direct-dispatch syntax or alternate receiver forms;
+    // lane-B sema now owns rejecting illegal `super` sites while preserving the
+    // same raw dynamic receiver spellings for runtime method-family accounting.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

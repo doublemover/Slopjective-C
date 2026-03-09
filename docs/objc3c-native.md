@@ -16760,4 +16760,28 @@ currently supported runtime-dispatch path:
 - happy-path proof includes `[self ping]`, `[super ping]`, and `[Widget shared]`
   resolving as concrete selectors with method-return typing
 - dynamic receivers such as `[local ping]` remain on the runtime-dynamic path
+
+## Super, dynamic, and method-family legality expansion (M255-B003)
+
+`M255-B003` closes the remaining lane-B dispatch legality edges without
+enabling any new direct-dispatch surface:
+
+- contract id `objc3c-super-dynamic-method-family/m255-b003-v1`
+- super legality policy
+  `super-requires-enclosing-method-and-real-superclass`
+- direct dispatch policy
+  `direct-dispatch-remains-reserved-non-goal`
+- dynamic dispatch policy
+  `dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting`
+- runtime-visible method-family policy
+  `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
+- canonical fixtures:
+  - `tests/tooling/fixtures/native/m255_super_dynamic_method_family_edges.objc3`
+  - `tests/tooling/fixtures/native/m255_super_outside_method.objc3`
+  - `tests/tooling/fixtures/native/m255_super_root_dispatch.objc3`
+- positive proof now emits `super` dispatch sites `4`, dynamic dispatch sites
+  `3`, direct dispatch sites `0`, and the preserved method-family totals
+  `init=1 copy=2 mutableCopy=1 new=2 none=1`
+- negative proof fails closed with `O3S216` for both `super` outside an
+  implementation method and `super` dispatch from a root implementation
   reserved for later work
