@@ -10173,6 +10173,8 @@ class Objc3Parser {
     message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(
         message->nil_receiver_foldable, message->nil_receiver_requires_runtime_dispatch, message->message_send_form);
     message->nil_receiver_semantics_is_normalized = true;
+    // M255-A001 dispatch-surface classification anchor: bracket sends remain
+    // live dynamic sites; super receivers stay explicit while direct dispatch remains reserved.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

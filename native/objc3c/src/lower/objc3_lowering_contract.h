@@ -8,6 +8,17 @@
 inline constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
 inline constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
 inline constexpr const char *kObjc3RuntimeDispatchSymbol = "objc3_msgsend_i32";
+inline constexpr const char *kObjc3DispatchSurfaceClassificationContractId =
+    "objc3c-dispatch-surface-classification/m255-a001-v1";
+inline constexpr const char *kObjc3DispatchSurfaceInstanceFamily = "instance";
+inline constexpr const char *kObjc3DispatchSurfaceClassFamily = "class";
+inline constexpr const char *kObjc3DispatchSurfaceSuperFamily = "super";
+inline constexpr const char *kObjc3DispatchSurfaceDirectFamily = "direct";
+inline constexpr const char *kObjc3DispatchSurfaceDynamicFamily = "dynamic";
+inline constexpr const char *kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily =
+    "objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat";
+inline constexpr const char *kObjc3DispatchSurfaceDirectDispatchBinding =
+    "reserved-non-goal";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
@@ -495,6 +506,20 @@ struct Objc3IdClassSelObjectPointerTypecheckContract {
   std::size_t sel_typecheck_sites = 0;
   std::size_t object_pointer_typecheck_sites = 0;
   std::size_t total_typecheck_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3DispatchSurfaceClassificationContract {
+  std::size_t instance_dispatch_sites = 0;
+  std::size_t class_dispatch_sites = 0;
+  std::size_t super_dispatch_sites = 0;
+  std::size_t direct_dispatch_sites = 0;
+  std::size_t dynamic_dispatch_sites = 0;
+  std::string instance_entrypoint_family = kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily;
+  std::string class_entrypoint_family = kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily;
+  std::string super_entrypoint_family = kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily;
+  std::string direct_entrypoint_family = kObjc3DispatchSurfaceDirectDispatchBinding;
+  std::string dynamic_entrypoint_family = kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily;
   bool deterministic = true;
 };
 

@@ -24,6 +24,7 @@ M251-D003 link wiring: emitted objects now link against
 `artifacts/lib/objc3_runtime.lib`, and this shim remains explicit test-only
 compatibility evidence for negative unresolved-symbol coverage and formula
 parity documentation.
+M255-A001 dispatch-classification freeze: instance/class/super/dynamic dispatch families all remain routed through the live runtime compatibility family while direct dispatch remains a reserved non-goal.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

@@ -5529,3 +5529,15 @@ runbook:
   `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
 - canonical closeout evidence
   `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+## M255 dispatch surface classification (A001)
+
+`M255-A001` freezes the live dispatch taxonomy without widening runtime
+behavior yet:
+
+- contract id `objc3c-dispatch-surface-classification/m255-a001-v1`
+- instance/class/super/dynamic dispatch remain classified against the live
+  runtime family
+  `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
+- direct dispatch remains a reserved non-goal in `M255-A001`
+- the freeze exists to hand off a deterministic starting point to `M255-A002`

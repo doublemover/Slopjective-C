@@ -16689,3 +16689,16 @@ while publishing the operator runbook that exercises the real integrated path:
   `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
 - canonical closeout evidence
   `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+## Dispatch surface classification (M255-A001)
+
+`M255-A001` freezes the live dispatch taxonomy before the runtime dispatch lane
+starts expanding actual entrypoint behavior:
+
+- contract id `objc3c-dispatch-surface-classification/m255-a001-v1`
+- live runtime entrypoint family
+  `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
+- instance, class, super, and dynamic dispatch all remain bound to that live
+  runtime family in the current native path
+- direct dispatch remains reserved for later work and is an explicit non-goal
+  in `M255-A001`

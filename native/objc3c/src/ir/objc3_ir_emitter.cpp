@@ -6740,6 +6740,9 @@ class Objc3IREmitter {
                              " x i8], ptr " + selector_it->second + ", i32 0, i32 0");
 
     const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
+      // M255-A001 dispatch-surface classification anchor: instance/class/super/dynamic
+      // message sends that survive folding all route through the live runtime family;
+      // direct dispatch remains an explicit non-goal for this freeze.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;

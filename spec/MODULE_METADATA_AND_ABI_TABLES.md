@@ -6587,3 +6587,12 @@ replay:
   `tmp/artifacts/objc3c-native/execution-smoke/m254_e002_bootstrap_runbook_closeout/summary.json`
 - closeout evidence remains
   `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`
+
+## M255 dispatch/runtime metadata anchors (A001)
+
+`M255-A001` keeps the dispatch/runtime ABI anchor set narrow and explicit while
+the live runtime family is frozen:
+
+- current selector/message-send compatibility entrypoint `objc3_msgsend_i32`
+- current live runtime dispatch family anchor `objc3_runtime_dispatch_i32`
+- no additional direct-dispatch metadata anchors are introduced in `M255-A001`
