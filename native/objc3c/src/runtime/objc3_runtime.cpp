@@ -667,6 +667,12 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     std::lock_guard<std::mutex> lock(state.mutex);
     (void)LookupSelectorUnlocked(selector);
   }
+  // M255-C003 runtime call ABI generation anchor: canonical runtime dispatch
+  // owns nil-receiver semantics for lowered instance/class/super surfaces, so
+  // a zero receiver returns zero without requiring lowering-side elision.
+  if (receiver == 0) {
+    return 0;
+  }
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }
 
@@ -700,9 +706,9 @@ int objc3_runtime_copy_registration_state_for_testing(
 
 extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
                                  int a1, int a2, int a3) {
-  // D003 compatibility bridge: existing emitted objects still default to the
-  // legacy lowering symbol while the canonical runtime API remains
-  // objc3_runtime_dispatch_i32.
+  // M255-C003 compatibility bridge: dynamic compatibility sites still route
+  // through the legacy lowering symbol until M255-C004 finishes removing live
+  // shim assumptions from the dispatch path.
   return objc3_runtime_dispatch_i32(receiver, selector, a0, a1, a2, a3);
 }
 

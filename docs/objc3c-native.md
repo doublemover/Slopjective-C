@@ -16830,3 +16830,19 @@ non-deferred happy path:
   argument ABI remains unchanged from `M255-C001`
 - the issue-local positive probe proves both IR emission and executable
   behavior for one instance send and one class send in the same native fixture
+
+## Super, nil, and direct runtime call ABI cutover (M255-C003)
+
+`M255-C003` extends the live lane-C call path without widening the whole
+dispatch surface:
+
+- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
+- normalized super sends now lower directly to `@objc3_runtime_dispatch_i32`
+- canonical nil-receiver sends stop compile-time eliding in IR and instead call
+  `@objc3_runtime_dispatch_i32`, which now returns `0` for nil receivers
+- normalized dynamic sends remain on `@objc3_msgsend_i32` until `M255-C004`
+- reserved direct-dispatch surfaces fail closed if they survive into IR
+  lowering
+- the issue-local evidence chain proves nil execution on a linked native binary
+  and proves mixed super/dynamic IR call-family counts on the existing method
+  family corpus

@@ -103,6 +103,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchCallAbiGenerationDeferredLoweringModel =
         "super-dynamic-and-deferred-sends-stay-on-compatibility-bridge-until-m255-c003";
+// M255-C003 runtime call ABI generation anchor: lane-C now routes normalized
+// super sends and nil-receiver canonical surfaces through the live runtime
+// entrypoint, keeps dynamic sends on the compatibility bridge until M255-C004,
+// and fails closed if an unsupported reserved direct-dispatch surface reaches
+// IR emission.
+inline constexpr const char *kObjc3RuntimeDispatchSuperNilContractId =
+    "objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1";
+inline constexpr const char
+    *kObjc3RuntimeDispatchSuperNilActiveLoweringModel =
+        "instance-class-super-and-nil-sends-lower-directly-to-canonical-runtime-entrypoint";
+inline constexpr const char
+    *kObjc3RuntimeDispatchSuperNilDeferredLoweringModel =
+        "dynamic-sends-stay-on-compatibility-bridge-until-m255-c004";
+inline constexpr const char
+    *kObjc3RuntimeDispatchSuperNilUnsupportedFallbackModel =
+        "direct-dispatch-fails-closed-until-supported-surface-materializes";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
@@ -1095,6 +1111,8 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
                                      std::string &error);
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary);
 bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
+    const std::string &dispatch_surface_family);
+bool RequiresFailClosedObjc3RuntimeDispatchFallback(
     const std::string &dispatch_surface_family);
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family);

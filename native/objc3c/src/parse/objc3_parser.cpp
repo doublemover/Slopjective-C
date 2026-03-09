@@ -10199,6 +10199,11 @@ class Objc3Parser {
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
     // M255-C003.
+    // M255-C003 runtime call ABI generation anchor: lowering now moves
+    // normalized super sends and nil-receiver canonical surfaces onto
+    // objc3_runtime_dispatch_i32, keeps dynamic compatibility sites on
+    // objc3_msgsend_i32 until M255-C004, and fails closed if a reserved direct
+    // dispatch surface survives into IR lowering.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

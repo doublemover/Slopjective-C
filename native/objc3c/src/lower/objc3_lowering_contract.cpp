@@ -203,15 +203,22 @@ std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boun
 bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
     const std::string &dispatch_surface_family) {
   return dispatch_surface_family == kObjc3DispatchSurfaceInstanceFamily ||
-         dispatch_surface_family == kObjc3DispatchSurfaceClassFamily;
+         dispatch_surface_family == kObjc3DispatchSurfaceClassFamily ||
+         dispatch_surface_family == kObjc3DispatchSurfaceSuperFamily;
+}
+
+bool RequiresFailClosedObjc3RuntimeDispatchFallback(
+    const std::string &dispatch_surface_family) {
+  return dispatch_surface_family == kObjc3DispatchSurfaceDirectFamily;
 }
 
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family) {
-  // M255-C002 runtime call ABI generation anchor: lowering now routes
-  // normalized instance/class sends directly to objc3_runtime_dispatch_i32
-  // while preserving the compatibility bridge for deferred super/dynamic and
-  // other non-cutover families until M255-C003.
+  // M255-C003 runtime call ABI generation anchor: lowering now routes
+  // normalized instance/class/super sends through objc3_runtime_dispatch_i32,
+  // leaves dynamic compatibility cases on objc3_msgsend_i32 until M255-C004,
+  // and handles reserved direct-dispatch surfaces as explicit fail-closed
+  // lowering failures before emission.
   return UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family)
              ? kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol
              : kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;

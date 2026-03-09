@@ -5644,3 +5644,15 @@ IR off the compatibility bridge and onto the canonical runtime ABI:
   `M255-C003`
 - selector operands remain lowered cstring pointers
 - the fixed four-slot `i32` argument vector is preserved unchanged
+
+## M255 super, nil, and direct runtime call ABI cutover (C003)
+
+`M255-C003` continues the lane-C cutover while keeping dynamic compatibility
+separate:
+
+- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
+- normalized super sends now lower to `objc3_runtime_dispatch_i32`
+- canonical nil-receiver sends no longer lower to local IR elision; they lower
+  through `objc3_runtime_dispatch_i32`, which owns the nil `0` result
+- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- reserved direct-dispatch surfaces fail closed if they reach IR emission

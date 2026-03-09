@@ -1,0 +1,6 @@
+module nilRuntimeDispatch;
+
+fn main() -> i32 {
+  let sent = [nil ping];
+  return sent + 9;
+}

@@ -6885,7 +6885,17 @@ class Objc3IREmitter {
   }
 
   std::string EmitRuntimeDispatch(const LoweredMessageSend &lowered, FunctionContext &ctx) const {
-    if (lowered.receiver_is_compile_time_zero) {
+    if (RequiresFailClosedObjc3RuntimeDispatchFallback(
+            lowered.dispatch_surface_family)) {
+      return EmitUnsupportedI32Value(
+          "direct dispatch lowering remains unsupported on the live runtime path");
+    }
+
+    const bool uses_canonical_runtime_entrypoint =
+        UsesCanonicalObjc3RuntimeDispatchEntrypoint(
+            lowered.dispatch_surface_family);
+    if (lowered.receiver_is_compile_time_zero &&
+        !uses_canonical_runtime_entrypoint) {
       return "0";
     }
 
@@ -6924,6 +6934,11 @@ class Objc3IREmitter {
       // M255-C002 runtime call ABI generation anchor: normalized instance/class
       // sends now call objc3_runtime_dispatch_i32 directly, while deferred
       // super/dynamic sites preserve objc3_msgsend_i32 until M255-C003.
+      // M255-C003 runtime call ABI generation anchor: normalized super sends
+      // now join the canonical runtime entrypoint, nil semantics for canonical
+      // surfaces are owned by objc3_runtime_dispatch_i32 itself, dynamic sends
+      // remain on objc3_msgsend_i32 until M255-C004, and reserved direct
+      // dispatch surfaces fail closed before IR emission.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowered.dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;
@@ -6935,7 +6950,8 @@ class Objc3IREmitter {
       ctx.code_lines.push_back(call.str());
     };
 
-    if (lowered.receiver_is_compile_time_nonzero) {
+    if (uses_canonical_runtime_entrypoint ||
+        lowered.receiver_is_compile_time_nonzero) {
       const std::string dispatch_value = NewTemp(ctx);
       emit_dispatch_call(dispatch_value);
       InvalidateGlobalProofState(ctx);

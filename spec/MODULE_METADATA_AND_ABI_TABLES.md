@@ -6690,3 +6690,14 @@ runtime cutover:
 - the issue-local lane-C proof keeps selector operands as lowered cstring
   pointers and preserves the fixed `i32[4]` ABI while verifying executable
   happy-path behavior
+
+## M255 super/nil runtime call ABI metadata anchors (C003)
+
+`M255-C003` extends the emitted-call-site boundary with a second live cutover:
+
+- contract id `objc3c-runtime-call-abi-super-nil-direct-dispatch/m255-c003-v1`
+- normalized super sends now lower directly to `objc3_runtime_dispatch_i32`
+- canonical nil-receiver surfaces now lower through
+  `objc3_runtime_dispatch_i32` instead of lowering-side elision
+- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- reserved direct-dispatch surfaces fail closed if they reach live IR emission
