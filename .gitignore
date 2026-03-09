@@ -10,6 +10,4 @@ reports/activation_preflight/**
 spec/planning/evidence/**/*.log
 
 # Milestone execution scratch evidence (not source-controlled)
-artifacts/tooling/**
-artifacts/compilation/**
-artifacts/bin/**
+artifacts/
