@@ -2001,6 +2001,11 @@ class Objc3IREmitter {
     // handoff now carries protocol inheritance, category attachment, and
     // adopted-protocol conformance identities so later object-model semantic
     // issues consume the same fail-closed source model.
+    // M256-B001 object-model semantic-rule freeze anchor: IR stays proof-only
+    // for the frozen semantic boundary covering realization legality,
+    // inheritance legality, override compatibility, protocol conformance, and
+    // deterministic category merge behavior; executable enforcement begins in
+    // later M256 lane-B issues.
     if (frontend_metadata_.executable_protocol_category_source_closure_ready) {
       out << "; executable_protocol_category_source_closure = contract="
           << frontend_metadata_

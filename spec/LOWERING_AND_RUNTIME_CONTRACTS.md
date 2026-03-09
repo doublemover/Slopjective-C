@@ -5853,3 +5853,27 @@ protocol/category declaration model:
   - category merge behavior
   - object-model semantic rule enforcement
 - the next implementation issue is `M256-B001`
+
+## M256 object-model semantic rules (B001)
+
+`M256-B001` freezes the semantic-rule boundary consumed by later executable
+class/protocol/category runtime work:
+
+- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
+- sema remains authoritative for:
+  - realization legality
+  - inheritance legality
+  - override compatibility
+  - declared protocol conformance policy
+  - deterministic category merge policy
+- parser remains source-only for superclass, adoption, and category-owner
+  identities
+- IR remains proof-only for the frozen semantic boundary and does not yet claim
+  executable enforcement
+- the frozen semantic models are:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- the next implementation issue is `M256-B002`

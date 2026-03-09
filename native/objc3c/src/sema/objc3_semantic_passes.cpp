@@ -9518,10 +9518,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   // M256-A003 protocol/category completion anchor: sema preserves the same
   // protocol/category composition and class/protocol/category linking summaries
   // so attachment and conformance closure consume one stable source model.
+  // M256-B001 object-model semantic-rule freeze anchor: sema remains the
+  // authority for realization legality, inheritance legality, override
+  // compatibility, declared protocol conformance, and deterministic category
+  // merge policy; parser and IR only preserve the source identities this
+  // semantic boundary consumes.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,
-                                               surface.protocol_category_composition_summary);
+                                              surface.protocol_category_composition_summary);
   surface.selector_normalization_summary = BuildSelectorNormalizationSummaryFromSurface(surface);
   surface.property_attribute_summary = BuildPropertyAttributeSummaryFromSurface(surface);
   surface.type_annotation_surface_summary = BuildTypeAnnotationSurfaceSummaryFromIntegrationSurface(surface);

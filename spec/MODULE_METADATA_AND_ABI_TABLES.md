@@ -6889,3 +6889,23 @@ categories:
   `; executable_protocol_category_source_closure = ...`
 - canonical lane-A summary path
   `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+
+## M256 object-model semantic-rule metadata anchors (B001)
+
+`M256-B001` does not introduce new executable metadata records. It freezes the
+semantic interpretation boundary over the already-emitted M256 source graph:
+
+- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
+- parser-owned anchors remain:
+  - raw superclass spellings
+  - protocol adoption spellings
+  - canonical category owner identities
+- sema-owned rule anchors are:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- IR anchor remains proof-only commentary over the same source-closure metadata
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`

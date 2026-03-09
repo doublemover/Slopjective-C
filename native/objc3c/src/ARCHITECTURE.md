@@ -8807,3 +8807,29 @@ ready for later object-model semantics:
   - `spec/planning/compiler/m256/m256_a003_protocol_and_category_source_surface_completion_for_executable_runtime_core_feature_expansion_packet.md`
   - `check:objc3c:m256-a003-protocol-and-category-source-surface-completion-for-executable-runtime`
   - `check:objc3c:m256-a003-lane-a-readiness`
+
+## M256 object-model semantic rules (B001)
+
+`M256-B001` freezes the semantic-rule boundary before lane-B begins executable
+object-model enforcement:
+
+- parser continues to preserve raw superclass/protocol/category source
+  identities only
+- sema remains authoritative for:
+  - realization legality
+  - inheritance legality
+  - override compatibility
+  - declared protocol conformance policy
+  - deterministic category merge policy
+- IR remains proof-only and must not claim executable enforcement yet
+- later `M256-B002+` issues must implement against the following frozen models:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_object_model_semantic_rules_contract_and_architecture_freeze_b001_expectations.md`
+  - `spec/planning/compiler/m256/m256_b001_object_model_semantic_rules_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m256-b001-object-model-semantic-rules-contract-and-architecture-freeze`
+  - `check:objc3c:m256-b001-lane-b-readiness`

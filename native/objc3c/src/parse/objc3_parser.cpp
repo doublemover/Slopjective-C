@@ -7483,6 +7483,10 @@ class Objc3Parser {
     // adopted-protocol list and canonical category owner identity now also
     // feed fail-closed protocol inheritance and category attachment/conformance
     // closure for executable runtime metadata.
+    // M256-B001 object-model semantic-rule freeze anchor: parser-owned
+    // superclass/adopted-protocol spellings remain raw inputs only; semantic
+    // legality for realization, overrides, conformance, and category merge
+    // stays outside parser policy.
     // M252-B003 diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.
@@ -7588,6 +7592,9 @@ class Objc3Parser {
     // preserve the same canonical class(category) identity and interface
     // pairing so later attachment/conformance checks consume one source-owned
     // runtime closure.
+    // M256-B001 object-model semantic-rule freeze anchor: parser-owned
+    // implementation/category records keep canonical owner identities, while
+    // realization legality and merge behavior remain sema-owned decisions.
     // M252-B003 diagnostic precision anchor: category implementation owners
     // mirror the canonical class(category) identity to keep attachment
     // collision diagnostics deterministic across parse and pipeline stages.

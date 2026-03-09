@@ -17064,3 +17064,34 @@ truly runnable:
 - the next implementation issue is `M256-B001`
 - the canonical lane-A summary path is
   `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+
+## Object-model semantic rules (M256-B001)
+
+`M256-B001` freezes the semantic-rule boundary that later lane-B runtime work
+must implement without reinterpreting the already-frozen source graph:
+
+- contract id `objc3c-object-model-semantic-rules/m256-b001-v1`
+- sema remains authoritative for:
+  - realization legality
+  - inheritance legality
+  - override compatibility
+  - declared protocol conformance policy
+  - deterministic category merge policy
+- parser remains limited to raw superclass, protocol-adoption, and category-owner
+  source identities and does not decide legality
+- IR remains proof-only for this boundary and does not yet claim executable
+  enforcement of these rules
+- the frozen semantic models are:
+  - `interface-plus-implementation-pair-required-before-runtime-realization`
+  - `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+  - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+  - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+  - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- this issue is freeze/evidence only and therefore does not yet implement:
+  - live realization enforcement
+  - callable override validation
+  - protocol member checking
+  - category conflict resolution at runtime
+- the next implementation issue is `M256-B002`
+- the canonical lane-B summary path is
+  `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
