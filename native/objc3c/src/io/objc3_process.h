@@ -46,6 +46,16 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string compile_wrapper_command_surface;
   std::string compile_proof_command_surface;
   std::string execution_smoke_command_surface;
+  std::string registration_descriptor_source_contract_id;
+  std::string registration_descriptor_source_surface_path;
+  std::string registration_descriptor_pragma_name;
+  std::string image_root_pragma_name;
+  std::string module_identity_source;
+  std::string registration_descriptor_identifier;
+  std::string registration_descriptor_identity_source;
+  std::string image_root_identifier;
+  std::string image_root_identity_source;
+  std::string bootstrap_visible_metadata_ownership_model;
   std::size_t class_descriptor_count = 0;
   std::size_t protocol_descriptor_count = 0;
   std::size_t category_descriptor_count = 0;

@@ -6997,3 +6997,33 @@ artifact-binding boundary across the already-emitted executable object surface:
     `selector-owner-return-arity-implementation-symbol-has-body`
 - canonical lane-C summary path
   `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`
+## M263 registration descriptor and image-root metadata anchors (A001)
+
+`M263-A001` publishes the residual bootstrap source surface at
+`frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_image_root_source_surface`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- frontend prelude contract path
+  `frontend.bootstrap_registration_source_pragma_contract`
+- pragma names:
+  - `objc_registration_descriptor`
+  - `objc_image_root`
+- identity-source vocabulary:
+  - `module-declaration-or-default`
+  - `source-pragma`
+  - `module-derived-default`
+- ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state`
+- emitted registration-manifest carry-through:
+  - `registration_descriptor_source_contract_id`
+  - `registration_descriptor_source_surface_path`
+  - `registration_descriptor_pragma_name`
+  - `image_root_pragma_name`
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - identity-source classification
+
+This freeze does not lower bootstrap descriptors or execute runtime replay yet.

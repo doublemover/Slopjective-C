@@ -1,0 +1,6 @@
+#pragma objc_language_version(3)
+#pragma objc_registration_descriptor(DemoRegistrationDescriptor)
+#pragma objc_image_root(DemoImageRoot)
+
+module DemoBootstrap;
+fn main() { return 0; }

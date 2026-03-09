@@ -620,6 +620,16 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.compile_wrapper_command_surface.empty() ||
       inputs.compile_proof_command_surface.empty() ||
       inputs.execution_smoke_command_surface.empty() ||
+      inputs.registration_descriptor_source_contract_id.empty() ||
+      inputs.registration_descriptor_source_surface_path.empty() ||
+      inputs.registration_descriptor_pragma_name.empty() ||
+      inputs.image_root_pragma_name.empty() ||
+      inputs.module_identity_source.empty() ||
+      inputs.registration_descriptor_identifier.empty() ||
+      inputs.registration_descriptor_identity_source.empty() ||
+      inputs.image_root_identifier.empty() ||
+      inputs.image_root_identity_source.empty() ||
+      inputs.bootstrap_visible_metadata_ownership_model.empty() ||
       inputs.total_descriptor_count !=
           inputs.class_descriptor_count + inputs.protocol_descriptor_count +
               inputs.category_descriptor_count +
@@ -801,6 +811,32 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.compile_proof_command_surface) << "\",\n"
       << "  \"execution_smoke_command_surface\": \""
       << EscapeJsonString(inputs.execution_smoke_command_surface)
+      << "\",\n"
+      << "  \"registration_descriptor_source_contract_id\": \""
+      << EscapeJsonString(inputs.registration_descriptor_source_contract_id)
+      << "\",\n"
+      << "  \"registration_descriptor_source_surface_path\": \""
+      << EscapeJsonString(inputs.registration_descriptor_source_surface_path)
+      << "\",\n"
+      << "  \"registration_descriptor_pragma_name\": \""
+      << EscapeJsonString(inputs.registration_descriptor_pragma_name)
+      << "\",\n"
+      << "  \"image_root_pragma_name\": \""
+      << EscapeJsonString(inputs.image_root_pragma_name) << "\",\n"
+      << "  \"module_identity_source\": \""
+      << EscapeJsonString(inputs.module_identity_source) << "\",\n"
+      << "  \"registration_descriptor_identifier\": \""
+      << EscapeJsonString(inputs.registration_descriptor_identifier)
+      << "\",\n"
+      << "  \"registration_descriptor_identity_source\": \""
+      << EscapeJsonString(inputs.registration_descriptor_identity_source)
+      << "\",\n"
+      << "  \"image_root_identifier\": \""
+      << EscapeJsonString(inputs.image_root_identifier) << "\",\n"
+      << "  \"image_root_identity_source\": \""
+      << EscapeJsonString(inputs.image_root_identity_source) << "\",\n"
+      << "  \"bootstrap_visible_metadata_ownership_model\": \""
+      << EscapeJsonString(inputs.bootstrap_visible_metadata_ownership_model)
       << "\",\n"
       << "  \"class_descriptor_count\": " << inputs.class_descriptor_count
       << ",\n"

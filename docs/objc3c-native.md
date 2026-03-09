@@ -15167,3 +15167,28 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
+## Registration descriptor and image-root source surface (M263-A001)
+
+`M263-A001` freezes the frontend-visible bootstrap naming surface for the
+residual startup/runtime work that remains after `M254`.
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- canonical frontend prelude contract path
+  `frontend.bootstrap_registration_source_pragma_contract`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_image_root_source_surface`
+- supported file-scope prelude pragmas:
+  - `#pragma objc_registration_descriptor(Name)`
+  - `#pragma objc_image_root(Name)`
+  - short pragma ids `objc_registration_descriptor` and `objc_image_root`
+- canonical identity-source vocabulary:
+  - `module-declaration-or-default`
+  - `source-pragma`
+  - `module-derived-default`
+- canonical ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state`
+- emitted `module.runtime-registration-manifest.json` now carries the A001
+  contract id, source path, pragma names, resolved registration descriptor
+  identifier, resolved image-root identifier, identity-source classification,
+  and ownership model.

@@ -8658,6 +8658,18 @@ M228 lane-D D016 integration closeout and gate sign-off anchors deterministic
   now publish one canonical header/archive/entrypoint/reset contract so later
   registrar/image-walk and deterministic-reset work extends one runtime boundary
   instead of inferring launch behavior from scattered implementation details.
+- M263 lane-A A001 freezes the registration-descriptor/image-root source surface
+  in `token/objc3_token_contract.h`, `lex/objc3_lexer.cpp`,
+  `parse/objc3_parser.cpp`, `pipeline/objc3_frontend_types.h`,
+  `pipeline/objc3_frontend_artifacts.cpp`, `io/objc3_process.cpp`,
+  `driver/objc3_objc3_path.cpp`, and
+  `libobjc3c_frontend/frontend_anchor.cpp`. The frontend manifest and emitted
+  `module.runtime-registration-manifest.json` now carry one canonical contract
+  for bootstrap pragma names, resolved registration descriptor and image-root
+  identifiers, identity-source classification, and the frozen ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state` so
+  later M263 frontend closure and lowering work extends one deterministic
+  bootstrap naming boundary.
 ## M255 lookup and dispatch runtime freeze (D001)
 
 `M255-D001` freezes the runtime-owned selector interning and dispatch boundary

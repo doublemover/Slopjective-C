@@ -735,6 +735,30 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeSupportLibraryRuntimeOwnershipBoundary =
         "runtime-owns-registration-lookup-and-dispatch-state";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceContractId =
+        "objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1";
+inline constexpr const char
+    *kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_runtime_registration_descriptor_image_root_source_surface";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapModuleIdentitySourceModel =
+        "module-declaration-or-default";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapDerivedIdentitySourcePragma =
+        "source-pragma";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapDerivedIdentitySourceModuleDefault =
+        "module-derived-default";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapVisibleMetadataOwnershipModel =
+        "image-root-owns-registration-descriptor-runtime-owns-bootstrap-state";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorDefaultSuffix =
+        "_registration_descriptor";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapImageRootDefaultSuffix = "_image_root";
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,

@@ -4197,6 +4197,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
   const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();
   const Objc3LexerLanguageVersionPragmaContract &pragma_contract = lexer.LanguageVersionPragmaContract();
+  const Objc3LexerBootstrapRegistrationSourceContract
+      &bootstrap_registration_pragma_contract =
+          lexer.BootstrapRegistrationSourceContract();
   result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;
   result.migration_hints.legacy_no_count = lexer_hints.legacy_no_count;
   result.migration_hints.legacy_null_count = lexer_hints.legacy_null_count;
@@ -4208,6 +4211,51 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.language_version_pragma_contract.first_column = pragma_contract.first_column;
   result.language_version_pragma_contract.last_line = pragma_contract.last_line;
   result.language_version_pragma_contract.last_column = pragma_contract.last_column;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.seen =
+      bootstrap_registration_pragma_contract.registration_descriptor.seen;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.directive_count =
+      bootstrap_registration_pragma_contract.registration_descriptor.directive_count;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.duplicate =
+      bootstrap_registration_pragma_contract.registration_descriptor.duplicate;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.non_leading =
+      bootstrap_registration_pragma_contract.registration_descriptor.non_leading;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.first_line =
+      bootstrap_registration_pragma_contract.registration_descriptor.first_line;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.first_column =
+      bootstrap_registration_pragma_contract.registration_descriptor.first_column;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.last_line =
+      bootstrap_registration_pragma_contract.registration_descriptor.last_line;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.last_column =
+      bootstrap_registration_pragma_contract.registration_descriptor.last_column;
+  result.bootstrap_registration_source_pragma_contract
+      .registration_descriptor.identifier =
+      bootstrap_registration_pragma_contract.registration_descriptor.identifier;
+  result.bootstrap_registration_source_pragma_contract.image_root.seen =
+      bootstrap_registration_pragma_contract.image_root.seen;
+  result.bootstrap_registration_source_pragma_contract.image_root.directive_count =
+      bootstrap_registration_pragma_contract.image_root.directive_count;
+  result.bootstrap_registration_source_pragma_contract.image_root.duplicate =
+      bootstrap_registration_pragma_contract.image_root.duplicate;
+  result.bootstrap_registration_source_pragma_contract.image_root.non_leading =
+      bootstrap_registration_pragma_contract.image_root.non_leading;
+  result.bootstrap_registration_source_pragma_contract.image_root.first_line =
+      bootstrap_registration_pragma_contract.image_root.first_line;
+  result.bootstrap_registration_source_pragma_contract.image_root.first_column =
+      bootstrap_registration_pragma_contract.image_root.first_column;
+  result.bootstrap_registration_source_pragma_contract.image_root.last_line =
+      bootstrap_registration_pragma_contract.image_root.last_line;
+  result.bootstrap_registration_source_pragma_contract.image_root.last_column =
+      bootstrap_registration_pragma_contract.image_root.last_column;
+  result.bootstrap_registration_source_pragma_contract.image_root.identifier =
+      bootstrap_registration_pragma_contract.image_root.identifier;
 
   if (result.stage_diagnostics.lexer.empty()) {
     Objc3AstBuilderResult parse_result = BuildObjc3AstFromTokens(tokens);

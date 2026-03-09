@@ -139,11 +139,19 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                     .runtime_translation_unit_registration_manifest_summary)) {
           compile_status = 125;
           std::cerr << "translation-unit registration manifest template not ready\n";
+        } else if (!IsReadyObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
+                       artifacts
+                           .runtime_registration_descriptor_image_root_source_surface_summary)) {
+          compile_status = 125;
+          std::cerr << "registration descriptor/image-root source surface not ready\n";
         } else {
           Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs
               manifest_inputs;
           const auto &registration_manifest_summary =
               artifacts.runtime_translation_unit_registration_manifest_summary;
+          const auto &registration_descriptor_source_surface_summary =
+              artifacts
+                  .runtime_registration_descriptor_image_root_source_surface_summary;
           const auto &runtime_bootstrap_api_summary =
               artifacts.runtime_bootstrap_api_summary;
           const auto &runtime_bootstrap_semantics_summary =
@@ -202,6 +210,32 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.compile_proof_command_surface;
           manifest_inputs.execution_smoke_command_surface =
               registration_manifest_summary.execution_smoke_command_surface;
+          manifest_inputs.registration_descriptor_source_contract_id =
+              registration_descriptor_source_surface_summary.contract_id;
+          manifest_inputs.registration_descriptor_source_surface_path =
+              registration_descriptor_source_surface_summary.source_surface_path;
+          manifest_inputs.registration_descriptor_pragma_name =
+              registration_descriptor_source_surface_summary
+                  .registration_descriptor_pragma_name;
+          manifest_inputs.image_root_pragma_name =
+              registration_descriptor_source_surface_summary.image_root_pragma_name;
+          manifest_inputs.module_identity_source =
+              registration_descriptor_source_surface_summary.module_identity_source;
+          manifest_inputs.registration_descriptor_identifier =
+              registration_descriptor_source_surface_summary
+                  .registration_descriptor_identifier;
+          manifest_inputs.registration_descriptor_identity_source =
+              registration_descriptor_source_surface_summary
+                  .registration_descriptor_identity_source;
+          manifest_inputs.image_root_identifier =
+              registration_descriptor_source_surface_summary
+                  .image_root_identifier;
+          manifest_inputs.image_root_identity_source =
+              registration_descriptor_source_surface_summary
+                  .image_root_identity_source;
+          manifest_inputs.bootstrap_visible_metadata_ownership_model =
+              registration_descriptor_source_surface_summary
+                  .bootstrap_visible_metadata_ownership_model;
           manifest_inputs.class_descriptor_count =
               registration_manifest_summary.class_descriptor_count;
           manifest_inputs.protocol_descriptor_count =

@@ -5953,3 +5953,33 @@ frontend:
   - no new descriptor payload families
   - no bootstrap/runtime-registration rebinding
   - no protocol executable-realization path
+## M263 registration descriptor and image-root source surface (A001)
+
+`M263-A001` freezes the frontend-visible naming surface that closes the
+remaining bootstrap source-model gap above the already-emitted `M254`
+registration manifest.
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- canonical frontend prelude contract path
+  `frontend.bootstrap_registration_source_pragma_contract`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_image_root_source_surface`
+- canonical file-scope prelude pragmas:
+  - `objc_registration_descriptor`
+  - `objc_image_root`
+- canonical identity-source vocabulary:
+  - `module-declaration-or-default`
+  - `source-pragma`
+  - `module-derived-default`
+- canonical ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state`
+
+Non-goals:
+
+- no bootstrap-table lowering yet
+- no multi-image root emission yet
+- no runtime replay/discovery execution yet
+
+`M263-A002` must preserve this contract while broadening frontend closure and
+registration-manifest consumption.

@@ -56,8 +56,13 @@ const Objc3LexerLanguageVersionPragmaContract &Objc3Lexer::LanguageVersionPragma
   return language_version_pragma_contract_;
 }
 
+const Objc3LexerBootstrapRegistrationSourceContract &
+Objc3Lexer::BootstrapRegistrationSourceContract() const {
+  return bootstrap_registration_source_contract_;
+}
+
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
-  ConsumeLanguageVersionPragmas(diagnostics);
+  ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {
     SkipTrivia(diagnostics);
@@ -69,9 +74,13 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
     const unsigned token_line = line_;
     const unsigned token_column = column_;
     const char c = source_[index_];
-    if (c == '#' &&
-        ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false)) {
-      continue;
+    if (c == '#') {
+      if (ConsumeLanguageVersionPragmaDirective(
+              diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false) ||
+          ConsumeBootstrapRegistrationPragmaDirective(
+              diagnostics, NamedIdentifierPragmaPlacement::kNonLeading)) {
+        continue;
+      }
     }
     if (c == '@') {
       Advance();
@@ -355,12 +364,160 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   return tokens;
 }
 
-void Objc3Lexer::ConsumeLanguageVersionPragmas(std::vector<std::string> &diagnostics) {
+void Objc3Lexer::ConsumePreludePragmas(std::vector<std::string> &diagnostics) {
   while (true) {
     SkipTrivia(diagnostics);
-    if (!ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kPrelude, true)) {
-      return;
+    if (ConsumeLanguageVersionPragmaDirective(
+            diagnostics, LanguageVersionPragmaPlacement::kPrelude, false) ||
+        ConsumeBootstrapRegistrationPragmaDirective(
+            diagnostics, NamedIdentifierPragmaPlacement::kPrelude)) {
+      continue;
     }
+    return;
+  }
+}
+
+bool Objc3Lexer::ConsumeBootstrapRegistrationPragmaDirective(
+    std::vector<std::string> &diagnostics,
+    NamedIdentifierPragmaPlacement placement) {
+  static constexpr char kMalformedRegistrationDescriptorMessage[] =
+      "malformed '#pragma objc_registration_descriptor' directive; expected '#pragma objc_registration_descriptor(Name)'";
+  static constexpr char kDuplicateRegistrationDescriptorMessage[] =
+      "duplicate '#pragma objc_registration_descriptor' directive; only one file-scope prelude directive is allowed";
+  static constexpr char kNonLeadingRegistrationDescriptorMessage[] =
+      "registration-descriptor pragma must stay in the file-scope prelude before declarations or tokens";
+  if (ConsumeNamedIdentifierPragmaDirective(
+          diagnostics, placement, kObjc3BootstrapRegistrationDescriptorPragmaName,
+          bootstrap_registration_source_contract_.registration_descriptor,
+          kMalformedRegistrationDescriptorMessage,
+          kDuplicateRegistrationDescriptorMessage,
+          kNonLeadingRegistrationDescriptorMessage)) {
+    return true;
+  }
+
+  static constexpr char kMalformedImageRootMessage[] =
+      "malformed '#pragma objc_image_root' directive; expected '#pragma objc_image_root(Name)'";
+  static constexpr char kDuplicateImageRootMessage[] =
+      "duplicate '#pragma objc_image_root' directive; only one file-scope prelude directive is allowed";
+  static constexpr char kNonLeadingImageRootMessage[] =
+      "image-root pragma must stay in the file-scope prelude before declarations or tokens";
+  return ConsumeNamedIdentifierPragmaDirective(
+      diagnostics, placement, kObjc3BootstrapImageRootPragmaName,
+      bootstrap_registration_source_contract_.image_root,
+      kMalformedImageRootMessage, kDuplicateImageRootMessage,
+      kNonLeadingImageRootMessage);
+}
+
+bool Objc3Lexer::ConsumeNamedIdentifierPragmaDirective(
+    std::vector<std::string> &diagnostics,
+    NamedIdentifierPragmaPlacement placement,
+    const char *directive_name,
+    Objc3LexerNamedIdentifierPragmaContract &contract,
+    const char *malformed_message,
+    const char *duplicate_message,
+    const char *non_leading_message) {
+  if (index_ >= source_.size() || source_[index_] != '#') {
+    return false;
+  }
+
+  std::size_t cursor = index_ + 1;
+  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+    ++cursor;
+  }
+  if (!MatchLiteralAt(cursor, "pragma")) {
+    return false;
+  }
+  cursor += 6;
+  while (cursor < source_.size() && IsHorizontalWhitespace(source_[cursor])) {
+    ++cursor;
+  }
+  if (!MatchLiteralAt(cursor, directive_name)) {
+    return false;
+  }
+
+  const unsigned directive_line = line_;
+  const unsigned directive_column = column_;
+  Advance();
+  SkipHorizontalWhitespace();
+  MatchLiteral("pragma");
+  SkipHorizontalWhitespace();
+  if (!MatchLiteral(directive_name)) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  SkipHorizontalWhitespace();
+  if (!MatchChar('(')) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  SkipHorizontalWhitespace();
+  if (index_ >= source_.size() || !IsIdentStart(source_[index_])) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
+    ConsumeToEndOfLine();
+    return true;
+  }
+  const std::string identifier = ConsumeIdentifier();
+
+  SkipHorizontalWhitespace();
+  if (!MatchChar(')')) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  SkipHorizontalWhitespace();
+  if (index_ < source_.size() && source_[index_] != '\n') {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L009", malformed_message));
+    ConsumeToEndOfLine();
+    return true;
+  }
+
+  RecordNamedIdentifierPragmaObservation(contract, directive_line, directive_column,
+                                         placement, identifier);
+  if (placement == NamedIdentifierPragmaPlacement::kNonLeading) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L011", non_leading_message));
+  }
+  if (contract.directive_count > 1) {
+    diagnostics.push_back(
+        MakeDiag(directive_line, directive_column, "O3L010", duplicate_message));
+  }
+
+  if (index_ < source_.size() && source_[index_] == '\n') {
+    Advance();
+  }
+  return true;
+}
+
+void Objc3Lexer::RecordNamedIdentifierPragmaObservation(
+    Objc3LexerNamedIdentifierPragmaContract &contract,
+    unsigned line,
+    unsigned column,
+    NamedIdentifierPragmaPlacement placement,
+    const std::string &identifier) {
+  if (!contract.seen) {
+    contract.seen = true;
+    contract.first_line = line;
+    contract.first_column = column;
+    contract.identifier = identifier;
+  }
+  ++contract.directive_count;
+  contract.last_line = line;
+  contract.last_column = column;
+  if (contract.directive_count > 1) {
+    contract.duplicate = true;
+  }
+  if (placement == NamedIdentifierPragmaPlacement::kNonLeading) {
+    contract.non_leading = true;
   }
 }
 

@@ -12,6 +12,7 @@
 #include "parse/objc3_parser_contract.h"
 #include "sema/objc3_sema_contract.h"
 #include "sema/objc3_sema_pass_manager_contract.h"
+#include "token/objc3_token_contract.h"
 
 inline constexpr std::uint8_t kObjc3DefaultLanguageVersion = 3u;
 
@@ -47,6 +48,23 @@ struct Objc3FrontendLanguageVersionPragmaContract {
   unsigned first_column = 0;
   unsigned last_line = 0;
   unsigned last_column = 0;
+};
+
+struct Objc3FrontendNamedIdentifierPragmaContract {
+  bool seen = false;
+  std::size_t directive_count = 0;
+  bool duplicate = false;
+  bool non_leading = false;
+  unsigned first_line = 0;
+  unsigned first_column = 0;
+  unsigned last_line = 0;
+  unsigned last_column = 0;
+  std::string identifier;
+};
+
+struct Objc3FrontendBootstrapRegistrationSourcePragmaContract {
+  Objc3FrontendNamedIdentifierPragmaContract registration_descriptor;
+  Objc3FrontendNamedIdentifierPragmaContract image_root;
 };
 
 struct Objc3TypedSemaToLoweringContractSurface {
@@ -3050,6 +3068,78 @@ inline bool IsReadyObjc3RuntimeBootstrapLoweringSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary {
+  std::string contract_id =
+      kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceContractId;
+  std::string registration_manifest_contract_id =
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string source_surface_path =
+      kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfacePath;
+  std::string registration_descriptor_pragma_name =
+      kObjc3BootstrapRegistrationDescriptorPragmaName;
+  std::string image_root_pragma_name = kObjc3BootstrapImageRootPragmaName;
+  std::string module_identity_source =
+      kObjc3RuntimeBootstrapModuleIdentitySourceModel;
+  std::string registration_descriptor_identity_source =
+      kObjc3RuntimeBootstrapDerivedIdentitySourceModuleDefault;
+  std::string image_root_identity_source =
+      kObjc3RuntimeBootstrapDerivedIdentitySourceModuleDefault;
+  std::string bootstrap_visible_metadata_ownership_model =
+      kObjc3RuntimeBootstrapVisibleMetadataOwnershipModel;
+  std::string module_name = "objc3_module";
+  std::string registration_descriptor_identifier =
+      std::string("objc3_module") +
+      kObjc3RuntimeBootstrapRegistrationDescriptorDefaultSuffix;
+  std::string image_root_identifier =
+      std::string("objc3_module") + kObjc3RuntimeBootstrapImageRootDefaultSuffix;
+  bool fail_closed = false;
+  bool registration_manifest_contract_ready = false;
+  bool source_surface_frozen = false;
+  bool prelude_pragma_contract_published = false;
+  bool registration_descriptor_identifier_resolved = false;
+  bool image_root_identifier_resolved = false;
+  bool bootstrap_visible_metadata_ownership_published = false;
+  bool ready_for_descriptor_frontend_closure = false;
+  bool registration_descriptor_pragma_seen = false;
+  bool registration_descriptor_pragma_duplicate = false;
+  bool registration_descriptor_pragma_non_leading = false;
+  std::size_t registration_descriptor_pragma_directive_count = 0;
+  bool image_root_pragma_seen = false;
+  bool image_root_pragma_duplicate = false;
+  bool image_root_pragma_non_leading = false;
+  std::size_t image_root_pragma_directive_count = 0;
+  std::string registration_manifest_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
+    const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
+        &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.registration_manifest_contract_id.empty() &&
+         !summary.source_surface_path.empty() &&
+         !summary.registration_descriptor_pragma_name.empty() &&
+         !summary.image_root_pragma_name.empty() &&
+         !summary.module_identity_source.empty() &&
+         !summary.registration_descriptor_identity_source.empty() &&
+         !summary.image_root_identity_source.empty() &&
+         !summary.bootstrap_visible_metadata_ownership_model.empty() &&
+         !summary.module_name.empty() &&
+         !summary.registration_descriptor_identifier.empty() &&
+         !summary.image_root_identifier.empty() &&
+         summary.fail_closed &&
+         summary.registration_manifest_contract_ready &&
+         summary.source_surface_frozen &&
+         summary.prelude_pragma_contract_published &&
+         summary.registration_descriptor_identifier_resolved &&
+         summary.image_root_identifier_resolved &&
+         summary.bootstrap_visible_metadata_ownership_published &&
+         summary.ready_for_descriptor_frontend_closure &&
+         !summary.registration_manifest_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3RuntimeBootstrapApiSummary {
   std::string contract_id = kObjc3RuntimeBootstrapApiContractId;
   std::string support_library_core_feature_contract_id =
@@ -3200,6 +3290,8 @@ struct Objc3FrontendPipelineResult {
       lowering_runtime_stability_core_feature_implementation_surface;
   Objc3FrontendMigrationHints migration_hints;
   Objc3FrontendLanguageVersionPragmaContract language_version_pragma_contract;
+  Objc3FrontendBootstrapRegistrationSourcePragmaContract
+      bootstrap_registration_source_pragma_contract;
   Objc3SemanticIntegrationSurface integration_surface;
   Objc3SemanticTypeMetadataHandoff sema_type_metadata_handoff;
   Objc3FrontendProtocolCategorySummary protocol_category_summary;

@@ -1,0 +1,4 @@
+#pragma objc_language_version(3)
+
+module AutoBootstrap;
+fn main() { return 0; }

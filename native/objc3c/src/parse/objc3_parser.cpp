@@ -5668,6 +5668,11 @@ class Objc3Parser {
   }
 
   void ParseModule(Objc3ParsedProgram &program) {
+    // M263-A001 registration-descriptor/image-root source-surface anchor:
+    // module identity remains parser-owned here, while the paired
+    // registration-descriptor and image-root prelude pragmas are lexer-owned
+    // inputs that later frontend-manifest code resolves into one bootstrap
+    // naming surface.
     const Token &name_token = Peek();
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
