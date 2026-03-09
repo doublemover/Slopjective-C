@@ -17162,3 +17162,32 @@ legality into realized-class inheritance and override legality:
   result
 - the canonical lane-B summary path is
   `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+
+## Executable object artifact lowering (M256-C001)
+
+`M256-C001` freezes the lane-C lowering boundary that binds executable method
+bodies and realized object records into emitted metadata artifacts:
+
+- contract id
+  `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- parser still owns raw implementation method bodies, selectors, and canonical
+  owner identities only
+- sema still owns realization legality, inheritance/category-merge decisions,
+  and the canonical owner identities consumed by lowering
+- IR/object lowering now preserves one explicit binding surface:
+  - implementation-owned method-list entries bind by owner identity to concrete
+    `@objc3_method_*` LLVM definitions
+  - class/metaclass descriptor bundles point to owner-scoped method-list refs
+  - category descriptor bundles point to owner-scoped method-list refs
+- fail-closed rules:
+  - no synthetic implementation symbols
+  - no rebinding of sema legality in IR
+  - no new metadata section families
+  - no bootstrap/runtime-registration reinterpretation
+- this issue is freeze-only and therefore does not yet:
+  - change descriptor payload shapes
+  - make protocol records executable realization records
+  - add new bootstrap/runtime dispatch behavior
+- the next implementation issue is `M256-C002`
+- the canonical lane-C summary path is
+  `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`

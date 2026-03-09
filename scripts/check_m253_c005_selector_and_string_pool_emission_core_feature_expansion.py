@@ -252,7 +252,7 @@ def make_probe_specs(args: argparse.Namespace) -> tuple[ProbeSpec, ...]:
             fixture=args.metadata_fixture,
             probe_subdir="metadata",
             expected_selector_pool_count=4,
-            expected_string_pool_count=21,
+            expected_string_pool_count=26,
             symbol_tokens=(
                 "@__objc3_sel_pool_0000",
                 "@__objc3_sel_pool_0003",
@@ -263,7 +263,7 @@ def make_probe_specs(args: argparse.Namespace) -> tuple[ProbeSpec, ...]:
             ),
             boundary_tokens=(
                 "selector_pool_count=4",
-                "string_pool_count=21",
+                "string_pool_count=26",
                 "selector_section=objc3.runtime.selector_pool",
                 "string_section=objc3.runtime.string_pool",
             ),

@@ -5165,6 +5165,64 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_member_table_typed_handoff_replay_key
           << "\n";
     }
+    if (emit_class_metaclass_bundle_payloads &&
+        emit_protocol_category_bundle_payloads &&
+        emit_member_table_payloads) {
+      std::unordered_set<std::string> implementation_method_owner_identities;
+      implementation_method_owner_identities.reserve(method_definitions_.size());
+      for (const MethodDefinition &method_def : method_definitions_) {
+        if (method_def.method == nullptr ||
+            method_def.method_owner_identity.empty()) {
+          continue;
+        }
+        implementation_method_owner_identities.insert(
+            method_def.method_owner_identity);
+      }
+      std::size_t executable_method_entry_count = 0;
+      std::size_t bound_method_entry_count = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic) {
+        const bool implementation_owned =
+            bundle.owner_kind == "class-implementation" ||
+            bundle.owner_kind == "category-implementation";
+        if (!implementation_owned) {
+          continue;
+        }
+        for (const auto &entry : bundle.entries_lexicographic) {
+          if (!entry.has_body) {
+            continue;
+          }
+          ++executable_method_entry_count;
+          if (implementation_method_owner_identities.find(entry.owner_identity) !=
+              implementation_method_owner_identities.end()) {
+            ++bound_method_entry_count;
+          }
+        }
+      }
+      out << "; executable_object_artifact_lowering = "
+          << Objc3ExecutableObjectArtifactLoweringSummary()
+          << ";class_realization_record_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << ";category_realization_record_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                 .size()
+          << ";implementation_method_definition_count="
+          << method_definitions_.size()
+          << ";executable_method_entry_count="
+          << executable_method_entry_count
+          << ";bound_method_entry_count=" << bound_method_entry_count
+          << ";class_handoff_replay="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_typed_handoff_replay_key
+          << ";protocol_category_handoff_replay="
+          << frontend_metadata_
+                 .runtime_metadata_protocol_category_typed_handoff_replay_key
+          << ";member_table_handoff_replay="
+          << frontend_metadata_
+                 .runtime_metadata_member_table_typed_handoff_replay_key
+          << "\n";
+    }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "
           << Objc3RuntimeMetadataSelectorStringPoolEmissionSummary()
@@ -5439,6 +5497,11 @@ class Objc3IREmitter {
               if (entry.has_body &&
                   (bundle.owner_kind == "class-implementation" ||
                    bundle.owner_kind == "category-implementation")) {
+                // M256-C001 executable object artifact lowering freeze anchor:
+                // object emission binds implementation-owned method entries by
+                // canonical owner identity to concrete LLVM definition symbols;
+                // later executable-runtime work must extend this binding
+                // surface instead of rediscovering bodies from source.
                 // M255-D003/M255-D004 slow-path anchor: class and category
                 // implementation method-table entries now carry callable
                 // implementation pointers from registered metadata.

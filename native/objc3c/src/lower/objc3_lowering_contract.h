@@ -379,6 +379,28 @@ inline constexpr const char *kObjc3RuntimeSelectorPoolLogicalSection =
     "objc3.runtime.selector_pool";
 inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
     "objc3.runtime.string_pool";
+// M256-C001 executable object artifact lowering freeze anchor: lane-C now
+// freezes the current binding surface where realized class/category metadata
+// records consume owner-scoped method-list refs and implementation-backed
+// method entries may point at concrete LLVM definition symbols. Later
+// implementation must extend this one executable object surface rather than
+// rediscovering bodies or realization edges out-of-band.
+inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringContractId =
+    "objc3c-executable-object-artifact-lowering/m256-c001-v1";
+inline constexpr const char
+    *kObjc3ExecutableObjectArtifactLoweringMethodBodyBindingModel =
+        "implementation-owner-identity-to-llvm-definition-symbol";
+inline constexpr const char
+    *kObjc3ExecutableObjectArtifactLoweringRealizationRecordModel =
+        "class-metaclass-and-category-descriptor-bundles-point-to-owner-scoped-method-list-ref-records";
+inline constexpr const char
+    *kObjc3ExecutableObjectArtifactLoweringMethodEntryPayloadModel =
+        "selector-owner-return-arity-implementation-symbol-has-body";
+inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
+    "parser-source-identities-sema-realization-closure-ir-object-binding";
+inline constexpr const char
+    *kObjc3ExecutableObjectArtifactLoweringFailClosedModel =
+        "no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1255,6 +1277,7 @@ std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
 std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
+std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

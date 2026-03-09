@@ -7656,6 +7656,10 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, true)) {
+        // M256-C001 executable object artifact lowering freeze anchor: parser
+        // keeps raw implementation method bodies, selectors, and canonical
+        // owner identities only. Emitted object binding and realization-record
+        // wiring remain downstream lane-C responsibilities.
         method.scope_owner_symbol = decl->scope_owner_symbol;
         method.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcMethodScopePathSymbol(method);
         AssignObjcMethodLookupOverrideConflictSymbols(

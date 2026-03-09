@@ -55,18 +55,20 @@ Emit real owner-scoped method tables plus real property and ivar descriptor payl
    - `module.object-backend.txt` is `llvm-direct`
    - `module.ll` carries `!objc3.objc_runtime_member_table_emission`
    - method-list bundle count `5`
-   - method-entry count `5`
-   - property descriptor count `3`
-   - ivar descriptor count `1`
+   - method-entry count `7`
+   - property descriptor count `5`
+   - ivar descriptor count `2`
+   - counts include the declaration-owner split that is now carried forward into the executable object-model handoff
    - class and protocol sections contain adjacent method-table globals
    - property and ivar sections contain real descriptor payloads and aggregates
    - no property/ivar family placeholder globals remain
    - `llvm-readobj --sections module.obj` exposes nontrivial class/protocol/property/ivar sections.
 2. Native compile probe over `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3` proves:
    - method-list bundle count `3`
-   - method-entry count `3`
-   - property descriptor count `3`
-   - ivar descriptor count `1`
+   - method-entry count `5`
+   - property descriptor count `5`
+   - ivar descriptor count `2`
+   - counts include the category declaration-owner split that is now carried forward into the executable object-model handoff
    - category and protocol sections contain adjacent method-table globals
    - property and ivar sections contain real descriptor payloads and aggregates
    - no property/ivar family placeholder globals remain

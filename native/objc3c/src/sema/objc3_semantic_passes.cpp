@@ -10804,6 +10804,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   // compatibility, declared protocol conformance, and deterministic category
   // merge policy; parser and IR only preserve the source identities this
   // semantic boundary consumes.
+  // M256-C001 executable object artifact lowering freeze anchor: sema owns the
+  // realized-object legality and canonical owner identities that lane-C binds
+  // into emitted method-list/class/category records; sema must not synthesize
+  // object-artifact slots or implementation symbol attachments itself.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

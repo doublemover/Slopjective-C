@@ -42,7 +42,8 @@ Expand lane-C runtime-adjacent string emission from the old selector-only global
 
 - Metadata fixture boundary summary contains:
   - `selector_pool_count=4`
-  - `string_pool_count=21`
+  - `string_pool_count=26`
+  - the higher string cardinality reflects the executable object-model handoff carrying more canonical runtime owner and binding strings while preserving selector cardinality
 - Message-send fixture boundary summary contains:
   - `selector_pool_count=1`
   - `string_pool_count=0`

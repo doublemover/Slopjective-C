@@ -125,9 +125,9 @@ def test_dynamic_probe_records_real_member_table_payloads(tmp_path: Path) -> Non
     assert class_case["backend"] == "llvm-direct"
     assert class_case["diagnostics_is_empty"] is True
     assert class_case["method_list_bundle_count"] == 5
-    assert class_case["method_entry_count"] == 5
-    assert class_case["property_descriptor_count"] == 3
-    assert class_case["ivar_descriptor_count"] == 1
+    assert class_case["method_entry_count"] == 7
+    assert class_case["property_descriptor_count"] == 5
+    assert class_case["ivar_descriptor_count"] == 2
     assert class_case["objc3.runtime.class_descriptors_raw_size"] is not None and class_case["objc3.runtime.class_descriptors_raw_size"] >= 256
     assert class_case["objc3.runtime.property_descriptors_raw_size"] is not None and class_case["objc3.runtime.property_descriptors_raw_size"] >= 256
     assert contract.BOUNDARY_COMMENT_PREFIX in class_case["boundary_line"]
@@ -137,9 +137,9 @@ def test_dynamic_probe_records_real_member_table_payloads(tmp_path: Path) -> Non
     assert category_case["backend"] == "llvm-direct"
     assert category_case["diagnostics_is_empty"] is True
     assert category_case["method_list_bundle_count"] == 3
-    assert category_case["method_entry_count"] == 3
-    assert category_case["property_descriptor_count"] == 3
-    assert category_case["ivar_descriptor_count"] == 1
+    assert category_case["method_entry_count"] == 5
+    assert category_case["property_descriptor_count"] == 5
+    assert category_case["ivar_descriptor_count"] == 2
     assert category_case["objc3.runtime.category_descriptors_raw_size"] is not None and category_case["objc3.runtime.category_descriptors_raw_size"] >= 256
     assert category_case["objc3.runtime.property_descriptors_raw_size"] is not None and category_case["objc3.runtime.property_descriptors_raw_size"] >= 256
     assert contract.BOUNDARY_COMMENT_PREFIX in category_case["boundary_line"]

@@ -533,6 +533,29 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableObjectArtifactLoweringSummary() {
+  std::ostringstream out;
+  // M256-C001 executable object artifact lowering freeze anchor: lane-C begins
+  // from the already-emitted method-list/class/category payload surface where
+  // implementation-owned method entries may carry concrete LLVM body symbols
+  // and realized object records consume owner-scoped method-list refs. The
+  // freeze is explicit that parser/sema remain the source of identities and
+  // legality while IR/object emission only binds those decisions into the
+  // produced artifact.
+  out << "contract=" << kObjc3ExecutableObjectArtifactLoweringContractId
+      << ";method_body_binding_model="
+      << kObjc3ExecutableObjectArtifactLoweringMethodBodyBindingModel
+      << ";realization_record_model="
+      << kObjc3ExecutableObjectArtifactLoweringRealizationRecordModel
+      << ";method_entry_payload_model="
+      << kObjc3ExecutableObjectArtifactLoweringMethodEntryPayloadModel
+      << ";scope_model=" << kObjc3ExecutableObjectArtifactLoweringScopeModel
+      << ";fail_closed_model="
+      << kObjc3ExecutableObjectArtifactLoweringFailClosedModel
+      << ";non_goals=no-new-descriptor-families-no-bootstrap-rebinding-no-protocol-executable-realization";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

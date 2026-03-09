@@ -8898,3 +8898,24 @@ legality into realized-class inheritance legality:
   - `spec/planning/compiler/m256/m256_b004_inheritance_override_and_realization_legality_core_feature_expansion_packet.md`
   - `check:objc3c:m256-b004-inheritance-override-and-realization-legality`
   - `check:objc3c:m256-b004-lane-b-readiness`
+
+## M256 executable object artifact lowering (C001)
+
+`M256-C001` freezes the lane-C object artifact boundary after the earlier M253
+emission work and the M256 lane-B legality work:
+
+- parser continues to own raw implementation method bodies, selectors, and
+  owner identities only
+- sema continues to own realized-object legality and canonical owner identities
+- IR/object emission owns one executable binding surface:
+  - implementation-owned method-list entries may point at concrete
+    `@objc3_method_*` LLVM definitions
+  - class/metaclass descriptor bundles consume owner-scoped method-list refs
+  - category descriptor bundles consume owner-scoped method-list refs
+- later work must extend this one binding surface rather than rediscovering
+  bodies or realization edges in a parallel runtime layer
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_executable_object_artifact_lowering_contract_and_architecture_freeze_c001_expectations.md`
+  - `spec/planning/compiler/m256/m256_c001_executable_object_artifact_lowering_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m256-c001-executable-object-artifact-lowering-contract`
+  - `check:objc3c:m256-c001-lane-c-readiness`

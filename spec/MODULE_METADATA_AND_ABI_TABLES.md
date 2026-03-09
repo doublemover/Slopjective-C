@@ -6973,3 +6973,27 @@ of that deterministic decision:
   legality result
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+
+## M256 executable object artifact lowering metadata anchors (C001)
+
+`M256-C001` still does not add new metadata section families. It freezes the
+artifact-binding boundary across the already-emitted executable object surface:
+
+- contract id `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- parser-owned anchors remain:
+  - raw implementation method bodies
+  - selectors
+  - canonical method owner identities
+- sema-owned anchors remain:
+  - realization legality
+  - inheritance/category-merge legality results
+  - canonical owner identities consumed by lowering
+- IR/object-binding anchors are:
+  - implementation-owned method entries bind to LLVM definitions by owner
+    identity
+  - class/metaclass descriptor bundles point to owner-scoped method-list refs
+  - category descriptor bundles point to owner-scoped method-list refs
+  - method entry payload model
+    `selector-owner-return-arity-implementation-symbol-has-body`
+- canonical lane-C summary path
+  `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`

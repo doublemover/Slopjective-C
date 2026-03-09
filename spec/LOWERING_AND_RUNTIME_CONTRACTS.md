@@ -5931,3 +5931,25 @@ into a live semantic surface:
 - IR remains a downstream proof consumer of the sema-owned realized-class
   legality result and must not reinterpret superclass closure or override
   compatibility
+
+## M256 executable object artifact lowering (C001)
+
+`M256-C001` freezes the lane-C lowering boundary that binds realized-object
+metadata records to executable method bodies already emitted by the native
+frontend:
+
+- contract id `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- parser preserves raw implementation method bodies, selectors, and owner
+  identities only
+- sema preserves realization legality and canonical owner identities only
+- IR/object lowering binds:
+  - implementation-owned method entries to LLVM definition symbols by owner
+    identity
+  - class/metaclass descriptor bundles to owner-scoped method-list refs
+  - category descriptor bundles to owner-scoped method-list refs
+- fail-closed model
+  `no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families`
+- non-goals:
+  - no new descriptor payload families
+  - no bootstrap/runtime-registration rebinding
+  - no protocol executable-realization path

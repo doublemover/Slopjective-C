@@ -125,7 +125,7 @@ def test_dynamic_probe_records_canonical_selector_and_string_pool_payloads(tmp_p
     assert metadata_case["backend"] == "llvm-direct"
     assert metadata_case["diagnostics_is_empty"] is True
     assert metadata_case["selector_pool_count"] == 4
-    assert metadata_case["string_pool_count"] == 21
+    assert metadata_case["string_pool_count"] == 26
     assert metadata_case["objc3.runtime.selector_pool_raw_size"] is not None and metadata_case["objc3.runtime.selector_pool_raw_size"] >= 64
     assert metadata_case["objc3.runtime.string_pool_raw_size"] is not None and metadata_case["objc3.runtime.string_pool_raw_size"] >= 512
     assert contract.BOUNDARY_COMMENT_PREFIX in metadata_case["boundary_line"]
