@@ -5577,3 +5577,22 @@ current native dispatch path consumes:
 - direct dispatch remains reserved
 - this freeze exists to hand off one deterministic legality packet to
   `M255-B002`
+
+## M255 selector resolution and ambiguity implementation (B002)
+
+`M255-B002` implements the first live selector-resolution rules that sit between
+dispatch-site classification and runtime dispatch emission:
+
+- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
+- concrete receiver policy
+  `self-super-known-class-receivers-resolve-concretely`
+- dynamic fallback policy
+  `non-concrete-receivers-remain-runtime-dynamic`
+- overload policy
+  `no-overload-recovery-exact-signature-or-fail-closed`
+- concrete `self`, `super`, and known-class receivers now resolve against the
+  semantic surface before lowering continues
+- missing concrete selectors emit `O3S216`
+- incompatible concrete interface/implementation signatures emit `O3S217`
+- lowering still uses the live runtime dispatch family and does not add a
+  second overload-recovery pass

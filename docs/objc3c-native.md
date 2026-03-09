@@ -16738,4 +16738,26 @@ widens actual dispatch semantics:
 - every live message send must keep an explicit receiver and a normalized
   selector shape before lowering consumes it
 - overload-style recovery remains a non-goal and direct dispatch remains
+
+## Selector resolution and ambiguity rejection (M255-B002)
+
+`M255-B002` turns the frozen legality packet into live lane-B behavior for the
+currently supported runtime-dispatch path:
+
+- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
+- concrete receiver policy
+  `self-super-known-class-receivers-resolve-concretely`
+- dynamic fallback policy
+  `non-concrete-receivers-remain-runtime-dynamic`
+- overload policy
+  `no-overload-recovery-exact-signature-or-fail-closed`
+- missing concrete selector diagnostic `O3S216`
+- ambiguous concrete selector diagnostic `O3S217`
+- canonical fixtures:
+  - `tests/tooling/fixtures/native/m255_selector_resolution_positive.objc3`
+  - `tests/tooling/fixtures/native/m255_selector_resolution_missing_selector.objc3`
+  - `tests/tooling/fixtures/native/m255_selector_resolution_ambiguous_signature.objc3`
+- happy-path proof includes `[self ping]`, `[super ping]`, and `[Widget shared]`
+  resolving as concrete selectors with method-return typing
+- dynamic receivers such as `[local ping]` remain on the runtime-dynamic path
   reserved for later work

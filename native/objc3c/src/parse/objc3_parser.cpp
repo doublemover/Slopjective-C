@@ -10181,6 +10181,10 @@ class Objc3Parser {
     // M255-B001 dispatch legality/selector-resolution freeze anchor: message sends remain legal only for normalized unary/keyword selectors with an
     // explicit receiver form; unresolved or ambiguous selector resolution stays
     // fail-closed and direct dispatch remains reserved.
+    // M255-B002 selector-resolution implementation anchor: parser still keeps
+    // one normalized selector spelling plus explicit receiver syntax only;
+    // lane-B sema is now responsible for exact concrete self/super/known-class
+    // resolution and fail-closed ambiguity diagnostics.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

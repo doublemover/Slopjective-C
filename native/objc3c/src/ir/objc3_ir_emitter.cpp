@@ -6901,6 +6901,11 @@ class Objc3IREmitter {
       // consumes normalized selector text only, preserves explicit receiver
       // legality, and does not attempt overload or ambiguity recovery beyond the
       // fail-closed frontend contract.
+      // M255-B002 selector-resolution implementation anchor: once lane-B sema
+      // resolves concrete self/super/known-class receivers, lowering still
+      // emits the same live runtime entrypoint family and relies on the
+      // fail-closed exact-signature result instead of performing its own
+      // overload recovery.
       std::ostringstream call;
       call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;

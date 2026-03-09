@@ -111,6 +111,36 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInf
   return MakeScalarSemanticType(fn.return_type);
 }
 
+static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInfo &method,
+                                                            std::size_t index) {
+  if (index >= method.param_types.size()) {
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (index < method.param_is_vector.size() && method.param_is_vector[index]) {
+    const std::string base_spelling =
+        index < method.param_vector_base_spelling.size()
+            ? method.param_vector_base_spelling[index]
+            : "";
+    const unsigned lane_count =
+        index < method.param_vector_lane_count.size()
+            ? method.param_vector_lane_count[index]
+            : 1u;
+    return MakeVectorSemanticType(method.param_types[index], base_spelling,
+                                  lane_count);
+  }
+  return MakeScalarSemanticType(method.param_types[index]);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
+    const Objc3MethodInfo &method) {
+  if (method.return_is_vector) {
+    return MakeVectorSemanticType(method.return_type,
+                                  method.return_vector_base_spelling,
+                                  method.return_vector_lane_count);
+  }
+  return MakeScalarSemanticType(method.return_type);
+}
+
 static SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
   return MakeScalarSemanticType(type);
 }
@@ -211,6 +241,34 @@ static std::string SemanticTypeName(const SemanticTypeInfo &info) {
   const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
   return base + "x" + std::to_string(info.vector_lane_count);
 }
+
+struct Objc3MessageSendResolutionContext {
+  const Objc3SemanticIntegrationSurface *surface = nullptr;
+  std::string current_implementation_name;
+  std::string current_super_name;
+  bool inside_method = false;
+  bool is_class_method = false;
+};
+
+struct Objc3ResolvedMessageSendMethod {
+  enum class Status {
+    DynamicFallback,
+    Resolved,
+    MissingConcreteSelector,
+    AmbiguousConcreteSelector
+  };
+
+  Status status = Status::DynamicFallback;
+  const Objc3MethodInfo *method = nullptr;
+  std::string owner_name;
+  bool is_class_method = false;
+  bool missing_base = false;
+  bool cycle_detected = false;
+};
+
+static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
+    const Expr &expr,
+    const Objc3MessageSendResolutionContext &context);
 
 struct ProtocolCompositionParseResult {
   bool has_protocol_composition = false;
@@ -1736,13 +1794,15 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 const std::unordered_map<std::string, ValueType> &globals,
                                                 const std::unordered_map<std::string, FunctionInfo> &functions,
                                                 std::vector<std::string> &diagnostics,
-                                                std::size_t max_message_send_args);
+                                                std::size_t max_message_send_args,
+                                                const Objc3MessageSendResolutionContext &message_send_context);
 
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
                                      const std::unordered_map<std::string, ValueType> &globals,
                                      const std::unordered_map<std::string, FunctionInfo> &functions,
                                      std::vector<std::string> &diagnostics,
-                                     std::size_t max_message_send_args) {
+                                     std::size_t max_message_send_args,
+                                     const Objc3MessageSendResolutionContext &message_send_context) {
   if (expr == nullptr) {
     return MakeScalarSemanticType(ValueType::Unknown);
   }
@@ -1773,10 +1833,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       return MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::Binary: {
-      const SemanticTypeInfo lhs =
-          ValidateExpr(expr->left.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      const SemanticTypeInfo rhs =
-          ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo lhs = ValidateExpr(
+          expr->left.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
+      const SemanticTypeInfo rhs = ValidateExpr(
+          expr->right.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
 
       if (expr->op == "+" || expr->op == "-" || expr->op == "*" || expr->op == "/" || expr->op == "%") {
         if (!IsUnknownSemanticType(lhs) && !IsScalarI32CompatibleType(lhs)) {
@@ -1864,17 +1926,20 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
         return MakeScalarSemanticType(ValueType::Unknown);
       }
 
-      const SemanticTypeInfo condition_type =
-          ValidateExpr(expr->left.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo condition_type = ValidateExpr(
+          expr->left.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
                                        "type mismatch: conditional condition must be bool-compatible"));
       }
 
-      const SemanticTypeInfo then_type =
-          ValidateExpr(expr->right.get(), scopes, globals, functions, diagnostics, max_message_send_args);
-      const SemanticTypeInfo else_type =
-          ValidateExpr(expr->third.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo then_type = ValidateExpr(
+          expr->right.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
+      const SemanticTypeInfo else_type = ValidateExpr(
+          expr->third.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
 
       if (IsUnknownSemanticType(then_type)) {
         return else_type;
@@ -1951,8 +2016,9 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       }
 
       for (std::size_t i = 0; i < expr->args.size(); ++i) {
-        const SemanticTypeInfo arg_type =
-            ValidateExpr(expr->args[i].get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        const SemanticTypeInfo arg_type = ValidateExpr(
+            expr->args[i].get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
         if (fn_it != functions.end() && i < fn_it->second.param_types.size()) {
           if (i < fn_it->second.param_has_invalid_type_suffix.size() &&
               fn_it->second.param_has_invalid_type_suffix[i]) {
@@ -1982,7 +2048,9 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       return MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::MessageSend: {
-      return ValidateMessageSendExpr(expr, scopes, globals, functions, diagnostics, max_message_send_args);
+      return ValidateMessageSendExpr(expr, scopes, globals, functions,
+                                     diagnostics, max_message_send_args,
+                                     message_send_context);
     }
   }
   return MakeScalarSemanticType(ValueType::Unknown);
@@ -1993,9 +2061,11 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 const std::unordered_map<std::string, ValueType> &globals,
                                                 const std::unordered_map<std::string, FunctionInfo> &functions,
                                                 std::vector<std::string> &diagnostics,
-                                                std::size_t max_message_send_args) {
-  const SemanticTypeInfo receiver_type =
-      ValidateExpr(expr->receiver.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+                                                std::size_t max_message_send_args,
+                                                const Objc3MessageSendResolutionContext &message_send_context) {
+  const SemanticTypeInfo receiver_type = ValidateExpr(
+      expr->receiver.get(), scopes, globals, functions, diagnostics,
+      max_message_send_args, message_send_context);
   const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
   if (!IsUnknownSemanticType(receiver_type) && !IsMessageCompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
@@ -2016,15 +2086,88 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
 
   for (std::size_t i = 0; i < expr->args.size(); ++i) {
     const auto &arg = expr->args[i];
-    const SemanticTypeInfo arg_type =
-        ValidateExpr(arg.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+    const SemanticTypeInfo arg_type = ValidateExpr(
+        arg.get(), scopes, globals, functions, diagnostics,
+        max_message_send_args, message_send_context);
     if (!IsUnknownSemanticType(arg_type) && !IsMessageCompatibleType(arg_type)) {
       diagnostics.push_back(MakeDiag(arg->line, arg->column, "O3S209",
                                      "type mismatch: message argument " + std::to_string(i) +
                                          " for selector '" + selector +
                                          "' must be ObjC-reference-compatible or scalar bridge-compatible, got '" +
-                                         SemanticTypeName(arg_type) + "'"));
+                                          SemanticTypeName(arg_type) + "'"));
     }
+  }
+  const Objc3ResolvedMessageSendMethod resolution =
+      ResolveConcreteMessageSendMethod(*expr, message_send_context);
+  if (resolution.status ==
+      Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector) {
+    const unsigned diag_line =
+        expr->receiver != nullptr ? expr->receiver->line : expr->line;
+    const unsigned diag_column =
+        expr->receiver != nullptr ? expr->receiver->column : expr->column;
+    diagnostics.push_back(MakeDiag(
+        diag_line, diag_column, "O3S216",
+        "selector resolution failed: concrete dispatch receiver '" +
+            resolution.owner_name + "' does not provide selector '" + selector +
+            "'"));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (resolution.status ==
+      Objc3ResolvedMessageSendMethod::Status::AmbiguousConcreteSelector) {
+    const unsigned diag_line =
+        expr->receiver != nullptr ? expr->receiver->line : expr->line;
+    const unsigned diag_column =
+        expr->receiver != nullptr ? expr->receiver->column : expr->column;
+    const std::string detail =
+        resolution.cycle_detected
+            ? "super-chain cycle detected during selector resolution"
+            : (resolution.missing_base
+                   ? "super-chain lookup requires a missing base interface"
+                   : "incompatible declarations produce no unique concrete target");
+    diagnostics.push_back(MakeDiag(
+        diag_line, diag_column, "O3S217",
+        "selector resolution is ambiguous for concrete dispatch receiver '" +
+            resolution.owner_name + "' and selector '" + selector + "': " +
+            detail));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (resolution.status == Objc3ResolvedMessageSendMethod::Status::Resolved &&
+      resolution.method != nullptr) {
+    if (expr->args.size() != resolution.method->arity) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S216",
+          "selector resolution failed: selector '" + selector +
+              "' resolves to arity " +
+              std::to_string(resolution.method->arity) + " for receiver '" +
+              resolution.owner_name + "'"));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    for (std::size_t i = 0; i < expr->args.size(); ++i) {
+      const SemanticTypeInfo arg_type = ValidateExpr(
+          expr->args[i].get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
+      const SemanticTypeInfo expected =
+          MakeSemanticTypeFromMethodInfoParam(*resolution.method, i);
+      const bool bool_coercion =
+          !expected.is_vector && expected.type == ValueType::Bool &&
+          !arg_type.is_vector && arg_type.type == ValueType::I32;
+      const bool i32_alias_coercion =
+          AreScalarI32AliasCompatible(expected, arg_type);
+      const bool objc_reference_coercion =
+          AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+      if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
+          !IsSameSemanticType(arg_type, expected) && !bool_coercion &&
+          !i32_alias_coercion && !objc_reference_coercion) {
+        diagnostics.push_back(MakeDiag(
+            expr->args[i]->line, expr->args[i]->column, "O3S206",
+            "type mismatch: selector '" + selector + "' on receiver '" +
+                resolution.owner_name + "' expects '" +
+                SemanticTypeName(expected) + "' for argument " +
+                std::to_string(i) + ", got '" + SemanticTypeName(arg_type) +
+                "'"));
+      }
+    }
+    return MakeSemanticTypeFromMethodInfoReturn(*resolution.method);
   }
   return MakeScalarSemanticType(ValueType::ObjCId);
 }
@@ -2035,7 +2178,8 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                                const std::unordered_map<std::string, FunctionInfo> &functions,
                                const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
-                               std::size_t max_message_send_args);
+                               std::size_t max_message_send_args,
+                               const Objc3MessageSendResolutionContext &message_send_context);
 
 static void ValidateAssignmentCompatibility(const std::string &target_name, const std::string &op,
                                            const Expr *value_expr, unsigned line, unsigned column,
@@ -2208,7 +2352,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                               const std::unordered_map<std::string, FunctionInfo> &functions,
                               const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                               std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
-                              std::size_t max_message_send_args) {
+                              std::size_t max_message_send_args,
+                              const Objc3MessageSendResolutionContext &message_send_context) {
   if (stmt == nullptr) {
     return;
   }
@@ -2232,14 +2377,16 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       case ForClause::Kind::None:
         return;
       case ForClause::Kind::Expr:
-        (void)ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        (void)ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics,
+                           max_message_send_args, message_send_context);
         return;
       case ForClause::Kind::Let: {
         if (scopes.empty()) {
           return;
         }
-        const SemanticTypeInfo value_type =
-            ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        const SemanticTypeInfo value_type = ValidateExpr(
+            clause.value.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
         if (scopes.back().find(clause.name) != scopes.back().end()) {
           diagnostics.push_back(MakeDiag(clause.line, clause.column, "O3S201",
                                          "duplicate declaration '" + clause.name + "'"));
@@ -2259,8 +2406,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                                          "invalid assignment target '" + clause.name +
                                              "': target must be a mutable symbol"));
         }
-        const SemanticTypeInfo value_type =
-            ValidateExpr(clause.value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        const SemanticTypeInfo value_type = ValidateExpr(
+            clause.value.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
         ValidateAssignmentCompatibility(clause.name, clause.op, clause.value.get(), clause.line, clause.column,
                                         found_target, target_type, value_type, diagnostics);
         return;
@@ -2274,8 +2422,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       if (let == nullptr || scopes.empty()) {
         return;
       }
-      const SemanticTypeInfo value_type =
-          ValidateExpr(let->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo value_type = ValidateExpr(
+          let->value.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (scopes.back().find(let->name) != scopes.back().end()) {
         diagnostics.push_back(MakeDiag(let->line, let->column, "O3S201",
                                        "duplicate declaration '" + let->name + "'"));
@@ -2296,8 +2445,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                                        "invalid assignment target '" + assign->name +
                                            "': target must be a mutable symbol"));
       }
-      const SemanticTypeInfo value_type =
-          ValidateExpr(assign->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo value_type = ValidateExpr(
+          assign->value.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       ValidateAssignmentCompatibility(assign->name, assign->op, assign->value.get(), assign->line, assign->column,
                                       found_target, target_type, value_type, diagnostics);
       return;
@@ -2318,12 +2468,14 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
           diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",
                                          "type mismatch: void function '" + function_name +
                                              "' must use 'return;'"));
-          (void)ValidateExpr(ret->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+          (void)ValidateExpr(ret->value.get(), scopes, globals, functions, diagnostics,
+                             max_message_send_args, message_send_context);
           return;
         }
 
-        const SemanticTypeInfo return_type =
-            ValidateExpr(ret->value.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        const SemanticTypeInfo return_type = ValidateExpr(
+            ret->value.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
         const bool return_matches = IsSameSemanticType(return_type, expected_return_type) ||
             AreScalarI32AliasCompatible(expected_return_type, return_type) ||
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
@@ -2344,7 +2496,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
         (void)ValidateExpr(stmt->expr_stmt->value.get(), scopes, globals, functions, diagnostics,
-                           max_message_send_args);
+                           max_message_send_args, message_send_context);
       }
       return;
     case Stmt::Kind::If: {
@@ -2352,19 +2504,22 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       if (if_stmt == nullptr) {
         return;
       }
-      const SemanticTypeInfo condition_type =
-          ValidateExpr(if_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo condition_type = ValidateExpr(
+          if_stmt->condition.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(if_stmt->line, if_stmt->column, "O3S206",
                                        "type mismatch: if condition must be bool-compatible"));
       }
       scopes.push_back({});
       ValidateStatements(if_stmt->then_body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth, switch_depth, max_message_send_args);
+                         diagnostics, loop_depth, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
       scopes.push_back({});
       ValidateStatements(if_stmt->else_body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth, switch_depth, max_message_send_args);
+                         diagnostics, loop_depth, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
       return;
     }
@@ -2375,11 +2530,13 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       }
       scopes.push_back({});
       ValidateStatements(do_while_stmt->body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth + 1, switch_depth, max_message_send_args);
+                         diagnostics, loop_depth + 1, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
 
-      const SemanticTypeInfo condition_type =
-          ValidateExpr(do_while_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo condition_type = ValidateExpr(
+          do_while_stmt->condition.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(do_while_stmt->line, do_while_stmt->column, "O3S206",
                                        "type mismatch: do-while condition must be bool-compatible"));
@@ -2394,8 +2551,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       scopes.push_back({});
       validate_for_clause(for_stmt->init);
       if (for_stmt->condition != nullptr) {
-        const SemanticTypeInfo condition_type =
-            ValidateExpr(for_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+        const SemanticTypeInfo condition_type = ValidateExpr(
+            for_stmt->condition.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
         if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
           diagnostics.push_back(MakeDiag(for_stmt->line, for_stmt->column, "O3S206",
                                          "type mismatch: for condition must be bool-compatible"));
@@ -2404,7 +2562,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       validate_for_clause(for_stmt->step);
       scopes.push_back({});
       ValidateStatements(for_stmt->body, scopes, globals, functions, expected_return_type, function_name, diagnostics,
-                         loop_depth + 1, switch_depth, max_message_send_args);
+                         loop_depth + 1, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
       scopes.pop_back();
       return;
@@ -2414,8 +2573,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       if (switch_stmt == nullptr) {
         return;
       }
-      const SemanticTypeInfo condition_type =
-          ValidateExpr(switch_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo condition_type = ValidateExpr(
+          switch_stmt->condition.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(switch_stmt->line, switch_stmt->column, "O3S206",
                                        "type mismatch: switch condition must be i32-compatible"));
@@ -2439,7 +2599,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         }
         scopes.push_back({});
         ValidateStatements(case_stmt.body, scopes, globals, functions, expected_return_type, function_name,
-                           diagnostics, loop_depth, switch_depth + 1, max_message_send_args);
+                           diagnostics, loop_depth, switch_depth + 1,
+                           max_message_send_args, message_send_context);
         scopes.pop_back();
       }
       return;
@@ -2449,15 +2610,17 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       if (while_stmt == nullptr) {
         return;
       }
-      const SemanticTypeInfo condition_type =
-          ValidateExpr(while_stmt->condition.get(), scopes, globals, functions, diagnostics, max_message_send_args);
+      const SemanticTypeInfo condition_type = ValidateExpr(
+          while_stmt->condition.get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(while_stmt->line, while_stmt->column, "O3S206",
                                        "type mismatch: while condition must be bool-compatible"));
       }
       scopes.push_back({});
       ValidateStatements(while_stmt->body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth + 1, switch_depth, max_message_send_args);
+                         diagnostics, loop_depth + 1, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
       return;
     }
@@ -2468,7 +2631,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       }
       scopes.push_back({});
       ValidateStatements(block_stmt->body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth, switch_depth, max_message_send_args);
+                         diagnostics, loop_depth, switch_depth,
+                         max_message_send_args, message_send_context);
       scopes.pop_back();
       return;
     }
@@ -2494,10 +2658,12 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                                const std::unordered_map<std::string, FunctionInfo> &functions,
                                const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
-                               std::size_t max_message_send_args) {
+                               std::size_t max_message_send_args,
+                               const Objc3MessageSendResolutionContext &message_send_context) {
   for (const auto &stmt : statements) {
     ValidateStatement(stmt.get(), scopes, globals, functions, expected_return_type, function_name, diagnostics,
-                      loop_depth, switch_depth, max_message_send_args);
+                      loop_depth, switch_depth, max_message_send_args,
+                      message_send_context);
   }
 }
 
@@ -4648,10 +4814,22 @@ static Objc3SymbolGraphScopeResolutionSummary BuildSymbolGraphScopeResolutionSum
   return summary;
 }
 
+static const Objc3MethodInfo *FindMethodInfoWithKind(
+    const std::unordered_map<std::string, Objc3MethodInfo> &methods,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto method_it = methods.find(selector);
+  if (method_it == methods.end() || method_it->second.is_class_method != is_class_method) {
+    return nullptr;
+  }
+  return &method_it->second;
+}
+
 static const Objc3MethodInfo *FindSurfaceMethodInSuperChain(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &interface_name,
     const std::string &selector,
+    bool is_class_method,
     bool &missing_base,
     bool &cycle_detected) {
   missing_base = false;
@@ -4674,13 +4852,169 @@ static const Objc3MethodInfo *FindSurfaceMethodInSuperChain(
       missing_base = true;
       return nullptr;
     }
-    const auto method_it = super_it->second.methods.find(selector);
-    if (method_it != super_it->second.methods.end()) {
-      return &method_it->second;
+    const Objc3MethodInfo *method =
+        FindMethodInfoWithKind(super_it->second.methods, selector, is_class_method);
+    if (method != nullptr) {
+      return method;
     }
     next_super = super_it->second.super_name;
   }
   return nullptr;
+}
+
+static const Objc3MethodInfo *ResolveMethodInOwnerInterface(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto interface_it = surface.interfaces.find(owner_name);
+  if (interface_it == surface.interfaces.end()) {
+    return nullptr;
+  }
+  return FindMethodInfoWithKind(interface_it->second.methods, selector,
+                                is_class_method);
+}
+
+static const Objc3MethodInfo *ResolveMethodInOwnerImplementation(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto implementation_it = surface.implementations.find(owner_name);
+  if (implementation_it == surface.implementations.end()) {
+    return nullptr;
+  }
+  return FindMethodInfoWithKind(implementation_it->second.methods, selector,
+                                is_class_method);
+}
+
+static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method) {
+  Objc3ResolvedMessageSendMethod resolution;
+  resolution.owner_name = owner_name;
+  resolution.is_class_method = is_class_method;
+
+  const Objc3MethodInfo *interface_method =
+      ResolveMethodInOwnerInterface(surface, owner_name, selector, is_class_method);
+  const Objc3MethodInfo *implementation_method = ResolveMethodInOwnerImplementation(
+      surface, owner_name, selector, is_class_method);
+
+  if (interface_method == nullptr && implementation_method == nullptr) {
+    resolution.status = Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector;
+    return resolution;
+  }
+  if (interface_method != nullptr && implementation_method != nullptr) {
+    if (!IsCompatibleMethodSignature(*interface_method, *implementation_method)) {
+      resolution.status =
+          Objc3ResolvedMessageSendMethod::Status::AmbiguousConcreteSelector;
+      return resolution;
+    }
+    resolution.status = Objc3ResolvedMessageSendMethod::Status::Resolved;
+    resolution.method = implementation_method;
+    return resolution;
+  }
+  resolution.status = Objc3ResolvedMessageSendMethod::Status::Resolved;
+  resolution.method =
+      implementation_method != nullptr ? implementation_method : interface_method;
+  return resolution;
+}
+
+static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
+    const Expr &expr,
+    const Objc3MessageSendResolutionContext &context) {
+  Objc3ResolvedMessageSendMethod resolution;
+  if (context.surface == nullptr || expr.receiver == nullptr) {
+    return resolution;
+  }
+
+  Expr::DispatchSurfaceKind dispatch_kind = expr.dispatch_surface_kind;
+  if (!expr.dispatch_surface_is_normalized) {
+    if (expr.receiver->kind == Expr::Kind::NilLiteral) {
+      dispatch_kind = Expr::DispatchSurfaceKind::Instance;
+    } else if (expr.receiver->kind != Expr::Kind::Identifier) {
+      dispatch_kind = Expr::DispatchSurfaceKind::Dynamic;
+    } else if (context.inside_method && expr.receiver->ident == "super") {
+      dispatch_kind = Expr::DispatchSurfaceKind::Super;
+    } else if (context.surface->interfaces.find(expr.receiver->ident) !=
+                   context.surface->interfaces.end() ||
+               context.surface->implementations.find(expr.receiver->ident) !=
+                   context.surface->implementations.end()) {
+      dispatch_kind = Expr::DispatchSurfaceKind::Class;
+    } else if (context.inside_method && expr.receiver->ident == "self") {
+      dispatch_kind = context.is_class_method
+                          ? Expr::DispatchSurfaceKind::Class
+                          : Expr::DispatchSurfaceKind::Instance;
+    } else {
+      dispatch_kind = Expr::DispatchSurfaceKind::Instance;
+    }
+  }
+
+  switch (dispatch_kind) {
+    case Expr::DispatchSurfaceKind::Super: {
+      resolution.owner_name = context.current_super_name;
+      resolution.is_class_method = context.is_class_method;
+      if (context.current_implementation_name.empty() ||
+          context.current_super_name.empty()) {
+        resolution.status =
+            Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector;
+        return resolution;
+      }
+      bool missing_base = false;
+      bool cycle_detected = false;
+      const Objc3MethodInfo *super_method = FindSurfaceMethodInSuperChain(
+          *context.surface, context.current_implementation_name, expr.selector,
+          context.is_class_method, missing_base, cycle_detected);
+      if (cycle_detected || missing_base) {
+        resolution.status =
+            Objc3ResolvedMessageSendMethod::Status::AmbiguousConcreteSelector;
+        resolution.missing_base = missing_base;
+        resolution.cycle_detected = cycle_detected;
+        return resolution;
+      }
+      if (super_method == nullptr) {
+        resolution.status =
+            Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector;
+        return resolution;
+      }
+      resolution.status = Objc3ResolvedMessageSendMethod::Status::Resolved;
+      resolution.method = super_method;
+      return resolution;
+    }
+    case Expr::DispatchSurfaceKind::Class: {
+      std::string owner_name;
+      if (expr.receiver->kind == Expr::Kind::Identifier &&
+          expr.receiver->ident == "self" && context.inside_method &&
+          !context.current_implementation_name.empty()) {
+        owner_name = context.current_implementation_name;
+      } else if (expr.receiver->kind == Expr::Kind::Identifier) {
+        owner_name = expr.receiver->ident;
+      }
+      if (owner_name.empty()) {
+        return resolution;
+      }
+      return ResolveConcreteOwnerMethod(*context.surface, owner_name,
+                                        expr.selector, true);
+    }
+    case Expr::DispatchSurfaceKind::Instance: {
+      if (!(expr.receiver->kind == Expr::Kind::Identifier &&
+            expr.receiver->ident == "self" && context.inside_method &&
+            !context.is_class_method &&
+            !context.current_implementation_name.empty())) {
+        return resolution;
+      }
+      return ResolveConcreteOwnerMethod(*context.surface,
+                                        context.current_implementation_name,
+                                        expr.selector, false);
+    }
+    case Expr::DispatchSurfaceKind::Direct:
+    case Expr::DispatchSurfaceKind::Dynamic:
+    case Expr::DispatchSurfaceKind::Unclassified:
+      return resolution;
+  }
+  return resolution;
 }
 
 static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflictSummaryFromIntegrationSurface(
@@ -4724,7 +5058,10 @@ static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflic
       bool missing_base = false;
       bool cycle_detected = false;
       const Objc3MethodInfo *base_method =
-          FindSurfaceMethodInSuperChain(surface, interface_name, method_entry.first, missing_base, cycle_detected);
+          FindSurfaceMethodInSuperChain(surface, interface_name,
+                                       method_entry.first,
+                                       method_entry.second.is_class_method,
+                                       missing_base, cycle_detected);
       if (cycle_detected) {
         summary.deterministic = false;
       }
@@ -13144,8 +13481,11 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     if (!fn.is_prototype) {
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
+      Objc3MessageSendResolutionContext message_send_context;
+      message_send_context.surface = &surface;
       ValidateStatements(fn.body, scopes, body_globals, surface.functions, expected_return_type, fn.name, diagnostics,
-                         0, 0, options.max_message_send_args);
+                         0, 0, options.max_message_send_args,
+                         message_send_context);
       // Legacy extraction anchor retained for contract tests:
       // ValidateStatements(fn.body, scopes, surface.globals, surface.functions, fn.return_type, fn.name, diagnostics,
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
@@ -13183,8 +13523,18 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
+      Objc3MessageSendResolutionContext message_send_context;
+      message_send_context.surface = &surface;
+      message_send_context.current_implementation_name = implementation_decl.name;
+      message_send_context.inside_method = true;
+      message_send_context.is_class_method = method.is_class_method;
+      const auto interface_it = surface.interfaces.find(implementation_decl.name);
+      if (interface_it != surface.interfaces.end()) {
+        message_send_context.current_super_name = interface_it->second.super_name;
+      }
       ValidateStatements(method.body, scopes, body_globals, surface.functions, expected_return_type, method_context,
-                         diagnostics, 0, 0, options.max_message_send_args);
+                         diagnostics, 0, 0, options.max_message_send_args,
+                         message_send_context);
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(method.body, &global_static_bindings)) {
         diagnostics.push_back(MakeDiag(method.line, method.column, "O3S205",

@@ -1,0 +1,20 @@
+module selectorResolutionAmbiguousSignature;
+
+@interface Widget
+- (i32) ping;
+- (i32) sample;
+@end
+
+@implementation Widget
+- (bool) ping {
+  return true;
+}
+
+- (i32) sample {
+  return [self ping];
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

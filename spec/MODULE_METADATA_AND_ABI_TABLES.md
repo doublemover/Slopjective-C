@@ -6624,3 +6624,19 @@ that later semantic/runtime implementation issues must preserve:
   `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
 - supported selector forms `unary-and-keyword-selectors`
 - no new direct-dispatch metadata anchors are introduced in `M255-B001`
+
+## M255 selector-resolution metadata anchors (B002)
+
+`M255-B002` adds the live lane-B selector-resolution metadata anchors that the
+runtime dispatch path now consumes:
+
+- contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
+- concrete receiver policy
+  `self-super-known-class-receivers-resolve-concretely`
+- dynamic fallback policy
+  `non-concrete-receivers-remain-runtime-dynamic`
+- overload policy
+  `no-overload-recovery-exact-signature-or-fail-closed`
+- diagnostic anchors `O3S216` and `O3S217`
+- the metadata story does not add new direct-dispatch anchors; it only narrows
+  which live dispatch sites are admitted as concrete before runtime emission

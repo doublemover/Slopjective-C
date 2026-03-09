@@ -1,0 +1,20 @@
+module selectorResolutionMissingSelector;
+
+@interface Widget
+- (i32) ping;
+- (i32) sample;
+@end
+
+@implementation Widget
+- (i32) ping {
+  return 1;
+}
+
+- (i32) sample {
+  return [self missing];
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

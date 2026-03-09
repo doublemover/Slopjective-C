@@ -1,0 +1,56 @@
+module selectorResolutionPositive;
+
+@interface Root
+- (i32) ping;
+@end
+
+@implementation Root
+- (i32) ping {
+  return 7;
+}
+@end
+
+@interface Widget : Root
++ (i32) shared;
++ (i32) sharedFromSelf;
+- (i32) ping;
+- (i32) useSelf;
+- (i32) useSuper;
+- (i32) useClass;
+- (i32) useDynamic:(id)local;
+@end
+
+@implementation Widget
++ (i32) shared {
+  return 11;
+}
+
++ (i32) sharedFromSelf {
+  return [self shared];
+}
+
+- (i32) ping {
+  return 13;
+}
+
+- (i32) useSelf {
+  return [self ping];
+}
+
+- (i32) useSuper {
+  return [super ping];
+}
+
+- (i32) useClass {
+  return [Widget shared];
+}
+
+- (i32) useDynamic:(id)local {
+  [local ping];
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}
