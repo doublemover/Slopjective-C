@@ -2011,6 +2011,9 @@ class Objc3IREmitter {
     // publishing the same protocol/category source identities after sema
     // starts enforcing required-vs-optional protocol member coverage with
     // fail-closed diagnostics.
+    // M256-B003 category-merge implementation anchor: IR remains downstream of
+    // the sema-owned realized-class category merge/conflict decision and must
+    // not reinterpret attachment legality or concrete message resolution.
     if (frontend_metadata_.executable_protocol_category_source_closure_ready) {
       out << "; executable_protocol_category_source_closure = contract="
           << frontend_metadata_

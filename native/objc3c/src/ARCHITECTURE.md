@@ -8854,3 +8854,23 @@ object model:
   - `spec/planning/compiler/m256/m256_b002_protocol_conformance_and_required_optional_member_enforcement_core_feature_implementation_packet.md`
   - `check:objc3c:m256-b002-protocol-conformance-and-required-optional-member-enforcement`
   - `check:objc3c:m256-b002-lane-b-readiness`
+
+## M256 category merge and conflict semantics (B003)
+
+`M256-B003` extends the M256 lane-B surface from protocol conformance into live
+category attachment legality for realized classes:
+
+- parser continues to own category identity and source ordering only
+- sema now owns live enforcement for:
+  - realized-class category interface/implementation pairing
+  - deterministic category merge order
+  - cross-category property and method compatibility
+  - concrete message resolution through attached category members
+  - protocol conformance through attached category members
+- deterministic category-merge failures collapse onto `O3S219`
+- IR remains proof-only and must not reinterpret the sema-owned merge result
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_category_merge_and_conflict_semantics_core_feature_implementation_b003_expectations.md`
+  - `spec/planning/compiler/m256/m256_b003_category_merge_and_conflict_semantics_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-b003-category-merge-and-conflict-semantics`
+  - `check:objc3c:m256-b003-lane-b-readiness`

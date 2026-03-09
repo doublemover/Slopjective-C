@@ -7349,6 +7349,9 @@ class Objc3Parser {
     if (!Match(TokenKind::LParen)) {
       return true;
     }
+    // M256-B003 category-merge source-order anchor: parser preserves category
+    // attachment spelling and declaration order verbatim so sema can build one
+    // deterministic realized-class merge surface without reparsing tokens.
     has_category = true;
     if (Match(TokenKind::Identifier)) {
       category_name = Previous().text;

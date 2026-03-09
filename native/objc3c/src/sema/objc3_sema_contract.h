@@ -1198,6 +1198,16 @@ struct Objc3ImplementationInfo {
   std::unordered_map<std::string, Objc3MethodInfo> methods;
 };
 
+struct Objc3CategoryMergeInfo {
+  std::vector<std::string> category_owner_identities_in_merge_order;
+  std::unordered_map<std::string, Objc3PropertyInfo> merged_properties;
+  std::unordered_map<std::string, std::string>
+      merged_property_owner_identities;
+  std::unordered_map<std::string, Objc3MethodInfo> merged_methods;
+  std::unordered_map<std::string, std::string> merged_method_owner_identities;
+  bool deterministic = true;
+};
+
 struct Objc3InterfaceImplementationSummary {
   std::size_t declared_interfaces = 0;
   std::size_t resolved_interfaces = 0;
@@ -1221,6 +1231,11 @@ struct Objc3SemanticIntegrationSurface {
   // rebuilding container ownership from manifest-only heuristics.
   std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
   std::unordered_map<std::string, Objc3ImplementationInfo> implementations;
+  std::unordered_map<std::string, Objc3InterfaceInfo> category_interfaces;
+  std::unordered_map<std::string, Objc3ImplementationInfo>
+      category_implementations;
+  std::unordered_map<std::string, Objc3CategoryMergeInfo>
+      category_merge_surfaces;
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;

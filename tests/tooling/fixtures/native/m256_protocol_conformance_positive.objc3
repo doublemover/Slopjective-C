@@ -44,6 +44,7 @@ module protocolConformancePositive;
 
 @interface Widget (Tracing) <Tracer>
 @property (readonly) id shadow;
+- (i32) tracedValue;
 @end
 
 @implementation Widget (Tracing)

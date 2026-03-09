@@ -1757,6 +1757,15 @@ static std::string BuildCategoryOwnerIdentity(const std::string &class_name,
   return "category:" + class_name + "(" + category_name + ")";
 }
 
+struct Objc3CategoryMergeOrderEntry {
+  std::string class_name;
+  std::string category_name;
+  std::string owner_identity;
+  std::string container_name;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 static std::string FormatObjcContainerName(const std::string &name,
                                            bool has_category,
                                            const std::string &category_name) {
@@ -5141,6 +5150,19 @@ static const Objc3MethodInfo *ResolveMethodInCategoryImplementation(
                                 is_class_method);
 }
 
+static const Objc3MethodInfo *ResolveMethodInMergedCategorySurface(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method) {
+  const auto merge_it = surface.category_merge_surfaces.find(owner_name);
+  if (merge_it == surface.category_merge_surfaces.end()) {
+    return nullptr;
+  }
+  return FindMethodInfoWithKind(merge_it->second.merged_methods, selector,
+                                is_class_method);
+}
+
 static const Objc3PropertyInfo *ResolvePropertyInOwnerInterface(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &owner_name,
@@ -5205,6 +5227,22 @@ static const Objc3PropertyInfo *ResolvePropertyInCategoryImplementation(
   return &property_it->second;
 }
 
+static const Objc3PropertyInfo *ResolvePropertyInMergedCategorySurface(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &property_name) {
+  const auto merge_it = surface.category_merge_surfaces.find(owner_name);
+  if (merge_it == surface.category_merge_surfaces.end()) {
+    return nullptr;
+  }
+  const auto property_it =
+      merge_it->second.merged_properties.find(property_name);
+  if (property_it == merge_it->second.merged_properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
 static const Objc3PropertyInfo *FindSurfacePropertyInSuperChain(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &interface_name,
@@ -5255,6 +5293,11 @@ static const Objc3MethodInfo *ResolveDeclaredConformanceMethod(
   if (method != nullptr) {
     return method;
   }
+  method = ResolveMethodInMergedCategorySurface(surface, owner_name, selector,
+                                                is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
   bool missing_base = false;
   bool cycle_detected = false;
   return FindSurfaceMethodInSuperChain(surface, owner_name, selector,
@@ -5294,6 +5337,11 @@ static const Objc3MethodInfo *ResolveCategoryConformanceMethod(
   if (method != nullptr) {
     return method;
   }
+  method = ResolveMethodInMergedCategorySurface(surface, class_name, selector,
+                                                is_class_method);
+  if (method != nullptr) {
+    return method;
+  }
   bool missing_base = false;
   bool cycle_detected = false;
   return FindSurfaceMethodInSuperChain(surface, class_name, selector,
@@ -5312,6 +5360,11 @@ static const Objc3PropertyInfo *ResolveDeclaredConformanceProperty(
   }
   property =
       ResolvePropertyInOwnerImplementation(surface, owner_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property =
+      ResolvePropertyInMergedCategorySurface(surface, owner_name, property_name);
   if (property != nullptr) {
     return property;
   }
@@ -5348,6 +5401,11 @@ static const Objc3PropertyInfo *ResolveCategoryConformanceProperty(
   }
   property =
       ResolvePropertyInOwnerImplementation(surface, class_name, property_name);
+  if (property != nullptr) {
+    return property;
+  }
+  property = ResolvePropertyInMergedCategorySurface(surface, class_name,
+                                                    property_name);
   if (property != nullptr) {
     return property;
   }
@@ -5437,6 +5495,240 @@ static bool CollectProtocolRequirementClosure(
 
   active_protocols.erase(protocol_name);
   return true;
+}
+
+static bool IsRealizedClassOwner(const Objc3SemanticIntegrationSurface &surface,
+                                 const std::string &class_name) {
+  return surface.interfaces.find(class_name) != surface.interfaces.end() &&
+         surface.implementations.find(class_name) !=
+             surface.implementations.end();
+}
+
+static void MergeCategoryMethodCandidate(
+    const Objc3SemanticIntegrationSurface &surface, const std::string &class_name,
+    const Objc3CategoryMergeOrderEntry &entry, const std::string &selector,
+    const Objc3MethodInfo &candidate, Objc3CategoryMergeInfo &merge_info,
+    std::vector<std::string> &diagnostics) {
+  const Objc3MethodInfo *base_interface = ResolveMethodInOwnerInterface(
+      surface, class_name, selector, candidate.is_class_method);
+  if (base_interface != nullptr &&
+      !IsCompatibleMethodSignature(*base_interface, candidate)) {
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' selector '" +
+            FormatMethodSelectorForDiagnostic(selector,
+                                             candidate.is_class_method) +
+            "' is incompatible with realized class '" + class_name + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  const Objc3MethodInfo *base_implementation = ResolveMethodInOwnerImplementation(
+      surface, class_name, selector, candidate.is_class_method);
+  if (base_implementation != nullptr &&
+      !IsCompatibleMethodSignature(*base_implementation, candidate)) {
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' selector '" +
+            FormatMethodSelectorForDiagnostic(selector,
+                                             candidate.is_class_method) +
+            "' is incompatible with realized class '" + class_name + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  const Objc3MethodInfo *existing = FindMethodInfoWithKind(
+      merge_info.merged_methods, selector, candidate.is_class_method);
+  if (existing != nullptr && !IsCompatibleMethodSignature(*existing, candidate)) {
+    const auto owner_it = merge_info.merged_method_owner_identities.find(selector);
+    const std::string previous_owner =
+        owner_it == merge_info.merged_method_owner_identities.end()
+            ? std::string("another attached category")
+            : owner_it->second;
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' selector '" +
+            FormatMethodSelectorForDiagnostic(selector,
+                                             candidate.is_class_method) +
+            "' conflicts with attached category '" + previous_owner + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  merge_info.merged_methods[selector] = candidate;
+  merge_info.merged_method_owner_identities[selector] = entry.container_name;
+}
+
+static void MergeCategoryPropertyCandidate(
+    const Objc3SemanticIntegrationSurface &surface, const std::string &class_name,
+    const Objc3CategoryMergeOrderEntry &entry,
+    const std::string &property_name, const Objc3PropertyInfo &candidate,
+    Objc3CategoryMergeInfo &merge_info, std::vector<std::string> &diagnostics) {
+  const Objc3PropertyInfo *base_interface =
+      ResolvePropertyInOwnerInterface(surface, class_name, property_name);
+  if (base_interface != nullptr &&
+      !IsCompatiblePropertySignature(*base_interface, candidate)) {
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' property '" + property_name +
+            "' is incompatible with realized class '" + class_name + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  const Objc3PropertyInfo *base_implementation =
+      ResolvePropertyInOwnerImplementation(surface, class_name, property_name);
+  if (base_implementation != nullptr &&
+      !IsCompatiblePropertySignature(*base_implementation, candidate)) {
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' property '" + property_name +
+            "' is incompatible with realized class '" + class_name + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  const auto existing_it = merge_info.merged_properties.find(property_name);
+  if (existing_it != merge_info.merged_properties.end() &&
+      !IsCompatiblePropertySignature(existing_it->second, candidate)) {
+    const auto owner_it =
+        merge_info.merged_property_owner_identities.find(property_name);
+    const std::string previous_owner =
+        owner_it == merge_info.merged_property_owner_identities.end()
+            ? std::string("another attached category")
+            : owner_it->second;
+    diagnostics.push_back(MakeDiag(
+        entry.line, entry.column, "O3S219",
+        "category merge failure: category '" + entry.container_name +
+            "' property '" + property_name +
+            "' conflicts with attached category '" + previous_owner + "'"));
+    merge_info.deterministic = false;
+    return;
+  }
+
+  merge_info.merged_properties[property_name] = candidate;
+  merge_info.merged_property_owner_identities[property_name] =
+      entry.container_name;
+}
+
+static void ValidateAndBuildCategoryMergeSurfaces(
+    const Objc3Program &ast, Objc3SemanticIntegrationSurface &surface,
+    std::vector<std::string> &diagnostics) {
+  // M256-B003 category-merge enforcement anchor: sema owns deterministic
+  // realized-class category merge order, concrete conflict detection, and the
+  // merged member surface used by later concrete resolution and conformance.
+  std::unordered_map<std::string, std::vector<Objc3CategoryMergeOrderEntry>>
+      merge_order_by_class;
+  std::unordered_set<std::string> seen_realized_category_interfaces;
+
+  for (const auto &interface_decl : ast.interfaces) {
+    if (!interface_decl.has_category) {
+      continue;
+    }
+    if (!IsRealizedClassOwner(surface, interface_decl.name)) {
+      continue;
+    }
+
+    const std::string owner_identity = BuildCategoryOwnerIdentity(
+        interface_decl.name, interface_decl.category_name);
+    if (!seen_realized_category_interfaces.insert(owner_identity).second) {
+      continue;
+    }
+    if (surface.category_implementations.find(owner_identity) ==
+        surface.category_implementations.end()) {
+      diagnostics.push_back(MakeDiag(
+          interface_decl.line, interface_decl.column, "O3S219",
+          "category merge failure: category interface '" +
+              FormatObjcContainerName(interface_decl.name, true,
+                                      interface_decl.category_name) +
+              "' is missing category implementation for realized class '" +
+              interface_decl.name + "'"));
+      continue;
+    }
+
+    Objc3CategoryMergeOrderEntry entry;
+    entry.class_name = interface_decl.name;
+    entry.category_name = interface_decl.category_name;
+    entry.owner_identity = owner_identity;
+    entry.container_name = FormatObjcContainerName(interface_decl.name, true,
+                                                   interface_decl.category_name);
+    entry.line = interface_decl.line;
+    entry.column = interface_decl.column;
+    merge_order_by_class[entry.class_name].push_back(std::move(entry));
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    if (!implementation_decl.has_category) {
+      continue;
+    }
+    if (!IsRealizedClassOwner(surface, implementation_decl.name)) {
+      continue;
+    }
+
+    const std::string owner_identity = BuildCategoryOwnerIdentity(
+        implementation_decl.name, implementation_decl.category_name);
+    if (surface.category_interfaces.find(owner_identity) ==
+        surface.category_interfaces.end()) {
+      diagnostics.push_back(MakeDiag(
+          implementation_decl.line, implementation_decl.column, "O3S219",
+          "category merge failure: category implementation '" +
+              FormatObjcContainerName(implementation_decl.name, true,
+                                      implementation_decl.category_name) +
+              "' is missing category interface for realized class '" +
+              implementation_decl.name + "'"));
+    }
+  }
+
+  surface.category_merge_surfaces.clear();
+  for (const auto &entry : merge_order_by_class) {
+    const std::string &class_name = entry.first;
+    Objc3CategoryMergeInfo merge_info;
+    for (const Objc3CategoryMergeOrderEntry &order_entry : entry.second) {
+      merge_info.category_owner_identities_in_merge_order.push_back(
+          order_entry.container_name);
+      const auto category_interface_it =
+          surface.category_interfaces.find(order_entry.owner_identity);
+      const auto category_implementation_it =
+          surface.category_implementations.find(order_entry.owner_identity);
+      if (category_interface_it == surface.category_interfaces.end() ||
+          category_implementation_it ==
+              surface.category_implementations.end()) {
+        merge_info.deterministic = false;
+        continue;
+      }
+
+      for (const auto &property_entry :
+           category_interface_it->second.properties) {
+        MergeCategoryPropertyCandidate(
+            surface, class_name, order_entry, property_entry.first,
+            property_entry.second, merge_info, diagnostics);
+      }
+      for (const auto &property_entry :
+           category_implementation_it->second.properties) {
+        MergeCategoryPropertyCandidate(
+            surface, class_name, order_entry, property_entry.first,
+            property_entry.second, merge_info, diagnostics);
+      }
+      for (const auto &method_entry : category_interface_it->second.methods) {
+        MergeCategoryMethodCandidate(surface, class_name, order_entry,
+                                     method_entry.first, method_entry.second,
+                                     merge_info, diagnostics);
+      }
+      for (const auto &method_entry :
+           category_implementation_it->second.methods) {
+        MergeCategoryMethodCandidate(surface, class_name, order_entry,
+                                     method_entry.first, method_entry.second,
+                                     merge_info, diagnostics);
+      }
+    }
+
+    surface.category_merge_surfaces.emplace(class_name, std::move(merge_info));
+  }
 }
 
 // M256-B002 protocol-conformance enforcement anchor: sema now consumes the
@@ -5590,6 +5882,15 @@ static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
   Objc3ResolvedMessageSendMethod resolution;
   resolution.owner_name = owner_name;
   resolution.is_class_method = is_class_method;
+
+  const Objc3MethodInfo *merged_category_method =
+      ResolveMethodInMergedCategorySurface(surface, owner_name, selector,
+                                          is_class_method);
+  if (merged_category_method != nullptr) {
+    resolution.status = Objc3ResolvedMessageSendMethod::Status::Resolved;
+    resolution.method = merged_category_method;
+    return resolution;
+  }
 
   const Objc3MethodInfo *interface_method =
       ResolveMethodInOwnerInterface(surface, owner_name, selector, is_class_method);
@@ -9371,9 +9672,6 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions =
           BuildProtocolSemanticDefinitions(ast, diagnostics);
-  std::unordered_map<std::string, Objc3InterfaceInfo> category_interfaces;
-  std::unordered_map<std::string, Objc3ImplementationInfo>
-      category_implementations;
   // M252-B003 diagnostic precision anchor: class interface/implementation
   // summaries exclude category containers so valid class-plus-category
   // programs do not degrade into duplicate class-owner diagnostics before the
@@ -10019,7 +10317,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       const std::string category_owner_identity =
           BuildCategoryOwnerIdentity(interface_decl.name,
                                      interface_decl.category_name);
-      if (!category_interfaces
+      if (!surface.category_interfaces
                .emplace(category_owner_identity, std::move(interface_info))
                .second) {
         diagnostics.push_back(MakeDiag(interface_decl.line,
@@ -10059,6 +10357,16 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                        "type mismatch: missing interface declaration for implementation '" +
                                            implementation_decl.name + "'"));
       } else {
+        implementation_info.has_matching_interface = true;
+        matched_interface = &interface_it->second;
+      }
+    } else {
+      const std::string category_owner_identity =
+          BuildCategoryOwnerIdentity(implementation_decl.name,
+                                     implementation_decl.category_name);
+      const auto interface_it =
+          surface.category_interfaces.find(category_owner_identity);
+      if (interface_it != surface.category_interfaces.end()) {
         implementation_info.has_matching_interface = true;
         matched_interface = &interface_it->second;
       }
@@ -10172,7 +10480,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       const std::string category_owner_identity =
           BuildCategoryOwnerIdentity(implementation_decl.name,
                                      implementation_decl.category_name);
-      if (!category_implementations
+      if (!surface.category_implementations
                .emplace(category_owner_identity, std::move(implementation_info))
                .second) {
         diagnostics.push_back(MakeDiag(implementation_decl.line,
@@ -10187,9 +10495,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   // M256-B002 protocol-conformance enforcement anchor: parser-owned
   // @required/@optional partitions are now enforced here against class and
   // category adoption before runtime metadata consumption can proceed.
+  ValidateAndBuildCategoryMergeSurfaces(ast, surface, diagnostics);
   ValidateDeclaredProtocolConformance(ast, surface, protocol_definitions,
-                                      category_interfaces,
-                                      category_implementations, diagnostics);
+                                      surface.category_interfaces,
+                                      surface.category_implementations,
+                                      diagnostics);
 
   interface_implementation_summary.resolved_interfaces = surface.interfaces.size();
   interface_implementation_summary.resolved_implementations = surface.implementations.size();

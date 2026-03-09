@@ -6929,3 +6929,23 @@ that decision:
 - IR anchor remains proof-only commentary over the same conformance result
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`
+
+## M256 category-merge metadata anchors (B003)
+
+`M256-B003` still does not add new emitted runtime metadata records. It makes
+the realized-class category legality boundary executable and publishes proof of
+that deterministic merge decision:
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- parser-owned anchors remain:
+  - category attachment identity
+  - category declaration order
+- sema-owned rule anchors are:
+  - realized-class category merge surfaces are deterministic
+  - concrete resolution and protocol conformance consume the merged surface
+  - missing interface/implementation category pairs fail closed
+  - incompatible attached category members collapse onto `O3S219`
+- IR anchor remains proof-only commentary over the same merge decision
+- canonical lane-B summary path
+  `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`

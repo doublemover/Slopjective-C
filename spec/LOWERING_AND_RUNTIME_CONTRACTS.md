@@ -5893,3 +5893,21 @@ the frozen M256 source graph:
 - inherited protocol requirements fail closed on incompatible required members
 - deterministic conformance diagnostics use `O3S218`
 - IR remains a downstream proof consumer of the sema-owned conformance result
+
+## M256 category merge and conflict semantics (B003)
+
+`M256-B003` turns category attachment on realized classes into a live semantic
+surface:
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- parser preserves category attachment order/identity for sema-owned merge
+  ordering
+- sema owns deterministic merge-surface construction for realized classes only
+- concrete message resolution consumes the merged category surface before base
+  class fallback
+- declared protocol conformance consumes the same merged category surface
+- realized-class category interface/implementation pairs fail closed when one
+  side is missing
+- incompatible attached category members fail closed with `O3S219`
+- IR remains a downstream proof consumer of the sema-owned merge legality

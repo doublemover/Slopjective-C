@@ -1,0 +1,35 @@
+module categoryMergePositive;
+
+@interface Widget
++ (i32) baseValue;
+@end
+
+@implementation Widget
++ (i32) baseValue {
+  return 40;
+}
+@end
+
+@interface Widget (Alpha)
++ (i32) alphaValue;
+@end
+
+@implementation Widget (Alpha)
++ (i32) alphaValue {
+  return 2;
+}
+@end
+
+@interface Widget (Beta)
++ (i32) betaValue;
+@end
+
+@implementation Widget (Beta)
++ (i32) betaValue {
+  return [Widget alphaValue] + [Widget baseValue];
+}
+@end
+
+fn main() -> i32 {
+  return [Widget betaValue];
+}

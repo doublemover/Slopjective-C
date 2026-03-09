@@ -17119,3 +17119,23 @@ over the frozen `M256-A003`/`M256-B001` source and semantic boundaries:
   does not reinterpret legality
 - the canonical lane-B summary path is
   `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`
+
+## Category merge and conflict semantics (M256-B003)
+
+`M256-B003` makes realized-class category attachment executable in sema rather
+than leaving it as a metadata-only shape:
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- parser preserves category attachment order and identity as the source of
+  truth for deterministic merge order
+- sema builds one merged category surface per realized class
+- concrete message resolution now consults the merged category surface before
+  falling back to the base class/super chain
+- declared protocol conformance now also consults the merged category surface
+- realized-class category interfaces and implementations must pair cleanly
+- incompatible attached category members fail closed with `O3S219`
+- deterministic conflict reporting preserves prior attached-category ownership
+- IR remains downstream proof only and does not reinterpret category legality
+- the canonical lane-B summary path is
+  `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
