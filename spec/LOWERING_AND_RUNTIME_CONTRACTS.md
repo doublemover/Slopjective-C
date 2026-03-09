@@ -5632,3 +5632,15 @@ IR off the compatibility bridge and onto the canonical runtime ABI:
 - default lowering target remains the compatibility bridge until `M255-C002`
 - `super`, nil, and direct runtime-entrypoint cutover stay deferred until
   `M255-C003`
+
+## M255 runtime call ABI generation for instance and class sends (C002)
+
+`M255-C002` applies the frozen lane-C ABI to real emitted call sites:
+
+- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
+- normalized instance sends lower to `objc3_runtime_dispatch_i32`
+- normalized class sends lower to `objc3_runtime_dispatch_i32`
+- normalized super/dynamic/deferred sends stay on `objc3_msgsend_i32` until
+  `M255-C003`
+- selector operands remain lowered cstring pointers
+- the fixed four-slot `i32` argument vector is preserved unchanged

@@ -6676,3 +6676,17 @@ cutover boundary without changing code generation yet:
 - fixed argument ABI `i32[4]`
 - result ABI `i32`
 - compatibility bridge remains the default lowering target until `M255-C002`
+
+## M255 runtime call ABI metadata anchors (C002)
+
+`M255-C002` adds the emitted-call-site metadata boundary for the first live
+runtime cutover:
+
+- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
+- normalized instance/class sends now lower directly to
+  `objc3_runtime_dispatch_i32`
+- normalized super/dynamic/deferred sends remain on `objc3_msgsend_i32` until
+  `M255-C003`
+- the issue-local lane-C proof keeps selector operands as lowered cstring
+  pointers and preserves the fixed `i32[4]` ABI while verifying executable
+  happy-path behavior

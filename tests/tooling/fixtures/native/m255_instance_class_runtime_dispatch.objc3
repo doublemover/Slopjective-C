@@ -1,0 +1,23 @@
+module instanceClassRuntimeDispatch;
+
+@interface Widget
+- (i32) ping;
++ (i32) shared;
+@end
+
+@implementation Widget
+- (i32) ping {
+  return 1;
+}
+
++ (i32) shared {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  let receiver = 9;
+  let instance = [receiver ping];
+  let classValue = [Widget shared];
+  return instance + classValue;
+}

@@ -16815,3 +16815,18 @@ call cutover lands:
   `super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003`
 - default native IR still lowers through `@objc3_msgsend_i32`; this issue
   freezes the migration boundary rather than changing the executable path yet
+
+## Runtime call ABI generation for instance and class sends (M255-C002)
+
+`M255-C002` turns the frozen lane-C ABI into real code generation for the
+non-deferred happy path:
+
+- contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
+- normalized instance/class sends lower directly to
+  `@objc3_runtime_dispatch_i32`
+- deferred super/dynamic/direct handling stays on `@objc3_msgsend_i32` until
+  `M255-C003`
+- selector operands remain lowered cstring pointers and the fixed `i32[4]`
+  argument ABI remains unchanged from `M255-C001`
+- the issue-local positive probe proves both IR emission and executable
+  behavior for one instance send and one class send in the same native fixture

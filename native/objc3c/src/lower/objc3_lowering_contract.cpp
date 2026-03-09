@@ -200,6 +200,23 @@ std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boun
          ";selector_global_ordering=" + boundary.selector_global_ordering;
 }
 
+bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
+    const std::string &dispatch_surface_family) {
+  return dispatch_surface_family == kObjc3DispatchSurfaceInstanceFamily ||
+         dispatch_surface_family == kObjc3DispatchSurfaceClassFamily;
+}
+
+const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
+    const std::string &dispatch_surface_family) {
+  // M255-C002 runtime call ABI generation anchor: lowering now routes
+  // normalized instance/class sends directly to objc3_runtime_dispatch_i32
+  // while preserving the compatibility bridge for deferred super/dynamic and
+  // other non-cutover families until M255-C003.
+  return UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family)
+             ? kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol
+             : kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;
+}
+
 bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
     const Objc3RuntimeMetadataLayoutPolicyInput &input,
     Objc3RuntimeMetadataLayoutPolicy &policy, std::string &error) {

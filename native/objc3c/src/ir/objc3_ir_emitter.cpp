@@ -1659,7 +1659,9 @@ class Objc3IREmitter {
     // }
     // out << ")\n\n";
     if (runtime_dispatch_call_emitted_) {
-      out << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n\n";
+      out << "; runtime_dispatch_call_decl = "
+          << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_)
+          << "\n\n";
     }
     out << body.str();
     ir = out.str();
@@ -1686,6 +1688,7 @@ class Objc3IREmitter {
     std::string selector;
     std::string dispatch_surface_family;
     std::string dispatch_surface_entrypoint_family;
+    std::string dispatch_symbol = kObjc3RuntimeDispatchSymbol;
   };
 
   struct ControlLabels {
@@ -6872,6 +6875,9 @@ class Objc3IREmitter {
     lowered.dispatch_surface_family = expr->dispatch_surface_family_symbol;
     lowered.dispatch_surface_entrypoint_family =
         expr->dispatch_surface_entrypoint_family_symbol;
+    lowered.dispatch_symbol =
+        Objc3DispatchSurfaceRuntimeEntrypointSymbol(
+            lowered.dispatch_surface_family);
     for (std::size_t i = 0; i < expr->args.size() && i < lowered.args.size(); ++i) {
       lowered.args[i] = EmitExpr(expr->args[i].get(), ctx);
     }
@@ -6915,8 +6921,11 @@ class Objc3IREmitter {
       // frozen lane-C ABI records the canonical runtime entrypoint,
       // selector-lookup surface, i32 receiver/result ABI, and fixed four-slot
       // argument vector that M255-C002 will cut over to explicitly.
+      // M255-C002 runtime call ABI generation anchor: normalized instance/class
+      // sends now call objc3_runtime_dispatch_i32 directly, while deferred
+      // super/dynamic sites preserve objc3_msgsend_i32 until M255-C003.
       std::ostringstream call;
-      call << "  " << dispatch_value << " = call i32 @" << lowering_ir_boundary_.runtime_dispatch_symbol << "(i32 "
+      call << "  " << dispatch_value << " = call i32 @" << lowered.dispatch_symbol << "(i32 "
            << lowered.receiver << ", ptr " << selector_ptr;
       for (const std::string &arg : lowered.args) {
         call << ", i32 " << arg;
@@ -7542,18 +7551,60 @@ class Objc3IREmitter {
 
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
     bool emitted = false;
+    std::unordered_set<std::string> declared_symbols;
+    const auto emit_declaration_once =
+        [&](const std::string &symbol, const std::string &declaration) {
+          if (symbol.empty() || !declared_symbols.insert(symbol).second) {
+            return false;
+          }
+          out << declaration;
+          emitted = true;
+          return true;
+        };
     if (ShouldEmitRuntimeBootstrapLowering()) {
-      out << "declare void @" << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
-          << "(ptr)\n";
-      out << "declare i32 @"
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_entrypoint_symbol
-          << "(ptr)\n";
-      out << "declare void @abort()\n";
-      emitted = true;
+      emit_declaration_once(
+          kObjc3RuntimeBootstrapStageRegistrationTableSymbol,
+          "declare void @" +
+              std::string(kObjc3RuntimeBootstrapStageRegistrationTableSymbol) +
+              "(ptr)\n");
+      emit_declaration_once(
+          frontend_metadata_
+              .runtime_bootstrap_lowering_registration_entrypoint_symbol,
+          "declare i32 @" +
+              frontend_metadata_
+                  .runtime_bootstrap_lowering_registration_entrypoint_symbol +
+              "(ptr)\n");
+      emit_declaration_once("abort", "declare void @abort()\n");
+    }
+    if (!selector_pool_globals_.empty()) {
+      const auto emit_runtime_dispatch_declaration =
+          [&](const std::string &symbol) {
+            if (symbol.empty() ||
+                !declared_symbols.insert(symbol).second) {
+              return false;
+            }
+            out << "declare i32 @" << symbol << "(i32, ptr";
+            for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots;
+                 ++i) {
+              out << ", i32";
+            }
+            out << ")\n";
+            emitted = true;
+            return true;
+          };
+      emit_runtime_dispatch_declaration(
+          kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
+      if (std::string(kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol) !=
+          std::string(kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol)) {
+        emit_runtime_dispatch_declaration(
+            kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol);
+      }
     }
     for (const auto &entry : function_signatures_) {
       if (defined_functions_.find(entry.first) != defined_functions_.end()) {
+        continue;
+      }
+      if (!declared_symbols.insert(entry.first).second) {
         continue;
       }
       const LoweredFunctionSignature &signature = entry.second;

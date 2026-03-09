@@ -10194,6 +10194,11 @@ class Objc3Parser {
     // lookup and canonical runtime-dispatch cutover stay in lane-C lowering,
     // with the compatibility bridge remaining the default call target until
     // M255-C002.
+    // M255-C002 runtime call ABI generation anchor: parser still does not pick
+    // the runtime entrypoint itself. Lowering now cuts normalized instance and
+    // class sends over to objc3_runtime_dispatch_i32 while deferred
+    // super/dynamic/direct handling stays on the compatibility bridge until
+    // M255-C003.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(

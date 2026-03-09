@@ -91,6 +91,18 @@ inline constexpr const char
         "compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
     "super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003";
+// M255-C002 runtime call ABI generation anchor: lane-C now cuts instance/class
+// sends over to the canonical runtime entrypoint while preserving the
+// compatibility bridge for deferred super/dynamic/direct surfaces until
+// M255-C003.
+inline constexpr const char *kObjc3RuntimeDispatchCallAbiGenerationContractId =
+    "objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1";
+inline constexpr const char
+    *kObjc3RuntimeDispatchCallAbiGenerationActiveLoweringModel =
+        "instance-and-class-sends-lower-directly-to-canonical-runtime-entrypoint";
+inline constexpr const char
+    *kObjc3RuntimeDispatchCallAbiGenerationDeferredLoweringModel =
+        "super-dynamic-and-deferred-sends-stay-on-compatibility-bridge-until-m255-c003";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
@@ -1082,6 +1094,10 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
                                      Objc3LoweringIRBoundary &boundary,
                                      std::string &error);
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary);
+bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
+    const std::string &dispatch_surface_family);
+const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
+    const std::string &dispatch_surface_family);
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary);
 bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
     const Objc3RuntimeMetadataLayoutPolicyInput &input,

@@ -35,11 +35,15 @@ M255-B003 super/direct/dynamic legality expansion: admitted super and dynamic
 sites still reach this runtime compatibility entrypoint with preserved
 method-family accounting, while illegal `super` sites fail closed before the
 shim and direct dispatch remains reserved/non-goal.
-M255-C001 dispatch lowering ABI freeze: `objc3_msgsend_i32` remains the
-default lowering target only as a compatibility bridge while lane-C freezes
+M255-C001 dispatch lowering ABI freeze: `objc3_msgsend_i32` remained the
+default lowering target only as a compatibility bridge while lane-C froze
 `objc3_runtime_dispatch_i32`, `objc3_runtime_lookup_selector`,
 `objc3_runtime_selector_handle`, and the fixed `i32[4]` argument ABI for the
 later live-runtime cutover.
+M255-C002 runtime call ABI generation: normalized instance/class sends now
+lower directly to `objc3_runtime_dispatch_i32`; this shim remains the
+compatibility surface for deferred super/dynamic sites and explicit negative
+coverage.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;
