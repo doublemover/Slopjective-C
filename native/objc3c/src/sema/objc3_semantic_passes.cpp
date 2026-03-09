@@ -9507,6 +9507,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
       interface_implementation_summary.linked_implementation_symbols <=
           interface_implementation_summary.interface_method_symbols;
   surface.interface_implementation_summary = interface_implementation_summary;
+  // M256-A001 executable source-closure freeze anchor: lane-A freezes one
+  // deterministic source closure over interface/implementation summaries plus
+  // protocol/category composition and class/protocol/category linking before
+  // later M256 realization, conformance, and category-merge issues make this
+  // surface executable at runtime.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

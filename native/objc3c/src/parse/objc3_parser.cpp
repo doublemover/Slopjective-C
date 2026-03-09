@@ -7471,6 +7471,11 @@ class Objc3Parser {
     // lexicographic adopted-protocol list remain the parser-owned inputs for
     // graph-backed inheritance and protocol-composition validation.
     decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
+    // M256-A001 executable source-closure freeze anchor: parser-owned
+    // interface records remain the canonical source surface for inheritance,
+    // metaclass derivation, adopted protocol lists, and category attachments
+    // until later M256 realization issues bind the same identities to runnable
+    // class/protocol/category behavior.
     // M252-B003 diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.
@@ -7565,6 +7570,10 @@ class Objc3Parser {
     if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
       SynchronizeObjcContainer();
     }
+    // M256-A001 executable source-closure freeze anchor: implementation and
+    // category source records keep the canonical interface/category attachment
+    // identity for later realization and category-merge work; this freeze does
+    // not yet add executable runtime realization semantics here.
     // M252-B003 diagnostic precision anchor: category implementation owners
     // mirror the canonical class(category) identity to keep attachment
     // collision diagnostics deterministic across parse and pipeline stages.

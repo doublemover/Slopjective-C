@@ -1961,6 +1961,11 @@ class Objc3IREmitter {
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
+    // M256-A001 executable source-closure freeze anchor: IR currently
+    // publishes interface/protocol/category/linking metadata as the canonical
+    // source-closure proof surface only. Later M256 realization issues must
+    // preserve these identities while adding runnable class/category/protocol
+    // behavior.
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";

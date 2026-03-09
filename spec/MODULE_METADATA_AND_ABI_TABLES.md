@@ -6809,3 +6809,25 @@ smoke/replay closeout surface:
   `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
 - canonical issue closeout summary path
   `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`
+
+## M256 executable class/protocol/category source-closure metadata anchors (A001)
+
+`M256-A001` freezes the metadata/evidence anchors for the runnable
+class/protocol/category source surface before realization:
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- canonical parser-owned source anchors remain:
+  - superclass names
+  - adopted protocol lists in lexicographic semantic-link order
+  - canonical interface/implementation/category owner identities
+- canonical semantic closure summaries remain:
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- canonical IR metadata anchors remain:
+  - `!objc3.objc_interface_implementation`
+  - `!objc3.objc_protocol_category`
+  - `!objc3.objc_class_protocol_category_linking`
+- canonical lane-A summary path
+  `tmp/reports/m256/M256-A001/executable_class_protocol_category_source_closure_contract_summary.json`

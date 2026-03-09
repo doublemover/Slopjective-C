@@ -5776,3 +5776,33 @@ replay proof authoritative:
   `objc3_runtime_dispatch_i32`
 - `objc3_msgsend_i32` remains compatibility/test evidence only and is not an
   acceptable substitute for live smoke/replay proof
+
+## M256 executable class/protocol/category source closure (A001)
+
+`M256-A001` freezes the parser/sema/IR source-closure boundary that later
+realization work must preserve:
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- parser-owned interface/implementation/category identities remain canonical
+  for:
+  - superclass inheritance input
+  - metaclass derivation input
+  - adopted protocol composition ordering
+  - category attachment ownership
+- sema must preserve one deterministic closure over:
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- IR must continue to publish
+  `!objc3.objc_interface_implementation`,
+  `!objc3.objc_protocol_category`, and
+  `!objc3.objc_class_protocol_category_linking`
+  as the canonical proof surface for this frozen source boundary
+- this issue is freeze/evidence only and therefore does not claim:
+  - runtime class realization
+  - category merge semantics
+  - protocol conformance runtime enforcement
+  - instance storage/layout behavior
+  - executable method binding
+- the next implementation issue is `M256-A002`

@@ -8741,3 +8741,25 @@ for the live runtime path:
 - message-send fixtures and runtime-dispatch unresolved-symbol negatives now
   assert the canonical live runtime symbol rather than the compatibility shim
 - the compatibility shim remains explicit non-authoritative evidence only
+
+## M256 executable class/protocol/category source closure (A001)
+
+`M256-A001` freezes the first runnable object-model source boundary:
+
+- parser remains the canonical owner of inheritance, category attachment, and
+  adopted protocol source records
+- sema remains the canonical owner of deterministic
+  interface/implementation/protocol/category closure summaries
+- IR remains the canonical proof surface for publishing those source-closure
+  summaries, but not yet for runnable class realization behavior
+- later `M256` implementation issues must preserve these identities while
+  adding:
+  - class/metaclass realization
+  - category merge behavior
+  - protocol conformance checks
+  - executable method binding
+- architecture/spec/checker anchors for this freeze are:
+  - `docs/contracts/m256_executable_class_protocol_category_source_closure_contract_and_architecture_freeze_a001_expectations.md`
+  - `spec/planning/compiler/m256/m256_a001_executable_class_protocol_category_source_closure_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m256-a001-executable-class-protocol-category-source-closure-contract`
+  - `check:objc3c:m256-a001-lane-a-readiness`

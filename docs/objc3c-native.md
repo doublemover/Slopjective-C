@@ -16980,3 +16980,32 @@ assumptions with canonical live runtime dispatch evidence:
   negatives now assert `objc3_runtime_dispatch_i32`
 - the canonical lane-E closeout summary path is
   `tmp/reports/m255/M255-E002/live_dispatch_smoke_replay_closeout_summary.json`
+
+## Executable class/protocol/category source closure (M256-A001)
+
+`M256-A001` freezes the source-surface subset that later `M256` work will make
+truly runnable:
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- parser-owned interface records remain the canonical source surface for:
+  - inheritance via explicit superclass names
+  - metaclass derivation from resolved interface identities
+  - adopted protocol lists in lexicographic semantic-link order
+  - category attachments through canonical `class(category)` identities
+- sema remains authoritative for the deterministic closure summaries:
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- IR remains authoritative only for publishing the same class/protocol/category
+  source-closure metadata surface; runnable realization records and live object
+  behavior remain later `M256` issues
+- explicit non-goals for this freeze:
+  - runtime class realization
+  - category merge behavior
+  - protocol conformance enforcement
+  - executable object allocation or instance layout
+  - method-body binding to runnable class metadata
+- the next implementation issue is `M256-A002`
+- the canonical lane-A summary path is
+  `tmp/reports/m256/M256-A001/executable_class_protocol_category_source_closure_contract_summary.json`
