@@ -30,6 +30,9 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Install Python test dependencies
+        run: python -m pip install --upgrade pytest
+
       - name: Build native objc3c artifacts
         run: npm run build:objc3c-native
 
