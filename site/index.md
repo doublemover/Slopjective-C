@@ -6696,6 +6696,98 @@ frontend:
   - no new descriptor payload families
   - no bootstrap/runtime-registration rebinding
   - no protocol executable-realization path
+## M263 registration descriptor and image-root source surface (A001)
+
+`M263-A001` freezes the frontend-visible naming surface that closes the
+remaining bootstrap source-model gap above the already-emitted `M254`
+registration manifest.
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- canonical frontend prelude contract path
+  `frontend.bootstrap_registration_source_pragma_contract`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_image_root_source_surface`
+- canonical file-scope prelude pragmas:
+  - `objc_registration_descriptor`
+  - `objc_image_root`
+- canonical identity-source vocabulary:
+  - `module-declaration-or-default`
+  - `source-pragma`
+  - `module-derived-default`
+- canonical ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state`
+
+Non-goals:
+
+- no bootstrap-table lowering yet
+- no multi-image root emission yet
+- no runtime replay/discovery execution yet
+
+`M263-A002` must preserve this contract while broadening frontend closure and
+registration-manifest consumption.
+
+## M263 registration manifest and descriptor frontend closure (A002)
+
+`M263-A002` turns the frozen `M263-A001` source packet into one emitted
+frontend-owned descriptor artifact that is derived from the already-emitted
+`M254` registration manifest.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_frontend_closure`
+- emitted artifact
+  `module.runtime-registration-descriptor.json`
+- payload model
+  `runtime-registration-descriptor-json-v1`
+- authority model
+  `registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest`
+- payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`
+
+Non-goals:
+
+- no bootstrap-table lowering yet
+- no multi-image replay behavior yet
+- no runtime bootstrap execution yet
+
+## M263 bootstrap legality, duplicate policy, and failure contract (B001)
+
+`M263-B001` freezes the semantic legality packet that sits above the emitted
+`M263-A002` descriptor closure and above the live `M254-B002` bootstrap
+semantics surface.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- frozen legality policies:
+  - duplicate registration
+    `fail-closed-by-translation-unit-identity-key`
+  - image order invariant
+    `strictly-monotonic-positive-registration-order-ordinal`
+  - failure mode
+    `abort-before-user-main-no-partial-registration-commit`
+  - restart lifecycle
+    `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+  - replay order
+    `replay-re-registers-retained-images-in-original-registration-order`
+  - image-local init reset
+    `retained-bootstrap-image-local-init-cells-reset-to-zero-before-replay`
+  - catalog retention
+    `bootstrap-catalog-retained-across-reset-for-deterministic-replay`
+- identifier and ordinal continuity flows through from `M263-A002`; later
+  runtime work must not rebuild bootstrap identity/order from scratch.
+
+Non-goals:
+
+- no multi-image bootstrap execution yet
+- no runtime replay implementation yet
+- no API widening beyond the already-frozen bootstrap/runtime contracts
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -13700,6 +13792,92 @@ artifact-binding boundary across the already-emitted executable object surface:
     `selector-owner-return-arity-implementation-symbol-has-body`
 - canonical lane-C summary path
   `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`
+## M263 registration descriptor and image-root metadata anchors (A001)
+
+`M263-A001` publishes the residual bootstrap source surface at
+`frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_image_root_source_surface`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- frontend prelude contract path
+  `frontend.bootstrap_registration_source_pragma_contract`
+- pragma names:
+  - `objc_registration_descriptor`
+  - `objc_image_root`
+- identity-source vocabulary:
+  - `module-declaration-or-default`
+  - `source-pragma`
+  - `module-derived-default`
+- ownership model
+  `image-root-owns-registration-descriptor-runtime-owns-bootstrap-state`
+- emitted registration-manifest carry-through:
+  - `registration_descriptor_source_contract_id`
+  - `registration_descriptor_source_surface_path`
+  - `registration_descriptor_pragma_name`
+  - `image_root_pragma_name`
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - identity-source classification
+
+This freeze does not lower bootstrap descriptors or execute runtime replay yet.
+
+## M263 registration descriptor frontend artifact metadata anchors (A002)
+
+`M263-A002` publishes the emitted frontend descriptor artifact at
+`module.runtime-registration-descriptor.json` and binds it to
+`frontend.pipeline.semantic_surface.objc_runtime_registration_descriptor_frontend_closure`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- payload model
+  `runtime-registration-descriptor-json-v1`
+- authority model
+  `registration-descriptor-artifact-derived-from-source-surface-and-registration-manifest`
+- payload ownership model
+  `compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity`
+- emitted descriptor fields include:
+  - `registration_descriptor_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identifier`
+  - `image_root_identity_source`
+  - `constructor_root_symbol`
+  - `constructor_init_stub_symbol`
+  - `bootstrap_registration_table_symbol`
+  - `bootstrap_image_local_init_state_symbol`
+
+## M263 bootstrap legality metadata anchors (B001)
+
+`M263-B001` publishes the fail-closed bootstrap legality packet at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`.
+
+Frozen metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- legality model:
+  - `duplicate_registration_policy`
+  - `image_registration_order_invariant`
+  - `failure_mode`
+  - `restart_lifecycle_model`
+  - `replay_order_model`
+  - `image_local_init_reset_model`
+  - `catalog_retention_model`
+  - `runtime_state_snapshot_symbol`
+- continuity fields:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identity_source`
+  - `translation_unit_registration_order_ordinal`
+
+This freeze does not yet land multi-image bootstrap execution or replay.
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---
