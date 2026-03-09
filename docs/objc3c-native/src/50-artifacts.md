@@ -28,6 +28,99 @@ Exit codes:
 - `2`: CLI usage / missing input / invalid arg / missing explicit clang path
 - `3`: clang compile step failed
 
+## Registration descriptor and image-root source surface (M263-A001)
+
+`M263-A001` freezes the source-surface contract for bootstrap identity
+directives before artifact emission or lowering consumes them.
+
+- contract id
+  `objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1`
+- source directives:
+  - `objc_registration_descriptor`
+  - `objc_image_root`
+- ownership model:
+  - image root owns registration descriptor and runtime owns bootstrap state
+
+## Registration manifest and descriptor frontend closure (M263-A002)
+
+`M263-A002` lifts the `M263-A001` source surface into one canonical frontend
+artifact handoff.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- emitted artifact:
+  - `module.runtime-registration-descriptor.json`
+- handoff guarantee:
+  - registration-descriptor identity, image-root identity, and manifest linkage
+    are captured before lowering
+
+## Bootstrap legality, duplicate policy, and failure contract (M263-B001)
+
+`M263-B001` freezes the legality surface that governs duplicate registration,
+image ordering, and fail-closed startup behavior.
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`
+- restart lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+
+## Duplicate-registration and image-order semantics (M263-B002)
+
+`M263-B002` makes the bootstrap legality policy concrete for repeated images
+and replay order.
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`
+- identity key:
+  - `translation_unit_identity_key`
+
+## Bootstrap failure-mode and restart semantics (M263-B003)
+
+`M263-B003` closes the bootstrap replay edge cases around retained catalogs and
+reset behavior.
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- runtime invariant:
+  - replay without reset fails closed
+
+## Constructor-root and init-array lowering contract (M263-C001)
+
+`M263-C001` freezes the lowering boundary that materializes bootstrap startup
+artifacts ahead of user code.
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- lowering input artifact:
+  - `module.runtime-registration-descriptor.json`
+
+## Registration-descriptor lowering and multi-image root emission (M263-C002)
+
+`M263-C002` extends the frozen `M263-C001` startup path with first-class
+registration-descriptor and image-root globals emitted directly into native
+object artifacts.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- lowering model
+  `frontend-identifiers-drive-emitted-registration-descriptor-and-image-root-globals`
+- emitted runtime sections:
+  - `objc3.runtime.registration_descriptor`
+  - `objc3.runtime.image_root`
+- emitted symbol families:
+  - `__objc3_runtime_registration_descriptor_`
+  - `__objc3_runtime_image_root_`
+- identifier proof cases:
+  - `AutoBootstrap_registration_descriptor`
+  - `AutoBootstrap_image_root`
+  - `DemoRegistrationDescriptor`
+  - `DemoImageRoot`
+- emitted payload guarantees:
+  - image-root payload points at module-name/image-descriptor/registration-table/discovery-root
+  - registration-descriptor payload points at image-root/image-descriptor/registration-table/linker-anchor/image-local-init-state
+  - the init stub still stages the registration table and then calls
+    `objc3_runtime_register_image`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:

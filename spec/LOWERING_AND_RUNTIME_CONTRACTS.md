@@ -6129,3 +6129,27 @@ registration manifest.
 - non-goals:
   - no multi-image root fanout yet
   - no replay partitioning/late linker synthesis yet
+
+## M263 registration-descriptor lowering and multi-image root emission (C002)
+
+`M263-C002` materializes the `M263-A002` descriptor/image-root identities as
+real lowering artifacts in the native IR/object path while preserving the
+frozen `M263-C001` constructor-root/registration-table ABI.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- lowering model
+  `frontend-identifiers-drive-emitted-registration-descriptor-and-image-root-globals`
+- canonical logical sections:
+  - `objc3.runtime.registration_descriptor`
+  - `objc3.runtime.image_root`
+- canonical symbol prefixes:
+  - `__objc3_runtime_registration_descriptor_`
+  - `__objc3_runtime_image_root_`
+- payload models:
+  - `registration-descriptor-record-points-at-image-root-image-descriptor-registration-table-linker-anchor-and-init-state`
+  - `image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root`
+- emitted proof minimums:
+  - one `runtime_registration_descriptor_image_root_lowering` line in `module.ll`
+  - one retained image-root global in `objc3.runtime.image_root`
+  - one retained registration-descriptor global in `objc3.runtime.registration_descriptor`

@@ -674,6 +674,33 @@ std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary() {
+  std::ostringstream out;
+  // M263-C002 registration-descriptor/image-root lowering anchor: this
+  // summary freezes the first live binary lowering surface for the source
+  // identifiers from M263-A002. The IR/object path now materializes dedicated
+  // registration-descriptor and image-root globals in their own sections
+  // rather than treating those identifiers as sidecar-only metadata.
+  out << "contract="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId
+      << ";lowering_model="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringModel
+      << ";registration_descriptor_logical_section="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection
+      << ";image_root_logical_section="
+      << kObjc3RuntimeBootstrapImageRootLogicalSection
+      << ";registration_descriptor_symbol_prefix="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorSymbolPrefix
+      << ";image_root_symbol_prefix="
+      << kObjc3RuntimeBootstrapImageRootSymbolPrefix
+      << ";registration_descriptor_payload_model="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorPayloadModel
+      << ";image_root_payload_model="
+      << kObjc3RuntimeBootstrapImageRootPayloadModel
+      << ";non_goals=no-cross-translation-unit-root-deduplication-or-runtime-fanout-merge";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataEmissionGateSummary() {
   std::ostringstream out;
   // M253-E001 metadata-emission gate anchor: lane-E freezes one fail-closed

@@ -12013,6 +12013,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       .runtime_bootstrap_lowering_image_local_initialization_landed =
       bundle.runtime_bootstrap_lowering_summary
           .image_local_initialization_landed;
+  ir_frontend_metadata
+      .runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id =
+      kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId;
+  ir_frontend_metadata.runtime_bootstrap_registration_descriptor_identifier =
+      bundle.runtime_registration_descriptor_frontend_closure_summary
+          .registration_descriptor_identifier;
+  ir_frontend_metadata.runtime_bootstrap_image_root_identifier =
+      bundle.runtime_registration_descriptor_frontend_closure_summary
+          .image_root_identifier;
   ir_frontend_metadata.runtime_bootstrap_lowering_ready =
       bundle.runtime_bootstrap_lowering_summary
           .ready_for_bootstrap_materialization;

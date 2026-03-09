@@ -505,6 +505,32 @@ inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix
     "__objc3_runtime_registration_table_";
 inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitStateSymbolPrefix =
     "__objc3_runtime_image_local_init_state_";
+// M263-C002 registration-descriptor/image-root lowering anchor: lane-C now
+// materializes the registration-descriptor and image-root identities as real
+// emitted globals in dedicated object sections so later multi-image runtime
+// bootstrap can consume binary artifacts instead of only sidecar manifests.
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId =
+        "objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringModel =
+        "frontend-identifiers-drive-emitted-registration-descriptor-and-image-root-globals";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection =
+        "objc3.runtime.registration_descriptor";
+inline constexpr const char *kObjc3RuntimeBootstrapImageRootLogicalSection =
+    "objc3.runtime.image_root";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorSymbolPrefix =
+        "__objc3_runtime_registration_descriptor_";
+inline constexpr const char *kObjc3RuntimeBootstrapImageRootSymbolPrefix =
+    "__objc3_runtime_image_root_";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationDescriptorPayloadModel =
+        "registration-descriptor-record-points-at-image-root-image-descriptor-registration-table-linker-anchor-and-init-state";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapImageRootPayloadModel =
+        "image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableLayoutModel =
     "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state";
 inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitializationModel =
@@ -1294,6 +1320,7 @@ std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeBootstrapLoweringBoundarySummary();
+std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(

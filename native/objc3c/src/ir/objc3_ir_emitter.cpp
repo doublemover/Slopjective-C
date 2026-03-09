@@ -1916,6 +1916,16 @@ class Objc3IREmitter {
                 .empty();
   }
 
+  bool ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering() const {
+    return ShouldEmitRuntimeBootstrapLowering() &&
+           !frontend_metadata_
+                .runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id
+                .empty() &&
+           !frontend_metadata_
+                .runtime_bootstrap_registration_descriptor_identifier.empty() &&
+           !frontend_metadata_.runtime_bootstrap_image_root_identifier.empty();
+  }
+
   std::string RuntimeBootstrapSafeSuffix() const {
     return MakeIdentifierSafeSuffix(
         frontend_metadata_
@@ -1933,6 +1943,36 @@ class Objc3IREmitter {
 
   std::string RuntimeBootstrapImageDescriptorSymbol() const {
     return "__objc3_runtime_image_descriptor_" + RuntimeBootstrapSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix() const {
+    return MakeIdentifierSafeSuffix(
+        frontend_metadata_.runtime_bootstrap_registration_descriptor_identifier);
+  }
+
+  std::string RuntimeBootstrapImageRootIdentifierSafeSuffix() const {
+    return MakeIdentifierSafeSuffix(
+        frontend_metadata_.runtime_bootstrap_image_root_identifier);
+  }
+
+  std::string RuntimeBootstrapRegistrationDescriptorNameGlobalSymbol() const {
+    return ".objc3_runtime_registration_descriptor_name_" +
+           RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapImageRootNameGlobalSymbol() const {
+    return ".objc3_runtime_image_root_name_" +
+           RuntimeBootstrapImageRootIdentifierSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapRegistrationDescriptorSymbol() const {
+    return std::string(kObjc3RuntimeBootstrapRegistrationDescriptorSymbolPrefix) +
+           RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix();
+  }
+
+  std::string RuntimeBootstrapImageRootSymbol() const {
+    return std::string(kObjc3RuntimeBootstrapImageRootSymbolPrefix) +
+           RuntimeBootstrapImageRootIdentifierSafeSuffix();
   }
 
   std::string RuntimeBootstrapInitStubSymbol() const {
@@ -5070,6 +5110,22 @@ class Objc3IREmitter {
           << ";realization_staging_model="
           << kObjc3RuntimeBootstrapRealizationStagingModel << "\n";
     }
+    if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
+      // M263-C002 registration-descriptor/image-root lowering anchor: the IR
+      // boundary now advertises the concrete identifier-driven globals and
+      // sections that the native bootstrap path materializes.
+      out << "; runtime_registration_descriptor_image_root_lowering = "
+          << Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary()
+          << ";registration_descriptor_identifier="
+          << frontend_metadata_
+                 .runtime_bootstrap_registration_descriptor_identifier
+          << ";image_root_identifier="
+          << frontend_metadata_.runtime_bootstrap_image_root_identifier
+          << ";registration_descriptor_symbol="
+          << RuntimeBootstrapRegistrationDescriptorSymbol()
+          << ";image_root_symbol=" << RuntimeBootstrapImageRootSymbol()
+          << "\n";
+    }
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
         frontend_metadata_.runtime_metadata_class_metaclass_emission_fail_closed &&
@@ -6478,6 +6534,22 @@ class Objc3IREmitter {
           "@" + RuntimeBootstrapTranslationUnitIdentityGlobalSymbol();
       const std::string image_descriptor_symbol =
           "@" + RuntimeBootstrapImageDescriptorSymbol();
+      const std::string registration_descriptor_name_symbol =
+          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
+              ? "@" + RuntimeBootstrapRegistrationDescriptorNameGlobalSymbol()
+              : std::string();
+      const std::string image_root_name_symbol =
+          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
+              ? "@" + RuntimeBootstrapImageRootNameGlobalSymbol()
+              : std::string();
+      const std::string registration_descriptor_symbol =
+          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
+              ? "@" + RuntimeBootstrapRegistrationDescriptorSymbol()
+              : std::string();
+      const std::string image_root_symbol =
+          ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()
+              ? "@" + RuntimeBootstrapImageRootSymbol()
+              : std::string();
       const std::string registration_table_symbol =
           "@" + RuntimeBootstrapRegistrationTableSymbol();
       const std::string image_local_init_state_symbol =
@@ -6504,6 +6576,10 @@ class Objc3IREmitter {
       const std::string &translation_unit_identity_key =
           frontend_metadata_
               .runtime_metadata_archive_static_link_translation_unit_identity_key;
+      const std::string &registration_descriptor_identifier =
+          frontend_metadata_.runtime_bootstrap_registration_descriptor_identifier;
+      const std::string &image_root_identifier =
+          frontend_metadata_.runtime_bootstrap_image_root_identifier;
       out << module_name_symbol << " = private unnamed_addr constant ["
           << (module_name.size() + 1u) << " x i8] c\""
           << EscapeCStringLiteral(module_name) << "\\00\", align 1\n";
@@ -6512,6 +6588,18 @@ class Objc3IREmitter {
           << (translation_unit_identity_key.size() + 1u) << " x i8] c\""
           << EscapeCStringLiteral(translation_unit_identity_key)
           << "\\00\", align 1\n";
+      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
+        out << registration_descriptor_name_symbol
+            << " = private unnamed_addr constant ["
+            << (registration_descriptor_identifier.size() + 1u)
+            << " x i8] c\""
+            << EscapeCStringLiteral(registration_descriptor_identifier)
+            << "\\00\", align 1\n";
+        out << image_root_name_symbol << " = private unnamed_addr constant ["
+            << (image_root_identifier.size() + 1u) << " x i8] c\""
+            << EscapeCStringLiteral(image_root_identifier)
+            << "\\00\", align 1\n";
+      }
       out << image_descriptor_symbol << " = internal constant "
           << RuntimeBootstrapImageDescriptorType()
           << " { ptr getelementptr inbounds (["
@@ -6554,6 +6642,34 @@ class Objc3IREmitter {
           << ivar_section_root_symbol << ", ptr " << selector_pool_symbol
           << ", ptr " << string_pool_symbol << ", ptr "
           << image_local_init_state_symbol << " }, align 8\n";
+      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
+        // M263-C002 emits first-class image-root/registration-descriptor
+        // globals into dedicated sections, keyed by the authoritative source
+        // identifiers from the frontend closure rather than sidecar-only JSON.
+        out << image_root_symbol << " = internal constant { ptr, ptr, ptr, ptr, ptr }"
+            << " { ptr getelementptr inbounds (["
+            << (image_root_identifier.size() + 1u) << " x i8], ptr "
+            << image_root_name_symbol << ", i32 0, i32 0), ptr getelementptr inbounds (["
+            << (module_name.size() + 1u) << " x i8], ptr " << module_name_symbol
+            << ", i32 0, i32 0), ptr " << image_descriptor_symbol
+            << ", ptr " << registration_table_symbol << ", ptr "
+            << discovery_root_symbol << " }, section \""
+            << Objc3RuntimeMetadataHostSectionForLogicalName(
+                   kObjc3RuntimeBootstrapImageRootLogicalSection)
+            << "\", align 8\n";
+        out << registration_descriptor_symbol
+            << " = internal constant { ptr, ptr, ptr, ptr, ptr, ptr }"
+            << " { ptr getelementptr inbounds (["
+            << (registration_descriptor_identifier.size() + 1u)
+            << " x i8], ptr " << registration_descriptor_name_symbol
+            << ", i32 0, i32 0), ptr " << image_root_symbol << ", ptr "
+            << image_descriptor_symbol << ", ptr " << registration_table_symbol
+            << ", ptr " << linker_anchor_symbol << ", ptr "
+            << image_local_init_state_symbol << " }, section \""
+            << Objc3RuntimeMetadataHostSectionForLogicalName(
+                   kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection)
+            << "\", align 8\n";
+      }
       out << "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
              "[{ i32, ptr, ptr } { i32 65535, ptr "
           << constructor_root_symbol << ", ptr " << registration_table_symbol
@@ -6561,6 +6677,10 @@ class Objc3IREmitter {
       emit_retained(image_descriptor_symbol);
       emit_retained(registration_table_symbol);
       emit_retained(image_local_init_state_symbol);
+      if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
+        emit_retained(image_root_symbol);
+        emit_retained(registration_descriptor_symbol);
+      }
     }
 
     out << "@llvm.used = appending global [" << retained_globals.size()

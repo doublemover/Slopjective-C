@@ -9028,3 +9028,27 @@ bootstrap artifacts directly into the native object path:
   - `spec/planning/compiler/m263/m263_c001_constructor_root_and_init_array_lowering_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m263-c001-constructor-root-and-init-array-lowering-contract`
   - `check:objc3c:m263-c001-lane-c-readiness`
+
+## M263 registration-descriptor lowering and multi-image root emission (C002)
+
+`M263-C002` lands the first live emitted bridge from the `M263-A002`
+descriptor/image-root identifiers into native bootstrap artifacts:
+
+- IR now emits one retained image-root global in `objc3.runtime.image_root`
+  and one retained registration-descriptor global in
+  `objc3.runtime.registration_descriptor`
+- the emitted image-root and registration-descriptor symbol families are
+  anchored by:
+  - `__objc3_runtime_image_root_`
+  - `__objc3_runtime_registration_descriptor_`
+- payloads are wired to the already-live bootstrap artifacts instead of
+  sidecar-only JSON:
+  - image root references module name, image descriptor, registration table,
+    and discovery root
+  - registration descriptor references image root, image descriptor,
+    registration table, linker anchor, and image-local init state
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_registration_descriptor_lowering_and_multi_image_root_emission_core_feature_implementation_c002_expectations.md`
+  - `spec/planning/compiler/m263/m263_c002_registration_descriptor_lowering_and_multi_image_root_emission_core_feature_implementation_packet.md`
+  - `check:objc3c:m263-c002-registration-descriptor-and-image-root-lowering`
+  - `check:objc3c:m263-c002-lane-c-readiness`

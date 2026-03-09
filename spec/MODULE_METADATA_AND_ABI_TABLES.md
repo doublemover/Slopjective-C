@@ -7176,3 +7176,27 @@ Metadata/runtime anchors:
   - `module.runtime-registration-descriptor.json`
   - `module.ll`
   - `module.obj`
+
+## M263 registration-descriptor and image-root emitted metadata anchors (C002)
+
+`M263-C002` extends the bootstrap metadata surface with live emitted
+registration-descriptor and image-root records.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- emitted logical sections:
+  - `objc3.runtime.registration_descriptor`
+  - `objc3.runtime.image_root`
+- emitted symbol families:
+  - `__objc3_runtime_registration_descriptor_`
+  - `__objc3_runtime_image_root_`
+- identifier continuity:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+- emitted payload linkage:
+  - registration descriptor points at image root, image descriptor,
+    registration table, linker anchor, and image-local init state
+  - image root points at module name, image descriptor, registration table,
+    and discovery root
