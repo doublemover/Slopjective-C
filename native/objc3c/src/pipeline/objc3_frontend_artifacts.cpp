@@ -121,6 +121,14 @@ std::string BuildExecutableMetadataSourceGraphJson(
       << EscapeJsonString(graph.class_metaclass_method_owner_identity_model)
       << "\",\"class_metaclass_object_identity_model\":\""
       << EscapeJsonString(graph.class_metaclass_object_identity_model)
+      << "\",\"protocol_category_source_closure_contract_id\":\""
+      << EscapeJsonString(graph.protocol_category_source_closure_contract_id)
+      << "\",\"protocol_inheritance_identity_model\":\""
+      << EscapeJsonString(graph.protocol_inheritance_identity_model)
+      << "\",\"category_attachment_identity_model\":\""
+      << EscapeJsonString(graph.category_attachment_identity_model)
+      << "\",\"protocol_category_conformance_identity_model\":\""
+      << EscapeJsonString(graph.protocol_category_conformance_identity_model)
       << "\",\"interface_nodes\":"
       << graph.interface_nodes_lexicographic.size()
       << ",\"implementation_nodes\":"
@@ -144,6 +152,18 @@ std::string BuildExecutableMetadataSourceGraphJson(
       << ",\"class_metaclass_object_identity_closure_complete\":"
       << (graph.class_metaclass_object_identity_closure_complete ? "true"
                                                                  : "false")
+      << ",\"protocol_category_declaration_closure_complete\":"
+      << (graph.protocol_category_declaration_closure_complete ? "true"
+                                                               : "false")
+      << ",\"protocol_inheritance_identity_closure_complete\":"
+      << (graph.protocol_inheritance_identity_closure_complete ? "true"
+                                                               : "false")
+      << ",\"category_attachment_identity_closure_complete\":"
+      << (graph.category_attachment_identity_closure_complete ? "true"
+                                                              : "false")
+      << ",\"protocol_category_conformance_identity_closure_complete\":"
+      << (graph.protocol_category_conformance_identity_closure_complete ? "true"
+                                                                        : "false")
       << ",\"interface_node_entries\":[";
   for (std::size_t i = 0; i < graph.interface_nodes_lexicographic.size(); ++i) {
     const auto &node = graph.interface_nodes_lexicographic[i];
@@ -302,6 +322,10 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << ",\"method_count\":" << node.method_count
         << ",\"is_forward_declaration\":"
         << (node.is_forward_declaration ? "true" : "false")
+        << ",\"declaration_complete\":"
+        << (node.declaration_complete ? "true" : "false")
+        << ",\"inherited_protocol_identity_complete\":"
+        << (node.inherited_protocol_identity_complete ? "true" : "false")
         << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
   }
   out << "],\"category_node_entries\":[";
@@ -333,6 +357,12 @@ std::string BuildExecutableMetadataSourceGraphJson(
     out << "],\"has_interface\":" << (node.has_interface ? "true" : "false")
         << ",\"has_implementation\":"
         << (node.has_implementation ? "true" : "false")
+        << ",\"declaration_complete\":"
+        << (node.declaration_complete ? "true" : "false")
+        << ",\"attachment_identity_complete\":"
+        << (node.attachment_identity_complete ? "true" : "false")
+        << ",\"conformance_identity_complete\":"
+        << (node.conformance_identity_complete ? "true" : "false")
         << ",\"interface_property_count\":" << node.interface_property_count
         << ",\"implementation_property_count\":"
         << node.implementation_property_count
@@ -9940,6 +9970,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .metaclass_nodes_lexicographic.size();
   ir_frontend_metadata.runtime_metadata_class_metaclass_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
+  ir_frontend_metadata.executable_protocol_category_source_closure_contract_id =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_category_source_closure_contract_id;
+  ir_frontend_metadata.executable_protocol_inheritance_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_inheritance_identity_model;
+  ir_frontend_metadata.executable_category_attachment_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .category_attachment_identity_model;
+  ir_frontend_metadata.executable_protocol_category_conformance_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_category_conformance_identity_model;
+  ir_frontend_metadata.executable_protocol_category_source_closure_ready =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_category_declaration_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_inheritance_identity_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .category_attachment_identity_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_category_conformance_identity_closure_complete;
+  ir_frontend_metadata.executable_protocol_category_protocol_node_count =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .protocol_nodes_lexicographic.size();
+  ir_frontend_metadata.executable_protocol_category_category_node_count =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .category_nodes_lexicographic.size();
   for (const auto &edge :
        executable_metadata_typed_lowering_handoff.source_graph.owner_edges_lexicographic) {
     if (edge.edge_kind == "interface-to-superclass" ||
@@ -9965,6 +10022,20 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         edge.edge_kind == "class-to-metaclass") {
       ++ir_frontend_metadata
             .executable_class_metaclass_object_identity_edge_count;
+    }
+    if (edge.edge_kind == "protocol-to-inherited-protocol") {
+      ++ir_frontend_metadata
+            .executable_protocol_inheritance_identity_edge_count;
+    }
+    if (edge.edge_kind == "category-to-class" ||
+        edge.edge_kind == "category-to-interface" ||
+        edge.edge_kind == "category-to-implementation") {
+      ++ir_frontend_metadata
+            .executable_category_attachment_identity_edge_count;
+    }
+    if (edge.edge_kind == "category-to-protocol") {
+      ++ir_frontend_metadata
+            .executable_protocol_category_conformance_identity_edge_count;
     }
   }
   ir_frontend_metadata.runtime_metadata_protocol_category_emission_contract_id =

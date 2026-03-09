@@ -1354,6 +1354,18 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3ExecutableMetadataClassMetaclassObjectIdentityModel =
         "declaration-owned-class-and-metaclass-object-identities";
+inline constexpr const char
+    *kObjc3ExecutableMetadataProtocolCategorySourceClosureContractId =
+        "objc3c-executable-protocol-category-source-closure/m256-a003-v1";
+inline constexpr const char
+    *kObjc3ExecutableMetadataProtocolInheritanceIdentityModel =
+        "protocol-declaration-owned-inherited-protocol-identities";
+inline constexpr const char
+    *kObjc3ExecutableMetadataCategoryAttachmentIdentityModel =
+        "category-declaration-owned-class-interface-implementation-attachment-identities";
+inline constexpr const char
+    *kObjc3ExecutableMetadataProtocolCategoryConformanceIdentityModel =
+        "category-declaration-owned-adopted-protocol-conformance-identities";
 inline constexpr const char *kObjc3ExecutableMetadataSemanticConsistencyContractId =
     "objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1";
 inline constexpr const char *kObjc3ExecutableMetadataSemanticValidationContractId =
@@ -1454,6 +1466,8 @@ struct Objc3ExecutableMetadataProtocolGraphNode {
   std::size_t property_count = 0;
   std::size_t method_count = 0;
   bool is_forward_declaration = false;
+  bool declaration_complete = false;
+  bool inherited_protocol_identity_complete = false;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -1468,6 +1482,9 @@ struct Objc3ExecutableMetadataCategoryGraphNode {
   std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
   bool has_interface = false;
   bool has_implementation = false;
+  bool declaration_complete = false;
+  bool attachment_identity_complete = false;
+  bool conformance_identity_complete = false;
   std::size_t interface_property_count = 0;
   std::size_t implementation_property_count = 0;
   std::size_t interface_method_count = 0;
@@ -1547,6 +1564,14 @@ struct Objc3ExecutableMetadataSourceGraph {
       kObjc3ExecutableMetadataClassMetaclassMethodOwnerIdentityModel;
   std::string class_metaclass_object_identity_model =
       kObjc3ExecutableMetadataClassMetaclassObjectIdentityModel;
+  std::string protocol_category_source_closure_contract_id =
+      kObjc3ExecutableMetadataProtocolCategorySourceClosureContractId;
+  std::string protocol_inheritance_identity_model =
+      kObjc3ExecutableMetadataProtocolInheritanceIdentityModel;
+  std::string category_attachment_identity_model =
+      kObjc3ExecutableMetadataCategoryAttachmentIdentityModel;
+  std::string protocol_category_conformance_identity_model =
+      kObjc3ExecutableMetadataProtocolCategoryConformanceIdentityModel;
   std::vector<Objc3ExecutableMetadataInterfaceGraphNode>
       interface_nodes_lexicographic;
   std::vector<Objc3ExecutableMetadataImplementationGraphNode>
@@ -1569,6 +1594,10 @@ struct Objc3ExecutableMetadataSourceGraph {
   bool class_metaclass_parent_identity_closure_complete = false;
   bool class_metaclass_method_owner_identity_closure_complete = false;
   bool class_metaclass_object_identity_closure_complete = false;
+  bool protocol_category_declaration_closure_complete = false;
+  bool protocol_inheritance_identity_closure_complete = false;
+  bool category_attachment_identity_closure_complete = false;
+  bool protocol_category_conformance_identity_closure_complete = false;
   bool source_graph_complete = false;
   bool ready_for_semantic_closure = false;
   bool ready_for_lowering = false;
@@ -1585,10 +1614,18 @@ inline bool IsReadyObjc3ExecutableMetadataSourceGraph(
          !graph.class_metaclass_parent_identity_model.empty() &&
          !graph.class_metaclass_method_owner_identity_model.empty() &&
          !graph.class_metaclass_object_identity_model.empty() &&
+         !graph.protocol_category_source_closure_contract_id.empty() &&
+         !graph.protocol_inheritance_identity_model.empty() &&
+         !graph.category_attachment_identity_model.empty() &&
+         !graph.protocol_category_conformance_identity_model.empty() &&
          graph.class_metaclass_declaration_closure_complete &&
          graph.class_metaclass_parent_identity_closure_complete &&
          graph.class_metaclass_method_owner_identity_closure_complete &&
-         graph.class_metaclass_object_identity_closure_complete;
+         graph.class_metaclass_object_identity_closure_complete &&
+         graph.protocol_category_declaration_closure_complete &&
+         graph.protocol_inheritance_identity_closure_complete &&
+         graph.category_attachment_identity_closure_complete &&
+         graph.protocol_category_conformance_identity_closure_complete;
 }
 
 struct Objc3ExecutableMetadataSemanticConsistencyBoundary {

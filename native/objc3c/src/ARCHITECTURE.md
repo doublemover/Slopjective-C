@@ -8786,3 +8786,24 @@ closure:
   - `spec/planning/compiler/m256/m256_a002_class_and_metaclass_declaration_completeness_plus_inheritance_modeling_core_feature_implementation_packet.md`
   - `check:objc3c:m256-a002-class-and-metaclass-declaration-completeness-plus-inheritance-modeling`
   - `check:objc3c:m256-a002-lane-a-readiness`
+
+## M256 protocol/category source-surface completion for executable runtime (A003)
+
+`M256-A003` upgrades the same source boundary into a protocol/category closure
+ready for later object-model semantics:
+
+- protocol nodes now carry explicit declaration and inherited-protocol identity
+  closure
+- category nodes now carry explicit declaration, attachment, and adopted-protocol
+  conformance identity closure
+- the declaration-owned protocol/category identities are now part of the
+  fail-closed executable source graph rather than an inferred downstream detail
+- protocol/category attachment and conformance edges must now be complete
+  before later semantic/runtime lanes consume the graph
+- IR republishes the same closure through one explicit
+  `executable_protocol_category_source_closure` summary line
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_protocol_and_category_source_surface_completion_for_executable_runtime_core_feature_expansion_a003_expectations.md`
+  - `spec/planning/compiler/m256/m256_a003_protocol_and_category_source_surface_completion_for_executable_runtime_core_feature_expansion_packet.md`
+  - `check:objc3c:m256-a003-protocol-and-category-source-surface-completion-for-executable-runtime`
+  - `check:objc3c:m256-a003-lane-a-readiness`

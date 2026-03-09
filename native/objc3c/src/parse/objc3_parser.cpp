@@ -7479,6 +7479,10 @@ class Objc3Parser {
     // M256-A002 class/metaclass completion anchor: the same parser-owned
     // superclass spelling continues to feed declaration-level class and
     // metaclass parent identities plus stable runtime method-owner identities.
+    // M256-A003 protocol/category completion anchor: the same parser-owned
+    // adopted-protocol list and canonical category owner identity now also
+    // feed fail-closed protocol inheritance and category attachment/conformance
+    // closure for executable runtime metadata.
     // M252-B003 diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.
@@ -7580,6 +7584,10 @@ class Objc3Parser {
     // M256-A002 class/metaclass completion anchor: implementation-owned
     // declaration closure still derives stable class/metaclass object identities
     // from the parser source record rather than ad hoc runtime reconstruction.
+    // M256-A003 protocol/category completion anchor: category implementations
+    // preserve the same canonical class(category) identity and interface
+    // pairing so later attachment/conformance checks consume one source-owned
+    // runtime closure.
     // M252-B003 diagnostic precision anchor: category implementation owners
     // mirror the canonical class(category) identity to keep attachment
     // collision diagnostics deterministic across parse and pipeline stages.

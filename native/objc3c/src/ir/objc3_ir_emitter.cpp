@@ -1997,6 +1997,40 @@ class Objc3IREmitter {
                  .executable_class_metaclass_object_identity_edge_count
           << "\n";
     }
+    // M256-A003 executable protocol/category source-closure anchor: the IR
+    // handoff now carries protocol inheritance, category attachment, and
+    // adopted-protocol conformance identities so later object-model semantic
+    // issues consume the same fail-closed source model.
+    if (frontend_metadata_.executable_protocol_category_source_closure_ready) {
+      out << "; executable_protocol_category_source_closure = contract="
+          << frontend_metadata_
+                 .executable_protocol_category_source_closure_contract_id
+          << ";protocol_inheritance_model="
+          << frontend_metadata_
+                 .executable_protocol_inheritance_identity_model
+          << ";category_attachment_model="
+          << frontend_metadata_
+                 .executable_category_attachment_identity_model
+          << ";protocol_category_conformance_model="
+          << frontend_metadata_
+                 .executable_protocol_category_conformance_identity_model
+          << ";protocol_node_count="
+          << frontend_metadata_
+                 .executable_protocol_category_protocol_node_count
+          << ";category_node_count="
+          << frontend_metadata_
+                 .executable_protocol_category_category_node_count
+          << ";protocol_inheritance_edge_count="
+          << frontend_metadata_
+                 .executable_protocol_inheritance_identity_edge_count
+          << ";category_attachment_edge_count="
+          << frontend_metadata_
+                 .executable_category_attachment_identity_edge_count
+          << ";protocol_category_conformance_edge_count="
+          << frontend_metadata_
+                 .executable_protocol_category_conformance_identity_edge_count
+          << "\n";
+    }
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";

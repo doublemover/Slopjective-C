@@ -17036,3 +17036,31 @@ truly runnable:
 - the next implementation issue is `M256-A003`
 - the canonical lane-A summary path is
   `tmp/reports/m256/M256-A002/class_metaclass_declaration_completeness_and_inheritance_modeling_summary.json`
+
+## Protocol and category source-surface completion for executable runtime (M256-A003)
+
+`M256-A003` upgrades the runnable source model for protocols and categories:
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - protocol inheritance identities
+  - category attachment identities
+  - adopted-protocol conformance identities
+- protocol nodes now fail closed unless declaration and inherited-protocol
+  identity closure is complete
+- category nodes now fail closed unless declaration, attachment, and
+  adopted-protocol conformance identity closure is complete
+- IR now republishes the same closure through the
+  `; executable_protocol_category_source_closure = ...` summary line
+- the canonical identity models are:
+  - `protocol-declaration-owned-inherited-protocol-identities`
+  - `category-declaration-owned-class-interface-implementation-attachment-identities`
+  - `category-declaration-owned-adopted-protocol-conformance-identities`
+- this issue still does not claim:
+  - live runtime protocol conformance enforcement
+  - category merge behavior
+  - object-model semantic rule enforcement
+- the next implementation issue is `M256-B001`
+- the canonical lane-A summary path is
+  `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`

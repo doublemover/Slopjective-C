@@ -5830,3 +5830,26 @@ runtime-facing declaration model:
   - root-class bootstrapping
   - category merge or protocol conformance runtime behavior
 - the next implementation issue is `M256-A003`
+
+## M256 protocol/category source-surface completion for executable runtime (A003)
+
+`M256-A003` upgrades the source closure into a runtime-facing
+protocol/category declaration model:
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - protocol inheritance identities
+  - category attachment identities
+  - adopted-protocol conformance identities
+- IR republishes the same closure through
+  `; executable_protocol_category_source_closure = ...`
+- the canonical identity models are:
+  - `protocol-declaration-owned-inherited-protocol-identities`
+  - `category-declaration-owned-class-interface-implementation-attachment-identities`
+  - `category-declaration-owned-adopted-protocol-conformance-identities`
+- this issue remains source-model work only and therefore does not yet claim:
+  - live runtime protocol conformance enforcement
+  - category merge behavior
+  - object-model semantic rule enforcement
+- the next implementation issue is `M256-B001`

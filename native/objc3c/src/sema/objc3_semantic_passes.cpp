@@ -9515,6 +9515,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   // M256-A002 class/metaclass completion anchor: sema preserves the same
   // declaration-owned class/metaclass parent identities and method-owner split
   // so later realization/runtime lanes can consume one stable source model.
+  // M256-A003 protocol/category completion anchor: sema preserves the same
+  // protocol/category composition and class/protocol/category linking summaries
+  // so attachment and conformance closure consume one stable source model.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

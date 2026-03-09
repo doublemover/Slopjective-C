@@ -6861,3 +6861,31 @@ class/protocol/category source surface before realization:
   `; executable_class_metaclass_source_closure = ...`
 - canonical lane-A summary path
   `tmp/reports/m256/M256-A002/class_metaclass_declaration_completeness_and_inheritance_modeling_summary.json`
+
+## M256 protocol/category source-surface completion metadata anchors (A003)
+
+`M256-A003` upgrades the runnable metadata source closure for protocols and
+categories:
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- canonical source-graph metadata anchors now include:
+  - `protocol_category_source_closure_contract_id`
+  - `protocol_inheritance_identity_model`
+  - `category_attachment_identity_model`
+  - `protocol_category_conformance_identity_model`
+  - `protocol_category_declaration_closure_complete`
+  - `protocol_inheritance_identity_closure_complete`
+  - `category_attachment_identity_closure_complete`
+  - `protocol_category_conformance_identity_closure_complete`
+- canonical protocol entries now carry:
+  - `declaration_complete`
+  - `inherited_protocol_identity_complete`
+- canonical category entries now carry:
+  - `declaration_complete`
+  - `attachment_identity_complete`
+  - `conformance_identity_complete`
+- canonical IR summary anchor:
+  `; executable_protocol_category_source_closure = ...`
+- canonical lane-A summary path
+  `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`

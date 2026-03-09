@@ -1174,6 +1174,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     node.property_count = protocol_decl.properties.size();
     node.method_count = protocol_decl.methods.size();
     node.is_forward_declaration = protocol_decl.is_forward_declaration;
+    node.declaration_complete =
+        !node.protocol_name.empty() && !node.owner_identity.empty();
     node.line = protocol_decl.line;
     node.column = protocol_decl.column;
     std::sort(node.inherited_protocol_owner_identities_lexicographic.begin(),
@@ -1182,6 +1184,12 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
         std::unique(node.inherited_protocol_owner_identities_lexicographic.begin(),
                     node.inherited_protocol_owner_identities_lexicographic.end()),
         node.inherited_protocol_owner_identities_lexicographic.end());
+    node.inherited_protocol_identity_complete =
+        std::all_of(node.inherited_protocol_owner_identities_lexicographic.begin(),
+                    node.inherited_protocol_owner_identities_lexicographic.end(),
+                    [](const std::string &owner_identity) {
+                      return !owner_identity.empty();
+                    });
     graph.protocol_nodes_lexicographic.push_back(node);
 
     for (const auto &target : node.inherited_protocol_owner_identities_lexicographic) {
@@ -1325,6 +1333,15 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
         aggregate.adopted_protocol_owner_identities_lexicographic;
     node.has_interface = aggregate.has_interface;
     node.has_implementation = aggregate.has_implementation;
+    node.declaration_complete =
+        !node.class_name.empty() && !node.category_name.empty() &&
+        !node.owner_identity.empty() && !node.class_owner_identity.empty() &&
+        (!node.has_interface || !node.interface_owner_identity.empty()) &&
+        (!node.has_implementation || !node.implementation_owner_identity.empty());
+    node.attachment_identity_complete =
+        !node.class_owner_identity.empty() &&
+        (!node.has_interface || !node.interface_owner_identity.empty()) &&
+        (!node.has_implementation || !node.implementation_owner_identity.empty());
     node.interface_property_count = aggregate.interface_property_count;
     node.implementation_property_count = aggregate.implementation_property_count;
     node.interface_method_count = aggregate.interface_method_count;
@@ -1340,6 +1357,12 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
         std::unique(node.adopted_protocol_owner_identities_lexicographic.begin(),
                     node.adopted_protocol_owner_identities_lexicographic.end()),
         node.adopted_protocol_owner_identities_lexicographic.end());
+    node.conformance_identity_complete =
+        std::all_of(node.adopted_protocol_owner_identities_lexicographic.begin(),
+                    node.adopted_protocol_owner_identities_lexicographic.end(),
+                    [](const std::string &owner_identity) {
+                      return !owner_identity.empty();
+                    });
     graph.category_nodes_lexicographic.push_back(node);
 
     add_owner_edge("category-to-class", node.owner_identity,
@@ -1571,6 +1594,10 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
   graph.class_metaclass_parent_identity_closure_complete = true;
   graph.class_metaclass_method_owner_identity_closure_complete = true;
   graph.class_metaclass_object_identity_closure_complete = true;
+  graph.protocol_category_declaration_closure_complete = true;
+  graph.protocol_inheritance_identity_closure_complete = true;
+  graph.category_attachment_identity_closure_complete = true;
+  graph.protocol_category_conformance_identity_closure_complete = true;
 
   for (const auto &node : graph.interface_nodes_lexicographic) {
     graph.class_metaclass_declaration_closure_complete =
@@ -1671,6 +1698,50 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                        node.owner_identity);
   }
 
+  for (const auto &node : graph.protocol_nodes_lexicographic) {
+    graph.protocol_category_declaration_closure_complete =
+        graph.protocol_category_declaration_closure_complete &&
+        node.declaration_complete;
+    graph.protocol_inheritance_identity_closure_complete =
+        graph.protocol_inheritance_identity_closure_complete &&
+        node.inherited_protocol_identity_complete &&
+        std::all_of(
+            node.inherited_protocol_owner_identities_lexicographic.begin(),
+            node.inherited_protocol_owner_identities_lexicographic.end(),
+            [&](const std::string &target_owner_identity) {
+              return has_graph_edge("protocol-to-inherited-protocol",
+                                    node.owner_identity,
+                                    target_owner_identity);
+            });
+  }
+
+  for (const auto &node : graph.category_nodes_lexicographic) {
+    graph.protocol_category_declaration_closure_complete =
+        graph.protocol_category_declaration_closure_complete &&
+        node.declaration_complete;
+    graph.category_attachment_identity_closure_complete =
+        graph.category_attachment_identity_closure_complete &&
+        node.attachment_identity_complete &&
+        has_graph_edge("category-to-class", node.owner_identity,
+                       node.class_owner_identity) &&
+        (!node.has_interface ||
+         has_graph_edge("category-to-interface", node.owner_identity,
+                        node.interface_owner_identity)) &&
+        (!node.has_implementation ||
+         has_graph_edge("category-to-implementation", node.owner_identity,
+                        node.implementation_owner_identity));
+    graph.protocol_category_conformance_identity_closure_complete =
+        graph.protocol_category_conformance_identity_closure_complete &&
+        node.conformance_identity_complete &&
+        std::all_of(
+            node.adopted_protocol_owner_identities_lexicographic.begin(),
+            node.adopted_protocol_owner_identities_lexicographic.end(),
+            [&](const std::string &target_owner_identity) {
+              return has_graph_edge("category-to-protocol", node.owner_identity,
+                                    target_owner_identity);
+            });
+  }
+
   graph.deterministic =
       std::is_sorted(graph.interface_nodes_lexicographic.begin(),
                      graph.interface_nodes_lexicographic.end(),
@@ -1711,7 +1782,11 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
       graph.class_metaclass_declaration_closure_complete &&
       graph.class_metaclass_parent_identity_closure_complete &&
       graph.class_metaclass_method_owner_identity_closure_complete &&
-      graph.class_metaclass_object_identity_closure_complete;
+      graph.class_metaclass_object_identity_closure_complete &&
+      graph.protocol_category_declaration_closure_complete &&
+      graph.protocol_inheritance_identity_closure_complete &&
+      graph.category_attachment_identity_closure_complete &&
+      graph.protocol_category_conformance_identity_closure_complete;
   graph.ready_for_semantic_closure = graph.source_graph_complete;
   graph.ready_for_lowering = false;
   return graph;
@@ -2477,6 +2552,14 @@ static std::string BuildExecutableMetadataTypedLoweringHandoffReplayKey(
   std::ostringstream out;
   out << "executable-metadata-typed-lowering-handoff:v1"
       << ";graph_contract=" << surface.executable_metadata_source_graph_contract_id
+      << ";protocol_category_source_closure_contract="
+      << surface.source_graph.protocol_category_source_closure_contract_id
+      << ";protocol_inheritance_identity_model="
+      << surface.source_graph.protocol_inheritance_identity_model
+      << ";category_attachment_identity_model="
+      << surface.source_graph.category_attachment_identity_model
+      << ";protocol_category_conformance_identity_model="
+      << surface.source_graph.protocol_category_conformance_identity_model
       << ";semantic_consistency_contract="
       << surface.executable_metadata_semantic_consistency_contract_id
       << ";semantic_validation_contract="
@@ -2542,8 +2625,10 @@ static std::string BuildExecutableMetadataTypedLoweringHandoffReplayKey(
       out << owner << ",";
     }
     out << "|" << node.property_count << "|" << node.method_count << "|"
-        << (node.is_forward_declaration ? "true" : "false") << "|" << node.line
-        << "|" << node.column;
+        << (node.is_forward_declaration ? "true" : "false") << "|"
+        << (node.declaration_complete ? "true" : "false") << "|"
+        << (node.inherited_protocol_identity_complete ? "true" : "false")
+        << "|" << node.line << "|" << node.column;
   }
   for (const auto &node : graph.category_nodes_lexicographic) {
     out << ";category=" << node.class_name << "|" << node.category_name << "|"
@@ -2555,6 +2640,9 @@ static std::string BuildExecutableMetadataTypedLoweringHandoffReplayKey(
     }
     out << "|" << (node.has_interface ? "true" : "false") << "|"
         << (node.has_implementation ? "true" : "false") << "|"
+        << (node.declaration_complete ? "true" : "false") << "|"
+        << (node.attachment_identity_complete ? "true" : "false") << "|"
+        << (node.conformance_identity_complete ? "true" : "false") << "|"
         << node.interface_property_count << "|"
         << node.implementation_property_count << "|"
         << node.interface_method_count << "|" << node.implementation_method_count
