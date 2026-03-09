@@ -51,6 +51,7 @@ jobs:
             throw "Hosted runner capability probe reported an unexpected llc failure mode."
           }
           Write-Host "Hosted runner does not provide llc --filetype=obj capability; continuing via capability-routed parity validation."
+          exit 0
 
       - name: Verify capability-routed source parity
         run: npm run check:objc3c:library-cli-parity:source:m144
