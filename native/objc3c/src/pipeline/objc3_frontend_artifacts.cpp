@@ -3324,7 +3324,13 @@ Objc3RuntimeDispatchLoweringAbiContract BuildRuntimeDispatchLoweringAbiContract(
   contract.compatibility_runtime_dispatch_symbol =
       runtime_bootstrap_api_summary.compatibility_dispatch_symbol;
   contract.default_lowering_target_symbol =
-      runtime_shim_host_link_contract.runtime_dispatch_symbol;
+      contract.canonical_runtime_dispatch_symbol;
+  contract.default_lowering_target_model =
+      kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel;
+  contract.compatibility_bridge_role_model =
+      kObjc3RuntimeDispatchLiveCutoverCompatibilityModel;
+  contract.deferred_cases_model =
+      kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel;
   contract.selector_lookup_symbol =
       runtime_bootstrap_api_summary.selector_lookup_symbol;
   contract.selector_handle_type =
@@ -8657,6 +8663,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (runtime_shim_host_link_contract.deterministic ? "true" : "false")
            << "},\n";
+  manifest << "  \"runtime_shim_host_link_runtime_dispatch_symbol\":\""
+           << runtime_shim_host_link_contract.runtime_dispatch_symbol
+           << "\",\n";
+  manifest << "  \"runtime_support_library_link_wiring_runtime_dispatch_symbol\":\""
+           << runtime_support_library_link_wiring.runtime_dispatch_symbol
+           << "\",\n";
   manifest << "  \"lowering_ownership_qualifier\":{\"replay_key\":\""
            << ownership_qualifier_lowering_replay_key
            << "\",\"lane_contract\":\"" << kObjc3OwnershipQualifierLoweringLaneContract

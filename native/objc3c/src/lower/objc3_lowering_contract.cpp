@@ -204,7 +204,8 @@ bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
     const std::string &dispatch_surface_family) {
   return dispatch_surface_family == kObjc3DispatchSurfaceInstanceFamily ||
          dispatch_surface_family == kObjc3DispatchSurfaceClassFamily ||
-         dispatch_surface_family == kObjc3DispatchSurfaceSuperFamily;
+         dispatch_surface_family == kObjc3DispatchSurfaceSuperFamily ||
+         dispatch_surface_family == kObjc3DispatchSurfaceDynamicFamily;
 }
 
 bool RequiresFailClosedObjc3RuntimeDispatchFallback(
@@ -214,11 +215,10 @@ bool RequiresFailClosedObjc3RuntimeDispatchFallback(
 
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family) {
-  // M255-C003 runtime call ABI generation anchor: lowering now routes
-  // normalized instance/class/super sends through objc3_runtime_dispatch_i32,
-  // leaves dynamic compatibility cases on objc3_msgsend_i32 until M255-C004,
-  // and handles reserved direct-dispatch surfaces as explicit fail-closed
-  // lowering failures before emission.
+  // M255-C004 live-dispatch cutover anchor: all supported live dispatch
+  // surfaces now route through objc3_runtime_dispatch_i32, the exported
+  // compatibility symbol remains a non-emitted alias/test surface, and
+  // reserved direct-dispatch cases still fail closed before IR emission.
   return UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family)
              ? kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol
              : kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;
@@ -1195,7 +1195,7 @@ bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
     return false;
   }
   if (contract.default_lowering_target_symbol !=
-      contract.compatibility_runtime_dispatch_symbol) {
+      contract.canonical_runtime_dispatch_symbol) {
     return false;
   }
   if (contract.selector_lookup_symbol !=
@@ -1219,11 +1219,11 @@ bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
       contract.argument_padding_model !=
           kObjc3RuntimeDispatchLoweringArgumentPaddingModel ||
       contract.default_lowering_target_model !=
-          kObjc3RuntimeDispatchLoweringDefaultTargetModel ||
+          kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel ||
       contract.compatibility_bridge_role_model !=
-          kObjc3RuntimeDispatchLoweringCompatibilityRoleModel ||
+          kObjc3RuntimeDispatchLiveCutoverCompatibilityModel ||
       contract.deferred_cases_model !=
-          kObjc3RuntimeDispatchLoweringDeferredCasesModel) {
+          kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel) {
     return false;
   }
   return contract.fail_closed;

@@ -7,7 +7,8 @@
 
 inline constexpr std::size_t kObjc3RuntimeDispatchDefaultArgs = 4;
 inline constexpr std::size_t kObjc3RuntimeDispatchMaxArgs = 16;
-inline constexpr const char *kObjc3RuntimeDispatchSymbol = "objc3_msgsend_i32";
+inline constexpr const char *kObjc3RuntimeDispatchSymbol =
+    "objc3_runtime_dispatch_i32";
 inline constexpr const char *kObjc3DispatchSurfaceClassificationContractId =
     "objc3c-dispatch-surface-classification/m255-a001-v1";
 inline constexpr const char *kObjc3DispatchSurfaceInstanceFamily = "instance";
@@ -119,6 +120,24 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilUnsupportedFallbackModel =
         "direct-dispatch-fails-closed-until-supported-surface-materializes";
+// M255-C004 live-dispatch cutover anchor: lane-C removes the last live-path
+// compatibility-bridge assumption by routing normalized dynamic sends through
+// the canonical runtime entrypoint too, while keeping the compatibility symbol
+// exported as test/compat evidence only and leaving direct dispatch fail-closed.
+inline constexpr const char *kObjc3RuntimeDispatchLiveCutoverContractId =
+    "objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLiveCutoverActiveLoweringModel =
+        "all-supported-sends-lower-directly-to-canonical-runtime-entrypoint";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLiveCutoverCompatibilityModel =
+        "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel =
+        "default-lowering-target-is-canonical-runtime-entrypoint";
+inline constexpr const char
+    *kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel =
+        "direct-dispatch-remains-fail-closed-after-live-cutover";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory

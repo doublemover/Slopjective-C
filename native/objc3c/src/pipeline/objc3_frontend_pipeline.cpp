@@ -392,6 +392,9 @@ void NormalizeDispatchSurfaceExpr(Expr *expr,
   expr->dispatch_surface_family_symbol = DispatchSurfaceFamilySymbol(dispatch_kind);
   expr->dispatch_surface_entrypoint_family_symbol =
       DispatchEntrypointFamilySymbol(dispatch_kind);
+  expr->runtime_dispatch_bridge_symbol =
+      Objc3DispatchSurfaceRuntimeEntrypointSymbol(
+          expr->dispatch_surface_family_symbol);
   expr->dispatch_surface_is_normalized = true;
   expr->super_dispatch_enabled =
       dispatch_kind == Expr::DispatchSurfaceKind::Super;

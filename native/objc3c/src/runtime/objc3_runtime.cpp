@@ -706,9 +706,8 @@ int objc3_runtime_copy_registration_state_for_testing(
 
 extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
                                  int a1, int a2, int a3) {
-  // M255-C003 compatibility bridge: dynamic compatibility sites still route
-  // through the legacy lowering symbol until M255-C004 finishes removing live
-  // shim assumptions from the dispatch path.
+  // M255-C004 compatibility bridge: live lowering no longer emits this symbol.
+  // It stays exported as a formula-parity alias and compatibility/test surface.
   return objc3_runtime_dispatch_i32(receiver, selector, a0, a1, a2, a3);
 }
 

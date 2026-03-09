@@ -5656,3 +5656,14 @@ separate:
   through `objc3_runtime_dispatch_i32`, which owns the nil `0` result
 - normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
 - reserved direct-dispatch surfaces fail closed if they reach IR emission
+
+## M255 live dispatch cutover and shim-removal boundary (C004)
+
+`M255-C004` removes the final live compatibility-bridge dependency:
+
+- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
+- normalized dynamic sends now lower to `objc3_runtime_dispatch_i32`
+- all supported live sends lower to `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
+  is no longer emitted by live-path IR
+- reserved direct-dispatch surfaces remain fail closed

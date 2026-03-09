@@ -30,7 +30,7 @@ struct Objc3CliOptions {
   Objc3CompatMode compat_mode = Objc3CompatMode::kCanonical;
   bool migration_assist = false;
   std::size_t max_message_send_args = 4;
-  std::string runtime_dispatch_symbol = "objc3_msgsend_i32";
+  std::string runtime_dispatch_symbol = "objc3_runtime_dispatch_i32";
 };
 
 std::string Objc3CliUsage();

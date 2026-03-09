@@ -22,7 +22,7 @@ objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] 
 - Default `--objc3-migration-assist`: `off`
 - Default `--objc3-ir-object-backend`: `llvm-direct`
 - Default `--objc3-max-message-args`: `4`
-- Default `--objc3-runtime-dispatch-symbol`: `objc3_msgsend_i32`
+- Default `--objc3-runtime-dispatch-symbol`: `objc3_runtime_dispatch_i32`
 - Native frontend language-version support is currently fail-closed to Objective-C `3` only; other version values return usage error exit `2`.
 
 ## C API parity runner usage (M142-E001)
@@ -16846,3 +16846,18 @@ dispatch surface:
 - the issue-local evidence chain proves nil execution on a linked native binary
   and proves mixed super/dynamic IR call-family counts on the existing method
   family corpus
+
+## Live dispatch cutover and shim-removal boundary (M255-C004)
+
+`M255-C004` removes the last live-path compatibility-bridge assumption:
+
+- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
+- normalized dynamic sends now also lower directly to
+  `@objc3_runtime_dispatch_i32`
+- all supported live sends now lower through the canonical runtime entrypoint
+  (`instance`, `class`, `super`, and `dynamic`)
+- `@objc3_msgsend_i32` remains exported only as compatibility/test evidence and
+  is no longer emitted by the live lowering path
+- reserved direct-dispatch surfaces remain fail-closed
+- the issue-local evidence chain proves executable dynamic dispatch and proves
+  zero compatibility-call emission on the mixed super/dynamic corpus

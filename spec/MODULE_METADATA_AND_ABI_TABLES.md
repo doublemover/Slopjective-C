@@ -6701,3 +6701,13 @@ runtime cutover:
   `objc3_runtime_dispatch_i32` instead of lowering-side elision
 - normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
 - reserved direct-dispatch surfaces fail closed if they reach live IR emission
+
+## M255 live dispatch cutover metadata anchors (C004)
+
+`M255-C004` closes the lane-C live dispatch ABI surface:
+
+- contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
+- normalized dynamic sends now lower directly to `objc3_runtime_dispatch_i32`
+- all supported live sends lower directly to `objc3_runtime_dispatch_i32`
+- `objc3_msgsend_i32` remains exported but is not emitted on the live path
+- reserved direct-dispatch surfaces remain fail closed

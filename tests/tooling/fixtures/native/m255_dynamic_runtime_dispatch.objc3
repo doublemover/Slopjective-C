@@ -1,0 +1,7 @@
+module dynamicRuntimeDispatch;
+
+fn main() -> i32 {
+  let toggle = 1;
+  let local = 5;
+  return [(toggle ? local : 0) copy];
+}

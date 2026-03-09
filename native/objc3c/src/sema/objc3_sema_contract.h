@@ -12,7 +12,8 @@
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMinor = 0;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionPatch = 0;
-inline constexpr const char *kObjc3RuntimeShimHostLinkDefaultDispatchSymbol = "objc3_msgsend_i32";
+inline constexpr const char *kObjc3RuntimeShimHostLinkDefaultDispatchSymbol =
+    "objc3_runtime_dispatch_i32";
 inline constexpr std::array<ValueType, 6> kObjc3CanonicalReferenceTypeForms = {
     ValueType::ObjCId,
     ValueType::ObjCClass,

@@ -103,7 +103,8 @@ static std::string BuildAutoreleasePoolScopeSymbol(unsigned serial, unsigned dep
 }
 
 constexpr unsigned kDispatchAbiMarshallingRuntimeArgSlots = 4u;
-constexpr const char *kRuntimeShimHostLinkDispatchSymbol = "objc3_msgsend_i32";
+constexpr const char *kRuntimeShimHostLinkDispatchSymbol =
+    "objc3_runtime_dispatch_i32";
 
 static unsigned ComputeDispatchAbiArgumentPaddingSlots(std::size_t argument_count,
                                                        unsigned runtime_arg_slots) {
@@ -10199,11 +10200,10 @@ class Objc3Parser {
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
     // M255-C003.
-    // M255-C003 runtime call ABI generation anchor: lowering now moves
-    // normalized super sends and nil-receiver canonical surfaces onto
-    // objc3_runtime_dispatch_i32, keeps dynamic compatibility sites on
-    // objc3_msgsend_i32 until M255-C004, and fails closed if a reserved direct
-    // dispatch surface survives into IR lowering.
+    // M255-C004 live-dispatch cutover anchor: lowering now moves normalized
+    // dynamic sends onto objc3_runtime_dispatch_i32 too, removing the last
+    // live-path compatibility-bridge dependency while keeping reserved direct
+    // dispatch fail closed in IR lowering.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(
