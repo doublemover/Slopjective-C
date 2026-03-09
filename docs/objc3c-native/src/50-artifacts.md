@@ -196,6 +196,34 @@ manifest-only claims.
   - `bootstrap_live_replay_registered_images_symbol`
   - `bootstrap_live_reset_replay_state_snapshot_symbol`
 
+## Live restart hardening (M263-D003)
+
+`M263-D003` freezes the runtime-owned hardening surface above the live D002
+registration path: idempotence, teardown-safe replay, and repeated restart
+cycles all publish through native runtime snapshots and the emitted registration
+manifest.
+
+- contract id
+  `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- live idempotence model
+  `second-live-replay-without-reset-fails-closed-and-preserves-live-runtime-state`
+- live teardown model
+  `reset-clears-live-state-zeroes-image-local-init-cells-and-retains-bootstrap-catalog`
+- live restart evidence model
+  `repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations`
+- canonical runtime bridge:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- manifest proof fields:
+  - `bootstrap_live_restart_hardening_contract_id`
+  - `bootstrap_live_idempotence_model`
+  - `bootstrap_live_teardown_model`
+  - `bootstrap_live_restart_evidence_model`
+  - `bootstrap_live_restart_reset_for_testing_symbol`
+  - `bootstrap_live_restart_replay_registered_images_symbol`
+  - `bootstrap_live_restart_reset_replay_state_snapshot_symbol`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:

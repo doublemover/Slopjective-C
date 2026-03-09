@@ -129,6 +129,9 @@ int objc3_runtime_copy_image_walk_state_for_testing(
 // catalog, reset/replay snapshot, and replay entrypoint are the canonical
 // runtime-owned proof surface for live discovery tracking and deterministic
 // replay over emitted metadata images.
+// M263-D003 live-restart-hardening anchor: repeated reset/replay cycles must
+// stay idempotent, preserve the retained bootstrap catalog across teardown, and
+// keep restart evidence observable through the same replay/reset snapshot APIs.
 int objc3_runtime_replay_registered_images_for_testing(void);
 int objc3_runtime_copy_reset_replay_state_for_testing(
     objc3_runtime_reset_replay_state_snapshot *snapshot);

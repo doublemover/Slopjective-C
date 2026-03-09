@@ -6230,3 +6230,30 @@ and deterministic replay over retained bootstrap images.
   - reset must clear live counters while preserving the retained bootstrap catalog
   - replay must republish the same image-walk/discovery evidence through the
     staged-table path and record last-replayed identity/generation
+
+## M263 live restart hardening (D003)
+
+`M263-D003` freezes the runtime-owned idempotence/teardown/restart hardening
+layer above `M263-D002`.
+
+- contract id
+  `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- upstream runtime contracts:
+  - `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - live idempotence
+    `second-live-replay-without-reset-fails-closed-and-preserves-live-runtime-state`
+  - live teardown
+    `reset-clears-live-state-zeroes-image-local-init-cells-and-retains-bootstrap-catalog`
+  - live restart evidence
+    `repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations`
+- canonical runtime bridge:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- frozen invariants:
+  - replay without teardown must fail closed and preserve current live runtime state
+  - repeated reset/replay cycles must keep the retained bootstrap catalog intact
+  - reset generation and replay generation must advance monotonically across repeated restart cycles

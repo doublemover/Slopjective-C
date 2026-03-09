@@ -1618,6 +1618,9 @@ int objc3_runtime_replay_registered_images_for_testing(void) {
   // retained bootstrap catalog only when live registration state is empty,
   // republishes discovery/image-walk state through the same staged-table path,
   // and records last-replayed identity plus replay-generation evidence.
+  // M263-D003 live-restart-hardening anchor: replay fails closed when live
+  // runtime state is still populated, repeated restart cycles must remain
+  // deterministic, and replay-generation evidence must advance monotonically.
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();
@@ -1822,6 +1825,10 @@ extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
 void objc3_runtime_reset_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  // M263-D003 live-restart-hardening anchor: teardown clears only live runtime
+  // state, preserves the retained bootstrap catalog for restart, zeroes image-
+  // local init cells, and advances reset-generation evidence for repeated
+  // restart-cycle probes.
   ClearLiveRegistrationStateUnlocked(state);
   state.last_reset_cleared_image_local_init_state_count =
       ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);

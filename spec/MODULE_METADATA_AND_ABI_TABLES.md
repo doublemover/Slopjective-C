@@ -7279,3 +7279,33 @@ Metadata/runtime anchors:
   - `replay_generation`
   - `last_replayed_module_name`
   - `last_replayed_translation_unit_identity_key`
+
+## M263 live restart hardening anchors (D003)
+
+`M263-D003` publishes the runtime-owned proof surface for repeated reset/replay
+cycles.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- manifest proof fields:
+  - `bootstrap_live_restart_hardening_contract_id`
+  - `bootstrap_live_idempotence_model`
+  - `bootstrap_live_teardown_model`
+  - `bootstrap_live_restart_evidence_model`
+  - `bootstrap_live_restart_reset_for_testing_symbol`
+  - `bootstrap_live_restart_replay_registered_images_symbol`
+  - `bootstrap_live_restart_reset_replay_state_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- published hardening fields:
+  - `retained_bootstrap_image_count`
+  - `last_reset_cleared_image_local_init_state_count`
+  - `reset_generation`
+  - `last_replayed_image_count`
+  - `replay_generation`
+  - `last_replay_status`
+  - `last_replayed_translation_unit_identity_key`

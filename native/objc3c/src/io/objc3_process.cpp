@@ -46,6 +46,14 @@ inline constexpr const char *kObjc3RuntimeLiveDiscoveryTrackingModel =
     "image-walk-snapshot-tracks-last-discovered-root-and-descriptor-families";
 inline constexpr const char *kObjc3RuntimeLiveReplayTrackingModel =
     "reset-replay-state-snapshot-tracks-retained-images-reset-clears-and-last-replayed-identity";
+inline constexpr const char *kObjc3RuntimeLiveRestartHardeningContractId =
+    "objc3c-runtime-live-restart-hardening/m263-d003-v1";
+inline constexpr const char *kObjc3RuntimeLiveIdempotenceModel =
+    "second-live-replay-without-reset-fails-closed-and-preserves-live-runtime-state";
+inline constexpr const char *kObjc3RuntimeLiveTeardownModel =
+    "reset-clears-live-state-zeroes-image-local-init-cells-and-retains-bootstrap-catalog";
+inline constexpr const char *kObjc3RuntimeLiveRestartEvidenceModel =
+    "repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations";
 
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
@@ -991,6 +999,27 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(
              inputs.bootstrap_reset_reset_replay_state_snapshot_symbol)
       << "\",\n"
+      << "  \"bootstrap_live_restart_hardening_contract_id\": \""
+      << EscapeJsonString(kObjc3RuntimeLiveRestartHardeningContractId)
+      << "\",\n"
+      << "  \"bootstrap_live_idempotence_model\": \""
+      << EscapeJsonString(kObjc3RuntimeLiveIdempotenceModel) << "\",\n"
+      << "  \"bootstrap_live_teardown_model\": \""
+      << EscapeJsonString(kObjc3RuntimeLiveTeardownModel) << "\",\n"
+      << "  \"bootstrap_live_restart_evidence_model\": \""
+      << EscapeJsonString(kObjc3RuntimeLiveRestartEvidenceModel)
+      << "\",\n"
+      << "  \"bootstrap_live_restart_reset_for_testing_symbol\": \""
+      << EscapeJsonString(inputs.bootstrap_runtime_api_reset_for_testing_symbol)
+      << "\",\n"
+      << "  \"bootstrap_live_restart_replay_registered_images_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_replay_registered_images_symbol)
+      << "\",\n"
+      << "  \"bootstrap_live_restart_reset_replay_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.bootstrap_reset_reset_replay_state_snapshot_symbol)
+      << "\",\n"
       << "  \"bootstrap_reset_contract_id\": \""
       << EscapeJsonString(inputs.bootstrap_reset_contract_id) << "\",\n"
       << "  \"bootstrap_reset_internal_header_path\": \""
@@ -1089,7 +1118,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"ready_for_bootstrap_lowering_materialization\": true,\n"
       << "  \"ready_for_runtime_bootstrap_enforcement\": true,\n"
       << "  \"ready_for_runtime_bootstrap_table_consumption\": true,\n"
-      << "  \"ready_for_live_registration_discovery_replay\": true\n"
+      << "  \"ready_for_live_registration_discovery_replay\": true,\n"
+      << "  \"ready_for_live_restart_hardening\": true\n"
       << "}\n";
   manifest_json = out.str();
   return true;
