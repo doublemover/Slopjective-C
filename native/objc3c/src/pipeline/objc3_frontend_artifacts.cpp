@@ -1906,7 +1906,8 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
     const Objc3RuntimeMetadataSectionScaffoldSummary
-        &runtime_metadata_section_scaffold) {
+        &runtime_metadata_section_scaffold,
+    std::uint64_t translation_unit_registration_order_ordinal) {
   Objc3RuntimeTranslationUnitRegistrationManifestSummary summary;
   summary.fail_closed = true;
   summary.translation_unit_registration_contract_ready =
@@ -1934,6 +1935,10 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
       runtime_metadata_section_scaffold.ivar_descriptor_count;
   summary.total_descriptor_count =
       runtime_metadata_section_scaffold.total_descriptor_count;
+  if (translation_unit_registration_order_ordinal > 0) {
+    summary.translation_unit_registration_order_ordinal =
+        translation_unit_registration_order_ordinal;
+  }
   if (summary.translation_unit_registration_contract_ready) {
     summary.translation_unit_registration_replay_key =
         registration_contract.replay_key;
@@ -5783,7 +5788,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeTranslationUnitRegistrationManifestSummary(
               runtime_translation_unit_registration_contract,
               runtime_support_library_link_wiring,
-              runtime_metadata_section_scaffold);
+              runtime_metadata_section_scaffold,
+              options.bootstrap_registration_order_ordinal);
   const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
       runtime_registration_descriptor_image_root_source_surface =
           BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
@@ -9796,6 +9802,54 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
+           // M263-C003 archive/static-link bootstrap replay corpus anchor:
+           // lane-C now publishes the retained-archive replay proof surface
+           // that ties the M253-D003 merge model to the live M263-B003 replay
+           // runtime and the emitted C002 registration-descriptor/image-root
+           // lowering boundary.
+           << ",\"objc_runtime_bootstrap_archive_static_link_replay_corpus\":{"
+           << "\"contract_id\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId)
+           << "\",\"archive_static_link_discovery_contract_id\":\""
+           << EscapeJsonString(kObjc3RuntimeArchiveStaticLinkDiscoveryContractId)
+           << "\",\"bootstrap_failure_restart_contract_id\":\""
+           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics.contract_id)
+           << "\",\"bootstrap_lowering_contract_id\":\""
+           << EscapeJsonString(runtime_bootstrap_lowering.contract_id)
+           << "\",\"registration_descriptor_lowering_contract_id\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId)
+           << "\",\"corpus_model\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel)
+           << "\",\"binary_proof_model\":\""
+           << EscapeJsonString(
+                  kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel)
+           << "\",\"merge_model\":\""
+           << EscapeJsonString(kObjc3RuntimeArchiveStaticLinkMergeModel)
+           << "\",\"translation_unit_identity_key\":\""
+           << EscapeJsonString(translation_unit_identity_key)
+           << "\",\"registration_descriptor_identifier\":\""
+           << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                   .registration_descriptor_identifier)
+           << "\",\"image_root_identifier\":\""
+           << EscapeJsonString(runtime_registration_descriptor_frontend_closure
+                                   .image_root_identifier)
+           << "\",\"replay_registered_images_symbol\":\""
+           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics
+                                   .replay_registered_images_symbol)
+           << "\",\"reset_replay_state_snapshot_symbol\":\""
+           << EscapeJsonString(runtime_bootstrap_failure_restart_semantics
+                                   .reset_replay_state_snapshot_symbol)
+           << "\",\"ready\":"
+           << ((IsReadyObjc3RuntimeBootstrapFailureRestartSemanticsSummary(
+                    runtime_bootstrap_failure_restart_semantics) &&
+                IsReadyObjc3RuntimeBootstrapLoweringSummary(
+                    runtime_bootstrap_lowering))
+                   ? "true"
+                   : "false")
+           << "}"
            // M254-B001 bootstrap-invariant anchor: lane-B freezes duplicate
            // registration, realization order, failure mode, and image-local
            // initialization semantics against the live A002 registration
@@ -12022,6 +12076,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.runtime_bootstrap_image_root_identifier =
       bundle.runtime_registration_descriptor_frontend_closure_summary
           .image_root_identifier;
+  ir_frontend_metadata.runtime_bootstrap_registration_order_ordinal =
+      bundle.runtime_translation_unit_registration_manifest_summary
+          .translation_unit_registration_order_ordinal;
   ir_frontend_metadata.runtime_bootstrap_lowering_ready =
       bundle.runtime_bootstrap_lowering_summary
           .ready_for_bootstrap_materialization;

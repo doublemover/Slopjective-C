@@ -9052,3 +9052,22 @@ descriptor/image-root identifiers into native bootstrap artifacts:
   - `spec/planning/compiler/m263/m263_c002_registration_descriptor_lowering_and_multi_image_root_emission_core_feature_implementation_packet.md`
   - `check:objc3c:m263-c002-registration-descriptor-and-image-root-lowering`
   - `check:objc3c:m263-c002-lane-c-readiness`
+
+## M263 archive/static-link bootstrap replay corpus (C003)
+
+`M263-C003` closes the gap between retained archive/static-link discovery
+artifacts and the live bootstrap replay runtime:
+
+- the retained `M253-D003` response/discovery artifacts now feed executable
+  replay probes instead of stopping at section retention inspection
+- the corpus proves three linked states:
+  - plain archive links omit bootstrap images
+  - retained single-archive links register and replay one image
+  - retained merged-archive links register and replay multiple images
+- the emitted IR/manifest surfaces publish one explicit replay-corpus packet so
+  later lane-D startup work extends the same retained-binary proof model
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion_c003_expectations.md`
+  - `spec/planning/compiler/m263/m263_c003_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion_packet.md`
+  - `check:objc3c:m263-c003-archive-static-link-bootstrap-replay-corpus`
+  - `check:objc3c:m263-c003-lane-c-readiness`

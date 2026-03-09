@@ -28,6 +28,7 @@ struct Objc3FrontendOptions {
   bool emit_manifest = true;
   bool emit_ir = true;
   bool emit_object = true;
+  std::uint64_t bootstrap_registration_order_ordinal = 1u;
   Objc3LoweringContract lowering;
 };
 

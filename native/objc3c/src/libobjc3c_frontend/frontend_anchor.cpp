@@ -411,6 +411,10 @@ static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_o
   frontend_options.emit_manifest = options.emit_manifest != 0;
   frontend_options.emit_ir = options.emit_ir != 0;
   frontend_options.emit_object = options.emit_object != 0;
+  if (options.translation_unit_registration_order_ordinal > 0) {
+    frontend_options.bootstrap_registration_order_ordinal =
+        options.translation_unit_registration_order_ordinal;
+  }
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }

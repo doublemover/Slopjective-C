@@ -7200,3 +7200,24 @@ Metadata/runtime anchors:
     registration table, linker anchor, and image-local init state
   - image root points at module name, image descriptor, registration table,
     and discovery root
+
+## M263 archive/static-link bootstrap replay corpus anchors (C003)
+
+`M263-C003` binds the retained archive/static-link discovery artifacts to live
+bootstrap replay probes.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+- retained linker/discovery artifacts:
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-discovery.json`
+- continuity keys:
+  - `translation_unit_identity_key`
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+- runtime replay linkage:
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`

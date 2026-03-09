@@ -1,0 +1,6 @@
+#pragma objc_language_version(3)
+#pragma objc_registration_descriptor(ArchiveReplayExplicitDescriptor)
+#pragma objc_image_root(ArchiveReplayExplicitImageRoot)
+
+module ArchiveReplayExplicit;
+fn main() { return 0; }

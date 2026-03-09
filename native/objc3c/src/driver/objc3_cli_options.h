@@ -29,6 +29,7 @@ struct Objc3CliOptions {
   std::uint32_t language_version = 3;
   Objc3CompatMode compat_mode = Objc3CompatMode::kCanonical;
   bool migration_assist = false;
+  std::uint64_t bootstrap_registration_order_ordinal = 1;
   std::size_t max_message_send_args = 4;
   std::string runtime_dispatch_symbol = "objc3_runtime_dispatch_i32";
 };

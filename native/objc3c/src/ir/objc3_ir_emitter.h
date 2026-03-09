@@ -306,6 +306,7 @@ struct Objc3IRFrontendMetadata {
       runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id;
   std::string runtime_bootstrap_registration_descriptor_identifier;
   std::string runtime_bootstrap_image_root_identifier;
+  std::uint64_t runtime_bootstrap_registration_order_ordinal = 1;
   std::size_t runtime_bootstrap_lowering_registration_table_abi_version = 0;
   std::size_t runtime_bootstrap_lowering_registration_table_pointer_field_count =
       0;

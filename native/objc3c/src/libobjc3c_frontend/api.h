@@ -128,6 +128,7 @@ typedef struct objc3c_frontend_compile_options {
   uint8_t compatibility_mode;
   uint8_t migration_assist;
   uint8_t reserved0;
+  uint64_t translation_unit_registration_order_ordinal;
 } objc3c_frontend_compile_options_t;
 
 /*

@@ -1,6 +1,7 @@
 #include "lower/objc3_lowering_contract.h"
 
 #include "ast/objc3_ast.h"
+#include "sema/objc3_sema_contract.h"
 
 #include <cctype>
 #include <sstream>
@@ -698,6 +699,32 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
       << ";image_root_payload_model="
       << kObjc3RuntimeBootstrapImageRootPayloadModel
       << ";non_goals=no-cross-translation-unit-root-deduplication-or-runtime-fanout-merge";
+  return out.str();
+}
+
+std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary() {
+  std::ostringstream out;
+  // M263-C003 archive/static-link bootstrap replay corpus anchor: this
+  // summary binds the M253-D003 retained archive/static-link discovery path to
+  // the live M263-B003 bootstrap reset/replay runtime so validation can prove
+  // real startup registration and replay behavior over linked archives.
+  out << "contract="
+      << kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId
+      << ";corpus_model="
+      << kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel
+      << ";binary_proof_model="
+      << kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel
+      << ";archive_static_link_discovery_contract_id="
+      << kObjc3RuntimeArchiveStaticLinkDiscoveryContractId
+      << ";bootstrap_failure_restart_contract_id="
+      << kObjc3BootstrapFailureRestartSemanticsContractId
+      << ";registration_descriptor_lowering_contract_id="
+      << kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId
+      << ";replay_registered_images_symbol="
+      << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol
+      << ";reset_replay_state_snapshot_symbol="
+      << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol
+      << ";non_goals=no-new-bootstrap-runtime-entrypoints-or-linker-merge-models";
   return out.str();
 }
 

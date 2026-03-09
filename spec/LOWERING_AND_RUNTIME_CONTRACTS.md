@@ -6153,3 +6153,23 @@ frozen `M263-C001` constructor-root/registration-table ABI.
   - one `runtime_registration_descriptor_image_root_lowering` line in `module.ll`
   - one retained image-root global in `objc3.runtime.image_root`
   - one retained registration-descriptor global in `objc3.runtime.registration_descriptor`
+
+## M263 archive/static-link bootstrap replay corpus (C003)
+
+`M263-C003` turns the earlier retained archive/static-link discovery work into
+one live bootstrap replay corpus over linked binaries.
+
+- contract id
+  `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+- corpus model
+  `merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes`
+- binary proof model
+  `plain-link-omits-bootstrap-images-retained-link-replays-them`
+- upstream contracts:
+  - `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- emitted proof minimums:
+  - one `runtime_bootstrap_archive_static_link_replay_corpus` line in `module.ll`
+  - merged response/discovery artifacts retain archive-linked bootstrap objects
+  - replay probes prove retained images register on startup and re-register after reset

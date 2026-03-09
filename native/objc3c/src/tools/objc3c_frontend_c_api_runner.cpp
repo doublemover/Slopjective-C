@@ -41,6 +41,7 @@ struct RunnerOptions {
   bool emit_manifest = true;
   bool emit_ir = true;
   bool emit_object = true;
+  std::uint64_t translation_unit_registration_order_ordinal = 0;
   fs::path summary_out;
 };
 
@@ -49,6 +50,7 @@ std::string Usage() {
          "[--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
          ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] "
+         "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object]";
 }
@@ -111,6 +113,23 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.max_message_send_args = static_cast<std::uint32_t>(parsed);
     } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
       options.runtime_dispatch_symbol = argv[++i];
+    } else if (arg == "--objc3-bootstrap-registration-order-ordinal" &&
+               i + 1 < argc) {
+      const std::string value = argv[++i];
+      errno = 0;
+      char *end = nullptr;
+      const unsigned long long parsed =
+          std::strtoull(value.c_str(), &end, 10);
+      if (value.empty() || end == value.c_str() || *end != '\0' ||
+          errno == ERANGE || parsed == 0) {
+        error =
+            "invalid --objc3-bootstrap-registration-order-ordinal (expected "
+            "positive integer): " +
+            value;
+        return false;
+      }
+      options.translation_unit_registration_order_ordinal =
+          static_cast<std::uint64_t>(parsed);
     } else if (arg == "--objc3-compat-mode" && i + 1 < argc) {
       const std::string mode_text = argv[++i];
       if (!ParseCompatibilityMode(mode_text, options.compatibility_mode)) {
@@ -540,6 +559,8 @@ int main(int argc, char **argv) {
   compile_options.max_message_send_args = options.max_message_send_args;
   compile_options.compatibility_mode = options.compatibility_mode;
   compile_options.migration_assist = options.migration_assist ? 1u : 0u;
+  compile_options.translation_unit_registration_order_ordinal =
+      options.translation_unit_registration_order_ordinal;
   compile_options.emit_manifest = options.emit_manifest ? 1u : 0u;
   compile_options.emit_ir = options.emit_ir ? 1u : 0u;
   compile_options.emit_object = options.emit_object ? 1u : 0u;

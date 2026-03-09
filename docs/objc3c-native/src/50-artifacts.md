@@ -121,6 +121,29 @@ object artifacts.
   - the init stub still stages the registration table and then calls
     `objc3_runtime_register_image`
 
+## Archive and static-link bootstrap replay corpus (M263-C003)
+
+`M263-C003` proves that the retained archive/static-link discovery path feeds
+the live bootstrap reset/replay runtime rather than only preserving sections in
+linked binaries.
+
+- contract id
+  `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+- corpus model
+  `merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes`
+- binary proof model
+  `plain-link-omits-bootstrap-images-retained-link-replays-them`
+- retained inputs:
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-discovery.json`
+- native compile control:
+  - `--objc3-bootstrap-registration-order-ordinal <positive-int>`
+  - retained multi-image corpora must assign distinct positive ordinals at compile time rather than rewriting merged discovery artifacts after emission
+- runtime replay proof:
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+
 ## M223 lowering/IR metadata envelope
 
 Native `.objc3` IR emission now includes deterministic frontend-profile metadata in addition to lowering boundary replay data:

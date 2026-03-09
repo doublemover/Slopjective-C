@@ -531,6 +531,19 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBootstrapImageRootPayloadModel =
         "image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root";
+// M263-C003 archive/static-link bootstrap replay corpus anchor: lane-C now
+// binds the earlier archive/static-link retention/discovery proof to the live
+// bootstrap replay runtime so archive-linked images are validated through one
+// retained-binary corpus instead of section-only inspection.
+inline constexpr const char
+    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId =
+        "objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel =
+        "merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel =
+        "plain-link-omits-bootstrap-images-retained-link-replays-them";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableLayoutModel =
     "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state";
 inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitializationModel =
@@ -1321,6 +1334,7 @@ std::string Objc3RuntimeMetadataLinkerRetentionSummary();
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeBootstrapLoweringBoundarySummary();
 std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary();
+std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(

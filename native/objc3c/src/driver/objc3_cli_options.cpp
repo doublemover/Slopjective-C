@@ -67,6 +67,18 @@ bool ParseLanguageVersion(const std::string &value, std::uint32_t &version) {
   return true;
 }
 
+bool ParsePositiveOrdinal(const std::string &value, std::uint64_t &ordinal) {
+  errno = 0;
+  char *end = nullptr;
+  const unsigned long long parsed = std::strtoull(value.c_str(), &end, 10);
+  if (value.empty() || end == value.c_str() || *end != '\0' || errno == ERANGE ||
+      parsed == 0 || parsed > std::numeric_limits<std::uint64_t>::max()) {
+    return false;
+  }
+  ordinal = static_cast<std::uint64_t>(parsed);
+  return true;
+}
+
 std::string ReadEnvironmentVariable(const char *name) {
 #if defined(_WIN32)
   char *value = nullptr;
@@ -112,6 +124,7 @@ std::string Objc3CliUsage() {
          "[--llc <path>] "
          "[-fobjc-version=<N>] [--objc3-language-version <N>] "
          "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] "
+         "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--llvm-capabilities-summary <path>] [--objc3-route-backend-from-capabilities] "
          "[--objc3-max-message-args <0-" +
@@ -162,6 +175,17 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       }
     } else if (flag == "--objc3-migration-assist") {
       options.migration_assist = true;
+    } else if (flag == "--objc3-bootstrap-registration-order-ordinal" &&
+               i + 1 < argc) {
+      const std::string ordinal_text = argv[++i];
+      std::uint64_t parsed_ordinal = 0;
+      if (!ParsePositiveOrdinal(ordinal_text, parsed_ordinal)) {
+        error =
+            "invalid --objc3-bootstrap-registration-order-ordinal (expected positive integer): " +
+            ordinal_text;
+        return false;
+      }
+      options.bootstrap_registration_order_ordinal = parsed_ordinal;
     } else if (flag == "--clang" && i + 1 < argc) {
       options.clang_path = argv[++i];
       options.clang_path_explicit = true;

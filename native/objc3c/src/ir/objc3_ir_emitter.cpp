@@ -4,6 +4,7 @@
 #include <array>
 #include <cctype>
 #include <iomanip>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -5125,6 +5126,26 @@ class Objc3IREmitter {
           << RuntimeBootstrapRegistrationDescriptorSymbol()
           << ";image_root_symbol=" << RuntimeBootstrapImageRootSymbol()
           << "\n";
+      if (frontend_metadata_.runtime_metadata_archive_static_link_discovery_ready) {
+        // M263-C003 archive/static-link bootstrap replay corpus anchor: the
+        // IR boundary now advertises the retained archive replay proof surface
+        // that composes the D003 merge model with the live bootstrap replay
+        // runtime over emitted C002 registration-descriptor/image-root globals.
+        out << "; runtime_bootstrap_archive_static_link_replay_corpus = "
+            << Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary()
+            << ";translation_unit_identity_key="
+            << frontend_metadata_
+                   .runtime_metadata_archive_static_link_translation_unit_identity_key
+            << ";registration_descriptor_identifier="
+            << frontend_metadata_
+                   .runtime_bootstrap_registration_descriptor_identifier
+            << ";image_root_identifier="
+            << frontend_metadata_.runtime_bootstrap_image_root_identifier
+            << ";replay_registered_images_symbol="
+            << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol
+            << ";reset_replay_state_snapshot_symbol="
+            << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol << "\n";
+      }
     }
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
@@ -6600,6 +6621,10 @@ class Objc3IREmitter {
             << EscapeCStringLiteral(image_root_identifier)
             << "\\00\", align 1\n";
       }
+      const std::uint64_t registration_order_ordinal =
+          frontend_metadata_.runtime_bootstrap_registration_order_ordinal == 0
+              ? kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal
+              : frontend_metadata_.runtime_bootstrap_registration_order_ordinal;
       out << image_descriptor_symbol << " = internal constant "
           << RuntimeBootstrapImageDescriptorType()
           << " { ptr getelementptr inbounds (["
@@ -6608,7 +6633,7 @@ class Objc3IREmitter {
           << (translation_unit_identity_key.size() + 1u)
           << " x i8], ptr " << translation_unit_identity_symbol
           << ", i32 0, i32 0)"
-          << ", i64 1, i64 "
+          << ", i64 " << registration_order_ordinal << ", i64 "
           << frontend_metadata_.runtime_metadata_section_scaffold_class_descriptor_count
           << ", i64 "
           << frontend_metadata_
@@ -6670,8 +6695,15 @@ class Objc3IREmitter {
                    kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection)
             << "\", align 8\n";
       }
+      const std::uint32_t global_ctor_priority =
+          registration_order_ordinal >
+                  static_cast<std::uint64_t>(
+                      std::numeric_limits<std::uint32_t>::max())
+              ? std::numeric_limits<std::uint32_t>::max()
+              : static_cast<std::uint32_t>(registration_order_ordinal);
       out << "@llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] "
-             "[{ i32, ptr, ptr } { i32 65535, ptr "
+             "[{ i32, ptr, ptr } { i32 "
+          << global_ctor_priority << ", ptr "
           << constructor_root_symbol << ", ptr " << registration_table_symbol
           << " }]\n";
       emit_retained(image_descriptor_symbol);
