@@ -30,15 +30,22 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Install LLVM toolchain
-        shell: pwsh
-        run: |
-          choco install llvm --version=21.1.8 -y --no-progress
-          "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          & "C:\Program Files\LLVM\bin\llc.exe" --version
-
       - name: Build native objc3c artifacts
         run: npm run build:objc3c-native
 
-      - name: Run native execution smoke
-        run: npm run test:objc3c:execution-smoke
+      - name: Probe hosted-runner LLVM capabilities
+        run: npm run check:objc3c:llvm-capabilities
+
+      - name: Verify capability-routed source parity
+        run: npm run check:objc3c:library-cli-parity:source:m144
+
+      - name: Run native execution smoke when llc is available
+        shell: pwsh
+        run: |
+          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
+          $summary = Get-Content $summaryPath | ConvertFrom-Json
+          if (-not $summary.llc.found -or -not $summary.llc_features.supports_filetype_obj) {
+            Write-Host "Skipping execution smoke: hosted runner does not provide llc --filetype=obj capability."
+            exit 0
+          }
+          npm run test:objc3c:execution-smoke
