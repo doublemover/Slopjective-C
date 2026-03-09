@@ -113,6 +113,14 @@ std::string BuildExecutableMetadataSourceGraphJson(
       << EscapeJsonString(graph.metaclass_node_policy)
       << "\",\"edge_ordering_model\":\""
       << EscapeJsonString(graph.edge_ordering_model)
+      << "\",\"class_metaclass_source_closure_contract_id\":\""
+      << EscapeJsonString(graph.class_metaclass_source_closure_contract_id)
+      << "\",\"class_metaclass_parent_identity_model\":\""
+      << EscapeJsonString(graph.class_metaclass_parent_identity_model)
+      << "\",\"class_metaclass_method_owner_identity_model\":\""
+      << EscapeJsonString(graph.class_metaclass_method_owner_identity_model)
+      << "\",\"class_metaclass_object_identity_model\":\""
+      << EscapeJsonString(graph.class_metaclass_object_identity_model)
       << "\",\"interface_nodes\":"
       << graph.interface_nodes_lexicographic.size()
       << ",\"implementation_nodes\":"
@@ -125,6 +133,17 @@ std::string BuildExecutableMetadataSourceGraphJson(
       << ",\"property_nodes\":" << graph.property_nodes_lexicographic.size()
       << ",\"ivar_nodes\":" << graph.ivar_nodes_lexicographic.size()
       << ",\"method_nodes\":" << graph.method_nodes_lexicographic.size()
+      << ",\"class_metaclass_declaration_closure_complete\":"
+      << (graph.class_metaclass_declaration_closure_complete ? "true" : "false")
+      << ",\"class_metaclass_parent_identity_closure_complete\":"
+      << (graph.class_metaclass_parent_identity_closure_complete ? "true"
+                                                                 : "false")
+      << ",\"class_metaclass_method_owner_identity_closure_complete\":"
+      << (graph.class_metaclass_method_owner_identity_closure_complete ? "true"
+                                                                       : "false")
+      << ",\"class_metaclass_object_identity_closure_complete\":"
+      << (graph.class_metaclass_object_identity_closure_complete ? "true"
+                                                                 : "false")
       << ",\"interface_node_entries\":[";
   for (std::size_t i = 0; i < graph.interface_nodes_lexicographic.size(); ++i) {
     const auto &node = graph.interface_nodes_lexicographic[i];
@@ -139,7 +158,15 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << EscapeJsonString(node.metaclass_owner_identity)
         << "\",\"super_class_owner_identity\":\""
         << EscapeJsonString(node.super_class_owner_identity)
+        << "\",\"super_metaclass_owner_identity\":\""
+        << EscapeJsonString(node.super_metaclass_owner_identity)
+        << "\",\"instance_method_owner_identity\":\""
+        << EscapeJsonString(node.instance_method_owner_identity)
+        << "\",\"class_method_owner_identity\":\""
+        << EscapeJsonString(node.class_method_owner_identity)
         << "\",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"declaration_complete\":"
+        << (node.declaration_complete ? "true" : "false")
         << ",\"property_count\":" << node.property_count
         << ",\"method_count\":" << node.method_count
         << ",\"class_method_count\":" << node.class_method_count
@@ -161,8 +188,19 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << EscapeJsonString(node.class_owner_identity)
         << "\",\"metaclass_owner_identity\":\""
         << EscapeJsonString(node.metaclass_owner_identity)
+        << "\",\"super_class_owner_identity\":\""
+        << EscapeJsonString(node.super_class_owner_identity)
+        << "\",\"super_metaclass_owner_identity\":\""
+        << EscapeJsonString(node.super_metaclass_owner_identity)
+        << "\",\"instance_method_owner_identity\":\""
+        << EscapeJsonString(node.instance_method_owner_identity)
+        << "\",\"class_method_owner_identity\":\""
+        << EscapeJsonString(node.class_method_owner_identity)
         << "\",\"has_matching_interface\":"
         << (node.has_matching_interface ? "true" : "false")
+        << ",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"declaration_complete\":"
+        << (node.declaration_complete ? "true" : "false")
         << ",\"property_count\":" << node.property_count
         << ",\"method_count\":" << node.method_count
         << ",\"class_method_count\":" << node.class_method_count
@@ -185,10 +223,18 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << EscapeJsonString(node.metaclass_owner_identity)
         << "\",\"super_class_owner_identity\":\""
         << EscapeJsonString(node.super_class_owner_identity)
+        << "\",\"super_metaclass_owner_identity\":\""
+        << EscapeJsonString(node.super_metaclass_owner_identity)
+        << "\",\"instance_method_owner_identity\":\""
+        << EscapeJsonString(node.instance_method_owner_identity)
+        << "\",\"class_method_owner_identity\":\""
+        << EscapeJsonString(node.class_method_owner_identity)
         << "\",\"has_interface\":" << (node.has_interface ? "true" : "false")
         << ",\"has_implementation\":"
         << (node.has_implementation ? "true" : "false")
         << ",\"has_super\":" << (node.has_super ? "true" : "false")
+        << ",\"realization_identity_complete\":"
+        << (node.realization_identity_complete ? "true" : "false")
         << ",\"interface_property_count\":" << node.interface_property_count
         << ",\"implementation_property_count\":"
         << node.implementation_property_count
@@ -9862,8 +9908,65 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .runtime_metadata_class_metaclass_method_list_reference_model =
       kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel;
+  ir_frontend_metadata.executable_class_metaclass_source_closure_contract_id =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_source_closure_contract_id;
+  ir_frontend_metadata.executable_class_metaclass_parent_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_parent_identity_model;
+  ir_frontend_metadata.executable_class_metaclass_method_owner_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_method_owner_identity_model;
+  ir_frontend_metadata.executable_class_metaclass_object_identity_model =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_object_identity_model;
+  ir_frontend_metadata.executable_class_metaclass_source_closure_ready =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_declaration_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_parent_identity_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_method_owner_identity_closure_complete &&
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_metaclass_object_identity_closure_complete;
+  ir_frontend_metadata.executable_class_metaclass_declaration_node_count =
+      executable_metadata_typed_lowering_handoff.source_graph
+          .interface_nodes_lexicographic.size() +
+      executable_metadata_typed_lowering_handoff.source_graph
+          .implementation_nodes_lexicographic.size() +
+      executable_metadata_typed_lowering_handoff.source_graph
+          .class_nodes_lexicographic.size() +
+      executable_metadata_typed_lowering_handoff.source_graph
+          .metaclass_nodes_lexicographic.size();
   ir_frontend_metadata.runtime_metadata_class_metaclass_typed_handoff_replay_key =
       executable_metadata_typed_lowering_handoff.replay_key;
+  for (const auto &edge :
+       executable_metadata_typed_lowering_handoff.source_graph.owner_edges_lexicographic) {
+    if (edge.edge_kind == "interface-to-superclass" ||
+        edge.edge_kind == "interface-to-super-metaclass" ||
+        edge.edge_kind == "implementation-to-superclass" ||
+        edge.edge_kind == "implementation-to-super-metaclass" ||
+        edge.edge_kind == "class-to-superclass" ||
+        edge.edge_kind == "metaclass-to-super-metaclass") {
+      ++ir_frontend_metadata
+            .executable_class_metaclass_parent_identity_edge_count;
+    }
+    if (edge.edge_kind == "interface-to-instance-method-owner" ||
+        edge.edge_kind == "interface-to-class-method-owner" ||
+        edge.edge_kind == "implementation-to-instance-method-owner" ||
+        edge.edge_kind == "implementation-to-class-method-owner") {
+      ++ir_frontend_metadata
+            .executable_class_metaclass_method_owner_identity_edge_count;
+    }
+    if (edge.edge_kind == "interface-to-class" ||
+        edge.edge_kind == "interface-to-metaclass" ||
+        edge.edge_kind == "implementation-to-class" ||
+        edge.edge_kind == "implementation-to-metaclass" ||
+        edge.edge_kind == "class-to-metaclass") {
+      ++ir_frontend_metadata
+            .executable_class_metaclass_object_identity_edge_count;
+    }
+  }
   ir_frontend_metadata.runtime_metadata_protocol_category_emission_contract_id =
       kObjc3RuntimeProtocolCategoryEmissionContractId;
   ir_frontend_metadata.runtime_metadata_protocol_emission_payload_model =
@@ -10024,11 +10127,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         Objc3IRRuntimeMetadataClassMetaclassBundle bundle;
         bundle.class_name = interface_node.class_name;
         bundle.owner_identity = interface_node.owner_identity;
+        bundle.class_owner_identity = interface_node.class_owner_identity;
+        bundle.metaclass_owner_identity = interface_node.metaclass_owner_identity;
         bundle.has_super = class_it->second->has_super;
+        bundle.super_class_owner_identity =
+            class_it->second->super_class_owner_identity;
+        bundle.super_metaclass_owner_identity =
+            class_it->second->super_metaclass_owner_identity;
         bundle.super_bundle_owner_identity =
             class_it->second->has_super
                 ? ("interface:" + class_it->second->super_class_owner_identity.substr(6))
                 : std::string{};
+        bundle.instance_method_owner_identity =
+            interface_node.instance_method_owner_identity;
+        bundle.class_method_owner_identity =
+            interface_node.class_method_owner_identity;
         bundle.instance_method_count = interface_node.instance_method_count;
         bundle.class_method_count =
             metaclass_it->second->interface_class_method_count;
@@ -10049,7 +10162,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         Objc3IRRuntimeMetadataClassMetaclassBundle bundle;
         bundle.class_name = implementation_node.class_name;
         bundle.owner_identity = implementation_node.owner_identity;
+        bundle.class_owner_identity = implementation_node.class_owner_identity;
+        bundle.metaclass_owner_identity =
+            implementation_node.metaclass_owner_identity;
         bundle.has_super = class_it->second->has_super;
+        bundle.super_class_owner_identity =
+            implementation_node.super_class_owner_identity;
+        bundle.super_metaclass_owner_identity =
+            implementation_node.super_metaclass_owner_identity;
         if (class_it->second->has_super) {
           const std::string super_class_name =
               class_it->second->super_class_owner_identity.substr(6);
@@ -10062,6 +10182,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           bundle.super_bundle_owner_identity =
               super_impl_it->second->owner_identity;
         }
+        bundle.instance_method_owner_identity =
+            implementation_node.instance_method_owner_identity;
+        bundle.class_method_owner_identity =
+            implementation_node.class_method_owner_identity;
         bundle.instance_method_count = implementation_node.instance_method_count;
         bundle.class_method_count =
             metaclass_it->second->implementation_class_method_count;

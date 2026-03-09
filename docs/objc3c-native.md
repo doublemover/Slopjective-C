@@ -17009,3 +17009,30 @@ truly runnable:
 - the next implementation issue is `M256-A002`
 - the canonical lane-A summary path is
   `tmp/reports/m256/M256-A001/executable_class_protocol_category_source_closure_contract_summary.json`
+
+## Class/metaclass declaration completeness plus inheritance modeling (M256-A002)
+
+`M256-A002` upgrades the runnable source model for class realization:
+
+- contract id
+  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - class object identities
+  - metaclass object identities
+  - superclass and super-metaclass identities
+  - instance-method owner identities
+  - class-method owner identities
+- interface and implementation declaration nodes now fail closed unless those
+  identities are complete for the declaration surface they own
+- class nodes now publish the same realization identity closure so later runtime
+  work can consume one canonical parent/method-owner model
+- IR now republishes the same closure through the
+  `; executable_class_metaclass_source_closure = ...` summary line
+- this issue still does not claim:
+  - live runtime class realization
+  - root-class bootstrapping
+  - category merge behavior
+  - protocol conformance enforcement
+- the next implementation issue is `M256-A003`
+- the canonical lane-A summary path is
+  `tmp/reports/m256/M256-A002/class_metaclass_declaration_completeness_and_inheritance_modeling_summary.json`

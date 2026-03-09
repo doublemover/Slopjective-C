@@ -14,7 +14,13 @@ struct Objc3Program;
 struct Objc3IRRuntimeMetadataClassMetaclassBundle {
   std::string class_name;
   std::string owner_identity;
+  std::string class_owner_identity;
+  std::string metaclass_owner_identity;
   std::string super_bundle_owner_identity;
+  std::string super_class_owner_identity;
+  std::string super_metaclass_owner_identity;
+  std::string instance_method_owner_identity;
+  std::string class_method_owner_identity;
   bool has_super = false;
   std::size_t instance_method_count = 0;
   std::size_t class_method_count = 0;
@@ -227,8 +233,17 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_metadata_class_metaclass_name_model;
   std::string runtime_metadata_class_metaclass_super_link_model;
   std::string runtime_metadata_class_metaclass_method_list_reference_model;
+  std::string executable_class_metaclass_source_closure_contract_id;
+  std::string executable_class_metaclass_parent_identity_model;
+  std::string executable_class_metaclass_method_owner_identity_model;
+  std::string executable_class_metaclass_object_identity_model;
   bool runtime_metadata_class_metaclass_emission_ready = false;
   bool runtime_metadata_class_metaclass_emission_fail_closed = false;
+  bool executable_class_metaclass_source_closure_ready = false;
+  std::size_t executable_class_metaclass_declaration_node_count = 0;
+  std::size_t executable_class_metaclass_parent_identity_edge_count = 0;
+  std::size_t executable_class_metaclass_method_owner_identity_edge_count = 0;
+  std::size_t executable_class_metaclass_object_identity_edge_count = 0;
   std::string runtime_metadata_class_metaclass_typed_handoff_replay_key;
   std::vector<Objc3IRRuntimeMetadataClassMetaclassBundle>
       runtime_metadata_class_metaclass_bundles_lexicographic;

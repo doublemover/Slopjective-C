@@ -9512,6 +9512,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   // protocol/category composition and class/protocol/category linking before
   // later M256 realization, conformance, and category-merge issues make this
   // surface executable at runtime.
+  // M256-A002 class/metaclass completion anchor: sema preserves the same
+  // declaration-owned class/metaclass parent identities and method-owner split
+  // so later realization/runtime lanes can consume one stable source model.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

@@ -1966,6 +1966,37 @@ class Objc3IREmitter {
     // source-closure proof surface only. Later M256 realization issues must
     // preserve these identities while adding runnable class/category/protocol
     // behavior.
+    // M256-A002 executable class/metaclass source-closure anchor: the IR
+    // handoff now carries declaration-owned parent identities, method-owner
+    // identities, and class/metaclass object identities so later realization
+    // work consumes the same fail-closed source model.
+    if (frontend_metadata_.executable_class_metaclass_source_closure_ready) {
+      out << "; executable_class_metaclass_source_closure = contract="
+          << frontend_metadata_
+                 .executable_class_metaclass_source_closure_contract_id
+          << ";parent_identity_model="
+          << frontend_metadata_
+                 .executable_class_metaclass_parent_identity_model
+          << ";method_owner_identity_model="
+          << frontend_metadata_
+                 .executable_class_metaclass_method_owner_identity_model
+          << ";class_object_identity_model="
+          << frontend_metadata_
+                 .executable_class_metaclass_object_identity_model
+          << ";declaration_node_count="
+          << frontend_metadata_
+                 .executable_class_metaclass_declaration_node_count
+          << ";parent_identity_edge_count="
+          << frontend_metadata_
+                 .executable_class_metaclass_parent_identity_edge_count
+          << ";method_owner_identity_edge_count="
+          << frontend_metadata_
+                 .executable_class_metaclass_method_owner_identity_edge_count
+          << ";class_object_identity_edge_count="
+          << frontend_metadata_
+                 .executable_class_metaclass_object_identity_edge_count
+          << "\n";
+    }
     out << "!objc3.frontend = !{!0}\n";
     out << "!objc3.objc_interface_implementation = !{!1}\n";
     out << "!objc3.objc_protocol_category = !{!2}\n";

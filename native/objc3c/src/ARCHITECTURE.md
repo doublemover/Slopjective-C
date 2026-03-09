@@ -8763,3 +8763,26 @@ for the live runtime path:
   - `spec/planning/compiler/m256/m256_a001_executable_class_protocol_category_source_closure_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m256-a001-executable-class-protocol-category-source-closure-contract`
   - `check:objc3c:m256-a001-lane-a-readiness`
+
+## M256 class/metaclass declaration completeness plus inheritance modeling (A002)
+
+`M256-A002` upgrades the same source boundary into a realization-ready class
+closure:
+
+- interface and implementation declaration nodes now carry explicit:
+  - class/metaclass object identities
+  - superclass/super-metaclass parent identities
+  - instance/class method-owner identities
+- the declaration-owned class/metaclass object identities are now part of the
+  fail-closed executable source graph rather than an inferred downstream detail
+- class nodes now carry the same realization identity closure for later runtime
+  realization work
+- the executable metadata source graph fails closed unless those declaration and
+  parent/method-owner/object-identity closures are complete
+- IR republishes the same closure through one explicit
+  `executable_class_metaclass_source_closure` summary line
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_class_and_metaclass_declaration_completeness_plus_inheritance_modeling_core_feature_implementation_a002_expectations.md`
+  - `spec/planning/compiler/m256/m256_a002_class_and_metaclass_declaration_completeness_plus_inheritance_modeling_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-a002-class-and-metaclass-declaration-completeness-plus-inheritance-modeling`
+  - `check:objc3c:m256-a002-lane-a-readiness`

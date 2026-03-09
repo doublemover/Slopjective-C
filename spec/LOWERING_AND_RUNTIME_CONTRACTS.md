@@ -5806,3 +5806,27 @@ realization work must preserve:
   - instance storage/layout behavior
   - executable method binding
 - the next implementation issue is `M256-A002`
+
+## M256 class/metaclass declaration completeness plus inheritance modeling (A002)
+
+`M256-A002` upgrades the source closure from the earlier freeze into a
+runtime-facing declaration model:
+
+- contract id
+  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
+- the executable metadata source graph now carries explicit declaration-owned:
+  - class object identities
+  - metaclass object identities
+  - superclass and super-metaclass identities
+  - instance/class method-owner identities
+- IR republishes the same closure through
+  `; executable_class_metaclass_source_closure = ...`
+- the canonical identity models are:
+  - `declaration-owned-class-parent-plus-metaclass-parent-identities`
+  - `declaration-owned-instance-class-method-owner-identities`
+  - `declaration-owned-class-and-metaclass-object-identities`
+- this issue remains source-model work only and therefore does not yet claim:
+  - live runtime class realization
+  - root-class bootstrapping
+  - category merge or protocol conformance runtime behavior
+- the next implementation issue is `M256-A003`
