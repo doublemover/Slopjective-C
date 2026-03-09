@@ -5516,3 +5516,16 @@ registration/bootstrap evidence chain without adding new runtime behavior:
 - any drift in manifest authority, bootstrap status codes, registration-table
   realization, deterministic reset/replay, or launch integration must fail
   closed before `M254-E002`
+
+## M254 replay and bootstrap proof plus runbook closeout (E002)
+
+`M254-E002` closes the milestone by composing the already-landed `M254-E001`
+gate with one published operator runbook and one live smoke replay of that
+runbook:
+
+- contract id `objc3c-runtime-replay-bootstrap-closeout/m254-e002-v1`
+- closeout model `e001-gate-plus-live-operator-runbook-smoke`
+- canonical runbook
+  `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
+- canonical closeout evidence
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`

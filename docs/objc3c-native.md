@@ -16675,3 +16675,17 @@ registration/bootstrap evidence chain:
   - `M254-D003` deterministic reset/replay
   - `M254-D004` operator launch integration
 - explicit handoff issue `M254-E002`
+
+## Replay and bootstrap proof plus runbook closeout (M254-E002)
+
+`M254-E002` closes the milestone on top of that same implemented evidence chain
+while publishing the operator runbook that exercises the real integrated path:
+
+- contract id `objc3c-runtime-replay-bootstrap-closeout/m254-e002-v1`
+- closeout model `e001-gate-plus-live-operator-runbook-smoke`
+- authoritative upstream gate remains
+  `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
+- canonical runbook
+  `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
+- canonical closeout evidence
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`

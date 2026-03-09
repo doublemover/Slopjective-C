@@ -7503,6 +7503,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // startup registration inputs ad hoc from loose sidecars.
            // M254-E001 startup-registration gate anchor: the semantic-surface registration manifest remains the canonical lane-E gate input
            // for the A002/B002/C003/D003/D004 replay-stable bootstrap evidence chain.
+           // M254-E002 runbook-closeout anchor: the registration manifest summary stays authoritative for the published runbook
+           // and its live smoke replay proof.
            << ",\"objc_runtime_translation_unit_registration_manifest\":"
            << BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
                   runtime_translation_unit_registration_manifest)

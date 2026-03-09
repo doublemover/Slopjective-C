@@ -6575,3 +6575,15 @@ summary-chain based, but the metadata anchors it trusts are still concrete:
 - `bootstrap_image_local_init_state_symbol`
 - `launch_integration_contract_id`
 - `driver_linker_flags`
+
+## M254 replay/bootstrap closeout metadata anchors (E002)
+
+`M254-E002` keeps the same emitted bootstrap metadata authoritative while
+closing the milestone on one published operator runbook and one live smoke
+replay:
+
+- emitted launch authority remains `module.runtime-registration-manifest.json`
+- runbook smoke evidence path remains
+  `tmp/artifacts/objc3c-native/execution-smoke/m254_e002_bootstrap_runbook_closeout/summary.json`
+- closeout evidence remains
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`

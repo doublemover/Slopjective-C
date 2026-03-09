@@ -199,3 +199,11 @@ implemented bootstrap proof chain:
   `tmp/reports/m254/M254-E001/startup_registration_gate_summary.json`
 - no new runtime/bootstrap behavior lands in `M254-E001`; it is a fail-closed
   validation boundary ahead of `M254-E002`
+
+`M254-E002` closes the milestone on top of the same replay/bootstrap evidence
+with one published operator runbook:
+
+- `docs/runbooks/m254_bootstrap_replay_operator_runbook.md`
+- `scripts/check_objc3c_native_execution_smoke.ps1`
+- canonical closeout evidence
+  `tmp/reports/m254/M254-E002/replay_bootstrap_runbook_closeout_summary.json`

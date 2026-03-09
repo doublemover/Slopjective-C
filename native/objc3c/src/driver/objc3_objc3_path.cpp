@@ -187,6 +187,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           // M254-E001 startup-registration gate anchor: lane-E consumes the
           // emitted registration manifest plus the A002/B002/C003/D003/D004 evidence chain
           // exactly as published here before E002 closeout broadens the gate.
+          // M254-E002 runbook-closeout anchor: the published operator runbook
+          // must stay bound to this emitted manifest contract instead of a
+          // separately reconstructed launch path.
           manifest_inputs.launch_integration_contract_id =
               registration_manifest_summary.launch_integration_contract_id;
           manifest_inputs.runtime_library_resolution_model =

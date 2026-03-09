@@ -732,6 +732,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // M254-E001 startup-registration gate anchor: lane-E closes over this same
   // emitted manifest plus the replay-stable bootstrap evidence chain from
   // A002/B002/C003/D003/D004, so drift here must fail closed before E002.
+  // M254-E002 runbook-closeout anchor: the operator runbook must stay bound to this emitted launch contract
+  // and prove the same integrated path end to end.
 
   std::ostringstream out;
   out << "{\n"
