@@ -1225,6 +1225,14 @@ inline constexpr const char *kObjc3BootstrapLegalityFailureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract";
 inline constexpr const char *kObjc3BootstrapLegalityImageOrderInvariantModel =
     kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel;
+inline constexpr const char *kObjc3BootstrapLegalitySemanticsContractId =
+    "objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1";
+inline constexpr const char *kObjc3BootstrapLegalitySemanticsSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics";
+inline constexpr const char *kObjc3BootstrapLegalityCrossImageLegalityModel =
+    "translation-unit-identity-key-and-registration-order-ordinal-govern-bootstrap-legality";
+inline constexpr const char *kObjc3BootstrapLegalitySemanticDiagnosticModel =
+    "fail-closed-bootstrap-legality-before-runtime-handoff";
 
 struct Objc3BootstrapLegalityFailureContractSummary {
   std::string contract_id = kObjc3BootstrapLegalityFailureContractId;
@@ -1275,6 +1283,53 @@ inline bool IsReadyObjc3BootstrapLegalityFailureContractSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3BootstrapLegalitySemanticsSummary {
+  std::string contract_id = kObjc3BootstrapLegalitySemanticsContractId;
+  std::string bootstrap_legality_failure_contract_id =
+      kObjc3BootstrapLegalityFailureContractId;
+  std::string bootstrap_semantics_contract_id =
+      kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string surface_path = kObjc3BootstrapLegalitySemanticsSurfacePath;
+  std::string duplicate_registration_policy =
+      kObjc3RuntimeStartupBootstrapDuplicateRegistrationPolicy;
+  std::string image_registration_order_invariant =
+      kObjc3BootstrapLegalityImageOrderInvariantModel;
+  std::string cross_image_legality_model =
+      kObjc3BootstrapLegalityCrossImageLegalityModel;
+  std::string semantic_diagnostic_model =
+      kObjc3BootstrapLegalitySemanticDiagnosticModel;
+  bool fail_closed = false;
+  bool bootstrap_legality_failure_contract_ready = false;
+  bool duplicate_registration_semantics_landed = false;
+  bool image_order_semantics_landed = false;
+  bool cross_image_legality_semantics_landed = false;
+  bool semantic_diagnostics_landed = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string bootstrap_legality_failure_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3BootstrapLegalitySemanticsSummary(
+    const Objc3BootstrapLegalitySemanticsSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.bootstrap_legality_failure_contract_id.empty() &&
+         !summary.bootstrap_semantics_contract_id.empty() &&
+         !summary.surface_path.empty() &&
+         !summary.duplicate_registration_policy.empty() &&
+         !summary.image_registration_order_invariant.empty() &&
+         !summary.cross_image_legality_model.empty() &&
+         !summary.semantic_diagnostic_model.empty() && summary.fail_closed &&
+         summary.bootstrap_legality_failure_contract_ready &&
+         summary.duplicate_registration_semantics_landed &&
+         summary.image_order_semantics_landed &&
+         summary.cross_image_legality_semantics_landed &&
+         summary.semantic_diagnostics_landed &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.bootstrap_legality_failure_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
@@ -1295,6 +1350,8 @@ struct Objc3SemanticIntegrationSurface {
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   Objc3BootstrapLegalityFailureContractSummary
       bootstrap_legality_failure_contract_summary;
+  Objc3BootstrapLegalitySemanticsSummary
+      bootstrap_legality_semantics_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;

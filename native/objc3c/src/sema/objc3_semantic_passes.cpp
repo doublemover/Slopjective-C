@@ -262,6 +262,68 @@ BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
   return summary;
 }
 
+static std::string BuildBootstrapLegalitySemanticsReplayKey(
+    const Objc3BootstrapLegalitySemanticsSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";bootstrap_legality_failure_contract_id="
+      << summary.bootstrap_legality_failure_contract_id
+      << ";bootstrap_semantics_contract_id="
+      << summary.bootstrap_semantics_contract_id
+      << ";surface_path=" << summary.surface_path
+      << ";duplicate_registration_policy="
+      << summary.duplicate_registration_policy
+      << ";image_registration_order_invariant="
+      << summary.image_registration_order_invariant
+      << ";cross_image_legality_model=" << summary.cross_image_legality_model
+      << ";semantic_diagnostic_model=" << summary.semantic_diagnostic_model
+      << ";bootstrap_legality_failure_replay_key="
+      << summary.bootstrap_legality_failure_replay_key;
+  return out.str();
+}
+
+static Objc3BootstrapLegalitySemanticsSummary
+BuildBootstrapLegalitySemanticsSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3BootstrapLegalitySemanticsSummary summary;
+  summary.fail_closed = true;
+  summary.bootstrap_legality_failure_contract_ready =
+      IsReadyObjc3BootstrapLegalityFailureContractSummary(
+          surface.bootstrap_legality_failure_contract_summary);
+  if (summary.bootstrap_legality_failure_contract_ready) {
+    summary.duplicate_registration_policy =
+        surface.bootstrap_legality_failure_contract_summary
+            .duplicate_registration_policy;
+    summary.image_registration_order_invariant =
+        surface.bootstrap_legality_failure_contract_summary
+            .image_registration_order_invariant;
+    summary.bootstrap_legality_failure_replay_key =
+        surface.bootstrap_legality_failure_contract_summary.replay_key;
+  }
+  summary.duplicate_registration_semantics_landed =
+      summary.bootstrap_legality_failure_contract_ready;
+  summary.image_order_semantics_landed =
+      summary.bootstrap_legality_failure_contract_ready;
+  summary.cross_image_legality_semantics_landed =
+      summary.bootstrap_legality_failure_contract_ready;
+  summary.semantic_diagnostics_landed =
+      summary.bootstrap_legality_failure_contract_ready &&
+      surface.bootstrap_legality_failure_contract_summary
+          .semantic_diagnostics_required;
+  summary.ready_for_lowering_and_runtime =
+      summary.bootstrap_legality_failure_contract_ready &&
+      surface.bootstrap_legality_failure_contract_summary
+          .ready_for_lowering_and_runtime;
+  if (summary.ready_for_lowering_and_runtime) {
+    summary.replay_key = BuildBootstrapLegalitySemanticsReplayKey(summary);
+  }
+  if (!IsReadyObjc3BootstrapLegalitySemanticsSummary(summary)) {
+    summary.failure_reason =
+        "bootstrap legality duplicate/order semantics summary is incomplete";
+  }
+  return summary;
+}
+
 static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
   if (lhs.is_vector != rhs.is_vector) {
     return false;
@@ -10832,6 +10894,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.bootstrap_legality_failure_contract_summary =
       BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
           surface);
+  surface.bootstrap_legality_semantics_summary =
+      BuildBootstrapLegalitySemanticsSummaryFromIntegrationSurface(surface);
   // M256-A001 executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before

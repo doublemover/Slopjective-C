@@ -6044,4 +6044,33 @@ Non-goals:
 
 - no multi-image bootstrap execution yet
 - no runtime replay implementation yet
+
+## M263 duplicate-registration and image-order semantics (B002)
+
+`M263-B002` turns the `M263-B001` freeze into a live semantic bridge that
+publishes duplicate-registration and cross-image legality using the emitted
+translation-unit identity key and registration-order ordinal.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- canonical models:
+  - duplicate registration
+    `fail-closed-by-translation-unit-identity-key`
+  - image order invariant
+    `strictly-monotonic-positive-registration-order-ordinal`
+  - cross-image legality
+    `translation-unit-identity-key-and-registration-order-ordinal-govern-bootstrap-legality`
+  - semantic diagnostics
+    `fail-closed-bootstrap-legality-before-runtime-handoff`
+- deterministic proof minimums:
+  - recompiling the same translation unit preserves the same
+    `translation_unit_identity_key`
+  - peer translation units with identical visible bootstrap identifiers receive
+    different `translation_unit_identity_key` values
 - no API widening beyond the already-frozen bootstrap/runtime contracts

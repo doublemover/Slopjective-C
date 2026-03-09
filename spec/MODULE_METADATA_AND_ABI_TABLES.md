@@ -7083,3 +7083,32 @@ Frozen metadata/runtime anchors:
   - `translation_unit_registration_order_ordinal`
 
 This freeze does not yet land multi-image bootstrap execution or replay.
+
+## M263 duplicate-registration and image-order semantics metadata anchors (B002)
+
+`M263-B002` publishes the live bootstrap duplicate/order semantic bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- identity/order fields:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+  - `translation_unit_registration_order_ordinal`
+- continuity fields:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identity_source`
+- semantic landing fields:
+  - `duplicate_registration_semantics_landed`
+  - `image_order_semantics_landed`
+  - `cross_image_legality_semantics_landed`
+  - `semantic_diagnostics_landed`
+  - `ready_for_lowering_and_runtime`

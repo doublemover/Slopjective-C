@@ -8966,3 +8966,20 @@ surface:
   - `spec/planning/compiler/m263/m263_b001_bootstrap_legality_duplicate_policy_and_failure_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m263-b001-bootstrap-legality-duplicate-policy-and-failure-contract`
   - `check:objc3c:m263-b001-lane-b-readiness`
+
+## M263 duplicate-registration and image-order semantics (B002)
+
+`M263-B002` lands the live semantic bridge over the residual bootstrap surface:
+
+- sema owns the canonical duplicate/order legality summary, including the
+  cross-image legality model and semantic-diagnostic model
+- frontend publication owns the manifest-visible bridge that carries the real
+  `translation_unit_identity_key` alongside the emitted registration/image
+  identifiers and registration-order ordinal
+- lowering/runtime consumers must now reuse that identity key rather than
+  rebuilding translation-unit identity from ad-hoc side channels
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_duplicate_registration_and_image_order_semantics_core_feature_implementation_b002_expectations.md`
+  - `spec/planning/compiler/m263/m263_b002_duplicate_registration_and_image_order_semantics_core_feature_implementation_packet.md`
+  - `check:objc3c:m263-b002-duplicate-registration-and-image-order-semantics`
+  - `check:objc3c:m263-b002-lane-b-readiness`

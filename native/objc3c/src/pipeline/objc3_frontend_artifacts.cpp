@@ -117,6 +117,14 @@ std::string MakeIdentifierSafeSuffix(const std::string &text) {
   return suffix.empty() ? "objc3_module" : suffix;
 }
 
+std::string BuildObjc3TranslationUnitIdentityKey(
+    const std::filesystem::path &input_path,
+    const Objc3ParseLoweringReadinessSurface &parse_lowering_readiness_surface) {
+  return input_path.generic_string() + "|" +
+         parse_lowering_readiness_surface.parse_artifact_replay_key + "|" +
+         parse_lowering_readiness_surface.lowering_boundary_replay_key;
+}
+
 std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph) {
   std::ostringstream out;
@@ -3067,6 +3075,241 @@ std::string BuildRuntimeBootstrapLegalityFailureContractSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeBootstrapLegalitySemanticsReplayKey(
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";bootstrap_legality_failure_contract_id="
+      << summary.bootstrap_legality_failure_contract_id
+      << ";registration_descriptor_frontend_closure_contract_id="
+      << summary.registration_descriptor_frontend_closure_contract_id
+      << ";bootstrap_semantics_contract_id="
+      << summary.bootstrap_semantics_contract_id
+      << ";frontend_surface_path=" << summary.frontend_surface_path
+      << ";duplicate_registration_policy="
+      << summary.duplicate_registration_policy
+      << ";image_registration_order_invariant="
+      << summary.image_registration_order_invariant
+      << ";cross_image_legality_model=" << summary.cross_image_legality_model
+      << ";semantic_diagnostic_model=" << summary.semantic_diagnostic_model
+      << ";translation_unit_identity_model="
+      << summary.translation_unit_identity_model
+      << ";translation_unit_identity_key=" << summary.translation_unit_identity_key
+      << ";registration_descriptor_identifier="
+      << summary.registration_descriptor_identifier
+      << ";image_root_identifier=" << summary.image_root_identifier
+      << ";registration_descriptor_identity_source="
+      << summary.registration_descriptor_identity_source
+      << ";image_root_identity_source=" << summary.image_root_identity_source
+      << ";translation_unit_registration_order_ordinal="
+      << summary.translation_unit_registration_order_ordinal
+      << ";semantic_boundary_replay_key=" << summary.semantic_boundary_replay_key
+      << ";bootstrap_legality_failure_contract_replay_key="
+      << summary.bootstrap_legality_failure_contract_replay_key
+      << ";registration_descriptor_frontend_closure_replay_key="
+      << summary.registration_descriptor_frontend_closure_replay_key
+      << ";bootstrap_semantics_replay_key="
+      << summary.bootstrap_semantics_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeBootstrapLegalitySemanticsSummary
+BuildRuntimeBootstrapLegalitySemanticsSummary(
+    const Objc3BootstrapLegalitySemanticsSummary &semantic_boundary,
+    const Objc3RuntimeBootstrapLegalityFailureContractSummary
+        &bootstrap_legality_failure_contract,
+    const Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
+        &registration_descriptor_frontend_closure,
+    const Objc3RuntimeBootstrapSemanticsSummary &bootstrap_semantics,
+    const std::string &translation_unit_identity_key) {
+  Objc3RuntimeBootstrapLegalitySemanticsSummary summary;
+  summary.fail_closed = true;
+  summary.semantic_boundary_ready =
+      IsReadyObjc3BootstrapLegalitySemanticsSummary(semantic_boundary);
+  summary.bootstrap_legality_failure_contract_ready =
+      IsReadyObjc3RuntimeBootstrapLegalityFailureContractSummary(
+          bootstrap_legality_failure_contract);
+  summary.registration_descriptor_frontend_closure_contract_ready =
+      IsReadyObjc3RuntimeRegistrationDescriptorFrontendClosureSummary(
+          registration_descriptor_frontend_closure);
+  summary.bootstrap_semantics_contract_ready =
+      IsReadyObjc3RuntimeBootstrapSemanticsSummary(bootstrap_semantics);
+  summary.translation_unit_identity_key = translation_unit_identity_key;
+
+  if (summary.semantic_boundary_ready) {
+    summary.duplicate_registration_policy =
+        semantic_boundary.duplicate_registration_policy;
+    summary.image_registration_order_invariant =
+        semantic_boundary.image_registration_order_invariant;
+    summary.cross_image_legality_model =
+        semantic_boundary.cross_image_legality_model;
+    summary.semantic_diagnostic_model =
+        semantic_boundary.semantic_diagnostic_model;
+    summary.duplicate_registration_semantics_landed =
+        semantic_boundary.duplicate_registration_semantics_landed;
+    summary.image_order_semantics_landed =
+        semantic_boundary.image_order_semantics_landed;
+    summary.cross_image_legality_semantics_landed =
+        semantic_boundary.cross_image_legality_semantics_landed;
+    summary.semantic_diagnostics_landed =
+        semantic_boundary.semantic_diagnostics_landed;
+    summary.semantic_boundary_replay_key = semantic_boundary.replay_key;
+  }
+
+  if (summary.bootstrap_legality_failure_contract_ready) {
+    summary.registration_descriptor_identifier =
+        bootstrap_legality_failure_contract.registration_descriptor_identifier;
+    summary.image_root_identifier =
+        bootstrap_legality_failure_contract.image_root_identifier;
+    summary.registration_descriptor_identity_source =
+        bootstrap_legality_failure_contract
+            .registration_descriptor_identity_source;
+    summary.image_root_identity_source =
+        bootstrap_legality_failure_contract.image_root_identity_source;
+    summary.translation_unit_registration_order_ordinal =
+        bootstrap_legality_failure_contract
+            .translation_unit_registration_order_ordinal;
+    summary.bootstrap_legality_failure_contract_replay_key =
+        bootstrap_legality_failure_contract.replay_key;
+  }
+
+  if (summary.registration_descriptor_frontend_closure_contract_ready) {
+    summary.translation_unit_identity_model =
+        registration_descriptor_frontend_closure.translation_unit_identity_model;
+    summary.registration_descriptor_frontend_closure_replay_key =
+        registration_descriptor_frontend_closure.replay_key;
+  }
+
+  if (summary.bootstrap_semantics_contract_ready) {
+    summary.translation_unit_identity_model =
+        bootstrap_semantics.translation_unit_identity_model;
+    summary.translation_unit_registration_order_ordinal =
+        bootstrap_semantics.translation_unit_registration_order_ordinal;
+    summary.bootstrap_semantics_replay_key = bootstrap_semantics.replay_key;
+  }
+
+  summary.ready_for_lowering_and_runtime =
+      summary.semantic_boundary_ready &&
+      summary.bootstrap_legality_failure_contract_ready &&
+      summary.registration_descriptor_frontend_closure_contract_ready &&
+      summary.bootstrap_semantics_contract_ready &&
+      summary.duplicate_registration_semantics_landed &&
+      summary.image_order_semantics_landed &&
+      summary.cross_image_legality_semantics_landed &&
+      summary.semantic_diagnostics_landed &&
+      summary.duplicate_registration_policy ==
+          bootstrap_legality_failure_contract.duplicate_registration_policy &&
+      summary.duplicate_registration_policy ==
+          bootstrap_semantics.duplicate_registration_policy &&
+      summary.image_registration_order_invariant ==
+          bootstrap_legality_failure_contract.image_registration_order_invariant &&
+      summary.image_registration_order_invariant ==
+          bootstrap_semantics.registration_order_ordinal_model &&
+      summary.translation_unit_identity_model ==
+          registration_descriptor_frontend_closure.translation_unit_identity_model &&
+      summary.translation_unit_identity_model ==
+          bootstrap_semantics.translation_unit_identity_model &&
+      summary.registration_descriptor_identifier ==
+          registration_descriptor_frontend_closure
+              .registration_descriptor_identifier &&
+      summary.image_root_identifier ==
+          registration_descriptor_frontend_closure.image_root_identifier &&
+      summary.registration_descriptor_identity_source ==
+          registration_descriptor_frontend_closure
+              .registration_descriptor_identity_source &&
+      summary.image_root_identity_source ==
+          registration_descriptor_frontend_closure.image_root_identity_source &&
+      summary.translation_unit_registration_order_ordinal ==
+          registration_descriptor_frontend_closure
+              .translation_unit_registration_order_ordinal &&
+      summary.translation_unit_registration_order_ordinal ==
+          bootstrap_semantics.translation_unit_registration_order_ordinal &&
+      !summary.translation_unit_identity_key.empty();
+
+  if (summary.ready_for_lowering_and_runtime) {
+    summary.replay_key = BuildRuntimeBootstrapLegalitySemanticsReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeBootstrapLegalitySemanticsSummary(summary)) {
+    summary.failure_reason =
+        "runtime bootstrap legality duplicate/order semantics summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeBootstrapLegalitySemanticsSummaryJson(
+    const Objc3RuntimeBootstrapLegalitySemanticsSummary &summary) {
+  std::ostringstream out;
+  out << "{\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"bootstrap_legality_failure_contract_id\":\""
+      << EscapeJsonString(summary.bootstrap_legality_failure_contract_id)
+      << "\",\"registration_descriptor_frontend_closure_contract_id\":\""
+      << EscapeJsonString(
+             summary.registration_descriptor_frontend_closure_contract_id)
+      << "\",\"bootstrap_semantics_contract_id\":\""
+      << EscapeJsonString(summary.bootstrap_semantics_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"duplicate_registration_policy\":\""
+      << EscapeJsonString(summary.duplicate_registration_policy)
+      << "\",\"image_registration_order_invariant\":\""
+      << EscapeJsonString(summary.image_registration_order_invariant)
+      << "\",\"cross_image_legality_model\":\""
+      << EscapeJsonString(summary.cross_image_legality_model)
+      << "\",\"semantic_diagnostic_model\":\""
+      << EscapeJsonString(summary.semantic_diagnostic_model)
+      << "\",\"translation_unit_identity_model\":\""
+      << EscapeJsonString(summary.translation_unit_identity_model)
+      << "\",\"translation_unit_identity_key\":\""
+      << EscapeJsonString(summary.translation_unit_identity_key)
+      << "\",\"registration_descriptor_identifier\":\""
+      << EscapeJsonString(summary.registration_descriptor_identifier)
+      << "\",\"image_root_identifier\":\""
+      << EscapeJsonString(summary.image_root_identifier)
+      << "\",\"registration_descriptor_identity_source\":\""
+      << EscapeJsonString(summary.registration_descriptor_identity_source)
+      << "\",\"image_root_identity_source\":\""
+      << EscapeJsonString(summary.image_root_identity_source)
+      << "\",\"translation_unit_registration_order_ordinal\":"
+      << summary.translation_unit_registration_order_ordinal << ",\"ready\":"
+      << (IsReadyObjc3RuntimeBootstrapLegalitySemanticsSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"semantic_boundary_ready\":"
+      << (summary.semantic_boundary_ready ? "true" : "false")
+      << ",\"bootstrap_legality_failure_contract_ready\":"
+      << (summary.bootstrap_legality_failure_contract_ready ? "true" : "false")
+      << ",\"registration_descriptor_frontend_closure_contract_ready\":"
+      << (summary.registration_descriptor_frontend_closure_contract_ready
+              ? "true"
+              : "false")
+      << ",\"bootstrap_semantics_contract_ready\":"
+      << (summary.bootstrap_semantics_contract_ready ? "true" : "false")
+      << ",\"duplicate_registration_semantics_landed\":"
+      << (summary.duplicate_registration_semantics_landed ? "true" : "false")
+      << ",\"image_order_semantics_landed\":"
+      << (summary.image_order_semantics_landed ? "true" : "false")
+      << ",\"cross_image_legality_semantics_landed\":"
+      << (summary.cross_image_legality_semantics_landed ? "true" : "false")
+      << ",\"semantic_diagnostics_landed\":"
+      << (summary.semantic_diagnostics_landed ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"semantic_boundary_replay_key\":\""
+      << EscapeJsonString(summary.semantic_boundary_replay_key)
+      << "\",\"bootstrap_legality_failure_contract_replay_key\":\""
+      << EscapeJsonString(summary.bootstrap_legality_failure_contract_replay_key)
+      << "\",\"registration_descriptor_frontend_closure_replay_key\":\""
+      << EscapeJsonString(
+             summary.registration_descriptor_frontend_closure_replay_key)
+      << "\",\"bootstrap_semantics_replay_key\":\""
+      << EscapeJsonString(summary.bootstrap_semantics_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeBootstrapApiReplayKey(
     const Objc3RuntimeBootstrapApiSummary &summary) {
   std::ostringstream out;
@@ -5293,6 +5536,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeRegistrationDescriptorFrontendClosureSummary(
               runtime_registration_descriptor_image_root_source_surface,
               runtime_translation_unit_registration_manifest);
+  const std::string translation_unit_identity_key =
+      BuildObjc3TranslationUnitIdentityKey(
+          input_path, pipeline_result.parse_lowering_readiness_surface);
   const Objc3RuntimeStartupBootstrapInvariantSummary
       runtime_startup_bootstrap_invariants =
           BuildRuntimeStartupBootstrapInvariantSummary(
@@ -5311,6 +5557,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   .bootstrap_legality_failure_contract_summary,
               runtime_registration_descriptor_frontend_closure,
               runtime_bootstrap_semantics);
+  const Objc3RuntimeBootstrapLegalitySemanticsSummary
+      runtime_bootstrap_legality_semantics =
+          BuildRuntimeBootstrapLegalitySemanticsSummary(
+              pipeline_result.sema_parity_surface
+                  .bootstrap_legality_semantics_summary,
+              runtime_bootstrap_legality_failure_contract,
+              runtime_registration_descriptor_frontend_closure,
+              runtime_bootstrap_semantics, translation_unit_identity_key);
   const Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering =
       BuildRuntimeBootstrapLoweringSummary(
           runtime_translation_unit_registration_manifest,
@@ -7760,6 +8014,127 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           << EscapeJsonString(runtime_bootstrap_legality_failure_contract
                                   .failure_reason)
           << "\""
+          << ",\"runtime_bootstrap_legality_semantics_contract_id\":\""
+          << EscapeJsonString(runtime_bootstrap_legality_semantics.contract_id)
+          << "\",\"runtime_bootstrap_legality_semantics_bootstrap_legality_failure_contract_id\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .bootstrap_legality_failure_contract_id)
+          << "\",\"runtime_bootstrap_legality_semantics_registration_descriptor_frontend_closure_contract_id\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .registration_descriptor_frontend_closure_contract_id)
+          << "\",\"runtime_bootstrap_legality_semantics_bootstrap_semantics_contract_id\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .bootstrap_semantics_contract_id)
+          << "\",\"runtime_bootstrap_legality_semantics_frontend_surface_path\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics.frontend_surface_path)
+          << "\",\"runtime_bootstrap_legality_semantics_duplicate_registration_policy\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .duplicate_registration_policy)
+          << "\",\"runtime_bootstrap_legality_semantics_image_registration_order_invariant\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .image_registration_order_invariant)
+          << "\",\"runtime_bootstrap_legality_semantics_cross_image_legality_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics.cross_image_legality_model)
+          << "\",\"runtime_bootstrap_legality_semantics_semantic_diagnostic_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .semantic_diagnostic_model)
+          << "\",\"runtime_bootstrap_legality_semantics_translation_unit_identity_model\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .translation_unit_identity_model)
+          << "\",\"runtime_bootstrap_legality_semantics_translation_unit_identity_key\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .translation_unit_identity_key)
+          << "\",\"runtime_bootstrap_legality_semantics_registration_descriptor_identifier\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .registration_descriptor_identifier)
+          << "\",\"runtime_bootstrap_legality_semantics_image_root_identifier\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics.image_root_identifier)
+          << "\",\"runtime_bootstrap_legality_semantics_registration_descriptor_identity_source\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .registration_descriptor_identity_source)
+          << "\",\"runtime_bootstrap_legality_semantics_image_root_identity_source\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .image_root_identity_source)
+          << "\",\"runtime_bootstrap_legality_semantics_translation_unit_registration_order_ordinal\":"
+          << runtime_bootstrap_legality_semantics
+                 .translation_unit_registration_order_ordinal
+          << ",\"runtime_bootstrap_legality_semantics_fail_closed\":"
+          << (runtime_bootstrap_legality_semantics.fail_closed ? "true"
+                                                               : "false")
+          << ",\"runtime_bootstrap_legality_semantics_semantic_boundary_ready\":"
+          << (runtime_bootstrap_legality_semantics.semantic_boundary_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_bootstrap_legality_failure_contract_ready\":"
+          << (runtime_bootstrap_legality_semantics
+                      .bootstrap_legality_failure_contract_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_registration_descriptor_frontend_closure_contract_ready\":"
+          << (runtime_bootstrap_legality_semantics
+                      .registration_descriptor_frontend_closure_contract_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_bootstrap_semantics_contract_ready\":"
+          << (runtime_bootstrap_legality_semantics
+                      .bootstrap_semantics_contract_ready
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_duplicate_registration_semantics_landed\":"
+          << (runtime_bootstrap_legality_semantics
+                      .duplicate_registration_semantics_landed
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_image_order_semantics_landed\":"
+          << (runtime_bootstrap_legality_semantics.image_order_semantics_landed
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_cross_image_legality_semantics_landed\":"
+          << (runtime_bootstrap_legality_semantics
+                      .cross_image_legality_semantics_landed
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_semantic_diagnostics_landed\":"
+          << (runtime_bootstrap_legality_semantics.semantic_diagnostics_landed
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_ready_for_lowering_and_runtime\":"
+          << (runtime_bootstrap_legality_semantics.ready_for_lowering_and_runtime
+                  ? "true"
+                  : "false")
+          << ",\"runtime_bootstrap_legality_semantics_semantic_boundary_replay_key\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics.semantic_boundary_replay_key)
+          << "\",\"runtime_bootstrap_legality_semantics_bootstrap_legality_failure_contract_replay_key\":\""
+          << EscapeJsonString(runtime_bootstrap_legality_semantics
+                                  .bootstrap_legality_failure_contract_replay_key)
+          << "\",\"runtime_bootstrap_legality_semantics_registration_descriptor_frontend_closure_replay_key\":\""
+          << EscapeJsonString(runtime_bootstrap_legality_semantics
+                                  .registration_descriptor_frontend_closure_replay_key)
+          << "\",\"runtime_bootstrap_legality_semantics_bootstrap_semantics_replay_key\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics
+                     .bootstrap_semantics_replay_key)
+          << "\",\"runtime_bootstrap_legality_semantics_replay_key\":\""
+          << EscapeJsonString(runtime_bootstrap_legality_semantics.replay_key)
+          << "\",\"runtime_bootstrap_legality_semantics_failure_reason\":\""
+          << EscapeJsonString(
+                 runtime_bootstrap_legality_semantics.failure_reason)
+          << "\""
           << ",\"runtime_bootstrap_api_contract_id\":\""
           << EscapeJsonString(runtime_bootstrap_api.contract_id)
           << "\",\"runtime_bootstrap_api_public_header_path\":\""
@@ -8913,6 +9288,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_bootstrap_legality_failure_contract\":"
            << BuildRuntimeBootstrapLegalityFailureContractSummaryJson(
                   runtime_bootstrap_legality_failure_contract)
+           // M263-B002 bootstrap-legality semantics anchor: lane-B now lands
+           // the live duplicate-registration and image-order semantic bridge
+           // over the emitted translation-unit identity key so lowering and
+           // runtime handoff consume one canonical cross-image legality model.
+           << ",\"objc_runtime_bootstrap_legality_semantics\":"
+           << BuildRuntimeBootstrapLegalitySemanticsSummaryJson(
+                  runtime_bootstrap_legality_semantics)
            // M254-D001 runtime-bootstrap-api anchor: lane-D freezes the
            // runtime-owned bootstrap header/archive/entrypoint/reset surface as
            // one canonical packet that later image-walk and reset-expansion
@@ -10120,6 +10502,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_registration_descriptor_frontend_closure;
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
+  bundle.runtime_bootstrap_legality_semantics_summary =
+      runtime_bootstrap_legality_semantics;
   bundle.runtime_bootstrap_legality_failure_contract_summary =
       runtime_bootstrap_legality_failure_contract;
   bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
@@ -11150,9 +11534,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       true;
   ir_frontend_metadata
       .runtime_metadata_archive_static_link_translation_unit_identity_key =
-      input_path.generic_string() + "|" +
-      bundle.parse_lowering_readiness_surface.parse_artifact_replay_key + "|" +
-      bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key;
+      BuildObjc3TranslationUnitIdentityKey(
+          input_path, bundle.parse_lowering_readiness_surface);
   // M254-C002 bootstrap materialization anchor: the native IR emitter consumes
   // this lowering packet directly when it materializes the ctor root, derived
   // init stub, registration table, and image descriptor. Driver/process code

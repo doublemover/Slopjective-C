@@ -203,6 +203,58 @@ Recommended M147 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m147_frontend_protocol_category_contract.py -q`
 
+## Bootstrap legality, duplicate policy, and failure contract (M263-B001)
+
+`M263-B001` freezes the fail-closed bootstrap legality packet that bridges the
+emitted `M263-A002` registration-descriptor closure and the live `M254-B002`
+bootstrap semantics surface.
+
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract`
+- restart lifecycle model
+  `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+- later runtime/lowering work must preserve the frozen duplicate-registration
+  and image-order legality model rather than rebuilding identity/order rules
+  from ad-hoc bootstrap side channels
+
+## Registration manifest and descriptor frontend closure (M263-A002)
+
+`M263-A002` publishes the frontend-owned bridge from the emitted translation-unit
+registration manifest to the runtime registration-descriptor artifact.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- emitted artifact
+  `module.runtime-registration-descriptor.json`
+- the frontend closure carries the emitted registration/image identifiers, the
+  translation-unit registration ordinal, and the translation-unit identity key
+  into later bootstrap legality and lowering/runtime handoff work
+
+## Duplicate-registration and image-order semantics (M263-B002)
+
+`M263-B002` lands the live semantic bridge that publishes duplicate-registration
+and cross-image legality using the emitted translation-unit identity key rather
+than a contract-only freeze.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`
+- the semantic surface now carries:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+  - `translation_unit_registration_order_ordinal`
+  - `duplicate_registration_policy`
+  - `image_registration_order_invariant`
+  - `cross_image_legality_model`
+- deterministic probe guarantees:
+  - recompiling the same translation unit preserves the same
+    `translation_unit_identity_key`
+  - compiling a peer translation unit with identical visible bootstrap names
+    yields a different `translation_unit_identity_key`
+  - visible registration/image identifiers still flow through from the emitted
+    `M263-A002` registration-descriptor closure
+
 ## M148 frontend selector-normalized method declaration grammar
 
 Frontend parser/AST method-declaration support now captures selector pieces and emits a canonical selector spelling for
