@@ -19,6 +19,14 @@ inline constexpr const char *kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily =
     "objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat";
 inline constexpr const char *kObjc3DispatchSurfaceDirectDispatchBinding =
     "reserved-non-goal";
+inline constexpr const char *kObjc3DispatchLegalitySelectorResolutionContractId =
+    "objc3c-dispatch-legality-selector-resolution/m255-b001-v1";
+inline constexpr const char *kObjc3DispatchLegalitySelectorResolutionBoundaryModel =
+    "selector-normalized-arity-checked-receiver-required-no-overload";
+inline constexpr const char *kObjc3DispatchLegalitySelectorResolutionAmbiguityPolicy =
+    "fail-closed-on-unresolved-or-ambiguous-selector-resolution";
+inline constexpr const char *kObjc3DispatchLegalitySelectorResolutionSupportedSelectorForms =
+    "unary-and-keyword-selectors";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory

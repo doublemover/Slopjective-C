@@ -5561,3 +5561,19 @@ semantic, and lowering handoff for the current native path:
   `!objc3.objc_dispatch_surface_classification`
 - the live lowering handoff contract remains
   `objc3c-dispatch-surface-classification/m255-a001-v1`
+
+## M255 dispatch legality and selector resolution (B001)
+
+`M255-B001` freezes the live legality and selector-resolution rules that the
+current native dispatch path consumes:
+
+- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
+- boundary model
+  `selector-normalized-arity-checked-receiver-required-no-overload`
+- ambiguity policy
+  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
+- selector forms stay normalized unary/keyword selectors only
+- receiver presence remains mandatory before dispatch lowering consumes the site
+- direct dispatch remains reserved
+- this freeze exists to hand off one deterministic legality packet to
+  `M255-B002`

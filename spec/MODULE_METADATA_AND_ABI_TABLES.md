@@ -6611,3 +6611,16 @@ anchor set:
   dynamic `1`
 - direct dispatch stays explicitly zero/reserved until a later syntax/binding
   issue materializes it
+
+## M255 dispatch/runtime metadata anchors (B001)
+
+`M255-B001` adds the canonical legality/selector-resolution metadata anchors
+that later semantic/runtime implementation issues must preserve:
+
+- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
+- legality boundary model
+  `selector-normalized-arity-checked-receiver-required-no-overload`
+- ambiguity policy
+  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
+- supported selector forms `unary-and-keyword-selectors`
+- no new direct-dispatch metadata anchors are introduced in `M255-B001`

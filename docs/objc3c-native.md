@@ -16723,3 +16723,19 @@ implementation for the currently supported native LLVM path:
 - live proof counts: instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
 - `objc3c-native` now compiles that fixture through `llvm-direct`, and
   `module.ll` emits `!objc3.objc_dispatch_surface_classification`
+
+## Dispatch legality and selector resolution (M255-B001)
+
+`M255-B001` freezes the live selector-resolution legality boundary before lane-B
+widens actual dispatch semantics:
+
+- contract id `objc3c-dispatch-legality-selector-resolution/m255-b001-v1`
+- boundary model
+  `selector-normalized-arity-checked-receiver-required-no-overload`
+- ambiguity policy
+  `fail-closed-on-unresolved-or-ambiguous-selector-resolution`
+- supported selector forms `unary-and-keyword-selectors`
+- every live message send must keep an explicit receiver and a normalized
+  selector shape before lowering consumes it
+- overload-style recovery remains a non-goal and direct dispatch remains
+  reserved for later work

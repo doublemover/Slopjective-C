@@ -26,6 +26,7 @@ compatibility evidence for negative unresolved-symbol coverage and formula
 parity documentation.
 M255-A001 dispatch-classification freeze: instance/class/super/dynamic dispatch families all remain routed through the live runtime compatibility family while direct dispatch remains a reserved non-goal.
 M255-A002 dispatch-site modeling: frontend/sema/lowering now materialize non-zero receiver identities for implicit self/super and known class-name sites so the same compatibility family remains reachable through native LLVM emission.
+M255-B001 dispatch legality/selector-resolution freeze: the shim consumes one already-normalized selector string and explicit receiver value only; it does not resolve ambiguity, recover missing selector forms, or simulate direct dispatch.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

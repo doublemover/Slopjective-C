@@ -10178,6 +10178,9 @@ class Objc3Parser {
     // spelling only; whole-program frontend normalization classifies
     // instance/class/super/direct/dynamic families before sema consumes the
     // message send.
+    // M255-B001 dispatch legality/selector-resolution freeze anchor: message sends remain legal only for normalized unary/keyword selectors with an
+    // explicit receiver form; unresolved or ambiguous selector resolution stays
+    // fail-closed and direct dispatch remains reserved.
     message->super_dispatch_enabled = IsSuperDispatchReceiver(*message->receiver);
     message->super_dispatch_requires_class_context = message->super_dispatch_enabled;
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(
