@@ -8983,3 +8983,24 @@ surface:
   - `spec/planning/compiler/m263/m263_b002_duplicate_registration_and_image_order_semantics_core_feature_implementation_packet.md`
   - `check:objc3c:m263-b002-duplicate-registration-and-image-order-semantics`
   - `check:objc3c:m263-b002-lane-b-readiness`
+
+## M263 bootstrap failure-mode and restart semantics (B003)
+
+`M263-B003` closes the remaining bootstrap restart/recovery gaps without
+widening the public runtime API:
+
+- sema owns the canonical fail-closed failure/restart summary, including the
+  restart lifecycle, replay order, retained-catalog continuity, and
+  unsupported-topology model
+- frontend publication owns the manifest-visible bridge that ties that summary
+  to the live `M254-B002` bootstrap semantics and the `M254-D003`
+  reset/replay hooks
+- runtime proof must demonstrate:
+  - replay without reset fails closed
+  - reset clears live state but retains restart metadata
+  - reset plus replay restores canonical registration order deterministically
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m263_bootstrap_failure_mode_and_restart_semantics_edge_case_and_compatibility_completion_b003_expectations.md`
+  - `spec/planning/compiler/m263/m263_b003_bootstrap_failure_mode_and_restart_semantics_edge_case_and_compatibility_completion_packet.md`
+  - `check:objc3c:m263-b003-bootstrap-failure-mode-and-restart-semantics`
+  - `check:objc3c:m263-b003-lane-b-readiness`

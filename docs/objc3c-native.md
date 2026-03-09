@@ -230,6 +230,25 @@ registration manifest to the runtime registration-descriptor artifact.
   translation-unit registration ordinal, and the translation-unit identity key
   into later bootstrap legality and lowering/runtime handoff work
 
+## Live bootstrap semantics (M254-B002)
+
+`M254-B002` publishes the live startup bootstrap semantics packet at
+`frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`.
+
+- the runtime bootstrap surface remains fail-closed
+- duplicate and out-of-order registration are enforced before user code runs
+- runtime probes consume `objc3_runtime_copy_registration_state_for_testing`
+  to verify status codes and registration-order continuity
+
+## Realization sequencing and deterministic reset hooks (M254-D003)
+
+`M254-D003` publishes the deterministic reset/replay packet over the private
+bootstrap runtime hooks.
+
+- the reset/replay surface remains fail-closed
+- `objc3_runtime_replay_registered_images_for_testing` replays the retained
+  bootstrap catalog only after live runtime state has been cleared
+
 ## Duplicate-registration and image-order semantics (M263-B002)
 
 `M263-B002` lands the live semantic bridge that publishes duplicate-registration
@@ -254,6 +273,27 @@ than a contract-only freeze.
     yields a different `translation_unit_identity_key`
   - visible registration/image identifiers still flow through from the emitted
     `M263-A002` registration-descriptor closure
+
+## Bootstrap failure-mode and restart semantics (M263-B003)
+
+`M263-B003` publishes the fail-closed semantic/runtime bridge for restart,
+replay, and unsupported bootstrap topologies over the live reset/replay hooks.
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics`
+- the semantic surface now carries:
+  - `failure_mode`
+  - `restart_lifecycle_model`
+  - `replay_order_model`
+  - `image_local_init_reset_model`
+  - `catalog_retention_model`
+  - `unsupported_topology_model`
+- runtime proof guarantees:
+  - replay without reset fails closed while live runtime state is still present
+  - reset clears live state but retains bootstrap catalog state for recovery
+  - reset plus replay restores the retained image in canonical order
 
 ## M148 frontend selector-normalized method declaration grammar
 

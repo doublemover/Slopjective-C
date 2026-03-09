@@ -2315,6 +2315,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.integration_surface.bootstrap_legality_failure_contract_summary;
   result.parity_surface.bootstrap_legality_semantics_summary =
       result.integration_surface.bootstrap_legality_semantics_summary;
+  result.parity_surface.bootstrap_failure_restart_semantics_summary =
+      result.integration_surface.bootstrap_failure_restart_semantics_summary;
   result.parity_surface.interface_method_symbols_total =
       result.parity_surface.interface_implementation_summary.interface_method_symbols;
   result.parity_surface.implementation_method_symbols_total =

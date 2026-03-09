@@ -1,0 +1,7 @@
+#pragma objc_language_version(3)
+
+module BootstrapFailureRestartDefault;
+
+fn bootstrapSentinel() -> i32 {
+  return 1;
+}

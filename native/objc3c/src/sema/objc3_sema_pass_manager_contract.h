@@ -905,6 +905,8 @@ struct Objc3SemaParityContractSurface {
       bootstrap_legality_failure_contract_summary;
   Objc3BootstrapLegalitySemanticsSummary
       bootstrap_legality_semantics_summary;
+  Objc3BootstrapFailureRestartSemanticsSummary
+      bootstrap_failure_restart_semantics_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;
@@ -996,6 +998,8 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.bootstrap_legality_failure_contract_summary) &&
          IsReadyObjc3BootstrapLegalitySemanticsSummary(
              surface.bootstrap_legality_semantics_summary) &&
+         IsReadyObjc3BootstrapFailureRestartSemanticsSummary(
+             surface.bootstrap_failure_restart_semantics_summary) &&
          surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&
          surface.parser_sema_performance_quality_guardrails.passed_guardrail_count ==
              surface.parser_sema_performance_quality_guardrails.required_guardrail_count &&

@@ -6074,3 +6074,29 @@ translation-unit identity key and registration-order ordinal.
   - peer translation units with identical visible bootstrap identifiers receive
     different `translation_unit_identity_key` values
 - no API widening beyond the already-frozen bootstrap/runtime contracts
+
+## M263 bootstrap failure-mode and restart semantics (B003)
+
+`M263-B003` closes the residual restart/recovery semantics by publishing a live
+bridge over the frozen bootstrap legality packet, the live `M254-B002`
+bootstrap semantics, and the `M254-D003` deterministic reset/replay contract.
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics`
+- upstream/runtime contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - failure mode `abort-before-user-main-no-partial-registration-commit`
+  - restart lifecycle `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+  - replay order `replay-re-registers-retained-images-in-original-registration-order`
+  - unsupported topology
+    `replay-requires-empty-live-runtime-state-and-retained-bootstrap-catalog`
+- deterministic proof minimums:
+  - replay while live state is still populated fails closed with the invalid
+    descriptor status path
+  - reset preserves retained catalog state and zeroes the live init-state cells
+  - reset plus replay restores the retained image in canonical order

@@ -1233,6 +1233,12 @@ inline constexpr const char *kObjc3BootstrapLegalityCrossImageLegalityModel =
     "translation-unit-identity-key-and-registration-order-ordinal-govern-bootstrap-legality";
 inline constexpr const char *kObjc3BootstrapLegalitySemanticDiagnosticModel =
     "fail-closed-bootstrap-legality-before-runtime-handoff";
+inline constexpr const char *kObjc3BootstrapFailureRestartSemanticsContractId =
+    "objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1";
+inline constexpr const char *kObjc3BootstrapFailureRestartSemanticsSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics";
+inline constexpr const char *kObjc3BootstrapFailureRestartUnsupportedTopologyModel =
+    "replay-requires-empty-live-runtime-state-and-retained-bootstrap-catalog";
 
 struct Objc3BootstrapLegalityFailureContractSummary {
   std::string contract_id = kObjc3BootstrapLegalityFailureContractId;
@@ -1330,6 +1336,62 @@ inline bool IsReadyObjc3BootstrapLegalitySemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3BootstrapFailureRestartSemanticsSummary {
+  std::string contract_id = kObjc3BootstrapFailureRestartSemanticsContractId;
+  std::string bootstrap_legality_semantics_contract_id =
+      kObjc3BootstrapLegalitySemanticsContractId;
+  std::string bootstrap_reset_contract_id =
+      kObjc3RuntimeBootstrapResetContractId;
+  std::string bootstrap_semantics_contract_id =
+      kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string surface_path = kObjc3BootstrapFailureRestartSemanticsSurfacePath;
+  std::string failure_mode = kObjc3RuntimeStartupBootstrapFailureMode;
+  std::string restart_lifecycle_model =
+      kObjc3RuntimeBootstrapResetLifecycleModel;
+  std::string replay_order_model = kObjc3RuntimeBootstrapReplayOrderModel;
+  std::string image_local_init_reset_model =
+      kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
+  std::string catalog_retention_model =
+      kObjc3RuntimeBootstrapCatalogRetentionModel;
+  std::string unsupported_topology_model =
+      kObjc3BootstrapFailureRestartUnsupportedTopologyModel;
+  bool fail_closed = false;
+  bool bootstrap_legality_semantics_ready = false;
+  bool failure_mode_semantics_landed = false;
+  bool restart_semantics_landed = false;
+  bool replay_semantics_landed = false;
+  bool unsupported_topology_semantics_landed = false;
+  bool deterministic_recovery_semantics_landed = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string bootstrap_legality_semantics_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3BootstrapFailureRestartSemanticsSummary(
+    const Objc3BootstrapFailureRestartSemanticsSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.bootstrap_legality_semantics_contract_id.empty() &&
+         !summary.bootstrap_reset_contract_id.empty() &&
+         !summary.bootstrap_semantics_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.failure_mode.empty() &&
+         !summary.restart_lifecycle_model.empty() &&
+         !summary.replay_order_model.empty() &&
+         !summary.image_local_init_reset_model.empty() &&
+         !summary.catalog_retention_model.empty() &&
+         !summary.unsupported_topology_model.empty() &&
+         summary.fail_closed &&
+         summary.bootstrap_legality_semantics_ready &&
+         summary.failure_mode_semantics_landed &&
+         summary.restart_semantics_landed &&
+         summary.replay_semantics_landed &&
+         summary.unsupported_topology_semantics_landed &&
+         summary.deterministic_recovery_semantics_landed &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.bootstrap_legality_semantics_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
@@ -1352,6 +1414,8 @@ struct Objc3SemanticIntegrationSurface {
       bootstrap_legality_failure_contract_summary;
   Objc3BootstrapLegalitySemanticsSummary
       bootstrap_legality_semantics_summary;
+  Objc3BootstrapFailureRestartSemanticsSummary
+      bootstrap_failure_restart_semantics_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;

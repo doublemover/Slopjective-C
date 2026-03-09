@@ -18,11 +18,14 @@ module runtimeBootstrapCategoryLibrary;
 @end
 
 @interface Widget (Debug)<Worker>
+@property (readonly, getter=tokenValue) id token;
 @property (readonly) id shadow;
+- (id) tokenValue;
 - (id) debugName;
 @end
 
 @implementation Widget (Debug)
+@property (readonly, getter=tokenValue) id token;
 @property (readonly) id shadow;
 - (id) debugName {
   return 3;

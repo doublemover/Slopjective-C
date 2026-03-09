@@ -7112,3 +7112,32 @@ Metadata/runtime anchors:
   - `cross_image_legality_semantics_landed`
   - `semantic_diagnostics_landed`
   - `ready_for_lowering_and_runtime`
+
+## M263 bootstrap failure-mode and restart semantics metadata anchors (B003)
+
+`M263-B003` publishes the restart/recovery bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- restart/recovery fields:
+  - `failure_mode`
+  - `restart_lifecycle_model`
+  - `replay_order_model`
+  - `image_local_init_reset_model`
+  - `catalog_retention_model`
+  - `unsupported_topology_model`
+- runtime continuity fields:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+  - `runtime_state_snapshot_symbol`
+  - `replay_registered_images_symbol`
+  - `reset_replay_state_snapshot_symbol`
+  - `invalid_descriptor_status_code`
+  - `translation_unit_registration_order_ordinal`

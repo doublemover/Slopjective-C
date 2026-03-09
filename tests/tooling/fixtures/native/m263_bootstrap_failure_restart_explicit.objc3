@@ -1,0 +1,9 @@
+#pragma objc_language_version(3)
+#pragma objc_registration_descriptor(BootstrapFailureRestartDescriptor)
+#pragma objc_image_root(BootstrapFailureRestartImageRoot)
+
+module BootstrapFailureRestartExplicit;
+
+fn bootstrapSentinel() -> i32 {
+  return 1;
+}

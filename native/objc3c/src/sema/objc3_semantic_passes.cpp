@@ -324,6 +324,75 @@ BuildBootstrapLegalitySemanticsSummaryFromIntegrationSurface(
   return summary;
 }
 
+static std::string BuildBootstrapFailureRestartSemanticsReplayKey(
+    const Objc3BootstrapFailureRestartSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";bootstrap_legality_semantics_contract_id="
+      << summary.bootstrap_legality_semantics_contract_id
+      << ";bootstrap_reset_contract_id=" << summary.bootstrap_reset_contract_id
+      << ";bootstrap_semantics_contract_id="
+      << summary.bootstrap_semantics_contract_id
+      << ";surface_path=" << summary.surface_path
+      << ";failure_mode=" << summary.failure_mode
+      << ";restart_lifecycle_model=" << summary.restart_lifecycle_model
+      << ";replay_order_model=" << summary.replay_order_model
+      << ";image_local_init_reset_model="
+      << summary.image_local_init_reset_model
+      << ";catalog_retention_model=" << summary.catalog_retention_model
+      << ";unsupported_topology_model=" << summary.unsupported_topology_model
+      << ";bootstrap_legality_semantics_replay_key="
+      << summary.bootstrap_legality_semantics_replay_key;
+  return out.str();
+}
+
+static Objc3BootstrapFailureRestartSemanticsSummary
+BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface) {
+  Objc3BootstrapFailureRestartSemanticsSummary summary;
+  summary.fail_closed = true;
+  summary.bootstrap_legality_semantics_ready =
+      IsReadyObjc3BootstrapLegalitySemanticsSummary(
+          surface.bootstrap_legality_semantics_summary);
+  if (summary.bootstrap_legality_semantics_ready) {
+    summary.failure_mode =
+        surface.bootstrap_legality_failure_contract_summary.failure_mode;
+    summary.restart_lifecycle_model =
+        surface.bootstrap_legality_failure_contract_summary
+            .restart_lifecycle_model;
+    summary.replay_order_model =
+        surface.bootstrap_legality_failure_contract_summary.replay_order_model;
+    summary.image_local_init_reset_model =
+        surface.bootstrap_legality_failure_contract_summary
+            .image_local_init_reset_model;
+    summary.catalog_retention_model =
+        surface.bootstrap_legality_failure_contract_summary
+            .catalog_retention_model;
+    summary.bootstrap_legality_semantics_replay_key =
+        surface.bootstrap_legality_semantics_summary.replay_key;
+  }
+  summary.failure_mode_semantics_landed =
+      summary.bootstrap_legality_semantics_ready;
+  summary.restart_semantics_landed = summary.bootstrap_legality_semantics_ready;
+  summary.replay_semantics_landed = summary.bootstrap_legality_semantics_ready;
+  summary.unsupported_topology_semantics_landed =
+      summary.bootstrap_legality_semantics_ready;
+  summary.deterministic_recovery_semantics_landed =
+      summary.bootstrap_legality_semantics_ready;
+  summary.ready_for_lowering_and_runtime =
+      summary.bootstrap_legality_semantics_ready &&
+      surface.bootstrap_legality_semantics_summary.ready_for_lowering_and_runtime;
+  if (summary.ready_for_lowering_and_runtime) {
+    summary.replay_key =
+        BuildBootstrapFailureRestartSemanticsReplayKey(summary);
+  }
+  if (!IsReadyObjc3BootstrapFailureRestartSemanticsSummary(summary)) {
+    summary.failure_reason =
+        "bootstrap failure-mode and restart semantics summary is incomplete";
+  }
+  return summary;
+}
+
 static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
   if (lhs.is_vector != rhs.is_vector) {
     return false;
@@ -10896,6 +10965,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
           surface);
   surface.bootstrap_legality_semantics_summary =
       BuildBootstrapLegalitySemanticsSummaryFromIntegrationSurface(surface);
+  surface.bootstrap_failure_restart_semantics_summary =
+      BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
+          surface);
   // M256-A001 executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before

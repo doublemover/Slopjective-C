@@ -3399,6 +3399,94 @@ inline bool IsReadyObjc3RuntimeBootstrapLegalitySemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3RuntimeBootstrapFailureRestartSemanticsSummary {
+  std::string contract_id = kObjc3BootstrapFailureRestartSemanticsContractId;
+  std::string bootstrap_legality_semantics_contract_id =
+      kObjc3BootstrapLegalitySemanticsContractId;
+  std::string bootstrap_reset_contract_id =
+      kObjc3RuntimeBootstrapResetContractId;
+  std::string bootstrap_semantics_contract_id =
+      kObjc3RuntimeBootstrapSemanticsContractId;
+  std::string frontend_surface_path =
+      kObjc3BootstrapFailureRestartSemanticsSurfacePath;
+  std::string failure_mode = kObjc3RuntimeStartupBootstrapFailureMode;
+  std::string restart_lifecycle_model =
+      kObjc3RuntimeBootstrapResetLifecycleModel;
+  std::string replay_order_model = kObjc3RuntimeBootstrapReplayOrderModel;
+  std::string image_local_init_reset_model =
+      kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
+  std::string catalog_retention_model =
+      kObjc3RuntimeBootstrapCatalogRetentionModel;
+  std::string unsupported_topology_model =
+      kObjc3BootstrapFailureRestartUnsupportedTopologyModel;
+  std::string translation_unit_identity_model =
+      kObjc3RuntimeTranslationUnitRegistrationTranslationUnitIdentityModel;
+  std::string translation_unit_identity_key;
+  std::string runtime_state_snapshot_symbol =
+      kObjc3RuntimeBootstrapStateSnapshotSymbol;
+  std::string replay_registered_images_symbol =
+      kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol;
+  std::string reset_replay_state_snapshot_symbol =
+      kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol;
+  int invalid_descriptor_status_code =
+      kObjc3RuntimeBootstrapInvalidDescriptorStatusCode;
+  std::uint64_t translation_unit_registration_order_ordinal =
+      kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal;
+  bool fail_closed = false;
+  bool semantic_boundary_ready = false;
+  bool bootstrap_legality_semantics_contract_ready = false;
+  bool bootstrap_semantics_contract_ready = false;
+  bool bootstrap_reset_contract_ready = false;
+  bool failure_mode_semantics_landed = false;
+  bool restart_semantics_landed = false;
+  bool replay_semantics_landed = false;
+  bool unsupported_topology_semantics_landed = false;
+  bool deterministic_recovery_semantics_landed = false;
+  bool runtime_restart_probe_required = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string semantic_boundary_replay_key;
+  std::string bootstrap_legality_semantics_replay_key;
+  std::string bootstrap_semantics_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3RuntimeBootstrapFailureRestartSemanticsSummary(
+    const Objc3RuntimeBootstrapFailureRestartSemanticsSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.bootstrap_legality_semantics_contract_id.empty() &&
+         !summary.bootstrap_reset_contract_id.empty() &&
+         !summary.bootstrap_semantics_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.failure_mode.empty() &&
+         !summary.restart_lifecycle_model.empty() &&
+         !summary.replay_order_model.empty() &&
+         !summary.image_local_init_reset_model.empty() &&
+         !summary.catalog_retention_model.empty() &&
+         !summary.unsupported_topology_model.empty() &&
+         !summary.translation_unit_identity_model.empty() &&
+         !summary.translation_unit_identity_key.empty() &&
+         !summary.runtime_state_snapshot_symbol.empty() &&
+         !summary.replay_registered_images_symbol.empty() &&
+         !summary.reset_replay_state_snapshot_symbol.empty() &&
+         summary.translation_unit_registration_order_ordinal > 0 &&
+         summary.fail_closed && summary.semantic_boundary_ready &&
+         summary.bootstrap_legality_semantics_contract_ready &&
+         summary.bootstrap_semantics_contract_ready &&
+         summary.bootstrap_reset_contract_ready &&
+         summary.failure_mode_semantics_landed &&
+         summary.restart_semantics_landed &&
+         summary.replay_semantics_landed &&
+         summary.unsupported_topology_semantics_landed &&
+         summary.deterministic_recovery_semantics_landed &&
+         summary.runtime_restart_probe_required &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.semantic_boundary_replay_key.empty() &&
+         !summary.bootstrap_legality_semantics_replay_key.empty() &&
+         !summary.bootstrap_semantics_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3RuntimeBootstrapApiSummary {
   std::string contract_id = kObjc3RuntimeBootstrapApiContractId;
   std::string support_library_core_feature_contract_id =
