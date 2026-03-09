@@ -53,8 +53,27 @@ jobs:
           Write-Host "Hosted runner does not provide llc --filetype=obj capability; continuing via capability-routed parity validation."
           exit 0
 
-      - name: Verify capability-routed source parity
-        run: npm run check:objc3c:library-cli-parity:source:m144
+      - name: Validate capability discovery and routing code paths
+        run: >
+          python -m pytest
+          tests/tooling/test_probe_objc3c_llvm_capabilities.py
+          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_routes_backend_from_capabilities_when_enabled
+          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_parity_is_unavailable
+          tests/tooling/test_objc3c_library_cli_parity.py::test_parity_source_mode_fail_closes_when_capability_routing_is_requested_without_summary
+          tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py
+          tests/tooling/test_objc3c_driver_cli_extraction.py
+          -q
+
+      - name: Verify capability-routed source parity when llc is available
+        shell: pwsh
+        run: |
+          $summaryPath = "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
+          $summary = Get-Content $summaryPath | ConvertFrom-Json
+          if (-not $summary.llc.found -or -not $summary.llc_features.supports_filetype_obj) {
+            Write-Host "Skipping live source parity: hosted runner does not provide llc --filetype=obj capability."
+            exit 0
+          }
+          npm run check:objc3c:library-cli-parity:source:m144
 
       - name: Run native execution smoke when llc is available
         shell: pwsh
