@@ -1,6 +1,7 @@
 name: Conformance Evidence Gate
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "schemas/**"
