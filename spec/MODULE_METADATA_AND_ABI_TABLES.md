@@ -7309,3 +7309,19 @@ Metadata/runtime anchors:
   - `replay_generation`
   - `last_replay_status`
   - `last_replayed_translation_unit_identity_key`
+
+## M263 bootstrap completion conformance gate metadata anchors (E001)
+
+`M263-E001` does not emit new runtime metadata families. It freezes the
+metadata-bearing evidence that must already exist before the milestone can be
+called bootstrap-complete for single-image and multi-image retained-link flows.
+
+- contract id
+  `objc3c-runtime-bootstrap-completion-gate/m263-e001-v1`
+- canonical emitted artifact pair:
+  - `module.runtime-registration-descriptor.json`
+  - `module.runtime-registration-manifest.json`
+- single-image and multi-image retained-link bootstrap evidence:
+  - `tmp/reports/m263/M263-B003/bootstrap_failure_restart_semantics_summary.json`
+  - `tmp/reports/m263/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json`
+  - `tmp/reports/m263/M263-D003/live_restart_hardening_summary.json`

@@ -386,7 +386,7 @@ def run_dynamic_probe(args: argparse.Namespace, failures: list[Finding]) -> tupl
     single_payload = json.loads(single_run.stdout)
     merged_payload_runtime = json.loads(merged_run.stdout)
 
-    checks_total += 17
+    checks_total += 18
     checks_passed += require(plain_payload.get("startup_registered_image_count") == 0, display_path(plain_exe), "M263-C003-PLAIN-COUNT", "plain link must start with zero registered images", failures)
     checks_passed += require(plain_payload.get("startup_walked_image_count") == 0, display_path(plain_exe), "M263-C003-PLAIN-WALK", "plain link must walk zero images", failures)
     checks_passed += require(single_payload.get("startup_registration_copy_status") == 0 and single_payload.get("startup_image_walk_copy_status") == 0 and single_payload.get("startup_reset_replay_copy_status") == 0, display_path(single_exe), "M263-C003-SINGLE-STARTUP-COPIES", "single retained probe snapshot copies must succeed", failures)
@@ -512,6 +512,7 @@ def run(argv: Sequence[str]) -> int:
         "checks_passed": checks_passed,
         "dynamic_probes_executed": not args.skip_dynamic_probes,
         "ok": not failures,
+        "object_format": dynamic_summary.get("object_format"),
         "dynamic_summary": dynamic_summary,
         "failures": [finding.__dict__ for finding in failures],
     }

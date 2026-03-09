@@ -28,6 +28,36 @@ Exit codes:
 - `2`: CLI usage / missing input / invalid arg / missing explicit clang path
 - `3`: clang compile step failed
 
+## Live bootstrap semantics (M254-B002)
+
+`M254-B002` turns the frozen startup/bootstrap semantics into a live runtime
+capability while constructor-root automation remains deferred to later lowering
+work.
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics`
+- runtime state snapshot symbol
+  `objc3_runtime_copy_registration_state_for_testing`
+- status-code model
+  - `0` success
+  - `-1` invalid descriptor
+  - `-2` duplicate registration
+  - `-3` out-of-order registration
+
+## Realization sequencing and deterministic reset hooks (M254-D003)
+
+`M254-D003` adds the runtime-owned replay/reset surface above live bootstrap
+registration so retained bootstrap catalogs can be reset and replayed
+deterministically for validation.
+
+- replay symbol
+  `objc3_runtime_replay_registered_images_for_testing`
+- reset/replay snapshot symbol
+  `objc3_runtime_copy_reset_replay_state_for_testing`
+- behavior
+  - reset clears live runtime state
+  - replay restores retained bootstrap images in deterministic order
+
 ## Registration descriptor and image-root source surface (M263-A001)
 
 `M263-A001` freezes the source-surface contract for bootstrap identity
@@ -223,6 +253,23 @@ manifest.
   - `bootstrap_live_restart_reset_for_testing_symbol`
   - `bootstrap_live_restart_replay_registered_images_symbol`
   - `bootstrap_live_restart_reset_replay_state_snapshot_symbol`
+
+## Bootstrap completion conformance gate (M263-E001)
+
+`M263-E001` freezes one lane-E gate over the current runnable bootstrap
+completion tranche. The gate consumes the emitted descriptor/manifest authority
+from `M263-A002`, the single-image restart semantics from `M263-B003`, the
+retained archive/static-link replay corpus from `M263-C003`, and the repeated
+live restart hardening proof from `M263-D003`.
+
+- contract id
+  `objc3c-runtime-bootstrap-completion-gate/m263-e001-v1`
+- evidence model
+  `a002-b003-c003-d003-summary-chain`
+- failure model
+  `fail-closed-on-bootstrap-completion-evidence-drift`
+- canonical evidence path:
+  - `tmp/reports/m263/M263-E001/bootstrap_completion_conformance_gate_summary.json`
 
 ## M223 lowering/IR metadata envelope
 

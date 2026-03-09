@@ -23,3 +23,4 @@ def test_m263_c003_static_contract_checker_passes() -> None:
     assert payload["ok"] is True
     assert payload["contract_id"] == "objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1"
     assert payload["dynamic_probes_executed"] is False
+    assert payload["checks_passed"] == payload["checks_total"]

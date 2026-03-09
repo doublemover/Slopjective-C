@@ -6257,3 +6257,26 @@ layer above `M263-D002`.
   - replay without teardown must fail closed and preserve current live runtime state
   - repeated reset/replay cycles must keep the retained bootstrap catalog intact
   - reset generation and replay generation must advance monotonically across repeated restart cycles
+
+## M263 bootstrap completion conformance gate (E001)
+
+`M263-E001` freezes the integrated lane-E gate that decides whether the current
+bootstrap tranche is actually complete for runnable native programs.
+
+- contract id
+  `objc3c-runtime-bootstrap-completion-gate/m263-e001-v1`
+- upstream proof chain:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+  - `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- canonical models:
+  - evidence chain
+    `a002-b003-c003-d003-summary-chain`
+  - failure model
+    `fail-closed-on-bootstrap-completion-evidence-drift`
+- frozen invariants:
+  - emitted registration-descriptor authority remains canonical for bootstrap-visible identities
+  - single-image restart semantics stay deterministic and replay-safe
+  - plain archive links omit bootstrap images while retained single/merged links replay them deterministically
+  - repeated live reset/replay cycles remain idempotence-safe across restart generations

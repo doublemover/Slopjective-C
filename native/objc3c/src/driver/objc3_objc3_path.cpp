@@ -422,6 +422,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             // M254-D004 launch-integration anchor: compile/proof/smoke command
             // surfaces consume this emitted registration manifest directly for
             // runtime archive resolution and launch/link boundary validation.
+            // M263-E001 bootstrap-completion gate anchor: lane-E consumes this
+            // emitted registration manifest plus the A002/B003/C003/D003 proof chain
+            // to decide whether current single-image and multi-image bootstrap
+            // completion is satisfied.
             WriteRuntimeRegistrationManifestArtifact(
                 cli_options.out_dir,
                 cli_options.emit_prefix,
@@ -521,6 +525,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               compile_status = 125;
               std::cerr << registration_descriptor_error << "\n";
             } else {
+              // M263-E001 bootstrap-completion gate anchor: lane-E treats the
+              // registration descriptor and registration manifest as one
+              // canonical emitted artifact pair rather than reconstructing
+              // descriptor authority from ad hoc sidecars.
               WriteRuntimeRegistrationDescriptorArtifact(
                   cli_options.out_dir, cli_options.emit_prefix,
                   registration_descriptor_json);

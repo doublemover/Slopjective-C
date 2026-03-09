@@ -34,6 +34,9 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+  // M263-E001 bootstrap-completion gate anchor: the registration manifest is
+  // one half of the canonical emitted artifact pair consumed by the lane-E bootstrap completion gate
+  // for single-image and multi-image evidence.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix);
@@ -42,6 +45,9 @@ std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+  // M263-E001 bootstrap-completion gate anchor: the registration descriptor is
+  // the other half of the canonical emitted artifact pair consumed by the
+  // lane-E bootstrap completion gate.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix);

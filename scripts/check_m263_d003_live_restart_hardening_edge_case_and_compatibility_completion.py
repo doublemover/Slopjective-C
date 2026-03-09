@@ -596,6 +596,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "upstream_live_registration_contract_id": UPSTREAM_LIVE_REGISTRATION_CONTRACT_ID,
         "upstream_failure_restart_contract_id": UPSTREAM_FAILURE_RESTART_CONTRACT_ID,
         "upstream_reset_replay_contract_id": UPSTREAM_RESET_REPLAY_CONTRACT_ID,
+        "ok": not failures,
         "checks_passed": checks_passed,
         "checks_total": checks_total,
         "dynamic_probes_skipped": bool(args.skip_dynamic_probes),

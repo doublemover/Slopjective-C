@@ -920,6 +920,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                     compile_status = 125;
                     backend_error = registration_manifest_error;
                   } else {
+                    // M263-E001 bootstrap-completion gate anchor: the frontend
+                    // C API publishes the same manifest/descriptor artifact pair as the CLI path
+                    // so lane-E bootstrap completion evidence stays identical across host entry points.
                     const std::filesystem::path registration_manifest_out =
                         BuildRuntimeRegistrationManifestArtifactPath(out_dir,
                                                                      emit_prefix);
@@ -1030,6 +1033,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                         compile_status = 125;
                         backend_error = registration_descriptor_error;
                       } else {
+                        // M263-E001 bootstrap-completion gate anchor: the
+                        // frontend C API publishes the same manifest/descriptor artifact pair as the CLI path.
                         const std::filesystem::path
                             registration_descriptor_out =
                                 BuildRuntimeRegistrationDescriptorArtifactPath(
