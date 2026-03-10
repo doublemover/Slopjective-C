@@ -16118,3 +16118,31 @@ for the current executable property/ivar surface.
   - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
   - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
   - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`
+
+## Runtime-aware import and module surface (M258-A001)
+
+`M258-A001` freezes the frontend-owned import/module surface that later
+cross-translation-unit runtime work must preserve.
+
+- contract id
+  `objc3c-runtime-aware-import-module-surface/m258-a001-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract`
+- source model
+  `runtime-aware-import-module-surface-freezes-frontend-owned-runtime-declaration-and-metadata-reference-boundaries-before-cross-translation-unit-realization`
+- non-goal model
+  `no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering`
+- fail-closed model
+  `fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims`
+- frozen truths
+  - the compiler now publishes one manifest-visible summary over module name,
+    runtime-owned declaration counts, and current module-import-graph facts
+  - imported module artifacts, imported runtime-owned declarations, and foreign
+    runtime metadata references are all still explicitly `false`/unsupported
+  - the public frontend embedding ABI still exposes no imported-module handle or
+    runtime-import payload surface
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tmp/reports/m258/M258-A001/runtime_aware_import_module_surface_contract_summary.json`
+- next issue
+  - `M258-A002`

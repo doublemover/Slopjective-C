@@ -9465,3 +9465,27 @@ ivars, accessors, and reflective runtime continuity:
   - `spec/planning/compiler/m257/m257_e002_runnable_property_ivar_and_accessor_conformance_plus_samples_cross_lane_integration_sync_packet.md`
   - `check:objc3c:m257-e002-runnable-property-ivar-and-accessor-conformance-plus-samples`
   - `check:objc3c:m257-e002-lane-e-readiness`
+
+## M258 runtime-aware import and module surface (A001)
+
+M258 lane-A A001 freezes the runtime-aware import/module source surface above
+the already-landed local module-import graph lowering and below any real
+cross-translation-unit runtime import capability:
+
+- `pipeline/objc3_frontend_artifacts.cpp` is now the canonical publication
+  point for
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract`
+- the frozen surface publishes:
+  - module identity
+  - runtime-owned declaration counts
+  - current module-import-graph facts
+  - explicit landed=`false` flags for imported module artifacts, imported
+    runtime-owned declarations, imported runtime metadata references, and public
+    frontend API import handles
+- `ir/objc3_ir_emitter.cpp` remains explicit that emitted IR preserves only the
+  local translation-unit module-import graph profile for now
+- `libobjc3c_frontend/api.h` remains explicit that embedding has no imported
+  module handle or runtime metadata reference ABI yet
+- the boundary is fail closed on drift or premature capability claims, and
+  `M258-A002` must preserve this exact surface while implementing the first real
+  import path

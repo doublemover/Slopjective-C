@@ -588,6 +588,10 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_generic_metadata_abi_replay_key << "\n";
     }
     if (!frontend_metadata_.lowering_module_import_graph_replay_key.empty()) {
+      // M258-A001 runtime-aware import/module surface anchor: emitted IR still
+      // preserves only the local translation-unit module-import graph profile.
+      // Imported runtime-owned declarations and foreign metadata references
+      // remain fail-closed until M258-A002 materializes a real import surface.
       out << "; module_import_graph_lowering = "
           << frontend_metadata_.lowering_module_import_graph_replay_key << "\n";
     }

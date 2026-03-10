@@ -116,6 +116,17 @@ std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
   };
 }
 
+constexpr char kObjc3RuntimeAwareImportModuleSurfaceContractId[] =
+    "objc3c-runtime-aware-import-module-surface/m258-a001-v1";
+constexpr char kObjc3RuntimeAwareImportModuleSurfacePath[] =
+    "frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract";
+constexpr char kObjc3RuntimeAwareImportModuleSurfaceSourceModel[] =
+    "runtime-aware-import-module-surface-freezes-frontend-owned-runtime-declaration-and-metadata-reference-boundaries-before-cross-translation-unit-realization";
+constexpr char kObjc3RuntimeAwareImportModuleSurfaceNonGoalModel[] =
+    "no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering";
+constexpr char kObjc3RuntimeAwareImportModuleSurfaceFailureModel[] =
+    "fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims";
+
 std::vector<std::string> BuildSupportedSelectionSurfaceIds() {
   return {
       kObjc3SupportedSelectionSurfaceLanguageVersion,
@@ -208,6 +219,106 @@ std::string BuildRunnableFeatureClaimInventoryJson(
       << ",\"replay_key\":\""
       << EscapeJsonString(
              BuildRunnableFeatureClaimInventoryReplayKey(options, pipeline_result))
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract) {
+  std::ostringstream out;
+  out << kObjc3RuntimeAwareImportModuleSurfaceContractId
+      << ";module_name=" << program.module_name
+      << ";protocol_decl_count=" << parser_contract_snapshot.protocol_decl_count
+      << ";interface_decl_count="
+      << parser_contract_snapshot.interface_decl_count
+      << ";implementation_decl_count="
+      << parser_contract_snapshot.implementation_decl_count
+      << ";interface_category_decl_count="
+      << parser_contract_snapshot.interface_category_decl_count
+      << ";implementation_category_decl_count="
+      << parser_contract_snapshot.implementation_category_decl_count
+      << ";function_decl_count=" << parser_contract_snapshot.function_decl_count
+      << ";module_import_graph_sites="
+      << module_import_graph_lowering_contract.module_import_graph_sites
+      << ";import_edge_candidate_sites="
+      << module_import_graph_lowering_contract.import_edge_candidate_sites
+      << ";object_pointer_type_sites="
+      << module_import_graph_lowering_contract.object_pointer_type_sites
+      << ";normalized_sites="
+      << module_import_graph_lowering_contract.normalized_sites
+      << ";runtime_aware_import_declarations_landed=false"
+      << ";module_metadata_import_surface_landed=false"
+      << ";runtime_owned_declaration_import_landed=false"
+      << ";runtime_metadata_reference_import_landed=false"
+      << ";public_frontend_api_module_surface_landed=false"
+      << ";fail_closed=true"
+      << ";deterministic="
+      << (module_import_graph_lowering_contract.deterministic ? "true" : "false");
+  return out.str();
+}
+
+std::string BuildRuntimeAwareImportModuleSurfaceSummaryJson(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << kObjc3RuntimeAwareImportModuleSurfaceContractId
+      << "\",\"surface_path\":\""
+      << kObjc3RuntimeAwareImportModuleSurfacePath
+      << "\",\"source_model\":\""
+      << kObjc3RuntimeAwareImportModuleSurfaceSourceModel
+      << "\",\"non_goal_model\":\""
+      << kObjc3RuntimeAwareImportModuleSurfaceNonGoalModel
+      << "\",\"failure_model\":\""
+      << kObjc3RuntimeAwareImportModuleSurfaceFailureModel
+      << "\",\"module_name\":\"" << EscapeJsonString(program.module_name)
+      << "\",\"protocol_decl_count\":"
+      << parser_contract_snapshot.protocol_decl_count
+      << ",\"interface_decl_count\":"
+      << parser_contract_snapshot.interface_decl_count
+      << ",\"implementation_decl_count\":"
+      << parser_contract_snapshot.implementation_decl_count
+      << ",\"interface_category_decl_count\":"
+      << parser_contract_snapshot.interface_category_decl_count
+      << ",\"implementation_category_decl_count\":"
+      << parser_contract_snapshot.implementation_category_decl_count
+      << ",\"function_decl_count\":"
+      << parser_contract_snapshot.function_decl_count
+      << ",\"module_import_graph_sites\":"
+      << module_import_graph_lowering_contract.module_import_graph_sites
+      << ",\"import_edge_candidate_sites\":"
+      << module_import_graph_lowering_contract.import_edge_candidate_sites
+      << ",\"namespace_segment_sites\":"
+      << module_import_graph_lowering_contract.namespace_segment_sites
+      << ",\"object_pointer_type_sites\":"
+      << module_import_graph_lowering_contract.object_pointer_type_sites
+      << ",\"pointer_declarator_sites\":"
+      << module_import_graph_lowering_contract.pointer_declarator_sites
+      << ",\"normalized_sites\":"
+      << module_import_graph_lowering_contract.normalized_sites
+      << ",\"contract_violation_sites\":"
+      << module_import_graph_lowering_contract.contract_violation_sites
+      << ",\"runtime_aware_import_declarations_landed\":false"
+      << ",\"module_metadata_import_surface_landed\":false"
+      << ",\"runtime_owned_declaration_import_landed\":false"
+      << ",\"runtime_metadata_reference_import_landed\":false"
+      << ",\"public_frontend_api_module_surface_landed\":false"
+      << ",\"fail_closed\":true"
+      << ",\"deterministic\":"
+      << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
+      << ",\"ready_for_core_feature_implementation\":true"
+      << ",\"next_issue\":\"M258-A002\""
+      << ",\"replay_key\":\""
+      << EscapeJsonString(BuildRuntimeAwareImportModuleSurfaceReplayKey(
+             program,
+             parser_contract_snapshot,
+             module_import_graph_lowering_contract))
       << "\"}";
   return out.str();
 }
@@ -10913,6 +11024,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           // M258-A001 runtime-aware import/module surface anchor: lane-A
+           // freezes one frontend-published contract above the current module
+           // import graph lowering surface and below any real imported
+           // runtime-owned declaration or metadata-reference realization.
+           << ",\"objc_runtime_aware_import_module_surface_contract\":"
+           << BuildRuntimeAwareImportModuleSurfaceSummaryJson(
+                  program,
+                  pipeline_result.parser_contract_snapshot,
+                  module_import_graph_lowering_contract)
            << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":"
            << namespace_collision_shadowing_lowering_contract
                   .namespace_collision_shadowing_sites

@@ -6741,3 +6741,32 @@ for executable properties and ivars.
   - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
   - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
 - the next implementation issue is `M258-A001`
+
+## M258 runtime-aware import/module surface freeze (A001)
+
+`M258-A001` freezes one frontend-published import/module boundary above the
+existing local module-import graph lowering surface and below any real imported
+runtime-owned declaration or foreign metadata-reference realization.
+
+- contract id `objc3c-runtime-aware-import-module-surface/m258-a001-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract`
+- source model
+  `runtime-aware-import-module-surface-freezes-frontend-owned-runtime-declaration-and-metadata-reference-boundaries-before-cross-translation-unit-realization`
+- non-goal model
+  `no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering`
+- failure model
+  `fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims`
+- the frozen surface must publish:
+  - module identity
+  - protocol/interface/implementation/category/function declaration counts
+  - current module-import-graph counts
+  - landed=`false` flags for imported module artifacts, imported runtime-owned
+    declarations, imported runtime metadata references, and public frontend API
+    module handles
+- emitted IR remains limited to the current translation unit; no imported
+  runtime-owned declarations or foreign metadata references are lowered yet
+- the public frontend C ABI remains fail closed for runtime-aware module import
+  inputs until `M258-A002`
+- `M258-A002` must preserve this exact surface while turning it into a real
+  compiler/runtime capability

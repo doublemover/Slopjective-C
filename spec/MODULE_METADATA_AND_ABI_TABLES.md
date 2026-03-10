@@ -7749,3 +7749,29 @@ summaries to one live executable matrix.
   - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
 - canonical matrix evidence:
   - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`
+
+## M258 runtime-aware import/module metadata anchors (A001)
+
+`M258-A001` publishes one new frontend semantic-surface packet:
+`frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract`.
+
+- contract id `objc3c-runtime-aware-import-module-surface/m258-a001-v1`
+- canonical metadata/runtime anchors:
+  - module identity
+  - protocol/interface/implementation declaration counts
+  - interface-category and implementation-category declaration counts
+  - function declaration count
+  - current module-import-graph counts
+  - landed=`false` flags for:
+    - imported module artifact surface
+    - imported runtime-owned declaration surface
+    - imported runtime metadata reference surface
+    - public frontend API module-import surface
+- canonical proof fixture:
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-A001/runtime_aware_import_module_surface_contract_summary.json`
+- non-goals:
+  - no emitted imported-module artifact format yet
+  - no cross-translation-unit runtime-owned declaration realization yet
+  - no foreign runtime metadata-reference lowering yet

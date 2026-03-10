@@ -48,6 +48,11 @@ extern "C" {
  * - Callers should gate startup with objc3c_frontend_is_abi_compatible().
  * - Reserved struct fields are for forward ABI growth and should be zero-initialized by callers.
  * - ABI evolution policy for exposed structs/enums is additive; existing fields and values remain stable.
+ * - M258-A001 runtime-aware import/module surface anchor: the public embedding
+ *   ABI does not yet expose imported module handles, imported runtime-owned
+ *   declaration descriptors, or foreign runtime metadata reference payloads.
+ *   Runtime-aware import/module requests therefore remain fail-closed until
+ *   M258-A002 lands a real implementation surface.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 
