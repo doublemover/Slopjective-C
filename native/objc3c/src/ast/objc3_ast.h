@@ -346,6 +346,12 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarSourceClosureContractId
     "objc3c-executable-property-ivar-source-closure/m257-a001-v1";
 inline constexpr const char *kObjc3ExecutablePropertyIvarSourceSurfaceModel =
     "property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization";
+inline constexpr const char *kObjc3ExecutablePropertyIvarSourceModelCompletionContractId =
+    "objc3c-executable-property-ivar-source-model-completion/m257-a002-v1";
+inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
+    "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
+inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
+    "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles";
 inline constexpr const char *kObjc3RuntimeMetadataMethodAstAnchor =
     "Objc3MethodDecl";
 inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =
@@ -1097,6 +1103,17 @@ struct Objc3PropertyDecl {
   std::string scope_path_symbol;
   std::string property_synthesis_symbol;
   std::string ivar_binding_symbol;
+  std::string executable_synthesized_binding_kind;
+  std::string executable_synthesized_binding_symbol;
+  std::string property_attribute_profile;
+  std::string effective_getter_selector;
+  bool effective_setter_available = false;
+  std::string effective_setter_selector;
+  std::string accessor_ownership_profile;
+  std::string executable_ivar_layout_symbol;
+  std::size_t executable_ivar_layout_slot_index = 0;
+  std::size_t executable_ivar_layout_size_bytes = 0;
+  std::size_t executable_ivar_layout_alignment_bytes = 0;
   unsigned line = 1;
   unsigned column = 1;
 };

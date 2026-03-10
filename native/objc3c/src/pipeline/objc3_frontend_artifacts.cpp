@@ -853,7 +853,33 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << ",\"setter_selector\":\"" << EscapeJsonString(node.setter_selector)
         << "\",\"ivar_binding_symbol\":\""
         << EscapeJsonString(node.ivar_binding_symbol)
-        << "\",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+        << "\",\"executable_synthesized_binding_kind\":\""
+        << EscapeJsonString(node.executable_synthesized_binding_kind)
+        << "\",\"executable_synthesized_binding_symbol\":\""
+        << EscapeJsonString(node.executable_synthesized_binding_symbol)
+        << "\",\"property_attribute_profile\":\""
+        << EscapeJsonString(node.property_attribute_profile)
+        << "\",\"ownership_lifetime_profile\":\""
+        << EscapeJsonString(node.ownership_lifetime_profile)
+        << "\",\"ownership_runtime_hook_profile\":\""
+        << EscapeJsonString(node.ownership_runtime_hook_profile)
+        << "\",\"effective_getter_selector\":\""
+        << EscapeJsonString(node.effective_getter_selector)
+        << "\",\"effective_setter_available\":"
+        << (node.effective_setter_available ? "true" : "false")
+        << ",\"effective_setter_selector\":\""
+        << EscapeJsonString(node.effective_setter_selector)
+        << "\",\"accessor_ownership_profile\":\""
+        << EscapeJsonString(node.accessor_ownership_profile)
+        << "\",\"executable_ivar_layout_symbol\":\""
+        << EscapeJsonString(node.executable_ivar_layout_symbol)
+        << "\",\"executable_ivar_layout_slot_index\":"
+        << node.executable_ivar_layout_slot_index
+        << ",\"executable_ivar_layout_size_bytes\":"
+        << node.executable_ivar_layout_size_bytes
+        << ",\"executable_ivar_layout_alignment_bytes\":"
+        << node.executable_ivar_layout_alignment_bytes
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
   }
   out << "],\"method_node_entries\":[";
   for (std::size_t i = 0; i < graph.method_nodes_lexicographic.size(); ++i) {
@@ -895,7 +921,19 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << "\",\"property_name\":\"" << EscapeJsonString(node.property_name)
         << "\",\"ivar_binding_symbol\":\""
         << EscapeJsonString(node.ivar_binding_symbol)
-        << "\",\"line\":" << node.line << ",\"column\":" << node.column << "}";
+        << "\",\"executable_synthesized_binding_kind\":\""
+        << EscapeJsonString(node.executable_synthesized_binding_kind)
+        << "\",\"executable_synthesized_binding_symbol\":\""
+        << EscapeJsonString(node.executable_synthesized_binding_symbol)
+        << "\",\"executable_ivar_layout_symbol\":\""
+        << EscapeJsonString(node.executable_ivar_layout_symbol)
+        << "\",\"executable_ivar_layout_slot_index\":"
+        << node.executable_ivar_layout_slot_index
+        << ",\"executable_ivar_layout_size_bytes\":"
+        << node.executable_ivar_layout_size_bytes
+        << ",\"executable_ivar_layout_alignment_bytes\":"
+        << node.executable_ivar_layout_alignment_bytes
+        << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
   }
   out << "],\"owner_edges\":[";
   for (std::size_t i = 0; i < graph.owner_edges_lexicographic.size(); ++i) {
@@ -11403,7 +11441,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << property_record.getter_selector << "\",\"has_setter\":"
              << (property_record.has_setter ? "true" : "false") << ",\"setter_selector\":\""
              << property_record.setter_selector << "\",\"ivar_binding_symbol\":\""
-             << property_record.ivar_binding_symbol << "\",\"line\":" << property_record.line
+             << property_record.ivar_binding_symbol
+             << "\",\"executable_synthesized_binding_kind\":\""
+             << property_record.executable_synthesized_binding_kind
+             << "\",\"executable_synthesized_binding_symbol\":\""
+             << property_record.executable_synthesized_binding_symbol
+             << "\",\"property_attribute_profile\":\""
+             << property_record.property_attribute_profile
+             << "\",\"ownership_lifetime_profile\":\""
+             << property_record.ownership_lifetime_profile
+             << "\",\"ownership_runtime_hook_profile\":\""
+             << property_record.ownership_runtime_hook_profile
+             << "\",\"effective_getter_selector\":\""
+             << property_record.effective_getter_selector
+             << "\",\"effective_setter_available\":"
+             << (property_record.effective_setter_available ? "true" : "false")
+             << ",\"effective_setter_selector\":\""
+             << property_record.effective_setter_selector
+             << "\",\"accessor_ownership_profile\":\""
+             << property_record.accessor_ownership_profile
+             << "\",\"executable_ivar_layout_symbol\":\""
+             << property_record.executable_ivar_layout_symbol
+             << "\",\"executable_ivar_layout_slot_index\":"
+             << property_record.executable_ivar_layout_slot_index
+             << ",\"executable_ivar_layout_size_bytes\":"
+             << property_record.executable_ivar_layout_size_bytes
+             << ",\"executable_ivar_layout_alignment_bytes\":"
+             << property_record.executable_ivar_layout_alignment_bytes
+             << ",\"line\":" << property_record.line
              << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
       manifest << ",";
@@ -11433,7 +11498,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     manifest << "      {\"owner_kind\":\"" << ivar_record.owner_kind << "\",\"owner_name\":\""
              << ivar_record.owner_name << "\",\"property_name\":\"" << ivar_record.property_name
              << "\",\"ivar_binding_symbol\":\"" << ivar_record.ivar_binding_symbol
-             << "\",\"source_model\":\"" << ivar_record.source_model << "\",\"line\":"
+             << "\",\"executable_synthesized_binding_kind\":\""
+             << ivar_record.executable_synthesized_binding_kind
+             << "\",\"executable_synthesized_binding_symbol\":\""
+             << ivar_record.executable_synthesized_binding_symbol
+             << "\",\"executable_ivar_layout_symbol\":\""
+             << ivar_record.executable_ivar_layout_symbol
+             << "\",\"executable_ivar_layout_slot_index\":"
+             << ivar_record.executable_ivar_layout_slot_index
+             << ",\"executable_ivar_layout_size_bytes\":"
+             << ivar_record.executable_ivar_layout_size_bytes
+             << ",\"executable_ivar_layout_alignment_bytes\":"
+             << ivar_record.executable_ivar_layout_alignment_bytes
+             << ",\"source_model\":\"" << ivar_record.source_model << "\",\"line\":"
              << ivar_record.line << ",\"column\":" << ivar_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {
       manifest << ",";
@@ -12867,7 +12944,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             property_node.property_name.empty() || property_node.type_name.empty() ||
             !property_owner_identities.insert(property_node.owner_identity).second ||
             (property_node.has_getter && property_node.getter_selector.empty()) ||
-            (property_node.has_setter && property_node.setter_selector.empty())) {
+            (property_node.has_setter && property_node.setter_selector.empty()) ||
+            property_node.property_attribute_profile.empty() ||
+            property_node.effective_getter_selector.empty() ||
+            property_node.accessor_ownership_profile.empty() ||
+            (property_node.effective_setter_available &&
+             property_node.effective_setter_selector.empty())) {
           member_table_payload_complete = false;
           break;
         }
@@ -12886,6 +12968,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         bundle.has_setter = property_node.has_setter;
         bundle.setter_selector = property_node.setter_selector;
         bundle.ivar_binding_symbol = property_node.ivar_binding_symbol;
+        bundle.executable_synthesized_binding_kind =
+            property_node.executable_synthesized_binding_kind;
+        bundle.executable_synthesized_binding_symbol =
+            property_node.executable_synthesized_binding_symbol;
+        bundle.property_attribute_profile =
+            property_node.property_attribute_profile;
+        bundle.ownership_lifetime_profile =
+            property_node.ownership_lifetime_profile;
+        bundle.ownership_runtime_hook_profile =
+            property_node.ownership_runtime_hook_profile;
+        bundle.effective_getter_selector =
+            property_node.effective_getter_selector;
+        bundle.effective_setter_available =
+            property_node.effective_setter_available;
+        bundle.effective_setter_selector =
+            property_node.effective_setter_selector;
+        bundle.accessor_ownership_profile =
+            property_node.accessor_ownership_profile;
+        bundle.executable_ivar_layout_symbol =
+            property_node.executable_ivar_layout_symbol;
+        bundle.executable_ivar_layout_slot_index =
+            property_node.executable_ivar_layout_slot_index;
+        bundle.executable_ivar_layout_size_bytes =
+            property_node.executable_ivar_layout_size_bytes;
+        bundle.executable_ivar_layout_alignment_bytes =
+            property_node.executable_ivar_layout_alignment_bytes;
         property_bundles.push_back(std::move(bundle));
       }
       std::sort(
@@ -12911,6 +13019,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               ivar_node.property_owner_identity.empty() ||
               ivar_node.property_name.empty() ||
               ivar_node.ivar_binding_symbol.empty() ||
+              ivar_node.executable_synthesized_binding_kind.empty() ||
+              ivar_node.executable_ivar_layout_symbol.empty() ||
               !ivar_owner_identities.insert(ivar_node.owner_identity).second) {
             member_table_payload_complete = false;
             break;
@@ -12925,6 +13035,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           bundle.property_owner_identity = ivar_node.property_owner_identity;
           bundle.property_name = ivar_node.property_name;
           bundle.ivar_binding_symbol = ivar_node.ivar_binding_symbol;
+          bundle.executable_synthesized_binding_kind =
+              ivar_node.executable_synthesized_binding_kind;
+          bundle.executable_synthesized_binding_symbol =
+              ivar_node.executable_synthesized_binding_symbol;
+          bundle.executable_ivar_layout_symbol =
+              ivar_node.executable_ivar_layout_symbol;
+          bundle.executable_ivar_layout_slot_index =
+              ivar_node.executable_ivar_layout_slot_index;
+          bundle.executable_ivar_layout_size_bytes =
+              ivar_node.executable_ivar_layout_size_bytes;
+          bundle.executable_ivar_layout_alignment_bytes =
+              ivar_node.executable_ivar_layout_alignment_bytes;
           ivar_bundles.push_back(std::move(bundle));
         }
       }
@@ -13040,8 +13162,40 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           ivar_bundles.size() ==
               runtime_metadata_section_scaffold.ivar_descriptor_count;
       if (member_table_payload_complete) {
+        std::size_t property_attribute_profiles = 0;
+        std::size_t accessor_ownership_profiles = 0;
+        std::size_t synthesized_binding_entries = 0;
+        for (const auto &bundle : property_bundles) {
+          if (!bundle.property_attribute_profile.empty()) {
+            ++property_attribute_profiles;
+          }
+          if (!bundle.accessor_ownership_profile.empty()) {
+            ++accessor_ownership_profiles;
+          }
+          if (!bundle.executable_synthesized_binding_kind.empty()) {
+            ++synthesized_binding_entries;
+          }
+        }
         ir_frontend_metadata.runtime_metadata_method_list_bundles_lexicographic =
             std::move(method_list_bundles);
+        ir_frontend_metadata.executable_property_attribute_profile_entries =
+            property_attribute_profiles;
+        ir_frontend_metadata.executable_accessor_ownership_profile_entries =
+            accessor_ownership_profiles;
+        ir_frontend_metadata.executable_synthesized_binding_entries =
+            synthesized_binding_entries;
+        ir_frontend_metadata.executable_ivar_layout_entries =
+            ivar_bundles.size();
+        ir_frontend_metadata.executable_property_ivar_source_model_replay_key =
+            "property_attribute_profiles=" +
+            std::to_string(property_attribute_profiles) +
+            ";accessor_ownership_profiles=" +
+            std::to_string(accessor_ownership_profiles) +
+            ";synthesized_bindings=" +
+            std::to_string(synthesized_binding_entries) +
+            ";ivar_layout_entries=" +
+            std::to_string(ivar_bundles.size()) +
+            ";deterministic=true;lane_contract=m257-property-ivar-source-model-v1";
         ir_frontend_metadata.runtime_metadata_property_bundles_lexicographic =
             std::move(property_bundles);
         ir_frontend_metadata.runtime_metadata_ivar_bundles_lexicographic =

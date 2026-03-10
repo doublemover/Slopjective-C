@@ -7005,6 +7005,159 @@ class Objc3Parser {
     property.ivar_binding_symbol = synthesis_owner_symbol + "::" + BuildObjcIvarBindingSymbol(property);
   }
 
+  struct Objc3ExecutablePropertyLayoutShape {
+    std::size_t size_bytes = 0;
+    std::size_t alignment_bytes = 1;
+  };
+
+  std::string TrimAsciiWhitespaceCopy(const std::string &text) {
+    std::size_t start = 0;
+    while (start < text.size() &&
+           std::isspace(static_cast<unsigned char>(text[start])) != 0) {
+      ++start;
+    }
+    std::size_t end = text.size();
+    while (end > start &&
+           std::isspace(static_cast<unsigned char>(text[end - 1])) != 0) {
+      --end;
+    }
+    return text.substr(start, end - start);
+  }
+
+  std::string BuildDefaultPropertySetterSelector(const std::string &property_name) {
+    if (property_name.empty()) {
+      return {};
+    }
+    std::string selector = "set";
+    selector.push_back(static_cast<char>(
+        std::toupper(static_cast<unsigned char>(property_name.front()))));
+    selector.append(property_name.substr(1));
+    selector.push_back(':');
+    return selector;
+  }
+
+  Objc3ExecutablePropertyLayoutShape ComputeExecutablePropertyLayoutShape(
+      const Objc3PropertyDecl &property) {
+    const auto scalar_layout = [&](std::size_t size_bytes,
+                                   std::size_t alignment_bytes) {
+      return Objc3ExecutablePropertyLayoutShape{size_bytes, alignment_bytes};
+    };
+    if (property.vector_spelling) {
+      const std::size_t lane_width =
+          property.type == ValueType::Bool ? 1u : 4u;
+      const std::size_t size_bytes =
+          lane_width * static_cast<std::size_t>(property.vector_lane_count);
+      return scalar_layout(size_bytes, std::min<std::size_t>(size_bytes, 16u));
+    }
+    switch (property.type) {
+    case ValueType::Bool:
+      return scalar_layout(1u, 1u);
+    case ValueType::I32:
+      return scalar_layout(4u, 4u);
+    case ValueType::Void:
+      return scalar_layout(0u, 1u);
+    case ValueType::ObjCId:
+    case ValueType::ObjCClass:
+    case ValueType::ObjCSel:
+    case ValueType::ObjCProtocol:
+    case ValueType::ObjCInstancetype:
+    case ValueType::ObjCObjectPtr:
+    case ValueType::Function:
+    case ValueType::Unknown:
+    default:
+      return scalar_layout(8u, 8u);
+    }
+  }
+
+  std::string BuildExecutablePropertyAttributeProfile(
+      const Objc3PropertyDecl &property) {
+    std::vector<std::string> attributes;
+    attributes.reserve(property.attributes.size());
+    for (const auto &attribute : property.attributes) {
+      std::string rendered = attribute.name;
+      if (attribute.has_value) {
+        rendered += "=" + TrimAsciiWhitespaceCopy(attribute.value);
+      }
+      attributes.push_back(std::move(rendered));
+    }
+    std::sort(attributes.begin(), attributes.end());
+
+    std::ostringstream out;
+    out << "readonly=" << (property.is_readonly ? 1 : 0)
+        << ";readwrite=" << (property.is_readwrite ? 1 : 0)
+        << ";atomic=" << (property.is_atomic ? 1 : 0)
+        << ";nonatomic=" << (property.is_nonatomic ? 1 : 0)
+        << ";copy=" << (property.is_copy ? 1 : 0)
+        << ";strong=" << (property.is_strong ? 1 : 0)
+        << ";weak=" << (property.is_weak ? 1 : 0)
+        << ";unowned=" << (property.is_unowned ? 1 : 0)
+        << ";assign=" << (property.is_assign ? 1 : 0)
+        << ";attributes=";
+    for (std::size_t i = 0; i < attributes.size(); ++i) {
+      if (i != 0u) {
+        out << ",";
+      }
+      out << attributes[i];
+    }
+    return out.str();
+  }
+
+  std::string BuildExecutableAccessorOwnershipProfile(
+      const Objc3PropertyDecl &property) {
+    std::ostringstream out;
+    out << "getter=" << property.effective_getter_selector
+        << ";setter_available=" << (property.effective_setter_available ? 1 : 0)
+        << ";setter=";
+    if (property.effective_setter_available) {
+      out << property.effective_setter_selector;
+    } else {
+      out << "<none>";
+    }
+    out << ";ownership_lifetime=" << property.ownership_lifetime_profile
+        << ";runtime_hook=" << property.ownership_runtime_hook_profile;
+    return out.str();
+  }
+
+  void AssignObjcExecutablePropertySourceModelFields(
+      Objc3PropertyDecl &property, const std::string &storage_owner_symbol,
+      std::size_t slot_index, bool supports_storage_layout) {
+    property.property_attribute_profile =
+        BuildExecutablePropertyAttributeProfile(property);
+    property.effective_getter_selector =
+        property.has_getter ? TrimAsciiWhitespaceCopy(property.getter_selector)
+                            : property.name;
+    property.effective_setter_available = !property.is_readonly;
+    property.effective_setter_selector =
+        property.effective_setter_available
+            ? (property.has_setter
+                   ? TrimAsciiWhitespaceCopy(property.setter_selector)
+                   : BuildDefaultPropertySetterSelector(property.name))
+            : std::string{};
+    property.executable_synthesized_binding_kind =
+        supports_storage_layout ? "implicit-ivar" : "none";
+    property.executable_synthesized_binding_symbol =
+        supports_storage_layout
+            ? storage_owner_symbol + "::" + BuildObjcPropertySynthesisSymbol(property)
+            : std::string{};
+    if (supports_storage_layout) {
+      const Objc3ExecutablePropertyLayoutShape layout_shape =
+          ComputeExecutablePropertyLayoutShape(property);
+      property.executable_ivar_layout_symbol =
+          storage_owner_symbol + "::objc_property_layout:" + property.name;
+      property.executable_ivar_layout_slot_index = slot_index;
+      property.executable_ivar_layout_size_bytes = layout_shape.size_bytes;
+      property.executable_ivar_layout_alignment_bytes =
+          layout_shape.alignment_bytes;
+    } else {
+      property.executable_ivar_layout_symbol.clear();
+      property.executable_ivar_layout_slot_index = 0;
+      property.executable_ivar_layout_size_bytes = 0;
+      property.executable_ivar_layout_alignment_bytes = 0;
+    }
+    property.accessor_ownership_profile =
+        BuildExecutableAccessorOwnershipProfile(property);
+  }
+
   void FinalizeObjcPropertySynthesisIvarBindingPackets(
       const std::vector<Objc3PropertyDecl> &properties,
       std::vector<std::string> &property_synthesis_symbols_lexicographic,
@@ -7450,6 +7603,9 @@ class Objc3Parser {
           property.protocol_requirement_kind = requirement_kind;
           property.scope_owner_symbol = decl->scope_owner_symbol;
           property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
+          AssignObjcExecutablePropertySourceModelFields(
+              property, decl->semantic_link_symbol, decl->properties.size(),
+              false);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -7579,6 +7735,9 @@ class Objc3Parser {
           property.scope_owner_symbol = decl->scope_owner_symbol;
           property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
           AssignObjcPropertySynthesisIvarBindingSymbols(property, decl->semantic_link_symbol);
+          AssignObjcExecutablePropertySourceModelFields(
+              property, decl->semantic_link_symbol, decl->properties.size(),
+              !decl->has_category);
           decl->properties.push_back(std::move(property));
           continue;
         }
@@ -7674,6 +7833,12 @@ class Objc3Parser {
         if (ParseObjcPropertyDecl(property)) {
           property.scope_owner_symbol = decl->scope_owner_symbol;
           property.scope_path_symbol = decl->scope_owner_symbol + "::" + BuildObjcPropertyScopePathSymbol(property);
+          const std::string &storage_owner_symbol =
+              decl->has_category ? decl->semantic_link_symbol
+                                 : decl->semantic_link_interface_symbol;
+          AssignObjcExecutablePropertySourceModelFields(
+              property, storage_owner_symbol, decl->properties.size(),
+              !decl->has_category);
           decl->properties.push_back(std::move(property));
           continue;
         }

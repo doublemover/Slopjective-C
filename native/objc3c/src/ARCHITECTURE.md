@@ -9107,6 +9107,33 @@ protocols, and categories:
   - `check:objc3c:m257-a001-property-and-ivar-executable-source-closure`
   - `check:objc3c:m257-a001-lane-a-readiness`
 
+## M257 ivar layout and property attribute source-model completion (A002)
+
+`M257-A002` broadens the frozen `M257-A001` source surface into one deterministic source-model completion step:
+
+- parser/AST own the canonical completion fields for:
+  - `property_attribute_profile`
+  - `effective_getter_selector`
+  - `effective_setter_available`
+  - `effective_setter_selector`
+  - `accessor_ownership_profile`
+  - `executable_synthesized_binding_kind`
+  - `executable_synthesized_binding_symbol`
+  - `executable_ivar_layout_symbol`
+  - `executable_ivar_layout_slot_index`
+  - `executable_ivar_layout_size_bytes`
+  - `executable_ivar_layout_alignment_bytes`
+- sema treats attribute/accessor ownership profiles as declaration compatibility data
+  while storage-local layout symbols stay outside protocol/interface compatibility
+- IR republishes one fail-closed replay marker:
+  - `; property_ivar_source_model_completion = ...`
+- `M257-B001` is the next issue after this implementation closes
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_ivar_layout_and_property_attribute_source_model_completion_core_feature_implementation_a002_expectations.md`
+  - `spec/planning/compiler/m257/m257_a002_ivar_layout_and_property_attribute_source_model_completion_core_feature_implementation_packet.md`
+  - `check:objc3c:m257-a002-ivar-layout-and-property-attribute-source-model-completion`
+  - `check:objc3c:m257-a002-lane-a-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

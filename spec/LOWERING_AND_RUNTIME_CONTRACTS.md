@@ -6171,6 +6171,24 @@ layout/accessor realization work.
   broadens this freeze into ivar layout and property attribute/source-model
   completion
 
+## M257 ivar layout and property attribute source-model completion (A002)
+
+`M257-A002` broadens the frozen `M257-A001` source surface into one
+deterministic source-model completion step:
+
+- contract id
+  `objc3c-executable-property-ivar-source-model-completion/m257-a002-v1`
+- layout model
+  `property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization`
+- attribute model
+  `property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles`
+- failure model
+  `fail-closed-on-property-attribute-accessor-ownership-or-layout-drift-before-storage-realization`
+- emitted IR summary
+  - `; property_ivar_source_model_completion = ...`
+- next handoff
+  - `M257-B001`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

@@ -7174,6 +7174,27 @@ properties and ivars before layout or runtime storage realization begins.
   remains the single explicit ivar-binding AST anchor until `M257-A002`
   broadens layout and attribute modeling
 
+## M257 property/ivar source-model completion metadata anchors (A002)
+
+`M257-A002` publishes the metadata-adjacent source-model fields that later
+property/ivar runtime lowering will consume without reopening the earlier
+descriptor-shape contracts.
+
+- contract id
+  `objc3c-executable-property-ivar-source-model-completion/m257-a002-v1`
+- canonical metadata/source anchors:
+  - `Objc3PropertyDecl.property_attribute_profile`
+  - `Objc3PropertyDecl.effective_getter_selector`
+  - `Objc3PropertyDecl.effective_setter_available`
+  - `Objc3PropertyDecl.effective_setter_selector`
+  - `Objc3PropertyDecl.accessor_ownership_profile`
+  - `Objc3PropertyDecl.executable_synthesized_binding_symbol`
+  - `Objc3PropertyDecl.executable_ivar_layout_symbol`
+  - `runtime_metadata_source_records.properties[*].property_attribute_profile`
+  - `runtime_metadata_source_records.ivars[*].executable_ivar_layout_symbol`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

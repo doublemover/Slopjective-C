@@ -163,6 +163,14 @@ class Objc3IREmitter {
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
     }
+    if (!frontend_metadata_.executable_property_ivar_source_model_replay_key.empty()) {
+      // M257-A002 property-ivar source-model completion anchor:
+      // publish the completed property attribute/accessor ownership/layout
+      // handoff without reopening the legacy descriptor shapes from M253-C004.
+      out << "; property_ivar_source_model_completion = "
+          << frontend_metadata_.executable_property_ivar_source_model_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {
       out << "; runtime_metadata_source_ownership = "
           << frontend_metadata_.runtime_metadata_source_ownership_contract_id << "\n";

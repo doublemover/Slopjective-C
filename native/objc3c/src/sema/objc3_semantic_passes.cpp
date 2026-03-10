@@ -1955,6 +1955,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.ownership_arc_fixit_available = property.ownership_arc_fixit_available;
   info.ownership_arc_diagnostic_profile = property.ownership_arc_diagnostic_profile;
   info.ownership_arc_fixit_hint = property.ownership_arc_fixit_hint;
+  info.ownership_lifetime_profile = property.ownership_lifetime_profile;
+  info.ownership_runtime_hook_profile = property.ownership_runtime_hook_profile;
   info.has_invalid_generic_suffix = HasInvalidGenericPropertyTypeSuffix(property);
   info.has_invalid_pointer_declarator = HasInvalidPointerPropertyTypeDeclarator(property);
   info.has_invalid_nullability_suffix = HasInvalidNullabilityPropertyTypeSuffix(property);
@@ -1974,6 +1976,22 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.has_setter = property.has_setter;
   info.getter_selector = TrimAsciiWhitespace(property.getter_selector);
   info.setter_selector = TrimAsciiWhitespace(property.setter_selector);
+  info.executable_synthesized_binding_kind =
+      property.executable_synthesized_binding_kind;
+  info.executable_synthesized_binding_symbol =
+      property.executable_synthesized_binding_symbol;
+  info.property_attribute_profile = property.property_attribute_profile;
+  info.effective_getter_selector = property.effective_getter_selector;
+  info.effective_setter_available = property.effective_setter_available;
+  info.effective_setter_selector = property.effective_setter_selector;
+  info.accessor_ownership_profile = property.accessor_ownership_profile;
+  info.executable_ivar_layout_symbol = property.executable_ivar_layout_symbol;
+  info.executable_ivar_layout_slot_index =
+      property.executable_ivar_layout_slot_index;
+  info.executable_ivar_layout_size_bytes =
+      property.executable_ivar_layout_size_bytes;
+  info.executable_ivar_layout_alignment_bytes =
+      property.executable_ivar_layout_alignment_bytes;
 
   std::unordered_map<std::string, std::size_t> attribute_name_counts;
   for (const auto &attribute : property.attributes) {
@@ -2092,6 +2110,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
 }
 
 static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Objc3PropertyInfo &rhs) {
+  // M257-A002 property-ivar source-model completion anchor:
+  // property attribute/accessor ownership/layout fields belong to declaration compatibility
+  // only when they describe the shared declaration surface rather than storage-local layout symbols.
   return lhs.type == rhs.type &&
          lhs.is_vector == rhs.is_vector &&
          lhs.vector_base_spelling == rhs.vector_base_spelling &&
@@ -2111,7 +2132,14 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
          lhs.has_getter == rhs.has_getter &&
          lhs.has_setter == rhs.has_setter &&
          lhs.getter_selector == rhs.getter_selector &&
-         lhs.setter_selector == rhs.setter_selector;
+         lhs.setter_selector == rhs.setter_selector &&
+         lhs.ownership_lifetime_profile == rhs.ownership_lifetime_profile &&
+         lhs.ownership_runtime_hook_profile == rhs.ownership_runtime_hook_profile &&
+         lhs.property_attribute_profile == rhs.property_attribute_profile &&
+         lhs.effective_getter_selector == rhs.effective_getter_selector &&
+         lhs.effective_setter_available == rhs.effective_setter_available &&
+         lhs.effective_setter_selector == rhs.effective_setter_selector &&
+         lhs.accessor_ownership_profile == rhs.accessor_ownership_profile;
 }
 
 // Legacy extraction anchor retained for contract tests:
@@ -7211,7 +7239,14 @@ static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropert
          lhs.has_getter == rhs.has_getter &&
          lhs.has_setter == rhs.has_setter &&
          lhs.getter_selector == rhs.getter_selector &&
-         lhs.setter_selector == rhs.setter_selector;
+         lhs.setter_selector == rhs.setter_selector &&
+         lhs.ownership_lifetime_profile == rhs.ownership_lifetime_profile &&
+         lhs.ownership_runtime_hook_profile == rhs.ownership_runtime_hook_profile &&
+         lhs.property_attribute_profile == rhs.property_attribute_profile &&
+         lhs.effective_getter_selector == rhs.effective_getter_selector &&
+         lhs.effective_setter_available == rhs.effective_setter_available &&
+         lhs.effective_setter_selector == rhs.effective_setter_selector &&
+         lhs.accessor_ownership_profile == rhs.accessor_ownership_profile;
 }
 
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(
@@ -11893,6 +11928,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
       property_metadata.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
       property_metadata.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
+      property_metadata.ownership_lifetime_profile = source.ownership_lifetime_profile;
+      property_metadata.ownership_runtime_hook_profile = source.ownership_runtime_hook_profile;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -11908,6 +11945,28 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;
       property_metadata.setter_selector = source.setter_selector;
+      property_metadata.executable_synthesized_binding_kind =
+          source.executable_synthesized_binding_kind;
+      property_metadata.executable_synthesized_binding_symbol =
+          source.executable_synthesized_binding_symbol;
+      property_metadata.property_attribute_profile =
+          source.property_attribute_profile;
+      property_metadata.effective_getter_selector =
+          source.effective_getter_selector;
+      property_metadata.effective_setter_available =
+          source.effective_setter_available;
+      property_metadata.effective_setter_selector =
+          source.effective_setter_selector;
+      property_metadata.accessor_ownership_profile =
+          source.accessor_ownership_profile;
+      property_metadata.executable_ivar_layout_symbol =
+          source.executable_ivar_layout_symbol;
+      property_metadata.executable_ivar_layout_slot_index =
+          source.executable_ivar_layout_slot_index;
+      property_metadata.executable_ivar_layout_size_bytes =
+          source.executable_ivar_layout_size_bytes;
+      property_metadata.executable_ivar_layout_alignment_bytes =
+          source.executable_ivar_layout_alignment_bytes;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;
@@ -12173,6 +12232,8 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.ownership_arc_fixit_available = source.ownership_arc_fixit_available;
       property_metadata.ownership_arc_diagnostic_profile = source.ownership_arc_diagnostic_profile;
       property_metadata.ownership_arc_fixit_hint = source.ownership_arc_fixit_hint;
+      property_metadata.ownership_lifetime_profile = source.ownership_lifetime_profile;
+      property_metadata.ownership_runtime_hook_profile = source.ownership_runtime_hook_profile;
       property_metadata.attribute_entries = source.attribute_entries;
       property_metadata.attribute_names_lexicographic = source.attribute_names_lexicographic;
       property_metadata.is_readonly = source.is_readonly;
@@ -12188,6 +12249,28 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;
       property_metadata.setter_selector = source.setter_selector;
+      property_metadata.executable_synthesized_binding_kind =
+          source.executable_synthesized_binding_kind;
+      property_metadata.executable_synthesized_binding_symbol =
+          source.executable_synthesized_binding_symbol;
+      property_metadata.property_attribute_profile =
+          source.property_attribute_profile;
+      property_metadata.effective_getter_selector =
+          source.effective_getter_selector;
+      property_metadata.effective_setter_available =
+          source.effective_setter_available;
+      property_metadata.effective_setter_selector =
+          source.effective_setter_selector;
+      property_metadata.accessor_ownership_profile =
+          source.accessor_ownership_profile;
+      property_metadata.executable_ivar_layout_symbol =
+          source.executable_ivar_layout_symbol;
+      property_metadata.executable_ivar_layout_slot_index =
+          source.executable_ivar_layout_slot_index;
+      property_metadata.executable_ivar_layout_size_bytes =
+          source.executable_ivar_layout_size_bytes;
+      property_metadata.executable_ivar_layout_alignment_bytes =
+          source.executable_ivar_layout_alignment_bytes;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;

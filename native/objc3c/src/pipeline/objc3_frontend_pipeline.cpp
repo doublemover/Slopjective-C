@@ -638,6 +638,32 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
           property_record.has_setter = property.has_setter;
           property_record.setter_selector = property.setter_selector;
           property_record.ivar_binding_symbol = property.ivar_binding_symbol;
+          property_record.executable_synthesized_binding_kind =
+              property.executable_synthesized_binding_kind;
+          property_record.executable_synthesized_binding_symbol =
+              property.executable_synthesized_binding_symbol;
+          property_record.property_attribute_profile =
+              property.property_attribute_profile;
+          property_record.ownership_lifetime_profile =
+              property.ownership_lifetime_profile;
+          property_record.ownership_runtime_hook_profile =
+              property.ownership_runtime_hook_profile;
+          property_record.effective_getter_selector =
+              property.effective_getter_selector;
+          property_record.effective_setter_available =
+              property.effective_setter_available;
+          property_record.effective_setter_selector =
+              property.effective_setter_selector;
+          property_record.accessor_ownership_profile =
+              property.accessor_ownership_profile;
+          property_record.executable_ivar_layout_symbol =
+              property.executable_ivar_layout_symbol;
+          property_record.executable_ivar_layout_slot_index =
+              property.executable_ivar_layout_slot_index;
+          property_record.executable_ivar_layout_size_bytes =
+              property.executable_ivar_layout_size_bytes;
+          property_record.executable_ivar_layout_alignment_bytes =
+              property.executable_ivar_layout_alignment_bytes;
           property_record.line = property.line;
           property_record.column = property.column;
           records.properties_lexicographic.push_back(std::move(property_record));
@@ -648,6 +674,18 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
             ivar_record.owner_name = owner_name;
             ivar_record.property_name = property.name;
             ivar_record.ivar_binding_symbol = property.ivar_binding_symbol;
+            ivar_record.executable_synthesized_binding_kind =
+                property.executable_synthesized_binding_kind;
+            ivar_record.executable_synthesized_binding_symbol =
+                property.executable_synthesized_binding_symbol;
+            ivar_record.executable_ivar_layout_symbol =
+                property.executable_ivar_layout_symbol;
+            ivar_record.executable_ivar_layout_slot_index =
+                property.executable_ivar_layout_slot_index;
+            ivar_record.executable_ivar_layout_size_bytes =
+                property.executable_ivar_layout_size_bytes;
+            ivar_record.executable_ivar_layout_alignment_bytes =
+                property.executable_ivar_layout_alignment_bytes;
             ivar_record.line = property.line;
             ivar_record.column = property.column;
             records.ivars_lexicographic.push_back(std::move(ivar_record));
@@ -883,6 +921,31 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
           node.has_setter = property.has_setter;
           node.setter_selector = property.setter_selector;
           node.ivar_binding_symbol = property.ivar_binding_symbol;
+          node.executable_synthesized_binding_kind =
+              property.executable_synthesized_binding_kind;
+          node.executable_synthesized_binding_symbol =
+              property.executable_synthesized_binding_symbol;
+          node.property_attribute_profile = property.property_attribute_profile;
+          node.ownership_lifetime_profile =
+              property.ownership_lifetime_profile;
+          node.ownership_runtime_hook_profile =
+              property.ownership_runtime_hook_profile;
+          node.effective_getter_selector =
+              property.effective_getter_selector;
+          node.effective_setter_available =
+              property.effective_setter_available;
+          node.effective_setter_selector =
+              property.effective_setter_selector;
+          node.accessor_ownership_profile =
+              property.accessor_ownership_profile;
+          node.executable_ivar_layout_symbol =
+              property.executable_ivar_layout_symbol;
+          node.executable_ivar_layout_slot_index =
+              property.executable_ivar_layout_slot_index;
+          node.executable_ivar_layout_size_bytes =
+              property.executable_ivar_layout_size_bytes;
+          node.executable_ivar_layout_alignment_bytes =
+              property.executable_ivar_layout_alignment_bytes;
           node.line = property.line;
           node.column = property.column;
           graph.property_nodes_lexicographic.push_back(node);
@@ -903,6 +966,18 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                 BuildIvarNodeOwnerIdentity(declaration_owner_identity, property);
             ivar_node.property_name = property.name;
             ivar_node.ivar_binding_symbol = property.ivar_binding_symbol;
+            ivar_node.executable_synthesized_binding_kind =
+                property.executable_synthesized_binding_kind;
+            ivar_node.executable_synthesized_binding_symbol =
+                property.executable_synthesized_binding_symbol;
+            ivar_node.executable_ivar_layout_symbol =
+                property.executable_ivar_layout_symbol;
+            ivar_node.executable_ivar_layout_slot_index =
+                property.executable_ivar_layout_slot_index;
+            ivar_node.executable_ivar_layout_size_bytes =
+                property.executable_ivar_layout_size_bytes;
+            ivar_node.executable_ivar_layout_alignment_bytes =
+                property.executable_ivar_layout_alignment_bytes;
             ivar_node.line = property.line;
             ivar_node.column = property.column;
             graph.ivar_nodes_lexicographic.push_back(ivar_node);
@@ -3107,7 +3182,31 @@ bool AreCompatibleRuntimePropertyRedeclarations(
          interface_record.has_getter == implementation_record.has_getter &&
          interface_record.getter_selector == implementation_record.getter_selector &&
          interface_record.has_setter == implementation_record.has_setter &&
-         interface_record.setter_selector == implementation_record.setter_selector;
+         interface_record.setter_selector == implementation_record.setter_selector &&
+         interface_record.executable_synthesized_binding_kind ==
+             implementation_record.executable_synthesized_binding_kind &&
+         interface_record.property_attribute_profile ==
+             implementation_record.property_attribute_profile &&
+         interface_record.ownership_lifetime_profile ==
+             implementation_record.ownership_lifetime_profile &&
+         interface_record.ownership_runtime_hook_profile ==
+             implementation_record.ownership_runtime_hook_profile &&
+         interface_record.effective_getter_selector ==
+             implementation_record.effective_getter_selector &&
+         interface_record.effective_setter_available ==
+             implementation_record.effective_setter_available &&
+         interface_record.effective_setter_selector ==
+             implementation_record.effective_setter_selector &&
+         interface_record.accessor_ownership_profile ==
+             implementation_record.accessor_ownership_profile &&
+         interface_record.executable_ivar_layout_symbol ==
+             implementation_record.executable_ivar_layout_symbol &&
+         interface_record.executable_ivar_layout_slot_index ==
+             implementation_record.executable_ivar_layout_slot_index &&
+         interface_record.executable_ivar_layout_size_bytes ==
+             implementation_record.executable_ivar_layout_size_bytes &&
+         interface_record.executable_ivar_layout_alignment_bytes ==
+             implementation_record.executable_ivar_layout_alignment_bytes;
 }
 
 bool AreCompatibleRuntimeMethodRedeclarations(

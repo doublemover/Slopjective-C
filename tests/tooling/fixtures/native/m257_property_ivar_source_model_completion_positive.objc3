@@ -1,0 +1,29 @@
+module propertyIvarSourceModelCompletion;
+
+@interface Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (assign, setter=setCount:) i32 count;
+- (id) tokenValue;
+- (id) currentValue;
+- (i32) count;
+@end
+
+@implementation Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (assign, setter=setCount:) i32 count;
+- (id) tokenValue {
+  return 0;
+}
+- (id) currentValue {
+  return 1;
+}
+- (i32) count {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

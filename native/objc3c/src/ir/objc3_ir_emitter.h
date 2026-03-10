@@ -80,6 +80,19 @@ struct Objc3IRRuntimeMetadataPropertyBundle {
   bool has_setter = false;
   std::string setter_selector;
   std::string ivar_binding_symbol;
+  std::string executable_synthesized_binding_kind;
+  std::string executable_synthesized_binding_symbol;
+  std::string property_attribute_profile;
+  std::string ownership_lifetime_profile;
+  std::string ownership_runtime_hook_profile;
+  std::string effective_getter_selector;
+  bool effective_setter_available = false;
+  std::string effective_setter_selector;
+  std::string accessor_ownership_profile;
+  std::string executable_ivar_layout_symbol;
+  std::size_t executable_ivar_layout_slot_index = 0;
+  std::size_t executable_ivar_layout_size_bytes = 0;
+  std::size_t executable_ivar_layout_alignment_bytes = 0;
 };
 
 struct Objc3IRRuntimeMetadataIvarBundle {
@@ -91,6 +104,12 @@ struct Objc3IRRuntimeMetadataIvarBundle {
   std::string property_owner_identity;
   std::string property_name;
   std::string ivar_binding_symbol;
+  std::string executable_synthesized_binding_kind;
+  std::string executable_synthesized_binding_symbol;
+  std::string executable_ivar_layout_symbol;
+  std::size_t executable_ivar_layout_slot_index = 0;
+  std::size_t executable_ivar_layout_size_bytes = 0;
+  std::size_t executable_ivar_layout_alignment_bytes = 0;
 };
 
 struct Objc3IRFrontendMetadata {
@@ -278,6 +297,11 @@ struct Objc3IRFrontendMetadata {
   bool runtime_metadata_member_table_emission_ready = false;
   bool runtime_metadata_member_table_emission_fail_closed = false;
   std::string runtime_metadata_member_table_typed_handoff_replay_key;
+  std::size_t executable_property_attribute_profile_entries = 0;
+  std::size_t executable_accessor_ownership_profile_entries = 0;
+  std::size_t executable_synthesized_binding_entries = 0;
+  std::size_t executable_ivar_layout_entries = 0;
+  std::string executable_property_ivar_source_model_replay_key;
   std::vector<Objc3IRRuntimeMetadataMethodListBundle>
       runtime_metadata_method_list_bundles_lexicographic;
   std::vector<Objc3IRRuntimeMetadataPropertyBundle>
