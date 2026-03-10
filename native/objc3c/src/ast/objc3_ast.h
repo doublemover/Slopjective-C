@@ -1148,6 +1148,9 @@ struct Objc3PropertyDecl {
   // M257-E001 property-ivar-execution gate anchor: lane-E freezes the
   // executable claim over these same binding, accessor, and layout identities
   // before broader runnable sample expansion is allowed.
+  // M257-E002 runnable property-ivar execution-matrix anchor: these same
+  // emitted identities must now survive one live integrated storage,
+  // synthesized-accessor, and reflection proof.
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

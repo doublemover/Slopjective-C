@@ -9449,3 +9449,19 @@ ivars, accessors, and reflective runtime continuity:
   - `spec/planning/compiler/m257/m257_e001_property_and_ivar_execution_gate_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m257-e001-property-and-ivar-execution-gate`
   - `check:objc3c:m257-e001-lane-e-readiness`
+
+## M257 runnable property and ivar execution matrix (E002)
+
+`M257-E002` broadens the frozen `M257-E001` gate into one live runnable property matrix:
+
+- lane-E now consumes the canonical `A002/B003/C003/D003/E001` evidence chain
+  and adds one real linked property runtime probe rather than inventing a
+  parallel validation surface
+- the matrix is fail closed on summary disappearance, contract drift, live
+  runtime proof loss, or property storage/accessor reflection regression
+- `M258-A001` is the next issue after this matrix closes
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_runnable_property_ivar_and_accessor_conformance_plus_samples_cross_lane_integration_sync_e002_expectations.md`
+  - `spec/planning/compiler/m257/m257_e002_runnable_property_ivar_and_accessor_conformance_plus_samples_cross_lane_integration_sync_packet.md`
+  - `check:objc3c:m257-e002-runnable-property-ivar-and-accessor-conformance-plus-samples`
+  - `check:objc3c:m257-e002-lane-e-readiness`

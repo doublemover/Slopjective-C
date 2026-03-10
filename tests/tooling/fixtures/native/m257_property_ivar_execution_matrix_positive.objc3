@@ -1,0 +1,15 @@
+module propertyIvarExecutionMatrix;
+
+@interface Widget
+@property (assign, setter=setCount:) i32 count;
+@property (assign) bool enabled;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (readonly, getter=tokenValue) id token;
+@end
+
+@implementation Widget
+@property (assign, setter=setCount:) i32 count;
+@property (assign) bool enabled;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (readonly, getter=tokenValue) id token;
+@end

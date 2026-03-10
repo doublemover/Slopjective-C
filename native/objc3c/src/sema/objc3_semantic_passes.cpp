@@ -12320,6 +12320,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // M257-E001 property-ivar-execution gate anchor: lane-E now consumes the
       // A002/B003/C003/D003 proof chain before runnable sample expansion, so
       // this emitted property surface remains the only authoritative handoff.
+      // M257-E002 runnable property-ivar execution-matrix anchor: lane-E
+      // broadens the frozen gate only through one live sample that still
+      // consumes this emitted property surface.
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

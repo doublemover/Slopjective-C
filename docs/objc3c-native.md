@@ -16100,3 +16100,21 @@ property/ivar surface.
   - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
 - evidence path
   - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`
+
+## Runnable property, ivar, and accessor execution matrix (M257-E002)
+
+`M257-E002` broadens the frozen `M257-E001` gate into one live runnable matrix
+for the current executable property/ivar surface.
+
+- contract id
+  `objc3c-runnable-property-ivar-accessor-execution-matrix/m257-e002-v1`
+- evidence model
+  `a002-b003-c003-d003-e001-summary-chain-plus-live-property-runtime-execution`
+- execution matrix model
+  `runnable-property-ivar-matrix-composes-upstream-summaries-with-live-storage-accessor-and-reflection-proof`
+- fail-closed model
+  `fail-closed-on-runnable-property-ivar-matrix-drift-or-missing-live-runtime-proof`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`

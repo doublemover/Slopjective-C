@@ -6723,3 +6723,21 @@ property/ivar surface without broadening the runnable sample matrix yet.
   - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
   - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
 - the next implementation issue is `M257-E002`
+
+## M257 runnable property/ivar/accessor execution matrix (E002)
+
+`M257-E002` broadens the frozen `M257-E001` gate into one live runnable matrix
+for executable properties and ivars.
+
+- contract id
+  `objc3c-runnable-property-ivar-accessor-execution-matrix/m257-e002-v1`
+- evidence model
+  `a002-b003-c003-d003-e001-summary-chain-plus-live-property-runtime-execution`
+- execution matrix model
+  `runnable-property-ivar-matrix-composes-upstream-summaries-with-live-storage-accessor-and-reflection-proof`
+- failure model
+  `fail-closed-on-runnable-property-ivar-matrix-drift-or-missing-live-runtime-proof`
+- canonical live proof assets:
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+- the next implementation issue is `M258-A001`

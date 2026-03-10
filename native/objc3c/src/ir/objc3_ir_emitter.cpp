@@ -415,6 +415,9 @@ class Objc3IREmitter {
         // M257-E001 property-ivar-execution gate anchor: lane-E freezes the
         // A002/B003/C003/D003 property proof chain over this same emitted
         // surface before runnable sample expansion is allowed.
+        // M257-E002 runnable property-ivar execution-matrix anchor: lane-E's
+        // live property probe links against this emitted surface rather than
+        // inventing a parallel runtime path.
         out << "; runtime_property_metadata_reflection = "
             << Objc3RuntimePropertyMetadataReflectionSummary()
             << ";reflectable_property_entries="

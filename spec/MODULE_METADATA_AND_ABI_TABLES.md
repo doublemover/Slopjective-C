@@ -7726,3 +7726,26 @@ sufficient to claim executable behavior.
   - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
 - canonical gate evidence:
   - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`
+
+## M257 runnable property/ivar/accessor execution matrix metadata anchors (E002)
+
+`M257-E002` does not add a new emitted metadata family. It binds the already
+landed property source, legality, lowering, runtime reflection, and gate
+summaries to one live executable matrix.
+
+- contract id `objc3c-runnable-property-ivar-accessor-execution-matrix/m257-e002-v1`
+- evidence model
+  `a002-b003-c003-d003-e001-summary-chain-plus-live-property-runtime-execution`
+- execution matrix model
+  `runnable-property-ivar-matrix-composes-upstream-summaries-with-live-storage-accessor-and-reflection-proof`
+- canonical upstream anchors:
+  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
+  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
+  - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`
+- canonical live proof assets:
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+- canonical matrix evidence:
+  - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`
