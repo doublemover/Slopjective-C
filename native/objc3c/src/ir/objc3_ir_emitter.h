@@ -19,6 +19,7 @@ struct Objc3IRRuntimeMetadataClassMetaclassBundle {
   std::string super_bundle_owner_identity;
   std::string super_class_owner_identity;
   std::string super_metaclass_owner_identity;
+  std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
   std::string instance_method_owner_identity;
   std::string class_method_owner_identity;
   bool has_super = false;

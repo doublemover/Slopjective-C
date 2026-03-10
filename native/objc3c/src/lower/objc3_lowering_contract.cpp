@@ -632,6 +632,24 @@ std::string Objc3RuntimeMetaclassGraphRootClassSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary() {
+  std::ostringstream out;
+  // M256-D003 category-attachment-protocol-conformance anchor: runtime-owned
+  // realized class nodes now retain preferred category attachments and answer
+  // protocol conformance queries from emitted class/category protocol refs
+  // without rediscovering source legality or widening the public ABI.
+  out << "contract="
+      << kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId
+      << ";category_attachment_model="
+      << kObjc3RuntimeCategoryAttachmentRealizedGraphModel
+      << ";protocol_conformance_query_model="
+      << kObjc3RuntimeProtocolConformanceQueryModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeAttachmentConformanceFailClosedModel
+      << ";non_goals=no-allocation-no-property-storage-no-cross-image-attachment";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

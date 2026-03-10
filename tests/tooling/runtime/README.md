@@ -287,3 +287,14 @@ baseline above that same lookup/dispatch surface:
 - additional proof surface:
   - `objc3_runtime_copy_realized_class_graph_state_for_testing`
   - `objc3_runtime_copy_realized_class_entry_for_testing`
+
+`M256-D003` proves attached-category dispatch and runtime protocol conformance
+queries above that same realized-graph surface:
+
+- contract id `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- probe:
+  `tests/tooling/runtime/m256_d003_category_attachment_protocol_runtime_probe.cpp`
+- fixture:
+  `tests/tooling/fixtures/native/m256_d003_category_attachment_protocol_runtime_library.objc3`
+- additional proof surface:
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`

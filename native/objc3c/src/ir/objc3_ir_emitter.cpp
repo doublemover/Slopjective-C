@@ -5355,6 +5355,30 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .runtime_metadata_class_metaclass_bundles_lexicographic.size()
           << "\n";
+      std::size_t class_protocol_ref_count = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_class_metaclass_bundles_lexicographic) {
+        class_protocol_ref_count +=
+            bundle.adopted_protocol_owner_identities_lexicographic.size();
+      }
+      std::size_t category_protocol_ref_count = 0;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_category_bundles_lexicographic) {
+        category_protocol_ref_count +=
+            bundle.adopted_protocol_owner_identities_lexicographic.size();
+      }
+      // M256-D003 category-attachment-protocol-conformance anchor: emitted
+      // realization records now carry direct class protocol refs and category
+      // attachment protocol refs so runtime queries can consume the realized
+      // graph without falling back to manifest-only summaries.
+      out << "; runtime_category_attachment_protocol_conformance = "
+          << Objc3RuntimeCategoryAttachmentProtocolConformanceSummary()
+          << ";attached_category_candidate_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                 .size()
+          << ";class_protocol_ref_count=" << class_protocol_ref_count
+          << ";category_protocol_ref_count=" << category_protocol_ref_count
+          << "\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "
@@ -6045,6 +6069,10 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, "metaclass",
                     "method_list_ref", i);
+            const std::string adopted_protocol_refs_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "adopted_protocol_refs", i);
             std::string class_super_object_identity_symbol = "null";
             std::string metaclass_super_object_identity_symbol = "null";
             if (bundle.has_super) {
@@ -6156,24 +6184,59 @@ class Objc3IREmitter {
                 << metaclass_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
+            out << adopted_protocol_refs_symbol << " = private global ";
+            if (bundle.adopted_protocol_owner_identities_lexicographic.empty()) {
+              out << "{ i64 } { i64 0 }";
+            } else {
+              out << "{ i64, ["
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] } { i64 "
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << ", ["
+                  << bundle.adopted_protocol_owner_identities_lexicographic.size()
+                  << " x ptr] [";
+              for (std::size_t adopted_index = 0;
+                   adopted_index <
+                   bundle.adopted_protocol_owner_identities_lexicographic.size();
+                   ++adopted_index) {
+                if (adopted_index != 0) {
+                  out << ", ";
+                }
+                std::string adopted_protocol_symbol = "null";
+                const auto adopted_it =
+                    protocol_descriptor_symbols_by_owner_identity.find(
+                        bundle.adopted_protocol_owner_identities_lexicographic
+                            [adopted_index]);
+                if (adopted_it !=
+                    protocol_descriptor_symbols_by_owner_identity.end()) {
+                  adopted_protocol_symbol = adopted_it->second;
+                }
+                out << "ptr " << adopted_protocol_symbol;
+              }
+              out << "] }";
+            }
+            out << ", section \"" << family.emitted_section_name
+                << "\", align 8\n";
             // M256-C003 executable realization-record expansion anchor: each
             // class/metaclass record now preserves bundle-owner, object-owner,
             // and super-object identities in-line with the realized bundle
             // pointer plus the existing owner-scoped method-list ref.
             out << descriptor_symbol
-                << " = private global { { ptr, ptr, ptr, ptr, ptr, ptr }, { ptr, ptr, ptr, ptr, ptr, ptr } } "
-                   "{ { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << " = private global { { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr } } "
+                   "{ { ptr, ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
                 << class_object_identity_symbol << ", ptr "
                 << class_super_object_identity_symbol << ", ptr "
                 << super_bundle_symbol << ", ptr "
-                << instance_method_list_ref_symbol
-                << " }, { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << instance_method_list_ref_symbol << ", ptr "
+                << adopted_protocol_refs_symbol
+                << " }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
                 << metaclass_object_identity_symbol << ", ptr "
                 << metaclass_super_object_identity_symbol << ", ptr "
                 << super_bundle_symbol << ", ptr "
-                << metaclass_method_list_ref_symbol << " } }, section \""
+                << metaclass_method_list_ref_symbol << ", ptr "
+                << adopted_protocol_refs_symbol << " } }, section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(descriptor_symbol);
           }

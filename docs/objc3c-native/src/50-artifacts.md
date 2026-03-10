@@ -222,6 +222,27 @@ native object programs.
 - evidence path
   - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
 
+## Category attachment and protocol conformance runtime checks (M256-D003)
+
+`M256-D003` extends the realized class graph into live category attachment and
+protocol conformance runtime queries.
+
+- contract id
+  `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- emitted IR summary
+  `; runtime_category_attachment_protocol_conformance = ...`
+- category attachment model
+  `realized-class-nodes-own-preferred-category-attachments-after-registration`
+- protocol conformance query model
+  `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
+- fail-closed model
+  `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_d003_category_attachment_protocol_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d003_category_attachment_protocol_runtime_probe.cpp`
+- evidence path
+  - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

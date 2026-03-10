@@ -457,6 +457,14 @@ inline constexpr const char *kObjc3RuntimeRootClassBaselineModel =
     "root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch";
 inline constexpr const char *kObjc3RuntimeRealizedClassGraphFailClosedModel =
     "missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch";
+inline constexpr const char *kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId =
+    "objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1";
+inline constexpr const char *kObjc3RuntimeCategoryAttachmentRealizedGraphModel =
+    "realized-class-nodes-own-preferred-category-attachments-after-registration";
+inline constexpr const char *kObjc3RuntimeProtocolConformanceQueryModel =
+    "runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures";
+inline constexpr const char *kObjc3RuntimeAttachmentConformanceFailClosedModel =
+    "invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1388,6 +1396,7 @@ std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
 std::string Objc3RuntimeMetaclassGraphRootClassSummary();
+std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

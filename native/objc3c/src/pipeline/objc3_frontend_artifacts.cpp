@@ -687,7 +687,22 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << EscapeJsonString(node.super_class_owner_identity)
         << "\",\"super_metaclass_owner_identity\":\""
         << EscapeJsonString(node.super_metaclass_owner_identity)
-        << "\",\"instance_method_owner_identity\":\""
+        << "\",\"adopted_protocol_owner_identities\":[";
+    for (std::size_t adopted_index = 0;
+         adopted_index <
+         node.adopted_protocol_owner_identities_lexicographic.size();
+         ++adopted_index) {
+      if (adopted_index != 0u) {
+        out << ",";
+      }
+      out << "\""
+          << EscapeJsonString(
+                 node.adopted_protocol_owner_identities_lexicographic
+                     [adopted_index])
+          << "\"";
+    }
+    out << "]"
+        << ",\"instance_method_owner_identity\":\""
         << EscapeJsonString(node.instance_method_owner_identity)
         << "\",\"class_method_owner_identity\":\""
         << EscapeJsonString(node.class_method_owner_identity)
@@ -11297,7 +11312,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     }
     first_interface_record = false;
     manifest << "    {\"name\":\"" << class_record.name << "\",\"super\":\"" << class_record.super_name
-             << "\",\"has_super\":" << (class_record.has_super ? "true" : "false")
+             << "\",\"adopted_protocols\":[";
+    for (std::size_t protocol_index = 0;
+         protocol_index < class_record.adopted_protocols_lexicographic.size();
+         ++protocol_index) {
+      if (protocol_index != 0u) {
+        manifest << ",";
+      }
+      manifest << "\"" << class_record.adopted_protocols_lexicographic[protocol_index]
+               << "\"";
+    }
+    manifest << "],\"has_super\":"
+             << (class_record.has_super ? "true" : "false")
              << ",\"property_count\":" << class_record.property_count
              << ",\"method_count\":" << class_record.method_count
              << ",\"line\":" << class_record.line << ",\"column\":" << class_record.column << "}";
@@ -12602,6 +12628,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             class_it->second->has_super
                 ? ("interface:" + class_it->second->super_class_owner_identity.substr(6))
                 : std::string{};
+        bundle.adopted_protocol_owner_identities_lexicographic =
+            class_it->second->adopted_protocol_owner_identities_lexicographic;
         bundle.instance_method_owner_identity =
             interface_node.instance_method_owner_identity;
         bundle.class_method_owner_identity =
@@ -12646,6 +12674,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           bundle.super_bundle_owner_identity =
               super_impl_it->second->owner_identity;
         }
+        bundle.adopted_protocol_owner_identities_lexicographic =
+            class_it->second->adopted_protocol_owner_identities_lexicographic;
         bundle.instance_method_owner_identity =
             implementation_node.instance_method_owner_identity;
         bundle.class_method_owner_identity =

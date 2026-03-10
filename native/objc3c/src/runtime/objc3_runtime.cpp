@@ -1,6 +1,7 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <algorithm>
+#include <cstring>
 #include <cstdint>
 #include <deque>
 #include <mutex>
@@ -132,6 +133,7 @@ struct EmittedClassRecord {
   const char *super_owner_identity;
   const void *super_bundle;
   const EmittedMethodListRef *method_list_ref;
+  const objc3_runtime_pointer_aggregate *adopted_protocol_refs;
 };
 
 struct EmittedClassBundle {
@@ -180,8 +182,10 @@ struct RealizedClassNode {
   std::uint64_t base_identity = 0;
   bool is_root_class = false;
   bool implementation_backed = false;
+  bool runtime_attachment_ready = false;
   const RegisteredImageMetadata *image = nullptr;
   const EmittedClassBundle *bundle = nullptr;
+  std::vector<const EmittedCategoryRecord *> attached_category_records;
   std::size_t super_node_index = 0;
   bool has_super_node = false;
 };
@@ -262,9 +266,17 @@ struct RuntimeState {
   std::uint64_t realized_root_class_count = 0;
   std::uint64_t realized_metaclass_edge_count = 0;
   std::uint64_t receiver_class_binding_count = 0;
+  std::uint64_t realized_attached_category_count = 0;
+  std::uint64_t realized_protocol_conformance_edge_count = 0;
   std::string last_realized_class_name;
   std::string last_realized_class_owner_identity;
   std::string last_realized_metaclass_owner_identity;
+  std::string last_attached_category_owner_identity;
+  std::string last_attached_category_name;
+  std::string last_protocol_conformance_class_name;
+  std::string last_protocol_conformance_protocol_name;
+  std::string last_protocol_conformance_owner_identity;
+  std::string last_protocol_conformance_attachment_owner_identity;
 };
 
 RuntimeState &State() {
@@ -311,9 +323,17 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.realized_root_class_count = 0;
   state.realized_metaclass_edge_count = 0;
   state.receiver_class_binding_count = 0;
+  state.realized_attached_category_count = 0;
+  state.realized_protocol_conformance_edge_count = 0;
   state.last_realized_class_name.clear();
   state.last_realized_class_owner_identity.clear();
   state.last_realized_metaclass_owner_identity.clear();
+  state.last_attached_category_owner_identity.clear();
+  state.last_attached_category_name.clear();
+  state.last_protocol_conformance_class_name.clear();
+  state.last_protocol_conformance_protocol_name.clear();
+  state.last_protocol_conformance_owner_identity.clear();
+  state.last_protocol_conformance_attachment_owner_identity.clear();
 }
 
 std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal) {
@@ -540,9 +560,145 @@ bool CollectPreferredCategoryRecordsForImage(
   return true;
 }
 
+bool ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
+    RuntimeState &state,
+    const objc3_runtime_pointer_aggregate *protocol_refs, DispatchFamily family,
+    std::uint64_t selector_stable_id, const char *selector_spelling,
+    std::uint64_t &protocol_probe_count, bool &ambiguous) {
+  if (protocol_refs == nullptr) {
+    return true;
+  }
+  for (std::uint64_t index = 0; index < protocol_refs->count; ++index) {
+    const auto *protocol_record = static_cast<const EmittedProtocolRecord *>(
+        AggregateEntry(protocol_refs, index));
+    if (protocol_record == nullptr) {
+      return false;
+    }
+    bool declared = false;
+    if (!ProbeProtocolSelectorDeclarationUnlocked(
+            state, protocol_record, family, selector_stable_id,
+            selector_spelling, protocol_probe_count, declared, ambiguous)) {
+      return false;
+    }
+    if (ambiguous) {
+      return true;
+    }
+  }
+  return true;
+}
+
+bool QueryProtocolConformanceFromProtocolRecordUnlocked(
+    const EmittedProtocolRecord *start_record, const char *protocol_name,
+    std::unordered_set<const EmittedProtocolRecord *> &visited,
+    std::uint64_t &visited_protocol_count, std::string &matched_owner_identity) {
+  if (start_record == nullptr || protocol_name == nullptr || protocol_name[0] == '\0') {
+    return false;
+  }
+  std::vector<const EmittedProtocolRecord *> stack;
+  stack.push_back(start_record);
+  while (!stack.empty()) {
+    const EmittedProtocolRecord *record = stack.back();
+    stack.pop_back();
+    if (record == nullptr || !visited.insert(record).second) {
+      continue;
+    }
+    if (record->protocol_name == nullptr || record->owner_identity == nullptr) {
+      return false;
+    }
+    ++visited_protocol_count;
+    if (std::strcmp(record->protocol_name, protocol_name) == 0) {
+      matched_owner_identity = record->owner_identity;
+      return true;
+    }
+    const objc3_runtime_pointer_aggregate *inherited_refs =
+        record->inherited_protocol_refs;
+    if (inherited_refs == nullptr) {
+      continue;
+    }
+    for (std::uint64_t index = 0; index < inherited_refs->count; ++index) {
+      const auto *inherited_record = static_cast<const EmittedProtocolRecord *>(
+          AggregateEntry(inherited_refs, index));
+      if (inherited_record == nullptr) {
+        return false;
+      }
+      stack.push_back(inherited_record);
+    }
+  }
+  return false;
+}
+
+bool QueryProtocolConformanceFromAggregateUnlocked(
+    const objc3_runtime_pointer_aggregate *protocol_refs,
+    const char *protocol_name,
+    std::unordered_set<const EmittedProtocolRecord *> &visited,
+    std::uint64_t &visited_protocol_count, std::string &matched_owner_identity) {
+  if (protocol_refs == nullptr) {
+    return false;
+  }
+  for (std::uint64_t index = 0; index < protocol_refs->count; ++index) {
+    const auto *protocol_record = static_cast<const EmittedProtocolRecord *>(
+        AggregateEntry(protocol_refs, index));
+    if (protocol_record == nullptr) {
+      return false;
+    }
+    if (QueryProtocolConformanceFromProtocolRecordUnlocked(
+            protocol_record, protocol_name, visited, visited_protocol_count,
+            matched_owner_identity)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
+                                           RealizedClassNode &node) {
+  // M256-D003 category-attachment-protocol-conformance anchor: realized class
+  // nodes now own preferred category attachments and direct protocol edges so
+  // later dispatch/query paths consume the published graph instead of
+  // rediscovering category/protocol relationships on each lookup.
+  node.attached_category_records.clear();
+  node.runtime_attachment_ready = false;
+  if (node.image == nullptr) {
+    return false;
+  }
+  std::vector<const EmittedCategoryRecord *> category_records;
+  if (!CollectPreferredCategoryRecordsForImage(*node.image, node.class_name,
+                                               category_records)) {
+    return false;
+  }
+  for (const EmittedCategoryRecord *category_record : category_records) {
+    if (category_record == nullptr || category_record->class_owner_identity == nullptr ||
+        category_record->category_owner_identity == nullptr ||
+        category_record->owner_identity == nullptr) {
+      return false;
+    }
+    if (node.class_owner_identity != category_record->class_owner_identity) {
+      return false;
+    }
+    node.attached_category_records.push_back(category_record);
+    state.last_attached_category_owner_identity =
+        category_record->category_owner_identity;
+    state.last_attached_category_name = category_record->category_name != nullptr
+                                            ? category_record->category_name
+                                            : "";
+    if (category_record->adopted_protocol_refs != nullptr) {
+      state.realized_protocol_conformance_edge_count +=
+          category_record->adopted_protocol_refs->count;
+    }
+  }
+  state.realized_attached_category_count +=
+      static_cast<std::uint64_t>(node.attached_category_records.size());
+  if (node.bundle != nullptr &&
+      node.bundle->class_record.adopted_protocol_refs != nullptr) {
+    state.realized_protocol_conformance_edge_count +=
+        node.bundle->class_record.adopted_protocol_refs->count;
+  }
+  node.runtime_attachment_ready = true;
+  return true;
+}
+
 bool TryResolveMethodFromAttachedCategoriesUnlocked(
-    RuntimeState &state, const RegisteredImageMetadata &image_record,
-    const char *class_name, DispatchFamily family,
+    RuntimeState &state, const RealizedClassNode &node, DispatchFamily family,
     std::uint64_t normalized_receiver_identity, std::uint64_t selector_stable_id,
     const char *selector_spelling, SlowPathResolution &resolution,
     bool &ambiguous, std::uint64_t &category_probe_count,
@@ -551,18 +707,15 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
   // preferred category implementation records become the next live method tier
   // and adopted/inherited protocol records provide declaration-aware negative
   // lookup evidence for unsupported selectors.
-  if (class_name == nullptr || class_name[0] == '\0') {
+  if (node.class_name.empty() || !node.runtime_attachment_ready) {
     return false;
   }
-  std::vector<const EmittedCategoryRecord *> category_records;
-  if (!CollectPreferredCategoryRecordsForImage(image_record, class_name,
-                                               category_records)) {
-    return false;
-  }
-  for (const EmittedCategoryRecord *category_record : category_records) {
+  for (const EmittedCategoryRecord *category_record :
+       node.attached_category_records) {
     ++category_probe_count;
     if (!TryResolveMethodFromMethodListRefUnlocked(
-            state, SelectMethodListRef(*category_record, family), class_name,
+            state, SelectMethodListRef(*category_record, family),
+            node.class_name.c_str(),
             family, normalized_receiver_identity, selector_stable_id,
             selector_spelling, resolution, ambiguous)) {
       return false;
@@ -570,26 +723,14 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
     if (ambiguous || resolution.resolved) {
       return true;
     }
-    const objc3_runtime_pointer_aggregate *adopted_protocol_refs =
-        category_record->adopted_protocol_refs;
-    if (adopted_protocol_refs == nullptr) {
-      continue;
+    if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
+            state, category_record->adopted_protocol_refs, family,
+            selector_stable_id, selector_spelling, protocol_probe_count,
+            ambiguous)) {
+      return false;
     }
-    for (std::uint64_t index = 0; index < adopted_protocol_refs->count; ++index) {
-      const auto *protocol_record = static_cast<const EmittedProtocolRecord *>(
-          AggregateEntry(adopted_protocol_refs, index));
-      if (protocol_record == nullptr) {
-        return false;
-      }
-      bool declared = false;
-      if (!ProbeProtocolSelectorDeclarationUnlocked(
-              state, protocol_record, family, selector_stable_id,
-              selector_spelling, protocol_probe_count, declared, ambiguous)) {
-        return false;
-      }
-      if (ambiguous) {
-        return true;
-      }
+    if (ambiguous) {
+      return true;
     }
   }
   return true;
@@ -806,6 +947,7 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
     if (node.is_root_class) {
       ++state.realized_root_class_count;
     }
+    (void)AttachRealizedCategoryRecordsUnlocked(state, node);
   }
 
   if (!state.realized_class_nodes.empty()) {
@@ -897,13 +1039,21 @@ bool TryResolveMethodFromRealizedClassChainUnlocked(
       return true;
     }
     if (!TryResolveMethodFromAttachedCategoriesUnlocked(
-            state, *node->image, record.class_name, family,
+            state, *node, family,
             normalized_receiver_identity, selector_stable_id, selector_spelling,
             resolution, ambiguous, category_probe_count,
             protocol_probe_count)) {
       return false;
     }
     if (ambiguous || resolution.resolved) {
+      return true;
+    }
+    if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
+            state, record.adopted_protocol_refs, family, selector_stable_id,
+            selector_spelling, protocol_probe_count, ambiguous)) {
+      return false;
+    }
+    if (ambiguous) {
       return true;
     }
     node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
@@ -1565,6 +1715,72 @@ int RegisterImageUnlocked(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+bool ProtocolExistsByNameUnlocked(const RuntimeState &state,
+                                  const char *protocol_name) {
+  if (protocol_name == nullptr || protocol_name[0] == '\0') {
+    return false;
+  }
+  for (const RegisteredImageMetadata *record : OrderedRegisteredImages(state)) {
+    for (std::uint64_t index = 0; index < record->protocol_descriptor_count;
+         ++index) {
+      const auto *protocol_record = static_cast<const EmittedProtocolRecord *>(
+          AggregateEntry(record->protocol_descriptor_root, index));
+      if (protocol_record == nullptr || protocol_record->protocol_name == nullptr) {
+        continue;
+      }
+      if (std::strcmp(protocol_record->protocol_name, protocol_name) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool QueryRealizedClassProtocolConformanceUnlocked(
+    RuntimeState &state, const RealizedClassNode *start_node,
+    const char *protocol_name, std::uint64_t &visited_protocol_count,
+    std::string &matched_protocol_owner_identity,
+    std::string &matched_attachment_owner_identity) {
+  // M256-D003 category-attachment-protocol-conformance anchor: runtime-facing
+  // protocol conformance queries walk realized class nodes, attached category
+  // protocol refs, and inherited protocol closures without widening the public
+  // dispatch ABI.
+  if (start_node == nullptr || protocol_name == nullptr || protocol_name[0] == '\0') {
+    return false;
+  }
+  std::unordered_set<const EmittedProtocolRecord *> visited_protocols;
+  std::unordered_set<const RealizedClassNode *> visited_nodes;
+  const RealizedClassNode *node = start_node;
+  while (node != nullptr && visited_nodes.insert(node).second) {
+    if (node->bundle == nullptr) {
+      return false;
+    }
+    matched_attachment_owner_identity.clear();
+    const EmittedClassRecord &record = node->bundle->class_record;
+    if (QueryProtocolConformanceFromAggregateUnlocked(
+            record.adopted_protocol_refs, protocol_name, visited_protocols,
+            visited_protocol_count, matched_protocol_owner_identity)) {
+      return true;
+    }
+    for (const EmittedCategoryRecord *category_record :
+         node->attached_category_records) {
+      if (QueryProtocolConformanceFromAggregateUnlocked(
+              category_record->adopted_protocol_refs, protocol_name,
+              visited_protocols, visited_protocol_count,
+              matched_protocol_owner_identity)) {
+        matched_attachment_owner_identity =
+            category_record->category_owner_identity != nullptr
+                ? category_record->category_owner_identity
+                : "";
+        return true;
+      }
+    }
+    node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
+                                : nullptr;
+  }
+  return false;
+}
+
 }  // namespace
 
 extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
@@ -1828,12 +2044,19 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->root_class_count = state.realized_root_class_count;
   snapshot->metaclass_edge_count = state.realized_metaclass_edge_count;
   snapshot->receiver_class_binding_count = state.receiver_class_binding_count;
+  snapshot->attached_category_count = state.realized_attached_category_count;
+  snapshot->protocol_conformance_edge_count =
+      state.realized_protocol_conformance_edge_count;
   snapshot->last_realized_class_name =
       StableCString(state.last_realized_class_name);
   snapshot->last_realized_class_owner_identity =
       StableCString(state.last_realized_class_owner_identity);
   snapshot->last_realized_metaclass_owner_identity =
       StableCString(state.last_realized_metaclass_owner_identity);
+  snapshot->last_attached_category_owner_identity =
+      StableCString(state.last_attached_category_owner_identity);
+  snapshot->last_attached_category_name =
+      StableCString(state.last_attached_category_name);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -1848,6 +2071,9 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
   snapshot->registration_order_ordinal = 0;
   snapshot->is_root_class = 0;
   snapshot->implementation_backed = 0;
+  snapshot->attached_category_count = 0;
+  snapshot->direct_protocol_count = 0;
+  snapshot->attached_protocol_count = 0;
   snapshot->module_name = nullptr;
   snapshot->translation_unit_identity_key = nullptr;
   snapshot->class_name = nullptr;
@@ -1855,6 +2081,8 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
   snapshot->metaclass_owner_identity = nullptr;
   snapshot->super_class_owner_identity = nullptr;
   snapshot->super_metaclass_owner_identity = nullptr;
+  snapshot->last_attached_category_owner_identity = nullptr;
+  snapshot->last_attached_category_name = nullptr;
 
   if (class_name == nullptr || class_name[0] == '\0') {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -1877,6 +2105,13 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
   snapshot->registration_order_ordinal = node.registration_order_ordinal;
   snapshot->is_root_class = node.is_root_class ? 1 : 0;
   snapshot->implementation_backed = node.implementation_backed ? 1 : 0;
+  snapshot->attached_category_count =
+      static_cast<std::uint64_t>(node.attached_category_records.size());
+  snapshot->direct_protocol_count =
+      (node.bundle != nullptr &&
+       node.bundle->class_record.adopted_protocol_refs != nullptr)
+          ? node.bundle->class_record.adopted_protocol_refs->count
+          : 0;
   snapshot->module_name = StableCString(node.module_name);
   snapshot->translation_unit_identity_key =
       StableCString(node.translation_unit_identity_key);
@@ -1887,6 +2122,89 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
       StableCString(node.super_class_owner_identity);
   snapshot->super_metaclass_owner_identity =
       StableCString(node.super_metaclass_owner_identity);
+  std::uint64_t attached_protocol_count = 0;
+  for (const EmittedCategoryRecord *category_record : node.attached_category_records) {
+    if (category_record != nullptr && category_record->adopted_protocol_refs != nullptr) {
+      attached_protocol_count += category_record->adopted_protocol_refs->count;
+    }
+  }
+  snapshot->attached_protocol_count = attached_protocol_count;
+  if (!node.attached_category_records.empty()) {
+    const EmittedCategoryRecord *last_category =
+        node.attached_category_records.back();
+    snapshot->last_attached_category_owner_identity =
+        last_category->category_owner_identity != nullptr
+            ? last_category->category_owner_identity
+            : nullptr;
+    snapshot->last_attached_category_name =
+        last_category->category_name != nullptr ? last_category->category_name
+                                                : nullptr;
+  }
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_protocol_conformance_query_for_testing(
+    const char *class_name, const char *protocol_name,
+    objc3_runtime_protocol_conformance_query_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->class_found = 0;
+  snapshot->protocol_found = 0;
+  snapshot->conforms = 0;
+  snapshot->visited_protocol_count = 0;
+  snapshot->attached_category_count = 0;
+  snapshot->class_name = nullptr;
+  snapshot->protocol_name = nullptr;
+  snapshot->matched_protocol_owner_identity = nullptr;
+  snapshot->matched_attachment_owner_identity = nullptr;
+
+  if (class_name == nullptr || class_name[0] == '\0' ||
+      protocol_name == nullptr || protocol_name[0] == '\0') {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.last_protocol_conformance_class_name = class_name;
+  state.last_protocol_conformance_protocol_name = protocol_name;
+  state.last_protocol_conformance_owner_identity.clear();
+  state.last_protocol_conformance_attachment_owner_identity.clear();
+  snapshot->class_name = StableCString(state.last_protocol_conformance_class_name);
+  snapshot->protocol_name =
+      StableCString(state.last_protocol_conformance_protocol_name);
+  snapshot->protocol_found = ProtocolExistsByNameUnlocked(state, protocol_name) ? 1 : 0;
+
+  const auto found = state.realized_class_node_indices_by_name.find(class_name);
+  if (found == state.realized_class_node_indices_by_name.end() ||
+      found->second.empty()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const std::size_t node_index = found->second.front();
+  if (node_index >= state.realized_class_nodes.size()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  const RealizedClassNode &node = state.realized_class_nodes[node_index];
+  snapshot->class_found = 1;
+  snapshot->attached_category_count =
+      static_cast<std::uint64_t>(node.attached_category_records.size());
+
+  std::string matched_protocol_owner_identity;
+  std::string matched_attachment_owner_identity;
+  if (QueryRealizedClassProtocolConformanceUnlocked(
+          state, &node, protocol_name, snapshot->visited_protocol_count,
+          matched_protocol_owner_identity, matched_attachment_owner_identity)) {
+    snapshot->conforms = 1;
+    state.last_protocol_conformance_owner_identity = matched_protocol_owner_identity;
+    state.last_protocol_conformance_attachment_owner_identity =
+        matched_attachment_owner_identity;
+    snapshot->matched_protocol_owner_identity =
+        StableCString(state.last_protocol_conformance_owner_identity);
+    snapshot->matched_attachment_owner_identity =
+        StableCString(state.last_protocol_conformance_attachment_owner_identity);
+  }
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

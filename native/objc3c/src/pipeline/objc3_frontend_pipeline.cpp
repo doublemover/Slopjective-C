@@ -710,6 +710,8 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     record.record_kind = "interface";
     record.name = interface_decl.name;
     record.super_name = interface_decl.super_name;
+    record.adopted_protocols_lexicographic =
+        interface_decl.adopted_protocols_lexicographic;
     record.has_super = !interface_decl.super_name.empty();
     record.property_count = interface_decl.properties.size();
     record.method_count = interface_decl.methods.size();
@@ -801,6 +803,7 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     std::string interface_owner_identity;
     std::string implementation_owner_identity;
     std::string super_class_owner_identity;
+    std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
     std::size_t interface_property_count = 0;
     std::size_t implementation_property_count = 0;
     std::size_t interface_method_count = 0;
@@ -1029,6 +1032,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     aggregate.has_interface = true;
     aggregate.interface_owner_identity = interface_decl.semantic_link_symbol;
     aggregate.super_class_owner_identity = node.super_class_owner_identity;
+    aggregate.adopted_protocol_owner_identities_lexicographic =
+        interface_decl.adopted_protocols_lexicographic;
     aggregate.interface_property_count = node.property_count;
     aggregate.interface_method_count = node.method_count;
     aggregate.interface_class_method_count = node.class_method_count;
@@ -1232,6 +1237,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
             ? std::string{}
             : BuildRuntimeMetaclassOwnerIdentity(
                   aggregate.super_class_owner_identity.substr(6u));
+    class_node.adopted_protocol_owner_identities_lexicographic =
+        aggregate.adopted_protocol_owner_identities_lexicographic;
     class_node.instance_method_owner_identity = class_node.owner_identity;
     class_node.class_method_owner_identity = class_node.metaclass_owner_identity;
     class_node.has_interface = aggregate.has_interface;

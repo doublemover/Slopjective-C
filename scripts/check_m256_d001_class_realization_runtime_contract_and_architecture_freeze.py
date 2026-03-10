@@ -350,7 +350,7 @@ def payload_checks(probe_payload: dict[str, Any], module_manifest: dict[str, Any
           "M256-D001-DYN-PAY-22", "instance dispatch must preserve the canonical instance receiver identity")
     check(inherited_state.get("last_category_probe_count") == 1,
           "M256-D001-DYN-PAY-23", "inheritedValue dispatch must preserve the class-local category probe count")
-    check(inherited_state.get("last_protocol_probe_count") == 1,
+    check(inherited_state.get("last_protocol_probe_count") == 2,
           "M256-D001-DYN-PAY-24", "inheritedValue dispatch must preserve the inherited protocol negative-check count")
     check(inherited_state.get("last_resolved_class_name") == "Base",
           "M256-D001-DYN-PAY-25", "inheritedValue must resolve against Base")
@@ -402,7 +402,7 @@ def payload_checks(probe_payload: dict[str, Any], module_manifest: dict[str, Any
           "M256-D001-DYN-PAY-46", "ignoredValue must fall back compatibly")
     check(protocol_fallback_state.get("last_category_probe_count") == 1,
           "M256-D001-DYN-PAY-47", "ignoredValue must preserve category probe evidence")
-    check(protocol_fallback_state.get("last_protocol_probe_count") == 1,
+    check(protocol_fallback_state.get("last_protocol_probe_count") == 2,
           "M256-D001-DYN-PAY-48", "ignoredValue must preserve protocol probe evidence")
 
     check(protocol_fallback_cached_state.get("last_dispatch_used_cache") == 1,
@@ -413,7 +413,7 @@ def payload_checks(probe_payload: dict[str, Any], module_manifest: dict[str, Any
           "M256-D001-DYN-PAY-51", "cached ignoredValue dispatch must still fall back compatibly")
     check(protocol_fallback_cached_state.get("last_category_probe_count") == 1,
           "M256-D001-DYN-PAY-52", "cached ignoredValue dispatch must preserve category probe count")
-    check(protocol_fallback_cached_state.get("last_protocol_probe_count") == 1,
+    check(protocol_fallback_cached_state.get("last_protocol_probe_count") == 2,
           "M256-D001-DYN-PAY-53", "cached ignoredValue dispatch must preserve protocol probe count")
 
     check(inherited_entry.get("found") == 1 and inherited_entry.get("resolved") == 1,
@@ -422,7 +422,7 @@ def payload_checks(probe_payload: dict[str, Any], module_manifest: dict[str, Any
           "M256-D001-DYN-PAY-55", "inheritedValue cache entry must store 1042")
     check(inherited_entry.get("category_probe_count") == 1,
           "M256-D001-DYN-PAY-56", "inheritedValue cache entry must preserve category probe count")
-    check(inherited_entry.get("protocol_probe_count") == 1,
+    check(inherited_entry.get("protocol_probe_count") == 2,
           "M256-D001-DYN-PAY-57", "inheritedValue cache entry must preserve protocol probe count")
     check(inherited_entry.get("resolved_class_name") == "Base",
           "M256-D001-DYN-PAY-58", "inheritedValue cache entry must point at Base")
@@ -463,7 +463,7 @@ def payload_checks(probe_payload: dict[str, Any], module_manifest: dict[str, Any
           "M256-D001-DYN-PAY-74", "ignoredValue negative cache entry must store 1042")
     check(protocol_fallback_entry.get("category_probe_count") == 1,
           "M256-D001-DYN-PAY-75", "ignoredValue negative cache entry must preserve category probe count")
-    check(protocol_fallback_entry.get("protocol_probe_count") == 1,
+    check(protocol_fallback_entry.get("protocol_probe_count") == 2,
           "M256-D001-DYN-PAY-76", "ignoredValue negative cache entry must preserve protocol probe count")
     check(protocol_fallback_entry.get("selector") == "ignoredValue",
           "M256-D001-DYN-PAY-77", "ignoredValue negative cache entry must preserve selector spelling")

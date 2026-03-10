@@ -56,6 +56,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // M256-D002 metaclass-graph-root-class anchor: the realized class graph and
 // root-class baseline also stay behind this same ABI, with extra proof surface
 // exposed only through private testing snapshots.
+// M256-D003 category-attachment-protocol-conformance anchor: realized category
+// attachment and runtime protocol-conformance queries must continue to consume
+// this ABI plus private testing snapshots rather than widening the public
+// runtime surface.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

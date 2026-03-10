@@ -11448,6 +11448,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // M256-D002 metaclass-graph-root-class anchor: sema therefore preserves
   // root-class empties and canonical superclass/metaclass owner identities as
   // the only legal input for runtime-owned realized graph publication.
+  // M256-D003 category-attachment-protocol-conformance anchor: sema also owns
+  // the adopted-protocol closure and deterministic category merge surface that
+  // runtime queries now consume from emitted refs rather than rebuilding from
+  // source or diagnostics.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

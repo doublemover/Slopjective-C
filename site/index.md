@@ -6884,6 +6884,31 @@ identity bindings.
   - `spec/planning/compiler/m256/m256_d002_metaclass_graph_and_root_class_baseline_core_feature_implementation_packet.md`
   - `check:objc3c:m256-d002-metaclass-graph-root-class-baseline`
   - `check:objc3c:m256-d002-lane-d-readiness`
+
+## M256 category attachment and protocol conformance runtime checks (D003)
+
+`M256-D003` consumes the D002 realized class graph directly and proves live
+category attachment plus runtime protocol-conformance queries without falling
+back to manifest-only summaries.
+
+- contract id `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- category attachment model
+  `realized-class-nodes-own-preferred-category-attachments-after-registration`
+- protocol conformance query model
+  `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
+- fail-closed model
+  `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
+- non-goals:
+  - object allocation
+  - property / ivar storage realization
+  - executable protocol-body dispatch
+  - cross-image attachment coalescing beyond the current registration order
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_category_attachment_and_protocol_conformance_runtime_checks_core_feature_implementation_d003_expectations.md`
+  - `spec/planning/compiler/m256/m256_d003_category_attachment_and_protocol_conformance_runtime_checks_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-d003-category-attachment-protocol-conformance-runtime-checks`
+  - `check:objc3c:m256-d003-lane-d-readiness`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
@@ -14312,6 +14337,24 @@ emitted realization records.
   - `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
   - `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
   - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
+
+## M256 runtime category attachment and protocol conformance anchors (D003)
+
+`M256-D003` publishes the next runtime-owned object-model anchor above the
+realized class graph and attached category surfaces.
+
+- contract id `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- emitted IR summary path
+  `; runtime_category_attachment_protocol_conformance = contract=objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- canonical runtime models:
+  - `realized-class-nodes-own-preferred-category-attachments-after-registration`
+  - `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
+  - `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_d003_category_attachment_protocol_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d003_category_attachment_protocol_runtime_probe.cpp`
+  - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

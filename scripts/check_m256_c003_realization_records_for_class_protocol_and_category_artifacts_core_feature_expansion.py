@@ -110,7 +110,7 @@ PACKAGE_SNIPPETS = (
 )
 
 CLASS_RECORD_RE = re.compile(
-    r"^@__objc3_meta_class_\d{4} = private global \{ \{ ptr, ptr, ptr, ptr, ptr, ptr \}, \{ ptr, ptr, ptr, ptr, ptr, ptr \} \}",
+    r"^@__objc3_meta_class_\d{4} = private global \{ \{ ptr, ptr, ptr, ptr, ptr, ptr, ptr \}, \{ ptr, ptr, ptr, ptr, ptr, ptr, ptr \} \}",
     re.MULTILINE,
 )
 PROTOCOL_RECORD_RE = re.compile(

@@ -9016,6 +9016,24 @@ graph publication:
 - later `M256-D003+` work must consume this realized graph rather than
   rediscovering bundle relationships on each runtime dispatch
 
+## M256 category attachment and protocol conformance runtime checks (D003)
+
+`M256-D003` extends the D002 realized graph into runtime-owned attachment and
+query behavior:
+
+- runtime attaches preferred category records onto realized class nodes after
+  registration
+- runtime protocol-conformance queries walk direct class refs, attached
+  category refs, and inherited protocol closures
+- attached category dispatch and protocol-aware fallback stay on the live
+  runtime path instead of dropping back to manifest-only evidence
+- invalid attachment owner identities or broken protocol refs fail closed
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_category_attachment_and_protocol_conformance_runtime_checks_core_feature_implementation_d003_expectations.md`
+  - `spec/planning/compiler/m256/m256_d003_category_attachment_and_protocol_conformance_runtime_checks_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-d003-category-attachment-protocol-conformance-runtime-checks`
+  - `check:objc3c:m256-d003-lane-d-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

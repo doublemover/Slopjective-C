@@ -118,9 +118,13 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t root_class_count;
   uint64_t metaclass_edge_count;
   uint64_t receiver_class_binding_count;
+  uint64_t attached_category_count;
+  uint64_t protocol_conformance_edge_count;
   const char *last_realized_class_name;
   const char *last_realized_class_owner_identity;
   const char *last_realized_metaclass_owner_identity;
+  const char *last_attached_category_owner_identity;
+  const char *last_attached_category_name;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {
@@ -129,6 +133,9 @@ typedef struct objc3_runtime_realized_class_entry_snapshot {
   uint64_t registration_order_ordinal;
   int is_root_class;
   int implementation_backed;
+  uint64_t attached_category_count;
+  uint64_t direct_protocol_count;
+  uint64_t attached_protocol_count;
   const char *module_name;
   const char *translation_unit_identity_key;
   const char *class_name;
@@ -136,7 +143,21 @@ typedef struct objc3_runtime_realized_class_entry_snapshot {
   const char *metaclass_owner_identity;
   const char *super_class_owner_identity;
   const char *super_metaclass_owner_identity;
+  const char *last_attached_category_owner_identity;
+  const char *last_attached_category_name;
 } objc3_runtime_realized_class_entry_snapshot;
+
+typedef struct objc3_runtime_protocol_conformance_query_snapshot {
+  int class_found;
+  int protocol_found;
+  int conforms;
+  uint64_t visited_protocol_count;
+  uint64_t attached_category_count;
+  const char *class_name;
+  const char *protocol_name;
+  const char *matched_protocol_owner_identity;
+  const char *matched_attachment_owner_identity;
+} objc3_runtime_protocol_conformance_query_snapshot;
 
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
@@ -178,11 +199,18 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 // class/metaclass graph with explicit root-class publication, and the
 // canonical proof surface for that graph stays behind private testing
 // snapshots instead of widening the public ABI.
+// M256-D003 category-attachment-protocol-conformance anchor: runtime-owned
+// category attachment and protocol conformance queries also remain on this
+// private testing surface so live graph proofs stay observable without
+// expanding the public runtime ABI.
 int objc3_runtime_copy_realized_class_graph_state_for_testing(
     objc3_runtime_realized_class_graph_state_snapshot *snapshot);
 int objc3_runtime_copy_realized_class_entry_for_testing(
     const char *class_name,
     objc3_runtime_realized_class_entry_snapshot *snapshot);
+int objc3_runtime_copy_protocol_conformance_query_for_testing(
+    const char *class_name, const char *protocol_name,
+    objc3_runtime_protocol_conformance_query_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

@@ -4832,6 +4832,10 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // M256-D002 metaclass-graph-root-class anchor: parser also keeps empty
   // superclass spellings explicit so runtime can distinguish root-class
   // baselines from broken superclass closure without reinterpreting syntax.
+  // M256-D003 category-attachment-protocol-conformance anchor: parser keeps
+  // direct class/category adopted-protocol spellings stable so runtime queries
+  // can consume emitted protocol refs instead of reconstructing conformance
+  // from diagnostics or manifests.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

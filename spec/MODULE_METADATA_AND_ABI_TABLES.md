@@ -7076,6 +7076,24 @@ emitted realization records.
   - `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
   - `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
   - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
+
+## M256 runtime category attachment and protocol conformance anchors (D003)
+
+`M256-D003` publishes the next runtime-owned object-model anchor above the
+realized class graph and attached category surfaces.
+
+- contract id `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- emitted IR summary path
+  `; runtime_category_attachment_protocol_conformance = contract=objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- canonical runtime models:
+  - `realized-class-nodes-own-preferred-category-attachments-after-registration`
+  - `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
+  - `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_d003_category_attachment_protocol_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d003_category_attachment_protocol_runtime_probe.cpp`
+  - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

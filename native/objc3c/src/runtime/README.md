@@ -199,3 +199,16 @@ the emitted `M256-C003` realization records:
 - proof surface now includes:
   - `objc3_runtime_copy_realized_class_graph_state_for_testing`
   - `objc3_runtime_copy_realized_class_entry_for_testing`
+
+`M256-D003` extends that runtime-owned realized graph into live category
+attachment and protocol conformance queries:
+
+- contract id `objc3c-runtime-category-attachment-protocol-conformance/m256-d003-v1`
+- category attachment model
+  `realized-class-nodes-own-preferred-category-attachments-after-registration`
+- protocol conformance query model
+  `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
+- fail-closed model
+  `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
+- proof surface now includes:
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
