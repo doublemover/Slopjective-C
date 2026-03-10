@@ -38,6 +38,9 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsContract
     "objc3c-compatibility-strictness-claim-semantics/m264-b001-v1";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics";
+// M259-B001 runnable-core compatibility guard anchor: sema owns the current
+// truthful split between live selections, source-only downgraded claims, and
+// fail-closed unsupported advanced surfaces around the runnable core.
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
     "live-compatibility-and-migration-selection-source-only-downgrade-unsupported-fail-closed";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimDowngradeModel =

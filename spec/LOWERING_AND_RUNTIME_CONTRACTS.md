@@ -7043,3 +7043,24 @@ live runtime proof.
   - scalar execution smoke and replay remain separate corpus gates in this issue
   - no blocks, ARC, async, throws, actors, or import/module expansion land here
   - the next implementation issue is `M259-B001`
+
+## M259 runnable core compatibility guard (B001)
+
+`M259-B001` freezes the sema-owned compatibility/migration boundary around the
+current runnable core.
+
+- contract id
+  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
+- guard model
+  `runnable-core-distinguishes-live-runtime-backed-core-from-source-only-or-fail-closed-advanced-surfaces`
+- evidence model
+  `a002-live-runnable-core-proof-plus-sema-compatibility-selection-and-unsupported-claim-boundary`
+- truthful boundary
+  - `M259-A002` remains the live runtime-backed proof floor
+  - compatibility mode and migration assist remain live semantic selections
+  - `O3S216` remains the live migration-assist fail-closed diagnostic
+  - `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
+    remain the currently landed unsupported-feature diagnostics
+  - later advanced surfaces remain outside the runnable core and are not
+    promoted by docs, smoke, replay, or package claims here
+  - the next implementation issue is `M259-B002`

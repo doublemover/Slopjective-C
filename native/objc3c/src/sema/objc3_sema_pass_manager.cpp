@@ -40,6 +40,8 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
 }
 
 void AppendMigrationAssistDiagnostics(const Objc3SemaPassManagerInput &input, std::vector<std::string> &diagnostics) {
+  // M259-B001 runnable-core compatibility guard anchor: migration assist only
+  // becomes a live fail-closed diagnostic surface in canonical mode.
   if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {
     return;
   }

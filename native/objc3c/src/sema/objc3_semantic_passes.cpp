@@ -12033,7 +12033,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   const Objc3UnsupportedFeatureClaimEnforcementStats
       unsupported_feature_enforcement =
           DiagnoseUnsupportedFeatureClaimSources(ast, diagnostics);
-  // M264-B001 semantic freeze anchor: sema owns the single fail-closed
+  // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed
   // legality summary that classifies live compatibility/migration selections,
   // source-only claim downgrades, and unsupported strictness/macro claim
   // rejections before later lowering/runtime/reporting lanes consume them.

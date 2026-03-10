@@ -16482,3 +16482,30 @@ single-module, live runtime proof for the current truthful object-model core.
   - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
   - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
   - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+
+## Runnable core compatibility and migration guard (M259-B001)
+
+`M259-B001` freezes the semantic/documentation boundary that keeps the current
+runnable native Objective-C 3 core truthful while later advanced areas remain
+outside the release-facing subset.
+
+- contract id
+  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
+- guard model
+  `runnable-core-distinguishes-live-runtime-backed-core-from-source-only-or-fail-closed-advanced-surfaces`
+- evidence model
+  `a002-live-runnable-core-proof-plus-sema-compatibility-selection-and-unsupported-claim-boundary`
+- truthful boundary
+  - `M259-A002` remains the current integrated runnable proof floor
+  - compatibility mode and migration assist remain the live semantic selection
+    knobs around the runnable core
+  - migration-assist legacy-literal diagnostics remain fail-closed as `O3S216`
+  - currently landed unsupported-feature diagnostics remain fail-closed for
+    `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
+  - later advanced surfaces such as strictness selections, strict concurrency,
+    async/await, actors, blocks, ARC, and feature-macro publication are not
+    promoted to runnable support by this issue
+  - the next implementation issue is `M259-B002`
+- canonical proof assets
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`

@@ -154,6 +154,9 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimProperties =
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerSurface =
     "source-only:object-pointer-nullability-generics";
 
+// M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
+// remain explicitly non-runnable claim families until dedicated runtime-backed
+// support lands.
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictness =
     "unsupported:strictness-selection";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictConcurrency =

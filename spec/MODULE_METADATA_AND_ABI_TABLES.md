@@ -8021,3 +8021,19 @@ object/category/protocol/property sample on the live runtime path.
   - the canonical sample preserves `category_descriptor_count = 2`
   - the canonical sample preserves `property_descriptor_count = 8`
   - the canonical sample preserves `ivar_descriptor_count = 4`
+
+## M259 runnable core compatibility guard metadata anchors (B001)
+
+`M259-B001` does not widen emitted metadata. It freezes how the project talks
+about the current runnable metadata-backed core versus later advanced surfaces.
+
+- contract id
+  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
+- canonical proof assets
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`
+- emitted metadata truth
+  - the current runnable core still bottoms out in the A002 integrated sample
+    descriptor counts (`4/2/2/8/4`)
+  - advanced unsupported surfaces are not promoted into new runnable metadata
+    claims by this issue

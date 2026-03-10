@@ -13,6 +13,7 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # sample families stay tracked through their dedicated summary chains until
 # M259-A002 unifies the canonical runnable sample set.
 # M259-A002 canonical-runnable-sample-set anchor: the dedicated canonical sample-set proof remains separate from scalar replay in this issue.
+# M259-B001 runnable-core-compatibility-guard anchor: advanced unsupported features must fail closed instead of counting as replay-proof runnable coverage.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
