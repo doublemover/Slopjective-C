@@ -6799,3 +6799,42 @@ artifact while keeping IR lowering fail closed for foreign metadata.
   foreign payload injection remain later work
 - emitted IR still remains translation-unit local until later M258 lowering and
   runtime milestones consume this artifact
+
+## M258 cross-module semantic preservation freeze (B001)
+
+`M258-B001` freezes the semantic preservation boundary that later imported
+runtime metadata handling must preserve.
+
+- contract id
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_cross_module_runtime_metadata_semantic_preservation_contract`
+- source frontend closure
+  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- source artifact
+  `module.runtime-import-surface.json`
+- authority model
+  `semantic-preservation-freeze-derived-from-runtime-import-surface-and-runtime-metadata-source-records`
+- conformance-shape model
+  `superclass-protocol-and-category-attachment-shape`
+- dispatch-trait model
+  `selector-classness-accessor-ivar-binding-and-body-availability`
+- effect-trait model
+  `property-attribute-and-ownership-effect-profiles`
+- the published freeze must account for:
+  - superclass edges
+  - protocol conformance / inheritance edges
+  - category attachment shape
+  - property accessor / ivar-binding traits
+  - method selector / classness / body-availability traits
+  - property attribute and ownership-effect profiles
+- imported runtime metadata semantics remain fail closed:
+  - imported conformance shape is not landed
+  - imported dispatch traits are not landed
+  - imported effect traits are not landed
+  - imported runtime metadata semantics are not landed
+  - ready-for-imported-metadata-semantic-rules remains `false`
+  - ready-for-cross-module-dispatch-equivalence remains `false`
+- imported runtime metadata semantics are not lowered into IR yet
+- public embedding remains filesystem-artifact only; no in-memory imported
+  module semantic handles or foreign payload injection ABI are exposed yet

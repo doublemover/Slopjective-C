@@ -55,6 +55,9 @@ extern "C" {
  *   including in-memory imported module handles or foreign metadata payload injection,
  *   so direct runtime-owned import wiring remains fail-closed until later
  *   lowering/runtime milestones consume that emitted artifact.
+ * - M258-B001 cross-module semantic preservation anchor: imported runtime
+ *   metadata semantics remain filesystem-artifact only and do not yet expose a
+ *   live imported-module semantic ABI.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

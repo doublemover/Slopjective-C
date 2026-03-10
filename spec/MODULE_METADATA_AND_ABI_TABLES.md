@@ -7799,3 +7799,33 @@ artifact:
     - method selectors
 - canonical contract evidence:
   - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
+
+## M258 cross-module semantic preservation anchors (B001)
+
+`M258-B001` publishes one additional semantic-surface contract over the emitted
+runtime import surface and runtime metadata source records:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_cross_module_runtime_metadata_semantic_preservation_contract`
+- contract id
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- source frontend closure
+  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- source artifact
+  `module.runtime-import-surface.json`
+- canonical semantic anchors:
+  - conformance shape:
+    - superclass edges
+    - protocol conformance / inheritance edges
+    - category attachment counts
+  - dispatch traits:
+    - property accessor traits
+    - property ivar-binding traits
+    - method selector traits
+    - method classness counts
+    - method body-availability counts
+  - effect traits:
+    - property-attribute and ownership-effect profiles
+    - executable binding traits
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-B001/cross_module_runtime_metadata_semantic_preservation_contract_summary.json`

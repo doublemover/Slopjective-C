@@ -9511,3 +9511,26 @@ frontend artifact for later cross-translation-unit consumers:
 - `libobjc3c_frontend/api.h` now documents that embedding consumes this
   emitted artifact through the filesystem contract rather than an in-memory
   imported-module handle ABI
+
+## M258 cross-module semantic preservation (B001)
+
+M258 lane-B B001 freezes the semantic facts that later imported runtime
+metadata handling must preserve:
+
+- `pipeline/objc3_frontend_artifacts.cpp` now publishes
+  `frontend.pipeline.semantic_surface.objc_cross_module_runtime_metadata_semantic_preservation_contract`
+  derived from the emitted `M258-A002` frontend closure plus the canonical
+  runtime metadata source records
+- the published freeze covers:
+  - conformance shape
+  - dispatch traits
+  - effect traits
+- landed semantics remain explicitly false:
+  - imported conformance shape
+  - imported dispatch traits
+  - imported effect traits
+  - imported runtime metadata semantics
+- `ir/objc3_ir_emitter.cpp` remains explicit that imported runtime metadata
+  semantics are not lowered into IR yet
+- `libobjc3c_frontend/api.h` remains explicit that imported runtime metadata semantics are still exposed only through filesystem artifacts and not a live
+  imported-module ABI

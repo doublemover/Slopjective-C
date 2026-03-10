@@ -16175,3 +16175,39 @@ emitted frontend artifact for later cross-translation-unit consumers.
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
   - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
+
+## Cross-module semantic preservation (M258-B001)
+
+`M258-B001` freezes the semantic facts that imported runtime metadata must
+preserve across module boundaries before lane-B lands real imported metadata
+semantic equivalence.
+
+- contract id
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_cross_module_runtime_metadata_semantic_preservation_contract`
+- source frontend closure
+  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- source artifact
+  `module.runtime-import-surface.json`
+- semantic models
+  - conformance shape
+    `superclass-protocol-and-category-attachment-shape`
+  - dispatch traits
+    `selector-classness-accessor-ivar-binding-and-body-availability`
+  - effect traits
+    `property-attribute-and-ownership-effect-profiles`
+- frozen boundary
+  - imported runtime metadata semantics remain fail closed
+  - conformance-shape, dispatch-trait, and effect-trait counts are published
+    deterministically from the runtime metadata source records
+  - lane-B does not yet claim imported conformance, imported dispatch
+    equivalence, or imported effect semantics are landed
+  - IR remains translation-unit local and does not lower imported runtime
+    metadata semantics
+  - embedding still consumes only the filesystem artifact handoff and not an
+    in-memory imported-module semantic ABI
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tmp/reports/m258/M258-B001/cross_module_runtime_metadata_semantic_preservation_contract_summary.json`

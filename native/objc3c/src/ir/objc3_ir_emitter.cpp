@@ -594,6 +594,9 @@ class Objc3IREmitter {
       // M258-A001/A002 runtime-aware import/module surface anchor: the
       // frontend now emits a canonical runtime-import surface artifact for
       // later cross-translation-unit consumers.
+      // M258-B001 cross-module semantic preservation anchor: imported runtime metadata semantics are not lowered into IR; the lane-B surface freezes
+      // semantic preservation requirements without landing imported metadata
+      // semantic equivalence yet.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.
