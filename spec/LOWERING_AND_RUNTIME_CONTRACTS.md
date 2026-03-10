@@ -7005,3 +7005,22 @@ and module execution matrix.
     surface, including startup registration, selector lookup, method-cache
     resolution, protocol conformance, reset, and replay
   - the matrix closes out onto `M259-A001`
+
+## M259 runnable sample surface (A001)
+
+`M259-A001` freezes the truthful runnable sample surface before `M259-A002`
+widens the canonical sample set.
+
+- contract id
+  `objc3c-runnable-sample-surface/m259-a001-v1`
+- evidence model
+  `execution-smoke-replay-script-surface-plus-m256-d004-m257-e002-m258-e002-summary-chain`
+- sample surface model
+  `canonical-runnable-sample-surface-composes-scalar-smoke-object-property-and-import-module-proofs`
+- truthful boundary
+  - lane A treats execution smoke and replay proof as the scalar/core sample
+    corpus boundary
+  - runnable object, property, and import/module samples remain frozen through
+    the already-landed `M256-D004`, `M257-E002`, and `M258-E002` proof chains
+  - the freeze does not add blocks, ARC, async, throws, or actor sample claims
+  - the next implementation issue is `M259-A002`

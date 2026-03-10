@@ -10,6 +10,10 @@ $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/executi
 $compatibilityRuntimeShimSource = Join-Path $repoRoot "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
 $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
+# M259-A001 runnable-sample-surface anchor: execution smoke remains the
+# scalar/core corpus boundary rooted at tests/tooling/fixtures/native/execution.
+# Broader object/property/import-module samples stay frozen as separate proof
+# families until M259-A002 widens the canonical sample set.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

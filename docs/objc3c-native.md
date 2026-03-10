@@ -16414,3 +16414,43 @@ cross-module execution matrix.
   - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
   - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
   - `tmp/reports/m258/M258-E002/runnable_import_module_execution_matrix_summary.json`
+
+## Runnable sample surface (M259-A001)
+
+`M259-A001` freezes the truthful canonical runnable sample surface that the
+project treats as release-facing proof of the current executable Objective-C 3
+core.
+
+- contract id
+  `objc3c-runnable-sample-surface/m259-a001-v1`
+- evidence model
+  `execution-smoke-replay-script-surface-plus-m256-d004-m257-e002-m258-e002-summary-chain`
+- sample surface model
+  `canonical-runnable-sample-surface-composes-scalar-smoke-object-property-and-import-module-proofs`
+- truthful boundary
+  - scalar/core execution remains rooted in
+    `tests/tooling/fixtures/native/execution/positive`,
+    `tests/tooling/fixtures/native/execution/negative`, and
+    `tests/tooling/fixtures/native/hello.objc3` through
+    `test:objc3c:execution-smoke` and `test:objc3c:execution-replay-proof`
+  - the canonical object sample remains
+    `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+    with metadata-rich category/protocol behavior still proven by the
+    library-plus-probe split from `M256-D004`
+  - the property/ivar/accessor sample remains
+    `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    plus the `M257-E002` probe path
+  - the import/module sample remains the provider/consumer pair from
+    `M258-E002` plus its cross-module runtime probe
+  - blocks, ARC, async, throws, actors, and fully source-bound cross-module
+    method bodies are not part of the canonical runnable sample surface yet
+  - the next implementation issue is `M259-A002`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/execution/positive`
+  - `tests/tooling/fixtures/native/execution/negative`
+  - `tests/tooling/fixtures/native/hello.objc3`
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - `tmp/reports/m259/M259-A001/runnable_sample_surface_contract_summary.json`

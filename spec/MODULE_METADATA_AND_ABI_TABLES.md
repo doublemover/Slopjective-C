@@ -7982,3 +7982,23 @@ and realized runtime metadata into one live cross-module execution matrix.
   - the matrix proves those emitted families survive separate compilation,
     link-plan assembly, startup registration, selector lookup, method-cache
     resolution, and replay without widening the emitted metadata ABI
+
+## M259 runnable sample surface metadata anchors (A001)
+
+`M259-A001` does not add a new metadata family. It freezes which existing
+sample families the project may truthfully treat as canonical runnable proof.
+
+- contract id
+  `objc3c-runnable-sample-surface/m259-a001-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tmp/reports/m259/M259-A001/runnable_sample_surface_contract_summary.json`
+- emitted metadata truth
+  - canonical runnable proof still composes existing descriptor, selector pool,
+    registration-manifest, and replay surfaces rather than widening the ABI here
