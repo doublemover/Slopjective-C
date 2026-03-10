@@ -412,6 +412,9 @@ class Objc3IREmitter {
         // M257-D003 property-metadata-reflection anchor: lane-D now exposes a
         // private reflective helper surface over the realized property graph so
         // runtime probes can query property/accessor/layout facts directly.
+        // M257-E001 property-ivar-execution gate anchor: lane-E freezes the
+        // A002/B003/C003/D003 property proof chain over this same emitted
+        // surface before runnable sample expansion is allowed.
         out << "; runtime_property_metadata_reflection = "
             << Objc3RuntimePropertyMetadataReflectionSummary()
             << ";reflectable_property_entries="

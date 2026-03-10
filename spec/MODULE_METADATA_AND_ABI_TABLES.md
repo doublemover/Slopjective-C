@@ -7707,3 +7707,22 @@ and publishes a private reflective helper surface for tests and diagnostics.
 - additional runtime proof surface:
   - `objc3_runtime_copy_property_registry_state_for_testing`
   - `objc3_runtime_copy_property_entry_for_testing`
+
+## M257 property/ivar execution gate metadata anchors (E001)
+
+`M257-E001` does not add a new emitted metadata family. It freezes the first
+lane-E gate that decides whether the current property/ivar evidence chain is
+sufficient to claim executable behavior.
+
+- contract id `objc3c-executable-property-ivar-execution-gate/m257-e001-v1`
+- evidence model
+  `a002-b003-c003-d003-summary-chain`
+- execution gate model
+  `runnable-property-ivar-evidence-consumes-source-sema-lowering-and-runtime-proofs`
+- canonical upstream anchors:
+  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
+  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
+- canonical gate evidence:
+  - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`

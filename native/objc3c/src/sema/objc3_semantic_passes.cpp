@@ -12317,6 +12317,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // M257-D003 property-metadata-reflection anchor: runtime reflection
       // helpers must also publish property/accessor/layout facts from this
       // emitted surface rather than re-querying sema or source text.
+      // M257-E001 property-ivar-execution gate anchor: lane-E now consumes the
+      // A002/B003/C003/D003 proof chain before runnable sample expansion, so
+      // this emitted property surface remains the only authoritative handoff.
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

@@ -9431,3 +9431,21 @@ helpers for realized property metadata.
   - `spec/planning/compiler/m257/m257_d003_property_metadata_registration_and_reflective_access_helpers_core_feature_expansion_packet.md`
   - `check:objc3c:m257-d003-property-metadata-reflection`
   - `check:objc3c:m257-d003-lane-d-readiness`
+
+## M257 property and ivar execution gate (E001)
+
+`M257-E001` freezes the first lane-E proof gate for executable properties,
+ivars, accessors, and reflective runtime continuity:
+
+- lane-E now consumes the canonical `A002/B003/C003/D003` evidence chain rather
+  than inventing a parallel source/runtime proof surface
+- the gate is fail closed on summary disappearance, contract-id drift, or proof
+  chain breakage across source layout modeling, accessor legality, synthesized
+  lowering, and runtime property reflection
+- `M257-E002` is the first issue allowed to broaden this freeze into a larger
+  runnable property/ivar sample matrix
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_property_and_ivar_execution_gate_contract_and_architecture_freeze_e001_expectations.md`
+  - `spec/planning/compiler/m257/m257_e001_property_and_ivar_execution_gate_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m257-e001-property-and-ivar-execution-gate`
+  - `check:objc3c:m257-e001-lane-e-readiness`

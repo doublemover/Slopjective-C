@@ -1145,6 +1145,9 @@ struct Objc3PropertyDecl {
   // M257-D003 property-metadata-reflection anchor: private runtime reflection
   // helpers must likewise surface property/accessor/layout facts from these
   // same emitted identities rather than rediscovering them from source.
+  // M257-E001 property-ivar-execution gate anchor: lane-E freezes the
+  // executable claim over these same binding, accessor, and layout identities
+  // before broader runnable sample expansion is allowed.
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

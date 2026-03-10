@@ -16079,3 +16079,24 @@ single-instance freeze into true per-instance allocation.
   - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
   - `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`
   - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
+
+## Property and ivar execution gate (M257-E001)
+
+`M257-E001` freezes the first lane-E proof gate above the current executable
+property/ivar surface.
+
+- contract id
+  `objc3c-executable-property-ivar-execution-gate/m257-e001-v1`
+- evidence model
+  `a002-b003-c003-d003-summary-chain`
+- execution gate model
+  `runnable-property-ivar-evidence-consumes-source-sema-lowering-and-runtime-proofs`
+- fail-closed model
+  `fail-closed-on-property-ivar-execution-evidence-drift`
+- upstream evidence chain
+  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
+  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
+- evidence path
+  - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`

@@ -6703,3 +6703,23 @@ allocation and per-instance synthesized accessor execution.
   `private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts`
 - fail-closed model
   `no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout`
+
+## M257 property/ivar execution gate (E001)
+
+`M257-E001` freezes the first lane-E proof gate over the current executable
+property/ivar surface without broadening the runnable sample matrix yet.
+
+- contract id
+  `objc3c-executable-property-ivar-execution-gate/m257-e001-v1`
+- evidence model
+  `a002-b003-c003-d003-summary-chain`
+- execution gate model
+  `runnable-property-ivar-evidence-consumes-source-sema-lowering-and-runtime-proofs`
+- failure model
+  `fail-closed-on-property-ivar-execution-evidence-drift`
+- canonical upstream evidence:
+  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
+  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
+- the next implementation issue is `M257-E002`
