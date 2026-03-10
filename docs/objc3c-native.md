@@ -16454,3 +16454,31 @@ core.
   - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
   - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
   - `tmp/reports/m259/M259-A001/runnable_sample_surface_contract_summary.json`
+
+## Canonical runnable sample set (M259-A002)
+
+`M259-A002` widens the frozen runnable sample surface into one dedicated,
+single-module, live runtime proof for the current truthful object-model core.
+
+- contract id
+  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
+- evidence model
+  `a001-freeze-plus-live-integrated-runnable-object-property-category-protocol-sample`
+- sample set model
+  `integrated-runnable-sample-set-unifies-alloc-init-protocol-category-and-property-behavior`
+- truthful boundary
+  - the proof asset is
+    `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    and the live probe is
+    `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - the integrated sample proves alloc/init, superclass dispatch, category
+    dispatch, protocol conformance, and property access on one live runtime path
+  - the dedicated sample set does not widen scalar execution smoke or replay;
+    those remain the core corpus gates in this issue
+  - blocks, ARC, async, throws, actors, and import/module expansion are still
+    out of scope here
+  - the next implementation issue is `M259-B001`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`

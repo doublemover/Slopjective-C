@@ -12,6 +12,7 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # scalar/core corpus carried by execution smoke. Object/property/import-module
 # sample families stay tracked through their dedicated summary chains until
 # M259-A002 unifies the canonical runnable sample set.
+# M259-A002 canonical-runnable-sample-set anchor: the dedicated canonical sample-set proof remains separate from scalar replay in this issue.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"

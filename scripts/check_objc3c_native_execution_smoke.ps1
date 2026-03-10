@@ -14,6 +14,8 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # scalar/core corpus boundary rooted at tests/tooling/fixtures/native/execution.
 # Broader object/property/import-module samples stay frozen as separate proof
 # families until M259-A002 widens the canonical sample set.
+# M259-A002 canonical-runnable-sample-set anchor: the integrated object/property/category/protocol sample exists as a dedicated proof asset,
+# but execution smoke still remains the scalar/core corpus gate in this issue.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

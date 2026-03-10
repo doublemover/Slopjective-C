@@ -7024,3 +7024,22 @@ widens the canonical sample set.
     the already-landed `M256-D004`, `M257-E002`, and `M258-E002` proof chains
   - the freeze does not add blocks, ARC, async, throws, or actor sample claims
   - the next implementation issue is `M259-A002`
+
+## M259 canonical runnable sample set (A002)
+
+`M259-A002` composes the frozen `M259-A001` sample surface into one integrated
+live runtime proof.
+
+- contract id
+  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
+- evidence model
+  `a001-freeze-plus-live-integrated-runnable-object-property-category-protocol-sample`
+- sample set model
+  `integrated-runnable-sample-set-unifies-alloc-init-protocol-category-and-property-behavior`
+- truthful boundary
+  - the fixture and probe are single-module and runtime-backed
+  - the live proof covers alloc/init, superclass dispatch, category dispatch,
+    protocol conformance, and property access together
+  - scalar execution smoke and replay remain separate corpus gates in this issue
+  - no blocks, ARC, async, throws, actors, or import/module expansion land here
+  - the next implementation issue is `M259-B001`

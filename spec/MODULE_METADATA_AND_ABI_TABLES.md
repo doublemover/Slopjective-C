@@ -8002,3 +8002,22 @@ sample families the project may truthfully treat as canonical runnable proof.
 - emitted metadata truth
   - canonical runnable proof still composes existing descriptor, selector pool,
     registration-manifest, and replay surfaces rather than widening the ABI here
+
+## M259 canonical runnable sample set metadata anchors (A002)
+
+`M259-A002` does not introduce a brand-new metadata family. It proves that the
+existing emitted metadata families are sufficient to support one integrated
+object/category/protocol/property sample on the live runtime path.
+
+- contract id
+  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+- emitted metadata truth
+  - the canonical sample preserves `class_descriptor_count = 4`
+  - the canonical sample preserves `protocol_descriptor_count = 2`
+  - the canonical sample preserves `category_descriptor_count = 2`
+  - the canonical sample preserves `property_descriptor_count = 8`
+  - the canonical sample preserves `ivar_descriptor_count = 4`
