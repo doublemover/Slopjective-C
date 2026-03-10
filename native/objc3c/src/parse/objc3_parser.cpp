@@ -4829,6 +4829,9 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // runtime class realization, metaclass graph walking, category attachment,
   // or protocol-aware negative lookup behavior. It only preserves the source
   // identities that later sema/lowering/runtime stages consume.
+  // M256-D002 metaclass-graph-root-class anchor: parser also keeps empty
+  // superclass spellings explicit so runtime can distinguish root-class
+  // baselines from broken superclass closure without reinterpreting syntax.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

@@ -445,6 +445,18 @@ inline constexpr const char *kObjc3RuntimeProtocolCheckModel =
     "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks";
 inline constexpr const char *kObjc3RuntimeClassRealizationFailClosedModel =
     "invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed";
+// M256-D002 metaclass-graph-root-class anchor: lane-D now promotes the frozen
+// D001 runtime boundary into a runtime-owned realized class graph keyed by
+// stable receiver identities, with explicit root-class publication and
+// metaclass-edge inventory available to later runtime lanes.
+inline constexpr const char *kObjc3RuntimeMetaclassGraphRootClassContractId =
+    "objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1";
+inline constexpr const char *kObjc3RuntimeRealizedClassGraphModel =
+    "runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records";
+inline constexpr const char *kObjc3RuntimeRootClassBaselineModel =
+    "root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch";
+inline constexpr const char *kObjc3RuntimeRealizedClassGraphFailClosedModel =
+    "missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1375,6 +1387,7 @@ std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
+std::string Objc3RuntimeMetaclassGraphRootClassSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

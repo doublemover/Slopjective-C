@@ -6860,6 +6860,30 @@ the already-emitted `M256-C003` realization records.
   - `spec/planning/compiler/m256/m256_d001_class_realization_runtime_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m256-d001-class-realization-runtime-contract`
   - `check:objc3c:m256-d001-lane-d-readiness`
+
+## M256 metaclass graph and root-class baseline (D002)
+
+`M256-D002` turns that frozen runtime boundary into a runtime-owned realized
+class graph with explicit root-class publication and stable receiver-base
+identity bindings.
+
+- contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- realized class graph model
+  `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
+- root-class baseline model
+  `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
+- fail-closed model
+  `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+- non-goals:
+  - object allocation
+  - instance storage / ivar layout
+  - executable protocol-body dispatch
+  - category attachment runtime checks beyond the already frozen D001 surface
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_metaclass_graph_and_root_class_baseline_core_feature_implementation_d002_expectations.md`
+  - `spec/planning/compiler/m256/m256_d002_metaclass_graph_and_root_class_baseline_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-d002-metaclass-graph-root-class-baseline`
+  - `check:objc3c:m256-d002-lane-d-readiness`
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
@@ -14271,6 +14295,23 @@ class/protocol/category realization records.
   - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
   - `tests/tooling/runtime/m256_d001_class_realization_runtime_probe.cpp`
   - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
+
+## M256 runtime metaclass graph and root-class anchors (D002)
+
+`M256-D002` publishes the next runtime-owned object-model anchor above the
+emitted realization records.
+
+- contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- emitted IR summary path
+  `; runtime_metaclass_graph_root_class_baseline = contract=objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- canonical runtime models:
+  - `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
+  - `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
+  - `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
+  - `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
+  - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

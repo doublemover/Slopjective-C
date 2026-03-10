@@ -11445,6 +11445,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // of realized-class legality, category merge/conflict decisions, protocol
   // conformance legality, and canonical inheritance identities. Runtime class
   // realization must consume that closure rather than reinterpreting source.
+  // M256-D002 metaclass-graph-root-class anchor: sema therefore preserves
+  // root-class empties and canonical superclass/metaclass owner identities as
+  // the only legal input for runtime-owned realized graph publication.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

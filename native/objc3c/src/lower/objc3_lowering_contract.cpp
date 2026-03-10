@@ -613,6 +613,25 @@ std::string Objc3RuntimeClassRealizationSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMetaclassGraphRootClassSummary() {
+  std::ostringstream out;
+  // M256-D002 metaclass-graph-root-class anchor: runtime now publishes a
+  // realized class graph keyed by stable receiver base identities, preserves
+  // root classes as explicit nodes with null superclass links, and keeps
+  // known-class/class-self dispatch on the same metaclass graph without
+  // widening the public runtime ABI. Allocation, instance storage, and
+  // protocol-body execution remain outside this boundary.
+  out << "contract=" << kObjc3RuntimeMetaclassGraphRootClassContractId
+      << ";realized_class_graph_model="
+      << kObjc3RuntimeRealizedClassGraphModel
+      << ";root_class_baseline_model="
+      << kObjc3RuntimeRootClassBaselineModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeRealizedClassGraphFailClosedModel
+      << ";non_goals=no-allocation-no-instance-storage-no-protocol-body-dispatch";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

@@ -7059,6 +7059,23 @@ class/protocol/category realization records.
   - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
   - `tests/tooling/runtime/m256_d001_class_realization_runtime_probe.cpp`
   - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
+
+## M256 runtime metaclass graph and root-class anchors (D002)
+
+`M256-D002` publishes the next runtime-owned object-model anchor above the
+emitted realization records.
+
+- contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- emitted IR summary path
+  `; runtime_metaclass_graph_root_class_baseline = contract=objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- canonical runtime models:
+  - `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
+  - `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
+  - `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
+  - `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
+  - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

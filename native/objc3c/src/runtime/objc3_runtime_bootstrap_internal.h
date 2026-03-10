@@ -113,6 +113,31 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   const char *resolved_owner_identity;
 } objc3_runtime_method_cache_entry_snapshot;
 
+typedef struct objc3_runtime_realized_class_graph_state_snapshot {
+  uint64_t realized_class_count;
+  uint64_t root_class_count;
+  uint64_t metaclass_edge_count;
+  uint64_t receiver_class_binding_count;
+  const char *last_realized_class_name;
+  const char *last_realized_class_owner_identity;
+  const char *last_realized_metaclass_owner_identity;
+} objc3_runtime_realized_class_graph_state_snapshot;
+
+typedef struct objc3_runtime_realized_class_entry_snapshot {
+  int found;
+  uint64_t base_identity;
+  uint64_t registration_order_ordinal;
+  int is_root_class;
+  int implementation_backed;
+  const char *module_name;
+  const char *translation_unit_identity_key;
+  const char *class_name;
+  const char *class_owner_identity;
+  const char *metaclass_owner_identity;
+  const char *super_class_owner_identity;
+  const char *super_metaclass_owner_identity;
+} objc3_runtime_realized_class_entry_snapshot;
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
@@ -149,6 +174,15 @@ int objc3_runtime_copy_method_cache_state_for_testing(
 int objc3_runtime_copy_method_cache_entry_for_testing(
     int receiver, const char *selector,
     objc3_runtime_method_cache_entry_snapshot *snapshot);
+// M256-D002 metaclass-graph-root-class anchor: the runtime now owns a realized
+// class/metaclass graph with explicit root-class publication, and the
+// canonical proof surface for that graph stays behind private testing
+// snapshots instead of widening the public ABI.
+int objc3_runtime_copy_realized_class_graph_state_for_testing(
+    objc3_runtime_realized_class_graph_state_snapshot *snapshot);
+int objc3_runtime_copy_realized_class_entry_for_testing(
+    const char *class_name,
+    objc3_runtime_realized_class_entry_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

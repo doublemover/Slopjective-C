@@ -53,6 +53,9 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // Class/metaclass graph walking, category attachment, and protocol-aware
 // negative runtime checks must preserve these entrypoints rather than widening
 // the public ABI prematurely.
+// M256-D002 metaclass-graph-root-class anchor: the realized class graph and
+// root-class baseline also stay behind this same ABI, with extra proof surface
+// exposed only through private testing snapshots.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

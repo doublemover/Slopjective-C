@@ -9004,6 +9004,18 @@ records:
 - later `M256-D002+` work must extend this runtime surface rather than
   rederiving source legality or widening the public runtime ABI
 
+## M256 metaclass graph and root-class baseline (D002)
+
+`M256-D002` moves that runtime surface onto explicit runtime-owned realized
+graph publication:
+
+- runtime owns the realized class graph keyed by receiver base identities
+- root classes remain explicit graph nodes with null superclass links
+- metaclass-edge inventory is rebuilt on successful image registration
+- known-class and class-self dispatch continue to share the metaclass cache key
+- later `M256-D003+` work must consume this realized graph rather than
+  rediscovering bundle relationships on each runtime dispatch
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

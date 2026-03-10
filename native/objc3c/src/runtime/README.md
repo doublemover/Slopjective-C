@@ -186,3 +186,16 @@ the emitted `M256-C003` realization records:
   - accessor synthesis
   - executable protocol-body dispatch
   - cross-image class coalescing beyond the current ordered image walk
+
+`M256-D002` promotes that freeze boundary into a runtime-owned realized graph:
+
+- contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- runtime-owned realized graph model
+  `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
+- root-class baseline model
+  `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
+- fail-closed model
+  `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+- proof surface now includes:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`

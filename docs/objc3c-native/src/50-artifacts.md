@@ -200,6 +200,28 @@ earlier `M256-C003` realization records.
 - evidence path
   - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
 
+## Metaclass graph and root-class baseline (M256-D002)
+
+`M256-D002` promotes that frozen runtime boundary into a runtime-owned
+realized class graph and proves the minimal root-class baseline needed for
+native object programs.
+
+- contract id
+  `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- emitted IR summary
+  `; runtime_metaclass_graph_root_class_baseline = ...`
+- realized graph model
+  `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
+- root-class baseline model
+  `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
+- fail-closed model
+  `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
+  - `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
+- evidence path
+  - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

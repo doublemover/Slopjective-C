@@ -275,3 +275,15 @@ lookup/dispatch surface:
 - protocol records remain declaration-aware negative runtime checks only
 - proof surface remains the private runtime snapshots in
   `runtime/objc3_runtime_bootstrap_internal.h`
+
+`M256-D002` proves the runtime-owned realized class graph and root-class
+baseline above that same lookup/dispatch surface:
+
+- contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`
+- probe:
+  `tests/tooling/runtime/m256_d002_metaclass_graph_root_class_probe.cpp`
+- fixture:
+  `tests/tooling/fixtures/native/m256_d002_metaclass_graph_root_class_library.objc3`
+- additional proof surface:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`

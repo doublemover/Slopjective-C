@@ -13,6 +13,8 @@
 namespace {
 
 constexpr std::int64_t kDispatchModulus = 2147483629LL;
+constexpr std::uint64_t kReceiverIdentityBase = 1024;
+constexpr std::uint64_t kReceiverIdentityStride = 17;
 
 struct SelectorSlot {
   std::string spelling_storage;
@@ -166,6 +168,24 @@ struct EmittedCategoryRecord {
   std::uint64_t class_method_count;
 };
 
+struct RealizedClassNode {
+  std::string module_name;
+  std::string translation_unit_identity_key;
+  std::string class_name;
+  std::string class_owner_identity;
+  std::string metaclass_owner_identity;
+  std::string super_class_owner_identity;
+  std::string super_metaclass_owner_identity;
+  std::uint64_t registration_order_ordinal = 0;
+  std::uint64_t base_identity = 0;
+  bool is_root_class = false;
+  bool implementation_backed = false;
+  const RegisteredImageMetadata *image = nullptr;
+  const EmittedClassBundle *bundle = nullptr;
+  std::size_t super_node_index = 0;
+  bool has_super_node = false;
+};
+
 struct RuntimeState {
   std::mutex mutex;
   std::uint64_t registered_image_count = 0;
@@ -233,6 +253,18 @@ struct RuntimeState {
   int last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   std::string last_replayed_module_name;
   std::string last_replayed_translation_unit_identity_key;
+  std::unordered_map<std::uint64_t, std::string>
+      realized_class_name_by_base_identity;
+  std::unordered_set<std::uint64_t> ambiguous_realized_base_identities;
+  std::unordered_map<std::string, std::vector<std::size_t>>
+      realized_class_node_indices_by_name;
+  std::vector<RealizedClassNode> realized_class_nodes;
+  std::uint64_t realized_root_class_count = 0;
+  std::uint64_t realized_metaclass_edge_count = 0;
+  std::uint64_t receiver_class_binding_count = 0;
+  std::string last_realized_class_name;
+  std::string last_realized_class_owner_identity;
+  std::string last_realized_metaclass_owner_identity;
 };
 
 RuntimeState &State() {
@@ -243,6 +275,8 @@ RuntimeState &State() {
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
 bool IsSupportedRuntimeI32ReturnType(const char *return_type_name);
+std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
+    const RegisteredImageMetadata &record, const std::string &class_name);
 
 void RefreshSelectorHandlePointersUnlocked(RuntimeState &state) {
   for (SelectorSlot &slot : state.selector_slots) {
@@ -267,6 +301,24 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.last_dispatch_fell_back = false;
   state.last_resolved_class_name.clear();
   state.last_resolved_owner_identity.clear();
+}
+
+void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
+  state.realized_class_name_by_base_identity.clear();
+  state.ambiguous_realized_base_identities.clear();
+  state.realized_class_node_indices_by_name.clear();
+  state.realized_class_nodes.clear();
+  state.realized_root_class_count = 0;
+  state.realized_metaclass_edge_count = 0;
+  state.receiver_class_binding_count = 0;
+  state.last_realized_class_name.clear();
+  state.last_realized_class_owner_identity.clear();
+  state.last_realized_metaclass_owner_identity.clear();
+}
+
+std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal) {
+  return kReceiverIdentityBase +
+         static_cast<std::uint64_t>(ordinal) * kReceiverIdentityStride;
 }
 
 const EmittedMethodListEntry *MethodListEntries(
@@ -566,19 +618,22 @@ bool DecodeReceiverIdentity(int receiver,
   if (receiver <= 0) {
     return false;
   }
-  static constexpr std::int64_t kBase = 1024;
-  static constexpr std::int64_t kStride = 17;
   const std::int64_t signed_receiver = receiver;
-  if (signed_receiver < kBase) {
+  if (signed_receiver < static_cast<std::int64_t>(kReceiverIdentityBase)) {
     return false;
   }
-  const std::int64_t delta = signed_receiver - kBase;
-  const std::int64_t ordinal = delta / kStride;
-  const std::int64_t salt = delta % kStride;
+  const std::int64_t delta =
+      signed_receiver - static_cast<std::int64_t>(kReceiverIdentityBase);
+  const std::int64_t ordinal =
+      delta / static_cast<std::int64_t>(kReceiverIdentityStride);
+  const std::int64_t salt =
+      delta % static_cast<std::int64_t>(kReceiverIdentityStride);
   if (ordinal < 0) {
     return false;
   }
-  base_identity = static_cast<std::uint64_t>(kBase + ordinal * kStride);
+  base_identity = static_cast<std::uint64_t>(
+      static_cast<std::int64_t>(kReceiverIdentityBase) +
+      ordinal * static_cast<std::int64_t>(kReceiverIdentityStride));
   switch (salt) {
     case 0:
     case 2:
@@ -630,37 +685,159 @@ bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
   return true;
 }
 
+void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
+  // M256-D002 metaclass-graph-root-class anchor: runtime now republishes a
+  // realized class/metaclass graph keyed by stable receiver base identities,
+  // preserving root classes as explicit graph nodes rather than rediscovering
+  // the class family from emitted bundles on every dispatch.
+  ClearRealizedClassGraphUnlocked(state);
+
+  struct ReceiverBinding {
+    std::string class_name;
+    bool ambiguous = false;
+  };
+
+  std::unordered_map<std::size_t, ReceiverBinding> bindings_by_ordinal;
+  std::vector<const RegisteredImageMetadata *> ordered_images =
+      OrderedRegisteredImages(state);
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    std::vector<std::string> class_names;
+    if (!CollectSortedImageClassNames(*record, class_names)) {
+      continue;
+    }
+    for (std::size_t ordinal = 0; ordinal < class_names.size(); ++ordinal) {
+      ReceiverBinding &binding = bindings_by_ordinal[ordinal];
+      if (binding.class_name.empty() && !binding.ambiguous) {
+        binding.class_name = class_names[ordinal];
+        continue;
+      }
+      if (binding.class_name != class_names[ordinal]) {
+        binding.class_name.clear();
+        binding.ambiguous = true;
+      }
+    }
+  }
+  for (const auto &[ordinal, binding] : bindings_by_ordinal) {
+    const std::uint64_t base_identity = BuildReceiverBaseIdentity(ordinal);
+    if (binding.ambiguous) {
+      state.ambiguous_realized_base_identities.insert(base_identity);
+      continue;
+    }
+    if (!binding.class_name.empty()) {
+      state.realized_class_name_by_base_identity.emplace(base_identity,
+                                                         binding.class_name);
+    }
+  }
+  state.receiver_class_binding_count =
+      static_cast<std::uint64_t>(state.realized_class_name_by_base_identity.size());
+
+  std::unordered_map<const EmittedClassBundle *, std::size_t> node_index_by_bundle;
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    std::vector<std::string> class_names;
+    if (!CollectSortedImageClassNames(*record, class_names)) {
+      continue;
+    }
+    std::unordered_map<std::string, std::size_t> ordinal_by_class_name;
+    ordinal_by_class_name.reserve(class_names.size());
+    for (std::size_t ordinal = 0; ordinal < class_names.size(); ++ordinal) {
+      ordinal_by_class_name.emplace(class_names[ordinal], ordinal);
+    }
+    for (const std::string &class_name : class_names) {
+      const auto ordinal_it = ordinal_by_class_name.find(class_name);
+      if (ordinal_it == ordinal_by_class_name.end()) {
+        continue;
+      }
+      const auto bundles = CollectPreferredClassBundlesForImage(*record, class_name);
+      for (const EmittedClassBundle *bundle : bundles) {
+        if (bundle == nullptr) {
+          continue;
+        }
+        RealizedClassNode node;
+        node.module_name = record->module_name;
+        node.translation_unit_identity_key = record->translation_unit_identity_key;
+        node.class_name = class_name;
+        node.class_owner_identity =
+            bundle->class_record.object_owner_identity != nullptr
+                ? bundle->class_record.object_owner_identity
+                : "";
+        node.metaclass_owner_identity =
+            bundle->metaclass_record.object_owner_identity != nullptr
+                ? bundle->metaclass_record.object_owner_identity
+                : "";
+        node.super_class_owner_identity =
+            bundle->class_record.super_owner_identity != nullptr
+                ? bundle->class_record.super_owner_identity
+                : "";
+        node.super_metaclass_owner_identity =
+            bundle->metaclass_record.super_owner_identity != nullptr
+                ? bundle->metaclass_record.super_owner_identity
+                : "";
+        node.registration_order_ordinal = record->registration_order_ordinal;
+        node.base_identity = BuildReceiverBaseIdentity(ordinal_it->second);
+        node.is_root_class = bundle->class_record.super_bundle == nullptr;
+        node.implementation_backed =
+            (bundle->class_record.method_list_ref != nullptr &&
+             IsImplementationOwnerIdentity(
+                 bundle->class_record.method_list_ref->owner_identity)) ||
+            (bundle->metaclass_record.method_list_ref != nullptr &&
+             IsImplementationOwnerIdentity(
+                 bundle->metaclass_record.method_list_ref->owner_identity));
+        node.image = record;
+        node.bundle = bundle;
+        const std::size_t node_index = state.realized_class_nodes.size();
+        state.realized_class_nodes.push_back(std::move(node));
+        node_index_by_bundle.emplace(bundle, node_index);
+        state.realized_class_node_indices_by_name[class_name].push_back(node_index);
+      }
+    }
+  }
+
+  for (std::size_t index = 0; index < state.realized_class_nodes.size(); ++index) {
+    RealizedClassNode &node = state.realized_class_nodes[index];
+    if (node.bundle != nullptr && node.bundle->class_record.super_bundle != nullptr) {
+      const auto super_it = node_index_by_bundle.find(
+          static_cast<const EmittedClassBundle *>(node.bundle->class_record.super_bundle));
+      if (super_it != node_index_by_bundle.end()) {
+        node.super_node_index = super_it->second;
+        node.has_super_node = true;
+        ++state.realized_metaclass_edge_count;
+      }
+    }
+    if (node.is_root_class) {
+      ++state.realized_root_class_count;
+    }
+  }
+
+  if (!state.realized_class_nodes.empty()) {
+    const RealizedClassNode &last_node = state.realized_class_nodes.back();
+    state.last_realized_class_name = last_node.class_name;
+    state.last_realized_class_owner_identity = last_node.class_owner_identity;
+    state.last_realized_metaclass_owner_identity =
+        last_node.metaclass_owner_identity;
+  }
+}
+
 bool ResolveReceiverClassNameUnlocked(const RuntimeState &state,
                                       std::uint64_t base_identity,
                                       std::string &class_name,
                                       bool &ambiguous) {
   ambiguous = false;
-  static constexpr std::uint64_t kBase = 1024;
-  static constexpr std::uint64_t kStride = 17;
-  if (base_identity < kBase || ((base_identity - kBase) % kStride) != 0) {
+  if (base_identity < kReceiverIdentityBase ||
+      ((base_identity - kReceiverIdentityBase) % kReceiverIdentityStride) != 0) {
     return false;
   }
-  const std::uint64_t ordinal = (base_identity - kBase) / kStride;
-  bool found_any = false;
-  for (const RegisteredImageMetadata *record : OrderedRegisteredImages(state)) {
-    std::vector<std::string> class_names;
-    if (!CollectSortedImageClassNames(*record, class_names)) {
-      return false;
-    }
-    if (ordinal >= class_names.size()) {
-      continue;
-    }
-    if (!found_any) {
-      class_name = class_names[ordinal];
-      found_any = true;
-      continue;
-    }
-    if (class_name != class_names[ordinal]) {
-      ambiguous = true;
-      return false;
-    }
+  if (state.ambiguous_realized_base_identities.find(base_identity) !=
+      state.ambiguous_realized_base_identities.end()) {
+    ambiguous = true;
+    return false;
   }
-  return found_any;
+  const auto found =
+      state.realized_class_name_by_base_identity.find(base_identity);
+  if (found == state.realized_class_name_by_base_identity.end()) {
+    return false;
+  }
+  class_name = found->second;
+  return true;
 }
 
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
@@ -689,9 +866,8 @@ std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
                                         : implementation_bundles;
 }
 
-bool TryResolveMethodFromBundleChainUnlocked(
-    RuntimeState &state, const RegisteredImageMetadata &image_record,
-    const EmittedClassBundle *start_bundle,
+bool TryResolveMethodFromRealizedClassChainUnlocked(
+    RuntimeState &state, const RealizedClassNode *start_node,
     DispatchFamily family, std::uint64_t normalized_receiver_identity,
     std::uint64_t selector_stable_id, const char *selector_spelling,
     SlowPathResolution &resolution, bool &ambiguous,
@@ -701,9 +877,13 @@ bool TryResolveMethodFromBundleChainUnlocked(
   // emitted class/metaclass chain directly, consults attached categories at
   // each realized class node, and preserves protocol checks as
   // declaration-aware negative evidence only.
-  std::unordered_set<const EmittedClassBundle *> visited;
-  const EmittedClassBundle *bundle = start_bundle;
-  while (bundle != nullptr && visited.insert(bundle).second) {
+  std::unordered_set<const RealizedClassNode *> visited;
+  const RealizedClassNode *node = start_node;
+  while (node != nullptr && visited.insert(node).second) {
+    if (node->bundle == nullptr || node->image == nullptr) {
+      return false;
+    }
+    const EmittedClassBundle *bundle = node->bundle;
     const EmittedClassRecord &record =
         family == DispatchFamily::Class ? bundle->metaclass_record
                                         : bundle->class_record;
@@ -717,7 +897,7 @@ bool TryResolveMethodFromBundleChainUnlocked(
       return true;
     }
     if (!TryResolveMethodFromAttachedCategoriesUnlocked(
-            state, image_record, record.class_name, family,
+            state, *node->image, record.class_name, family,
             normalized_receiver_identity, selector_stable_id, selector_spelling,
             resolution, ambiguous, category_probe_count,
             protocol_probe_count)) {
@@ -726,7 +906,8 @@ bool TryResolveMethodFromBundleChainUnlocked(
     if (ambiguous || resolution.resolved) {
       return true;
     }
-    bundle = static_cast<const EmittedClassBundle *>(record.super_bundle);
+    node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
+                                : nullptr;
   }
   return true;
 }
@@ -753,7 +934,17 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     return resolution;
   }
 
-  for (const RegisteredImageMetadata *record : OrderedRegisteredImages(state)) {
+  const auto realized_nodes_it =
+      state.realized_class_node_indices_by_name.find(resolved_class_name);
+  if (realized_nodes_it == state.realized_class_node_indices_by_name.end()) {
+    return resolution;
+  }
+
+  for (const std::size_t node_index : realized_nodes_it->second) {
+    if (node_index >= state.realized_class_nodes.size()) {
+      continue;
+    }
+    const RealizedClassNode &node = state.realized_class_nodes[node_index];
     SlowPathResolution image_resolution;
     image_resolution.selector_storage =
         selector_spelling != nullptr ? selector_spelling : "";
@@ -761,33 +952,26 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     image_resolution.selector_stable_id = selector_stable_id;
     std::uint64_t image_category_probe_count = 0;
     std::uint64_t image_protocol_probe_count = 0;
-    const auto bundles =
-        CollectPreferredClassBundlesForImage(*record, resolved_class_name);
-    for (const EmittedClassBundle *bundle : bundles) {
-      bool method_ambiguous = false;
-      if (!TryResolveMethodFromBundleChainUnlocked(
-              state, *record, bundle, family, normalized_receiver_identity,
-              selector_stable_id, selector_spelling, image_resolution,
-              method_ambiguous, image_category_probe_count,
-              image_protocol_probe_count)) {
-        return SlowPathResolution{};
-      }
-      if (method_ambiguous) {
-        resolution = SlowPathResolution{};
-        resolution.ambiguous = true;
-        resolution.selector_storage =
-            selector_spelling != nullptr ? selector_spelling : "";
-        resolution.normalized_receiver_identity = normalized_receiver_identity;
-        resolution.selector_stable_id = selector_stable_id;
-        resolution.category_probe_count =
-            category_probe_count + image_category_probe_count;
-        resolution.protocol_probe_count =
-            protocol_probe_count + image_protocol_probe_count;
-        return resolution;
-      }
-      if (image_resolution.resolved) {
-        break;
-      }
+    bool method_ambiguous = false;
+    if (!TryResolveMethodFromRealizedClassChainUnlocked(
+            state, &node, family, normalized_receiver_identity,
+            selector_stable_id, selector_spelling, image_resolution,
+            method_ambiguous, image_category_probe_count,
+            image_protocol_probe_count)) {
+      return SlowPathResolution{};
+    }
+    if (method_ambiguous) {
+      resolution = SlowPathResolution{};
+      resolution.ambiguous = true;
+      resolution.selector_storage =
+          selector_spelling != nullptr ? selector_spelling : "";
+      resolution.normalized_receiver_identity = normalized_receiver_identity;
+      resolution.selector_stable_id = selector_stable_id;
+      resolution.category_probe_count =
+          category_probe_count + image_category_probe_count;
+      resolution.protocol_probe_count =
+          protocol_probe_count + image_protocol_probe_count;
+      return resolution;
     }
     category_probe_count += image_category_probe_count;
     protocol_probe_count += image_protocol_probe_count;
@@ -1146,6 +1330,7 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_materialized_selector_pool_index = 0;
   state.last_materialized_from_metadata = false;
   ClearMethodCacheStateUnlocked(state);
+  ClearRealizedClassGraphUnlocked(state);
   state.staged_registration_table = nullptr;
   state.walked_image_count = 0;
   ClearImageWalkSnapshotUnlocked(state);
@@ -1371,6 +1556,10 @@ int RegisterImageUnlocked(
       image->translation_unit_identity_key;
   state.registration_order_by_identity_key.emplace(
       image->translation_unit_identity_key, image->registration_order_ordinal);
+  // M256-D002 metaclass-graph-root-class anchor: successful registration now
+  // republishes a runtime-owned realized class/metaclass graph and root-class
+  // baseline before dispatch can consume the image.
+  RebuildRealizedClassGraphUnlocked(state);
   ClearRejectedRegistrationUnlocked(state);
   ClearMethodCacheStateUnlocked(state);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -1623,6 +1812,81 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
   snapshot->selector = StableCString(entry.selector_storage);
   snapshot->resolved_class_name = StableCString(entry.class_name);
   snapshot->resolved_owner_identity = StableCString(entry.owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_realized_class_graph_state_for_testing(
+    objc3_runtime_realized_class_graph_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->realized_class_count =
+      static_cast<std::uint64_t>(state.realized_class_nodes.size());
+  snapshot->root_class_count = state.realized_root_class_count;
+  snapshot->metaclass_edge_count = state.realized_metaclass_edge_count;
+  snapshot->receiver_class_binding_count = state.receiver_class_binding_count;
+  snapshot->last_realized_class_name =
+      StableCString(state.last_realized_class_name);
+  snapshot->last_realized_class_owner_identity =
+      StableCString(state.last_realized_class_owner_identity);
+  snapshot->last_realized_metaclass_owner_identity =
+      StableCString(state.last_realized_metaclass_owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_realized_class_entry_for_testing(
+    const char *class_name, objc3_runtime_realized_class_entry_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->found = 0;
+  snapshot->base_identity = 0;
+  snapshot->registration_order_ordinal = 0;
+  snapshot->is_root_class = 0;
+  snapshot->implementation_backed = 0;
+  snapshot->module_name = nullptr;
+  snapshot->translation_unit_identity_key = nullptr;
+  snapshot->class_name = nullptr;
+  snapshot->class_owner_identity = nullptr;
+  snapshot->metaclass_owner_identity = nullptr;
+  snapshot->super_class_owner_identity = nullptr;
+  snapshot->super_metaclass_owner_identity = nullptr;
+
+  if (class_name == nullptr || class_name[0] == '\0') {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto found = state.realized_class_node_indices_by_name.find(class_name);
+  if (found == state.realized_class_node_indices_by_name.end() ||
+      found->second.empty()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const std::size_t node_index = found->second.front();
+  if (node_index >= state.realized_class_nodes.size()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const RealizedClassNode &node = state.realized_class_nodes[node_index];
+  snapshot->found = 1;
+  snapshot->base_identity = node.base_identity;
+  snapshot->registration_order_ordinal = node.registration_order_ordinal;
+  snapshot->is_root_class = node.is_root_class ? 1 : 0;
+  snapshot->implementation_backed = node.implementation_backed ? 1 : 0;
+  snapshot->module_name = StableCString(node.module_name);
+  snapshot->translation_unit_identity_key =
+      StableCString(node.translation_unit_identity_key);
+  snapshot->class_name = StableCString(node.class_name);
+  snapshot->class_owner_identity = StableCString(node.class_owner_identity);
+  snapshot->metaclass_owner_identity = StableCString(node.metaclass_owner_identity);
+  snapshot->super_class_owner_identity =
+      StableCString(node.super_class_owner_identity);
+  snapshot->super_metaclass_owner_identity =
+      StableCString(node.super_metaclass_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

@@ -5342,6 +5342,19 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
                  .size()
           << "\n";
+      // M256-D002 metaclass-graph-root-class anchor: lane-D now republishes
+      // the realized class/metaclass graph and root-class baseline over the
+      // same emitted realization records without widening the IR object
+      // surface beyond preserved receiver identities and owner/super edges.
+      out << "; runtime_metaclass_graph_root_class_baseline = "
+          << Objc3RuntimeMetaclassGraphRootClassSummary()
+          << ";class_bundle_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << ";receiver_binding_candidate_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << "\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "

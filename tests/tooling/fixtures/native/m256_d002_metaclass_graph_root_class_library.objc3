@@ -1,0 +1,26 @@
+module metaclassGraphRootClassRuntimeLibrary;
+
+@interface RootObject
+- (i32) rootValue;
++ (i32) shared;
+@end
+
+@implementation RootObject
+- (i32) rootValue {
+  return 17;
+}
+
++ (i32) shared {
+  return 19;
+}
+@end
+
+@interface Widget : RootObject
+- (i32) widgetValue;
+@end
+
+@implementation Widget
+- (i32) widgetValue {
+  return 23;
+}
+@end
