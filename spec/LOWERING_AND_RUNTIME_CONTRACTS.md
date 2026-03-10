@@ -5953,6 +5953,28 @@ frontend:
   - no new descriptor payload families
   - no bootstrap/runtime-registration rebinding
   - no protocol executable-realization path
+
+## M256 executable method-body binding (C002)
+
+`M256-C002` turns the frozen `M256-C001` object-artifact boundary into a live
+fail-closed executable binding capability:
+
+- contract id `objc3c-executable-method-body-binding/m256-c002-v1`
+- lowering now requires:
+  - every implementation-owned executable method entry binds to exactly one
+    concrete LLVM definition symbol
+  - missing bindings fail closed during IR/object emission
+  - duplicate bindings for the same canonical method owner identity fail closed
+- emitted IR publishes:
+  - `; executable_method_body_binding = ...`
+- runtime consumption model:
+  - emitted method-entry implementation pointers dispatch through
+    `objc3_runtime_dispatch_i32`
+  - no runtime-side body rediscovery from source or manifests
+- proof surface:
+  - `tests/tooling/fixtures/native/m256_c002_method_body_binding.objc3`
+  - `tests/tooling/runtime/m256_c002_method_binding_probe.cpp`
+  - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

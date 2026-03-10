@@ -5302,6 +5302,14 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .runtime_metadata_member_table_typed_handoff_replay_key
           << "\n";
+      out << "; executable_method_body_binding = "
+          << Objc3ExecutableMethodBodyBindingSummary()
+          << ";implementation_method_definition_count="
+          << method_definitions_.size()
+          << ";executable_method_entry_count="
+          << executable_method_entry_count
+          << ";bound_method_entry_count=" << bound_method_entry_count
+          << "\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "
@@ -5418,6 +5426,7 @@ class Objc3IREmitter {
     std::unordered_map<std::string, std::size_t> method_list_entry_counts_by_key;
     std::unordered_map<std::string, std::string>
         implementation_method_symbols_by_owner_identity;
+    std::string executable_method_binding_error;
     if (emit_member_table_payloads) {
       method_list_symbols_by_key.reserve(
           frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
@@ -5453,9 +5462,23 @@ class Objc3IREmitter {
             method_def.method_owner_identity.empty()) {
           continue;
         }
-        implementation_method_symbols_by_owner_identity.emplace(
-            method_def.method_owner_identity,
-            "@" + method_def.symbol);
+        const std::string implementation_symbol = "@" + method_def.symbol;
+        const auto [binding_it, inserted] =
+            implementation_method_symbols_by_owner_identity.emplace(
+                method_def.method_owner_identity, implementation_symbol);
+        if (!inserted && binding_it->second != implementation_symbol) {
+          executable_method_binding_error =
+              "duplicate executable method-body binding for owner identity '" +
+              method_def.method_owner_identity + "'";
+          break;
+        }
+      }
+      if (!executable_method_binding_error.empty()) {
+        if (!fail_open_fallback_triggered_) {
+          fail_open_fallback_triggered_ = true;
+          fail_open_fallback_reason_ = executable_method_binding_error;
+        }
+        return;
       }
     }
 
@@ -5507,7 +5530,7 @@ class Objc3IREmitter {
     const auto emit_method_list_bundles_for_family =
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
           if (!emit_member_table_payloads) {
-            return;
+            return true;
           }
           for (std::size_t bundle_index = 0;
                bundle_index <
@@ -5582,6 +5605,12 @@ class Objc3IREmitter {
                 // canonical owner identity to concrete LLVM definition symbols;
                 // later executable-runtime work must extend this binding
                 // surface instead of rediscovering bodies from source.
+                // M256-C002 executable method-body binding anchor: the
+                // implementation pointer is now a fail-closed requirement for
+                // every implementation-owned executable method entry. If the
+                // canonical method owner identity cannot resolve to exactly one
+                // emitted LLVM body symbol, IR/object emission aborts instead
+                // of silently leaving a null implementation slot.
                 // M255-D003/M255-D004 slow-path anchor: class and category
                 // implementation method-table entries now carry callable
                 // implementation pointers from registered metadata.
@@ -5596,10 +5625,16 @@ class Objc3IREmitter {
                 const auto implementation_it =
                     implementation_method_symbols_by_owner_identity.find(
                         entry.owner_identity);
-                if (implementation_it !=
+                if (implementation_it ==
                     implementation_method_symbols_by_owner_identity.end()) {
-                  implementation_symbol = implementation_it->second;
+                  executable_method_binding_error =
+                      "missing executable method-body binding for owner identity '" +
+                      entry.owner_identity + "' in emitted " +
+                      bundle.owner_kind + " " + bundle.list_kind +
+                      " method list";
+                  return false;
                 }
+                implementation_symbol = implementation_it->second;
               }
 
               out << selector_symbol << " = private constant ["
@@ -5652,6 +5687,7 @@ class Objc3IREmitter {
                 << "\", align 8\n";
             emit_retained(list_symbol);
           }
+          return true;
         };
 
     const auto emit_property_descriptor_section =
@@ -6476,7 +6512,16 @@ class Objc3IREmitter {
           (family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily ||
            family.kind == kObjc3RuntimeMetadataLayoutPolicyProtocolFamily ||
            family.kind == kObjc3RuntimeMetadataLayoutPolicyCategoryFamily)) {
-        emit_method_list_bundles_for_family(family);
+        if (!emit_method_list_bundles_for_family(family)) {
+          if (!fail_open_fallback_triggered_) {
+            fail_open_fallback_triggered_ = true;
+            fail_open_fallback_reason_ =
+                executable_method_binding_error.empty()
+                    ? "runtime metadata method-body binding failed"
+                    : executable_method_binding_error;
+          }
+          return;
+        }
       }
       if (emit_class_metaclass_bundle_payloads &&
           family.kind == kObjc3RuntimeMetadataLayoutPolicyClassFamily) {

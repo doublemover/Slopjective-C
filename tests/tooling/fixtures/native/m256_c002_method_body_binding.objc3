@@ -1,0 +1,26 @@
+module executableMethodBodyBinding;
+
+@interface Widget
+- (i32) value:(i32)lhs extra:(i32)rhs;
++ (i32) classValue;
+@end
+
+@implementation Widget
+- (i32) value:(i32)lhs extra:(i32)rhs {
+  return lhs + rhs + 5;
+}
+
++ (i32) classValue {
+  return 44;
+}
+@end
+
+@interface Widget (Tracing)
+- (i32) tracedValue;
+@end
+
+@implementation Widget (Tracing)
+- (i32) tracedValue {
+  return 33;
+}
+@end

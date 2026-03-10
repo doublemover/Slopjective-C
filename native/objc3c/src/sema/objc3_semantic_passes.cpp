@@ -11433,6 +11433,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // realized-object legality and canonical owner identities that lane-C binds
   // into emitted method-list/class/category records; sema must not synthesize
   // object-artifact slots or implementation symbol attachments itself.
+  // M256-C002 executable method-body binding anchor: sema still stops at
+  // canonical method owner identities and realized legality; IR/object
+  // emission must fail closed if those implementation-owned method identities
+  // do not attach to exactly one concrete LLVM body symbol.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

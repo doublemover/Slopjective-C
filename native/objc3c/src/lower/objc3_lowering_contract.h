@@ -401,6 +401,18 @@ inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
 inline constexpr const char
     *kObjc3ExecutableObjectArtifactLoweringFailClosedModel =
         "no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families";
+// M256-C002 executable method-body binding implementation anchor: lane-C now
+// hardens the existing executable object surface so implementation-owned
+// method entries must bind to exactly one concrete LLVM definition symbol and
+// object emission fails closed when that attachment is missing or ambiguous.
+inline constexpr const char *kObjc3ExecutableMethodBodyBindingContractId =
+    "objc3c-executable-method-body-binding/m256-c002-v1";
+inline constexpr const char *kObjc3ExecutableMethodBodyBindingSourceModel =
+    "implementation-owned-method-entry-owner-identity-selects-one-llvm-definition-symbol";
+inline constexpr const char *kObjc3ExecutableMethodBodyBindingRuntimeModel =
+    "emitted-method-entry-implementation-pointer-dispatches-through-objc3_runtime_dispatch_i32";
+inline constexpr const char *kObjc3ExecutableMethodBodyBindingFailClosedModel =
+    "error-on-missing-or-duplicate-implementation-binding";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1328,6 +1340,7 @@ std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
+std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

@@ -6390,6 +6390,129 @@ Exit codes:
 - `2`: CLI usage / missing input / invalid arg / missing explicit clang path
 - `3`: clang compile step failed
 
+## Executable class/protocol/category source closure (M256-A001)
+
+`M256-A001` freezes the executable source-closure handoff before runtime-oriented
+object-model work consumes it.
+
+- contract id
+  `objc3c-executable-class-protocol-category-source-closure/m256-a001-v1`
+- canonical semantic summaries
+  - `interface_implementation_summary`
+  - `protocol_category_composition_summary`
+  - `class_protocol_category_linking_summary`
+- next issue
+  - `M256-A002`
+
+## Class/metaclass declaration completeness plus inheritance modeling (M256-A002)
+
+`M256-A002` extends the frozen `M256-A001` source closure so class and
+metaclass declaration inventories are complete enough for executable lowering
+and later legality checks.
+
+- contract id
+  `objc3c-executable-class-metaclass-source-closure/m256-a002-v1`
+- next issue
+  - `M256-A003`
+
+## Protocol and category source-surface completion for executable runtime (M256-A003)
+
+`M256-A003` closes the remaining protocol/category attachment and conformance
+edges required before lane-B object-model legality runs live.
+
+- contract id
+  `objc3c-executable-protocol-category-source-closure/m256-a003-v1`
+- next issue
+  - `M256-B001`
+
+## Object-model semantic rules (M256-B001)
+
+`M256-B001` freezes the semantic legality rules that executable runtime
+realization must preserve.
+
+- contract id
+  `objc3c-object-model-semantic-rules/m256-b001-v1`
+- realization model
+  `interface-plus-implementation-pair-required-before-runtime-realization`
+- inheritance model
+  `single-superclass-no-cycles-rooted-in-source-closure-parent-identities`
+- override model
+  `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
+- conformance model
+  `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
+- category merge model
+  `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
+- next issue
+  - `M256-B002`
+
+## Protocol conformance and required/optional member enforcement (M256-B002)
+
+`M256-B002` turns the frozen conformance model into live semantic enforcement.
+
+- contract id
+  `objc3c-protocol-conformance-required-optional-enforcement/m256-b002-v1`
+- enforced surface
+  - required methods and required properties
+- primary diagnostic
+  - `O3S218`
+
+## Category merge and conflict semantics (M256-B003)
+
+`M256-B003` makes realized classes consume one deterministic merged category
+surface before runtime binding.
+
+- contract id
+  `objc3c-category-merge-conflict-semantics/m256-b003-v1`
+- concrete behavior
+  - concrete message resolution now consults the merged category surface
+- primary diagnostic
+  - `O3S219`
+
+## Inheritance, override, and realization legality (M256-B004)
+
+`M256-B004` closes the remaining superclass and override legality edge cases
+needed before executable method/runtime binding proceeds.
+
+- contract id
+  `objc3c-inheritance-override-realization-legality/m256-b004-v1`
+- runtime-facing requirement
+  - realized superclass implementation must exist before child realization
+- primary diagnostic
+  - `O3S220`
+
+## Executable object artifact lowering (M256-C001)
+
+`M256-C001` freezes the executable object-artifact boundary immediately before
+live method-body binding starts.
+
+- contract id
+  `objc3c-executable-object-artifact-lowering/m256-c001-v1`
+- lowering invariant
+  - implementation-owned method-list entries bind by owner identity
+- evidence path
+  - `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`
+
+## Executable method-body binding (M256-C002)
+
+`M256-C002` turns the frozen `M256-C001` object-artifact boundary into one
+fail-closed executable binding capability.
+
+- contract id
+  `objc3c-executable-method-body-binding/m256-c002-v1`
+- emitted IR summary
+  `; executable_method_body_binding = ...`
+- source model
+  `implementation-owned-method-entry-owner-identity-selects-one-llvm-definition-symbol`
+- runtime model
+  `emitted-method-entry-implementation-pointer-dispatches-through-objc3_runtime_dispatch_i32`
+- fail-closed model
+  `error-on-missing-or-duplicate-implementation-binding`
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_c002_method_body_binding.objc3`
+  - `tests/tooling/runtime/m256_c002_method_binding_probe.cpp`
+- evidence path
+  - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

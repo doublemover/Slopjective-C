@@ -8944,6 +8944,27 @@ emission work and the M256 lane-B legality work:
   - `check:objc3c:m256-c001-executable-object-artifact-lowering-contract`
   - `check:objc3c:m256-c001-lane-c-readiness`
 
+## M256 executable method-body binding (C002)
+
+`M256-C002` hardens the frozen `M256-C001` binding surface into one real
+fail-closed executable capability:
+
+- parser still owns canonical method owner identities only
+- sema still owns realized-object legality only
+- IR/object emission must now:
+  - bind every implementation-owned executable method entry to exactly one
+    concrete `@objc3_method_*` LLVM definition symbol
+  - fail closed if that binding is missing or duplicated
+  - publish one explicit `; executable_method_body_binding = ...` IR summary
+- runtime dispatch then consumes those bound implementation pointers through
+  the already-live `objc3_runtime_dispatch_i32` path without rediscovering
+  method bodies from source
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_bind_method_bodies_to_runtime_metadata_entries_core_feature_implementation_c002_expectations.md`
+  - `spec/planning/compiler/m256/m256_c002_bind_method_bodies_to_runtime_metadata_entries_core_feature_implementation_packet.md`
+  - `check:objc3c:m256-c002-bind-method-bodies-to-runtime-metadata-entries`
+  - `check:objc3c:m256-c002-lane-c-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

@@ -557,6 +557,22 @@ std::string Objc3ExecutableObjectArtifactLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableMethodBodyBindingSummary() {
+  std::ostringstream out;
+  // M256-C002 executable method-body binding implementation anchor: lane-C
+  // upgrades the frozen C001 surface into a fail-closed runtime capability by
+  // requiring every implementation-owned executable method entry to bind to
+  // exactly one concrete LLVM definition symbol before the object artifact is
+  // accepted.
+  out << "contract=" << kObjc3ExecutableMethodBodyBindingContractId
+      << ";source_model=" << kObjc3ExecutableMethodBodyBindingSourceModel
+      << ";runtime_model=" << kObjc3ExecutableMethodBodyBindingRuntimeModel
+      << ";fail_closed_model="
+      << kObjc3ExecutableMethodBodyBindingFailClosedModel
+      << ";scope_model=" << kObjc3ExecutableObjectArtifactLoweringScopeModel;
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

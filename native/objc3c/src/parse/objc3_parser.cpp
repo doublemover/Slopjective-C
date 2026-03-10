@@ -4818,6 +4818,10 @@ static std::string BuildObjcContainerScopeOwner(const std::string &container_kin
 }
 
 static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method) {
+  // M256-C002 executable method-body binding anchor: parser preserves one
+  // canonical method owner identity per executable declaration so lane-C can
+  // attach method-list entries to concrete LLVM body symbols without
+  // rediscovering selector ownership from syntax.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

@@ -6997,6 +6997,28 @@ artifact-binding boundary across the already-emitted executable object surface:
     `selector-owner-return-arity-implementation-symbol-has-body`
 - canonical lane-C summary path
   `tmp/reports/m256/M256-C001/executable_object_artifact_lowering_contract_summary.json`
+
+## M256 executable method-body binding metadata anchors (C002)
+
+`M256-C002` publishes the executable method-body binding proof surface above
+the frozen `M256-C001` object-artifact boundary.
+
+- contract id `objc3c-executable-method-body-binding/m256-c002-v1`
+- emitted IR summary path
+  `; executable_method_body_binding = contract=objc3c-executable-method-body-binding/m256-c002-v1`
+- canonical payload anchors:
+  - implementation-owned executable method entries bind to concrete
+    `@objc3_method_*` pointers
+  - class implementation owner identity
+    `implementation:Widget::instance_method:value:extra:`
+  - class implementation owner identity
+    `implementation:Widget::class_method:classValue`
+  - category implementation owner identity
+    `implementation:Widget(Tracing)::instance_method:tracedValue`
+- canonical runnable proof artifacts:
+  - `tests/tooling/fixtures/native/m256_c002_method_body_binding.objc3`
+  - `tests/tooling/runtime/m256_c002_method_binding_probe.cpp`
+  - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at
