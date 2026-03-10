@@ -1,0 +1,12 @@
+module propertyScalarOwnershipNegative;
+
+@interface Widget
+@property (strong) i32 value;
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -1,0 +1,28 @@
+module propertyAccessorAttributeInteractionsPositive;
+
+@interface Widget
+@property (nonatomic, getter=tokenValue, setter=setTokenValue:, strong) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, copy) id value;
+@property (assign, getter=countValue, setter=setCountValue:) i32 count;
+- (id) tokenValue;
+- (id) currentValue;
+- (i32) countValue;
+@end
+
+@implementation Widget
+- (id) tokenValue {
+  return 0;
+}
+
+- (id) currentValue {
+  return 1;
+}
+
+- (i32) countValue {
+  return 2;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

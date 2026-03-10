@@ -6763,6 +6763,27 @@ default ivar binding semantics for matched class implementations.
 - next handoff
   - `M257-B003`
 
+## Accessor legality and ownership or atomicity attribute interactions (M257-B003)
+
+`M257-B003` expands the live `M257-B002` property boundary so runtime-visible
+accessor and storage interactions fail closed before executable accessor
+realization.
+
+- contract id
+  `objc3c-property-accessor-attribute-interactions/m257-b003-v1`
+- accessor-selector uniqueness model
+  `effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding`
+- ownership or atomicity interaction model
+  `runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land`
+- semantic ownership
+  - duplicate effective getter and setter selectors now fail closed per property container
+  - ownership modifiers on non-object properties and atomic ownership-aware properties fail closed
+  - IR consumes only sema-approved effective accessor selectors and attribute profiles
+- evidence path
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+- next handoff
+  - `M257-B004`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

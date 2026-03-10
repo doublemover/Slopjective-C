@@ -360,6 +360,10 @@ inline constexpr const char *kObjc3ExecutablePropertyDefaultIvarBindingResolutio
     "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration";
 inline constexpr const char *kObjc3ExecutablePropertyAccessorSemanticsModel =
     "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission";
+inline constexpr const char *kObjc3ExecutablePropertyAccessorSelectorUniquenessModel =
+    "effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding";
+inline constexpr const char *kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel =
+    "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land";
 inline constexpr const char *kObjc3ExecutablePropertyStorageSemanticsModel =
     "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation";
 inline constexpr const char *kObjc3ExecutablePropertyCompatibilitySemanticsModel =

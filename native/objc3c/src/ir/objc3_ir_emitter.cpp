@@ -174,6 +174,10 @@ class Objc3IREmitter {
       // sema now resolves authoritative default ivar bindings from
       // interface-declared class properties even when the implementation does
       // not redeclare those properties.
+      // M257-B003 accessor legality expansion anchor:
+      // IR only consumes sema-approved effective accessor selectors and
+      // ownership/atomicity profiles after duplicate selector and unsupported
+      // storage interaction diagnostics have already fail-closed source.
       out << "; property_ivar_source_model_completion = "
           << frontend_metadata_.executable_property_ivar_source_model_replay_key
           << "\n";

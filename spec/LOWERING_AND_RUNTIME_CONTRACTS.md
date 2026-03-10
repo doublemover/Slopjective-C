@@ -6227,6 +6227,24 @@ compiler rule:
 - next handoff
   - `M257-B003`
 
+## M257 accessor legality and ownership or atomicity attribute interactions (B003)
+
+`M257-B003` promotes the `M257-B002` property surface into a stricter live
+compiler rule:
+
+- contract id
+  `objc3c-property-accessor-attribute-interactions/m257-b003-v1`
+- accessor-selector uniqueness model
+  `effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding`
+- ownership or atomicity interaction model
+  `runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land`
+- lowering consequence
+  - lane-B rejects duplicate effective accessor selectors before executable accessor binding
+  - lowering consumes only sema-approved property accessor selectors and ownership profiles
+  - atomic ownership-aware properties remain fail-closed until later runtime storage/accessor work lands
+- next handoff
+  - `M257-B004`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

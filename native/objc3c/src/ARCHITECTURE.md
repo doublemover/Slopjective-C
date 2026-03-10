@@ -9173,6 +9173,20 @@ protocols, and categories:
   - `check:objc3c:m257-b002-property-synthesis-and-default-ivar-binding-full-semantics`
   - `check:objc3c:m257-b002-lane-b-readiness`
 
+## M257 accessor legality and ownership or atomicity attribute interactions (B003)
+
+`M257-B003` closes the remaining runtime-meaningful property legality gaps in
+lane-B:
+
+- duplicate effective accessor selectors are rejected before runtime accessor realization
+- runtime-managed ownership modifiers fail closed on non-object properties
+- atomic ownership-aware properties remain fail-closed until later executable accessor/storage work
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_accessor_legality_and_ownership_or_atomicity_attribute_interactions_core_feature_expansion_b003_expectations.md`
+  - `spec/planning/compiler/m257/m257_b003_accessor_legality_and_ownership_or_atomicity_attribute_interactions_core_feature_expansion_packet.md`
+  - `check:objc3c:m257-b003-accessor-legality-and-ownership-or-atomicity-attribute-interactions`
+  - `check:objc3c:m257-b003-lane-b-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

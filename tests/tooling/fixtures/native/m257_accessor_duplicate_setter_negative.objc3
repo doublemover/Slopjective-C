@@ -1,0 +1,13 @@
+module propertyAccessorDuplicateSetterNegative;
+
+@interface Widget
+@property (setter=setValue:) id token;
+@property (setter=setValue:) id alias;
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}

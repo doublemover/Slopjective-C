@@ -1993,6 +1993,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       property.executable_ivar_layout_size_bytes;
   info.executable_ivar_layout_alignment_bytes =
       property.executable_ivar_layout_alignment_bytes;
+  info.line = property.line;
+  info.column = property.column;
 
   std::unordered_map<std::string, std::size_t> attribute_name_counts;
   for (const auto &attribute : property.attributes) {
@@ -2094,6 +2096,42 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         "type mismatch: @property ownership modifiers 'weak' and 'unowned' conflict for property '" + property.name +
             "' in " + owner_kind + " '" + owner_name + "'");
   }
+  const bool supports_runtime_managed_ownership =
+      !info.is_vector &&
+      (info.id_spelling || info.class_spelling || info.instancetype_spelling ||
+       info.object_pointer_type_spelling);
+  const bool has_runtime_managed_ownership_modifier =
+      info.is_copy || info.is_strong || info.is_weak || info.is_unowned;
+  // M257-B003 accessor/ownership legality anchor: lane-B remains the
+  // fail-closed source of truth for unsupported scalar ownership modifiers and
+  // atomic ownership-aware property combinations until runtime storage
+  // semantics land.
+  if (has_runtime_managed_ownership_modifier &&
+      !supports_runtime_managed_ownership) {
+    std::string ownership_modifier = "copy";
+    if (info.is_strong) {
+      ownership_modifier = "strong";
+    } else if (info.is_weak) {
+      ownership_modifier = "weak";
+    } else if (info.is_unowned) {
+      ownership_modifier = "unowned";
+    }
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property ownership modifier '" + ownership_modifier +
+            "' requires an Objective-C object property for property '" +
+            property.name + "' in " + owner_kind + " '" + owner_name + "'");
+  }
+  if (info.is_atomic && has_runtime_managed_ownership_modifier &&
+      supports_runtime_managed_ownership) {
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: atomic ownership-aware property '" + property.name +
+            "' in " + owner_kind + " '" + owner_name +
+            "' is unsupported until executable accessor storage semantics land");
+  }
   if (info.is_readonly && info.has_setter) {
     info.has_accessor_selector_contract_violation = true;
     emit_property_contract_violation(
@@ -2108,6 +2146,108 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       info.has_atomicity_conflict || info.has_ownership_conflict || info.has_accessor_selector_contract_violation ||
       info.invalid_attribute_entries > 0 || info.property_contract_violations > 0;
   return info;
+}
+
+struct PropertyAccessorSelectorOwnerState {
+  std::string property_name;
+  bool owner_marked_conflict = false;
+};
+
+static void FinalizePropertyInvalidAttributeContract(Objc3PropertyInfo &property) {
+  property.has_invalid_attribute_contract =
+      property.has_unknown_attribute || property.has_duplicate_attribute ||
+      property.has_readwrite_conflict || property.has_atomicity_conflict ||
+      property.has_ownership_conflict ||
+      property.has_accessor_selector_contract_violation ||
+      property.invalid_attribute_entries > 0 ||
+      property.property_contract_violations > 0;
+}
+
+static void EmitPropertyContractViolation(Objc3PropertyInfo &property,
+                                          unsigned line,
+                                          unsigned column,
+                                          const std::string &message,
+                                          std::vector<std::string> &diagnostics,
+                                          bool accessor_selector_violation) {
+  if (accessor_selector_violation) {
+    property.has_accessor_selector_contract_violation = true;
+  }
+  diagnostics.push_back(MakeDiag(line, column, "O3S206", message));
+  ++property.property_contract_violations;
+  FinalizePropertyInvalidAttributeContract(property);
+}
+
+static void ValidatePropertyAccessorSelectorUniqueness(
+    Objc3PropertyInfo &property,
+    const std::string &property_name,
+    const std::string &container_name,
+    const std::string &container_label,
+    std::unordered_map<std::string, Objc3PropertyInfo> &properties,
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        &getter_owner_states,
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        &setter_owner_states,
+    std::vector<std::string> &diagnostics) {
+  const auto validate_selector =
+      [&](const std::string &selector,
+          const char *accessor_kind,
+          std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+              &owner_states) {
+        if (selector.empty()) {
+          return;
+        }
+
+        auto owner_it = owner_states.find(selector);
+        if (owner_it == owner_states.end()) {
+          owner_states.emplace(selector,
+                               PropertyAccessorSelectorOwnerState{
+                                   property_name,
+                                   false,
+                               });
+          return;
+        }
+        if (owner_it->second.property_name == property_name) {
+          return;
+        }
+
+        const std::string message =
+            "type mismatch: duplicate effective " +
+            std::string(accessor_kind) + " selector '" + selector +
+            "' for properties '" + owner_it->second.property_name + "' and '" +
+            property_name + "' in " + container_label + " '" + container_name +
+            "'";
+
+        auto previous_property_it = properties.find(owner_it->second.property_name);
+        if (previous_property_it != properties.end() &&
+            !owner_it->second.owner_marked_conflict) {
+          EmitPropertyContractViolation(previous_property_it->second,
+                                        previous_property_it->second.line,
+                                        previous_property_it->second.column,
+                                        message,
+                                        diagnostics,
+                                        true);
+          owner_it->second.owner_marked_conflict = true;
+        }
+
+        EmitPropertyContractViolation(property,
+                                      property.line,
+                                      property.column,
+                                      message,
+                                      diagnostics,
+                                      true);
+      };
+
+  if (IsValidPropertyGetterSelector(property.effective_getter_selector)) {
+    validate_selector(property.effective_getter_selector,
+                      "getter",
+                      getter_owner_states);
+  }
+  if (property.effective_setter_available &&
+      IsValidPropertySetterSelector(property.effective_setter_selector)) {
+    validate_selector(property.effective_setter_selector,
+                      "setter",
+                      setter_owner_states);
+  }
 }
 
 static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Objc3PropertyInfo &rhs) {
@@ -2455,20 +2595,35 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       continue;
     }
 
-    std::unordered_set<std::string> property_names;
+    std::unordered_map<std::string, Objc3PropertyInfo> protocol_properties;
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        getter_owner_states;
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        setter_owner_states;
     for (const auto &property_decl : protocol_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, container_name, kContainerLabel,
                                    diagnostics);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, kContainerLabel,
                             diagnostics);
-      if (!property_names.insert(property_decl.name).second) {
+      const auto property_insert =
+          protocol_properties.emplace(property_decl.name, std::move(property_info));
+      if (!property_insert.second) {
         diagnostics.push_back(
             MakeDiag(property_decl.line, property_decl.column, "O3S200",
                      "duplicate protocol property '" + property_decl.name +
                          "' in protocol '" + protocol_decl.name + "'"));
         continue;
       }
+      ValidatePropertyAccessorSelectorUniqueness(
+          property_insert.first->second,
+          property_decl.name,
+          container_name,
+          kContainerLabel,
+          protocol_properties,
+          getter_owner_states,
+          setter_owner_states,
+          diagnostics);
       if (property_decl.protocol_requirement_kind ==
           Objc3ProtocolRequirementKind::Optional) {
         continue;
@@ -2476,7 +2631,7 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
 
       Objc3ProtocolPropertyRequirementInfo requirement;
       requirement.property_name = property_decl.name;
-      requirement.property = std::move(property_info);
+      requirement.property = property_insert.first->second;
       requirement.protocol_name = protocol_decl.name;
       requirement.line = property_decl.line;
       requirement.column = property_decl.column;
@@ -11356,7 +11511,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     // deterministic for protocol/category/property/ivar packets.
     // M252-B001 freeze anchor: the same deterministic inventories remain the
     // semantic-consistency boundary inputs for fail-closed lane-B admission.
+    // M257-B003 accessor legality anchor: interface/category-interface
+    // property containers also own one fail-closed effective accessor selector
+    // namespace so later executable accessors never inherit ambiguous getter
+    // or setter bindings from source.
     interface_info.super_name = interface_decl.super_name;
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        getter_owner_states;
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        setter_owner_states;
     for (const auto &property_decl : interface_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, container_name,
                                    container_label, diagnostics);
@@ -11372,6 +11535,16 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                      "duplicate " + container_label + " property '" +
                          property_decl.name + "' in " + container_label +
                          " '" + container_name + "'"));
+      } else {
+        ValidatePropertyAccessorSelectorUniqueness(
+            property_insert.first->second,
+            property_decl.name,
+            container_name,
+            container_label,
+            interface_info.properties,
+            getter_owner_states,
+            setter_owner_states,
+            diagnostics);
       }
     }
 
@@ -11473,6 +11646,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       }
     }
 
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        getter_owner_states;
+    std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
+        setter_owner_states;
     for (const auto &property_decl : implementation_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, container_name,
                                    container_label, diagnostics);
@@ -11490,6 +11667,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                 container_name + "'"));
         continue;
       }
+      ValidatePropertyAccessorSelectorUniqueness(
+          property_insert.first->second,
+          property_decl.name,
+          container_name,
+          container_label,
+          implementation_info.properties,
+          getter_owner_states,
+          setter_owner_states,
+          diagnostics);
 
       if (matched_interface == nullptr) {
         continue;

@@ -7235,6 +7235,23 @@ optional implementation redeclarations.
 - canonical live evidence:
   - `tmp/reports/m257/M257-B002/property_synthesis_default_ivar_binding_full_semantics_summary.json`
 
+## M257 property accessor legality metadata anchors (B003)
+
+`M257-B003` extends the property semantic boundary with fail-closed accessor
+selector and ownership or atomicity legality that later executable accessors
+must consume without reinterpretation.
+
+- contract id
+  `objc3c-property-accessor-attribute-interactions/m257-b003-v1`
+- canonical metadata/source anchors:
+  - `kObjc3ExecutablePropertyAccessorSelectorUniquenessModel`
+  - `kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel`
+  - `Objc3PropertyInfo.has_accessor_selector_contract_violation`
+  - `frontend.pipeline.semantic_surface.objc_property_attribute_surface`
+  - `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

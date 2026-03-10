@@ -1213,6 +1213,8 @@ struct Objc3PropertyInfo {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  unsigned line = 1;
+  unsigned column = 1;
   std::size_t invalid_attribute_entries = 0;
   std::size_t property_contract_violations = 0;
   bool has_unknown_attribute = false;

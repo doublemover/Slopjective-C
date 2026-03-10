@@ -1,0 +1,12 @@
+module propertyAtomicOwnershipNegative;
+
+@interface Widget
+@property (atomic, copy) id value;
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}
