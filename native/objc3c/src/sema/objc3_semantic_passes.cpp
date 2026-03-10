@@ -1976,6 +1976,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.has_setter = property.has_setter;
   info.getter_selector = TrimAsciiWhitespace(property.getter_selector);
   info.setter_selector = TrimAsciiWhitespace(property.setter_selector);
+  info.ivar_binding_symbol = property.ivar_binding_symbol;
   info.executable_synthesized_binding_kind =
       property.executable_synthesized_binding_kind;
   info.executable_synthesized_binding_symbol =
@@ -7208,17 +7209,6 @@ static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflic
   return summary;
 }
 
-static const Objc3SemanticPropertyTypeMetadata *FindPropertyInInterfaceMetadata(
-    const Objc3SemanticInterfaceTypeMetadata &metadata,
-    const std::string &property_name) {
-  for (const auto &property_metadata : metadata.properties_lexicographic) {
-    if (property_metadata.name == property_name) {
-      return &property_metadata;
-    }
-  }
-  return nullptr;
-}
-
 static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropertyTypeMetadata &lhs,
                                                       const Objc3SemanticPropertyTypeMetadata &rhs) {
   // M257-B001 property-ivar executable semantics anchor:
@@ -7252,28 +7242,134 @@ static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropert
          lhs.accessor_ownership_profile == rhs.accessor_ownership_profile;
 }
 
+static const Objc3PropertyInfo *FindPropertyInImplementationInfo(
+    const Objc3ImplementationInfo &implementation_info,
+    const std::string &property_name) {
+  const auto property_it = implementation_info.properties.find(property_name);
+  if (property_it == implementation_info.properties.end()) {
+    return nullptr;
+  }
+  return &property_it->second;
+}
+
+static const Objc3SemanticPropertyTypeMetadata *FindPropertyInImplementationMetadata(
+    const Objc3SemanticImplementationTypeMetadata &metadata,
+    const std::string &property_name) {
+  for (const auto &property_metadata : metadata.properties_lexicographic) {
+    if (property_metadata.name == property_name) {
+      return &property_metadata;
+    }
+  }
+  return nullptr;
+}
+
+static bool HasResolvedDefaultIvarBinding(const Objc3PropertyInfo &property) {
+  return property.executable_synthesized_binding_kind == "implicit-ivar" &&
+         !property.ivar_binding_symbol.empty() &&
+         !property.executable_synthesized_binding_symbol.empty() &&
+         !property.executable_ivar_layout_symbol.empty() &&
+         property.executable_ivar_layout_alignment_bytes > 0u;
+}
+
+static bool HasResolvedDefaultIvarBinding(
+    const Objc3SemanticPropertyTypeMetadata &property) {
+  return property.executable_synthesized_binding_kind == "implicit-ivar" &&
+         !property.ivar_binding_symbol.empty() &&
+         !property.executable_synthesized_binding_symbol.empty() &&
+         !property.executable_ivar_layout_symbol.empty() &&
+         property.executable_ivar_layout_alignment_bytes > 0u;
+}
+
+static bool HasCompatibleResolvedDefaultIvarBinding(
+    const Objc3PropertyInfo &interface_property,
+    const Objc3PropertyInfo &implementation_property) {
+  return interface_property.ivar_binding_symbol ==
+             implementation_property.ivar_binding_symbol &&
+         interface_property.executable_synthesized_binding_kind ==
+             implementation_property.executable_synthesized_binding_kind &&
+         interface_property.executable_synthesized_binding_symbol ==
+             implementation_property.executable_synthesized_binding_symbol &&
+         interface_property.executable_ivar_layout_symbol ==
+             implementation_property.executable_ivar_layout_symbol &&
+         interface_property.executable_ivar_layout_slot_index ==
+             implementation_property.executable_ivar_layout_slot_index &&
+         interface_property.executable_ivar_layout_size_bytes ==
+             implementation_property.executable_ivar_layout_size_bytes &&
+         interface_property.executable_ivar_layout_alignment_bytes ==
+             implementation_property.executable_ivar_layout_alignment_bytes;
+}
+
+static bool HasCompatibleResolvedDefaultIvarBinding(
+    const Objc3SemanticPropertyTypeMetadata &interface_property,
+    const Objc3SemanticPropertyTypeMetadata &implementation_property) {
+  return interface_property.ivar_binding_symbol ==
+             implementation_property.ivar_binding_symbol &&
+         interface_property.executable_synthesized_binding_kind ==
+             implementation_property.executable_synthesized_binding_kind &&
+         interface_property.executable_synthesized_binding_symbol ==
+             implementation_property.executable_synthesized_binding_symbol &&
+         interface_property.executable_ivar_layout_symbol ==
+             implementation_property.executable_ivar_layout_symbol &&
+         interface_property.executable_ivar_layout_slot_index ==
+             implementation_property.executable_ivar_layout_slot_index &&
+         interface_property.executable_ivar_layout_size_bytes ==
+             implementation_property.executable_ivar_layout_size_bytes &&
+         interface_property.executable_ivar_layout_alignment_bytes ==
+             implementation_property.executable_ivar_layout_alignment_bytes;
+}
+
+static void OverlayAuthoritativeDefaultIvarBinding(
+    Objc3PropertyInfo &implementation_property,
+    const Objc3PropertyInfo &interface_property) {
+  implementation_property.ivar_binding_symbol =
+      interface_property.ivar_binding_symbol;
+  implementation_property.executable_synthesized_binding_kind =
+      interface_property.executable_synthesized_binding_kind;
+  implementation_property.executable_synthesized_binding_symbol =
+      interface_property.executable_synthesized_binding_symbol;
+  implementation_property.executable_ivar_layout_symbol =
+      interface_property.executable_ivar_layout_symbol;
+  implementation_property.executable_ivar_layout_slot_index =
+      interface_property.executable_ivar_layout_slot_index;
+  implementation_property.executable_ivar_layout_size_bytes =
+      interface_property.executable_ivar_layout_size_bytes;
+  implementation_property.executable_ivar_layout_alignment_bytes =
+      interface_property.executable_ivar_layout_alignment_bytes;
+}
+
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3PropertySynthesisIvarBindingSummary summary;
   for (const auto &implementation_entry : surface.implementations) {
     const auto interface_it = surface.interfaces.find(implementation_entry.first);
-    const bool has_interface = interface_it != surface.interfaces.end();
-    for (const auto &property_entry : implementation_entry.second.properties) {
+    if (interface_it == surface.interfaces.end()) {
+      continue;
+    }
+
+    for (const auto &interface_property_entry : interface_it->second.properties) {
       ++summary.property_synthesis_sites;
       ++summary.property_synthesis_default_ivar_bindings;
+      ++summary.interface_owned_property_synthesis_sites;
       ++summary.ivar_binding_sites;
-      if (!has_interface) {
+      const Objc3PropertyInfo &interface_property = interface_property_entry.second;
+      const Objc3PropertyInfo *implementation_property =
+          FindPropertyInImplementationInfo(implementation_entry.second,
+                                           interface_property_entry.first);
+      if (implementation_property != nullptr) {
+        ++summary.implementation_property_redeclaration_sites;
+      }
+
+      if (!HasResolvedDefaultIvarBinding(interface_property)) {
         ++summary.ivar_binding_missing;
         continue;
       }
 
-      const auto interface_property_it = interface_it->second.properties.find(property_entry.first);
-      if (interface_property_it == interface_it->second.properties.end()) {
-        ++summary.ivar_binding_missing;
-        continue;
-      }
-
-      if (!IsCompatiblePropertySignature(interface_property_it->second, property_entry.second)) {
+      if (implementation_property != nullptr &&
+          (!IsCompatiblePropertySignature(interface_property,
+                                         *implementation_property) ||
+           !HasResolvedDefaultIvarBinding(*implementation_property) ||
+           !HasCompatibleResolvedDefaultIvarBinding(interface_property,
+                                                   *implementation_property))) {
         ++summary.ivar_binding_conflicts;
       } else {
         ++summary.ivar_binding_resolved;
@@ -7286,6 +7382,10 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
       summary.property_synthesis_default_ivar_bindings <= summary.property_synthesis_sites &&
       summary.property_synthesis_explicit_ivar_bindings +
               summary.property_synthesis_default_ivar_bindings ==
+          summary.property_synthesis_sites &&
+      summary.interface_owned_property_synthesis_sites ==
+          summary.property_synthesis_sites &&
+      summary.implementation_property_redeclaration_sites <=
           summary.property_synthesis_sites &&
       summary.ivar_binding_sites == summary.property_synthesis_sites &&
       summary.ivar_binding_resolved <= summary.ivar_binding_sites &&
@@ -7318,24 +7418,33 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
 
   for (const auto &implementation_metadata : handoff.implementations_lexicographic) {
     const auto interface_it = interfaces_by_name.find(implementation_metadata.name);
-    const bool has_interface = interface_it != interfaces_by_name.end();
-    for (const auto &property_metadata : implementation_metadata.properties_lexicographic) {
+    if (interface_it == interfaces_by_name.end()) {
+      continue;
+    }
+
+    for (const auto &interface_property : interface_it->second->properties_lexicographic) {
       ++summary.property_synthesis_sites;
       ++summary.property_synthesis_default_ivar_bindings;
+      ++summary.interface_owned_property_synthesis_sites;
       ++summary.ivar_binding_sites;
-      if (!has_interface) {
+      const Objc3SemanticPropertyTypeMetadata *implementation_property =
+          FindPropertyInImplementationMetadata(implementation_metadata,
+                                              interface_property.name);
+      if (implementation_property != nullptr) {
+        ++summary.implementation_property_redeclaration_sites;
+      }
+
+      if (!HasResolvedDefaultIvarBinding(interface_property)) {
         ++summary.ivar_binding_missing;
         continue;
       }
 
-      const Objc3SemanticPropertyTypeMetadata *interface_property =
-          FindPropertyInInterfaceMetadata(*interface_it->second, property_metadata.name);
-      if (interface_property == nullptr) {
-        ++summary.ivar_binding_missing;
-        continue;
-      }
-
-      if (!IsCompatiblePropertyTypeMetadataSignature(*interface_property, property_metadata)) {
+      if (implementation_property != nullptr &&
+          (!IsCompatiblePropertyTypeMetadataSignature(interface_property,
+                                                     *implementation_property) ||
+           !HasResolvedDefaultIvarBinding(*implementation_property) ||
+           !HasCompatibleResolvedDefaultIvarBinding(interface_property,
+                                                   *implementation_property))) {
         ++summary.ivar_binding_conflicts;
       } else {
         ++summary.ivar_binding_resolved;
@@ -7348,6 +7457,10 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
       summary.property_synthesis_default_ivar_bindings <= summary.property_synthesis_sites &&
       summary.property_synthesis_explicit_ivar_bindings +
               summary.property_synthesis_default_ivar_bindings ==
+          summary.property_synthesis_sites &&
+      summary.interface_owned_property_synthesis_sites ==
+          summary.property_synthesis_sites &&
+      summary.implementation_property_redeclaration_sites <=
           summary.property_synthesis_sites &&
       summary.ivar_binding_sites == summary.property_synthesis_sites &&
       summary.ivar_binding_resolved <= summary.ivar_binding_sites &&
@@ -11398,6 +11511,47 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                        "O3S206",
                                        "type mismatch: incompatible property signature for '" + property_decl.name +
                                            "' in implementation '" + implementation_decl.name + "'"));
+        continue;
+      }
+      OverlayAuthoritativeDefaultIvarBinding(property_insert.first->second,
+                                             interface_property_it->second);
+    }
+
+    // M257-B002 property-synthesis enforcement anchor: matched class
+    // implementations resolve default ivar bindings from interface-declared
+    // properties first, then fold in optional implementation redeclarations
+    // without making redeclaration a prerequisite for authoritative binding.
+    if (!is_category_implementation && matched_interface != nullptr) {
+      for (const auto &interface_property_entry : matched_interface->properties) {
+        const Objc3PropertyInfo &interface_property = interface_property_entry.second;
+        if (!HasResolvedDefaultIvarBinding(interface_property)) {
+          diagnostics.push_back(MakeDiag(
+              implementation_decl.line,
+              implementation_decl.column,
+              "O3S206",
+              "type mismatch: property synthesis for '" +
+                  interface_property_entry.first + "' in implementation '" +
+                  implementation_decl.name +
+                  "' lacks an authoritative default ivar binding"));
+          continue;
+        }
+
+        const Objc3PropertyInfo *implementation_property =
+            FindPropertyInImplementationInfo(implementation_info,
+                                            interface_property_entry.first);
+        if (implementation_property != nullptr &&
+            (!HasResolvedDefaultIvarBinding(*implementation_property) ||
+             !HasCompatibleResolvedDefaultIvarBinding(interface_property,
+                                                     *implementation_property))) {
+          diagnostics.push_back(MakeDiag(
+              implementation_decl.line,
+              implementation_decl.column,
+              "O3S206",
+              "type mismatch: property synthesis for '" +
+                  interface_property_entry.first + "' in implementation '" +
+                  implementation_decl.name +
+                  "' drifted from the interface default ivar binding"));
+        }
       }
     }
 
@@ -11948,6 +12102,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;
       property_metadata.setter_selector = source.setter_selector;
+      property_metadata.ivar_binding_symbol = source.ivar_binding_symbol;
       property_metadata.executable_synthesized_binding_kind =
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
@@ -12252,6 +12407,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;
       property_metadata.setter_selector = source.setter_selector;
+      property_metadata.ivar_binding_symbol = source.ivar_binding_symbol;
       property_metadata.executable_synthesized_binding_kind =
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
@@ -14926,6 +15082,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings &&
          handoff.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
              property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings &&
+         handoff.property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites ==
+             property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites &&
+         handoff.property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites ==
+             property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites &&
          handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
              property_synthesis_ivar_binding_summary.ivar_binding_sites &&
          handoff.property_synthesis_ivar_binding_summary.ivar_binding_resolved ==
@@ -14936,6 +15096,10 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              property_synthesis_ivar_binding_summary.ivar_binding_conflicts &&
          handoff.property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings +
                  handoff.property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings ==
+             handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+         handoff.property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites ==
+             handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
+         handoff.property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites <=
              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&
          handoff.property_synthesis_ivar_binding_summary.ivar_binding_sites ==
              handoff.property_synthesis_ivar_binding_summary.property_synthesis_sites &&

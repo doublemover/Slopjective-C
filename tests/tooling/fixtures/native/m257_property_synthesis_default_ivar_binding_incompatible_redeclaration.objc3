@@ -1,0 +1,17 @@
+module propertySynthesisDefaultIvarBindingIncompatibleRedeclaration;
+
+@interface Widget
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@implementation Widget
+@property (readonly, getter=tokenValue) i32 token;
+- (id) tokenValue {
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

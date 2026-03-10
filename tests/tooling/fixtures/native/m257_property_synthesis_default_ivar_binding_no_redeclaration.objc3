@@ -1,0 +1,21 @@
+module propertySynthesisDefaultIvarBindingNoRedeclaration;
+
+@interface Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue;
+- (id) currentValue;
+@end
+
+@implementation Widget
+- (id) tokenValue {
+  return 0;
+}
+- (id) currentValue {
+  return 1;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

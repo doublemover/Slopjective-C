@@ -546,9 +546,15 @@ struct Objc3PropertySynthesisIvarBindingSummary {
   // M252-E002 corpus-sync anchor: representative legality corpus cases keep
   // these counts deterministic so docs and integrated gate coverage stay
   // aligned on the real runner path.
+  // M257-B002 default-binding semantics anchor: matched class implementations
+  // resolve synthesis from interface-declared properties first, then fold in
+  // optional implementation redeclarations without making redeclaration a
+  // prerequisite for default ivar binding.
   std::size_t property_synthesis_sites = 0;
   std::size_t property_synthesis_explicit_ivar_bindings = 0;
   std::size_t property_synthesis_default_ivar_bindings = 0;
+  std::size_t interface_owned_property_synthesis_sites = 0;
+  std::size_t implementation_property_redeclaration_sites = 0;
   std::size_t ivar_binding_sites = 0;
   std::size_t ivar_binding_resolved = 0;
   std::size_t ivar_binding_missing = 0;
@@ -1195,6 +1201,7 @@ struct Objc3PropertyInfo {
   bool has_setter = false;
   std::string getter_selector;
   std::string setter_selector;
+  std::string ivar_binding_symbol;
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;
@@ -1907,6 +1914,7 @@ struct Objc3SemanticPropertyTypeMetadata {
   bool has_setter = false;
   std::string getter_selector;
   std::string setter_selector;
+  std::string ivar_binding_symbol;
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

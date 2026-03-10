@@ -383,6 +383,24 @@ synthesized bindings, and ivar layout publication.
 - next handoff
   - `M257-B002`
 
+## Property synthesis and default ivar binding semantics (M257-B002)
+
+`M257-B002` turns the frozen `M257-B001` boundary into live interface-driven
+default ivar binding semantics for matched class implementations.
+
+- contract id
+  `objc3c-property-default-ivar-binding-semantics/m257-b002-v1`
+- default binding resolution model
+  `matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration`
+- semantic ownership
+  - interface-declared class properties remain the authoritative synthesis sites
+  - implementation redeclarations are optional and must stay signature/binding compatible
+  - category implementations do not participate in default ivar synthesis
+- evidence path
+  - `tmp/reports/m257/M257-B002/property_synthesis_default_ivar_binding_full_semantics_summary.json`
+- next handoff
+  - `M257-B003`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

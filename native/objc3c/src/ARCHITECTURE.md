@@ -9154,6 +9154,25 @@ protocols, and categories:
   - `check:objc3c:m257-b001-property-and-ivar-executable-semantics`
   - `check:objc3c:m257-b001-lane-b-readiness`
 
+## M257 property synthesis and default ivar binding full semantics (B002)
+
+`M257-B002` makes the property synthesis boundary executable:
+
+- sema now treats matched class-interface properties as the authoritative
+  synthesis inventory even when implementations omit `@property`
+  redeclarations entirely
+- optional implementation redeclarations remain compatibility overlays and
+  must preserve the same default ivar binding identity/layout packet
+- category implementations remain outside default ivar synthesis
+- manifest publication now distinguishes:
+  - interface-owned property synthesis sites
+  - implementation property redeclaration sites
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_property_synthesis_and_default_ivar_binding_full_semantics_core_feature_implementation_b002_expectations.md`
+  - `spec/planning/compiler/m257/m257_b002_property_synthesis_and_default_ivar_binding_full_semantics_core_feature_implementation_packet.md`
+  - `check:objc3c:m257-b002-property-synthesis-and-default-ivar-binding-full-semantics`
+  - `check:objc3c:m257-b002-lane-b-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

@@ -356,6 +356,8 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
     "objc3c-executable-property-ivar-semantics/m257-b001-v1";
 inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =
     "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands";
+inline constexpr const char *kObjc3ExecutablePropertyDefaultIvarBindingResolutionModel =
+    "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration";
 inline constexpr const char *kObjc3ExecutablePropertyAccessorSemanticsModel =
     "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission";
 inline constexpr const char *kObjc3ExecutablePropertyStorageSemanticsModel =

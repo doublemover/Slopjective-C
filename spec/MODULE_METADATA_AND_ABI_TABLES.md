@@ -7216,6 +7216,25 @@ property/ivar runtime lowering must preserve.
 - canonical live evidence:
   - `tmp/reports/m257/M257-B001/property_ivar_executable_semantics_contract_summary.json`
 
+## M257 property/default-ivar-binding implementation metadata anchors (B002)
+
+`M257-B002` extends the `M257-B001` semantic freeze with live metadata-visible
+counts that distinguish authoritative interface-owned synthesis sites from
+optional implementation redeclarations.
+
+- contract id
+  `objc3c-property-default-ivar-binding-semantics/m257-b002-v1`
+- canonical metadata/source anchors:
+  - `kObjc3ExecutablePropertyDefaultIvarBindingResolutionModel`
+  - `Objc3PropertyInfo.ivar_binding_symbol`
+  - `Objc3SemanticPropertyTypeMetadata.ivar_binding_symbol`
+  - `frontend.pipeline.sema_pass_manager.interface_owned_property_synthesis_sites`
+  - `frontend.pipeline.sema_pass_manager.implementation_property_redeclaration_sites`
+  - `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.interface_owned_property_synthesis_sites`
+  - `frontend.pipeline.semantic_surface.objc_property_synthesis_ivar_binding_surface.implementation_property_redeclaration_sites`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-B002/property_synthesis_default_ivar_binding_full_semantics_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

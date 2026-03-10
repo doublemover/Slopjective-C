@@ -9316,6 +9316,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings
            << ",\"property_synthesis_default_ivar_bindings\":"
            << property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings
+           << ",\"interface_owned_property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites
+           << ",\"implementation_property_redeclaration_sites\":"
+           << property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites
            << ",\"ivar_binding_sites\":"
            << property_synthesis_ivar_binding_summary.ivar_binding_sites
            << ",\"ivar_binding_resolved\":"
@@ -10083,6 +10087,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_synthesis_ivar_binding_summary.property_synthesis_explicit_ivar_bindings
            << ",\"property_synthesis_default_ivar_bindings\":"
            << property_synthesis_ivar_binding_summary.property_synthesis_default_ivar_bindings
+           << ",\"interface_owned_property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_summary.interface_owned_property_synthesis_sites
+           << ",\"implementation_property_redeclaration_sites\":"
+           << property_synthesis_ivar_binding_summary.implementation_property_redeclaration_sites
            << ",\"ivar_binding_sites\":"
            << property_synthesis_ivar_binding_summary.ivar_binding_sites
            << ",\"ivar_binding_resolved\":"

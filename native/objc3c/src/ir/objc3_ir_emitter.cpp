@@ -170,6 +170,10 @@ class Objc3IREmitter {
       // M257-B001 property-ivar executable semantics anchor:
       // runtime-meaningful synthesis/accessor/storage semantics stay frozen on
       // this replay marker until accessor bodies and storage realization land.
+      // M257-B002 property-synthesis implementation anchor:
+      // sema now resolves authoritative default ivar bindings from
+      // interface-declared class properties even when the implementation does
+      // not redeclare those properties.
       out << "; property_ivar_source_model_completion = "
           << frontend_metadata_.executable_property_ivar_source_model_replay_key
           << "\n";

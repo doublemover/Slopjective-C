@@ -6209,6 +6209,24 @@ deterministic source-model completion step:
 - next handoff
   - `M257-B002`
 
+## M257 property synthesis and default ivar binding full semantics (B002)
+
+`M257-B002` promotes the frozen `M257-B001` synthesis boundary into a live
+compiler rule:
+
+- contract id
+  `objc3c-property-default-ivar-binding-semantics/m257-b002-v1`
+- default binding resolution model
+  `matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration`
+- authoritative synthesis rule
+  - matched class implementations synthesize from interface-declared properties first
+  - implementation redeclarations remain optional compatibility overlays
+  - category implementations remain outside default ivar synthesis
+- lowering consequence
+  - lowering consumes the sema-owned interface-driven property synthesis counts and bindings without re-deriving them from implementation-local redeclarations
+- next handoff
+  - `M257-B003`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
