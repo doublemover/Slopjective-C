@@ -16056,3 +16056,26 @@ single-instance freeze into true per-instance allocation.
   - `tests/tooling/fixtures/native/m257_d002_instance_allocation_runtime_positive.objc3`
   - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
   - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`
+
+## Property metadata registration and reflective access helpers (M257-D003)
+
+`M257-D003` adds a private runtime reflection surface above `M257-D002` so
+ tests and diagnostics can query realized property/accessor/layout facts
+ directly.
+
+- contract id
+  `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- registration model
+  `runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery`
+- query model
+  `private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts`
+- fail-closed model
+  `no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout`
+- live runtime now exposes:
+  - aggregate property reflection state snapshots
+  - per-property reflective entry snapshots
+  - last-query evidence for diagnostics and probe continuity
+- canonical proof assets:
+  - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+  - `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`
+  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`

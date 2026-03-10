@@ -375,6 +375,12 @@ struct RuntimeState {
   std::uint64_t last_allocated_runtime_instance_base_identity = 0;
   std::uint64_t last_allocated_runtime_instance_size_bytes = 0;
   std::string last_allocated_runtime_instance_class_name;
+  std::string last_queried_property_class_name;
+  std::string last_queried_property_name;
+  std::string last_reflected_property_class_name;
+  std::string last_reflected_property_owner_identity;
+  bool last_property_query_found = false;
+  bool last_property_query_inherited = false;
 };
 
 RuntimeState &State() {
@@ -432,6 +438,12 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_conformance_protocol_name.clear();
   state.last_protocol_conformance_owner_identity.clear();
   state.last_protocol_conformance_attachment_owner_identity.clear();
+  state.last_queried_property_class_name.clear();
+  state.last_queried_property_name.clear();
+  state.last_reflected_property_class_name.clear();
+  state.last_reflected_property_owner_identity.clear();
+  state.last_property_query_found = false;
+  state.last_property_query_inherited = false;
 }
 
 void ClearRuntimeInstanceStateUnlocked(RuntimeState &state) {
@@ -1029,6 +1041,41 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
                                 : nullptr;
   }
   return false;
+}
+
+const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
+    const RuntimeState &state, const RealizedClassNode &start_node,
+    const char *property_name, const RealizedClassNode *&resolved_node,
+    bool &inherited) {
+  // M257-D003 property-metadata-reflection anchor: private reflective helper
+  // lookup walks the realized runtime-owned property graph by class/property
+  // name instead of rediscovering accessors or layout from source.
+  if (property_name == nullptr || property_name[0] == '\0') {
+    return nullptr;
+  }
+  std::unordered_set<const RealizedClassNode *> visited;
+  const RealizedClassNode *node = &start_node;
+  inherited = false;
+  while (node != nullptr && visited.insert(node).second) {
+    if (node->runtime_layout_ready) {
+      for (const RealizedPropertyAccessor &accessor :
+           node->runtime_property_accessors) {
+        if (accessor.property_descriptor == nullptr ||
+            accessor.property_descriptor->property_name == nullptr) {
+          continue;
+        }
+        if (std::strcmp(accessor.property_descriptor->property_name,
+                        property_name) == 0) {
+          resolved_node = node;
+          inherited = node != &start_node;
+          return &accessor;
+        }
+      }
+    }
+    node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
+                                : nullptr;
+  }
+  return nullptr;
 }
 
 bool TryResolveMethodFromAttachedCategoriesUnlocked(
@@ -2814,6 +2861,198 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
         last_category->category_name != nullptr ? last_category->category_name
                                                 : nullptr;
   }
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_property_registry_state_for_testing(
+    objc3_runtime_property_registry_state_snapshot *snapshot) {
+  // M257-D003 property-metadata-reflection anchor: the private registry-state
+  // snapshot is the canonical diagnostic/testing surface for aggregate
+  // reflectable property metadata counts and last-query evidence.
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->layout_ready_class_count = 0;
+  snapshot->reflectable_property_count = 0;
+  snapshot->writable_property_count = 0;
+  snapshot->slot_backed_property_count = 0;
+  snapshot->last_query_found = 0;
+  snapshot->last_query_inherited = 0;
+  snapshot->last_queried_class_name = nullptr;
+  snapshot->last_queried_property_name = nullptr;
+  snapshot->last_resolved_class_name = nullptr;
+  snapshot->last_resolved_owner_identity = nullptr;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  for (const RealizedClassNode &node : state.realized_class_nodes) {
+    if (!node.runtime_layout_ready) {
+      continue;
+    }
+    snapshot->layout_ready_class_count += 1;
+    snapshot->reflectable_property_count +=
+        static_cast<std::uint64_t>(node.runtime_property_accessors.size());
+    for (const RealizedPropertyAccessor &accessor : node.runtime_property_accessors) {
+      snapshot->writable_property_count +=
+          !accessor.setter_owner_identity.empty() ? 1u : 0u;
+      snapshot->slot_backed_property_count +=
+          accessor.ivar_descriptor != nullptr ? 1u : 0u;
+    }
+  }
+  snapshot->last_query_found = state.last_property_query_found ? 1 : 0;
+  snapshot->last_query_inherited = state.last_property_query_inherited ? 1 : 0;
+  snapshot->last_queried_class_name =
+      StableCString(state.last_queried_property_class_name);
+  snapshot->last_queried_property_name =
+      StableCString(state.last_queried_property_name);
+  snapshot->last_resolved_class_name =
+      StableCString(state.last_reflected_property_class_name);
+  snapshot->last_resolved_owner_identity =
+      StableCString(state.last_reflected_property_owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_property_entry_for_testing(
+    const char *class_name, const char *property_name,
+    objc3_runtime_property_entry_snapshot *snapshot) {
+  // M257-D003 property-metadata-reflection anchor: the private per-property
+  // snapshot exposes runtime-owned accessor/layout facts by class/property name
+  // without widening the public ABI or rederiving metadata from source.
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->found = 0;
+  snapshot->inherited = 0;
+  snapshot->setter_available = 0;
+  snapshot->has_runtime_getter = 0;
+  snapshot->has_runtime_setter = 0;
+  snapshot->base_identity = 0;
+  snapshot->slot_index = 0;
+  snapshot->offset_bytes = 0;
+  snapshot->size_bytes = 0;
+  snapshot->alignment_bytes = 0;
+  snapshot->instance_size_bytes = 0;
+  snapshot->queried_class_name = nullptr;
+  snapshot->resolved_class_name = nullptr;
+  snapshot->property_name = nullptr;
+  snapshot->declaration_owner_identity = nullptr;
+  snapshot->export_owner_identity = nullptr;
+  snapshot->getter_selector = nullptr;
+  snapshot->setter_selector = nullptr;
+  snapshot->effective_getter_selector = nullptr;
+  snapshot->effective_setter_selector = nullptr;
+  snapshot->ivar_binding_symbol = nullptr;
+  snapshot->synthesized_binding_symbol = nullptr;
+  snapshot->ivar_layout_symbol = nullptr;
+  snapshot->getter_owner_identity = nullptr;
+  snapshot->setter_owner_identity = nullptr;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.last_queried_property_class_name =
+      class_name != nullptr ? class_name : "";
+  state.last_queried_property_name =
+      property_name != nullptr ? property_name : "";
+  state.last_reflected_property_class_name.clear();
+  state.last_reflected_property_owner_identity.clear();
+  state.last_property_query_found = false;
+  state.last_property_query_inherited = false;
+
+  snapshot->queried_class_name =
+      StableCString(state.last_queried_property_class_name);
+  if (class_name == nullptr || class_name[0] == '\0' ||
+      property_name == nullptr || property_name[0] == '\0') {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  const auto found = state.realized_class_node_indices_by_name.find(class_name);
+  if (found == state.realized_class_node_indices_by_name.end() ||
+      found->second.empty()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+  const std::size_t node_index = found->second.front();
+  if (node_index >= state.realized_class_nodes.size()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  const RealizedClassNode &start_node = state.realized_class_nodes[node_index];
+  const RealizedClassNode *resolved_node = nullptr;
+  bool inherited = false;
+  const RealizedPropertyAccessor *accessor =
+      FindRuntimePropertyAccessorByNameUnlocked(
+          state, start_node, property_name, resolved_node, inherited);
+  if (accessor == nullptr || resolved_node == nullptr ||
+      accessor->property_descriptor == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  state.last_property_query_found = true;
+  state.last_property_query_inherited = inherited;
+  state.last_reflected_property_class_name = resolved_node->class_name;
+  state.last_reflected_property_owner_identity =
+      accessor->property_descriptor->declaration_owner_identity != nullptr
+          ? accessor->property_descriptor->declaration_owner_identity
+          : "";
+
+  const EmittedPropertyDescriptor &descriptor = *accessor->property_descriptor;
+  snapshot->found = 1;
+  snapshot->inherited = inherited ? 1 : 0;
+  snapshot->setter_available = descriptor.effective_setter_available ? 1 : 0;
+  snapshot->has_runtime_getter = 1;
+  snapshot->has_runtime_setter =
+      !accessor->setter_owner_identity.empty() ? 1 : 0;
+  snapshot->base_identity = resolved_node->base_identity;
+  snapshot->slot_index =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->slot_index
+          : descriptor.ivar_layout_slot_index;
+  snapshot->offset_bytes = EffectiveIvarOffset(*accessor);
+  snapshot->size_bytes = EffectiveIvarSize(*accessor);
+  snapshot->alignment_bytes =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->alignment_bytes
+          : descriptor.ivar_layout_alignment_bytes;
+  snapshot->instance_size_bytes =
+      static_cast<std::uint64_t>(resolved_node->runtime_instance_size_bytes);
+  snapshot->resolved_class_name =
+      StableCString(state.last_reflected_property_class_name);
+  snapshot->property_name = descriptor.property_name;
+  snapshot->declaration_owner_identity =
+      descriptor.declaration_owner_identity != nullptr
+          ? descriptor.declaration_owner_identity
+          : nullptr;
+  snapshot->export_owner_identity =
+      descriptor.export_owner_identity != nullptr
+          ? descriptor.export_owner_identity
+          : nullptr;
+  snapshot->getter_selector =
+      descriptor.getter_selector != nullptr ? descriptor.getter_selector : nullptr;
+  snapshot->setter_selector =
+      descriptor.setter_selector != nullptr ? descriptor.setter_selector : nullptr;
+  snapshot->effective_getter_selector =
+      descriptor.effective_getter_selector != nullptr
+          ? descriptor.effective_getter_selector
+          : nullptr;
+  snapshot->effective_setter_selector =
+      descriptor.effective_setter_selector != nullptr
+          ? descriptor.effective_setter_selector
+          : nullptr;
+  snapshot->ivar_binding_symbol =
+      descriptor.ivar_binding_symbol != nullptr ? descriptor.ivar_binding_symbol
+                                                : nullptr;
+  snapshot->synthesized_binding_symbol =
+      descriptor.synthesized_binding_symbol != nullptr
+          ? descriptor.synthesized_binding_symbol
+          : nullptr;
+  snapshot->ivar_layout_symbol =
+      descriptor.ivar_layout_symbol != nullptr ? descriptor.ivar_layout_symbol
+                                               : nullptr;
+  snapshot->getter_owner_identity =
+      StableCString(accessor->getter_owner_identity);
+  snapshot->setter_owner_identity =
+      StableCString(accessor->setter_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

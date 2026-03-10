@@ -401,6 +401,25 @@ class Objc3IREmitter {
             << frontend_metadata_.executable_ivar_layout_owner_entries
             << ";synthesized_accessor_entries="
             << synthesized_property_accessor_count_ << "\n";
+        std::size_t writable_property_entries = 0u;
+        for (const auto &bundle :
+             frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
+          if (IsImplementationOwnedPropertyBundle(bundle) &&
+              !bundle.executable_synthesized_binding_symbol.empty()) {
+            writable_property_entries += bundle.effective_setter_available ? 1u : 0u;
+          }
+        }
+        // M257-D003 property-metadata-reflection anchor: lane-D now exposes a
+        // private reflective helper surface over the realized property graph so
+        // runtime probes can query property/accessor/layout facts directly.
+        out << "; runtime_property_metadata_reflection = "
+            << Objc3RuntimePropertyMetadataReflectionSummary()
+            << ";reflectable_property_entries="
+            << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                   .size()
+            << ";writable_property_entries=" << writable_property_entries
+            << ";synthesized_accessor_entries="
+            << synthesized_property_accessor_count_ << "\n";
       }
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {

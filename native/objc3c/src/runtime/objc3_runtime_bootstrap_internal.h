@@ -154,6 +154,47 @@ typedef struct objc3_runtime_realized_class_entry_snapshot {
   const char *last_attached_category_name;
 } objc3_runtime_realized_class_entry_snapshot;
 
+typedef struct objc3_runtime_property_registry_state_snapshot {
+  uint64_t layout_ready_class_count;
+  uint64_t reflectable_property_count;
+  uint64_t writable_property_count;
+  uint64_t slot_backed_property_count;
+  int last_query_found;
+  int last_query_inherited;
+  const char *last_queried_class_name;
+  const char *last_queried_property_name;
+  const char *last_resolved_class_name;
+  const char *last_resolved_owner_identity;
+} objc3_runtime_property_registry_state_snapshot;
+
+typedef struct objc3_runtime_property_entry_snapshot {
+  int found;
+  int inherited;
+  int setter_available;
+  int has_runtime_getter;
+  int has_runtime_setter;
+  uint64_t base_identity;
+  uint64_t slot_index;
+  uint64_t offset_bytes;
+  uint64_t size_bytes;
+  uint64_t alignment_bytes;
+  uint64_t instance_size_bytes;
+  const char *queried_class_name;
+  const char *resolved_class_name;
+  const char *property_name;
+  const char *declaration_owner_identity;
+  const char *export_owner_identity;
+  const char *getter_selector;
+  const char *setter_selector;
+  const char *effective_getter_selector;
+  const char *effective_setter_selector;
+  const char *ivar_binding_symbol;
+  const char *synthesized_binding_symbol;
+  const char *ivar_layout_symbol;
+  const char *getter_owner_identity;
+  const char *setter_owner_identity;
+} objc3_runtime_property_entry_snapshot;
+
 typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   int class_found;
   int protocol_found;
@@ -222,11 +263,20 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 // realized-graph snapshots now also publish live instance-allocation and
 // runtime layout-consumption evidence for synthesized property access without
 // widening the public runtime header.
+// M257-D003 property-metadata-reflection anchor: property metadata
+// registration state and per-property reflective helper lookups stay on this
+// same private testing surface so diagnostics and probes can consume the live
+// runtime-owned metadata without widening the public ABI.
 int objc3_runtime_copy_realized_class_graph_state_for_testing(
     objc3_runtime_realized_class_graph_state_snapshot *snapshot);
 int objc3_runtime_copy_realized_class_entry_for_testing(
     const char *class_name,
     objc3_runtime_realized_class_entry_snapshot *snapshot);
+int objc3_runtime_copy_property_registry_state_for_testing(
+    objc3_runtime_property_registry_state_snapshot *snapshot);
+int objc3_runtime_copy_property_entry_for_testing(
+    const char *class_name, const char *property_name,
+    objc3_runtime_property_entry_snapshot *snapshot);
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);

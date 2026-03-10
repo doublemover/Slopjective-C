@@ -258,3 +258,16 @@ same realized graph:
   - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
   - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
+
+`M257-D003` adds private runtime reflection helpers above that same realized
+property graph:
+
+- contract id `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- registration model
+  `runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery`
+- query model
+  `private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts`
+- live proof surface now includes:
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`

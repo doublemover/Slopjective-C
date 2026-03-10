@@ -1,0 +1,13 @@
+module propertyMetadataReflectionRuntime;
+
+@interface Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (assign, setter=setCount:) i32 count;
+@end
+
+@implementation Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (assign, setter=setCount:) i32 count;
+@end

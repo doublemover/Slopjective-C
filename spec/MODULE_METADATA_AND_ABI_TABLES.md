@@ -7688,3 +7688,22 @@ the historical shared storage fallback.
 - canonical proof assets:
   - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
   - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`
+
+## M257 runtime property metadata reflection anchors (D003)
+
+`M257-D003` consumes the realized property/accessor/layout graph from `M257-D002`
+and publishes a private reflective helper surface for tests and diagnostics.
+
+- contract id
+  `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- runtime reflection still consumes descriptor-carried attachments for:
+  - `effective_getter_selector`
+  - `effective_setter_selector`
+  - `synthesized_binding_symbol`
+  - `ivar_layout_symbol`
+  - `declaration_owner_identity`
+- canonical IR boundary:
+  - `; runtime_property_metadata_reflection = contract=objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- additional runtime proof surface:
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`

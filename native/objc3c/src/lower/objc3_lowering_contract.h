@@ -503,6 +503,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeInstanceAllocationLayoutSupportFailClosedModel =
         "no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet";
+// M257-D003 property-metadata-reflection anchor: lane-D now freezes the
+// private reflective helper surface over the realized property metadata graph
+// so diagnostics and tests can query property/accessor/layout facts without
+// widening the public runtime ABI or rediscovering metadata from source.
+inline constexpr const char
+    *kObjc3RuntimePropertyMetadataReflectionContractId =
+        "objc3c-runtime-property-metadata-reflection/m257-d003-v1";
+inline constexpr const char
+    *kObjc3RuntimePropertyMetadataReflectionRegistrationModel =
+        "runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery";
+inline constexpr const char
+    *kObjc3RuntimePropertyMetadataReflectionQueryModel =
+        "private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts";
+inline constexpr const char
+    *kObjc3RuntimePropertyMetadataReflectionFailClosedModel =
+        "no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1507,6 +1523,7 @@ std::string Objc3ExecutableIvarLayoutEmissionSummary();
 std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
 std::string Objc3RuntimePropertyLayoutConsumptionSummary();
 std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
+std::string Objc3RuntimePropertyMetadataReflectionSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

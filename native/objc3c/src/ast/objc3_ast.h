@@ -1142,6 +1142,9 @@ struct Objc3PropertyDecl {
   // binding and layout identities must also be sufficient for true
   // per-instance allocation and slot storage without rederiving layout from
   // source.
+  // M257-D003 property-metadata-reflection anchor: private runtime reflection
+  // helpers must likewise surface property/accessor/layout facts from these
+  // same emitted identities rather than rediscovering them from source.
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

@@ -12314,6 +12314,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // M257-D002 instance-allocation-layout-runtime anchor: later runtime
       // allocation and per-instance slot storage must still consume only these
       // emitted selector/binding/layout facts without reopening sema.
+      // M257-D003 property-metadata-reflection anchor: runtime reflection
+      // helpers must also publish property/accessor/layout facts from this
+      // emitted surface rather than re-querying sema or source text.
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

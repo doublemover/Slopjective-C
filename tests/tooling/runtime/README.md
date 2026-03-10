@@ -337,3 +337,15 @@ runtime-owned realized graph:
   `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
 - additional proof surface:
   - `objc3_runtime_copy_method_cache_entry_for_testing`
+
+`M257-D003` adds private property metadata reflection helpers over that same
+runtime-owned graph:
+
+- contract id `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- probe:
+  `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`
+- fixture:
+  `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+- additional proof surface:
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`

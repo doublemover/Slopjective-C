@@ -659,6 +659,22 @@ std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimePropertyMetadataReflectionSummary() {
+  std::ostringstream out;
+  // M257-D003 property-metadata-reflection anchor: runtime now publishes a
+  // private reflective helper surface over the realized property/accessor/layout
+  // graph so tests and diagnostics can query live metadata without reopening
+  // the public ABI or rederiving property facts from source.
+  out << "contract=" << kObjc3RuntimePropertyMetadataReflectionContractId
+      << ";registration_model="
+      << kObjc3RuntimePropertyMetadataReflectionRegistrationModel
+      << ";query_model=" << kObjc3RuntimePropertyMetadataReflectionQueryModel
+      << ";fail_closed_model="
+      << kObjc3RuntimePropertyMetadataReflectionFailClosedModel
+      << ";non_goals=no-public-runtime-reflection-abi-no-source-recovery";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

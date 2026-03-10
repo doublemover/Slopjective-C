@@ -9415,3 +9415,19 @@ artifacts and the live bootstrap replay runtime:
   - `spec/planning/compiler/m257/m257_d002_instance_allocation_layout_and_ivar_offset_runtime_support_core_feature_implementation_packet.md`
   - `check:objc3c:m257-d002-instance-allocation-layout-runtime-support`
   - `check:objc3c:m257-d002-lane-d-readiness`
+
+## M257 property metadata registration and reflective access helpers (D003)
+
+`M257-D003` extends the same runtime-owned surface with private reflective
+helpers for realized property metadata.
+
+- emitted IR now publishes `; runtime_property_metadata_reflection = ...`
+- runtime reflection queries consume realized property/accessor/layout facts by
+  class/property name without source rediscovery
+- aggregate registry snapshots publish reflectable-property totals plus
+  last-query evidence for diagnostics
+- canonical issue assets:
+  - `docs/contracts/m257_property_metadata_registration_and_reflective_access_helpers_core_feature_expansion_d003_expectations.md`
+  - `spec/planning/compiler/m257/m257_d003_property_metadata_registration_and_reflective_access_helpers_core_feature_expansion_packet.md`
+  - `check:objc3c:m257-d003-property-metadata-reflection`
+  - `check:objc3c:m257-d003-lane-d-readiness`

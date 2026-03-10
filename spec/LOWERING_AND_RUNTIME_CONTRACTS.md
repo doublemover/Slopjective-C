@@ -6690,3 +6690,16 @@ allocation and per-instance synthesized accessor execution.
   `synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records`
 - fail-closed model
   `no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet`
+
+## M257 property metadata registration and reflective access helpers (D003)
+
+`M257-D003` adds the private runtime reflection helper surface above `M257-D002`.
+
+- contract id
+  `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
+- registration model
+  `runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery`
+- query model
+  `private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts`
+- fail-closed model
+  `no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout`
