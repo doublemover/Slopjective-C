@@ -597,6 +597,10 @@ class Objc3IREmitter {
       // M258-B001 cross-module semantic preservation anchor: imported runtime metadata semantics are not lowered into IR; the lane-B surface freezes
       // semantic preservation requirements without landing imported metadata
       // semantic equivalence yet.
+      // M258-B002 imported metadata semantic rules anchor: imported runtime
+      // surface artifacts may now be consumed and validated before IR
+      // emission, but the imported runtime metadata payloads themselves still
+      // are not lowered into IR in this lane.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.

@@ -12,6 +12,9 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
   options.emit_object = true;
   options.bootstrap_registration_order_ordinal =
       cli_options.bootstrap_registration_order_ordinal;
+  for (const auto &path : cli_options.imported_runtime_surface_paths) {
+    options.imported_runtime_surface_paths.push_back(path.generic_string());
+  }
   options.lowering.max_message_send_args = cli_options.max_message_send_args;
   options.lowering.runtime_dispatch_symbol = cli_options.runtime_dispatch_symbol;
   return options;

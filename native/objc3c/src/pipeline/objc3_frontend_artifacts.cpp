@@ -26,6 +26,7 @@
 #include "pipeline/objc3_lowering_pipeline_pass_graph_scaffold.h"
 #include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
+#include "pipeline/objc3_runtime_import_surface.h"
 
 namespace {
 
@@ -856,6 +857,266 @@ std::string BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
   return out.str();
 }
 
+std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source_contract="
+      << summary.source_semantic_preservation_contract_id
+      << ";input_model=" << summary.input_model
+      << ";imported_module_count=" << summary.imported_module_count
+      << ";runtime_owned_declaration_count="
+      << summary.runtime_owned_declaration_count
+      << ";superclass_edge_count=" << summary.superclass_edge_count
+      << ";protocol_conformance_edge_count="
+      << summary.protocol_conformance_edge_count
+      << ";category_attachment_count=" << summary.category_attachment_count
+      << ";property_accessor_trait_count="
+      << summary.property_accessor_trait_count
+      << ";property_ivar_binding_trait_count="
+      << summary.property_ivar_binding_trait_count
+      << ";method_selector_trait_count="
+      << summary.method_selector_trait_count
+      << ";class_method_trait_count="
+      << summary.class_method_trait_count
+      << ";instance_method_trait_count="
+      << summary.instance_method_trait_count
+      << ";implemented_method_count="
+      << summary.implemented_method_count
+      << ";declaration_only_method_count="
+      << summary.declaration_only_method_count
+      << ";property_attribute_profile_count="
+      << summary.property_attribute_profile_count
+      << ";ownership_effect_profile_count="
+      << summary.ownership_effect_profile_count
+      << ";executable_binding_trait_count="
+      << summary.executable_binding_trait_count
+      << ";modules=";
+  for (std::size_t i = 0; i < summary.imported_module_names_lexicographic.size();
+       ++i) {
+    if (i != 0) {
+      out << ",";
+    }
+    out << summary.imported_module_names_lexicographic[i];
+  }
+  return out.str();
+}
+
+Objc3ImportedRuntimeMetadataSemanticRulesSummary
+BuildImportedRuntimeMetadataSemanticRulesSummary(
+    const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary
+        &source_semantic_preservation,
+    const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces,
+    const std::size_t imported_input_path_count) {
+  Objc3ImportedRuntimeMetadataSemanticRulesSummary summary;
+  summary.fail_closed = true;
+  summary.semantic_surface_published = true;
+  summary.imported_input_path_count = imported_input_path_count;
+  summary.imported_runtime_surface_inputs_present = imported_input_path_count > 0u;
+  summary.imported_runtime_surface_inputs_loaded = true;
+  summary.source_semantic_preservation_contract_ready =
+      IsReadyObjc3CrossModuleRuntimeMetadataSemanticPreservationSummary(
+          source_semantic_preservation);
+  summary.imported_module_count = imported_surfaces.size();
+  summary.imported_module_names_lexicographic.reserve(imported_surfaces.size());
+
+  for (const auto &surface : imported_surfaces) {
+    summary.imported_module_names_lexicographic.push_back(
+        surface.frontend_closure_summary.module_name);
+    const auto &records = surface.runtime_metadata_source_records;
+    summary.class_record_count += records.classes_lexicographic.size();
+    summary.protocol_record_count += records.protocols_lexicographic.size();
+    summary.category_record_count += records.categories_lexicographic.size();
+    summary.property_record_count += records.properties_lexicographic.size();
+    summary.method_record_count += records.methods_lexicographic.size();
+    summary.ivar_record_count += records.ivars_lexicographic.size();
+    for (const auto &class_record : records.classes_lexicographic) {
+      if (class_record.has_super && !class_record.super_name.empty()) {
+        ++summary.superclass_edge_count;
+      }
+      summary.protocol_conformance_edge_count +=
+          class_record.adopted_protocols_lexicographic.size();
+    }
+    for (const auto &protocol_record : records.protocols_lexicographic) {
+      summary.protocol_conformance_edge_count +=
+          protocol_record.inherited_protocols_lexicographic.size();
+    }
+    summary.category_attachment_count += records.categories_lexicographic.size();
+    for (const auto &category_record : records.categories_lexicographic) {
+      summary.protocol_conformance_edge_count +=
+          category_record.adopted_protocols_lexicographic.size();
+    }
+    for (const auto &property_record : records.properties_lexicographic) {
+      if (!property_record.effective_getter_selector.empty()) {
+        ++summary.property_accessor_trait_count;
+      }
+      if (property_record.effective_setter_available &&
+          !property_record.effective_setter_selector.empty()) {
+        ++summary.property_accessor_trait_count;
+      }
+      if (!property_record.ivar_binding_symbol.empty()) {
+        ++summary.property_ivar_binding_trait_count;
+      }
+      if (!property_record.property_attribute_profile.empty()) {
+        ++summary.property_attribute_profile_count;
+      }
+      if (!property_record.ownership_lifetime_profile.empty() ||
+          !property_record.ownership_runtime_hook_profile.empty() ||
+          !property_record.accessor_ownership_profile.empty()) {
+        ++summary.ownership_effect_profile_count;
+      }
+      if ((property_record.executable_synthesized_binding_kind != "none" &&
+           !property_record.executable_synthesized_binding_kind.empty()) ||
+          !property_record.executable_synthesized_binding_symbol.empty() ||
+          !property_record.executable_ivar_layout_symbol.empty()) {
+        ++summary.executable_binding_trait_count;
+      }
+    }
+    for (const auto &method_record : records.methods_lexicographic) {
+      if (!method_record.selector.empty()) {
+        ++summary.method_selector_trait_count;
+      }
+      if (method_record.is_class_method) {
+        ++summary.class_method_trait_count;
+      } else {
+        ++summary.instance_method_trait_count;
+      }
+      if (method_record.has_body) {
+        ++summary.implemented_method_count;
+      } else {
+        ++summary.declaration_only_method_count;
+      }
+    }
+    for (const auto &ivar_record : records.ivars_lexicographic) {
+      if ((ivar_record.executable_synthesized_binding_kind != "none" &&
+           !ivar_record.executable_synthesized_binding_kind.empty()) ||
+          !ivar_record.executable_synthesized_binding_symbol.empty() ||
+          !ivar_record.executable_ivar_layout_symbol.empty()) {
+        ++summary.executable_binding_trait_count;
+      }
+    }
+  }
+
+  std::sort(summary.imported_module_names_lexicographic.begin(),
+            summary.imported_module_names_lexicographic.end());
+  summary.runtime_owned_declaration_count =
+      summary.class_record_count + summary.protocol_record_count +
+      summary.category_record_count + summary.property_record_count +
+      summary.method_record_count + summary.ivar_record_count;
+  summary.imported_conformance_shape_landed =
+      summary.source_semantic_preservation_contract_ready;
+  summary.imported_dispatch_traits_landed =
+      summary.source_semantic_preservation_contract_ready;
+  summary.imported_effect_traits_landed =
+      summary.source_semantic_preservation_contract_ready;
+  summary.imported_runtime_metadata_semantics_landed =
+      summary.source_semantic_preservation_contract_ready;
+  summary.ready_for_imported_metadata_semantic_rules =
+      summary.source_semantic_preservation_contract_ready &&
+      summary.imported_runtime_surface_inputs_loaded;
+  summary.ready_for_cross_module_dispatch_equivalence =
+      summary.ready_for_imported_metadata_semantic_rules;
+
+  if (summary.ready_for_imported_metadata_semantic_rules) {
+    summary.replay_key =
+        BuildImportedRuntimeMetadataSemanticRulesReplayKey(summary);
+  } else {
+    summary.failure_reason =
+        "imported runtime metadata semantic rules summary is incomplete";
+  }
+  if (!IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary) &&
+      summary.failure_reason.empty()) {
+    summary.failure_reason =
+        "imported runtime metadata semantic rules summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_semantic_preservation_contract_id\":\""
+      << EscapeJsonString(summary.source_semantic_preservation_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"input_model\":\""
+      << EscapeJsonString(summary.input_model)
+      << "\",\"imported_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.imported_module_names_lexicographic)
+      << ",\"imported_input_path_count\":" << summary.imported_input_path_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"class_record_count\":" << summary.class_record_count
+      << ",\"protocol_record_count\":" << summary.protocol_record_count
+      << ",\"category_record_count\":" << summary.category_record_count
+      << ",\"property_record_count\":" << summary.property_record_count
+      << ",\"method_record_count\":" << summary.method_record_count
+      << ",\"ivar_record_count\":" << summary.ivar_record_count
+      << ",\"runtime_owned_declaration_count\":"
+      << summary.runtime_owned_declaration_count
+      << ",\"superclass_edge_count\":" << summary.superclass_edge_count
+      << ",\"protocol_conformance_edge_count\":"
+      << summary.protocol_conformance_edge_count
+      << ",\"category_attachment_count\":"
+      << summary.category_attachment_count
+      << ",\"property_accessor_trait_count\":"
+      << summary.property_accessor_trait_count
+      << ",\"property_ivar_binding_trait_count\":"
+      << summary.property_ivar_binding_trait_count
+      << ",\"method_selector_trait_count\":"
+      << summary.method_selector_trait_count
+      << ",\"class_method_trait_count\":"
+      << summary.class_method_trait_count
+      << ",\"instance_method_trait_count\":"
+      << summary.instance_method_trait_count
+      << ",\"implemented_method_count\":"
+      << summary.implemented_method_count
+      << ",\"declaration_only_method_count\":"
+      << summary.declaration_only_method_count
+      << ",\"property_attribute_profile_count\":"
+      << summary.property_attribute_profile_count
+      << ",\"ownership_effect_profile_count\":"
+      << summary.ownership_effect_profile_count
+      << ",\"executable_binding_trait_count\":"
+      << summary.executable_binding_trait_count
+      << ",\"ready\":"
+      << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"source_semantic_preservation_contract_ready\":"
+      << (summary.source_semantic_preservation_contract_ready ? "true"
+                                                              : "false")
+      << ",\"semantic_surface_published\":"
+      << (summary.semantic_surface_published ? "true" : "false")
+      << ",\"imported_runtime_surface_inputs_present\":"
+      << (summary.imported_runtime_surface_inputs_present ? "true" : "false")
+      << ",\"imported_runtime_surface_inputs_loaded\":"
+      << (summary.imported_runtime_surface_inputs_loaded ? "true" : "false")
+      << ",\"imported_conformance_shape_landed\":"
+      << (summary.imported_conformance_shape_landed ? "true" : "false")
+      << ",\"imported_dispatch_traits_landed\":"
+      << (summary.imported_dispatch_traits_landed ? "true" : "false")
+      << ",\"imported_effect_traits_landed\":"
+      << (summary.imported_effect_traits_landed ? "true" : "false")
+      << ",\"imported_runtime_metadata_semantics_landed\":"
+      << (summary.imported_runtime_metadata_semantics_landed ? "true"
+                                                             : "false")
+      << ",\"ready_for_imported_metadata_semantic_rules\":"
+      << (summary.ready_for_imported_metadata_semantic_rules ? "true"
+                                                             : "false")
+      << ",\"ready_for_cross_module_dispatch_equivalence\":"
+      << (summary.ready_for_cross_module_dispatch_equivalence ? "true"
+                                                              : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
@@ -1000,7 +1261,23 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
         << EscapeJsonString(property_record.executable_synthesized_binding_kind)
         << "\",\"executable_synthesized_binding_symbol\":\""
         << EscapeJsonString(property_record.executable_synthesized_binding_symbol)
-        << "\",\"line\":" << property_record.line
+        << "\",\"property_attribute_profile\":\""
+        << EscapeJsonString(property_record.property_attribute_profile)
+        << "\",\"ownership_lifetime_profile\":\""
+        << EscapeJsonString(property_record.ownership_lifetime_profile)
+        << "\",\"ownership_runtime_hook_profile\":\""
+        << EscapeJsonString(property_record.ownership_runtime_hook_profile)
+        << "\",\"accessor_ownership_profile\":\""
+        << EscapeJsonString(property_record.accessor_ownership_profile)
+        << "\",\"executable_ivar_layout_symbol\":\""
+        << EscapeJsonString(property_record.executable_ivar_layout_symbol)
+        << "\",\"executable_ivar_layout_slot_index\":"
+        << property_record.executable_ivar_layout_slot_index
+        << ",\"executable_ivar_layout_size_bytes\":"
+        << property_record.executable_ivar_layout_size_bytes
+        << ",\"executable_ivar_layout_alignment_bytes\":"
+        << property_record.executable_ivar_layout_alignment_bytes
+        << ",\"line\":" << property_record.line
         << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
       out << ",";
@@ -1042,6 +1319,14 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
         << EscapeJsonString(ivar_record.executable_synthesized_binding_symbol)
         << "\",\"executable_ivar_layout_symbol\":\""
         << EscapeJsonString(ivar_record.executable_ivar_layout_symbol)
+        << "\",\"executable_ivar_layout_slot_index\":"
+        << ivar_record.executable_ivar_layout_slot_index
+        << ",\"executable_ivar_layout_size_bytes\":"
+        << ivar_record.executable_ivar_layout_size_bytes
+        << ",\"executable_ivar_layout_alignment_bytes\":"
+        << ivar_record.executable_ivar_layout_alignment_bytes
+        << ",\"source_model\":\""
+        << EscapeJsonString(ivar_record.source_model)
         << "\",\"line\":" << ivar_record.line
         << ",\"column\":" << ivar_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {
@@ -7594,6 +7879,61 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
               runtime_aware_import_module_frontend_closure,
               runtime_metadata_source_records);
+  std::vector<Objc3ImportedRuntimeModuleSurface> imported_runtime_module_surfaces;
+  imported_runtime_module_surfaces.reserve(
+      options.imported_runtime_surface_paths.size());
+  {
+    std::unordered_set<std::string> normalized_input_paths;
+    std::unordered_set<std::string> imported_module_names;
+    for (const auto &input_path_text : options.imported_runtime_surface_paths) {
+      const std::filesystem::path raw_input_path(input_path_text);
+      const std::filesystem::path absolute_input_path =
+          std::filesystem::absolute(raw_input_path);
+      const std::string normalized_input_path =
+          absolute_input_path.lexically_normal().generic_string();
+      if (!normalized_input_paths.insert(normalized_input_path).second) {
+        record_post_pipeline_failure(
+            "O3S264",
+            "imported runtime surface path was provided more than once: " +
+                normalized_input_path);
+        break;
+      }
+      Objc3ImportedRuntimeModuleSurface imported_surface;
+      std::string import_surface_error;
+      if (!TryLoadObjc3ImportedRuntimeModuleSurface(absolute_input_path,
+                                                   imported_surface,
+                                                   import_surface_error)) {
+        record_post_pipeline_failure(
+            "O3S264",
+            "imported runtime surface load failed: " + import_surface_error);
+        break;
+      }
+      const std::string &module_name =
+          imported_surface.frontend_closure_summary.module_name;
+      if (!imported_module_names.insert(module_name).second) {
+        record_post_pipeline_failure(
+            "O3S264",
+            "imported runtime surface module name was provided more than once: " +
+                module_name);
+        break;
+      }
+      imported_runtime_module_surfaces.push_back(std::move(imported_surface));
+    }
+  }
+  const Objc3ImportedRuntimeMetadataSemanticRulesSummary
+      imported_runtime_metadata_semantic_rules =
+          BuildImportedRuntimeMetadataSemanticRulesSummary(
+              cross_module_runtime_metadata_semantic_preservation,
+              imported_runtime_module_surfaces,
+              options.imported_runtime_surface_paths.size());
+  if (post_pipeline_failure_code.empty() &&
+      !IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
+          imported_runtime_metadata_semantic_rules)) {
+    record_post_pipeline_failure(
+        "O3S264",
+        "imported runtime metadata semantic rules are incomplete: " +
+            imported_runtime_metadata_semantic_rules.failure_reason);
+  }
   const Objc3NamespaceCollisionShadowingLoweringContract
       namespace_collision_shadowing_lowering_contract =
           BuildNamespaceCollisionShadowingLoweringContract(
@@ -11867,6 +12207,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_cross_module_runtime_metadata_semantic_preservation_contract\":"
            << BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
                   cross_module_runtime_metadata_semantic_preservation)
+           << ",\"objc_imported_runtime_metadata_semantic_rules\":"
+           << BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
+                  imported_runtime_metadata_semantic_rules)
            << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":" 
            << namespace_collision_shadowing_lowering_contract
                   .namespace_collision_shadowing_sites

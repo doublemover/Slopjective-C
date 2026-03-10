@@ -6838,3 +6838,30 @@ runtime metadata handling must preserve.
 - imported runtime metadata semantics are not lowered into IR yet
 - public embedding remains filesystem-artifact only; no in-memory imported
   module semantic handles or foreign payload injection ABI are exposed yet
+
+## M258 imported metadata conformance, effect, and dispatch preservation rules (B002)
+
+`M258-B002` converts the frozen `M258-B001` preservation boundary into a real
+frontend capability that consumes emitted runtime import-surface artifacts.
+
+- contract id
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
+- source semantic-preservation contract
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- compiler behavior
+  - repeated `--objc3-import-runtime-surface <path>` inputs are loaded before IR
+    emission
+  - duplicate input paths fail closed
+  - duplicate imported module names fail closed
+  - malformed or contract-invalid import-surface payloads fail closed
+- landed semantic preservation
+  - imported conformance shape is counted from the consumed artifacts
+  - imported dispatch traits are counted from the consumed artifacts
+  - imported effect traits are counted from the consumed artifacts
+  - ready-for-imported-metadata-semantic-rules is `true` when the imported
+    surfaces load successfully and the source `M258-B001` contract is ready
+- imported runtime metadata payloads still are not lowered into IR in this lane

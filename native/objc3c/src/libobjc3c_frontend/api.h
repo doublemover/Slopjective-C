@@ -58,6 +58,10 @@ extern "C" {
  * - M258-B001 cross-module semantic preservation anchor: imported runtime
  *   metadata semantics remain filesystem-artifact only and do not yet expose a
  *   live imported-module semantic ABI.
+ * - M258-B002 imported metadata semantic rules anchor: embedding may direct
+ *   the frontend driver to consume emitted runtime-import-surface filesystem
+ *   artifacts, but this public C ABI still does not expose live imported
+ *   module semantic handles or in-memory foreign metadata payload injection.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

@@ -9534,3 +9534,15 @@ metadata handling must preserve:
   semantics are not lowered into IR yet
 - `libobjc3c_frontend/api.h` remains explicit that imported runtime metadata semantics are still exposed only through filesystem artifacts and not a live
   imported-module ABI
+
+`M258-B002` is the next lane-B step:
+
+- repeated `--objc3-import-runtime-surface <path>` inputs are consumed as real
+  frontend inputs
+- duplicate paths, duplicate module names, and malformed import-surface payloads
+  fail closed
+- imported conformance/effect/dispatch counts are derived from the consumed
+  artifacts and published at
+  `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
+- imported runtime metadata payloads still are not lowered into IR until the
+  later lowering/runtime lanes land

@@ -7829,3 +7829,34 @@ runtime import surface and runtime metadata source records:
     - executable binding traits
 - canonical contract evidence:
   - `tmp/reports/m258/M258-B001/cross_module_runtime_metadata_semantic_preservation_contract_summary.json`
+
+## M258 imported metadata semantic-rule anchors (B002)
+
+`M258-B002` adds the consumed-import semantic surface over emitted
+runtime-import-surface artifacts:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
+- contract id
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- source semantic-preservation contract
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- canonical imported semantic anchors:
+  - conformance shape:
+    - superclass edges
+    - protocol conformance / inheritance edges
+    - category attachment counts
+  - dispatch traits:
+    - property accessor traits
+    - property ivar-binding traits
+    - method selector traits
+    - method classness counts
+    - method body-availability counts
+  - effect traits:
+    - property-attribute profiles
+    - ownership-effect profiles
+    - executable binding traits
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`

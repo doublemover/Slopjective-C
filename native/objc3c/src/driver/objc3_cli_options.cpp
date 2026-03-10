@@ -121,7 +121,7 @@ std::filesystem::path DefaultLlcPath() {
 
 std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
-         "[--llc <path>] "
+         "[--llc <path>] [--objc3-import-runtime-surface <path>]... "
          "[-fobjc-version=<N>] [--objc3-language-version <N>] "
          "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
@@ -192,6 +192,8 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     } else if (flag == "--llc" && i + 1 < argc) {
       options.llc_path = argv[++i];
       options.llc_path_explicit = true;
+    } else if (flag == "--objc3-import-runtime-surface" && i + 1 < argc) {
+      options.imported_runtime_surface_paths.push_back(argv[++i]);
     } else if (flag == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
       if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {

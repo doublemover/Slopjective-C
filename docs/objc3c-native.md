@@ -16211,3 +16211,31 @@ semantic equivalence.
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
   - `tmp/reports/m258/M258-B001/cross_module_runtime_metadata_semantic_preservation_contract_summary.json`
+
+## Imported metadata semantic rules (M258-B002)
+
+`M258-B002` lands imported runtime metadata conformance, effect, and dispatch
+preservation as a real frontend capability by consuming emitted
+`module.runtime-import-surface.json` artifacts.
+
+- contract id
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
+- source semantic-preservation contract
+  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- landed truths
+  - repeated `--objc3-import-runtime-surface <path>` inputs are loaded and
+    validated as a deterministic compiler capability
+  - imported conformance shape, dispatch traits, and effect traits are counted
+    from the consumed artifacts rather than only the current translation unit
+  - duplicate input paths, duplicate imported module names, and malformed
+    import-surface payloads fail closed
+- current boundary
+  - imported runtime metadata payloads still are not lowered into IR in lane-B
+  - the public embedding ABI still remains filesystem-artifact based
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
+  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`

@@ -1118,6 +1118,7 @@ $frontendModules = @(
     name = "pipeline"
     sources = @(
       "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+      "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
       "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
       "native/objc3c/src/pipeline/objc3_ir_emission_completeness_scaffold.cpp"
       "native/objc3c/src/pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp"
