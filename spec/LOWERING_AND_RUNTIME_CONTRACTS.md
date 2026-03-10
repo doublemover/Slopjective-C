@@ -7141,3 +7141,27 @@ proof.
   - broader archive/static-link, multi-module, and multi-image replay or
     inspection expansion is deferred
   - the next implementation issue is `M259-D001`
+
+## M259 toolchain and runtime operations freeze (D001)
+
+`M259-D001` freezes the supported local toolchain/runtime operations boundary
+for the runnable core before `M259-D002` expands workflow and packaging
+implementation.
+
+- contract id
+  `objc3c-runnable-toolchain-runtime-operations-freeze/m259-d001-v1`
+- operations model
+  `runnable-core-build-compile-smoke-replay-operations-boundary`
+- evidence model
+  `operations-freeze-docs-package-and-script-anchors-for-runnable-core`
+- failure model
+  `fail-closed-on-unsupported-packaging-or-runtime-operations-claim-drift`
+- frozen operations
+  - `npm run build:objc3c-native`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  - `npm run test:objc3c:execution-smoke`
+  - `npm run test:objc3c:execution-replay-proof`
+- truthful boundary
+  - only the current Windows x64 + `pwsh` + `python` + `node`/`npm` + MSVC/CMake/Ninja + LLVM `llc`/`llvm-readobj` host baseline is claimed here
+  - installer, system deployment, and cross-platform packaging claims remain deferred
+  - the next implementation issue is `M259-D002`

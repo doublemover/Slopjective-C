@@ -27,6 +27,8 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # runtime replay corpus, while canonical object/IR replay plus metadata section
 # inspection is delegated to execution replay proof over the A002 runnable
 # sample.
+# M259-D001 toolchain-runtime-operations anchor: execution smoke remains one of
+# the frozen runnable-core operations, and installer or cross-platform packaging claims remain outside this freeze until M259-D002.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

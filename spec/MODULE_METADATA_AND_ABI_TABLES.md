@@ -8114,3 +8114,21 @@ section-inspection artifacts.
   - `objc3.runtime.linker_anchor`
   - `objc3.runtime.image_root`
   - `objc3.runtime.registration_descriptor`
+
+## M259 toolchain and package-output freeze anchors (D001)
+
+`M259-D001` does not change the metadata ABI. It freezes the supported local
+package-output and evidence anchors that the runnable core operations boundary
+must preserve before `M259-D002` expands workflow and packaging behavior.
+
+- contract id
+  `objc3c-runnable-toolchain-runtime-operations-freeze/m259-d001-v1`
+- frozen package outputs
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+- frozen evidence outputs
+  - `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+- truthful boundary
+  - installer, system deployment, and cross-platform packaging claims remain outside D001
+  - the next implementation issue is `M259-D002`

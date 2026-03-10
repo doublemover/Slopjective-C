@@ -23,6 +23,8 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # M259-C002 object-ir-replay-proof anchor: canonical runnable A002 programs now
 # prove direct IR replay, object replay, and metadata-section inspection replay
 # on the live execution proof path.
+# M259-D001 toolchain-runtime-operations anchor: execution replay proof remains
+# a frozen runnable-core operation, while workflow/package expansion remains deferred to M259-D002.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"

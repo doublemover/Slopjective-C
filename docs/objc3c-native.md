@@ -11228,6 +11228,31 @@ canonical runnable object-model programs.
     expansion still does not land here
   - the next implementation issue is `M259-D001`
 
+## M259 toolchain and runtime operations freeze (D001)
+
+`M259-D001` freezes the supported local operations boundary for the runnable
+Objective-C 3 core before workflow and packaging expansion lands in `M259-D002`.
+
+- contract id
+  `objc3c-runnable-toolchain-runtime-operations-freeze/m259-d001-v1`
+- supported host baseline
+  - Windows x64 + `pwsh` + `python` + `node`/`npm` + MSVC/CMake/Ninja + LLVM `llc`/`llvm-readobj`
+- frozen runnable-core operations
+  - `npm run build:objc3c-native`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  - `npm run test:objc3c:execution-smoke`
+  - `npm run test:objc3c:execution-replay-proof`
+- frozen package and evidence outputs
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+  - `tmp/artifacts/objc3c-native/execution-smoke/<run_id>/summary.json`
+  - `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+- truthful boundary
+  - no installer or system-wide deployment claim lands here
+  - no cross-platform packaging claim lands here
+  - no toolchain auto-provisioning claim lands here
+  - `M259-D001` freezes the operations boundary only; `M259-D002` implements the workflow and packaging surface
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current
