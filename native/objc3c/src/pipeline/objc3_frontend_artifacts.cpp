@@ -115,6 +115,29 @@ std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
   };
 }
 
+std::vector<std::string> BuildSupportedSelectionSurfaceIds() {
+  return {
+      kObjc3SupportedSelectionSurfaceLanguageVersion,
+      kObjc3SupportedSelectionSurfaceCompatibilityMode,
+      kObjc3SupportedSelectionSurfaceMigrationAssist,
+  };
+}
+
+std::vector<std::string> BuildUnsupportedSelectionSurfaceIds() {
+  return {
+      kObjc3UnsupportedSelectionSurfaceStrictness,
+      kObjc3UnsupportedSelectionSurfaceStrictConcurrency,
+  };
+}
+
+std::vector<std::string> BuildSuppressedMacroClaimIds() {
+  return {
+      kObjc3SuppressedMacroClaimStrictnessLevel,
+      kObjc3SuppressedMacroClaimConcurrencyMode,
+      kObjc3SuppressedMacroClaimConcurrencyStrict,
+  };
+}
+
 std::string BuildRunnableFeatureClaimInventoryReplayKey(
     const Objc3FrontendOptions &options,
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -184,6 +207,80 @@ std::string BuildRunnableFeatureClaimInventoryJson(
       << ",\"replay_key\":\""
       << EscapeJsonString(
              BuildRunnableFeatureClaimInventoryReplayKey(options, pipeline_result))
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result) {
+  std::ostringstream out;
+  out << kObjc3FeatureClaimStrictnessTruthSurfaceContractId
+      << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
+      << ";language_version=" << static_cast<unsigned>(options.language_version)
+      << ";compatibility_mode=" << CompatibilityModeName(options.compatibility_mode)
+      << ";migration_assist=" << (options.migration_assist ? "true" : "false")
+      << ";supported_selection_surfaces=3"
+      << ";unsupported_selection_surfaces=2"
+      << ";suppressed_macro_claims=3"
+      << ";parser_declared_protocols=" << pipeline_result.program.ast.protocols.size()
+      << ";parser_declared_interfaces=" << pipeline_result.program.ast.interfaces.size()
+      << ";parser_declared_implementations=" << pipeline_result.program.ast.implementations.size();
+  return out.str();
+}
+
+std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendPipelineResult &pipeline_result) {
+  const std::vector<std::string> supported_selection_surface_ids =
+      BuildSupportedSelectionSurfaceIds();
+  const std::vector<std::string> unsupported_selection_surface_ids =
+      BuildUnsupportedSelectionSurfaceIds();
+  const std::vector<std::string> suppressed_macro_claim_ids =
+      BuildSuppressedMacroClaimIds();
+  const std::vector<std::string> supported_compatibility_modes = {
+      "canonical",
+      "legacy",
+  };
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << kObjc3FeatureClaimStrictnessTruthSurfaceContractId
+      << "\",\"runnable_feature_claim_inventory_contract_id\":\""
+      << kObjc3RunnableFeatureClaimInventoryContractId
+      << "\",\"language_mode\":\"" << kObjc3RunnableFeatureClaimModeName
+      << "\",\"language_version\":" << static_cast<unsigned>(options.language_version)
+      << ",\"effective_compatibility_mode\":\""
+      << CompatibilityModeName(options.compatibility_mode)
+      << "\",\"default_compatibility_mode\":\"canonical\""
+      << ",\"migration_assist_enabled\":"
+      << (options.migration_assist ? "true" : "false")
+      << ",\"driver_surface_model\":\""
+      << kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel
+      << "\",\"language_version_selection_supported\":true"
+      << ",\"compatibility_selection_supported\":true"
+      << ",\"migration_assist_selection_supported\":true"
+      << ",\"strictness_selection_supported\":false"
+      << ",\"strict_concurrency_selection_supported\":false"
+      << ",\"feature_macro_surface_supported\":false"
+      << ",\"claim_truth_fail_closed\":true"
+      << ",\"supported_compatibility_modes\":"
+      << BuildStringArrayJson(supported_compatibility_modes)
+      << ",\"supported_selection_surface_ids\":"
+      << BuildStringArrayJson(supported_selection_surface_ids)
+      << ",\"unsupported_selection_surface_ids\":"
+      << BuildStringArrayJson(unsupported_selection_surface_ids)
+      << ",\"suppressed_macro_claim_ids\":"
+      << BuildStringArrayJson(suppressed_macro_claim_ids)
+      << ",\"declared_protocol_count\":"
+      << pipeline_result.program.ast.protocols.size()
+      << ",\"declared_interface_count\":"
+      << pipeline_result.program.ast.interfaces.size()
+      << ",\"declared_implementation_count\":"
+      << pipeline_result.program.ast.implementations.size()
+      << ",\"replay_key\":\""
+      << EscapeJsonString(BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
+             options, pipeline_result))
       << "\"}";
   return out.str();
 }
@@ -6403,7 +6500,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  \"frontend\": {\n";
   manifest << "    \"language_version\":" << static_cast<unsigned>(options.language_version) << ",\n";
   manifest << "    \"compatibility_mode\":\"" << CompatibilityModeName(options.compatibility_mode) << "\",\n";
+  manifest << "    \"default_compatibility_mode\":\"canonical\",\n";
   manifest << "    \"migration_assist\":" << (options.migration_assist ? "true" : "false") << ",\n";
+  manifest << "    \"language_version_selection_supported\":true,\n";
+  manifest << "    \"compatibility_selection_supported\":true,\n";
+  manifest << "    \"migration_assist_selection_supported\":true,\n";
+  manifest << "    \"strictness_selection_supported\":false,\n";
+  manifest << "    \"strict_concurrency_selection_supported\":false,\n";
+  manifest << "    \"feature_macro_surface_supported\":false,\n";
+  manifest << "    \"feature_claim_truth_surface_contract_id\":\""
+           << kObjc3FeatureClaimStrictnessTruthSurfaceContractId << "\",\n";
   manifest << "    \"migration_hints\":{\"legacy_yes\":" << pipeline_result.migration_hints.legacy_yes_count
            << ",\"legacy_no\":" << pipeline_result.migration_hints.legacy_no_count << ",\"legacy_null\":"
            << pipeline_result.migration_hints.legacy_null_count
@@ -9738,6 +9844,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // currently implemented Objective-C 3 native subset.
            << ",\"objc_runnable_feature_claim_inventory\":"
            << BuildRunnableFeatureClaimInventoryJson(options, pipeline_result)
+           // M264-A002 truth-surface anchor: the frontend must publish the
+           // supported driver/selection surfaces explicitly so strictness and
+           // feature-macro claims remain fail-closed until later lanes land.
+           << ",\"objc_feature_claim_and_strictness_truth_surface\":"
+           << BuildFeatureClaimStrictnessTruthSurfaceJson(options, pipeline_result)
            << ",\"objc_executable_metadata_source_graph\":"
            << BuildExecutableMetadataSourceGraphJson(
                   executable_metadata_source_graph)

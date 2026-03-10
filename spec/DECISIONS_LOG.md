@@ -243,3 +243,25 @@ support based on parser/sema or contract-only progress.
 
 **Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
+
+---
+
+## D-017: Unsupported strictness and macro-claim surfaces stay unadvertised until executable {#decisions-d-017}
+
+**Decision:** The native `objc3c` frontend shall explicitly advertise only the
+currently live selection surfaces:
+
+- language version,
+- compatibility mode,
+- migration assist.
+
+Strictness selection, strict concurrency selection, and feature-macro claim
+publication shall remain machine-readable but fail-closed as unsupported until
+their corresponding executable/runtime-backed implementations exist.
+
+**Rationale:** Truthful versioning/conformance reporting requires the frontend
+and driver to expose what is actually selectable today, not what the long-range
+spec eventually defines.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.

@@ -10352,6 +10352,9 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   // the canonical declaration/grammar coverage record consumed by the emitted
   // runnable feature-claim inventory. Later lanes may refine claims, but they
   // must not invent a second frontend source-of-truth surface.
+  // M264-A002 truth-surface wiring anchor: the parser does not admit hidden
+  // strictness/concurrency claim syntax, so unsupported selection surfaces stay
+  // explicit in the frontend truth packet rather than being inferred.
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
   return result;

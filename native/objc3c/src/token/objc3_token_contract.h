@@ -121,6 +121,10 @@ inline constexpr const char *kObjc3RunnableFeatureClaimModeName =
     "objc3-v1-native-subset";
 inline constexpr const char *kObjc3RunnableFeatureClaimTruthModel =
     "truthful-runnable-subset-plus-source-only-plus-fail-closed-unsupported";
+inline constexpr const char *kObjc3FeatureClaimStrictnessTruthSurfaceContractId =
+    "objc3c-feature-claim-strictness-truth-surface/m264-a002-v1";
+inline constexpr const char *kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel =
+    "language-version-and-compatibility-live-strictness-and-feature-macro-fail-closed";
 
 inline constexpr const char *kObjc3RunnableFeatureClaimModule =
     "runnable:module-declaration";
@@ -164,6 +168,24 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimBlocks =
     "unsupported:blocks";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
     "unsupported:arc";
+
+inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
+    "selection:language-version";
+inline constexpr const char *kObjc3SupportedSelectionSurfaceCompatibilityMode =
+    "selection:compatibility-mode";
+inline constexpr const char *kObjc3SupportedSelectionSurfaceMigrationAssist =
+    "selection:migration-assist";
+inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictness =
+    "selection:strictness";
+inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictConcurrency =
+    "selection:strict-concurrency";
+
+inline constexpr const char *kObjc3SuppressedMacroClaimStrictnessLevel =
+    "macro-claim:__OBJC3_STRICTNESS_LEVEL__";
+inline constexpr const char *kObjc3SuppressedMacroClaimConcurrencyMode =
+    "macro-claim:__OBJC3_CONCURRENCY_MODE__";
+inline constexpr const char *kObjc3SuppressedMacroClaimConcurrencyStrict =
+    "macro-claim:__OBJC3_CONCURRENCY_STRICT__";
 
 enum class Objc3SemaTokenKind {
   PointerDeclarator,

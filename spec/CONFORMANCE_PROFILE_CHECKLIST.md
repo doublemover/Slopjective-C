@@ -268,3 +268,21 @@ The packet must separate:
 Until strictness, strict concurrency, effects, async/await, actors, blocks, and
 ARC are live, that packet is the canonical source used to avoid over-claiming
 Objective-C 3 conformance.
+
+## M264 frontend selection truth surface (implementation note)
+
+The native toolchain also publishes one explicit truth surface for what the
+frontend currently accepts and advertises:
+
+- `frontend.feature_claim_truth_surface_contract_id`
+- `frontend.pipeline.semantic_surface.objc_feature_claim_and_strictness_truth_surface`
+
+That surface must keep the current state explicit:
+
+- language-version / compatibility / migration-assist selection are live
+- strictness / strict-concurrency selection remain unsupported
+- feature-macro claim publication remains unsupported
+
+This prevents the driver/frontend layer from implying Strict, Strict
+Concurrency, or feature-macro conformance before those surfaces are actually
+implemented end to end.

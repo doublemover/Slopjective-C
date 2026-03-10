@@ -4293,3 +4293,24 @@ Validation deliberately proves both sides of that split:
 
 This prevents later milestones from over-claiming runtime-backed Objective-C 3
 support before the corresponding lanes are actually implemented and runnable.
+
+## Feature-claim and strictness truth surface (M264-A002)
+
+`M264-A002` wires the truthful selection/claim surface into both:
+
+- `frontend.*` manifest fields for live defaults and supported switches
+- `frontend.pipeline.semantic_surface.objc_feature_claim_and_strictness_truth_surface`
+
+The surface is explicit about what is live today:
+
+- language-version selection: supported
+- compatibility selection: supported
+- migration assist selection: supported
+- strictness selection: not yet supported
+- strict concurrency selection: not yet supported
+- feature-macro claim publication: not yet supported
+
+Validation deliberately proves both sides of the current truth model:
+
+- native runnable compilation keeps the surface truthful on the executable path
+- manifest-only runner probes keep legacy/source-only truth explicit without pretending strictness or feature macros are available

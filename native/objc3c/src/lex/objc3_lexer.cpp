@@ -65,6 +65,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M264-A001 mode-truth source anchor: the lexer owns the effective language
   // version / compatibility / migration prelude inputs consumed by the
   // runnable feature-claim inventory emitted by the frontend manifest.
+  // M264-A002 truth-surface wiring anchor: strictness / strict concurrency do
+  // not have accepted hidden lexer/prelude selection forms yet, so the emitted
+  // truth packet must keep those surfaces fail-closed and unadvertised.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {
