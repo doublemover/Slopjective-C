@@ -412,6 +412,48 @@ Conforming metadata/interface behavior shall preserve whether a declaration is e
 **Rationale:** Declaration-scoped control supports gradual adoption, avoids module-wide semantic surprises, and keeps mixed erased/reified codebases tractable.
 
 **Spec impact:** [Part 3](#part-3) [§3.5.5](#part-3-5-5) and [§3.9](#part-3-9).
+
+---
+
+## D-016: Conformance and version claims are bounded by one live frontend inventory <a id="decisions-d-016"></a>
+
+**Decision:** The native `objc3c` toolchain shall publish one canonical frontend
+feature-claim inventory that explicitly separates:
+
+- runnable claims,
+- source-only recognized claims,
+- unsupported fail-closed claims.
+
+Strictness, strict concurrency, effects, async/await, actors, blocks, and ARC
+shall not be advertised as supported until they move into the runnable set.
+
+**Rationale:** This prevents the project from over-claiming Objective-C 3
+support based on parser/sema or contract-only progress.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
+## D-017: Unsupported strictness and macro-claim surfaces stay unadvertised until executable <a id="decisions-d-017"></a>
+
+**Decision:** The native `objc3c` frontend shall explicitly advertise only the
+currently live selection surfaces:
+
+- language version,
+- compatibility mode,
+- migration assist.
+
+Strictness selection, strict concurrency selection, and feature-macro claim
+publication shall remain machine-readable but fail-closed as unsupported until
+their corresponding executable/runtime-backed implementations exist.
+
+**Rationale:** Truthful versioning/conformance reporting requires the frontend
+and driver to expose what is actually selectable today, not what the long-range
+spec eventually defines.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
 <!-- END DECISIONS_LOG.md -->
 
 ---
@@ -6787,7 +6829,260 @@ Non-goals:
 
 - no multi-image bootstrap execution yet
 - no runtime replay implementation yet
+
+## M263 duplicate-registration and image-order semantics (B002)
+
+`M263-B002` turns the `M263-B001` freeze into a live semantic bridge that
+publishes duplicate-registration and cross-image legality using the emitted
+translation-unit identity key and registration-order ordinal.
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- canonical models:
+  - duplicate registration
+    `fail-closed-by-translation-unit-identity-key`
+  - image order invariant
+    `strictly-monotonic-positive-registration-order-ordinal`
+  - cross-image legality
+    `translation-unit-identity-key-and-registration-order-ordinal-govern-bootstrap-legality`
+  - semantic diagnostics
+    `fail-closed-bootstrap-legality-before-runtime-handoff`
+- deterministic proof minimums:
+  - recompiling the same translation unit preserves the same
+    `translation_unit_identity_key`
+  - peer translation units with identical visible bootstrap identifiers receive
+    different `translation_unit_identity_key` values
 - no API widening beyond the already-frozen bootstrap/runtime contracts
+
+## M263 bootstrap failure-mode and restart semantics (B003)
+
+`M263-B003` closes the residual restart/recovery semantics by publishing a live
+bridge over the frozen bootstrap legality packet, the live `M254-B002`
+bootstrap semantics, and the `M254-D003` deterministic reset/replay contract.
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics`
+- upstream/runtime contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - failure mode `abort-before-user-main-no-partial-registration-commit`
+  - restart lifecycle `reset-clears-live-runtime-state-and-zeroes-image-local-init-cells`
+  - replay order `replay-re-registers-retained-images-in-original-registration-order`
+  - unsupported topology
+    `replay-requires-empty-live-runtime-state-and-retained-bootstrap-catalog`
+- deterministic proof minimums:
+  - replay while live state is still populated fails closed with the invalid
+    descriptor status path
+  - reset preserves retained catalog state and zeroes the live init-state cells
+  - reset plus replay restores the retained image in canonical order
+
+## M263 constructor-root and init-array lowering contract (C001)
+
+`M263-C001` freezes the live lowering boundary above the emitted
+`M263-A002` registration-descriptor artifact and the emitted translation-unit
+registration manifest.
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- canonical semantic surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`
+- descriptor handoff contract id
+  `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+- descriptor artifact
+  `module.runtime-registration-descriptor.json`
+- lowering boundary model
+  `registration-descriptor-and-registration-manifest-drive-constructor-root-init-stub-registration-table-and-platform-init-array-lowering`
+- emitted lowering guarantees:
+  - constructor root `__objc3_runtime_register_image_ctor`
+  - init-stub prefix `__objc3_runtime_register_image_init_stub_`
+  - registration-table prefix `__objc3_runtime_registration_table_`
+  - image-local-init prefix `__objc3_runtime_image_local_init_state_`
+  - platform startup participation
+    `llvm.global_ctors-single-root-priority-65535`
+  - init stub still stages the registration table before calling
+    `objc3_runtime_register_image`
+- non-goals:
+  - no multi-image root fanout yet
+  - no replay partitioning/late linker synthesis yet
+
+## M263 registration-descriptor lowering and multi-image root emission (C002)
+
+`M263-C002` materializes the `M263-A002` descriptor/image-root identities as
+real lowering artifacts in the native IR/object path while preserving the
+frozen `M263-C001` constructor-root/registration-table ABI.
+
+- contract id
+  `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- lowering model
+  `frontend-identifiers-drive-emitted-registration-descriptor-and-image-root-globals`
+- canonical logical sections:
+  - `objc3.runtime.registration_descriptor`
+  - `objc3.runtime.image_root`
+- canonical symbol prefixes:
+  - `__objc3_runtime_registration_descriptor_`
+  - `__objc3_runtime_image_root_`
+- payload models:
+  - `registration-descriptor-record-points-at-image-root-image-descriptor-registration-table-linker-anchor-and-init-state`
+  - `image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root`
+- emitted proof minimums:
+  - one `runtime_registration_descriptor_image_root_lowering` line in `module.ll`
+  - one retained image-root global in `objc3.runtime.image_root`
+  - one retained registration-descriptor global in `objc3.runtime.registration_descriptor`
+
+## M263 archive/static-link bootstrap replay corpus (C003)
+
+`M263-C003` turns the earlier retained archive/static-link discovery work into
+one live bootstrap replay corpus over linked binaries.
+
+- contract id
+  `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+- corpus model
+  `merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes`
+- binary proof model
+  `plain-link-omits-bootstrap-images-retained-link-replays-them`
+- upstream contracts:
+  - `objc3c-runtime-metadata-archive-and-static-link-discovery/m253-d003-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- emitted proof minimums:
+  - one `runtime_bootstrap_archive_static_link_replay_corpus` line in `module.ll`
+  - merged response/discovery artifacts retain archive-linked bootstrap objects
+  - replay probes prove retained images register on startup and re-register after reset
+
+## M263 runtime bootstrap table consumption freeze (D001)
+
+`M263-D001` freezes the runtime-side bridge that consumes emitted registration
+tables, rejects duplicate image identities before advancing bootstrap state,
+and publishes one authoritative image-walk snapshot for runtime probes.
+
+- contract id
+  `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+- upstream runtime/lowering contracts:
+  - `objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1`
+  - `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- canonical models:
+  - table consumption
+    `next-public-register-call-consumes-staged-registration-table-once`
+  - deduplication
+    `translation-unit-identity-key-rejection-before-registration-state-advance`
+  - image state publication
+    `image-walk-snapshot-publishes-module-identity-root-counts-and-staged-table-usage`
+- canonical runtime bridge:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+- frozen invariants:
+  - staged tables must descriptor-match the runtime image before state is published
+  - discovery root must close over every descriptor family before the image-walk
+    snapshot is committed
+  - duplicate registration must fail closed without incrementing registered-image
+    counters or next-expected ordinal
+
+## M263 live registration, discovery, and replay implementation (D002)
+
+`M263-D002` freezes the already-live runtime tracking surface that sits above
+`M263-D001`: successful startup registration, discovery-root accounting, reset,
+and deterministic replay over retained bootstrap images.
+
+- contract id
+  `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+- upstream runtime/lowering contracts:
+  - `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - live registration
+    `emitted-metadata-images-register-through-native-runtime-and-retained-bootstrap-catalog`
+  - live discovery tracking
+    `image-walk-snapshot-tracks-last-discovered-root-and-descriptor-families`
+  - live replay tracking
+    `reset-replay-state-snapshot-tracks-retained-images-reset-clears-and-last-replayed-identity`
+- canonical runtime bridge:
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+- frozen invariants:
+  - startup registration must retain exactly one bootstrap record per emitted image
+  - reset must clear live counters while preserving the retained bootstrap catalog
+  - replay must republish the same image-walk/discovery evidence through the
+    staged-table path and record last-replayed identity/generation
+
+## M263 live restart hardening (D003)
+
+`M263-D003` freezes the runtime-owned idempotence/teardown/restart hardening
+layer above `M263-D002`.
+
+- contract id
+  `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- upstream runtime contracts:
+  - `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- canonical models:
+  - live idempotence
+    `second-live-replay-without-reset-fails-closed-and-preserves-live-runtime-state`
+  - live teardown
+    `reset-clears-live-state-zeroes-image-local-init-cells-and-retains-bootstrap-catalog`
+  - live restart evidence
+    `repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations`
+- canonical runtime bridge:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- frozen invariants:
+  - replay without teardown must fail closed and preserve current live runtime state
+  - repeated reset/replay cycles must keep the retained bootstrap catalog intact
+  - reset generation and replay generation must advance monotonically across repeated restart cycles
+
+## M263 bootstrap completion conformance gate (E001)
+
+`M263-E001` freezes the integrated lane-E gate that decides whether the current
+bootstrap tranche is actually complete for runnable native programs.
+
+- contract id
+  `objc3c-runtime-bootstrap-completion-gate/m263-e001-v1`
+- upstream proof chain:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+  - `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+  - `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- canonical models:
+  - evidence chain
+    `a002-b003-c003-d003-summary-chain`
+  - failure model
+    `fail-closed-on-bootstrap-completion-evidence-drift`
+- frozen invariants:
+  - emitted registration-descriptor authority remains canonical for bootstrap-visible identities
+  - single-image restart semantics stay deterministic and replay-safe
+  - plain archive links omit bootstrap images while retained single/merged links replay them deterministically
+  - repeated live reset/replay cycles remain idempotence-safe across restart generations
+
+## M263 runnable multi-image bootstrap matrix closeout (E002)
+
+`M263-E002` closes the milestone by binding the `M263-E001` gate to one
+published operator runbook and one stable bootstrap matrix summary.
+
+- contract id
+  `objc3c-runtime-runnable-bootstrap-matrix-closeout/m263-e002-v1`
+- closeout model
+  `e001-gate-plus-published-bootstrap-matrix-runbook`
+- required matrix cases:
+  - `single-image-default`
+  - `single-image-explicit`
+  - `archive-backed-plain`
+  - `archive-backed-single-retained`
+  - `archive-backed-merged-retained`
+- canonical operator script:
+  - `scripts/check_objc3c_bootstrap_matrix.ps1`
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -13878,6 +14173,262 @@ Frozen metadata/runtime anchors:
   - `translation_unit_registration_order_ordinal`
 
 This freeze does not yet land multi-image bootstrap execution or replay.
+
+## M263 duplicate-registration and image-order semantics metadata anchors (B002)
+
+`M263-B002` publishes the live bootstrap duplicate/order semantic bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1`
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- identity/order fields:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+  - `translation_unit_registration_order_ordinal`
+- continuity fields:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+  - `registration_descriptor_identity_source`
+  - `image_root_identity_source`
+- semantic landing fields:
+  - `duplicate_registration_semantics_landed`
+  - `image_order_semantics_landed`
+  - `cross_image_legality_semantics_landed`
+  - `semantic_diagnostics_landed`
+  - `ready_for_lowering_and_runtime`
+
+## M263 bootstrap failure-mode and restart semantics metadata anchors (B003)
+
+`M263-B003` publishes the restart/recovery bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1`
+- upstream contract ids:
+  - `objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+  - `objc3c-runtime-bootstrap-reset-replay/m254-d003-v1`
+- restart/recovery fields:
+  - `failure_mode`
+  - `restart_lifecycle_model`
+  - `replay_order_model`
+  - `image_local_init_reset_model`
+  - `catalog_retention_model`
+  - `unsupported_topology_model`
+- runtime continuity fields:
+  - `translation_unit_identity_model`
+  - `translation_unit_identity_key`
+  - `runtime_state_snapshot_symbol`
+  - `replay_registered_images_symbol`
+  - `reset_replay_state_snapshot_symbol`
+  - `invalid_descriptor_status_code`
+  - `translation_unit_registration_order_ordinal`
+
+## M263 constructor-root and init-array lowering metadata anchors (C001)
+
+`M263-C001` freezes the live lowering bridge at
+`frontend.pipeline.semantic_surface.objc_runtime_bootstrap_lowering_contract`.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-constructor-root-init-array-lowering/m263-c001-v1`
+- upstream contract ids:
+  - `objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+  - `objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1`
+- handoff fields:
+  - `registration_descriptor_frontend_closure_contract_id`
+  - `registration_descriptor_artifact`
+  - `registration_descriptor_handoff_model`
+- emitted lowering fields:
+  - `constructor_root_symbol`
+  - `constructor_init_stub_symbol_prefix`
+  - `registration_table_symbol_prefix`
+  - `image_local_init_state_symbol_prefix`
+  - `registration_entrypoint_symbol`
+  - `global_ctor_list_model`
+  - `registration_table_layout_model`
+  - `image_local_initialization_model`
+  - `constructor_root_emission_state`
+  - `init_stub_emission_state`
+  - `registration_table_emission_state`
+- emitted artifact proof minimums:
+  - `module.runtime-registration-manifest.json`
+  - `module.runtime-registration-descriptor.json`
+  - `module.ll`
+  - `module.obj`
+
+## M263 registration-descriptor and image-root emitted metadata anchors (C002)
+
+`M263-C002` extends the bootstrap metadata surface with live emitted
+registration-descriptor and image-root records.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-registration-descriptor-and-image-root-lowering/m263-c002-v1`
+- emitted logical sections:
+  - `objc3.runtime.registration_descriptor`
+  - `objc3.runtime.image_root`
+- emitted symbol families:
+  - `__objc3_runtime_registration_descriptor_`
+  - `__objc3_runtime_image_root_`
+- identifier continuity:
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+- emitted payload linkage:
+  - registration descriptor points at image root, image descriptor,
+    registration table, linker anchor, and image-local init state
+  - image root points at module name, image descriptor, registration table,
+    and discovery root
+
+## M263 archive/static-link bootstrap replay corpus anchors (C003)
+
+`M263-C003` binds the retained archive/static-link discovery artifacts to live
+bootstrap replay probes.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-archive-static-link-replay-corpus/m263-c003-v1`
+- retained linker/discovery artifacts:
+  - `module.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-linker-options.rsp`
+  - `module.merged.runtime-metadata-discovery.json`
+- continuity keys:
+  - `translation_unit_identity_key`
+  - `registration_descriptor_identifier`
+  - `image_root_identifier`
+- runtime replay linkage:
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+
+## M263 runtime bootstrap table consumption anchors (D001)
+
+`M263-D001` publishes the runtime bootstrap-table consumption freeze over the
+already-live staged registrar bridge.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1`
+- manifest proof fields:
+  - `bootstrap_table_consumption_contract_id`
+  - `bootstrap_table_consumption_model`
+  - `bootstrap_table_deduplication_model`
+  - `bootstrap_table_image_state_publication_model`
+  - `bootstrap_table_stage_registration_table_symbol`
+  - `bootstrap_table_image_walk_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+- published image-state fields:
+  - `last_walked_module_name`
+  - `last_walked_translation_unit_identity_key`
+  - `last_walked_class_descriptor_count`
+  - `last_walked_protocol_descriptor_count`
+  - `last_walked_category_descriptor_count`
+  - `last_walked_property_descriptor_count`
+  - `last_walked_ivar_descriptor_count`
+  - `last_registration_used_staged_table`
+
+## M263 live registration, discovery, and replay anchors (D002)
+
+`M263-D002` publishes the live runtime tracking surface over emitted metadata
+images.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-live-registration-discovery-replay/m263-d002-v1`
+- manifest proof fields:
+  - `bootstrap_live_registration_contract_id`
+  - `bootstrap_live_registration_model`
+  - `bootstrap_live_discovery_tracking_model`
+  - `bootstrap_live_replay_tracking_model`
+  - `bootstrap_live_replay_registered_images_symbol`
+  - `bootstrap_live_reset_replay_state_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+- published replay/discovery fields:
+  - `retained_bootstrap_image_count`
+  - `last_reset_cleared_image_local_init_state_count`
+  - `last_replayed_image_count`
+  - `replay_generation`
+  - `last_replayed_module_name`
+  - `last_replayed_translation_unit_identity_key`
+
+## M263 live restart hardening anchors (D003)
+
+`M263-D003` publishes the runtime-owned proof surface for repeated reset/replay
+cycles.
+
+Metadata/runtime anchors:
+
+- contract id
+  `objc3c-runtime-live-restart-hardening/m263-d003-v1`
+- manifest proof fields:
+  - `bootstrap_live_restart_hardening_contract_id`
+  - `bootstrap_live_idempotence_model`
+  - `bootstrap_live_teardown_model`
+  - `bootstrap_live_restart_evidence_model`
+  - `bootstrap_live_restart_reset_for_testing_symbol`
+  - `bootstrap_live_restart_replay_registered_images_symbol`
+  - `bootstrap_live_restart_reset_replay_state_snapshot_symbol`
+- canonical runtime bridge:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- published hardening fields:
+  - `retained_bootstrap_image_count`
+  - `last_reset_cleared_image_local_init_state_count`
+  - `reset_generation`
+  - `last_replayed_image_count`
+  - `replay_generation`
+  - `last_replay_status`
+  - `last_replayed_translation_unit_identity_key`
+
+## M263 bootstrap completion conformance gate metadata anchors (E001)
+
+`M263-E001` does not emit new runtime metadata families. It freezes the
+metadata-bearing evidence that must already exist before the milestone can be
+called bootstrap-complete for single-image and multi-image retained-link flows.
+
+- contract id
+  `objc3c-runtime-bootstrap-completion-gate/m263-e001-v1`
+- canonical emitted artifact pair:
+  - `module.runtime-registration-descriptor.json`
+  - `module.runtime-registration-manifest.json`
+- single-image and multi-image retained-link bootstrap evidence:
+  - `tmp/reports/m263/M263-B003/bootstrap_failure_restart_semantics_summary.json`
+  - `tmp/reports/m263/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json`
+  - `tmp/reports/m263/M263-D003/live_restart_hardening_summary.json`
+
+## M263 runnable bootstrap matrix metadata anchors (E002)
+
+`M263-E002` does not add new metadata families. It closes the milestone on the
+same emitted descriptor/manifest pair while publishing one operator matrix over
+the already-live startup paths.
+
+- contract id
+  `objc3c-runtime-runnable-bootstrap-matrix-closeout/m263-e002-v1`
+- canonical emitted artifact pair:
+  - `module.runtime-registration-descriptor.json`
+  - `module.runtime-registration-manifest.json`
+- operator matrix summary:
+  - `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---
@@ -14136,6 +14687,41 @@ A serious conformance claim should ship with:
   - [D Table A](#d-3-1) metadata is preserved under separate compilation,
   - runtime contracts for `throws` and `async` behave correctly under optimization,
 - migration tooling notes for large codebases (warning groups, fix-its, staged adoption).
+
+## M264 frontend claim truth packet (implementation note)
+
+Current native `objc3c` work publishes one fail-closed frontend packet for
+claim truthfulness:
+
+- `frontend.pipeline.semantic_surface.objc_runnable_feature_claim_inventory`
+
+The packet must separate:
+
+- runnable native claims
+- source-only recognized claims
+- unsupported fail-closed claims
+
+Until strictness, strict concurrency, effects, async/await, actors, blocks, and
+ARC are live, that packet is the canonical source used to avoid over-claiming
+Objective-C 3 conformance.
+
+## M264 frontend selection truth surface (implementation note)
+
+The native toolchain also publishes one explicit truth surface for what the
+frontend currently accepts and advertises:
+
+- `frontend.feature_claim_truth_surface_contract_id`
+- `frontend.pipeline.semantic_surface.objc_feature_claim_and_strictness_truth_surface`
+
+That surface must keep the current state explicit:
+
+- language-version / compatibility / migration-assist selection are live
+- strictness / strict-concurrency selection remain unsupported
+- feature-macro claim publication remains unsupported
+
+This prevents the driver/frontend layer from implying Strict, Strict
+Concurrency, or feature-macro conformance before those surfaces are actually
+implemented end to end.
 <!-- END CONFORMANCE_PROFILE_CHECKLIST.md -->
 
 ---
