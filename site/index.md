@@ -7024,6 +7024,26 @@ deterministic source-model completion step:
 - next handoff
   - `M257-B001`
 
+## M257 property and ivar executable semantics (B001)
+
+`M257-B001` freezes the runtime-meaningful semantic rules above the completed
+`M257-A002` source model:
+
+- contract id
+  `objc3c-executable-property-ivar-semantics/m257-b001-v1`
+- synthesis semantics model
+  `non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands`
+- accessor semantics model
+  `readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission`
+- storage semantics model
+  `interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation`
+- compatibility semantics model
+  `protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols`
+- failure model
+  `fail-closed-on-property-runtime-semantic-boundary-drift-before-accessor-body-or-storage-realization`
+- next handoff
+  - `M257-B002`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
@@ -14570,6 +14590,27 @@ descriptor-shape contracts.
   - `runtime_metadata_source_records.ivars[*].executable_ivar_layout_symbol`
 - canonical live evidence:
   - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
+
+## M257 property/ivar executable semantics metadata anchors (B001)
+
+`M257-B001` freezes the metadata-adjacent semantic contract that later
+property/ivar runtime lowering must preserve.
+
+- contract id
+  `objc3c-executable-property-ivar-semantics/m257-b001-v1`
+- canonical metadata/source anchors:
+  - `kObjc3ExecutablePropertyIvarSemanticsContractId`
+  - `kObjc3ExecutablePropertySynthesisSemanticsModel`
+  - `kObjc3ExecutablePropertyAccessorSemanticsModel`
+  - `kObjc3ExecutablePropertyStorageSemanticsModel`
+  - `kObjc3ExecutablePropertyCompatibilitySemanticsModel`
+  - `Objc3PropertyInfo.property_attribute_profile`
+  - `Objc3PropertyInfo.accessor_ownership_profile`
+  - `Objc3SemanticPropertyTypeMetadata.executable_ivar_layout_symbol`
+  - `runtime_metadata_source_records.properties[*].property_attribute_profile`
+  - `runtime_metadata_source_records.ivars[*].executable_ivar_layout_symbol`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-B001/property_ivar_executable_semantics_contract_summary.json`
 
 ## M263 registration descriptor and image-root metadata anchors (A001)
 

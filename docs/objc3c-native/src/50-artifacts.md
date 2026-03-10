@@ -363,6 +363,26 @@ synthesized bindings, and ivar layout publication.
 - next handoff
   - `M257-B001`
 
+## Property and ivar executable semantics (M257-B001)
+
+`M257-B001` freezes the runtime-meaningful semantic rules above the completed
+`M257-A002` source model and below live accessor-body or storage realization.
+
+- contract id
+  `objc3c-executable-property-ivar-semantics/m257-b001-v1`
+- synthesis semantics model
+  `non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands`
+- accessor semantics model
+  `readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission`
+- storage semantics model
+  `interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation`
+- compatibility semantics model
+  `protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols`
+- evidence path
+  - `tmp/reports/m257/M257-B001/property_ivar_executable_semantics_contract_summary.json`
+- next handoff
+  - `M257-B002`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

@@ -7221,6 +7221,9 @@ static const Objc3SemanticPropertyTypeMetadata *FindPropertyInInterfaceMetadata(
 
 static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropertyTypeMetadata &lhs,
                                                       const Objc3SemanticPropertyTypeMetadata &rhs) {
+  // M257-B001 property-ivar executable semantics anchor:
+  // runtime-meaningful property compatibility preserves declaration-level attribute,
+  // accessor, and ownership semantics while excluding storage-local layout identities.
   return lhs.type == rhs.type &&
          lhs.is_vector == rhs.is_vector &&
          lhs.vector_base_spelling == rhs.vector_base_spelling &&

@@ -7195,6 +7195,27 @@ descriptor-shape contracts.
 - canonical live evidence:
   - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
 
+## M257 property/ivar executable semantics metadata anchors (B001)
+
+`M257-B001` freezes the metadata-adjacent semantic contract that later
+property/ivar runtime lowering must preserve.
+
+- contract id
+  `objc3c-executable-property-ivar-semantics/m257-b001-v1`
+- canonical metadata/source anchors:
+  - `kObjc3ExecutablePropertyIvarSemanticsContractId`
+  - `kObjc3ExecutablePropertySynthesisSemanticsModel`
+  - `kObjc3ExecutablePropertyAccessorSemanticsModel`
+  - `kObjc3ExecutablePropertyStorageSemanticsModel`
+  - `kObjc3ExecutablePropertyCompatibilitySemanticsModel`
+  - `Objc3PropertyInfo.property_attribute_profile`
+  - `Objc3PropertyInfo.accessor_ownership_profile`
+  - `Objc3SemanticPropertyTypeMetadata.executable_ivar_layout_symbol`
+  - `runtime_metadata_source_records.properties[*].property_attribute_profile`
+  - `runtime_metadata_source_records.ivars[*].executable_ivar_layout_symbol`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-B001/property_ivar_executable_semantics_contract_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

@@ -167,6 +167,9 @@ class Objc3IREmitter {
       // M257-A002 property-ivar source-model completion anchor:
       // publish the completed property attribute/accessor ownership/layout
       // handoff without reopening the legacy descriptor shapes from M253-C004.
+      // M257-B001 property-ivar executable semantics anchor:
+      // runtime-meaningful synthesis/accessor/storage semantics stay frozen on
+      // this replay marker until accessor bodies and storage realization land.
       out << "; property_ivar_source_model_completion = "
           << frontend_metadata_.executable_property_ivar_source_model_replay_key
           << "\n";

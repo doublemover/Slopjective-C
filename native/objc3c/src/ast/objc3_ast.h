@@ -352,6 +352,16 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
     "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles";
+inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
+    "objc3c-executable-property-ivar-semantics/m257-b001-v1";
+inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =
+    "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands";
+inline constexpr const char *kObjc3ExecutablePropertyAccessorSemanticsModel =
+    "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission";
+inline constexpr const char *kObjc3ExecutablePropertyStorageSemanticsModel =
+    "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation";
+inline constexpr const char *kObjc3ExecutablePropertyCompatibilitySemanticsModel =
+    "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols";
 inline constexpr const char *kObjc3RuntimeMetadataMethodAstAnchor =
     "Objc3MethodDecl";
 inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =

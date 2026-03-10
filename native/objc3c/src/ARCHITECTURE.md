@@ -9134,6 +9134,26 @@ protocols, and categories:
   - `check:objc3c:m257-a002-ivar-layout-and-property-attribute-source-model-completion`
   - `check:objc3c:m257-a002-lane-a-readiness`
 
+## M257 property and ivar executable semantics (B001)
+
+`M257-B001` freezes the runtime-meaningful semantic rules above the completed `M257-A002` source model:
+
+- AST owns the canonical semantic model constants for:
+  - deterministic implicit ivar/synthesized-binding ownership
+  - declaration-level accessor profile resolution
+  - storage-local layout publication
+  - protocol/inheritance compatibility excluding storage-local layout identities
+- sema owns the canonical compatibility boundary:
+  - declaration-level attribute/accessor/ownership profiles participate in compatibility
+  - storage-local layout symbols remain out-of-band for protocol compatibility
+- IR republishes the already-live property/ivar source-model replay marker without widening behavior
+- `M257-B002` is the next issue after this freeze closes
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_property_and_ivar_executable_semantics_contract_and_architecture_freeze_b001_expectations.md`
+  - `spec/planning/compiler/m257/m257_b001_property_and_ivar_executable_semantics_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m257-b001-property-and-ivar-executable-semantics`
+  - `check:objc3c:m257-b001-lane-b-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap
