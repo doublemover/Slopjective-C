@@ -883,6 +883,9 @@ struct Objc3ResolvedMessageSendMethod {
 static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context);
+static Expr::DispatchSurfaceKind ResolveNormalizedMessageSendDispatchSurfaceKind(
+    const Expr &expr,
+    const Objc3MessageSendResolutionContext &context);
 
 struct ProtocolCompositionParseResult {
   bool has_protocol_composition = false;
@@ -2950,6 +2953,25 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
       ResolveConcreteMessageSendMethod(*expr, message_send_context);
   if (resolution.status ==
       Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector) {
+    const Expr::DispatchSurfaceKind dispatch_kind =
+        ResolveNormalizedMessageSendDispatchSurfaceKind(*expr,
+                                                       message_send_context);
+    const bool builtin_runtime_alloc_new =
+        expr->args.empty() &&
+        dispatch_kind == Expr::DispatchSurfaceKind::Class &&
+        (selector == "alloc" || selector == "new");
+    const bool builtin_runtime_init =
+        expr->args.empty() &&
+        dispatch_kind == Expr::DispatchSurfaceKind::Instance &&
+        selector == "init";
+    if (builtin_runtime_alloc_new || builtin_runtime_init) {
+      // M256-D004 canonical runnable-object-sample anchor: concrete class
+      // receivers admit runtime-owned builtin alloc/new support, and concrete
+      // instance-self receivers admit builtin init support, so canonical
+      // runnable object samples can compile without placeholder source bodies
+      // for those selectors.
+      return MakeScalarSemanticType(ValueType::ObjCId);
+    }
     const unsigned diag_line =
         expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column =
@@ -6790,7 +6812,25 @@ static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
       surface, owner_name, selector, is_class_method);
 
   if (interface_method == nullptr && implementation_method == nullptr) {
-    resolution.status = Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector;
+    bool missing_base = false;
+    bool cycle_detected = false;
+    const Objc3MethodInfo *super_method = FindSurfaceMethodInSuperChain(
+        surface, owner_name, selector, is_class_method, missing_base,
+        cycle_detected);
+    if (cycle_detected || missing_base) {
+      resolution.status =
+          Objc3ResolvedMessageSendMethod::Status::AmbiguousConcreteSelector;
+      resolution.missing_base = missing_base;
+      resolution.cycle_detected = cycle_detected;
+      return resolution;
+    }
+    if (super_method != nullptr) {
+      resolution.status = Objc3ResolvedMessageSendMethod::Status::Resolved;
+      resolution.method = super_method;
+      return resolution;
+    }
+    resolution.status =
+        Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector;
     return resolution;
   }
   if (interface_method != nullptr && implementation_method != nullptr) {
@@ -6809,6 +6849,40 @@ static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
   return resolution;
 }
 
+static Expr::DispatchSurfaceKind ResolveNormalizedMessageSendDispatchSurfaceKind(
+    const Expr &expr,
+    const Objc3MessageSendResolutionContext &context) {
+  Expr::DispatchSurfaceKind dispatch_kind = expr.dispatch_surface_kind;
+  if (expr.dispatch_surface_is_normalized) {
+    return dispatch_kind;
+  }
+  if (expr.receiver == nullptr) {
+    return dispatch_kind;
+  }
+  if (expr.receiver->kind == Expr::Kind::NilLiteral) {
+    return Expr::DispatchSurfaceKind::Instance;
+  }
+  if (expr.receiver->kind != Expr::Kind::Identifier) {
+    return Expr::DispatchSurfaceKind::Dynamic;
+  }
+  if (context.inside_method && expr.receiver->ident == "super") {
+    return Expr::DispatchSurfaceKind::Super;
+  }
+  if ((context.surface != nullptr &&
+       context.surface->interfaces.find(expr.receiver->ident) !=
+           context.surface->interfaces.end()) ||
+      (context.surface != nullptr &&
+       context.surface->implementations.find(expr.receiver->ident) !=
+           context.surface->implementations.end())) {
+    return Expr::DispatchSurfaceKind::Class;
+  }
+  if (context.inside_method && expr.receiver->ident == "self") {
+    return context.is_class_method ? Expr::DispatchSurfaceKind::Class
+                                   : Expr::DispatchSurfaceKind::Instance;
+  }
+  return Expr::DispatchSurfaceKind::Instance;
+}
+
 static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context) {
@@ -6817,27 +6891,8 @@ static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
     return resolution;
   }
 
-  Expr::DispatchSurfaceKind dispatch_kind = expr.dispatch_surface_kind;
-  if (!expr.dispatch_surface_is_normalized) {
-    if (expr.receiver->kind == Expr::Kind::NilLiteral) {
-      dispatch_kind = Expr::DispatchSurfaceKind::Instance;
-    } else if (expr.receiver->kind != Expr::Kind::Identifier) {
-      dispatch_kind = Expr::DispatchSurfaceKind::Dynamic;
-    } else if (context.inside_method && expr.receiver->ident == "super") {
-      dispatch_kind = Expr::DispatchSurfaceKind::Super;
-    } else if (context.surface->interfaces.find(expr.receiver->ident) !=
-                   context.surface->interfaces.end() ||
-               context.surface->implementations.find(expr.receiver->ident) !=
-                   context.surface->implementations.end()) {
-      dispatch_kind = Expr::DispatchSurfaceKind::Class;
-    } else if (context.inside_method && expr.receiver->ident == "self") {
-      dispatch_kind = context.is_class_method
-                          ? Expr::DispatchSurfaceKind::Class
-                          : Expr::DispatchSurfaceKind::Instance;
-    } else {
-      dispatch_kind = Expr::DispatchSurfaceKind::Instance;
-    }
-  }
+  const Expr::DispatchSurfaceKind dispatch_kind =
+      ResolveNormalizedMessageSendDispatchSurfaceKind(expr, context);
 
   switch (dispatch_kind) {
     case Expr::DispatchSurfaceKind::Super: {
@@ -11452,6 +11507,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // the adopted-protocol closure and deterministic category merge surface that
   // runtime queries now consume from emitted refs rather than rebuilding from
   // source or diagnostics.
+  // M256-D004 canonical-runnable-object-sample anchor: sema additionally owns
+  // the fail-closed admission boundary for runtime-built alloc/new/init on
+  // concrete object samples, including inherited class-method lookup through
+  // the canonical superclass chain.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

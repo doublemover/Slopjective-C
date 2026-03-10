@@ -203,6 +203,10 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 // category attachment and protocol conformance queries also remain on this
 // private testing surface so live graph proofs stay observable without
 // expanding the public runtime ABI.
+// M256-D004 canonical-runnable-object-sample anchor: canonical object-sample
+// proofs likewise stay on these same realized-graph and method-cache snapshots
+// so builtin alloc/new/init ownership can be observed without widening the
+// public ABI.
 int objc3_runtime_copy_realized_class_graph_state_for_testing(
     objc3_runtime_realized_class_graph_state_snapshot *snapshot);
 int objc3_runtime_copy_realized_class_entry_for_testing(

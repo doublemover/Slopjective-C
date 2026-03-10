@@ -650,6 +650,25 @@ std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary() {
+  std::ostringstream out;
+  // M256-D004 canonical-runnable-object-sample anchor: runtime-owned builtin
+  // alloc/new/init resolution now closes the smallest truthful executable
+  // object sample while metadata-rich object-model behavior stays proven
+  // through paired library/probe evidence instead of pretending the runtime
+  // export gate is already open for every executable sample shape.
+  out << "contract="
+      << kObjc3RuntimeCanonicalRunnableObjectSampleSupportContractId
+      << ";execution_model="
+      << kObjc3RuntimeCanonicalRunnableObjectExecutionModel
+      << ";probe_split_model="
+      << kObjc3RuntimeCanonicalRunnableObjectProbeSplitModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeCanonicalRunnableObjectFailClosedModel
+      << ";non_goals=no-property-storage-no-ivar-layout-no-metadata-heavy-executable-export-bypass";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

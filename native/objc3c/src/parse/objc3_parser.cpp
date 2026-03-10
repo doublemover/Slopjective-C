@@ -4836,6 +4836,10 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // direct class/category adopted-protocol spellings stable so runtime queries
   // can consume emitted protocol refs instead of reconstructing conformance
   // from diagnostics or manifests.
+  // M256-D004 canonical-runnable-object-sample anchor: parser also preserves
+  // nested bracketed object-sample sends like [[Widget alloc] init] without
+  // rewriting receiver shape, so later sema/runtime stages can admit the
+  // runtime-owned builtin alloc/new/init boundary truthfully.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

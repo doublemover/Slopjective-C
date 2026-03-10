@@ -1,0 +1,47 @@
+module canonicalRunnableObjectRuntimeLibrary;
+
+@protocol Worker
+@required
+- (i32) inheritedValue;
++ (i32) classValue;
+@end
+
+@protocol Tracer <Worker>
+@required
+- (i32) tracedValue;
+@end
+
+@interface Base
+- (i32) inheritedValue;
++ (i32) shared;
+@end
+
+@implementation Base
+- (i32) inheritedValue {
+  return 7;
+}
+
++ (i32) shared {
+  return 19;
+}
+@end
+
+@interface Widget : Base <Worker>
++ (i32) classValue;
+@end
+
+@implementation Widget
++ (i32) classValue {
+  return 11;
+}
+@end
+
+@interface Widget (Tracing) <Tracer>
+- (i32) tracedValue;
+@end
+
+@implementation Widget (Tracing)
+- (i32) tracedValue {
+  return 13;
+}
+@end

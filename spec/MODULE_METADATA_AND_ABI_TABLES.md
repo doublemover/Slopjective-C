@@ -7094,6 +7094,24 @@ realized class graph and attached category surfaces.
   - `tests/tooling/runtime/m256_d003_category_attachment_protocol_runtime_probe.cpp`
   - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
 
+## M256 canonical runnable class and object sample anchors (D004)
+
+`M256-D004` publishes the truthful executable object-sample boundary above the
+existing realized graph and category/protocol runtime anchors.
+
+- contract id `objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
+- emitted IR summary path
+  `; runtime_canonical_runnable_object_sample_support = contract=objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
+- canonical runtime models:
+  - `canonical-object-samples-use-runtime-owned-alloc-new-init-and-realized-class-dispatch`
+  - `metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits`
+  - `metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

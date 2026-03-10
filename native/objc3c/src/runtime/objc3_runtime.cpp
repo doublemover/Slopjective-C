@@ -59,6 +59,13 @@ enum class DispatchFamily {
   Class = 2,
 };
 
+enum class RuntimeBuiltinKind {
+  None = 0,
+  Alloc = 1,
+  Init = 2,
+  New = 3,
+};
+
 struct MethodCacheKey {
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
@@ -88,6 +95,7 @@ struct MethodCacheEntry {
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
+  RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
 };
 
 struct SlowPathResolution {
@@ -103,6 +111,7 @@ struct SlowPathResolution {
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
+  RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
 };
 
 struct EmittedMethodListRef {
@@ -752,6 +761,43 @@ bool IsSupportedRuntimeI32ReturnType(const char *return_type_name) {
   return type_name != "void" && type_name != "bool";
 }
 
+bool TryResolveRuntimeBuiltinObjectSampleMethod(
+    const std::string &class_name, DispatchFamily family,
+    const char *selector_spelling, SlowPathResolution &resolution) {
+  if (class_name.empty() || selector_spelling == nullptr ||
+      selector_spelling[0] == '\0') {
+    return false;
+  }
+  const std::string selector = selector_spelling;
+  if (family == DispatchFamily::Class &&
+      (selector == "alloc" || selector == "new")) {
+    resolution.resolved = true;
+    resolution.dispatch_family_is_class = true;
+    resolution.class_name = class_name;
+    resolution.selector_storage = selector;
+    resolution.owner_identity =
+        "runtime-builtin:" + class_name + "::class_method:" + selector;
+    resolution.parameter_count = 0;
+    resolution.implementation = nullptr;
+    resolution.builtin_kind =
+        selector == "alloc" ? RuntimeBuiltinKind::Alloc : RuntimeBuiltinKind::New;
+    return true;
+  }
+  if (family == DispatchFamily::Instance && selector == "init") {
+    resolution.resolved = true;
+    resolution.dispatch_family_is_class = false;
+    resolution.class_name = class_name;
+    resolution.selector_storage = selector;
+    resolution.owner_identity =
+        "runtime-builtin:" + class_name + "::instance_method:init";
+    resolution.parameter_count = 0;
+    resolution.implementation = nullptr;
+    resolution.builtin_kind = RuntimeBuiltinKind::Init;
+    return true;
+  }
+  return false;
+}
+
 bool DecodeReceiverIdentity(int receiver,
                             std::uint64_t &base_identity,
                             DispatchFamily &family,
@@ -1148,6 +1194,14 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
   }
   resolution.category_probe_count = category_probe_count;
   resolution.protocol_probe_count = protocol_probe_count;
+  if (!resolution.resolved && !resolution.ambiguous &&
+      TryResolveRuntimeBuiltinObjectSampleMethod(resolved_class_name, family,
+                                                selector_spelling, resolution)) {
+    resolution.normalized_receiver_identity = normalized_receiver_identity;
+    resolution.selector_stable_id = selector_stable_id;
+    resolution.category_probe_count = category_probe_count;
+    resolution.protocol_probe_count = protocol_probe_count;
+  }
   return resolution;
 }
 
@@ -1170,6 +1224,20 @@ int InvokeResolvedMethod(const void *implementation, std::uint64_t parameter_cou
     default:
       return 0;
   }
+}
+
+int InvokeRuntimeBuiltinMethod(RuntimeBuiltinKind builtin_kind, int receiver,
+                               std::uint64_t base_identity) {
+  switch (builtin_kind) {
+    case RuntimeBuiltinKind::Alloc:
+    case RuntimeBuiltinKind::New:
+      return static_cast<int>(base_identity + 1u);
+    case RuntimeBuiltinKind::Init:
+      return receiver;
+    case RuntimeBuiltinKind::None:
+      return 0;
+  }
+  return 0;
 }
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
@@ -2283,7 +2351,9 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   RuntimeState &state = State();
   const void *resolved_implementation = nullptr;
   std::uint64_t resolved_parameter_count = 0;
+  RuntimeBuiltinKind resolved_builtin_kind = RuntimeBuiltinKind::None;
   bool resolved_live_method = false;
+  std::uint64_t receiver_base_identity = 0;
   {
     std::lock_guard<std::mutex> lock(state.mutex);
     const objc3_runtime_selector_handle *selector_handle =
@@ -2306,6 +2376,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
       DispatchFamily family = DispatchFamily::Invalid;
       if (DecodeReceiverIdentity(receiver, base_identity, family,
                                  normalized_receiver_identity)) {
+        receiver_base_identity = base_identity;
         state.last_dispatch_normalized_receiver_identity =
             normalized_receiver_identity;
         const MethodCacheKey cache_key{normalized_receiver_identity,
@@ -2323,6 +2394,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.last_resolved_owner_identity = entry.owner_identity;
           if (entry.resolved) {
             resolved_live_method = true;
+            resolved_builtin_kind = entry.builtin_kind;
             resolved_implementation = entry.implementation;
             resolved_parameter_count = entry.parameter_count;
             ++state.live_dispatch_count;
@@ -2349,6 +2421,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           cache_entry.category_probe_count = resolution.category_probe_count;
           cache_entry.protocol_probe_count = resolution.protocol_probe_count;
           cache_entry.implementation = resolution.implementation;
+          cache_entry.builtin_kind = resolution.builtin_kind;
           state.method_cache.emplace(cache_key, std::move(cache_entry));
           state.last_dispatch_resolved_live_method = resolution.resolved;
           state.last_dispatch_fell_back = !resolution.resolved;
@@ -2358,6 +2431,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.last_resolved_owner_identity = resolution.owner_identity;
           if (resolution.resolved) {
             resolved_live_method = true;
+            resolved_builtin_kind = resolution.builtin_kind;
             resolved_implementation = resolution.implementation;
             resolved_parameter_count = resolution.parameter_count;
             ++state.live_dispatch_count;
@@ -2380,6 +2454,10 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   if (resolved_live_method && resolved_implementation != nullptr) {
     return InvokeResolvedMethod(resolved_implementation, resolved_parameter_count,
                                 a0, a1, a2, a3);
+  }
+  if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
+    return InvokeRuntimeBuiltinMethod(resolved_builtin_kind, receiver,
+                                      receiver_base_identity);
   }
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }

@@ -5379,6 +5379,20 @@ class Objc3IREmitter {
           << ";class_protocol_ref_count=" << class_protocol_ref_count
           << ";category_protocol_ref_count=" << category_protocol_ref_count
           << "\n";
+      // M256-D004 canonical-runnable-object-sample anchor: emitted
+      // realization records now publish the truthful object-sample execution
+      // boundary above the D003 realized graph. The builtin selector count is
+      // fixed to alloc/new/init, while metadata-rich category/protocol shapes
+      // remain observable through the paired library/probe proof path.
+      out << "; runtime_canonical_runnable_object_sample_support = "
+          << Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary()
+          << ";class_bundle_count="
+          << frontend_metadata_.runtime_metadata_class_metaclass_bundles_lexicographic
+                 .size()
+          << ";attached_category_candidate_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                 .size()
+          << ";builtin_object_sample_selector_count=3\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "

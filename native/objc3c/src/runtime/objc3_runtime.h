@@ -60,6 +60,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // attachment and runtime protocol-conformance queries must continue to consume
 // this ABI plus private testing snapshots rather than widening the public
 // runtime surface.
+// M256-D004 canonical-runnable-object-sample anchor: runtime-owned builtin
+// alloc/new/init resolution and inherited class dispatch for canonical object
+// samples also stay behind this same ABI rather than adding dedicated public
+// allocation or sample-only helper entrypoints.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

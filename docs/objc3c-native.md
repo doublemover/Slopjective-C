@@ -6605,6 +6605,29 @@ protocol conformance runtime queries.
 - evidence path
   - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
 
+## Canonical runnable class and object sample support (M256-D004)
+
+`M256-D004` adds the first truthful executable object sample above the realized
+graph while keeping metadata-rich category/protocol cases on a dedicated
+library-plus-probe path.
+
+- contract id
+  `objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
+- emitted IR summary
+  `; runtime_canonical_runnable_object_sample_support = ...`
+- execution model
+  `canonical-object-samples-use-runtime-owned-alloc-new-init-and-realized-class-dispatch`
+- probe split model
+  `metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits`
+- fail-closed model
+  `metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open`
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
+- evidence path
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

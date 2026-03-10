@@ -465,6 +465,14 @@ inline constexpr const char *kObjc3RuntimeProtocolConformanceQueryModel =
     "runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures";
 inline constexpr const char *kObjc3RuntimeAttachmentConformanceFailClosedModel =
     "invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries";
+inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectSampleSupportContractId =
+    "objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1";
+inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectExecutionModel =
+    "canonical-object-samples-use-runtime-owned-alloc-new-init-and-realized-class-dispatch";
+inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectProbeSplitModel =
+    "metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits";
+inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectFailClosedModel =
+    "metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1397,6 +1405,7 @@ std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
 std::string Objc3RuntimeMetaclassGraphRootClassSummary();
 std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary();
+std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

@@ -212,3 +212,19 @@ attachment and protocol conformance queries:
   `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
 - proof surface now includes:
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+
+`M256-D004` closes the smallest truthful executable object sample above that
+same realized graph:
+
+- contract id `objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
+- execution model
+  `canonical-object-samples-use-runtime-owned-alloc-new-init-and-realized-class-dispatch`
+- probe split model
+  `metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits`
+- fail-closed model
+  `metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open`
+- proof surface now includes:
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`

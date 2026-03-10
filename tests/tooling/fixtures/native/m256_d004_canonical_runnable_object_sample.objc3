@@ -1,0 +1,31 @@
+module canonicalRunnableObjectSample;
+
+@interface Base
++ (i32) shared;
+@end
+
+@implementation Base
++ (i32) shared {
+  return 19;
+}
+@end
+
+@interface Widget : Base
+- (i32) value;
++ (i32) classValue;
+@end
+
+@implementation Widget
+- (i32) value {
+  return 7;
+}
+
++ (i32) classValue {
+  return 11;
+}
+@end
+
+fn main() -> i32 {
+  let widget = [[Widget alloc] init];
+  return [widget value] + [Widget shared] + [Widget classValue];
+}

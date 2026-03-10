@@ -298,3 +298,16 @@ queries above that same realized-graph surface:
   `tests/tooling/fixtures/native/m256_d003_category_attachment_protocol_runtime_library.objc3`
 - additional proof surface:
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+
+`M256-D004` adds the canonical runnable object sample split above the same
+runtime-owned realized graph:
+
+- contract id `objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
+- executable sample:
+  `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+- metadata-rich library:
+  `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_runtime_library.objc3`
+- probe:
+  `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
+- additional proof surface:
+  - `objc3_runtime_copy_method_cache_entry_for_testing`

@@ -9034,6 +9034,23 @@ query behavior:
   - `check:objc3c:m256-d003-category-attachment-protocol-conformance-runtime-checks`
   - `check:objc3c:m256-d003-lane-d-readiness`
 
+## M256 canonical runnable class and object sample support (D004)
+
+`M256-D004` turns the D003 runtime graph into the first truthful executable
+object-sample surface:
+
+- runtime-owned builtin `alloc` / `new` / `init` resolution now closes the
+  smallest canonical object sample without introducing public sample-only APIs
+- inherited class-method dispatch remains resolved through the realized
+  superclass chain rather than ad hoc source reconstruction
+- metadata-rich category/protocol behavior remains proven through a dedicated
+  library-plus-probe split until the wider runtime export gate is implemented
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_canonical_runnable_class_and_object_sample_support_core_feature_expansion_d004_expectations.md`
+  - `spec/planning/compiler/m256/m256_d004_canonical_runnable_class_and_object_sample_support_core_feature_expansion_packet.md`
+  - `check:objc3c:m256-d004-canonical-runnable-class-and-object-sample-support`
+  - `check:objc3c:m256-d004-lane-d-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap
