@@ -9365,3 +9365,22 @@ artifacts and the live bootstrap replay runtime:
   - `spec/planning/compiler/m263/m263_c003_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion_packet.md`
   - `check:objc3c:m263-c003-archive-static-link-bootstrap-replay-corpus`
   - `check:objc3c:m263-c003-lane-c-readiness`
+
+## M257 synthesized accessor and property metadata lowering (C003)
+
+`M257-C003` is the first lane-C step where property lowering becomes executable instead of descriptor-only.
+
+- emitted IR now publishes `!objc3.objc_executable_synthesized_accessor_property_lowering`
+- implementation-owned property bundles synthesize missing effective instance getters/setters into emitted method-list entries
+- synthesized property state is currently backed by deterministic emitted storage globals anchored by `@objc3_property_storage_...`
+- widened property descriptor payloads now retain:
+  - effective getter/setter selectors
+  - synthesized binding symbol
+  - ivar layout symbol
+  - getter/setter implementation pointers
+  - slot / size / alignment facts
+- canonical issue assets:
+  - `docs/contracts/m257_synthesized_accessor_and_property_metadata_lowering_core_feature_implementation_c003_expectations.md`
+  - `spec/planning/compiler/m257/m257_c003_synthesized_accessor_and_property_metadata_lowering_core_feature_implementation_packet.md`
+  - `check:objc3c:m257-c003-synthesized-accessor-and-property-metadata-lowering`
+  - `check:objc3c:m257-c003-lane-c-readiness`

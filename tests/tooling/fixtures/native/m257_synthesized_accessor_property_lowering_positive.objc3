@@ -1,0 +1,13 @@
+module synthesizedAccessorPropertyLowering;
+
+@interface Widget
+@property (assign) i32 count;
+@property (assign) bool enabled;
+@property (strong) id value;
+@end
+
+@implementation Widget
+@property (assign) i32 count;
+@property (assign) bool enabled;
+@property (strong) id value;
+@end

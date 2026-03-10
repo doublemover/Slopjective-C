@@ -12305,6 +12305,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_synthesized_binding_symbol;
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
+      // M257-C003 synthesized accessor/property lowering anchor: sema remains
+      // the only authority for effective accessor selectors and synthesized
+      // binding identities that lane-C may turn into executable bodies.
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

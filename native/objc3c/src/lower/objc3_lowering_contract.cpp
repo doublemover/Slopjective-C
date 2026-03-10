@@ -598,6 +598,26 @@ std::string Objc3ExecutableIvarLayoutEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
+  std::ostringstream out;
+  // M257-C003 synthesized accessor/property lowering anchor: lane-C promotes
+  // sema-approved effective property accessors into executable method entries
+  // and deterministic storage globals without reopening true runtime instance
+  // allocation or reflective property registration.
+  out << "contract="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
+      << ";source_model="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel
+      << ";storage_model="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel
+      << ";property_descriptor_model="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
+      << ";fail_closed_model="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
+      << ";non_goals=no-runtime-instance-allocation-no-runtime-property-registration";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

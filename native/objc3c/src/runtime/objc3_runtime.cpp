@@ -66,6 +66,13 @@ enum class RuntimeBuiltinKind {
   New = 3,
 };
 
+enum class RuntimeMethodReturnKind {
+  Unsupported = 0,
+  I32Like = 1,
+  Bool = 2,
+  Void = 3,
+};
+
 struct MethodCacheKey {
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
@@ -92,6 +99,7 @@ struct MethodCacheEntry {
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
   std::uint64_t parameter_count = 0;
+  RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
@@ -108,6 +116,7 @@ struct SlowPathResolution {
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
   std::uint64_t parameter_count = 0;
+  RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
@@ -295,7 +304,7 @@ RuntimeState &State() {
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
-bool IsSupportedRuntimeI32ReturnType(const char *return_type_name);
+RuntimeMethodReturnKind ClassifyRuntimeReturnType(const char *return_type_name);
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
 
@@ -409,6 +418,8 @@ bool TryResolveMethodFromMethodListRefUnlocked(
   const EmittedMethodListEntry *entries = MethodListEntries(header);
   for (std::uint64_t index = 0; index < header->count; ++index) {
     const EmittedMethodListEntry &entry = entries[index];
+    const RuntimeMethodReturnKind entry_return_kind =
+        ClassifyRuntimeReturnType(entry.return_type_name);
     if (entry.selector == nullptr || entry.owner_identity == nullptr ||
         entry.return_type_name == nullptr) {
       return false;
@@ -417,13 +428,14 @@ bool TryResolveMethodFromMethodListRefUnlocked(
                                             selector_stable_id,
                                             selector_spelling) ||
         entry.has_body == 0 || entry.implementation == nullptr ||
-        !IsSupportedRuntimeI32ReturnType(entry.return_type_name) ||
+        entry_return_kind == RuntimeMethodReturnKind::Unsupported ||
         entry.parameter_count > 4) {
       continue;
     }
     if (resolution.resolved &&
         (resolution.implementation != entry.implementation ||
          resolution.parameter_count != entry.parameter_count ||
+         resolution.return_kind != entry_return_kind ||
          resolution.owner_identity != entry.owner_identity ||
          resolution.class_name !=
              (resolved_class_name != nullptr ? resolved_class_name : ""))) {
@@ -439,6 +451,7 @@ bool TryResolveMethodFromMethodListRefUnlocked(
     resolution.normalized_receiver_identity = normalized_receiver_identity;
     resolution.selector_stable_id = selector_stable_id;
     resolution.parameter_count = entry.parameter_count;
+    resolution.return_kind = entry_return_kind;
     resolution.implementation = entry.implementation;
   }
   return true;
@@ -753,12 +766,21 @@ bool IsImplementationOwnerIdentity(const char *owner_identity) {
   return std::string(owner_identity).rfind(kImplementationPrefix, 0) == 0;
 }
 
-bool IsSupportedRuntimeI32ReturnType(const char *return_type_name) {
+RuntimeMethodReturnKind ClassifyRuntimeReturnType(const char *return_type_name) {
   if (return_type_name == nullptr) {
-    return false;
+    return RuntimeMethodReturnKind::Unsupported;
   }
   const std::string type_name = return_type_name;
-  return type_name != "void" && type_name != "bool";
+  if (type_name == "void") {
+    return RuntimeMethodReturnKind::Void;
+  }
+  if (type_name == "bool") {
+    return RuntimeMethodReturnKind::Bool;
+  }
+  if (type_name.empty()) {
+    return RuntimeMethodReturnKind::Unsupported;
+  }
+  return RuntimeMethodReturnKind::I32Like;
 }
 
 bool TryResolveRuntimeBuiltinObjectSampleMethod(
@@ -1205,25 +1227,89 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
   return resolution;
 }
 
-int InvokeResolvedMethod(const void *implementation, std::uint64_t parameter_count,
-                         int a0, int a1, int a2, int a3) {
-  switch (parameter_count) {
-    case 0:
-      return reinterpret_cast<int (*)()>(const_cast<void *>(implementation))();
-    case 1:
-      return reinterpret_cast<int (*)(int)>(const_cast<void *>(implementation))(a0);
-    case 2:
-      return reinterpret_cast<int (*)(int, int)>(
-          const_cast<void *>(implementation))(a0, a1);
-    case 3:
-      return reinterpret_cast<int (*)(int, int, int)>(
-          const_cast<void *>(implementation))(a0, a1, a2);
-    case 4:
-      return reinterpret_cast<int (*)(int, int, int, int)>(
-          const_cast<void *>(implementation))(a0, a1, a2, a3);
-    default:
+int InvokeResolvedMethod(const void *implementation,
+                         RuntimeMethodReturnKind return_kind,
+                         std::uint64_t parameter_count, int a0, int a1, int a2,
+                         int a3) {
+  switch (return_kind) {
+    case RuntimeMethodReturnKind::I32Like:
+      switch (parameter_count) {
+        case 0:
+          return reinterpret_cast<int (*)()>(
+              const_cast<void *>(implementation))();
+        case 1:
+          return reinterpret_cast<int (*)(int)>(
+              const_cast<void *>(implementation))(a0);
+        case 2:
+          return reinterpret_cast<int (*)(int, int)>(
+              const_cast<void *>(implementation))(a0, a1);
+        case 3:
+          return reinterpret_cast<int (*)(int, int, int)>(
+              const_cast<void *>(implementation))(a0, a1, a2);
+        case 4:
+          return reinterpret_cast<int (*)(int, int, int, int)>(
+              const_cast<void *>(implementation))(a0, a1, a2, a3);
+        default:
+          return 0;
+      }
+    case RuntimeMethodReturnKind::Bool:
+      switch (parameter_count) {
+        case 0:
+          return reinterpret_cast<bool (*)()>(
+                     const_cast<void *>(implementation))()
+                     ? 1
+                     : 0;
+        case 1:
+          return reinterpret_cast<bool (*)(int)>(
+                     const_cast<void *>(implementation))(a0)
+                     ? 1
+                     : 0;
+        case 2:
+          return reinterpret_cast<bool (*)(int, int)>(
+                     const_cast<void *>(implementation))(a0, a1)
+                     ? 1
+                     : 0;
+        case 3:
+          return reinterpret_cast<bool (*)(int, int, int)>(
+                     const_cast<void *>(implementation))(a0, a1, a2)
+                     ? 1
+                     : 0;
+        case 4:
+          return reinterpret_cast<bool (*)(int, int, int, int)>(
+                     const_cast<void *>(implementation))(a0, a1, a2, a3)
+                     ? 1
+                     : 0;
+        default:
+          return 0;
+      }
+    case RuntimeMethodReturnKind::Void:
+      switch (parameter_count) {
+        case 0:
+          reinterpret_cast<void (*)()>(const_cast<void *>(implementation))();
+          return 0;
+        case 1:
+          reinterpret_cast<void (*)(int)>(
+              const_cast<void *>(implementation))(a0);
+          return 0;
+        case 2:
+          reinterpret_cast<void (*)(int, int)>(
+              const_cast<void *>(implementation))(a0, a1);
+          return 0;
+        case 3:
+          reinterpret_cast<void (*)(int, int, int)>(
+              const_cast<void *>(implementation))(a0, a1, a2);
+          return 0;
+        case 4:
+          reinterpret_cast<void (*)(int, int, int, int)>(
+              const_cast<void *>(implementation))(a0, a1, a2, a3);
+          return 0;
+        default:
+          return 0;
+      }
+    case RuntimeMethodReturnKind::Unsupported:
       return 0;
   }
+  return 0;
 }
 
 int InvokeRuntimeBuiltinMethod(RuntimeBuiltinKind builtin_kind, int receiver,
@@ -2351,6 +2437,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   RuntimeState &state = State();
   const void *resolved_implementation = nullptr;
   std::uint64_t resolved_parameter_count = 0;
+  RuntimeMethodReturnKind resolved_return_kind =
+      RuntimeMethodReturnKind::Unsupported;
   RuntimeBuiltinKind resolved_builtin_kind = RuntimeBuiltinKind::None;
   bool resolved_live_method = false;
   std::uint64_t receiver_base_identity = 0;
@@ -2397,6 +2485,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
             resolved_builtin_kind = entry.builtin_kind;
             resolved_implementation = entry.implementation;
             resolved_parameter_count = entry.parameter_count;
+            resolved_return_kind = entry.return_kind;
             ++state.live_dispatch_count;
           } else {
             ++state.fallback_dispatch_count;
@@ -2418,6 +2507,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
               normalized_receiver_identity;
           cache_entry.selector_stable_id = selector_handle->stable_id;
           cache_entry.parameter_count = resolution.parameter_count;
+          cache_entry.return_kind = resolution.return_kind;
           cache_entry.category_probe_count = resolution.category_probe_count;
           cache_entry.protocol_probe_count = resolution.protocol_probe_count;
           cache_entry.implementation = resolution.implementation;
@@ -2434,6 +2524,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
             resolved_builtin_kind = resolution.builtin_kind;
             resolved_implementation = resolution.implementation;
             resolved_parameter_count = resolution.parameter_count;
+            resolved_return_kind = resolution.return_kind;
             ++state.live_dispatch_count;
           } else {
             ++state.fallback_dispatch_count;
@@ -2452,8 +2543,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     return 0;
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
-    return InvokeResolvedMethod(resolved_implementation, resolved_parameter_count,
-                                a0, a1, a2, a3);
+    return InvokeResolvedMethod(resolved_implementation, resolved_return_kind,
+                                resolved_parameter_count, a0, a1, a2, a3);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
     return InvokeRuntimeBuiltinMethod(resolved_builtin_kind, receiver,

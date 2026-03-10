@@ -15992,3 +15992,23 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
+
+## Synthesized accessor and property metadata lowering (M257-C003)
+
+`M257-C003` upgrades the current property lowering path from descriptor-only publication to executable accessor support.
+
+- contract id
+  `objc3c-executable-synthesized-accessor-property-lowering/m257-c003-v1`
+- lowering now emits one private storage cell family anchored by
+  `@objc3_property_storage_...`
+- implementation-owned properties now synthesize missing effective instance getters/setters into emitted method tables
+- property descriptor payloads now retain:
+  - effective getter selector
+  - effective setter selector
+  - synthesized binding symbol
+  - ivar layout symbol
+  - getter/setter implementation pointers
+- canonical proof assets:
+  - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
+  - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
+  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`

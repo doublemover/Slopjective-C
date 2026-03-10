@@ -19,13 +19,70 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
 
 class Objc3IREmitter {
  public:
+  enum class SynthesizedAccessorKind {
+    None,
+    Getter,
+    Setter,
+  };
+
   struct MethodDefinition {
     std::string symbol;
     std::string implementation_name;
     std::string method_owner_identity;
     std::string superclass_name;
     const Objc3MethodDecl *method = nullptr;
+    SynthesizedAccessorKind synthesized_accessor_kind =
+        SynthesizedAccessorKind::None;
+    std::string synthesized_storage_symbol;
+    ValueType synthesized_value_type = ValueType::Unknown;
   };
+
+  struct SynthesizedPropertyStorage {
+    std::string symbol;
+    std::string binding_symbol;
+  };
+
+  static bool IsImplementationOwnedPropertyBundle(
+      const Objc3IRRuntimeMetadataPropertyBundle &bundle) {
+    return bundle.owner_kind == "class-implementation" ||
+           bundle.owner_kind == "category-implementation";
+  }
+
+  static std::string BuildSynthesizedInstanceMethodOwnerIdentity(
+      const std::string &declaration_owner_identity,
+      const std::string &selector) {
+    return declaration_owner_identity + "::instance_method:" + selector;
+  }
+
+  static std::string BuildSynthesizedPropertyStorageSymbol(
+      const std::string &binding_symbol) {
+    std::string out = "objc3_property_storage_";
+    out.reserve(out.size() + binding_symbol.size());
+    for (unsigned char ch : binding_symbol) {
+      if (std::isalnum(ch) != 0) {
+        out.push_back(static_cast<char>(ch));
+      } else {
+        out.push_back('_');
+      }
+    }
+    if (out == "objc3_property_storage_") {
+      out += "anonymous";
+    }
+    return out;
+  }
+
+  static ValueType RuntimeMetadataValueType(const std::string &type_name) {
+    if (type_name == "void") {
+      return ValueType::Void;
+    }
+    if (type_name == "bool") {
+      return ValueType::Bool;
+    }
+    if (type_name.empty()) {
+      return ValueType::Unknown;
+    }
+    return ValueType::I32;
+  }
 
   Objc3IREmitter(const Objc3Program &program,
                  const Objc3LoweringContract &lowering_contract,
@@ -56,6 +113,7 @@ class Objc3IREmitter {
                                               interface_decl.super_name);
     }
     std::unordered_map<std::string, std::size_t> method_symbol_counts;
+    std::unordered_set<std::string> method_owner_identities;
     for (const auto &implementation : program_.implementations) {
       for (const auto &method : implementation.methods) {
         if (!method.has_body) {
@@ -76,7 +134,92 @@ class Objc3IREmitter {
                              implementation.name,
                              method.scope_path_symbol,
                              superclass_name,
-                             &method});
+                             &method,
+                             SynthesizedAccessorKind::None,
+                             std::string{},
+                             ValueType::Unknown});
+        if (!method.scope_path_symbol.empty()) {
+          method_owner_identities.insert(method.scope_path_symbol);
+        }
+      }
+    }
+    std::unordered_map<std::string, std::string>
+        synthesized_storage_symbols_by_binding;
+    synthesized_storage_symbols_by_binding.reserve(
+        frontend_metadata_
+            .runtime_metadata_property_bundles_lexicographic.size());
+    for (const auto &bundle :
+         frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
+      if (!IsImplementationOwnedPropertyBundle(bundle) ||
+          bundle.declaration_owner_identity.empty() || bundle.owner_name.empty() ||
+          bundle.type_name.empty() || bundle.effective_getter_selector.empty() ||
+          bundle.executable_synthesized_binding_kind.empty() ||
+          bundle.executable_synthesized_binding_symbol.empty()) {
+        continue;
+      }
+      const ValueType property_type = RuntimeMetadataValueType(bundle.type_name);
+      if (property_type == ValueType::Unknown || property_type == ValueType::Void) {
+        boundary_error_ =
+            "unsupported synthesized property accessor type '" +
+            bundle.type_name + "' for owner '" + bundle.declaration_owner_identity +
+            "'";
+        return;
+      }
+      const auto [storage_it, inserted_storage] =
+          synthesized_storage_symbols_by_binding.emplace(
+              bundle.executable_synthesized_binding_symbol,
+              BuildSynthesizedPropertyStorageSymbol(
+                  bundle.executable_synthesized_binding_symbol));
+      if (inserted_storage) {
+        synthesized_property_storages_.push_back(
+            SynthesizedPropertyStorage{storage_it->second,
+                                       bundle.executable_synthesized_binding_symbol});
+      }
+      const auto append_synthesized_method =
+          [&](const std::string &selector, SynthesizedAccessorKind kind) {
+            if (selector.empty()) {
+              boundary_error_ =
+                  "missing synthesized property accessor selector for owner '" +
+                  bundle.declaration_owner_identity + "'";
+              return;
+            }
+            const std::string method_owner_identity =
+                BuildSynthesizedInstanceMethodOwnerIdentity(
+                    bundle.declaration_owner_identity, selector);
+            if (!method_owner_identities.insert(method_owner_identity).second) {
+              return;
+            }
+            const std::string base_symbol =
+                BuildImplementationMethodFunctionSymbol(bundle.owner_name,
+                                                        selector, false);
+            const std::size_t ordinal = method_symbol_counts[base_symbol]++;
+            const std::string symbol =
+                ordinal == 0
+                    ? base_symbol
+                    : base_symbol + "_" + std::to_string(ordinal + 1u);
+            method_definitions_.push_back(MethodDefinition{
+                symbol,
+                bundle.owner_name,
+                method_owner_identity,
+                std::string{},
+                nullptr,
+                kind,
+                storage_it->second,
+                property_type,
+            });
+            ++synthesized_property_accessor_count_;
+          };
+      append_synthesized_method(bundle.effective_getter_selector,
+                                SynthesizedAccessorKind::Getter);
+      if (!boundary_error_.empty()) {
+        return;
+      }
+      if (bundle.effective_setter_available) {
+        append_synthesized_method(bundle.effective_setter_selector,
+                                  SynthesizedAccessorKind::Setter);
+        if (!boundary_error_.empty()) {
+          return;
+        }
       }
     }
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
@@ -127,6 +270,13 @@ class Objc3IREmitter {
       body << "\n";
     }
 
+    for (const auto &storage : synthesized_property_storages_) {
+      body << "@" << storage.symbol << " = private global i32 0, align 4\n";
+    }
+    if (!synthesized_property_storages_.empty()) {
+      body << "\n";
+    }
+
     EmitRuntimeMetadataSectionScaffold(body);
 
     EmitPrototypeDeclarations(body);
@@ -138,9 +288,6 @@ class Objc3IREmitter {
       body << "\n";
     }
     for (const MethodDefinition &method_def : method_definitions_) {
-      if (method_def.method == nullptr) {
-        continue;
-      }
       EmitMethod(method_def, body);
       body << "\n";
     }
@@ -214,6 +361,18 @@ class Objc3IREmitter {
             << frontend_metadata_.executable_ivar_layout_table_entries
             << ";layout_owner_entries="
             << frontend_metadata_.executable_ivar_layout_owner_entries << "\n";
+      }
+      if (synthesized_property_accessor_count_ > 0u) {
+        // M257-C003 synthesized accessor/property lowering anchor: lane-C now
+        // materializes missing implementation-owned property accessors as real
+        // method bodies backed by deterministic storage globals and republishes
+        // the widened property-descriptor surface in emitted IR.
+        out << "; executable_synthesized_accessor_property_lowering = "
+            << Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary()
+            << ";synthesized_accessor_entries="
+            << synthesized_property_accessor_count_
+            << ";synthesized_storage_globals="
+            << synthesized_property_storages_.size() << "\n";
       }
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {
@@ -2176,6 +2335,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
     out << "!objc3.objc_dispatch_surface_classification = !{!66}\n";
     out << "!objc3.objc_executable_ivar_layout_emission = !{!67}\n";
+    out << "!objc3.objc_executable_synthesized_accessor_property_lowering = !{!68}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3276,6 +3436,23 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(
                frontend_metadata_.executable_ivar_layout_emission_replay_key)
         << "\"}\n";
+    out << "!68 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel)
+        << "\", i64 "
+        << static_cast<unsigned long long>(synthesized_property_accessor_count_)
+        << ", i64 "
+        << static_cast<unsigned long long>(synthesized_property_storages_.size())
+        << "}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "
@@ -5337,8 +5514,7 @@ class Objc3IREmitter {
       std::unordered_set<std::string> implementation_method_owner_identities;
       implementation_method_owner_identities.reserve(method_definitions_.size());
       for (const MethodDefinition &method_def : method_definitions_) {
-        if (method_def.method == nullptr ||
-            method_def.method_owner_identity.empty()) {
+        if (method_def.method_owner_identity.empty()) {
           continue;
         }
         implementation_method_owner_identities.insert(
@@ -5635,8 +5811,7 @@ class Objc3IREmitter {
             bundle.entries_lexicographic.size());
       }
       for (const MethodDefinition &method_def : method_definitions_) {
-        if (method_def.method == nullptr ||
-            method_def.method_owner_identity.empty()) {
+        if (method_def.method_owner_identity.empty()) {
           continue;
         }
         const std::string implementation_symbol = "@" + method_def.symbol;
@@ -5918,12 +6093,38 @@ class Objc3IREmitter {
                                                         family.kind,
                                                         "setter_selector", i)
                                                   : std::string{"null"};
+            const std::string effective_getter_symbol =
+                bundle.effective_getter_selector.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "effective_getter_selector", i);
+            const std::string effective_setter_symbol =
+                bundle.effective_setter_available
+                    ? BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "effective_setter_selector", i)
+                    : std::string{"null"};
             const std::string ivar_binding_symbol =
                 bundle.ivar_binding_symbol.empty()
                     ? std::string{"null"}
                     : BuildRuntimeMetadataAuxiliarySymbol(
                           layout_policy.descriptor_symbol_prefix, family.kind,
                           "ivar_binding", i);
+            const std::string synthesized_binding_symbol =
+                bundle.executable_synthesized_binding_symbol.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "synthesized_binding", i);
+            const std::string ivar_layout_symbol =
+                bundle.executable_ivar_layout_symbol.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "ivar_layout", i);
+            std::string getter_implementation_symbol = "null";
+            std::string setter_implementation_symbol = "null";
             descriptor_symbols.push_back(descriptor_symbol);
 
             out << property_name_symbol << " = private constant ["
@@ -5966,6 +6167,22 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
+            if (!bundle.effective_getter_selector.empty()) {
+              out << effective_getter_symbol << " = private constant ["
+                  << (bundle.effective_getter_selector.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.effective_getter_selector)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (bundle.effective_setter_available) {
+              out << effective_setter_symbol << " = private constant ["
+                  << (bundle.effective_setter_selector.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.effective_setter_selector)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
             if (!bundle.ivar_binding_symbol.empty()) {
               out << ivar_binding_symbol << " = private constant ["
                   << (bundle.ivar_binding_symbol.size() + 1u) << " x i8] c\""
@@ -5973,17 +6190,78 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
+            if (!bundle.executable_synthesized_binding_symbol.empty()) {
+              out << synthesized_binding_symbol << " = private constant ["
+                  << (bundle.executable_synthesized_binding_symbol.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(
+                         bundle.executable_synthesized_binding_symbol)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (!bundle.executable_ivar_layout_symbol.empty()) {
+              out << ivar_layout_symbol << " = private constant ["
+                  << (bundle.executable_ivar_layout_symbol.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.executable_ivar_layout_symbol)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (IsImplementationOwnedPropertyBundle(bundle)) {
+              const auto getter_implementation_it =
+                  implementation_method_symbols_by_owner_identity.find(
+                      BuildSynthesizedInstanceMethodOwnerIdentity(
+                          bundle.declaration_owner_identity,
+                          bundle.effective_getter_selector));
+              if (getter_implementation_it ==
+                  implementation_method_symbols_by_owner_identity.end()) {
+                executable_method_binding_error =
+                    "missing synthesized accessor getter binding for property '" +
+                    bundle.property_name + "' in owner '" +
+                    bundle.declaration_owner_identity + "'";
+                return false;
+              }
+              getter_implementation_symbol = getter_implementation_it->second;
+              if (bundle.effective_setter_available) {
+                const auto setter_implementation_it =
+                    implementation_method_symbols_by_owner_identity.find(
+                        BuildSynthesizedInstanceMethodOwnerIdentity(
+                            bundle.declaration_owner_identity,
+                            bundle.effective_setter_selector));
+                if (setter_implementation_it ==
+                    implementation_method_symbols_by_owner_identity.end()) {
+                  executable_method_binding_error =
+                      "missing synthesized accessor setter binding for property '" +
+                      bundle.property_name + "' in owner '" +
+                      bundle.declaration_owner_identity + "'";
+                  return false;
+                }
+                setter_implementation_symbol =
+                    setter_implementation_it->second;
+              }
+            }
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 } "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i1, i1, i1 } "
                    "{ ptr "
                 << property_name_symbol << ", ptr " << type_name_symbol
                 << ", ptr " << owner_identity_symbol << ", ptr "
                 << declaration_owner_identity_symbol << ", ptr "
                 << export_owner_identity_symbol << ", ptr " << getter_symbol
-                << ", ptr " << setter_symbol << ", ptr " << ivar_binding_symbol
-                << ", i1 " << (bundle.has_getter ? 1 : 0) << ", i1 "
-                << (bundle.has_setter ? 1 : 0) << " }, section \""
+                << ", ptr " << setter_symbol << ", ptr "
+                << effective_getter_symbol << ", ptr "
+                << effective_setter_symbol << ", ptr " << ivar_binding_symbol
+                << ", ptr " << synthesized_binding_symbol << ", ptr "
+                << ivar_layout_symbol << ", ptr "
+                << getter_implementation_symbol << ", ptr "
+                << setter_implementation_symbol << ", i64 "
+                << bundle.executable_ivar_layout_slot_index << ", i64 "
+                << bundle.executable_ivar_layout_size_bytes << ", i64 "
+                << bundle.executable_ivar_layout_alignment_bytes << ", i1 "
+                << (bundle.has_getter ? 1 : 0) << ", i1 "
+                << (bundle.has_setter ? 1 : 0) << ", i1 "
+                << (bundle.effective_setter_available ? 1 : 0)
+                << " }, section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(descriptor_symbol);
           }
@@ -6008,6 +6286,7 @@ class Objc3IREmitter {
           out << ", section \"" << family.emitted_section_name
               << "\", align 8\n";
           emit_retained(aggregate_symbol);
+          return true;
         };
 
     const auto emit_ivar_descriptor_section =
@@ -8754,6 +9033,10 @@ class Objc3IREmitter {
 
   void EmitMethod(const MethodDefinition &method_def,
                   std::ostringstream &out) const {
+    if (method_def.method == nullptr) {
+      EmitSynthesizedAccessorMethod(method_def, out);
+      return;
+    }
     const Objc3MethodDecl &method = *method_def.method;
     std::ostringstream signature;
     for (std::size_t i = 0; i < method.params.size(); ++i) {
@@ -8820,6 +9103,43 @@ class Objc3IREmitter {
       out << line << "\n";
     }
 
+    out << "}\n";
+  }
+
+  void EmitSynthesizedAccessorMethod(const MethodDefinition &method_def,
+                                     std::ostringstream &out) const {
+    if (method_def.synthesized_accessor_kind == SynthesizedAccessorKind::None ||
+        method_def.synthesized_storage_symbol.empty()) {
+      return;
+    }
+    const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
+    if (method_def.synthesized_accessor_kind == SynthesizedAccessorKind::Getter) {
+      out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
+      out << "entry:\n";
+      out << "  %objc3_property_slot = load i32, ptr @"
+          << method_def.synthesized_storage_symbol << ", align 4\n";
+      if (method_def.synthesized_value_type == ValueType::Bool) {
+        out << "  %objc3_property_value = icmp ne i32 %objc3_property_slot, 0\n";
+        out << "  ret i1 %objc3_property_value\n";
+      } else {
+        out << "  ret i32 %objc3_property_slot\n";
+      }
+      out << "}\n";
+      return;
+    }
+
+    out << "define void @" << method_def.symbol << "(" << llvm_value_type
+        << " %arg0) {\n";
+    out << "entry:\n";
+    if (method_def.synthesized_value_type == ValueType::Bool) {
+      out << "  %objc3_property_value = zext i1 %arg0 to i32\n";
+      out << "  store i32 %objc3_property_value, ptr @"
+          << method_def.synthesized_storage_symbol << ", align 4\n";
+    } else {
+      out << "  store i32 %arg0, ptr @" << method_def.synthesized_storage_symbol
+          << ", align 4\n";
+    }
+    out << "  ret void\n";
     out << "}\n";
   }
 
@@ -8902,6 +9222,8 @@ class Objc3IREmitter {
   std::unordered_set<std::string> declared_pure_functions_;
   std::vector<const FunctionDecl *> function_definitions_;
   std::vector<MethodDefinition> method_definitions_;
+  std::vector<SynthesizedPropertyStorage> synthesized_property_storages_;
+  std::size_t synthesized_property_accessor_count_ = 0;
   std::unordered_map<std::string, FunctionEffectInfo> function_effects_;
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;

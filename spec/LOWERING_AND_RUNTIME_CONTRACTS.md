@@ -6644,3 +6644,18 @@ published operator runbook and one stable bootstrap matrix summary.
   - `archive-backed-merged-retained`
 - canonical operator script:
   - `scripts/check_objc3c_bootstrap_matrix.ps1`
+
+## M257 synthesized accessor and property metadata lowering (C003)
+
+`M257-C003` turns implementation-owned effective property accessors into real emitted method bodies while keeping true runtime instance allocation deferred to lane D.
+
+- contract id
+  `objc3c-executable-synthesized-accessor-property-lowering/m257-c003-v1`
+- canonical source model
+  `implementation-owned-properties-synthesize-missing-effective-instance-accessors-into-emitted-method-lists`
+- storage model
+  `one-private-i32-storage-global-per-synthesized-binding-symbol-pending-runtime-instance-layout`
+- property descriptor model
+  `property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers`
+- fail-closed model
+  `no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation`

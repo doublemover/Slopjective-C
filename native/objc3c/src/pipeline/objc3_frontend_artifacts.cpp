@@ -13073,6 +13073,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       method_list_bundles.reserve(source_graph.method_nodes_lexicographic.size());
       std::unordered_map<std::string, std::size_t> method_bundle_indexes;
       method_bundle_indexes.reserve(source_graph.method_nodes_lexicographic.size());
+      std::unordered_set<std::string> method_owner_identities;
+      method_owner_identities.reserve(source_graph.method_nodes_lexicographic.size());
       const auto determine_owner_family_kind = [](const std::string &owner_kind)
           -> std::string {
         if (owner_kind == "protocol") {
@@ -13139,6 +13141,107 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           entry.parameter_count = method_node.parameter_count;
           entry.has_body = method_node.has_body;
           bundle.entries_lexicographic.push_back(std::move(entry));
+          method_owner_identities.insert(method_node.owner_identity);
+        }
+      }
+      const auto is_implementation_property_owner_kind =
+          [](const std::string &owner_kind) {
+            return owner_kind == "class-implementation" ||
+                   owner_kind == "category-implementation";
+          };
+      const auto build_instance_method_owner_identity =
+          [](const std::string &declaration_owner_identity,
+             const std::string &selector) {
+            return declaration_owner_identity + "::instance_method:" + selector;
+          };
+      if (member_table_payload_complete) {
+        for (const auto &property_bundle : property_bundles) {
+          if (!is_implementation_property_owner_kind(property_bundle.owner_kind) ||
+              property_bundle.owner_name.empty() ||
+              property_bundle.declaration_owner_identity.empty() ||
+              property_bundle.export_owner_identity.empty() ||
+              property_bundle.property_name.empty() ||
+              property_bundle.type_name.empty() ||
+              property_bundle.executable_synthesized_binding_kind.empty() ||
+              property_bundle.executable_synthesized_binding_symbol.empty()) {
+            continue;
+          }
+
+          const std::string owner_family_kind =
+              determine_owner_family_kind(property_bundle.owner_kind);
+          if (owner_family_kind.empty()) {
+            member_table_payload_complete = false;
+            break;
+          }
+
+          const auto append_synthesized_accessor =
+              [&](const std::string &selector,
+                  const std::string &return_type_name,
+                  std::size_t parameter_count) {
+                if (selector.empty() || return_type_name.empty()) {
+                  member_table_payload_complete = false;
+                  return;
+                }
+                const std::string method_owner_identity =
+                    build_instance_method_owner_identity(
+                        property_bundle.declaration_owner_identity, selector);
+                if (!method_owner_identities.insert(method_owner_identity).second) {
+                  return;
+                }
+
+                const std::string bundle_key =
+                    property_bundle.declaration_owner_identity + "|instance";
+                auto bundle_it = method_bundle_indexes.find(bundle_key);
+                if (bundle_it == method_bundle_indexes.end()) {
+                  Objc3IRRuntimeMetadataMethodListBundle bundle;
+                  bundle.owner_kind = property_bundle.owner_kind;
+                  bundle.owner_name = property_bundle.owner_name;
+                  bundle.owner_family_kind = owner_family_kind;
+                  bundle.declaration_owner_identity =
+                      property_bundle.declaration_owner_identity;
+                  bundle.export_owner_identity =
+                      property_bundle.export_owner_identity;
+                  bundle.list_kind = "instance";
+                  method_list_bundles.push_back(std::move(bundle));
+                  bundle_it = method_bundle_indexes
+                                  .emplace(bundle_key,
+                                           method_list_bundles.size() - 1u)
+                                  .first;
+                }
+
+                auto &bundle = method_list_bundles[bundle_it->second];
+                if (bundle.owner_kind != property_bundle.owner_kind ||
+                    bundle.owner_name != property_bundle.owner_name ||
+                    bundle.owner_family_kind != owner_family_kind ||
+                    bundle.export_owner_identity !=
+                        property_bundle.export_owner_identity ||
+                    bundle.list_kind != "instance") {
+                  member_table_payload_complete = false;
+                  return;
+                }
+
+                Objc3IRRuntimeMetadataMethodEntry entry;
+                entry.owner_identity = method_owner_identity;
+                entry.selector = selector;
+                entry.return_type_name = return_type_name;
+                entry.parameter_count = parameter_count;
+                entry.has_body = true;
+                bundle.entries_lexicographic.push_back(std::move(entry));
+              };
+
+          append_synthesized_accessor(
+              property_bundle.effective_getter_selector, property_bundle.type_name,
+              0u);
+          if (!member_table_payload_complete) {
+            break;
+          }
+          if (property_bundle.effective_setter_available) {
+            append_synthesized_accessor(
+                property_bundle.effective_setter_selector, "void", 1u);
+            if (!member_table_payload_complete) {
+              break;
+            }
+          }
         }
       }
       std::sort(

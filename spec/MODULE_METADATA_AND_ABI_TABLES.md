@@ -7631,3 +7631,20 @@ the already-live startup paths.
   - `module.runtime-registration-manifest.json`
 - operator matrix summary:
   - `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`
+
+## M257 synthesized accessor property metadata anchors (C003)
+
+`M257-C003` widens emitted property descriptor payloads so lowering publishes executable accessor attachments rather than only declaration summaries.
+
+- contract id
+  `objc3c-executable-synthesized-accessor-property-lowering/m257-c003-v1`
+- widened descriptor payload fields include:
+  - `effective_getter_selector`
+  - `effective_setter_selector`
+  - `synthesized_binding_symbol`
+  - `ivar_layout_symbol`
+  - `getter_implementation_pointer`
+  - `setter_implementation_pointer`
+  - slot / size / alignment scalars
+- synthesized storage family anchor:
+  - `@objc3_property_storage_...`

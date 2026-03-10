@@ -1131,6 +1131,10 @@ struct Objc3PropertyDecl {
   std::string scope_path_symbol;
   std::string property_synthesis_symbol;
   std::string ivar_binding_symbol;
+  // M257-C003 synthesized accessor/property lowering anchor: lane-C consumes
+  // the effective accessor selectors plus synthesized binding identity below
+  // to materialize executable getter/setter bodies without reopening property
+  // parsing or sema ownership/layout derivation.
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

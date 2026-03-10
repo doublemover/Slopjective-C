@@ -441,6 +441,28 @@ inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionScopeModel =
     "sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation";
 inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionFailClosedModel =
     "no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis";
+// M257-C003 synthesized accessor/property lowering anchor: lane-C upgrades the
+// frozen property/layout handoff into executable accessor support by
+// materializing missing implementation-owned getter/setter method entries,
+// emitting deterministic storage globals keyed by synthesized binding symbols,
+// and widening property descriptor payloads with effective accessor and layout
+// attachment records while still deferring true runtime instance allocation to
+// later lane-D work.
+inline constexpr const char
+    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId =
+        "objc3c-executable-synthesized-accessor-property-lowering/m257-c003-v1";
+inline constexpr const char
+    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel =
+        "implementation-owned-properties-synthesize-missing-effective-instance-accessors-into-emitted-method-lists";
+inline constexpr const char
+    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel =
+        "one-private-i32-storage-global-per-synthesized-binding-symbol-pending-runtime-instance-layout";
+inline constexpr const char
+    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel =
+        "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
+inline constexpr const char
+    *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
+        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1442,6 +1464,7 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
 std::string Objc3ExecutableIvarLayoutEmissionSummary();
+std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
