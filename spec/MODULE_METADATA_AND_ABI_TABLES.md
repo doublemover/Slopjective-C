@@ -7252,6 +7252,24 @@ must consume without reinterpretation.
 - canonical live evidence:
   - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
 
+## M257 accessor and layout lowering metadata anchors (C001)
+
+`M257-C001` freezes the emitted property/ivar lowering bridge that later live
+accessor execution and storage realization must consume without reinterpretation.
+
+- contract id
+  `objc3c-executable-property-accessor-layout-lowering/m257-c001-v1`
+- canonical metadata/runtime anchors:
+  - `kObjc3ExecutablePropertyAccessorLayoutLoweringContractId`
+  - `kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel`
+  - `kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel`
+  - `kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel`
+  - `frontend.pipeline.semantic_surface.objc_property_attribute_surface`
+  - `frontend.pipeline.semantic_surface.objc_executable_metadata_typed_lowering_handoff`
+  - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-C001/accessor_and_layout_lowering_contract_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

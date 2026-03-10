@@ -6245,6 +6245,32 @@ compiler rule:
 - next handoff
   - `M257-B004`
 
+## M257 accessor and layout lowering (C001)
+
+`M257-C001` freezes the current lane-C lowering boundary above the completed
+`M257-A002` source model and the `M257-B001..B003` semantic closure:
+
+- contract id
+  `objc3c-executable-property-accessor-layout-lowering/m257-c001-v1`
+- property-table model
+  `property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records`
+- ivar-layout model
+  `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records`
+- accessor-binding model
+  `effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis`
+- scope model
+  `ast-sema-property-layout-handoff-ir-object-metadata-publication`
+- failure model
+  `no-synthesized-accessor-bodies-no-runtime-storage-allocation-no-layout-rederivation`
+- emitted IR summary
+  - `; executable_property_accessor_layout_lowering = ...`
+- non-goals
+  - no synthesized accessor body emission
+  - no runtime storage allocation
+  - no instance layout realization
+- next handoff
+  - `M257-C002`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

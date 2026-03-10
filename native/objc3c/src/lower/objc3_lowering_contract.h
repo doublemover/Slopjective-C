@@ -401,6 +401,29 @@ inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
 inline constexpr const char
     *kObjc3ExecutableObjectArtifactLoweringFailClosedModel =
         "no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families";
+// M257-C001 accessor/layout lowering freeze anchor: lane-C now freezes the
+// current property/ivar lowering surface where sema-approved property
+// descriptor bundles, ivar layout symbols/slots/sizes/alignment, and
+// synthesized binding identities are serialized into emitted metadata/object
+// artifacts without yet synthesizing accessor bodies or runtime storage.
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringContractId =
+        "objc3c-executable-property-accessor-layout-lowering/m257-c001-v1";
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel =
+        "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records";
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel =
+        "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records";
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel =
+        "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis";
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel =
+        "ast-sema-property-layout-handoff-ir-object-metadata-publication";
+inline constexpr const char
+    *kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel =
+        "no-synthesized-accessor-bodies-no-runtime-storage-allocation-no-layout-rederivation";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1400,6 +1423,7 @@ std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
+std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

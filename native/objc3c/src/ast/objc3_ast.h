@@ -352,6 +352,12 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
     "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles";
+// M257-C001 accessor/layout lowering freeze anchor: AST remains the canonical
+// source of property attribute/accessor profiles, synthesized-binding
+// identities, and ivar layout identities. Lane-C lowering may only serialize
+// this handoff into emitted metadata/object artifacts; it must not synthesize
+// accessor bodies or invent runtime storage/layout beyond the sema-approved
+// source model.
 inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
     "objc3c-executable-property-ivar-semantics/m257-b001-v1";
 inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =

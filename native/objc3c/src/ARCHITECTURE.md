@@ -9187,6 +9187,30 @@ lane-B:
   - `check:objc3c:m257-b003-accessor-legality-and-ownership-or-atomicity-attribute-interactions`
   - `check:objc3c:m257-b003-lane-b-readiness`
 
+## M257 accessor and layout lowering (C001)
+
+`M257-C001` freezes the current lane-C bridge that serializes the sema-approved
+property/accessor/layout surface into emitted IR/object artifacts:
+
+- lowering owns the canonical artifact boundary for:
+  - property descriptor bundle publication
+  - ivar descriptor bundle publication
+  - synthesized binding identity carry-through
+  - ivar layout symbol/slot/size/alignment carry-through
+- AST and sema remain authoritative for:
+  - declaration-level property attribute/accessor profiles
+  - synthesized binding identities
+  - ivar layout identities and compatibility rules
+- IR republishes one fail-closed lowering marker:
+  - `; executable_property_accessor_layout_lowering = ...`
+- synthesized accessor execution and runtime storage realization remain
+  deferred until later issues
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_accessor_and_layout_lowering_contract_and_architecture_freeze_c001_expectations.md`
+  - `spec/planning/compiler/m257/m257_c001_accessor_and_layout_lowering_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m257-c001-accessor-and-layout-lowering-contract`
+  - `check:objc3c:m257-c001-lane-c-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

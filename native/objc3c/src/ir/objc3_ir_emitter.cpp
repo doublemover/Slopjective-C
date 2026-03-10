@@ -181,6 +181,26 @@ class Objc3IREmitter {
       out << "; property_ivar_source_model_completion = "
           << frontend_metadata_.executable_property_ivar_source_model_replay_key
           << "\n";
+      // M257-C001 accessor/layout lowering freeze anchor:
+      // lane-C now republishes the current property descriptor, ivar layout,
+      // and synthesized binding handoff directly in emitted IR without yet
+      // synthesizing accessor bodies or realizing runtime storage/layout.
+      out << "; executable_property_accessor_layout_lowering = "
+          << Objc3ExecutablePropertyAccessorLayoutLoweringSummary()
+          << ";property_metadata_entries="
+          << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                 .size()
+          << ";ivar_metadata_entries="
+          << frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                 .size()
+          << ";property_attribute_profiles="
+          << frontend_metadata_.executable_property_attribute_profile_entries
+          << ";accessor_ownership_profiles="
+          << frontend_metadata_.executable_accessor_ownership_profile_entries
+          << ";synthesized_binding_entries="
+          << frontend_metadata_.executable_synthesized_binding_entries
+          << ";ivar_layout_entries="
+          << frontend_metadata_.executable_ivar_layout_entries << "\n";
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {
       out << "; runtime_metadata_source_ownership = "

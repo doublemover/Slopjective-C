@@ -6784,6 +6784,31 @@ realization.
 - next handoff
   - `M257-B004`
 
+## Accessor and layout lowering (M257-C001)
+
+`M257-C001` freezes the current lane-C property/accessor/layout lowering
+boundary immediately before synthesized accessor execution or runtime storage
+realization lands.
+
+- contract id
+  `objc3c-executable-property-accessor-layout-lowering/m257-c001-v1`
+- property-table model
+  `property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records`
+- ivar-layout model
+  `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records`
+- accessor-binding model
+  `effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis`
+- emitted IR summary
+  `; executable_property_accessor_layout_lowering = ...`
+- non-goals
+  - no synthesized accessor body emission
+  - no runtime storage allocation
+  - no instance layout realization
+- evidence path
+  - `tmp/reports/m257/M257-C001/accessor_and_layout_lowering_contract_summary.json`
+- next handoff
+  - `M257-C002`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

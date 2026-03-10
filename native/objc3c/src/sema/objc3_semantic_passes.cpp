@@ -2254,6 +2254,11 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
   // M257-A002 property-ivar source-model completion anchor:
   // property attribute/accessor ownership/layout fields belong to declaration compatibility
   // only when they describe the shared declaration surface rather than storage-local layout symbols.
+  // M257-C001 accessor/layout lowering freeze anchor: sema remains the
+  // authority for the declaration-level property attribute/accessor/layout
+  // compatibility packet and the canonical synthesized binding/layout
+  // identities that lane-C publishes. IR/object emission must not recompute
+  // those identities or invent executable accessor bodies.
   return lhs.type == rhs.type &&
          lhs.is_vector == rhs.is_vector &&
          lhs.vector_base_spelling == rhs.vector_base_spelling &&

@@ -557,6 +557,29 @@ std::string Objc3ExecutableObjectArtifactLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
+  std::ostringstream out;
+  // M257-C001 accessor/layout lowering freeze anchor: lane-C begins from the
+  // already-emitted property/ivar descriptor surface and the sema-approved
+  // source-model completion packet. This freeze is explicit that accessor
+  // bodies and runtime storage/layout realization remain deferred; lowering
+  // only republishes the property table, ivar layout, and synthesized binding
+  // handoff into emitted IR/object artifacts.
+  out << "contract=" << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+      << ";property_table_model="
+      << kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel
+      << ";ivar_layout_model="
+      << kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel
+      << ";accessor_binding_model="
+      << kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel
+      << ";scope_model="
+      << kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel
+      << ";fail_closed_model="
+      << kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel
+      << ";non_goals=no-synthesized-accessor-body-emission-no-runtime-storage-allocation-no-instance-layout-realization";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C
