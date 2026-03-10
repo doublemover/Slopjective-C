@@ -1461,6 +1461,9 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
   std::size_t rejected_unsupported_feature_claim_count = 0;
   std::size_t rejected_selection_surface_count = 0;
   std::size_t suppressed_macro_claim_count = 0;
+  // M259-B002/M264-B002 unsupported-feature enforcement anchor: accepted
+  // advanced source surfaces must either keep these counters at zero on the
+  // runnable path or fail closed before lowering/runtime handoff.
   std::size_t live_unsupported_feature_family_count = 0;
   std::size_t live_unsupported_feature_site_count = 0;
   std::size_t live_unsupported_feature_diagnostic_count = 0;

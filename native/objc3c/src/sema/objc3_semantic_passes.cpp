@@ -552,6 +552,8 @@ static void RecordUnsupportedFeatureClaimDiagnostic(
     const std::string &message,
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  // M259-B002/M264-B002 unsupported-feature enforcement anchor: accepted
+  // advanced surfaces fail closed here before lowering/runtime publication.
   ++site_counter;
   ++stats.live_unsupported_feature_site_count;
   ++stats.live_unsupported_feature_diagnostic_count;
@@ -825,6 +827,9 @@ static Objc3UnsupportedFeatureClaimEnforcementStats
 DiagnoseUnsupportedFeatureClaimSources(
     const Objc3Program &ast,
     std::vector<std::string> &diagnostics) {
+  // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
+  // runnable-core positive path at zero-site readiness and reject accepted
+  // unsupported advanced sources deterministically with O3S221.
   Objc3UnsupportedFeatureClaimEnforcementStats stats;
   for (const auto &fn : ast.functions) {
     DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats);

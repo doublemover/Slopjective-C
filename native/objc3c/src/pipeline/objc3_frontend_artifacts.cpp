@@ -2222,6 +2222,9 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.rejected_selection_surface_count;
     summary.suppressed_macro_claim_count =
         semantic_boundary.suppressed_macro_claim_count;
+    // M259-B002/M264-B002 unsupported-feature enforcement anchor: preserve the
+    // semantic boundary counters verbatim so positive runnable proofs and
+    // fail-closed advanced-source rejections remain replay-stable.
     summary.live_unsupported_feature_family_count =
         semantic_boundary.live_unsupported_feature_family_count;
     summary.live_unsupported_feature_site_count =

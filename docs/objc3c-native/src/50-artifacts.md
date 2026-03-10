@@ -4716,6 +4716,57 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 - Optional toolchain override:
   - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH=<clang executable>`
 
+## Runnable sample surface (M259-A001)
+
+`M259-A001` freezes the current release-facing runnable sample surface without
+widening it.
+
+- contract id
+  `objc3c-runnable-sample-surface/m259-a001-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+- truthful boundary
+  - execution smoke and replay remain the scalar/core corpus
+  - object/property/import-module samples remain separate proof families
+  - blocks, ARC, async, throws, actors, and import/module expansion are not
+    promoted into the scalar corpus here
+  - the next implementation issue is `M259-A002`
+
+## Canonical runnable sample set (M259-A002)
+
+`M259-A002` composes the frozen sample surface into one integrated runnable
+object/property/category/protocol proof.
+
+- contract id
+  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+- truthful boundary
+  - the positive proof stays single-module and runtime-backed
+  - alloc/init, superclass dispatch, category dispatch, protocol conformance,
+    and property access land together here
+  - scalar execution smoke and replay remain separate corpus gates
+  - the next implementation issue is `M259-B001`
+
+## Runnable core compatibility and migration guard (M259-B001)
+
+`M259-B001` freezes the compatibility/migration boundary around the current
+runnable core.
+
+- contract id
+  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
+- truthful boundary
+  - `M259-A002` remains the live positive proof floor
+  - compatibility mode and migration assist remain live semantic selections
+  - migration-assist legacy literal diagnostics remain fail-closed `O3S216`
+  - `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
+    remain the currently landed unsupported-feature diagnostics
+  - the next implementation issue is `M259-B002`
+
 ## Runnable feature-claim inventory (M264-A001)
 
 `M264-A001` freezes one truthful frontend packet for versioning/conformance work:
@@ -4790,6 +4841,34 @@ Validation proves:
 - canonical native hello keeps the semantic packet truthful on the executable path
 - legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
 - source-only metadata fixtures remain downgraded rather than misreported as runnable
+
+## M259 fail-closed unsupported advanced-feature diagnostics (B002)
+
+`M259-B002` converts the runnable-core compatibility boundary into a live
+semantic rejection path for accepted advanced source surfaces that are still
+outside the native Objective-C 3 runnable subset.
+
+- contract id
+  `objc3c-runnable-core-unsupported-advanced-feature-diagnostics/m259-b002-v1`
+- guard model
+  `runnable-core-crossing-into-unsupported-advanced-surfaces-fails-before-lowering-runtime-handoff`
+- evidence model
+  `a002-runnable-proof-plus-b001-guard-plus-live-o3s221-negative-source-probes`
+- truthful boundary
+  - `M259-A002` remains the positive runnable-core proof floor
+  - `M259-B001` remains the freeze that keeps advanced surfaces outside the
+    release-facing runnable core
+  - the semantic packet
+    `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+    stays ready with zero live unsupported rejection sites on the runnable path
+  - accepted unsupported advanced surfaces fail closed with `O3S221` before
+    manifest/IR/object publication
+  - `throws`, `@autoreleasepool`, and ARC ownership qualifiers are the canonical
+    live negative probes in this issue
+  - block literals remain documented as unsupported without over-claiming this
+    issue as the canonical live proof path while the parser surface is still
+    gated earlier than this rejection boundary
+  - the next implementation issue is `M259-C001`
 
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 

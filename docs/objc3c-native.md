@@ -11153,6 +11153,34 @@ Validation proves:
 - legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
 - source-only metadata fixtures remain downgraded rather than misreported as runnable
 
+## M259 fail-closed unsupported advanced-feature diagnostics (B002)
+
+`M259-B002` converts the runnable-core compatibility boundary into a live
+semantic rejection path for accepted advanced source surfaces that are still
+outside the native Objective-C 3 runnable subset.
+
+- contract id
+  `objc3c-runnable-core-unsupported-advanced-feature-diagnostics/m259-b002-v1`
+- guard model
+  `runnable-core-crossing-into-unsupported-advanced-surfaces-fails-before-lowering-runtime-handoff`
+- evidence model
+  `a002-runnable-proof-plus-b001-guard-plus-live-o3s221-negative-source-probes`
+- truthful boundary
+  - `M259-A002` remains the positive runnable-core proof floor
+  - `M259-B001` remains the freeze that keeps advanced surfaces outside the
+    release-facing runnable core
+  - the semantic packet
+    `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+    stays ready with zero live unsupported rejection sites on the runnable path
+  - accepted unsupported advanced surfaces fail closed with `O3S221` before
+    manifest/IR/object publication
+  - `throws`, `@autoreleasepool`, and ARC ownership qualifiers are the canonical
+    live negative probes in this issue
+  - block literals remain documented as unsupported without over-claiming this
+    issue as the canonical live proof path while the parser surface is still
+    gated earlier than this rejection boundary
+  - the next implementation issue is `M259-C001`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

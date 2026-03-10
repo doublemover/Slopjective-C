@@ -7064,3 +7064,30 @@ current runnable core.
   - later advanced surfaces remain outside the runnable core and are not
     promoted by docs, smoke, replay, or package claims here
   - the next implementation issue is `M259-B002`
+
+## M259 fail-closed unsupported advanced-feature diagnostics (B002)
+
+`M259-B002` makes the runnable-core boundary executable as a hard fail-closed
+semantic gate.
+
+- contract id
+  `objc3c-runnable-core-unsupported-advanced-feature-diagnostics/m259-b002-v1`
+- guard model
+  `runnable-core-crossing-into-unsupported-advanced-surfaces-fails-before-lowering-runtime-handoff`
+- evidence model
+  `a002-runnable-proof-plus-b001-guard-plus-live-o3s221-negative-source-probes`
+- truthful boundary
+  - `M259-A002` remains the positive runnable-core proof floor
+  - `M259-B001` remains the frozen compatibility/migration boundary
+  - the semantic packet
+    `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+    must stay ready with zero live unsupported rejection sites on positive
+    runnable probes
+  - accepted unsupported advanced surfaces fail closed with `O3S221` before
+    lowering/runtime handoff
+  - this issue proves the live negative path for `throws`,
+    `@autoreleasepool`, and ARC ownership qualifiers
+  - block literals remain explicitly unsupported without over-claiming this
+    issue as the canonical live proof path while that source surface is still
+    gated earlier
+  - the next implementation issue is `M259-C001`

@@ -8037,3 +8037,25 @@ about the current runnable metadata-backed core versus later advanced surfaces.
     descriptor counts (`4/2/2/8/4`)
   - advanced unsupported surfaces are not promoted into new runnable metadata
     claims by this issue
+
+## M259 fail-closed unsupported advanced-feature diagnostics metadata anchors (B002)
+
+`M259-B002` still does not widen emitted metadata. It proves that accepted
+advanced source surfaces are rejected before metadata publication rather than
+being misreported as runnable.
+
+- contract id
+  `objc3c-runnable-core-unsupported-advanced-feature-diagnostics/m259-b002-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - `tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_throws.objc3`
+  - `tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_autoreleasepool.objc3`
+  - `tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_arc_ownership_qualifier.objc3`
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`
+  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+- emitted metadata truth
+  - positive runnable probes still preserve the A002 integrated sample metadata
+    envelope without introducing new ABI families
+  - negative advanced-source probes do not publish manifest, IR, or object
+    artifacts once `O3S221` fail-closed diagnostics fire

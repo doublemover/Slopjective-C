@@ -17,6 +17,8 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-A002 canonical-runnable-sample-set anchor: the integrated object/property/category/protocol sample exists as a dedicated proof asset,
 # but execution smoke still remains the scalar/core corpus gate in this issue.
 # M259-B001 runnable-core-compatibility-guard anchor: advanced unsupported features must fail closed instead of counting as runnable smoke coverage.
+# M259-B002 unsupported-advanced-feature-diagnostics anchor: `O3S221` fail-closed diagnostics for accepted advanced surfaces
+# must stay outside runnable smoke counts and never be treated as successful runtime coverage.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId
