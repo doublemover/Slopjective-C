@@ -48,6 +48,11 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // objc3_runtime_dispatch_i32 over objc3_runtime_selector_handle. Later
 // selector-table, method-cache, and protocol/category-aware slow-path work must
 // extend this ABI without renaming or silently narrowing it.
+// M256-D001 class-realization-runtime anchor: the current runtime-owned class
+// realization boundary still fits behind this public lookup/dispatch ABI.
+// Class/metaclass graph walking, category attachment, and protocol-aware
+// negative runtime checks must preserve these entrypoints rather than widening
+// the public ABI prematurely.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

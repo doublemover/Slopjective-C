@@ -11441,6 +11441,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // last stop for canonical superclass, class-object, metaclass-object,
   // protocol-inheritance, and category-attachment identities before lowering
   // serializes them into realization-ready records.
+  // M256-D001 class-realization-runtime freeze anchor: sema remains the owner
+  // of realized-class legality, category merge/conflict decisions, protocol
+  // conformance legality, and canonical inheritance identities. Runtime class
+  // realization must consume that closure rather than reinterpreting source.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

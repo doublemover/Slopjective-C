@@ -5326,6 +5326,22 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
                  .size()
           << "\n";
+      // M256-D001 class-realization-runtime freeze anchor: lane-D consumes the
+      // already-emitted realization records through one explicit runtime-owned
+      // boundary instead of rediscovering class/metaclass/category/protocol
+      // relationships from source or manifests.
+      out << "; runtime_class_realization = "
+          << Objc3RuntimeClassRealizationSummary()
+          << ";class_bundle_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << ";protocol_record_count="
+          << frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+                 .size()
+          << ";category_record_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                 .size()
+          << "\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "

@@ -593,6 +593,26 @@ std::string Objc3ExecutableRealizationRecordsSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeClassRealizationSummary() {
+  std::ostringstream out;
+  // M256-D001 class-realization-runtime freeze anchor: the current runtime
+  // consumes emitted realization records directly, walks the class/metaclass
+  // graph deterministically, attaches preferred category implementation
+  // records after bundle selection, and uses protocol records only as
+  // declaration-aware negative lookup evidence. Property/ivar storage and
+  // executable protocol bodies remain outside this runtime boundary.
+  out << "contract=" << kObjc3RuntimeClassRealizationContractId
+      << ";class_realization_model=" << kObjc3RuntimeClassRealizationModel
+      << ";metaclass_graph_model=" << kObjc3RuntimeMetaclassGraphModel
+      << ";category_attachment_model="
+      << kObjc3RuntimeClassRealizationCategoryAttachmentModel
+      << ";protocol_check_model=" << kObjc3RuntimeProtocolCheckModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeClassRealizationFailClosedModel
+      << ";non_goals=no-property-storage-no-ivar-layout-no-protocol-body-dispatch";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

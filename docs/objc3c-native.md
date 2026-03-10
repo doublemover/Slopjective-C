@@ -6535,6 +6535,33 @@ class/protocol/category records preserve the runtime graph edges directly.
 - evidence path
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
 
+## Class realization runtime freeze (M256-D001)
+
+`M256-D001` freezes the runtime-owned object-model boundary that consumes the
+earlier `M256-C003` realization records.
+
+- contract id
+  `objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- emitted IR summary
+  `; runtime_class_realization = ...`
+- class realization model
+  `registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name`
+- metaclass graph model
+  `known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain`
+- category attachment model
+  `preferred-category-implementation-records-attach-after-class-bundle-resolution`
+- protocol check model
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks`
+- non-goals
+  - property/ivar storage realization
+  - accessor synthesis
+  - executable protocol-body dispatch
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_d001_class_realization_runtime_library.objc3`
+  - `tests/tooling/runtime/m256_d001_class_realization_runtime_probe.cpp`
+- evidence path
+  - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

@@ -166,3 +166,23 @@ metadata:
 - probe and cache snapshots now record category/protocol traversal counts
 - conflicting category/protocol outcomes fail closed through
   `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
+
+`M256-D001` freezes the next runtime-owned object-model boundary that consumes
+the emitted `M256-C003` realization records:
+
+- contract id `objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- class realization model
+  `registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name`
+- metaclass graph model
+  `known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain`
+- category attachment model
+  `preferred-category-implementation-records-attach-after-class-bundle-resolution`
+- protocol check model
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks`
+- fail-closed model
+  `invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed`
+- non-goals:
+  - property/ivar storage realization
+  - accessor synthesis
+  - executable protocol-body dispatch
+  - cross-image class coalescing beyond the current ordered image walk

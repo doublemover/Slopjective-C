@@ -140,6 +140,10 @@ int objc3_runtime_copy_selector_lookup_table_state_for_testing(
 int objc3_runtime_copy_selector_lookup_entry_for_testing(
     const char *selector,
     objc3_runtime_selector_lookup_entry_snapshot *snapshot);
+// M256-D001 class-realization-runtime anchor: the private method-cache
+// snapshots remain the canonical proof surface for realized class/metaclass
+// resolution, category attachment, and protocol-aware negative runtime checks
+// without widening the public runtime header.
 int objc3_runtime_copy_method_cache_state_for_testing(
     objc3_runtime_method_cache_state_snapshot *snapshot);
 int objc3_runtime_copy_method_cache_entry_for_testing(

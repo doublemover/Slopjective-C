@@ -5998,6 +5998,33 @@ consume directly:
   - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
   - `tests/tooling/fixtures/native/m256_category_merge_positive.objc3`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+
+## M256 class realization runtime freeze (D001)
+
+`M256-D001` freezes the runtime-owned class realization boundary that consumes
+the already-emitted `M256-C003` realization records.
+
+- contract id `objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- class realization model
+  `registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name`
+- metaclass graph model
+  `known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain`
+- category attachment model
+  `preferred-category-implementation-records-attach-after-class-bundle-resolution`
+- protocol check model
+  `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks`
+- fail-closed model
+  `invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed`
+- non-goals:
+  - property/ivar storage realization
+  - accessor synthesis
+  - executable protocol-body dispatch
+  - cross-image class coalescing beyond the current ordered image walk
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_class_realization_runtime_contract_and_architecture_freeze_d001_expectations.md`
+  - `spec/planning/compiler/m256/m256_d001_class_realization_runtime_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m256-d001-class-realization-runtime-contract`
+  - `check:objc3c:m256-d001-lane-d-readiness`
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

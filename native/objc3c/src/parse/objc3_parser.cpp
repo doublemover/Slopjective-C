@@ -4825,6 +4825,10 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // M256-C003 executable realization-record expansion anchor: parser still
   // stops at canonical bundle/object/attachment identities only. Realization
   // record serialization remains a downstream lowering responsibility.
+  // M256-D001 class-realization-runtime freeze anchor: parser does not decide
+  // runtime class realization, metaclass graph walking, category attachment,
+  // or protocol-aware negative lookup behavior. It only preserves the source
+  // identities that later sema/lowering/runtime stages consume.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

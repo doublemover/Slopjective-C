@@ -262,3 +262,16 @@ cutover:
   category/protocol probe counts
 - cache snapshots preserve category/protocol probe counts across repeat
   dispatches
+
+`M256-D001` freezes the runtime-owned class realization boundary above that
+lookup/dispatch surface:
+
+- contract id `objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- class/metaclass realization remains driven by emitted `M256-C003`
+  realization records rather than source rediscovery
+- superclass walking remains deterministic per resolved class bundle chain
+- category attachment remains runtime-owned through preferred implementation
+  records per category name
+- protocol records remain declaration-aware negative runtime checks only
+- proof surface remains the private runtime snapshots in
+  `runtime/objc3_runtime_bootstrap_internal.h`

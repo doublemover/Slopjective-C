@@ -432,6 +432,10 @@ bool ProbeProtocolSelectorDeclarationUnlocked(
 bool CollectPreferredCategoryRecordsForImage(
     const RegisteredImageMetadata &record, const std::string &class_name,
     std::vector<const EmittedCategoryRecord *> &preferred_records) {
+  // M256-D001 class-realization-runtime freeze anchor: category attachment is
+  // resolved from emitted category records only after one concrete class name
+  // has been selected. Runtime prefers implementation records over interface
+  // records per category name and fails closed on conflicting attachments.
   std::unordered_map<std::string, const EmittedCategoryRecord *> grouped_records;
   grouped_records.reserve(static_cast<std::size_t>(record.category_descriptor_count));
   for (std::uint64_t index = 0; index < record.category_descriptor_count; ++index) {
@@ -693,6 +697,10 @@ bool TryResolveMethodFromBundleChainUnlocked(
     SlowPathResolution &resolution, bool &ambiguous,
     std::uint64_t &category_probe_count,
     std::uint64_t &protocol_probe_count) {
+  // M256-D001 class-realization-runtime freeze anchor: runtime walks the
+  // emitted class/metaclass chain directly, consults attached categories at
+  // each realized class node, and preserves protocol checks as
+  // declaration-aware negative evidence only.
   std::unordered_set<const EmittedClassBundle *> visited;
   const EmittedClassBundle *bundle = start_bundle;
   while (bundle != nullptr && visited.insert(bundle).second) {

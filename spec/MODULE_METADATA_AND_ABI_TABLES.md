@@ -7041,6 +7041,24 @@ realization-ready metadata surface for the runtime tranche.
   - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
   - `tests/tooling/fixtures/native/m256_category_merge_positive.objc3`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+
+## M256 class realization runtime anchors (D001)
+
+`M256-D001` freezes the runtime-owned consumption boundary for the emitted
+class/protocol/category realization records.
+
+- contract id `objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- emitted IR summary path
+  `; runtime_class_realization = contract=objc3c-runtime-class-realization-freeze/m256-d001-v1`
+- canonical runtime models:
+  - `registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name`
+  - `known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain`
+  - `preferred-category-implementation-records-attach-after-class-bundle-resolution`
+  - `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks`
+- canonical proof artifacts:
+  - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
+  - `tests/tooling/runtime/m256_d001_class_realization_runtime_probe.cpp`
+  - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

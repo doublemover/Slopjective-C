@@ -8987,6 +8987,23 @@ runtime realization work will consume:
   - `check:objc3c:m256-c003-realization-records-for-class-protocol-and-category-artifacts`
   - `check:objc3c:m256-c003-lane-c-readiness`
 
+## M256 class realization runtime freeze (D001)
+
+`M256-D001` freezes the runtime-owned boundary above those emitted realization
+records:
+
+- runtime consumes the emitted class/metaclass bundles directly
+- runtime selects one deterministic class/metaclass chain per resolved class
+  name
+- known-class and class-self receivers normalize onto the metaclass chain
+- category attachment remains runtime-owned after class-bundle selection and
+  prefers implementation records over interface records per category name
+- protocol records remain declaration-aware negative lookup evidence only
+- the boundary must fail closed on invalid bundle graphs, conflicting category
+  attachments, and ambiguous runtime resolution
+- later `M256-D002+` work must extend this runtime surface rather than
+  rederiving source legality or widening the public runtime ABI
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

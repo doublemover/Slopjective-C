@@ -428,6 +428,23 @@ inline constexpr const char *kObjc3ExecutableRealizationCategoryRecordModel =
     "category-records-carry-explicit-class-and-category-owner-identities-plus-attachment-and-adopted-protocol-edges";
 inline constexpr const char *kObjc3ExecutableRealizationFailClosedModel =
     "no-identity-edge-elision-no-out-of-band-graph-reconstruction";
+// M256-D001 class-realization-runtime freeze anchor: lane-D now freezes the
+// current runtime-owned class realization surface that consumes emitted
+// realization records, walks class/metaclass chains, attaches preferred
+// category implementation records, and uses protocol records as
+// declaration-aware negative lookup evidence only.
+inline constexpr const char *kObjc3RuntimeClassRealizationContractId =
+    "objc3c-runtime-class-realization-freeze/m256-d001-v1";
+inline constexpr const char *kObjc3RuntimeClassRealizationModel =
+    "registered-class-bundles-realize-one-deterministic-class-metaclass-chain-per-class-name";
+inline constexpr const char *kObjc3RuntimeMetaclassGraphModel =
+    "known-class-and-class-self-receivers-normalize-onto-the-metaclass-record-chain";
+inline constexpr const char *kObjc3RuntimeClassRealizationCategoryAttachmentModel =
+    "preferred-category-implementation-records-attach-after-class-bundle-resolution";
+inline constexpr const char *kObjc3RuntimeProtocolCheckModel =
+    "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks";
+inline constexpr const char *kObjc3RuntimeClassRealizationFailClosedModel =
+    "invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1357,6 +1374,7 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
+std::string Objc3RuntimeClassRealizationSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
