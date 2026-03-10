@@ -7903,3 +7903,31 @@ payload over the runtime-import-surface handoff:
   - ready replay key for downstream consumption
 - canonical contract evidence:
   - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
+
+## M258 cross-module build and runtime orchestration anchors (D001)
+
+`M258-D001` adds one deterministic orchestration freeze packet above the
+transitive runtime-import-surface payload and the emitted local runtime
+registration manifest.
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_cross_module_build_runtime_orchestration_contract`
+- contract id
+  `objc3c-cross-module-build-runtime-orchestration/m258-d001-v1`
+- source contracts
+  - `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- authoritative artifacts
+  - `module.runtime-import-surface.json`
+  - `module.runtime-registration-manifest.json`
+- canonical payload anchors:
+  - lexicographic module-image set derived from the transitive reuse payload
+  - direct imported-runtime-surface input count
+  - local class/protocol/category/property/ivar descriptor counts from the
+    emitted registration manifest
+  - transitive runtime-owned declaration and metadata-reference counts
+  - fail-closed landed=`false` flags for link-plan packaging, imported
+    registration-manifest ingestion, runtime-archive aggregation, aggregated
+    runtime registration, and public orchestration ABI
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-D001/cross_module_build_runtime_orchestration_contract_summary.json`

@@ -9572,3 +9572,37 @@ metadata handling must preserve:
   without reparsing source
 - keep IR and the public embedding ABI explicit that runtime registration and
   direct imported-payload IR lowering are still later-lane responsibilities
+
+## M258 cross-module build and runtime orchestration (D001)
+
+M258 lane-D D001 freezes the truthful orchestration boundary above the
+transitive serialized import payload and the emitted local registration
+manifest:
+
+- `pipeline/objc3_frontend_artifacts.cpp` now publishes
+  `frontend.pipeline.semantic_surface.objc_cross_module_build_runtime_orchestration_contract`
+- that surface binds together:
+  - the transitive reused module set from `M258-C002`
+  - the direct imported-runtime-surface input count
+  - the local class/protocol/category/property/ivar descriptor counts from
+    `module.runtime-registration-manifest.json`
+- landed truths in this lane:
+  - the transitive import payload is authoritative for cross-module module-set
+    planning
+  - the emitted local registration manifest is authoritative for local
+    descriptor inventory
+- non-goals remain explicit and fail closed:
+  - no cross-module link-plan artifact is emitted
+  - imported registration manifests are not loaded yet
+  - runtime-archive aggregation is not landed
+  - aggregated runtime-registration launch orchestration is not landed
+  - the public embedding ABI still has no cross-module orchestration handle
+
+`M258-D002` is the next lane-D step:
+
+- consume the frozen D001 boundary to package real cross-module link/runtime
+  registration inputs
+- preserve the `module.runtime-import-surface.json` plus local
+  `module.runtime-registration-manifest.json` authority split
+- land imported registration-manifest loading, packaging proof output, and the
+  first real cross-module runtime-registration orchestration path

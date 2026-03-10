@@ -16300,3 +16300,34 @@ prefer that payload when present.
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
   - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
   - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
+
+## Cross-module build and runtime orchestration freeze (M258-D001)
+
+`M258-D001` freezes the truthful lane-D boundary above transitive
+runtime-import-surface reuse and the emitted local runtime registration
+manifest, but below any real cross-module link packaging or aggregated runtime
+registration.
+
+- contract id
+  `objc3c-cross-module-build-runtime-orchestration/m258-d001-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_cross_module_build_runtime_orchestration_contract`
+- source contracts
+  - `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- authoritative artifacts
+  - `module.runtime-import-surface.json`
+  - `module.runtime-registration-manifest.json`
+- current boundary
+  - the compiler now publishes one deterministic orchestration freeze packet
+    tying the transitive import payload to the local registration manifest
+  - cross-module link-plan artifacts are not landed
+  - imported registration-manifest loading is not landed
+  - runtime-archive aggregation and aggregated runtime registration are not
+    landed
+  - no public cross-module orchestration ABI is exposed in this lane
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tmp/reports/m258/M258-D001/cross_module_build_runtime_orchestration_contract_summary.json`

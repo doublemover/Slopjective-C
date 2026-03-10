@@ -609,6 +609,11 @@ class Objc3IREmitter {
       // runtime-import-surface artifacts may now carry a transitive serialized
       // runtime-metadata payload for downstream frontend reuse, but imported
       // payloads still are not lowered directly into IR in this lane.
+      // M258-D001 cross-module build/runtime orchestration anchor:
+      // cross-module link-plan packaging and aggregated runtime-registration
+      // orchestration remain outside the IR emitter; lane D only freezes the
+      // boundary between emitted import-surface reuse payloads and the local
+      // runtime registration manifest here.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.

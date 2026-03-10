@@ -6917,3 +6917,31 @@ lowering.
   - payload reuse is a frontend capability in this lane
   - runtime registration and cross-module realization remain lane-D work
   - imported payloads still are not lowered directly into LLVM IR in this lane
+
+## M258 cross-module build and runtime orchestration freeze (D001)
+
+`M258-D001` freezes the packaging/orchestration contract between the transitive
+serialized import payload and the emitted local runtime registration manifest.
+
+- contract id
+  `objc3c-cross-module-build-runtime-orchestration/m258-d001-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_cross_module_build_runtime_orchestration_contract`
+- source contracts
+  - `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- authoritative artifacts
+  - `module.runtime-import-surface.json`
+  - `module.runtime-registration-manifest.json`
+- compiler behavior
+  - the semantic surface now binds the direct imported runtime-surface inputs,
+    the transitive reused module set, and the local registration-manifest
+    descriptor inventory into one deterministic freeze packet
+  - the boundary stays fail closed if either source contract disappears or
+    drifts
+- current boundary
+  - cross-module link-plan artifacts are not landed
+  - imported registration-manifest loading is not landed
+  - runtime-archive aggregation is not landed
+  - cross-module runtime-registration launch orchestration is not landed
+  - no public cross-module orchestration ABI is exposed in this lane

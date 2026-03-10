@@ -72,6 +72,12 @@ extern "C" {
  *   serialized runtime metadata for downstream frontend reuse, but this public
  *   C ABI still does not expose direct serialized-payload handles or imported
  *   IR-lowering entrypoints.
+ * - M258-D001 cross-module build/runtime orchestration anchor: this public C
+ *   ABI still exposes no cross-module link-plan bundle, imported
+ *   registration-manifest ingestion handle, or aggregated runtime-registration
+ *   launch surface. The truthful boundary remains the emitted
+ *   `module.runtime-import-surface.json` artifact plus the local
+ *   `module.runtime-registration-manifest.json` artifact.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 
