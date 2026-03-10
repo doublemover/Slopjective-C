@@ -23,6 +23,10 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # canonical runnable replay corpus boundary for scalar/core coverage. Broader
 # object inspection is frozen onto the dedicated A002 sample instead of widening
 # this smoke script.
+# M259-C002 object-ir-replay-proof anchor: scalar/core smoke remains the base
+# runtime replay corpus, while canonical object/IR replay plus metadata section
+# inspection is delegated to execution replay proof over the A002 runnable
+# sample.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

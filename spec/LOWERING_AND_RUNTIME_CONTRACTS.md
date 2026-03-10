@@ -7115,3 +7115,29 @@ proof.
   - archive/static-link, multi-module, multi-image, and broader binary
     inspection expansion are deferred
   - the next implementation issue is `M259-C002`
+
+## M259 object and IR replay-proof plus metadata inspection evidence (C002)
+
+`M259-C002` implements the live runnable replay-proof capability above the
+`M259-C001` freeze.
+
+- contract id
+  `objc3c-runnable-object-ir-replay-and-metadata-inspection/m259-c002-v1`
+- replay model
+  `a002-canonical-runnable-sample-ir-object-and-readobj-section-replay`
+- evidence model
+  `execution-replay-proof-script-emits-live-ir-object-and-section-inspection-hashes-for-a002`
+- failure model
+  `fail-closed-on-ir-object-or-metadata-inspection-replay-drift`
+- truthful boundary
+  - `scripts/check_objc3c_execution_replay_proof.ps1` must now emit one live
+    proof over the canonical A002 runnable sample rather than relying on a
+    manifest-only summary layer
+  - the proof compares replay-stable hashes for `module.ll`, `module.obj`, and
+    `llvm-readobj --sections` output across two runs of the same canonical
+    runnable sample
+  - the proof remains rooted in the scalar/core smoke corpus plus the dedicated
+    A002 object-model sample
+  - broader archive/static-link, multi-module, and multi-image replay or
+    inspection expansion is deferred
+  - the next implementation issue is `M259-D001`

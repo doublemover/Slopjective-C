@@ -8084,3 +8084,33 @@ runnable sample metadata families.
   - `objc3.runtime.linker_anchor`
   - `objc3.runtime.image_root`
   - `objc3.runtime.registration_descriptor`
+
+## M259 replay-proof metadata inspection evidence anchors (C002)
+
+`M259-C002` does not widen the metadata ABI further. It proves that the current
+A002 runnable sample replays identically through IR, object, and metadata
+section-inspection artifacts.
+
+- contract id
+  `objc3c-runnable-object-ir-replay-and-metadata-inspection/m259-c002-v1`
+- canonical live proof asset
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+- replay-proof summary anchor
+  - `tmp/artifacts/objc3c-native/execution-replay-proof/<proof_run_id>/summary.json`
+- canonical replay fields
+  - `canonical_runnable_replay.ir_sha256`
+  - `canonical_runnable_replay.object_sha256`
+  - `canonical_runnable_replay.section_inspection_sha256`
+  - `canonical_runnable_replay.required_runtime_sections`
+- canonical inspected sections remain
+  - `objc3.runtime.class_descriptors`
+  - `objc3.runtime.protocol_descriptors`
+  - `objc3.runtime.category_descriptors`
+  - `objc3.runtime.property_descriptors`
+  - `objc3.runtime.ivar_descriptors`
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+  - `objc3.runtime.discovery_root`
+  - `objc3.runtime.linker_anchor`
+  - `objc3.runtime.image_root`
+  - `objc3.runtime.registration_descriptor`

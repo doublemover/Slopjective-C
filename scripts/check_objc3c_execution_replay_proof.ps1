@@ -20,11 +20,31 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # canonical replay-proof artifact boundary for the current runnable slice.
 # Deeper object/metadata inspection is frozen onto the dedicated A002 sample
 # instead of widening the scalar replay corpus here.
+# M259-C002 object-ir-replay-proof anchor: canonical runnable A002 programs now
+# prove direct IR replay, object replay, and metadata-section inspection replay
+# on the live execution proof path.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 $run1Id = "${proofRunId}_run1"
 $run2Id = "${proofRunId}_run2"
+$canonicalRunnableFixture = Join-Path $repoRoot "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
+$defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$configuredLlvmReadobj = $env:OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH
+$llvmReadobjCommand = if ([string]::IsNullOrWhiteSpace($configuredLlvmReadobj)) { "llvm-readobj" } else { $configuredLlvmReadobj }
+$requiredRuntimeSections = @(
+  "objc3.runtime.class_descriptors",
+  "objc3.runtime.protocol_descriptors",
+  "objc3.runtime.category_descriptors",
+  "objc3.runtime.property_descriptors",
+  "objc3.runtime.ivar_descriptors",
+  "objc3.runtime.selector_pool",
+  "objc3.runtime.string_pool",
+  "objc3.runtime.discovery_root",
+  "objc3.runtime.linker_anchor",
+  "objc3.runtime.image_root",
+  "objc3.runtime.registration_descriptor"
+)
 
 function Get-RepoRelativePath {
   param(
@@ -51,6 +71,138 @@ function Get-Sha256HexFromText {
   }
   finally {
     $sha256.Dispose()
+  }
+}
+
+function Get-Sha256HexFromFile {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "execution replay proof FAIL: missing file for hashing $Path"
+  }
+  return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-NormalizedTextFromFile {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "execution replay proof FAIL: missing text file $Path"
+  }
+  return (Get-Content -LiteralPath $Path -Raw).Replace("`r`n", "`n")
+}
+
+function Get-NormalizedReadobjSectionText {
+  param([Parameter(Mandatory = $true)][string]$Text)
+
+  $normalizedLines = foreach ($line in ($Text -split "`r?`n")) {
+    if ($line.StartsWith("File: ")) {
+      "File: <canonical-object>"
+    }
+    else {
+      $line
+    }
+  }
+  return (($normalizedLines -join "`n").TrimEnd() + "`n")
+}
+
+function Get-ReadobjSectionNames {
+  param([Parameter(Mandatory = $true)][string]$Text)
+
+  $names = [System.Collections.Generic.List[string]]::new()
+  foreach ($line in ($Text -split "`r?`n")) {
+    $trimmed = $line.Trim()
+    if ($trimmed.StartsWith("Name: ")) {
+      $name = $trimmed.Substring(6)
+      $parenIndex = $name.IndexOf(" (", [System.StringComparison]::Ordinal)
+      if ($parenIndex -ge 0) {
+        $name = $name.Substring(0, $parenIndex)
+      }
+      $names.Add($name.Trim())
+    }
+  }
+  return @($names)
+}
+
+function Resolve-NativeExeForReplay {
+  param([Parameter(Mandatory = $true)][string]$SummaryPath)
+
+  $summary = Get-Content -LiteralPath $SummaryPath -Raw | ConvertFrom-Json
+  if ($summary.PSObject.Properties.Name -contains "native_exe") {
+    $nativeRelative = "$($summary.native_exe)"
+    if (![string]::IsNullOrWhiteSpace($nativeRelative)) {
+      $candidate = Join-Path $repoRoot ($nativeRelative.Replace('/', '\'))
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        return $candidate
+      }
+    }
+  }
+  if (Test-Path -LiteralPath $defaultNativeExe -PathType Leaf) {
+    return $defaultNativeExe
+  }
+  throw "execution replay proof FAIL: unable to resolve native executable for canonical runnable replay"
+}
+
+function Invoke-CanonicalRunnableReplayArtifact {
+  param(
+    [Parameter(Mandatory = $true)][string]$RunLabel,
+    [Parameter(Mandatory = $true)][string]$NativeExe
+  )
+
+  $artifactRoot = Join-Path $proofDir "canonical_runnable_${RunLabel}"
+  $outDir = Join-Path $artifactRoot "out"
+  $compileLog = Join-Path $artifactRoot "compile.log"
+  $readobjLog = Join-Path $artifactRoot "readobj-sections.log"
+  New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
+  New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+  & $NativeExe $canonicalRunnableFixture --out-dir $outDir --emit-prefix module *> $compileLog
+  $compileExit = [int]$LASTEXITCODE
+  if ($compileExit -ne 0) {
+    throw "execution replay proof FAIL: canonical runnable compile failed for $RunLabel (exit=$compileExit)"
+  }
+
+  $backendPath = Join-Path $outDir "module.object-backend.txt"
+  $manifestPath = Join-Path $outDir "module.manifest.json"
+  $irPath = Join-Path $outDir "module.ll"
+  $objPath = Join-Path $outDir "module.obj"
+  foreach ($artifactPath in @($backendPath, $manifestPath, $irPath, $objPath)) {
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      throw "execution replay proof FAIL: missing canonical runnable artifact $artifactPath"
+    }
+  }
+
+  $backend = (Get-Content -LiteralPath $backendPath -Raw).Trim()
+  if ($backend -ne "llvm-direct") {
+    throw "execution replay proof FAIL: canonical runnable backend drift ($RunLabel backend=$backend)"
+  }
+
+  & $llvmReadobjCommand --sections $objPath *> $readobjLog
+  $readobjExit = [int]$LASTEXITCODE
+  if ($readobjExit -ne 0) {
+    throw "execution replay proof FAIL: llvm-readobj --sections failed for $RunLabel (exit=$readobjExit)"
+  }
+
+  $sectionText = Get-NormalizedTextFromFile -Path $readobjLog
+  $normalizedSectionText = Get-NormalizedReadobjSectionText -Text $sectionText
+  $sectionNames = @(Get-ReadobjSectionNames -Text $sectionText)
+  $missingSections = @($requiredRuntimeSections | Where-Object { $sectionNames -notcontains $_ })
+  if ($missingSections.Count -gt 0) {
+    throw "execution replay proof FAIL: canonical runnable object is missing required runtime sections for $RunLabel (missing=$($missingSections -join '|'))"
+  }
+
+  return [ordered]@{
+    out_dir = Get-RepoRelativePath -Path $outDir -Root $repoRoot
+    compile_log = Get-RepoRelativePath -Path $compileLog -Root $repoRoot
+    backend = $backend
+    manifest = Get-RepoRelativePath -Path $manifestPath -Root $repoRoot
+    ir = Get-RepoRelativePath -Path $irPath -Root $repoRoot
+    object = Get-RepoRelativePath -Path $objPath -Root $repoRoot
+    readobj_sections_log = Get-RepoRelativePath -Path $readobjLog -Root $repoRoot
+    ir_sha256 = Get-Sha256HexFromText -Text (Get-NormalizedTextFromFile -Path $irPath)
+    object_sha256 = Get-Sha256HexFromFile -Path $objPath
+    section_inspection_sha256 = Get-Sha256HexFromText -Text $normalizedSectionText
+    section_names = @($sectionNames)
   }
 }
 
@@ -147,6 +299,22 @@ try {
     throw "execution replay proof FAIL: canonical summary drift across replay (run1=$run1Hash run2=$run2Hash)"
   }
 
+  $nativeExeForReplay = Resolve-NativeExeForReplay -SummaryPath $run1SummaryPath
+  $canonicalRun1 = Invoke-CanonicalRunnableReplayArtifact -RunLabel "run1" -NativeExe $nativeExeForReplay
+  $canonicalRun2 = Invoke-CanonicalRunnableReplayArtifact -RunLabel "run2" -NativeExe $nativeExeForReplay
+  if ($canonicalRun1.ir_sha256 -ne $canonicalRun2.ir_sha256) {
+    throw "execution replay proof FAIL: canonical runnable IR drift across replay (run1=$($canonicalRun1.ir_sha256) run2=$($canonicalRun2.ir_sha256))"
+  }
+  if ($canonicalRun1.object_sha256 -ne $canonicalRun2.object_sha256) {
+    throw "execution replay proof FAIL: canonical runnable object drift across replay (run1=$($canonicalRun1.object_sha256) run2=$($canonicalRun2.object_sha256))"
+  }
+  if ($canonicalRun1.section_inspection_sha256 -ne $canonicalRun2.section_inspection_sha256) {
+    throw "execution replay proof FAIL: canonical runnable metadata inspection drift across replay (run1=$($canonicalRun1.section_inspection_sha256) run2=$($canonicalRun2.section_inspection_sha256))"
+  }
+  if (($canonicalRun1.section_names -join "|") -ne ($canonicalRun2.section_names -join "|")) {
+    throw "execution replay proof FAIL: canonical runnable section inventory drift across replay"
+  }
+
   $summary = [ordered]@{
     proof_run_id = $proofRunId
     run1_id = $run1Id
@@ -155,11 +323,25 @@ try {
     run2_summary = Get-RepoRelativePath -Path $run2SummaryPath -Root $repoRoot
     run1_sha256 = $run1Hash
     run2_sha256 = $run2Hash
+    canonical_runnable_replay = [ordered]@{
+      fixture = Get-RepoRelativePath -Path $canonicalRunnableFixture -Root $repoRoot
+      native_exe = Get-RepoRelativePath -Path $nativeExeForReplay -Root $repoRoot
+      required_runtime_sections = @($requiredRuntimeSections)
+      run1 = $canonicalRun1
+      run2 = $canonicalRun2
+      ir_sha256 = $canonicalRun1.ir_sha256
+      object_sha256 = $canonicalRun1.object_sha256
+      section_inspection_sha256 = $canonicalRun1.section_inspection_sha256
+      status = "PASS"
+    }
     status = "PASS"
   }
   $summary | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $summaryPath -Encoding utf8
   Write-Output "run1_sha256: $run1Hash"
   Write-Output "run2_sha256: $run2Hash"
+  Write-Output "canonical_runnable_ir_sha256: $($canonicalRun1.ir_sha256)"
+  Write-Output "canonical_runnable_object_sha256: $($canonicalRun1.object_sha256)"
+  Write-Output "canonical_runnable_section_inspection_sha256: $($canonicalRun1.section_inspection_sha256)"
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $summaryPath -Root $repoRoot)"
   Write-Output "status: PASS"
 }

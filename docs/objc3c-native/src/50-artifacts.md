@@ -4894,6 +4894,29 @@ boundary for the runnable native Objective-C 3 slice.
     surfaces are still outside the runnable replay/inspection claim boundary
   - the next implementation issue is `M259-C002`
 
+## M259 object and IR replay-proof plus metadata inspection evidence (C002)
+
+`M259-C002` turns the frozen `M259-C001` boundary into one live proof path for
+canonical runnable object-model programs.
+
+- contract id
+  `objc3c-runnable-object-ir-replay-and-metadata-inspection/m259-c002-v1`
+- replay model
+  `a002-canonical-runnable-sample-ir-object-and-readobj-section-replay`
+- evidence model
+  `execution-replay-proof-script-emits-live-ir-object-and-section-inspection-hashes-for-a002`
+- truthful boundary
+  - `scripts/check_objc3c_execution_replay_proof.ps1` now proves replay-stable
+    hashes for `module.ll`, `module.obj`, and `llvm-readobj --sections` output
+    over the canonical A002 runnable sample
+  - the proof remains rooted in
+    `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - scalar/core smoke remains the upstream execution corpus; C002 adds the
+    dedicated object-model replay and metadata-inspection proof above it
+  - broader archive/static-link, multi-module, and multi-image inspection
+    expansion still does not land here
+  - the next implementation issue is `M259-D001`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current
