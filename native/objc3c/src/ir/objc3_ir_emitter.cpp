@@ -5384,6 +5384,10 @@ class Objc3IREmitter {
       // boundary above the D003 realized graph. The builtin selector count is
       // fixed to alloc/new/init, while metadata-rich category/protocol shapes
       // remain observable through the paired library/probe proof path.
+      // M256-E001 class-protocol-category conformance gate anchor:
+      // A003/B004/C003/D004 remain the canonical proof surface that lane-E
+      // consumes to decide whether classes/protocols/categories are executable
+      // rather than merely modeled.
       out << "; runtime_canonical_runnable_object_sample_support = "
           << Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary()
           << ";class_bundle_count="

@@ -4840,6 +4840,9 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // nested bracketed object-sample sends like [[Widget alloc] init] without
   // rewriting receiver shape, so later sema/runtime stages can admit the
   // runtime-owned builtin alloc/new/init boundary truthfully.
+  // M256-E001 class-protocol-category conformance gate anchor: lane-E consumes
+  // the A003/B004/C003/D004 evidence chain and therefore still depends on this
+  // parser-owned syntax preservation instead of any gate-specific rewrite.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

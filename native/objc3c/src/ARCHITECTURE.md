@@ -9051,6 +9051,24 @@ object-sample surface:
   - `check:objc3c:m256-d004-canonical-runnable-class-and-object-sample-support`
   - `check:objc3c:m256-d004-lane-d-readiness`
 
+## M256 class/protocol/category conformance gate (E001)
+
+`M256-E001` freezes the first lane-E proof gate for executable classes,
+protocols, and categories:
+
+- lane-E now consumes the canonical `A003/B004/C003/D004` evidence chain rather
+  than inventing a parallel parser/sema/runtime proof surface
+- the gate is fail closed on summary disappearance, contract-id drift, or proof
+  chain breakage across source closure, inheritance legality, realization
+  records, and the canonical runnable object sample
+- `M256-E002` is the first issue allowed to broaden this freeze into a larger
+  runnable execution matrix
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_class_protocol_and_category_conformance_gate_contract_and_architecture_freeze_e001_expectations.md`
+  - `spec/planning/compiler/m256/m256_e001_class_protocol_and_category_conformance_gate_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m256-e001-class-protocol-and-category-conformance-gate`
+  - `check:objc3c:m256-e001-lane-e-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

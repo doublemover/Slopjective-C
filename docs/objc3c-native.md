@@ -6628,6 +6628,27 @@ library-plus-probe path.
 - evidence path
   - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
 
+## Class, protocol, and category conformance gate (M256-E001)
+
+`M256-E001` freezes the first lane-E proof gate above the current executable
+class/protocol/category surface.
+
+- contract id
+  `objc3c-executable-class-protocol-category-conformance-gate/m256-e001-v1`
+- evidence model
+  `a003-b004-c003-d004-summary-chain`
+- execution boundary model
+  `runnable-class-protocol-category-evidence-consumes-source-sema-lowering-and-runtime-proofs`
+- fail-closed model
+  `fail-closed-on-class-protocol-category-conformance-evidence-drift`
+- upstream evidence chain
+  - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+  - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+- evidence path
+  - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

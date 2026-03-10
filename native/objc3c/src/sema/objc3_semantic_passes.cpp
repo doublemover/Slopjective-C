@@ -11511,6 +11511,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // the fail-closed admission boundary for runtime-built alloc/new/init on
   // concrete object samples, including inherited class-method lookup through
   // the canonical superclass chain.
+  // M256-E001 class-protocol-category conformance gate anchor: lane-E freezes
+  // the aggregated evidence boundary over these sema-owned inheritance,
+  // conformance, and category-merge decisions before execution-matrix
+  // expansion in M256-E002.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

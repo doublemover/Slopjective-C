@@ -7112,6 +7112,25 @@ existing realized graph and category/protocol runtime anchors.
   - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
   - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
 
+## M256 class/protocol/category conformance gate metadata anchors (E001)
+
+`M256-E001` does not add new emitted metadata families. It freezes the first
+lane-E gate that decides whether the current class/protocol/category evidence
+chain is sufficient to claim executable behavior.
+
+- contract id `objc3c-executable-class-protocol-category-conformance-gate/m256-e001-v1`
+- evidence model
+  `a003-b004-c003-d004-summary-chain`
+- execution boundary model
+  `runnable-class-protocol-category-evidence-consumes-source-sema-lowering-and-runtime-proofs`
+- canonical upstream anchors:
+  - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+  - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+- canonical gate evidence:
+  - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at
