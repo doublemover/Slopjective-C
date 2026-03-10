@@ -454,6 +454,29 @@ spec eventually defines.
 
 **Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
+
+---
+
+## D-018: Compatibility selections are live, source-only claims stay downgraded, and strictness stays rejected <a id="decisions-d-018"></a>
+
+**Decision:** The native `objc3c` sema layer shall publish one fail-closed
+semantic legality packet that classifies the current frontend truth surface as:
+
+- valid live selections: language version, compatibility mode, migration assist,
+- downgraded recognized claims: source-only declaration/object-surface features,
+- rejected claim surfaces: strictness, strict concurrency, and feature-macro publication.
+
+Source-only recognized features shall not be promoted into runnable claims until
+their lowering/runtime-backed implementations exist. Unsupported strictness and
+feature-macro surfaces shall remain explicitly rejected until they become
+executable.
+
+**Rationale:** Truthful conformance requires a semantic boundary that explains
+how live selections and non-runnable claims relate, rather than treating every
+recognized surface as implementation-complete.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
 <!-- END DECISIONS_LOG.md -->
 
 ---
@@ -14722,6 +14745,23 @@ That surface must keep the current state explicit:
 This prevents the driver/frontend layer from implying Strict, Strict
 Concurrency, or feature-macro conformance before those surfaces are actually
 implemented end to end.
+
+## M264 semantic claim legality packet (implementation note)
+
+The frontend/sema layer also publishes one fail-closed legality packet that
+classifies the currently live truth surface:
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+That packet must keep the semantic classification explicit:
+
+- compatibility mode and migration-assist combinations are valid live selections
+- source-only recognized claims remain downgraded and never promote to runnable
+- strictness / strict-concurrency selection remain rejected
+- feature-macro publication remains suppressed
+
+This is the semantic boundary later lowering/runtime/reporting lanes must
+consume when deciding what Objective-C 3 support can be truthfully claimed.
 <!-- END CONFORMANCE_PROFILE_CHECKLIST.md -->
 
 ---

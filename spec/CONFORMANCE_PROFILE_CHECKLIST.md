@@ -286,3 +286,20 @@ That surface must keep the current state explicit:
 This prevents the driver/frontend layer from implying Strict, Strict
 Concurrency, or feature-macro conformance before those surfaces are actually
 implemented end to end.
+
+## M264 semantic claim legality packet (implementation note)
+
+The frontend/sema layer also publishes one fail-closed legality packet that
+classifies the currently live truth surface:
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+That packet must keep the semantic classification explicit:
+
+- compatibility mode and migration-assist combinations are valid live selections
+- source-only recognized claims remain downgraded and never promote to runnable
+- strictness / strict-concurrency selection remain rejected
+- feature-macro publication remains suppressed
+
+This is the semantic boundary later lowering/runtime/reporting lanes must
+consume when deciding what Objective-C 3 support can be truthfully claimed.

@@ -3501,6 +3501,90 @@ inline bool IsReadyObjc3RuntimeBootstrapFailureRestartSemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary {
+  std::string contract_id =
+      kObjc3CompatibilityStrictnessClaimSemanticsContractId;
+  std::string runnable_feature_claim_inventory_contract_id =
+      kObjc3RunnableFeatureClaimInventoryContractId;
+  std::string feature_claim_truth_surface_contract_id =
+      kObjc3FeatureClaimStrictnessTruthSurfaceContractId;
+  std::string frontend_surface_path =
+      kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath;
+  std::string semantic_model =
+      kObjc3CompatibilityStrictnessClaimSemanticModel;
+  std::string downgrade_model =
+      kObjc3CompatibilityStrictnessClaimDowngradeModel;
+  std::string rejection_model =
+      kObjc3CompatibilityStrictnessClaimRejectionModel;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  std::size_t valid_compatibility_mode_count = 0;
+  std::size_t live_selection_surface_count = 0;
+  std::size_t valid_selection_combination_count = 0;
+  std::size_t runnable_feature_claim_count = 0;
+  std::size_t downgraded_source_only_claim_count = 0;
+  std::size_t rejected_unsupported_feature_claim_count = 0;
+  std::size_t rejected_selection_surface_count = 0;
+  std::size_t suppressed_macro_claim_count = 0;
+  bool fail_closed = false;
+  bool semantic_boundary_ready = false;
+  bool compatibility_mode_semantics_landed = false;
+  bool migration_assist_semantics_landed = false;
+  bool source_only_claim_downgrade_semantics_landed = false;
+  bool unsupported_feature_claim_rejection_semantics_landed = false;
+  bool strictness_selection_rejection_semantics_landed = false;
+  bool feature_macro_claim_suppression_semantics_landed = false;
+  bool selected_configuration_valid = false;
+  bool selected_configuration_downgraded = false;
+  bool selected_configuration_rejected = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string semantic_boundary_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary &summary) {
+  const bool compatibility_mode_valid =
+      summary.effective_compatibility_mode == "canonical" ||
+      summary.effective_compatibility_mode == "legacy";
+  return !summary.contract_id.empty() &&
+         !summary.runnable_feature_claim_inventory_contract_id.empty() &&
+         !summary.feature_claim_truth_surface_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.semantic_model.empty() && !summary.downgrade_model.empty() &&
+         !summary.rejection_model.empty() && compatibility_mode_valid &&
+         summary.fail_closed && summary.semantic_boundary_ready &&
+         summary.valid_compatibility_mode_count ==
+             kObjc3CompatibilityStrictnessClaimValidCompatibilityModeCount &&
+         summary.live_selection_surface_count ==
+             kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount &&
+         summary.valid_selection_combination_count ==
+             kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount &&
+         summary.runnable_feature_claim_count ==
+             kObjc3CompatibilityStrictnessClaimRunnableFeatureCount &&
+         summary.downgraded_source_only_claim_count ==
+             kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount &&
+         summary.rejected_unsupported_feature_claim_count ==
+             kObjc3CompatibilityStrictnessClaimRejectedFeatureCount &&
+         summary.rejected_selection_surface_count ==
+             kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount &&
+         summary.suppressed_macro_claim_count ==
+             kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount &&
+         summary.compatibility_mode_semantics_landed &&
+         summary.migration_assist_semantics_landed &&
+         summary.source_only_claim_downgrade_semantics_landed &&
+         summary.unsupported_feature_claim_rejection_semantics_landed &&
+         summary.strictness_selection_rejection_semantics_landed &&
+         summary.feature_macro_claim_suppression_semantics_landed &&
+         summary.selected_configuration_valid &&
+         !summary.selected_configuration_downgraded &&
+         !summary.selected_configuration_rejected &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.semantic_boundary_replay_key.empty() &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3RuntimeBootstrapApiSummary {
   std::string contract_id = kObjc3RuntimeBootstrapApiContractId;
   std::string support_library_core_feature_contract_id =

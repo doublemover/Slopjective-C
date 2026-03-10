@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "parse/objc3_parser_contract.h"
+#include "token/objc3_token_contract.h"
 
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMajor = 1;
 inline constexpr std::uint32_t kObjc3SemaBoundaryContractVersionMinor = 0;
@@ -33,6 +34,24 @@ inline constexpr std::array<ValueType, 5> kObjc3CanonicalBridgeTopReferenceTypeF
     ValueType::ObjCInstancetype,
     ValueType::ObjCObjectPtr,
 };
+inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsContractId =
+    "objc3c-compatibility-strictness-claim-semantics/m264-b001-v1";
+inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics";
+inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
+    "live-compatibility-and-migration-selection-source-only-downgrade-unsupported-fail-closed";
+inline constexpr const char *kObjc3CompatibilityStrictnessClaimDowngradeModel =
+    "source-only-claims-remain-recognized-but-never-promote-to-runnable";
+inline constexpr const char *kObjc3CompatibilityStrictnessClaimRejectionModel =
+    "strictness-strict-concurrency-and-feature-macro-claims-remain-fail-closed";
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidCompatibilityModeCount = 2u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 3u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 4u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 7u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount = 6u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 7u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 2u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount = 3u;
 
 inline bool IsObjc3CanonicalReferenceTypeForm(ValueType type) {
   for (const ValueType candidate : kObjc3CanonicalReferenceTypeForms) {
@@ -1392,6 +1411,86 @@ inline bool IsReadyObjc3BootstrapFailureRestartSemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
+  std::string contract_id =
+      kObjc3CompatibilityStrictnessClaimSemanticsContractId;
+  std::string runnable_feature_claim_inventory_contract_id =
+      kObjc3RunnableFeatureClaimInventoryContractId;
+  std::string feature_claim_truth_surface_contract_id =
+      kObjc3FeatureClaimStrictnessTruthSurfaceContractId;
+  std::string surface_path =
+      kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath;
+  std::string semantic_model =
+      kObjc3CompatibilityStrictnessClaimSemanticModel;
+  std::string downgrade_model =
+      kObjc3CompatibilityStrictnessClaimDowngradeModel;
+  std::string rejection_model =
+      kObjc3CompatibilityStrictnessClaimRejectionModel;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  std::size_t valid_compatibility_mode_count = 0;
+  std::size_t live_selection_surface_count = 0;
+  std::size_t valid_selection_combination_count = 0;
+  std::size_t runnable_feature_claim_count = 0;
+  std::size_t downgraded_source_only_claim_count = 0;
+  std::size_t rejected_unsupported_feature_claim_count = 0;
+  std::size_t rejected_selection_surface_count = 0;
+  std::size_t suppressed_macro_claim_count = 0;
+  bool fail_closed = false;
+  bool compatibility_mode_semantics_landed = false;
+  bool migration_assist_semantics_landed = false;
+  bool source_only_claim_downgrade_semantics_landed = false;
+  bool unsupported_feature_claim_rejection_semantics_landed = false;
+  bool strictness_selection_rejection_semantics_landed = false;
+  bool feature_macro_claim_suppression_semantics_landed = false;
+  bool selected_configuration_valid = false;
+  bool selected_configuration_downgraded = false;
+  bool selected_configuration_rejected = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
+    const Objc3CompatibilityStrictnessClaimSemanticsSummary &summary) {
+  const bool compatibility_mode_valid =
+      summary.effective_compatibility_mode == "canonical" ||
+      summary.effective_compatibility_mode == "legacy";
+  return !summary.contract_id.empty() &&
+         !summary.runnable_feature_claim_inventory_contract_id.empty() &&
+         !summary.feature_claim_truth_surface_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.downgrade_model.empty() && !summary.rejection_model.empty() &&
+         compatibility_mode_valid && summary.fail_closed &&
+         summary.valid_compatibility_mode_count ==
+             kObjc3CompatibilityStrictnessClaimValidCompatibilityModeCount &&
+         summary.live_selection_surface_count ==
+             kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount &&
+         summary.valid_selection_combination_count ==
+             kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount &&
+         summary.runnable_feature_claim_count ==
+             kObjc3CompatibilityStrictnessClaimRunnableFeatureCount &&
+         summary.downgraded_source_only_claim_count ==
+             kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount &&
+         summary.rejected_unsupported_feature_claim_count ==
+             kObjc3CompatibilityStrictnessClaimRejectedFeatureCount &&
+         summary.rejected_selection_surface_count ==
+             kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount &&
+         summary.suppressed_macro_claim_count ==
+             kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount &&
+         summary.compatibility_mode_semantics_landed &&
+         summary.migration_assist_semantics_landed &&
+         summary.source_only_claim_downgrade_semantics_landed &&
+         summary.unsupported_feature_claim_rejection_semantics_landed &&
+         summary.strictness_selection_rejection_semantics_landed &&
+         summary.feature_macro_claim_suppression_semantics_landed &&
+         summary.selected_configuration_valid &&
+         !summary.selected_configuration_downgraded &&
+         !summary.selected_configuration_rejected &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
@@ -1416,6 +1515,8 @@ struct Objc3SemanticIntegrationSurface {
       bootstrap_legality_semantics_summary;
   Objc3BootstrapFailureRestartSemanticsSummary
       bootstrap_failure_restart_semantics_summary;
+  Objc3CompatibilityStrictnessClaimSemanticsSummary
+      compatibility_strictness_claim_semantics_summary;
   Objc3ProtocolCategoryCompositionSummary protocol_category_composition_summary;
   Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary;
   Objc3SelectorNormalizationSummary selector_normalization_summary;

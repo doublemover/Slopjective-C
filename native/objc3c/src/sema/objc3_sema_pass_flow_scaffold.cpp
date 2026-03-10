@@ -47,10 +47,8 @@ void FinalizeObjc3SemaPassFlowSummary(
   summary.diagnostics_emission_totals_consistent = diagnostics_emitted_total == summary.diagnostics_total;
   summary.transition_edge_count = summary.executed_pass_count > 0u ? summary.executed_pass_count - 1u : 0u;
   summary.compatibility_handoff_consistent =
-      (!summary.migration_assist_enabled ||
-       summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical) &&
-      (summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ||
-       summary.compatibility_mode == Objc3SemaCompatibilityMode::Legacy);
+      summary.compatibility_mode == Objc3SemaCompatibilityMode::Canonical ||
+      summary.compatibility_mode == Objc3SemaCompatibilityMode::Legacy;
   summary.missing_pass_execution_count = 0;
   for (const bool pass_executed : summary.pass_executed) {
     if (!pass_executed) {

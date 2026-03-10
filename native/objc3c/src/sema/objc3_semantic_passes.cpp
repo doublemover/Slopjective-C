@@ -393,6 +393,86 @@ BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
   return summary;
 }
 
+static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
+    const Objc3CompatibilityStrictnessClaimSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";inventory_contract_id="
+      << summary.runnable_feature_claim_inventory_contract_id
+      << ";truth_surface_contract_id="
+      << summary.feature_claim_truth_surface_contract_id
+      << ";surface_path=" << summary.surface_path
+      << ";semantic_model=" << summary.semantic_model
+      << ";downgrade_model=" << summary.downgrade_model
+      << ";rejection_model=" << summary.rejection_model
+      << ";compatibility_mode=" << summary.effective_compatibility_mode
+      << ";migration_assist="
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ";valid_compatibility_modes="
+      << summary.valid_compatibility_mode_count
+      << ";live_selection_surfaces=" << summary.live_selection_surface_count
+      << ";valid_selection_combinations="
+      << summary.valid_selection_combination_count
+      << ";runnable_claims=" << summary.runnable_feature_claim_count
+      << ";downgraded_source_only_claims="
+      << summary.downgraded_source_only_claim_count
+      << ";rejected_feature_claims="
+      << summary.rejected_unsupported_feature_claim_count
+      << ";rejected_selection_surfaces="
+      << summary.rejected_selection_surface_count
+      << ";suppressed_macro_claims="
+      << summary.suppressed_macro_claim_count;
+  return out.str();
+}
+
+static Objc3CompatibilityStrictnessClaimSemanticsSummary
+BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
+    const Objc3SemanticIntegrationSurface &surface,
+    bool legacy_compatibility_mode,
+    bool migration_assist_enabled) {
+  Objc3CompatibilityStrictnessClaimSemanticsSummary summary;
+  summary.effective_compatibility_mode =
+      legacy_compatibility_mode ? "legacy" : "canonical";
+  summary.migration_assist_enabled = migration_assist_enabled;
+  summary.valid_compatibility_mode_count =
+      kObjc3CompatibilityStrictnessClaimValidCompatibilityModeCount;
+  summary.live_selection_surface_count =
+      kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount;
+  summary.valid_selection_combination_count =
+      kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount;
+  summary.runnable_feature_claim_count =
+      kObjc3CompatibilityStrictnessClaimRunnableFeatureCount;
+  summary.downgraded_source_only_claim_count =
+      kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount;
+  summary.rejected_unsupported_feature_claim_count =
+      kObjc3CompatibilityStrictnessClaimRejectedFeatureCount;
+  summary.rejected_selection_surface_count =
+      kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount;
+  summary.suppressed_macro_claim_count =
+      kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount;
+  summary.fail_closed = true;
+  summary.compatibility_mode_semantics_landed = true;
+  summary.migration_assist_semantics_landed = true;
+  summary.source_only_claim_downgrade_semantics_landed = true;
+  summary.unsupported_feature_claim_rejection_semantics_landed = true;
+  summary.strictness_selection_rejection_semantics_landed = true;
+  summary.feature_macro_claim_suppression_semantics_landed = true;
+  summary.selected_configuration_valid = true;
+  summary.selected_configuration_downgraded = false;
+  summary.selected_configuration_rejected = false;
+  summary.ready_for_lowering_and_runtime =
+      surface.interface_implementation_summary.deterministic;
+  if (summary.ready_for_lowering_and_runtime) {
+    summary.replay_key =
+        BuildCompatibilityStrictnessClaimSemanticsReplayKey(summary);
+  }
+  if (!IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(summary)) {
+    summary.failure_reason =
+        "compatibility/strictness/claim semantics summary is incomplete";
+  }
+  return summary;
+}
+
 static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeInfo &rhs) {
   if (lhs.is_vector != rhs.is_vector) {
     return false;
@@ -10113,8 +10193,11 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
 // transport boundary over this semantic integration surface before section
 // emission/startup registration land, so later runtime ingest consumes the
 // published graph rather than a reconstructed sema view.
-Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
-                                                                        std::vector<std::string> &diagnostics) {
+Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
+    const Objc3ParsedProgram &program,
+    bool legacy_compatibility_mode,
+    bool migration_assist_enabled,
+    std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3SemanticIntegrationSurface surface;
   std::unordered_map<std::string, int> resolved_global_values;
@@ -10968,6 +11051,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
   surface.bootstrap_failure_restart_semantics_summary =
       BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
           surface);
+  // M264-B001 semantic freeze anchor: sema owns the single fail-closed
+  // legality summary that classifies live compatibility/migration selections,
+  // source-only claim downgrades, and unsupported strictness/macro claim
+  // rejections before later lowering/runtime/reporting lanes consume them.
+  surface.compatibility_strictness_claim_semantics_summary =
+      BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
+          surface, legacy_compatibility_mode, migration_assist_enabled);
   // M256-A001 executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before

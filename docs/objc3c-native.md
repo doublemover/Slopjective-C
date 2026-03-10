@@ -10676,6 +10676,32 @@ Validation deliberately proves both sides of the current truth model:
 
 - native runnable compilation keeps the surface truthful on the executable path
 - manifest-only runner probes keep legacy/source-only truth explicit without pretending strictness or feature macros are available
+
+## Compatibility, strictness, and claim semantics (M264-B001)
+
+`M264-B001` adds the sema-owned legality packet that freezes how the current
+frontend truth surfaces must be interpreted:
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+This packet is deliberately fail-closed and classifies the live surface into:
+
+- valid selection combinations: canonical/legacy x migration-assist on/off
+- downgraded claim families: source-only recognized features
+- rejected claim families: unsupported strictness, strict concurrency, and feature-macro publication
+
+The semantic boundary is explicit about current reality:
+
+- compatibility mode and migration assist are live semantic selections
+- source-only claims stay recognized but never promote to runnable
+- strictness and strict-concurrency remain rejected until they become executable
+- feature-macro publication remains suppressed until the corresponding executable/runtime work lands
+
+Validation proves:
+
+- canonical native hello keeps the semantic packet truthful on the executable path
+- legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
+- source-only metadata fixtures remain downgraded rather than misreported as runnable
 ## Deterministic contract commands
 
 From repo root:

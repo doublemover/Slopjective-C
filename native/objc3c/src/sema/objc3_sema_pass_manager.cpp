@@ -888,7 +888,12 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
 
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
-      result.integration_surface = BuildSemanticIntegrationSurface(*input.program, pass_diagnostics);
+      result.integration_surface =
+          BuildSemanticIntegrationSurface(
+              *input.program,
+              input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,
+              input.migration_assist,
+              pass_diagnostics);
     } else if (pass == Objc3SemaPassId::ValidateBodies) {
       ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);
     } else {
@@ -2317,6 +2322,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.integration_surface.bootstrap_legality_semantics_summary;
   result.parity_surface.bootstrap_failure_restart_semantics_summary =
       result.integration_surface.bootstrap_failure_restart_semantics_summary;
+  result.parity_surface.compatibility_strictness_claim_semantics_summary =
+      result.integration_surface.compatibility_strictness_claim_semantics_summary;
   result.parity_surface.interface_method_symbols_total =
       result.parity_surface.interface_implementation_summary.interface_method_symbols;
   result.parity_surface.implementation_method_symbols_total =
