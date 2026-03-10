@@ -618,6 +618,27 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
+  std::ostringstream out;
+  // M257-D001 runtime property/layout consumption freeze anchor: the current
+  // runtime consumes emitted accessor implementation pointers and
+  // property/layout attachment identities through the existing lookup/dispatch
+  // ABI, but alloc/new still collapse onto one canonical realized instance
+  // identity per class and synthesized accessors still execute against the
+  // lane-C storage globals until D002 introduces true instance slots.
+  out << "contract=" << kObjc3RuntimePropertyLayoutConsumptionContractId
+      << ";descriptor_model="
+      << kObjc3RuntimePropertyLayoutConsumptionDescriptorModel
+      << ";allocator_model="
+      << kObjc3RuntimePropertyLayoutConsumptionAllocatorModel
+      << ";storage_model="
+      << kObjc3RuntimePropertyLayoutConsumptionStorageModel
+      << ";fail_closed_model="
+      << kObjc3RuntimePropertyLayoutConsumptionFailClosedModel
+      << ";non_goals=no-true-instance-allocation-no-per-instance-slot-storage-no-reflective-property-registration";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

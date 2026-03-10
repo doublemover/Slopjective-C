@@ -463,6 +463,27 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
         "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation";
+// M257-D001 runtime property/layout consumption freeze anchor: lane-D now
+// freezes the truthful runtime boundary above C003. Runtime consumes emitted
+// synthesized accessor implementation pointers plus property/layout attachment
+// records through the existing lookup/dispatch ABI, but alloc/new still
+// materialize one canonical realized instance identity per class and accessor
+// execution still uses the lane-C storage globals until D002 introduces real
+// per-instance slot allocation.
+inline constexpr const char *kObjc3RuntimePropertyLayoutConsumptionContractId =
+    "objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1";
+inline constexpr const char
+    *kObjc3RuntimePropertyLayoutConsumptionDescriptorModel =
+        "runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery";
+inline constexpr const char
+    *kObjc3RuntimePropertyLayoutConsumptionAllocatorModel =
+        "alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation";
+inline constexpr const char
+    *kObjc3RuntimePropertyLayoutConsumptionStorageModel =
+        "synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots";
+inline constexpr const char
+    *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
+        "no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1465,6 +1486,7 @@ std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
 std::string Objc3ExecutableIvarLayoutEmissionSummary();
 std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
+std::string Objc3RuntimePropertyLayoutConsumptionSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

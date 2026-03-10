@@ -373,6 +373,21 @@ class Objc3IREmitter {
             << synthesized_property_accessor_count_
             << ";synthesized_storage_globals="
             << synthesized_property_storages_.size() << "\n";
+        // M257-D001 runtime property/layout consumption freeze anchor: lane-D
+        // now freezes the truthful runtime surface above C003. Runtime
+        // consumes emitted accessor implementation pointers and
+        // property/layout attachment identities, but repeated alloc/new still
+        // normalize onto one canonical realized instance identity per class
+        // until D002 introduces per-instance slot allocation.
+        out << "; runtime_property_layout_consumption = "
+            << Objc3RuntimePropertyLayoutConsumptionSummary()
+            << ";property_descriptor_entries="
+            << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                   .size()
+            << ";ivar_layout_owner_entries="
+            << frontend_metadata_.executable_ivar_layout_owner_entries
+            << ";synthesized_accessor_entries="
+            << synthesized_property_accessor_count_ << "\n";
       }
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {

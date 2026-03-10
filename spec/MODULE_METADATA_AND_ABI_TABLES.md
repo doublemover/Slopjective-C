@@ -7648,3 +7648,22 @@ the already-live startup paths.
   - slot / size / alignment scalars
 - synthesized storage family anchor:
   - `@objc3_property_storage_...`
+
+## M257 runtime property/layout metadata consumption anchors (D001)
+
+`M257-D001` freezes the first truthful runtime-owned consumer boundary over the emitted property and ivar metadata surface from `M257-C003`.
+
+- contract id
+  `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- runtime consumes descriptor-carried attachments for:
+  - `effective_getter_selector`
+  - `effective_setter_selector`
+  - `synthesized_binding_symbol`
+  - `ivar_layout_symbol`
+  - `getter_implementation_pointer`
+  - `setter_implementation_pointer`
+- canonical IR boundary:
+  - `; runtime_property_layout_consumption = contract=objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- canonical proof assets:
+  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+  - `tmp/reports/m257/M257-D001/property_layout_runtime_contract_summary.json`

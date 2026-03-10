@@ -9384,3 +9384,17 @@ artifacts and the live bootstrap replay runtime:
   - `spec/planning/compiler/m257/m257_c003_synthesized_accessor_and_property_metadata_lowering_core_feature_implementation_packet.md`
   - `check:objc3c:m257-c003-synthesized-accessor-and-property-metadata-lowering`
   - `check:objc3c:m257-c003-lane-c-readiness`
+
+## M257 runtime property and layout consumption freeze (D001)
+
+`M257-D001` freezes the runtime surface immediately above `M257-C003`.
+
+- emitted IR now publishes `; runtime_property_layout_consumption = ...`
+- runtime consumes emitted accessor implementation pointers and property/layout attachment identities without source rediscovery
+- builtin `alloc` / `new` still return one canonical realized instance identity per class
+- synthesized property execution still uses the deterministic lane-C storage globals rather than true per-instance slot storage
+- canonical issue assets:
+  - `docs/contracts/m257_runtime_property_and_layout_consumption_contract_and_architecture_freeze_d001_expectations.md`
+  - `spec/planning/compiler/m257/m257_d001_runtime_property_and_layout_consumption_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m257-d001-runtime-property-and-layout-consumption-contract`
+  - `check:objc3c:m257-d001-lane-d-readiness`

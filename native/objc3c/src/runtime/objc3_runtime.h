@@ -64,6 +64,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // alloc/new/init resolution and inherited class dispatch for canonical object
 // samples also stay behind this same ABI rather than adding dedicated public
 // allocation or sample-only helper entrypoints.
+// M257-D001 property-layout-runtime anchor: runtime-owned property/layout
+// consumption, canonical alloc/new single-instance behavior, and synthesized
+// accessor-backed storage must also stay behind this same ABI until D002
+// introduces real per-instance slot allocation.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

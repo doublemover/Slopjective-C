@@ -207,6 +207,10 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 // proofs likewise stay on these same realized-graph and method-cache snapshots
 // so builtin alloc/new/init ownership can be observed without widening the
 // public ABI.
+// M257-D001 property-layout-runtime anchor: repeated alloc/new observations,
+// synthesized accessor cache entries, and registration/selector snapshots also
+// remain the canonical proof surface for the current single-instance
+// property/layout runtime boundary.
 int objc3_runtime_copy_realized_class_graph_state_for_testing(
     objc3_runtime_realized_class_graph_state_snapshot *snapshot);
 int objc3_runtime_copy_realized_class_entry_for_testing(

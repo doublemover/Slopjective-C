@@ -16012,3 +16012,25 @@ For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forw
   - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
   - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
   - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
+
+## Runtime property and layout consumption freeze (M257-D001)
+
+`M257-D001` freezes the truthful runtime boundary above `M257-C003`.
+
+- contract id
+  `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- runtime consumption model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation`
+- storage model
+  `synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots`
+- current live probe proves repeated `alloc` over `Widget` returns the same canonical instance identity while synthesized getters/setters observe the same storage through that identity
+- canonical proof assets:
+  - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
+  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+  - `tmp/reports/m257/M257-D001/property_layout_runtime_contract_summary.json`
+- non-goals:
+  - true instance allocation
+  - per-instance slot storage
+  - reflective property registration

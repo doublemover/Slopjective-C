@@ -276,6 +276,20 @@ lookup/dispatch surface:
 - proof surface remains the private runtime snapshots in
   `runtime/objc3_runtime_bootstrap_internal.h`
 
+`M257-D001` freezes the current property/layout runtime boundary above the same
+lookup/dispatch surface:
+
+- contract id `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- repeated `alloc`/`new` still produce one canonical realized instance identity
+  per class
+- synthesized property accessors still execute through the lane-C storage
+  globals rather than true per-instance slots
+- proof surface remains:
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+
 `M256-D002` proves the runtime-owned realized class graph and root-class
 baseline above that same lookup/dispatch surface:
 

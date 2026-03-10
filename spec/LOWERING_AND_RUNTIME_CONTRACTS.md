@@ -6659,3 +6659,18 @@ published operator runbook and one stable bootstrap matrix summary.
   `property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers`
 - fail-closed model
   `no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation`
+
+## M257 runtime property and layout consumption freeze (D001)
+
+`M257-D001` freezes the truthful runtime boundary above `M257-C003`: runtime now consumes emitted accessor implementation pointers plus property/layout attachment identities, but alloc/new still return one canonical realized instance identity per class and synthesized accessor execution still uses the lane-C storage globals.
+
+- contract id
+  `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- descriptor model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation`
+- storage model
+  `synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots`
+- fail-closed model
+  `no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet`

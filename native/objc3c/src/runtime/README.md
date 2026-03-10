@@ -187,6 +187,23 @@ the emitted `M256-C003` realization records:
   - executable protocol-body dispatch
   - cross-image class coalescing beyond the current ordered image walk
 
+`M257-D001` freezes the next truthful property/layout runtime boundary above the
+lane-C accessor work:
+
+- contract id `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
+- runtime consumption model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation`
+- storage model
+  `synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots`
+- proof surface remains the same public ABI plus private registration/selector
+  and method-cache snapshots
+- non-goals:
+  - true instance allocation
+  - per-instance slot storage
+  - reflective property registration
+
 `M256-D002` promotes that freeze boundary into a runtime-owned realized graph:
 
 - contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`

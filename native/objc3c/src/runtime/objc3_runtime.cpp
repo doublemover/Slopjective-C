@@ -791,6 +791,11 @@ bool TryResolveRuntimeBuiltinObjectSampleMethod(
     return false;
   }
   const std::string selector = selector_spelling;
+  // M257-D001 runtime property/layout consumption freeze anchor: builtin
+  // alloc/new still materialize one canonical realized instance identity per
+  // class, and synthesized property accessors continue to execute through the
+  // emitted method-cache path plus lane-C storage globals until D002 introduces
+  // true per-instance slot allocation.
   if (family == DispatchFamily::Class &&
       (selector == "alloc" || selector == "new")) {
     resolution.resolved = true;
