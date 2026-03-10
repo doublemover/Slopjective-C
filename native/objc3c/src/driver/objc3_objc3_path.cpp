@@ -57,6 +57,20 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       return 1;
     }
 
+    if (!IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+            artifacts.runtime_aware_import_module_frontend_closure_summary)) {
+      std::cerr << "runtime-aware import/module frontend closure not ready\n";
+      return 125;
+    }
+    if (artifacts.runtime_aware_import_module_artifact_json.empty()) {
+      std::cerr << "runtime-aware import/module artifact payload missing\n";
+      return 125;
+    }
+    WriteRuntimeAwareImportModuleArtifact(
+        cli_options.out_dir,
+        cli_options.emit_prefix,
+        artifacts.runtime_aware_import_module_artifact_json);
+
     // M251-A003 expands the handoff so manifest projection survives fail-closed
     // later lowering/object gates; native runtime linking remains a later
     // milestone.

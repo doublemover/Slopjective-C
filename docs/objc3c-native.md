@@ -16146,3 +16146,32 @@ cross-translation-unit runtime work must preserve.
   - `tmp/reports/m258/M258-A001/runtime_aware_import_module_surface_contract_summary.json`
 - next issue
   - `M258-A002`
+
+## Runtime-aware import/module frontend closure (M258-A002)
+
+`M258-A002` preserves the frozen `M258-A001` surface and turns it into a real
+emitted frontend artifact for later cross-translation-unit consumers.
+
+- contract id
+  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_frontend_closure`
+- emitted artifact
+  `module.runtime-import-surface.json`
+- payload model
+  `runtime-aware-import-module-surface-json-v1`
+- landed truths
+  - runtime-owned declaration import surface is emitted as a deterministic
+    artifact derived from the frozen `M258-A001` contract plus live runtime
+    metadata source records
+  - metadata references are exported as canonical superclass/protocol/property
+    accessor/property ivar-binding/method selector edges
+  - embedding consumes the same artifact through `out_dir` + `emit_prefix`
+    without introducing an in-memory imported-module handle ABI yet
+- current boundary
+  - emitted IR still remains translation-unit local
+  - foreign runtime metadata lowering remains a later lowering/runtime tranche
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
+  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`

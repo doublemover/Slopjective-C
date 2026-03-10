@@ -5,6 +5,7 @@
 #include "ast/objc3_ast.h"
 #include "io/objc3_file_io.h"
 #include "lower/objc3_lowering_contract.h"
+#include "pipeline/objc3_frontend_types.h"
 
 std::filesystem::path BuildManifestArtifactPath(
     const std::filesystem::path &out_dir,
@@ -29,6 +30,14 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
   return out_dir / (emit_prefix + kObjc3RuntimeLinkerDiscoveryArtifactSuffix);
+}
+
+std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir /
+         (emit_prefix +
+          kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix);
 }
 
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
@@ -82,6 +91,14 @@ void WriteRuntimeMetadataDiscoveryArtifact(
     const std::string &discovery_json) {
   WriteText(BuildRuntimeMetadataDiscoveryArtifactPath(out_dir, emit_prefix),
             discovery_json);
+}
+
+void WriteRuntimeAwareImportModuleArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildRuntimeAwareImportModuleArtifactPath(out_dir, emit_prefix),
+            artifact_json);
 }
 
 void WriteRuntimeRegistrationManifestArtifact(

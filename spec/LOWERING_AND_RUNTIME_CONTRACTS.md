@@ -6770,3 +6770,32 @@ runtime-owned declaration or foreign metadata-reference realization.
   inputs until `M258-A002`
 - `M258-A002` must preserve this exact surface while turning it into a real
   compiler/runtime capability
+
+## M258 runtime-aware import/module frontend closure (A002)
+
+`M258-A002` extends the frozen `M258-A001` surface into one emitted frontend
+artifact while keeping IR lowering fail closed for foreign metadata.
+
+- contract id `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_frontend_closure`
+- emitted artifact
+  `module.runtime-import-surface.json`
+- payload model
+  `runtime-aware-import-module-surface-json-v1`
+- authority model
+  `runtime-import-surface-artifact-derived-from-frozen-import-surface-and-runtime-metadata-source-records`
+- payload ownership model
+  `compiler-emits-runtime-import-surface-artifact-frontend-and-later-module-consumers-own-cross-translation-unit-handoff`
+- the emitted artifact must publish:
+  - the preserved `M258-A001` declaration/import-graph counts
+  - canonical runtime-owned declaration inventories
+  - canonical metadata-reference inventories for superclass/protocol/property
+    accessor/property ivar-binding/method selector edges
+  - landed=`true` flags for the frontend import/module surface and emitted
+    artifact handoff
+- the public frontend embedding ABI may advertise only the emitted filesystem
+  artifact path contract for now; direct in-memory imported-module handles or
+  foreign payload injection remain later work
+- emitted IR still remains translation-unit local until later M258 lowering and
+  runtime milestones consume this artifact

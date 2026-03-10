@@ -15,6 +15,9 @@ std::filesystem::path BuildRuntimeMetadataLinkerResponseArtifactPath(
 std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
@@ -36,6 +39,10 @@ void WriteRuntimeMetadataDiscoveryArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &discovery_json);
+void WriteRuntimeAwareImportModuleArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
 void WriteRuntimeRegistrationManifestArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,

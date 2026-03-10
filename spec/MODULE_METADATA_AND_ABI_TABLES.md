@@ -7775,3 +7775,27 @@ summaries to one live executable matrix.
   - no emitted imported-module artifact format yet
   - no cross-translation-unit runtime-owned declaration realization yet
   - no foreign runtime metadata-reference lowering yet
+
+## M258 runtime-aware import/module frontend artifact anchors (A002)
+
+`M258-A002` publishes one new frontend semantic-surface packet plus one emitted
+artifact:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_frontend_closure`
+- contract id
+  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+- emitted artifact
+  `module.runtime-import-surface.json`
+- canonical artifact payload anchors:
+  - preserved `M258-A001` declaration/import-graph counts
+  - runtime-owned declaration inventories for classes, protocols, categories,
+    properties, methods, and ivars
+  - metadata-reference inventories for:
+    - superclass edges
+    - protocol conformance / inheritance edges
+    - property accessor selectors
+    - property ivar-binding symbols
+    - method selectors
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`

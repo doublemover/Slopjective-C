@@ -323,6 +323,568 @@ std::string BuildRuntimeAwareImportModuleSurfaceSummaryJson(
   return out.str();
 }
 
+std::size_t CountRuntimeAwareImportProtocolReferences(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  std::size_t total = 0;
+  for (const auto &class_record : records.classes_lexicographic) {
+    total += class_record.adopted_protocols_lexicographic.size();
+  }
+  for (const auto &protocol_record : records.protocols_lexicographic) {
+    total += protocol_record.inherited_protocols_lexicographic.size();
+  }
+  for (const auto &category_record : records.categories_lexicographic) {
+    total += category_record.adopted_protocols_lexicographic.size();
+  }
+  return total;
+}
+
+std::size_t CountRuntimeAwareImportPropertyAccessorReferences(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  std::size_t total = 0;
+  for (const auto &property_record : records.properties_lexicographic) {
+    if (!property_record.effective_getter_selector.empty()) {
+      ++total;
+    }
+    if (property_record.effective_setter_available &&
+        !property_record.effective_setter_selector.empty()) {
+      ++total;
+    }
+  }
+  return total;
+}
+
+std::size_t CountRuntimeAwareImportPropertyIvarBindingReferences(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  std::size_t total = 0;
+  for (const auto &property_record : records.properties_lexicographic) {
+    if (!property_record.ivar_binding_symbol.empty()) {
+      ++total;
+    }
+  }
+  return total;
+}
+
+std::string BuildRuntimeAwareImportModuleFrontendClosureReplayKey(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source_surface_contract_id=" << summary.source_surface_contract_id
+      << ";frontend_surface_path=" << summary.frontend_surface_path
+      << ";payload_model=" << summary.payload_model
+      << ";artifact_relative_path=" << summary.artifact_relative_path
+      << ";authority_model=" << summary.authority_model
+      << ";payload_ownership_model=" << summary.payload_ownership_model
+      << ";module_name=" << summary.module_name
+      << ";protocol_decl_count=" << summary.protocol_decl_count
+      << ";interface_decl_count=" << summary.interface_decl_count
+      << ";implementation_decl_count=" << summary.implementation_decl_count
+      << ";interface_category_decl_count="
+      << summary.interface_category_decl_count
+      << ";implementation_category_decl_count="
+      << summary.implementation_category_decl_count
+      << ";function_decl_count=" << summary.function_decl_count
+      << ";module_import_graph_sites=" << summary.module_import_graph_sites
+      << ";import_edge_candidate_sites="
+      << summary.import_edge_candidate_sites
+      << ";namespace_segment_sites=" << summary.namespace_segment_sites
+      << ";object_pointer_type_sites=" << summary.object_pointer_type_sites
+      << ";pointer_declarator_sites=" << summary.pointer_declarator_sites
+      << ";normalized_sites=" << summary.normalized_sites
+      << ";contract_violation_sites=" << summary.contract_violation_sites
+      << ";class_record_count=" << summary.class_record_count
+      << ";protocol_record_count=" << summary.protocol_record_count
+      << ";category_record_count=" << summary.category_record_count
+      << ";property_record_count=" << summary.property_record_count
+      << ";method_record_count=" << summary.method_record_count
+      << ";ivar_record_count=" << summary.ivar_record_count
+      << ";runtime_owned_declaration_count="
+      << summary.runtime_owned_declaration_count
+      << ";superclass_reference_count=" << summary.superclass_reference_count
+      << ";protocol_reference_count=" << summary.protocol_reference_count
+      << ";property_accessor_reference_count="
+      << summary.property_accessor_reference_count
+      << ";property_ivar_binding_reference_count="
+      << summary.property_ivar_binding_reference_count
+      << ";method_selector_reference_count="
+      << summary.method_selector_reference_count
+      << ";metadata_reference_count=" << summary.metadata_reference_count
+      << ";source_surface_replay_key=" << summary.source_surface_replay_key;
+  return out.str();
+}
+
+Objc3RuntimeAwareImportModuleFrontendClosureSummary
+BuildRuntimeAwareImportModuleFrontendClosureSummary(
+    const Objc3Program &program,
+    const Objc3ParserContractSnapshot &parser_contract_snapshot,
+    const Objc3ModuleImportGraphLoweringContract
+        &module_import_graph_lowering_contract,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
+  Objc3RuntimeAwareImportModuleFrontendClosureSummary summary;
+  summary.fail_closed = true;
+  summary.source_surface_contract_ready =
+      module_import_graph_lowering_contract.deterministic;
+  summary.runtime_metadata_source_records_ready =
+      IsReadyObjc3RuntimeMetadataSourceRecordSet(runtime_metadata_source_records);
+  summary.frontend_surface_published = true;
+  summary.import_artifact_template_published = true;
+  summary.runtime_aware_import_declarations_landed = true;
+  summary.module_metadata_import_surface_landed = true;
+  summary.runtime_owned_declaration_import_landed = true;
+  summary.runtime_metadata_reference_import_landed = true;
+  summary.public_frontend_api_module_surface_landed = true;
+  summary.module_name = program.module_name;
+  summary.protocol_decl_count = parser_contract_snapshot.protocol_decl_count;
+  summary.interface_decl_count = parser_contract_snapshot.interface_decl_count;
+  summary.implementation_decl_count =
+      parser_contract_snapshot.implementation_decl_count;
+  summary.interface_category_decl_count =
+      parser_contract_snapshot.interface_category_decl_count;
+  summary.implementation_category_decl_count =
+      parser_contract_snapshot.implementation_category_decl_count;
+  summary.function_decl_count = parser_contract_snapshot.function_decl_count;
+  summary.module_import_graph_sites =
+      module_import_graph_lowering_contract.module_import_graph_sites;
+  summary.import_edge_candidate_sites =
+      module_import_graph_lowering_contract.import_edge_candidate_sites;
+  summary.namespace_segment_sites =
+      module_import_graph_lowering_contract.namespace_segment_sites;
+  summary.object_pointer_type_sites =
+      module_import_graph_lowering_contract.object_pointer_type_sites;
+  summary.pointer_declarator_sites =
+      module_import_graph_lowering_contract.pointer_declarator_sites;
+  summary.normalized_sites = module_import_graph_lowering_contract.normalized_sites;
+  summary.contract_violation_sites =
+      module_import_graph_lowering_contract.contract_violation_sites;
+  summary.class_record_count =
+      runtime_metadata_source_records.classes_lexicographic.size();
+  summary.protocol_record_count =
+      runtime_metadata_source_records.protocols_lexicographic.size();
+  summary.category_record_count =
+      runtime_metadata_source_records.categories_lexicographic.size();
+  summary.property_record_count =
+      runtime_metadata_source_records.properties_lexicographic.size();
+  summary.method_record_count =
+      runtime_metadata_source_records.methods_lexicographic.size();
+  summary.ivar_record_count =
+      runtime_metadata_source_records.ivars_lexicographic.size();
+  summary.runtime_owned_declaration_count =
+      summary.class_record_count + summary.protocol_record_count +
+      summary.category_record_count + summary.property_record_count +
+      summary.method_record_count + summary.ivar_record_count;
+  for (const auto &class_record : runtime_metadata_source_records.classes_lexicographic) {
+    if (class_record.has_super && !class_record.super_name.empty()) {
+      ++summary.superclass_reference_count;
+    }
+  }
+  summary.protocol_reference_count =
+      CountRuntimeAwareImportProtocolReferences(runtime_metadata_source_records);
+  summary.property_accessor_reference_count =
+      CountRuntimeAwareImportPropertyAccessorReferences(
+          runtime_metadata_source_records);
+  summary.property_ivar_binding_reference_count =
+      CountRuntimeAwareImportPropertyIvarBindingReferences(
+          runtime_metadata_source_records);
+  summary.method_selector_reference_count =
+      runtime_metadata_source_records.methods_lexicographic.size();
+  summary.metadata_reference_count =
+      summary.superclass_reference_count + summary.protocol_reference_count +
+      summary.property_accessor_reference_count +
+      summary.property_ivar_binding_reference_count +
+      summary.method_selector_reference_count;
+  summary.ready_for_import_artifact_emission =
+      summary.source_surface_contract_ready &&
+      summary.runtime_metadata_source_records_ready;
+  summary.ready_for_frontend_module_consumption =
+      summary.ready_for_import_artifact_emission;
+  if (summary.source_surface_contract_ready) {
+    summary.source_surface_replay_key =
+        BuildRuntimeAwareImportModuleSurfaceReplayKey(
+            program,
+            parser_contract_snapshot,
+            module_import_graph_lowering_contract);
+  }
+  if (summary.ready_for_frontend_module_consumption) {
+    summary.replay_key =
+        BuildRuntimeAwareImportModuleFrontendClosureReplayKey(summary);
+  }
+  if (!IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(summary)) {
+    summary.failure_reason =
+        "runtime-aware import/module frontend closure summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_surface_contract_id\":\""
+      << EscapeJsonString(summary.source_surface_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"payload_model\":\""
+      << EscapeJsonString(summary.payload_model)
+      << "\",\"artifact_relative_path\":\""
+      << EscapeJsonString(summary.artifact_relative_path)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"payload_ownership_model\":\""
+      << EscapeJsonString(summary.payload_ownership_model)
+      << "\",\"module_name\":\"" << EscapeJsonString(summary.module_name)
+      << "\",\"protocol_decl_count\":" << summary.protocol_decl_count
+      << ",\"interface_decl_count\":" << summary.interface_decl_count
+      << ",\"implementation_decl_count\":"
+      << summary.implementation_decl_count
+      << ",\"interface_category_decl_count\":"
+      << summary.interface_category_decl_count
+      << ",\"implementation_category_decl_count\":"
+      << summary.implementation_category_decl_count
+      << ",\"function_decl_count\":" << summary.function_decl_count
+      << ",\"module_import_graph_sites\":" << summary.module_import_graph_sites
+      << ",\"import_edge_candidate_sites\":"
+      << summary.import_edge_candidate_sites
+      << ",\"namespace_segment_sites\":" << summary.namespace_segment_sites
+      << ",\"object_pointer_type_sites\":"
+      << summary.object_pointer_type_sites
+      << ",\"pointer_declarator_sites\":"
+      << summary.pointer_declarator_sites
+      << ",\"normalized_sites\":" << summary.normalized_sites
+      << ",\"contract_violation_sites\":" << summary.contract_violation_sites
+      << ",\"class_record_count\":" << summary.class_record_count
+      << ",\"protocol_record_count\":" << summary.protocol_record_count
+      << ",\"category_record_count\":" << summary.category_record_count
+      << ",\"property_record_count\":" << summary.property_record_count
+      << ",\"method_record_count\":" << summary.method_record_count
+      << ",\"ivar_record_count\":" << summary.ivar_record_count
+      << ",\"runtime_owned_declaration_count\":"
+      << summary.runtime_owned_declaration_count
+      << ",\"superclass_reference_count\":"
+      << summary.superclass_reference_count
+      << ",\"protocol_reference_count\":"
+      << summary.protocol_reference_count
+      << ",\"property_accessor_reference_count\":"
+      << summary.property_accessor_reference_count
+      << ",\"property_ivar_binding_reference_count\":"
+      << summary.property_ivar_binding_reference_count
+      << ",\"method_selector_reference_count\":"
+      << summary.method_selector_reference_count
+      << ",\"metadata_reference_count\":" << summary.metadata_reference_count
+      << ",\"ready\":"
+      << (IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"source_surface_contract_ready\":"
+      << (summary.source_surface_contract_ready ? "true" : "false")
+      << ",\"runtime_metadata_source_records_ready\":"
+      << (summary.runtime_metadata_source_records_ready ? "true" : "false")
+      << ",\"frontend_surface_published\":"
+      << (summary.frontend_surface_published ? "true" : "false")
+      << ",\"import_artifact_template_published\":"
+      << (summary.import_artifact_template_published ? "true" : "false")
+      << ",\"runtime_aware_import_declarations_landed\":"
+      << (summary.runtime_aware_import_declarations_landed ? "true" : "false")
+      << ",\"module_metadata_import_surface_landed\":"
+      << (summary.module_metadata_import_surface_landed ? "true" : "false")
+      << ",\"runtime_owned_declaration_import_landed\":"
+      << (summary.runtime_owned_declaration_import_landed ? "true" : "false")
+      << ",\"runtime_metadata_reference_import_landed\":"
+      << (summary.runtime_metadata_reference_import_landed ? "true" : "false")
+      << ",\"public_frontend_api_module_surface_landed\":"
+      << (summary.public_frontend_api_module_surface_landed ? "true"
+                                                            : "false")
+      << ",\"ready_for_import_artifact_emission\":"
+      << (summary.ready_for_import_artifact_emission ? "true" : "false")
+      << ",\"ready_for_frontend_module_consumption\":"
+      << (summary.ready_for_frontend_module_consumption ? "true" : "false")
+      << ",\"source_surface_replay_key\":\""
+      << EscapeJsonString(summary.source_surface_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
+std::string BuildRuntimeAwareImportModuleArtifactJson(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(summary.contract_id)
+      << "\",\n"
+      << "  \"source_surface_contract_id\": \""
+      << EscapeJsonString(summary.source_surface_contract_id) << "\",\n"
+      << "  \"frontend_surface_path\": \""
+      << EscapeJsonString(summary.frontend_surface_path) << "\",\n"
+      << "  \"artifact\": \""
+      << EscapeJsonString(summary.artifact_relative_path) << "\",\n"
+      << "  \"payload_model\": \""
+      << EscapeJsonString(summary.payload_model) << "\",\n"
+      << "  \"authority_model\": \""
+      << EscapeJsonString(summary.authority_model) << "\",\n"
+      << "  \"payload_ownership_model\": \""
+      << EscapeJsonString(summary.payload_ownership_model) << "\",\n"
+      << "  \"module_name\": \"" << EscapeJsonString(summary.module_name)
+      << "\",\n"
+      << "  \"protocol_decl_count\": " << summary.protocol_decl_count << ",\n"
+      << "  \"interface_decl_count\": " << summary.interface_decl_count
+      << ",\n"
+      << "  \"implementation_decl_count\": "
+      << summary.implementation_decl_count << ",\n"
+      << "  \"interface_category_decl_count\": "
+      << summary.interface_category_decl_count << ",\n"
+      << "  \"implementation_category_decl_count\": "
+      << summary.implementation_category_decl_count << ",\n"
+      << "  \"function_decl_count\": " << summary.function_decl_count << ",\n"
+      << "  \"module_import_graph_sites\": " << summary.module_import_graph_sites
+      << ",\n"
+      << "  \"import_edge_candidate_sites\": "
+      << summary.import_edge_candidate_sites << ",\n"
+      << "  \"namespace_segment_sites\": " << summary.namespace_segment_sites
+      << ",\n"
+      << "  \"object_pointer_type_sites\": "
+      << summary.object_pointer_type_sites << ",\n"
+      << "  \"pointer_declarator_sites\": "
+      << summary.pointer_declarator_sites << ",\n"
+      << "  \"normalized_sites\": " << summary.normalized_sites << ",\n"
+      << "  \"contract_violation_sites\": "
+      << summary.contract_violation_sites << ",\n"
+      << "  \"runtime_owned_declaration_count\": "
+      << summary.runtime_owned_declaration_count << ",\n"
+      << "  \"metadata_reference_count\": "
+      << summary.metadata_reference_count << ",\n"
+      << "  \"runtime_aware_import_declarations_landed\": "
+      << (summary.runtime_aware_import_declarations_landed ? "true" : "false")
+      << ",\n"
+      << "  \"module_metadata_import_surface_landed\": "
+      << (summary.module_metadata_import_surface_landed ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_owned_declaration_import_landed\": "
+      << (summary.runtime_owned_declaration_import_landed ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_metadata_reference_import_landed\": "
+      << (summary.runtime_metadata_reference_import_landed ? "true" : "false")
+      << ",\n"
+      << "  \"public_frontend_api_module_surface_landed\": "
+      << (summary.public_frontend_api_module_surface_landed ? "true" : "false")
+      << ",\n"
+      << "  \"ready_for_import_artifact_emission\": "
+      << (summary.ready_for_import_artifact_emission ? "true" : "false")
+      << ",\n"
+      << "  \"ready_for_frontend_module_consumption\": "
+      << (summary.ready_for_frontend_module_consumption ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_owned_declarations\": {\n"
+      << "    \"classes\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.classes_lexicographic.size(); ++i) {
+    const auto &class_record = runtime_metadata_source_records.classes_lexicographic[i];
+    out << "      {\"record_kind\":\"" << EscapeJsonString(class_record.record_kind)
+        << "\",\"name\":\"" << EscapeJsonString(class_record.name)
+        << "\",\"super_name\":\"" << EscapeJsonString(class_record.super_name)
+        << "\",\"has_super\":" << (class_record.has_super ? "true" : "false")
+        << ",\"adopted_protocols\":"
+        << BuildStringArrayJson(class_record.adopted_protocols_lexicographic)
+        << ",\"property_count\":" << class_record.property_count
+        << ",\"method_count\":" << class_record.method_count
+        << ",\"line\":" << class_record.line
+        << ",\"column\":" << class_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.classes_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ],\n"
+      << "    \"protocols\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.protocols_lexicographic.size(); ++i) {
+    const auto &protocol_record = runtime_metadata_source_records.protocols_lexicographic[i];
+    out << "      {\"name\":\"" << EscapeJsonString(protocol_record.name)
+        << "\",\"inherited_protocols\":"
+        << BuildStringArrayJson(protocol_record.inherited_protocols_lexicographic)
+        << ",\"is_forward_declaration\":"
+        << (protocol_record.is_forward_declaration ? "true" : "false")
+        << ",\"property_count\":" << protocol_record.property_count
+        << ",\"method_count\":" << protocol_record.method_count
+        << ",\"line\":" << protocol_record.line
+        << ",\"column\":" << protocol_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.protocols_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ],\n"
+      << "    \"categories\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.categories_lexicographic.size(); ++i) {
+    const auto &category_record = runtime_metadata_source_records.categories_lexicographic[i];
+    out << "      {\"record_kind\":\"" << EscapeJsonString(category_record.record_kind)
+        << "\",\"class_name\":\"" << EscapeJsonString(category_record.class_name)
+        << "\",\"category_name\":\"" << EscapeJsonString(category_record.category_name)
+        << "\",\"adopted_protocols\":"
+        << BuildStringArrayJson(category_record.adopted_protocols_lexicographic)
+        << ",\"property_count\":" << category_record.property_count
+        << ",\"method_count\":" << category_record.method_count
+        << ",\"line\":" << category_record.line
+        << ",\"column\":" << category_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.categories_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ],\n"
+      << "    \"properties\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.properties_lexicographic.size(); ++i) {
+    const auto &property_record = runtime_metadata_source_records.properties_lexicographic[i];
+    out << "      {\"owner_kind\":\"" << EscapeJsonString(property_record.owner_kind)
+        << "\",\"owner_name\":\"" << EscapeJsonString(property_record.owner_name)
+        << "\",\"property_name\":\"" << EscapeJsonString(property_record.property_name)
+        << "\",\"type\":\"" << EscapeJsonString(property_record.type_name)
+        << "\",\"effective_getter_selector\":\""
+        << EscapeJsonString(property_record.effective_getter_selector)
+        << "\",\"effective_setter_available\":"
+        << (property_record.effective_setter_available ? "true" : "false")
+        << ",\"effective_setter_selector\":\""
+        << EscapeJsonString(property_record.effective_setter_selector)
+        << "\",\"ivar_binding_symbol\":\""
+        << EscapeJsonString(property_record.ivar_binding_symbol)
+        << "\",\"executable_synthesized_binding_kind\":\""
+        << EscapeJsonString(property_record.executable_synthesized_binding_kind)
+        << "\",\"executable_synthesized_binding_symbol\":\""
+        << EscapeJsonString(property_record.executable_synthesized_binding_symbol)
+        << "\",\"line\":" << property_record.line
+        << ",\"column\":" << property_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ],\n"
+      << "    \"methods\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.methods_lexicographic.size(); ++i) {
+    const auto &method_record = runtime_metadata_source_records.methods_lexicographic[i];
+    out << "      {\"owner_kind\":\"" << EscapeJsonString(method_record.owner_kind)
+        << "\",\"owner_name\":\"" << EscapeJsonString(method_record.owner_name)
+        << "\",\"selector\":\"" << EscapeJsonString(method_record.selector)
+        << "\",\"is_class_method\":"
+        << (method_record.is_class_method ? "true" : "false")
+        << ",\"has_body\":" << (method_record.has_body ? "true" : "false")
+        << ",\"parameter_count\":" << method_record.parameter_count
+        << ",\"return_type\":\""
+        << EscapeJsonString(method_record.return_type_name)
+        << "\",\"line\":" << method_record.line
+        << ",\"column\":" << method_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.methods_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ],\n"
+      << "    \"ivars\": [\n";
+  for (std::size_t i = 0; i < runtime_metadata_source_records.ivars_lexicographic.size(); ++i) {
+    const auto &ivar_record = runtime_metadata_source_records.ivars_lexicographic[i];
+    out << "      {\"owner_kind\":\"" << EscapeJsonString(ivar_record.owner_kind)
+        << "\",\"owner_name\":\"" << EscapeJsonString(ivar_record.owner_name)
+        << "\",\"property_name\":\"" << EscapeJsonString(ivar_record.property_name)
+        << "\",\"ivar_binding_symbol\":\""
+        << EscapeJsonString(ivar_record.ivar_binding_symbol)
+        << "\",\"executable_synthesized_binding_kind\":\""
+        << EscapeJsonString(ivar_record.executable_synthesized_binding_kind)
+        << "\",\"executable_synthesized_binding_symbol\":\""
+        << EscapeJsonString(ivar_record.executable_synthesized_binding_symbol)
+        << "\",\"executable_ivar_layout_symbol\":\""
+        << EscapeJsonString(ivar_record.executable_ivar_layout_symbol)
+        << "\",\"line\":" << ivar_record.line
+        << ",\"column\":" << ivar_record.column << "}";
+    if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << "    ]\n"
+      << "  },\n"
+      << "  \"metadata_references\": [\n";
+  bool first_reference = true;
+  auto emit_reference = [&](const std::string &reference_kind,
+                            const std::string &owner_kind,
+                            const std::string &owner_name,
+                            const std::string &target_kind,
+                            const std::string &target_name,
+                            unsigned line,
+                            unsigned column) {
+    if (!first_reference) {
+      out << ",\n";
+    }
+    first_reference = false;
+    out << "    {\"reference_kind\":\"" << EscapeJsonString(reference_kind)
+        << "\",\"owner_kind\":\"" << EscapeJsonString(owner_kind)
+        << "\",\"owner_name\":\"" << EscapeJsonString(owner_name)
+        << "\",\"target_kind\":\"" << EscapeJsonString(target_kind)
+        << "\",\"target_name\":\"" << EscapeJsonString(target_name)
+        << "\",\"line\":" << line << ",\"column\":" << column << "}";
+  };
+  for (const auto &class_record : runtime_metadata_source_records.classes_lexicographic) {
+    if (class_record.has_super && !class_record.super_name.empty()) {
+      emit_reference("class-superclass", class_record.record_kind,
+                     class_record.name, "class", class_record.super_name,
+                     class_record.line, class_record.column);
+    }
+    for (const auto &protocol_name : class_record.adopted_protocols_lexicographic) {
+      emit_reference("class-adopted-protocol", class_record.record_kind,
+                     class_record.name, "protocol", protocol_name,
+                     class_record.line, class_record.column);
+    }
+  }
+  for (const auto &protocol_record : runtime_metadata_source_records.protocols_lexicographic) {
+    for (const auto &inherited_name : protocol_record.inherited_protocols_lexicographic) {
+      emit_reference("protocol-inherited-protocol", "protocol",
+                     protocol_record.name, "protocol", inherited_name,
+                     protocol_record.line, protocol_record.column);
+    }
+  }
+  for (const auto &category_record : runtime_metadata_source_records.categories_lexicographic) {
+    for (const auto &protocol_name : category_record.adopted_protocols_lexicographic) {
+      emit_reference("category-adopted-protocol", category_record.record_kind,
+                     category_record.category_name, "protocol", protocol_name,
+                     category_record.line, category_record.column);
+    }
+  }
+  for (const auto &property_record : runtime_metadata_source_records.properties_lexicographic) {
+    if (!property_record.effective_getter_selector.empty()) {
+      emit_reference("property-getter-selector", property_record.owner_kind,
+                     property_record.owner_name, "selector",
+                     property_record.effective_getter_selector,
+                     property_record.line, property_record.column);
+    }
+    if (property_record.effective_setter_available &&
+        !property_record.effective_setter_selector.empty()) {
+      emit_reference("property-setter-selector", property_record.owner_kind,
+                     property_record.owner_name, "selector",
+                     property_record.effective_setter_selector,
+                     property_record.line, property_record.column);
+    }
+    if (!property_record.ivar_binding_symbol.empty()) {
+      emit_reference("property-ivar-binding", property_record.owner_kind,
+                     property_record.owner_name, "ivar-binding-symbol",
+                     property_record.ivar_binding_symbol,
+                     property_record.line, property_record.column);
+    }
+  }
+  for (const auto &method_record : runtime_metadata_source_records.methods_lexicographic) {
+    emit_reference("method-selector", method_record.owner_kind,
+                   method_record.owner_name, "selector", method_record.selector,
+                   method_record.line, method_record.column);
+  }
+  if (!first_reference) {
+    out << "\n";
+  }
+  out << "  ],\n"
+      << "  \"source_surface_replay_key\": \""
+      << EscapeJsonString(summary.source_surface_replay_key) << "\",\n"
+      << "  \"replay_key\": \"" << EscapeJsonString(summary.replay_key)
+      << "\"\n"
+      << "}\n";
+  return out.str();
+}
+
 std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
     const Objc3FrontendOptions &options,
     const Objc3FrontendPipelineResult &pipeline_result) {
@@ -6770,6 +7332,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string module_import_graph_lowering_replay_key =
       Objc3ModuleImportGraphLoweringReplayKey(
           module_import_graph_lowering_contract);
+  const Objc3RuntimeAwareImportModuleFrontendClosureSummary
+      runtime_aware_import_module_frontend_closure =
+          BuildRuntimeAwareImportModuleFrontendClosureSummary(
+              program,
+              pipeline_result.parser_contract_snapshot,
+              module_import_graph_lowering_contract,
+              runtime_metadata_source_records);
   const Objc3NamespaceCollisionShadowingLoweringContract
       namespace_collision_shadowing_lowering_contract =
           BuildNamespaceCollisionShadowingLoweringContract(
@@ -11033,7 +11602,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   program,
                   pipeline_result.parser_contract_snapshot,
                   module_import_graph_lowering_contract)
-           << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":"
+           << ",\"objc_runtime_aware_import_module_frontend_closure\":"
+           << BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
+                  runtime_aware_import_module_frontend_closure)
+           << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":" 
            << namespace_collision_shadowing_lowering_contract
                   .namespace_collision_shadowing_sites
            << ",\"namespace_segment_sites\":"
@@ -11651,6 +12223,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "}\n";
   bundle.manifest_json = manifest.str();
   bundle.runtime_metadata_binary = executable_metadata_runtime_ingest_binary_payload;
+  if (IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+          runtime_aware_import_module_frontend_closure)) {
+    bundle.runtime_aware_import_module_artifact_json =
+        BuildRuntimeAwareImportModuleArtifactJson(
+            runtime_aware_import_module_frontend_closure,
+            runtime_metadata_source_records);
+  }
+  bundle.runtime_aware_import_module_frontend_closure_summary =
+      runtime_aware_import_module_frontend_closure;
   bundle.runtime_registration_descriptor_image_root_source_surface_summary =
       runtime_registration_descriptor_image_root_source_surface;
   bundle.runtime_registration_descriptor_frontend_closure_summary =

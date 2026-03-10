@@ -9489,3 +9489,25 @@ cross-translation-unit runtime import capability:
 - the boundary is fail closed on drift or premature capability claims, and
   `M258-A002` must preserve this exact surface while implementing the first real
   import path
+
+## M258 runtime-aware import/module frontend closure (A002)
+
+M258 lane-A A002 extends the frozen source surface into one deterministic
+frontend artifact for later cross-translation-unit consumers:
+
+- `pipeline/objc3_frontend_artifacts.cpp` now publishes
+  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_frontend_closure`
+  and emits `module.runtime-import-surface.json`
+- that emitted artifact carries:
+  - preserved declaration/import-graph counts from `M258-A001`
+  - runtime-owned declaration inventories
+  - metadata-reference inventories
+- `driver/objc3_objc3_path.cpp` and
+  `libobjc3c_frontend/frontend_anchor.cpp` both write the same canonical
+  artifact on successful frontend compilation
+- `ir/objc3_ir_emitter.cpp` remains explicit that foreign metadata is still not
+  lowered into IR yet; A002 lands the frontend handoff, not the lowering/runtime
+  consumer
+- `libobjc3c_frontend/api.h` now documents that embedding consumes this
+  emitted artifact through the filesystem contract rather than an in-memory
+  imported-module handle ABI
