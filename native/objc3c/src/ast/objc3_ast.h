@@ -342,6 +342,10 @@ inline constexpr const char *kObjc3RuntimeMetadataCategoryAstAnchor =
     "Objc3InterfaceDecl.has_category/Objc3ImplementationDecl.has_category";
 inline constexpr const char *kObjc3RuntimeMetadataPropertyAstAnchor =
     "Objc3PropertyDecl";
+inline constexpr const char *kObjc3ExecutablePropertyIvarSourceClosureContractId =
+    "objc3c-executable-property-ivar-source-closure/m257-a001-v1";
+inline constexpr const char *kObjc3ExecutablePropertyIvarSourceSurfaceModel =
+    "property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization";
 inline constexpr const char *kObjc3RuntimeMetadataMethodAstAnchor =
     "Objc3MethodDecl";
 inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =

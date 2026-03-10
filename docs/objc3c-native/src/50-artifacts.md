@@ -312,6 +312,38 @@ execution matrix for the current executable class/protocol/category surface.
 - evidence path
   - `tmp/reports/m256/M256-E002/runnable_class_protocol_category_execution_matrix_summary.json`
 
+## Property and ivar executable source closure (M257-A001)
+
+`M257-A001` freezes the exact property/ivar/accessor source closure that the
+runtime-executable `M257` tranche will preserve before layout, synthesized
+accessor bodies, and storage realization expand the surface.
+
+- contract id
+  `objc3c-executable-property-ivar-source-closure/m257-a001-v1`
+- source-surface model
+  `property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization`
+- evidence model
+  `class-protocol-property-ivar-fixture-manifest-and-ir-replay-key`
+- failure model
+  `fail-closed-on-property-ivar-source-surface-drift-before-layout-and-accessor-expansion`
+- canonical source anchors
+  - `Objc3PropertyDecl`
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3InterfaceDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3InterfaceDecl.ivar_binding_symbols_lexicographic`
+  - `Objc3ImplementationDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3ImplementationDecl.ivar_binding_symbols_lexicographic`
+  - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- evidence path
+  - `tmp/reports/m257/M257-A001/property_ivar_executable_source_closure_summary.json`
+- non-goals
+  - no ivar layout realization
+  - no synthesized accessor body emission
+  - no instance storage allocation
+  - no live runtime property/ivar execution semantics
+- next handoff
+  - `M257-A002`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

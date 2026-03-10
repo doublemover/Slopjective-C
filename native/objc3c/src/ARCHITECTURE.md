@@ -9085,6 +9085,28 @@ protocols, and categories:
   - `check:objc3c:m256-e002-runnable-class-protocol-and-category-execution-matrix`
   - `check:objc3c:m256-e002-lane-e-readiness`
 
+## M257 property and ivar executable source closure (A001)
+
+`M257-A001` freezes the source-surface handoff for executable properties and ivars:
+
+- the AST owns the canonical declaration anchors:
+  - `Objc3PropertyDecl`
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3InterfaceDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3InterfaceDecl.ivar_binding_symbols_lexicographic`
+  - `Objc3ImplementationDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3ImplementationDecl.ivar_binding_symbols_lexicographic`
+- sema owns the canonical replay surface:
+  - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- IR only republishes that replay key as a fail-closed lowering marker
+- `M257-A002` is the first issue allowed to broaden this freeze into layout,
+  property attributes, and storage realization
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_property_and_ivar_executable_source_closure_contract_and_architecture_freeze_a001_expectations.md`
+  - `spec/planning/compiler/m257/m257_a001_property_and_ivar_executable_source_closure_contract_and_architecture_freeze_packet.md`
+  - `check:objc3c:m257-a001-property-and-ivar-executable-source-closure`
+  - `check:objc3c:m257-a001-lane-a-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

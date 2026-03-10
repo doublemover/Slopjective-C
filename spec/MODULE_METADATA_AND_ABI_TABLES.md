@@ -7153,6 +7153,27 @@ one live executable inheritance matrix.
 - live matrix fixture:
   - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
 
+## M257 property/ivar executable source closure metadata anchors (A001)
+
+`M257-A001` freezes the metadata-adjacent source surface for executable
+properties and ivars before layout or runtime storage realization begins.
+
+- contract id
+  `objc3c-executable-property-ivar-source-closure/m257-a001-v1`
+- canonical metadata/source anchors:
+  - `Objc3PropertyDecl`
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3InterfaceDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3InterfaceDecl.ivar_binding_symbols_lexicographic`
+  - `Objc3ImplementationDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3ImplementationDecl.ivar_binding_symbols_lexicographic`
+  - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-A001/property_ivar_executable_source_closure_summary.json`
+- `Objc3PropertyDecl.ivar_binding_symbol`
+  remains the single explicit ivar-binding AST anchor until `M257-A002`
+  broadens layout and attribute modeling
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

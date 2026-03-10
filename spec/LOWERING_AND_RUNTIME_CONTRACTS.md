@@ -6143,6 +6143,34 @@ execution matrix for executable classes, protocols, and categories.
   - expected exit code `4`
 - the next implementation issue is `M257-A001`
 
+## M257 property and ivar executable source closure (A001)
+
+`M257-A001` freezes one fail-closed lowering/runtime boundary above the
+existing property-synthesis/ivar-binding summary surface and below the later
+layout/accessor realization work.
+
+- contract id
+  `objc3c-executable-property-ivar-source-closure/m257-a001-v1`
+- source-surface model
+  `property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization`
+- evidence model
+  `class-protocol-property-ivar-fixture-manifest-and-ir-replay-key`
+- failure model
+  `fail-closed-on-property-ivar-source-surface-drift-before-layout-and-accessor-expansion`
+- canonical anchors:
+  - `Objc3PropertyDecl`
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3InterfaceDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3InterfaceDecl.ivar_binding_symbols_lexicographic`
+  - `Objc3ImplementationDecl.property_synthesis_symbols_lexicographic`
+  - `Objc3ImplementationDecl.ivar_binding_symbols_lexicographic`
+  - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
+- evidence path:
+  - `tmp/reports/m257/M257-A001/property_ivar_executable_source_closure_summary.json`
+- `M257-A002`
+  broadens this freeze into ivar layout and property attribute/source-model
+  completion
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

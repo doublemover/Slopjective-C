@@ -13797,6 +13797,8 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           handoff.result_like_lowering_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
+  // M257-A001 property-ivar executable-source-closure anchor:
+  // freeze the source-surface replay key above layout/accessor realization.
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);
   const Objc3IdClassSelObjectPointerTypeCheckingSummary id_class_sel_object_pointer_type_checking_summary =

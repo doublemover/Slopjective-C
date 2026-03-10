@@ -158,6 +158,8 @@ class Objc3IREmitter {
     out << "; runtime_dispatch_decl = " << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n";
     out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";
     if (!frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key.empty()) {
+      // M257-A001 property-ivar executable-source-closure anchor:
+      // preserve the source freeze as a lowering-only replay marker.
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
     }
