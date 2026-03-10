@@ -302,6 +302,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t executable_synthesized_binding_entries = 0;
   std::size_t executable_ivar_layout_entries = 0;
   std::string executable_property_ivar_source_model_replay_key;
+  std::string executable_ivar_layout_emission_contract_id;
+  std::string executable_ivar_layout_descriptor_model;
+  std::string executable_ivar_offset_global_model;
+  std::string executable_ivar_layout_table_model;
+  bool executable_ivar_layout_emission_ready = false;
+  bool executable_ivar_layout_emission_fail_closed = false;
+  std::size_t executable_ivar_offset_global_entries = 0;
+  std::size_t executable_ivar_layout_table_entries = 0;
+  std::size_t executable_ivar_layout_owner_entries = 0;
+  std::string executable_ivar_layout_emission_replay_key;
   std::vector<Objc3IRRuntimeMetadataMethodListBundle>
       runtime_metadata_method_list_bundles_lexicographic;
   std::vector<Objc3IRRuntimeMetadataPropertyBundle>

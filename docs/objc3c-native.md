@@ -6809,6 +6809,37 @@ realization lands.
 - next handoff
   - `M257-C002`
 
+## Ivar offset and layout emission (M257-C002)
+
+`M257-C002` upgrades the frozen `M257-C001` bridge into real emitted ivar
+layout payloads by materializing retained offset globals, per-owner layout
+tables, and expanded ivar descriptor records inside the existing ivar metadata
+section.
+
+- contract id
+  `objc3c-executable-ivar-layout-emission/m257-c002-v1`
+- descriptor model
+  `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
+- offset-global model
+  `one-retained-i64-offset-global-per-emitted-ivar-binding`
+- layout-table model
+  `declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size`
+- emitted IR summary
+  `; executable_ivar_layout_emission = ...`
+- emitted payload surface
+  - `@__objc3_meta_ivar_offset_####`
+  - `@__objc3_meta_ivar_layout_record_####`
+  - `@__objc3_meta_ivar_layout_table_####`
+  - `!objc3.objc_executable_ivar_layout_emission`
+- non-goals
+  - no runtime instance allocation
+  - no layout re-derivation beyond sema-approved slot/size/alignment
+  - no synthesized accessor body execution
+- evidence path
+  - `tmp/reports/m257/M257-C002/ivar_layout_offset_emission_summary.json`
+- next handoff
+  - `M257-C003`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <set>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -13204,6 +13205,51 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             ";ivar_layout_entries=" +
             std::to_string(ivar_bundles.size()) +
             ";deterministic=true;lane_contract=m257-property-ivar-source-model-v1";
+        ir_frontend_metadata.executable_ivar_layout_emission_contract_id =
+            kObjc3ExecutableIvarLayoutEmissionContractId;
+        ir_frontend_metadata.executable_ivar_layout_descriptor_model =
+            kObjc3ExecutableIvarLayoutDescriptorModel;
+        ir_frontend_metadata.executable_ivar_offset_global_model =
+            kObjc3ExecutableIvarOffsetGlobalModel;
+        ir_frontend_metadata.executable_ivar_layout_table_model =
+            kObjc3ExecutableIvarLayoutTableModel;
+        std::set<std::string> ivar_layout_owner_identities;
+        bool ivar_layout_emission_complete = true;
+        std::size_t ivar_offset_global_entries = 0;
+        for (const auto &bundle : ivar_bundles) {
+          if (bundle.declaration_owner_identity.empty() ||
+              bundle.executable_ivar_layout_symbol.empty() ||
+              bundle.executable_ivar_layout_alignment_bytes == 0u ||
+              bundle.executable_ivar_layout_size_bytes == 0u ||
+              bundle.ivar_binding_symbol.empty()) {
+            ivar_layout_emission_complete = false;
+            break;
+          }
+          ivar_layout_owner_identities.insert(bundle.declaration_owner_identity);
+          ++ivar_offset_global_entries;
+        }
+        ir_frontend_metadata.executable_ivar_offset_global_entries =
+            ivar_offset_global_entries;
+        ir_frontend_metadata.executable_ivar_layout_table_entries =
+            ivar_layout_owner_identities.size();
+        ir_frontend_metadata.executable_ivar_layout_owner_entries =
+            ivar_layout_owner_identities.size();
+        ir_frontend_metadata.executable_ivar_layout_emission_ready =
+            ivar_layout_emission_complete;
+        ir_frontend_metadata.executable_ivar_layout_emission_fail_closed =
+            ivar_layout_emission_complete;
+        if (ivar_layout_emission_complete) {
+          ir_frontend_metadata.executable_ivar_layout_emission_replay_key =
+              "offset_globals=" +
+              std::to_string(ivar_offset_global_entries) +
+              ";layout_tables=" +
+              std::to_string(ivar_layout_owner_identities.size()) +
+              ";owner_entries=" +
+              std::to_string(ivar_layout_owner_identities.size()) +
+              ";deterministic=true;lane_contract=m257-ivar-layout-emission-v1";
+        } else {
+          ir_frontend_metadata.executable_ivar_layout_emission_replay_key.clear();
+        }
         ir_frontend_metadata.runtime_metadata_property_bundles_lexicographic =
             std::move(property_bundles);
         ir_frontend_metadata.runtime_metadata_ivar_bundles_lexicographic =

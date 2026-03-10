@@ -358,6 +358,12 @@ inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
 // this handoff into emitted metadata/object artifacts; it must not synthesize
 // accessor bodies or invent runtime storage/layout beyond the sema-approved
 // source model.
+// M257-C002 ivar offset/layout emission anchor: AST-owned
+// `Objc3PropertyDecl.executable_ivar_layout_symbol`,
+// `.executable_ivar_layout_slot_index`, `.executable_ivar_layout_size_bytes`,
+// and `.executable_ivar_layout_alignment_bytes` remain the only authoritative
+// layout-shape inputs that lane-C may use when it materializes emitted offset
+// globals or per-owner layout tables.
 inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
     "objc3c-executable-property-ivar-semantics/m257-b001-v1";
 inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =

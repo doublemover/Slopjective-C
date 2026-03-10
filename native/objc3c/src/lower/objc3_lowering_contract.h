@@ -424,6 +424,23 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel =
         "no-synthesized-accessor-bodies-no-runtime-storage-allocation-no-layout-rederivation";
+// M257-C002 ivar offset/layout emission anchor: lane-C extends the frozen
+// accessor/layout handoff into real object payloads by emitting per-ivar
+// offset globals, per-owner layout tables, and descriptor records that carry
+// the sema-approved slot/offset/size/alignment tuple without yet allocating
+// runtime instances or synthesizing accessor bodies.
+inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionContractId =
+    "objc3c-executable-ivar-layout-emission/m257-c002-v1";
+inline constexpr const char *kObjc3ExecutableIvarLayoutDescriptorModel =
+    "ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment";
+inline constexpr const char *kObjc3ExecutableIvarOffsetGlobalModel =
+    "one-retained-i64-offset-global-per-emitted-ivar-binding";
+inline constexpr const char *kObjc3ExecutableIvarLayoutTableModel =
+    "declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size";
+inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionScopeModel =
+    "sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation";
+inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionFailClosedModel =
+    "no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1424,6 +1441,7 @@ std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
+std::string Objc3ExecutableIvarLayoutEmissionSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

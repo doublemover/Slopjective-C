@@ -201,6 +201,20 @@ class Objc3IREmitter {
           << frontend_metadata_.executable_synthesized_binding_entries
           << ";ivar_layout_entries="
           << frontend_metadata_.executable_ivar_layout_entries << "\n";
+      if (frontend_metadata_.executable_ivar_layout_emission_ready) {
+        // M257-C002 ivar offset/layout emission anchor: lane-C now materializes
+        // real retained offset globals and per-owner layout tables inside the
+        // ivar descriptor section, but runtime allocation and accessor
+        // execution remain deferred to later issues.
+        out << "; executable_ivar_layout_emission = "
+            << Objc3ExecutableIvarLayoutEmissionSummary()
+            << ";offset_global_entries="
+            << frontend_metadata_.executable_ivar_offset_global_entries
+            << ";layout_table_entries="
+            << frontend_metadata_.executable_ivar_layout_table_entries
+            << ";layout_owner_entries="
+            << frontend_metadata_.executable_ivar_layout_owner_entries << "\n";
+      }
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {
       out << "; runtime_metadata_source_ownership = "
@@ -2161,6 +2175,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_symbol_graph_scope_resolution = !{!6}\n";
     out << "!objc3.objc_id_class_sel_object_pointer_typecheck = !{!8}\n";
     out << "!objc3.objc_dispatch_surface_classification = !{!66}\n";
+    out << "!objc3.objc_executable_ivar_layout_emission = !{!67}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3231,6 +3246,36 @@ class Objc3IREmitter {
                 ? 1
                 : 0)
         << "}\n";
+    out << "!67 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_ivar_layout_emission_contract_id)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_ivar_layout_descriptor_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_ivar_offset_global_model)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_ivar_layout_table_model)
+        << "\", i1 "
+        << (frontend_metadata_.executable_ivar_layout_emission_ready ? 1 : 0)
+        << ", i1 "
+        << (frontend_metadata_.executable_ivar_layout_emission_fail_closed ? 1
+                                                                           : 0)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.executable_ivar_offset_global_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.executable_ivar_layout_table_entries)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.executable_ivar_layout_owner_entries)
+        << ", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.executable_ivar_layout_emission_replay_key)
+        << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "
@@ -5967,10 +6012,73 @@ class Objc3IREmitter {
 
     const auto emit_ivar_descriptor_section =
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
+          const auto align_to = [](std::size_t value, std::size_t alignment) {
+            const std::size_t effective_alignment =
+                std::max<std::size_t>(alignment, 1u);
+            const std::size_t remainder = value % effective_alignment;
+            return remainder == 0u ? value
+                                   : value + (effective_alignment - remainder);
+          };
+
+          std::vector<std::size_t> descriptor_offsets(
+              frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                  .size(),
+              0u);
+          std::map<std::string, std::vector<std::size_t>>
+              ivar_indexes_by_declaration_owner_identity;
+          for (std::size_t i = 0;
+               i <
+               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                   .size();
+               ++i) {
+            const auto &bundle =
+                frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                    [i];
+            ivar_indexes_by_declaration_owner_identity
+                [bundle.declaration_owner_identity]
+                    .push_back(i);
+          }
+          std::map<std::string, std::size_t> instance_size_by_owner_identity;
+          for (auto &[owner_identity, indexes] :
+               ivar_indexes_by_declaration_owner_identity) {
+            std::stable_sort(
+                indexes.begin(), indexes.end(),
+                [&](std::size_t lhs_index, std::size_t rhs_index) {
+                  const auto &lhs =
+                      frontend_metadata_
+                          .runtime_metadata_ivar_bundles_lexicographic[lhs_index];
+                  const auto &rhs =
+                      frontend_metadata_
+                          .runtime_metadata_ivar_bundles_lexicographic[rhs_index];
+                  return std::tie(lhs.executable_ivar_layout_slot_index,
+                                  lhs.property_name, lhs.owner_identity) <
+                         std::tie(rhs.executable_ivar_layout_slot_index,
+                                  rhs.property_name, rhs.owner_identity);
+                });
+            std::size_t running_offset = 0u;
+            std::size_t max_alignment = 1u;
+            for (const std::size_t index : indexes) {
+              const auto &bundle =
+                  frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
+                      [index];
+              const std::size_t alignment =
+                  std::max<std::size_t>(
+                      bundle.executable_ivar_layout_alignment_bytes, 1u);
+              running_offset = align_to(running_offset, alignment);
+              descriptor_offsets[index] = running_offset;
+              running_offset += bundle.executable_ivar_layout_size_bytes;
+              max_alignment = std::max(max_alignment, alignment);
+            }
+            instance_size_by_owner_identity[owner_identity] =
+                align_to(running_offset, max_alignment);
+          }
+
           std::vector<std::string> descriptor_symbols;
           descriptor_symbols.reserve(
               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
                   .size());
+          std::map<std::string, std::vector<std::string>>
+              descriptor_symbols_by_declaration_owner_identity;
           for (std::size_t i = 0;
                i <
                frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
@@ -6006,7 +6114,24 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
                     "binding", i);
+            const std::string layout_symbol =
+                bundle.executable_ivar_layout_symbol.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "layout_symbol", i);
+            const std::string offset_global_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "offset", i);
+            const std::string layout_record_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "layout_record", i);
             descriptor_symbols.push_back(descriptor_symbol);
+            descriptor_symbols_by_declaration_owner_identity
+                [bundle.declaration_owner_identity]
+                    .push_back(descriptor_symbol);
 
             out << owner_identity_symbol << " = private constant ["
                 << (bundle.owner_identity.size() + 1u) << " x i8] c\""
@@ -6040,17 +6165,87 @@ class Objc3IREmitter {
                 << EscapeCStringLiteral(bundle.ivar_binding_symbol)
                 << "\\00\", section \"" << family.emitted_section_name
                 << "\", align 1\n";
+            if (!bundle.executable_ivar_layout_symbol.empty()) {
+              out << layout_symbol << " = private constant ["
+                  << (bundle.executable_ivar_layout_symbol.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.executable_ivar_layout_symbol)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            out << offset_global_symbol << " = private global i64 "
+                << descriptor_offsets[i] << ", section \""
+                << family.emitted_section_name << "\", align 8\n";
+            emit_retained(offset_global_symbol);
+            out << layout_record_symbol
+                << " = private global { ptr, i64, i64, i64, i64 } { ptr "
+                << layout_symbol << ", i64 "
+                << bundle.executable_ivar_layout_slot_index << ", i64 "
+                << descriptor_offsets[i] << ", i64 "
+                << bundle.executable_ivar_layout_size_bytes << ", i64 "
+                << bundle.executable_ivar_layout_alignment_bytes
+                << " }, section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            emit_retained(layout_record_symbol);
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i64 } { ptr "
                 << owner_identity_symbol << ", ptr "
                 << declaration_owner_identity_symbol << ", ptr "
                 << export_owner_identity_symbol << ", ptr "
                 << property_owner_identity_symbol << ", ptr "
                 << property_name_symbol << ", ptr " << ivar_binding_symbol
+                << ", ptr " << layout_record_symbol << ", ptr "
+                << offset_global_symbol << ", i64 "
+                << bundle.executable_ivar_layout_slot_index << ", i64 "
+                << descriptor_offsets[i] << ", i64 "
+                << bundle.executable_ivar_layout_size_bytes << ", i64 "
+                << bundle.executable_ivar_layout_alignment_bytes
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             emit_retained(descriptor_symbol);
+          }
+
+          std::size_t layout_table_ordinal = 0u;
+          for (const auto &[owner_identity, owner_descriptor_symbols] :
+               descriptor_symbols_by_declaration_owner_identity) {
+            const std::string owner_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "layout_owner", layout_table_ordinal);
+            const std::string layout_table_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "layout_table", layout_table_ordinal);
+            out << owner_identity_symbol << " = private constant ["
+                << (owner_identity.size() + 1u) << " x i8] c\""
+                << EscapeCStringLiteral(owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << layout_table_symbol << " = private global ";
+            if (owner_descriptor_symbols.empty()) {
+              out << "{ ptr, i64, i64 } { ptr " << owner_identity_symbol
+                  << ", i64 0, i64 0 }";
+            } else {
+              out << "{ ptr, i64, [" << owner_descriptor_symbols.size()
+                  << " x ptr], i64 } { ptr " << owner_identity_symbol
+                  << ", i64 " << owner_descriptor_symbols.size() << ", ["
+                  << owner_descriptor_symbols.size() << " x ptr] [";
+              for (std::size_t symbol_index = 0u;
+                   symbol_index < owner_descriptor_symbols.size();
+                   ++symbol_index) {
+                if (symbol_index != 0u) {
+                  out << ", ";
+                }
+                out << "ptr " << owner_descriptor_symbols[symbol_index];
+              }
+              out << "], i64 "
+                  << instance_size_by_owner_identity[owner_identity] << " }";
+            }
+            out << ", section \"" << family.emitted_section_name
+                << "\", align 8\n";
+            emit_retained(layout_table_symbol);
+            ++layout_table_ordinal;
           }
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;

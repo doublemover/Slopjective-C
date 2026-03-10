@@ -2259,6 +2259,11 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
   // compatibility packet and the canonical synthesized binding/layout
   // identities that lane-C publishes. IR/object emission must not recompute
   // those identities or invent executable accessor bodies.
+  // M257-C002 ivar offset/layout emission anchor: sema owns the canonical slot
+  // index, size, and alignment identities that lane-C converts into emitted
+  // offset globals and per-owner layout tables. Lowering may derive byte
+  // offsets from those identities, but it must not reclassify compatibility or
+  // invent new layout shapes.
   return lhs.type == rhs.type &&
          lhs.is_vector == rhs.is_vector &&
          lhs.vector_base_spelling == rhs.vector_base_spelling &&

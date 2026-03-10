@@ -9211,6 +9211,33 @@ property/accessor/layout surface into emitted IR/object artifacts:
   - `check:objc3c:m257-c001-accessor-and-layout-lowering-contract`
   - `check:objc3c:m257-c001-lane-c-readiness`
 
+## M257 ivar offset and layout emission (C002)
+
+`M257-C002` turns the frozen `M257-C001` bridge into a real emitted ivar layout
+payload surface inside the existing ivar descriptor family:
+
+- lowering owns the canonical emitted payload boundary for:
+  - per-ivar retained offset globals
+  - per-ivar layout records carrying slot/offset/size/alignment
+  - per-owner layout tables publishing deterministic instance size
+  - expanded ivar descriptor payloads that point at the emitted layout data
+- AST and sema remain authoritative for:
+  - `Objc3PropertyDecl.executable_ivar_layout_symbol`
+  - `Objc3PropertyDecl.executable_ivar_layout_slot_index`
+  - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
+  - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
+  - declaration-level compatibility and synthesized binding identity
+- IR republishes one fail-closed lowering marker:
+  - `; executable_ivar_layout_emission = ...`
+  - `!objc3.objc_executable_ivar_layout_emission`
+- runtime instance allocation and synthesized accessor execution remain
+  deferred until later issues
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m257_ivar_offset_and_layout_emission_core_feature_implementation_c002_expectations.md`
+  - `spec/planning/compiler/m257/m257_c002_ivar_offset_and_layout_emission_core_feature_implementation_packet.md`
+  - `check:objc3c:m257-c002-ivar-offset-and-layout-emission`
+  - `check:objc3c:m257-c002-lane-c-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

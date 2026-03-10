@@ -1,0 +1,29 @@
+module ivarLayoutOffsetEmission;
+
+@interface Widget
+@property (assign) bool enabled;
+@property (assign) i32 count;
+@property (strong) id token;
+- (bool) enabled;
+- (i32) count;
+- (id) token;
+@end
+
+@implementation Widget
+@property (assign) bool enabled;
+@property (assign) i32 count;
+@property (strong) id token;
+- (bool) enabled {
+  return 0;
+}
+- (i32) count {
+  return 1;
+}
+- (id) token {
+  return 0;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

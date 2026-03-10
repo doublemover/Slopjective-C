@@ -580,6 +580,24 @@ std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableIvarLayoutEmissionSummary() {
+  std::ostringstream out;
+  // M257-C002 ivar offset/layout emission anchor: lane-C upgrades the frozen
+  // C001 handoff into real object payloads. Lowering now materializes
+  // sema-approved slot/size/alignment identities as retained offset globals,
+  // per-owner layout tables, and ivar descriptor records, but runtime
+  // allocation and synthesized accessor execution remain deferred to lane D/C003.
+  out << "contract=" << kObjc3ExecutableIvarLayoutEmissionContractId
+      << ";descriptor_model=" << kObjc3ExecutableIvarLayoutDescriptorModel
+      << ";offset_global_model=" << kObjc3ExecutableIvarOffsetGlobalModel
+      << ";layout_table_model=" << kObjc3ExecutableIvarLayoutTableModel
+      << ";scope_model=" << kObjc3ExecutableIvarLayoutEmissionScopeModel
+      << ";fail_closed_model="
+      << kObjc3ExecutableIvarLayoutEmissionFailClosedModel
+      << ";non_goals=no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

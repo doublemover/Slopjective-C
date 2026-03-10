@@ -6556,6 +6556,34 @@ compiler rule:
 - next handoff
   - `M257-C002`
 
+## M257 ivar offset and layout emission (C002)
+
+`M257-C002` extends the frozen `M257-C001` lowering boundary into real emitted
+ivar layout payloads. Lane-C now materializes byte offsets from the
+sema-approved slot/size/alignment packet and publishes retained per-owner
+layout tables in object artifacts without yet allocating runtime instances.
+
+- contract id
+  `objc3c-executable-ivar-layout-emission/m257-c002-v1`
+- descriptor model
+  `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
+- offset-global model
+  `one-retained-i64-offset-global-per-emitted-ivar-binding`
+- layout-table model
+  `declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size`
+- scope model
+  `sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation`
+- failure model
+  `no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis`
+- emitted IR summary
+  - `; executable_ivar_layout_emission = ...`
+- non-goals
+  - no runtime instance allocation
+  - no runtime layout re-derivation
+  - no synthesized accessor body emission
+- next handoff
+  - `M257-C003`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
@@ -13282,6 +13310,25 @@ accessor execution and storage realization must consume without reinterpretation
   - `frontend.pipeline.sema_pass_manager.lowering_property_synthesis_ivar_binding_replay_key`
 - canonical live evidence:
   - `tmp/reports/m257/M257-C001/accessor_and_layout_lowering_contract_summary.json`
+
+## M257 ivar offset and layout emission metadata anchors (C002)
+
+`M257-C002` upgrades the frozen `M257-C001` bridge into real emitted ivar
+offset/layout payloads while keeping the existing ivar section family stable.
+
+- contract id
+  `objc3c-executable-ivar-layout-emission/m257-c002-v1`
+- canonical metadata/runtime anchors:
+  - `kObjc3ExecutableIvarLayoutEmissionContractId`
+  - `kObjc3ExecutableIvarLayoutDescriptorModel`
+  - `kObjc3ExecutableIvarOffsetGlobalModel`
+  - `kObjc3ExecutableIvarLayoutTableModel`
+  - `!objc3.objc_executable_ivar_layout_emission`
+  - `@__objc3_meta_ivar_offset_####`
+  - `@__objc3_meta_ivar_layout_record_####`
+  - `@__objc3_meta_ivar_layout_table_####`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-C002/ivar_layout_offset_emission_summary.json`
 
 ## M263 registration descriptor and image-root metadata anchors (A001)
 

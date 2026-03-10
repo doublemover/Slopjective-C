@@ -7270,6 +7270,25 @@ accessor execution and storage realization must consume without reinterpretation
 - canonical live evidence:
   - `tmp/reports/m257/M257-C001/accessor_and_layout_lowering_contract_summary.json`
 
+## M257 ivar offset and layout emission metadata anchors (C002)
+
+`M257-C002` upgrades the frozen `M257-C001` bridge into real emitted ivar
+offset/layout payloads while keeping the existing ivar section family stable.
+
+- contract id
+  `objc3c-executable-ivar-layout-emission/m257-c002-v1`
+- canonical metadata/runtime anchors:
+  - `kObjc3ExecutableIvarLayoutEmissionContractId`
+  - `kObjc3ExecutableIvarLayoutDescriptorModel`
+  - `kObjc3ExecutableIvarOffsetGlobalModel`
+  - `kObjc3ExecutableIvarLayoutTableModel`
+  - `!objc3.objc_executable_ivar_layout_emission`
+  - `@__objc3_meta_ivar_offset_####`
+  - `@__objc3_meta_ivar_layout_record_####`
+  - `@__objc3_meta_ivar_layout_table_####`
+- canonical live evidence:
+  - `tmp/reports/m257/M257-C002/ivar_layout_offset_emission_summary.json`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

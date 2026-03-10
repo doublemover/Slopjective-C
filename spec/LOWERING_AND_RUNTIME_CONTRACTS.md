@@ -6271,6 +6271,34 @@ compiler rule:
 - next handoff
   - `M257-C002`
 
+## M257 ivar offset and layout emission (C002)
+
+`M257-C002` extends the frozen `M257-C001` lowering boundary into real emitted
+ivar layout payloads. Lane-C now materializes byte offsets from the
+sema-approved slot/size/alignment packet and publishes retained per-owner
+layout tables in object artifacts without yet allocating runtime instances.
+
+- contract id
+  `objc3c-executable-ivar-layout-emission/m257-c002-v1`
+- descriptor model
+  `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
+- offset-global model
+  `one-retained-i64-offset-global-per-emitted-ivar-binding`
+- layout-table model
+  `declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size`
+- scope model
+  `sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation`
+- failure model
+  `no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis`
+- emitted IR summary
+  - `; executable_ivar_layout_emission = ...`
+- non-goals
+  - no runtime instance allocation
+  - no runtime layout re-derivation
+  - no synthesized accessor body emission
+- next handoff
+  - `M257-C003`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the
