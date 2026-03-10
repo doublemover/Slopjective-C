@@ -3526,12 +3526,19 @@ struct Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary {
   std::size_t rejected_unsupported_feature_claim_count = 0;
   std::size_t rejected_selection_surface_count = 0;
   std::size_t suppressed_macro_claim_count = 0;
+  std::size_t live_unsupported_feature_family_count = 0;
+  std::size_t live_unsupported_feature_site_count = 0;
+  std::size_t live_unsupported_feature_diagnostic_count = 0;
+  std::size_t throws_source_rejection_site_count = 0;
+  std::size_t blocks_source_rejection_site_count = 0;
+  std::size_t arc_source_rejection_site_count = 0;
   bool fail_closed = false;
   bool semantic_boundary_ready = false;
   bool compatibility_mode_semantics_landed = false;
   bool migration_assist_semantics_landed = false;
   bool source_only_claim_downgrade_semantics_landed = false;
   bool unsupported_feature_claim_rejection_semantics_landed = false;
+  bool live_unsupported_feature_source_rejection_landed = false;
   bool strictness_selection_rejection_semantics_landed = false;
   bool feature_macro_claim_suppression_semantics_landed = false;
   bool selected_configuration_valid = false;
@@ -3567,6 +3574,20 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
              kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount &&
          summary.rejected_unsupported_feature_claim_count ==
              kObjc3CompatibilityStrictnessClaimRejectedFeatureCount &&
+         summary.live_unsupported_feature_family_count <=
+             summary.rejected_unsupported_feature_claim_count &&
+         summary.throws_source_rejection_site_count <=
+             summary.live_unsupported_feature_site_count &&
+         summary.blocks_source_rejection_site_count <=
+             summary.live_unsupported_feature_site_count &&
+         summary.arc_source_rejection_site_count <=
+             summary.live_unsupported_feature_site_count &&
+         summary.live_unsupported_feature_diagnostic_count ==
+             summary.live_unsupported_feature_site_count &&
+         summary.throws_source_rejection_site_count +
+                 summary.blocks_source_rejection_site_count +
+                 summary.arc_source_rejection_site_count ==
+             summary.live_unsupported_feature_site_count &&
          summary.rejected_selection_surface_count ==
              kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount &&
          summary.suppressed_macro_claim_count ==
@@ -3575,6 +3596,7 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          summary.migration_assist_semantics_landed &&
          summary.source_only_claim_downgrade_semantics_landed &&
          summary.unsupported_feature_claim_rejection_semantics_landed &&
+         summary.live_unsupported_feature_source_rejection_landed &&
          summary.strictness_selection_rejection_semantics_landed &&
          summary.feature_macro_claim_suppression_semantics_landed &&
          summary.selected_configuration_valid &&

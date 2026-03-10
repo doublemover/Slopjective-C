@@ -477,6 +477,33 @@ recognized surface as implementation-complete.
 
 **Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
+
+---
+
+## D-019: Accepted unsupported source surfaces must fail before lowering/runtime handoff <a id="decisions-d-019"></a>
+
+**Decision:** When the native `objc3c` frontend accepts source syntax for a
+feature family that is still not runnable end to end, semantic analysis shall
+reject that source surface before lowering/runtime handoff rather than allowing
+later lanes to imply runnable support.
+
+For the current Objective-C 3 native subset, the live fail-closed source
+rejection surface includes:
+
+- `throws`,
+- `@autoreleasepool`,
+- ARC ownership qualifiers on executable function/method signatures.
+
+Block literals remain tracked in the unsupported feature inventory, but the
+current parser path is still gated earlier than the B002 semantic rejection
+surface and therefore shall not be overstated as part of the current live proof.
+
+**Rationale:** Truthful conformance requires the compiler to reject accepted but
+non-runnable source surfaces at the semantic boundary, not merely document them
+as unsupported after the fact.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
 <!-- END DECISIONS_LOG.md -->
 
 ---
@@ -14762,6 +14789,25 @@ That packet must keep the semantic classification explicit:
 
 This is the semantic boundary later lowering/runtime/reporting lanes must
 consume when deciding what Objective-C 3 support can be truthfully claimed.
+
+## M264 accepted unsupported-source rejection gate (implementation note)
+
+The same semantic legality packet must also fail closed when the live frontend
+accepts source syntax for features that are still not runnable end to end.
+
+For the current native subset, that means:
+
+- `throws`
+- `@autoreleasepool`
+- ARC ownership qualifiers on executable function/method signatures
+
+Those accepted source surfaces must stop compilation before lowering/runtime
+handoff and emit deterministic diagnostics rather than allowing conformance
+reporting to imply runnable support.
+
+Block literals remain part of the broader unsupported feature inventory, but the
+current parser path is still gated before the B002 semantic-rejection proof
+surface becomes authoritative for them.
 <!-- END CONFORMANCE_PROFILE_CHECKLIST.md -->
 
 ---

@@ -10702,6 +10702,44 @@ Validation proves:
 - canonical native hello keeps the semantic packet truthful on the executable path
 - legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
 - source-only metadata fixtures remain downgraded rather than misreported as runnable
+
+## Fail-closed unsupported-feature claim enforcement (M264-B002)
+
+`M264-B002` turns the accepted-but-not-runnable source surfaces in the current
+native frontend into hard semantic failures before lowering/runtime handoff:
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+The same semantic legality packet remains the single source of truth, but it now
+has to prove two distinct states correctly:
+
+- positive runnable/source-only probes keep the packet ready with zero live
+  unsupported source rejection sites
+- accepted unsupported source surfaces fail closed with `O3S221` before the
+  compiler can proceed into lowering/runtime publication
+
+The live B002 enforcement proof covers the currently accepted source surfaces
+that would otherwise over-claim runnable support:
+
+- `throws`
+- `@autoreleasepool`
+- ARC ownership qualifiers on executable function/method signatures
+
+This issue deliberately does not over-claim broader unsupported syntax:
+
+- block literals remain tracked as unsupported, but the current parser path is
+  still gated before the B002 sema rejection path becomes the canonical live
+  proof surface
+
+Validation proves:
+
+- canonical native hello remains ready with zero live unsupported rejection
+  sites
+- source-only metadata fixtures remain ready with zero live unsupported
+  rejection sites
+- negative source probes for `throws`, `@autoreleasepool`, and ARC ownership
+  qualifiers fail closed with `O3S221` and do not advance into manifest/IR/object
+  publication
 ## Deterministic contract commands
 
 From repo root:

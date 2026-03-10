@@ -1,0 +1,7 @@
+module Probe;
+
+fn main() -> i32 {
+  @autoreleasepool {
+    return 0;
+  }
+}

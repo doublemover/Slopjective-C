@@ -300,6 +300,18 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";compatibility_mode=" << summary.effective_compatibility_mode
       << ";migration_assist="
       << (summary.migration_assist_enabled ? "true" : "false")
+      << ";live_unsupported_feature_families="
+      << summary.live_unsupported_feature_family_count
+      << ";live_unsupported_feature_sites="
+      << summary.live_unsupported_feature_site_count
+      << ";live_unsupported_feature_diagnostics="
+      << summary.live_unsupported_feature_diagnostic_count
+      << ";throws_source_rejections="
+      << summary.throws_source_rejection_site_count
+      << ";blocks_source_rejections="
+      << summary.blocks_source_rejection_site_count
+      << ";arc_source_rejections="
+      << summary.arc_source_rejection_site_count
       << ";semantic_boundary_replay_key="
       << summary.semantic_boundary_replay_key;
   return out.str();
@@ -334,6 +346,18 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.rejected_selection_surface_count;
     summary.suppressed_macro_claim_count =
         semantic_boundary.suppressed_macro_claim_count;
+    summary.live_unsupported_feature_family_count =
+        semantic_boundary.live_unsupported_feature_family_count;
+    summary.live_unsupported_feature_site_count =
+        semantic_boundary.live_unsupported_feature_site_count;
+    summary.live_unsupported_feature_diagnostic_count =
+        semantic_boundary.live_unsupported_feature_diagnostic_count;
+    summary.throws_source_rejection_site_count =
+        semantic_boundary.throws_source_rejection_site_count;
+    summary.blocks_source_rejection_site_count =
+        semantic_boundary.blocks_source_rejection_site_count;
+    summary.arc_source_rejection_site_count =
+        semantic_boundary.arc_source_rejection_site_count;
     summary.fail_closed = semantic_boundary.fail_closed;
     summary.compatibility_mode_semantics_landed =
         semantic_boundary.compatibility_mode_semantics_landed;
@@ -343,6 +367,8 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.source_only_claim_downgrade_semantics_landed;
     summary.unsupported_feature_claim_rejection_semantics_landed =
         semantic_boundary.unsupported_feature_claim_rejection_semantics_landed;
+    summary.live_unsupported_feature_source_rejection_landed =
+        semantic_boundary.live_unsupported_feature_source_rejection_landed;
     summary.strictness_selection_rejection_semantics_landed =
         semantic_boundary.strictness_selection_rejection_semantics_landed;
     summary.feature_macro_claim_suppression_semantics_landed =
@@ -400,6 +426,18 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << summary.downgraded_source_only_claim_count
       << ",\"rejected_unsupported_feature_claim_count\":"
       << summary.rejected_unsupported_feature_claim_count
+      << ",\"live_unsupported_feature_family_count\":"
+      << summary.live_unsupported_feature_family_count
+      << ",\"live_unsupported_feature_site_count\":"
+      << summary.live_unsupported_feature_site_count
+      << ",\"live_unsupported_feature_diagnostic_count\":"
+      << summary.live_unsupported_feature_diagnostic_count
+      << ",\"throws_source_rejection_site_count\":"
+      << summary.throws_source_rejection_site_count
+      << ",\"blocks_source_rejection_site_count\":"
+      << summary.blocks_source_rejection_site_count
+      << ",\"arc_source_rejection_site_count\":"
+      << summary.arc_source_rejection_site_count
       << ",\"rejected_selection_surface_count\":"
       << summary.rejected_selection_surface_count
       << ",\"suppressed_macro_claim_count\":"
@@ -418,6 +456,9 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << ",\"unsupported_feature_claim_rejection_semantics_landed\":"
       << (summary.unsupported_feature_claim_rejection_semantics_landed ? "true"
                                                                        : "false")
+      << ",\"live_unsupported_feature_source_rejection_landed\":"
+      << (summary.live_unsupported_feature_source_rejection_landed ? "true"
+                                                                   : "false")
       << ",\"strictness_selection_rejection_semantics_landed\":"
       << (summary.strictness_selection_rejection_semantics_landed ? "true"
                                                                   : "false")

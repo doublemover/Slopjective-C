@@ -303,3 +303,22 @@ That packet must keep the semantic classification explicit:
 
 This is the semantic boundary later lowering/runtime/reporting lanes must
 consume when deciding what Objective-C 3 support can be truthfully claimed.
+
+## M264 accepted unsupported-source rejection gate (implementation note)
+
+The same semantic legality packet must also fail closed when the live frontend
+accepts source syntax for features that are still not runnable end to end.
+
+For the current native subset, that means:
+
+- `throws`
+- `@autoreleasepool`
+- ARC ownership qualifiers on executable function/method signatures
+
+Those accepted source surfaces must stop compilation before lowering/runtime
+handoff and emit deterministic diagnostics rather than allowing conformance
+reporting to imply runnable support.
+
+Block literals remain part of the broader unsupported feature inventory, but the
+current parser path is still gated before the B002 semantic-rejection proof
+surface becomes authoritative for them.

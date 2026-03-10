@@ -418,6 +418,18 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
       << summary.downgraded_source_only_claim_count
       << ";rejected_feature_claims="
       << summary.rejected_unsupported_feature_claim_count
+      << ";live_unsupported_feature_families="
+      << summary.live_unsupported_feature_family_count
+      << ";live_unsupported_feature_sites="
+      << summary.live_unsupported_feature_site_count
+      << ";live_unsupported_feature_diagnostics="
+      << summary.live_unsupported_feature_diagnostic_count
+      << ";throws_source_rejections="
+      << summary.throws_source_rejection_site_count
+      << ";blocks_source_rejections="
+      << summary.blocks_source_rejection_site_count
+      << ";arc_source_rejections="
+      << summary.arc_source_rejection_site_count
       << ";rejected_selection_surfaces="
       << summary.rejected_selection_surface_count
       << ";suppressed_macro_claims="
@@ -425,11 +437,22 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
   return out.str();
 }
 
+struct Objc3UnsupportedFeatureClaimEnforcementStats {
+  std::size_t live_unsupported_feature_family_count = 0;
+  std::size_t live_unsupported_feature_site_count = 0;
+  std::size_t live_unsupported_feature_diagnostic_count = 0;
+  std::size_t throws_source_rejection_site_count = 0;
+  std::size_t blocks_source_rejection_site_count = 0;
+  std::size_t arc_source_rejection_site_count = 0;
+};
+
 static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
     bool legacy_compatibility_mode,
-    bool migration_assist_enabled) {
+    bool migration_assist_enabled,
+    const Objc3UnsupportedFeatureClaimEnforcementStats
+        &unsupported_feature_enforcement) {
   Objc3CompatibilityStrictnessClaimSemanticsSummary summary;
   summary.effective_compatibility_mode =
       legacy_compatibility_mode ? "legacy" : "canonical";
@@ -450,18 +473,34 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
       kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount;
   summary.suppressed_macro_claim_count =
       kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount;
+  summary.live_unsupported_feature_family_count =
+      unsupported_feature_enforcement.live_unsupported_feature_family_count;
+  summary.live_unsupported_feature_site_count =
+      unsupported_feature_enforcement.live_unsupported_feature_site_count;
+  summary.live_unsupported_feature_diagnostic_count =
+      unsupported_feature_enforcement.live_unsupported_feature_diagnostic_count;
+  summary.throws_source_rejection_site_count =
+      unsupported_feature_enforcement.throws_source_rejection_site_count;
+  summary.blocks_source_rejection_site_count =
+      unsupported_feature_enforcement.blocks_source_rejection_site_count;
+  summary.arc_source_rejection_site_count =
+      unsupported_feature_enforcement.arc_source_rejection_site_count;
   summary.fail_closed = true;
   summary.compatibility_mode_semantics_landed = true;
   summary.migration_assist_semantics_landed = true;
   summary.source_only_claim_downgrade_semantics_landed = true;
   summary.unsupported_feature_claim_rejection_semantics_landed = true;
+  summary.live_unsupported_feature_source_rejection_landed = true;
   summary.strictness_selection_rejection_semantics_landed = true;
   summary.feature_macro_claim_suppression_semantics_landed = true;
   summary.selected_configuration_valid = true;
   summary.selected_configuration_downgraded = false;
   summary.selected_configuration_rejected = false;
   summary.ready_for_lowering_and_runtime =
-      surface.interface_implementation_summary.deterministic;
+      surface.interface_implementation_summary.deterministic &&
+      unsupported_feature_enforcement.live_unsupported_feature_site_count == 0u &&
+      unsupported_feature_enforcement.live_unsupported_feature_diagnostic_count ==
+          unsupported_feature_enforcement.live_unsupported_feature_site_count;
   if (summary.ready_for_lowering_and_runtime) {
     summary.replay_key =
         BuildCompatibilityStrictnessClaimSemanticsReplayKey(summary);
@@ -492,6 +531,329 @@ static std::string SemanticTypeName(const SemanticTypeInfo &info) {
   }
   const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
   return base + "x" + std::to_string(info.vector_lane_count);
+}
+
+static unsigned OwnershipQualifierLine(
+    const std::vector<Objc3SemaTokenMetadata> &tokens,
+    unsigned fallback_line) {
+  return tokens.empty() ? fallback_line : tokens.front().line;
+}
+
+static unsigned OwnershipQualifierColumn(
+    const std::vector<Objc3SemaTokenMetadata> &tokens,
+    unsigned fallback_column) {
+  return tokens.empty() ? fallback_column : tokens.front().column;
+}
+
+static void RecordUnsupportedFeatureClaimDiagnostic(
+    std::size_t &site_counter,
+    unsigned line,
+    unsigned column,
+    const std::string &message,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  ++site_counter;
+  ++stats.live_unsupported_feature_site_count;
+  ++stats.live_unsupported_feature_diagnostic_count;
+  diagnostics.push_back(MakeDiag(line, column, "O3S221", message));
+}
+
+static void DiagnoseUnsupportedFeatureClaimsInExpr(
+    const Expr *expr,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats);
+
+static void DiagnoseUnsupportedFeatureClaimsInStmt(
+    const Stmt *stmt,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  if (stmt == nullptr) {
+    return;
+  }
+
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->let_stmt->value.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->assign_stmt->value.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->return_stmt->value.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return;
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->if_stmt->condition.get(), diagnostics, stats);
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          then_stmt.get(), diagnostics, stats);
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          else_stmt.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats);
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->do_while_stmt->condition.get(), diagnostics, stats);
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return;
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->for_stmt->init.value.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->for_stmt->condition.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->for_stmt->step.value.get(), diagnostics, stats);
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return;
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->switch_stmt->condition.get(), diagnostics, stats);
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &case_stmt : switch_case.body) {
+        DiagnoseUnsupportedFeatureClaimsInStmt(
+            case_stmt.get(), diagnostics, stats);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return;
+    }
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        stmt->while_stmt->condition.get(), diagnostics, stats);
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    if (stmt->block_stmt->is_autoreleasepool_scope) {
+      RecordUnsupportedFeatureClaimDiagnostic(
+          stats.arc_source_rejection_site_count,
+          stmt->block_stmt->line,
+          stmt->block_stmt->column,
+          "unsupported feature claim: '@autoreleasepool' is not yet runnable in Objective-C 3 native mode",
+          diagnostics,
+          stats);
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(
+          stmt->expr_stmt->value.get(), diagnostics, stats);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static void DiagnoseUnsupportedFeatureClaimsInExpr(
+    const Expr *expr,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  switch (expr->kind) {
+  case Expr::Kind::BlockLiteral:
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.blocks_source_rejection_site_count,
+        expr->line,
+        expr->column,
+        "unsupported feature claim: block literals are not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+    return;
+  case Expr::Kind::Call:
+    for (const auto &arg : expr->args) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats);
+    }
+    return;
+  case Expr::Kind::MessageSend:
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->receiver.get(), diagnostics, stats);
+    for (const auto &arg : expr->args) {
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats);
+    }
+    return;
+  case Expr::Kind::Binary:
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->left.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->right.get(), diagnostics, stats);
+    return;
+  case Expr::Kind::Conditional:
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->left.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->right.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInExpr(
+        expr->third.get(), diagnostics, stats);
+    return;
+  case Expr::Kind::BoolLiteral:
+  case Expr::Kind::Identifier:
+  case Expr::Kind::NilLiteral:
+  case Expr::Kind::Number:
+  default:
+    return;
+  }
+}
+
+static void DiagnoseUnsupportedFunctionFeatureClaims(
+    const FunctionDecl &fn,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  if (fn.throws_declared) {
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.throws_source_rejection_site_count,
+        fn.line,
+        fn.column,
+        "unsupported feature claim: 'throws' is not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  for (const auto &param : fn.params) {
+    if (!param.has_ownership_qualifier) {
+      continue;
+    }
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.arc_source_rejection_site_count,
+        OwnershipQualifierLine(param.ownership_qualifier_tokens, param.line),
+        OwnershipQualifierColumn(param.ownership_qualifier_tokens, param.column),
+        "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  if (fn.has_return_ownership_qualifier) {
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.arc_source_rejection_site_count,
+        OwnershipQualifierLine(
+            fn.return_ownership_qualifier_tokens, fn.line),
+        OwnershipQualifierColumn(
+            fn.return_ownership_qualifier_tokens, fn.column),
+        "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  for (const auto &stmt : fn.body) {
+    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats);
+  }
+}
+
+static void DiagnoseUnsupportedMethodFeatureClaims(
+    const Objc3MethodDecl &method,
+    std::vector<std::string> &diagnostics,
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  if (method.throws_declared) {
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.throws_source_rejection_site_count,
+        method.line,
+        method.column,
+        "unsupported feature claim: 'throws' is not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  for (const auto &param : method.params) {
+    if (!param.has_ownership_qualifier) {
+      continue;
+    }
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.arc_source_rejection_site_count,
+        OwnershipQualifierLine(param.ownership_qualifier_tokens, param.line),
+        OwnershipQualifierColumn(param.ownership_qualifier_tokens, param.column),
+        "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  if (method.has_return_ownership_qualifier) {
+    RecordUnsupportedFeatureClaimDiagnostic(
+        stats.arc_source_rejection_site_count,
+        OwnershipQualifierLine(
+            method.return_ownership_qualifier_tokens, method.line),
+        OwnershipQualifierColumn(
+            method.return_ownership_qualifier_tokens, method.column),
+        "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
+        diagnostics,
+        stats);
+  }
+  for (const auto &stmt : method.body) {
+    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats);
+  }
+}
+
+static Objc3UnsupportedFeatureClaimEnforcementStats
+DiagnoseUnsupportedFeatureClaimSources(
+    const Objc3Program &ast,
+    std::vector<std::string> &diagnostics) {
+  Objc3UnsupportedFeatureClaimEnforcementStats stats;
+  for (const auto &fn : ast.functions) {
+    DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats);
+  }
+  for (const auto &protocol_decl : ast.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+    }
+  }
+  for (const auto &interface_decl : ast.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+    }
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+    }
+  }
+  if (stats.throws_source_rejection_site_count > 0u) {
+    ++stats.live_unsupported_feature_family_count;
+  }
+  if (stats.blocks_source_rejection_site_count > 0u) {
+    ++stats.live_unsupported_feature_family_count;
+  }
+  if (stats.arc_source_rejection_site_count > 0u) {
+    ++stats.live_unsupported_feature_family_count;
+  }
+  return stats;
 }
 
 struct Objc3MessageSendResolutionContext {
@@ -11051,13 +11413,6 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   surface.bootstrap_failure_restart_semantics_summary =
       BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
           surface);
-  // M264-B001 semantic freeze anchor: sema owns the single fail-closed
-  // legality summary that classifies live compatibility/migration selections,
-  // source-only claim downgrades, and unsupported strictness/macro claim
-  // rejections before later lowering/runtime/reporting lanes consume them.
-  surface.compatibility_strictness_claim_semantics_summary =
-      BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
-          surface, legacy_compatibility_mode, migration_assist_enabled);
   // M256-A001 executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before
@@ -11198,6 +11553,22 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);
   surface.autoreleasepool_scope_summary =
       BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(surface);
+  // M264-B002 unsupported-feature enforcement anchor: accepted source sites
+  // that would over-claim unsupported runtime-backed features must fail closed
+  // in sema before lowering/runtime handoff proceeds.
+  const Objc3UnsupportedFeatureClaimEnforcementStats
+      unsupported_feature_enforcement =
+          DiagnoseUnsupportedFeatureClaimSources(ast, diagnostics);
+  // M264-B001 semantic freeze anchor: sema owns the single fail-closed
+  // legality summary that classifies live compatibility/migration selections,
+  // source-only claim downgrades, and unsupported strictness/macro claim
+  // rejections before later lowering/runtime/reporting lanes consume them.
+  surface.compatibility_strictness_claim_semantics_summary =
+      BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
+          surface,
+          legacy_compatibility_mode,
+          migration_assist_enabled,
+          unsupported_feature_enforcement);
   surface.built = true;
   return surface;
 }
