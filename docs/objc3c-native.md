@@ -16331,3 +16331,32 @@ registration.
   - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
   - `tmp/reports/m258/M258-D001/cross_module_build_runtime_orchestration_contract_summary.json`
+
+## Cross-module runtime packaging, link planning, and registration (M258-D002)
+
+`M258-D002` lands the first real lane-D cross-module packaging path above the
+frozen D001 orchestration boundary.
+
+- contract id
+  `objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1`
+- authoritative artifacts
+  - `module.cross-module-runtime-link-plan.json`
+  - `module.cross-module-runtime-linker-options.rsp`
+- landed truths
+  - downstream compilation now ingests imported peer registration artifacts and
+    emits a deterministic cross-module link plan plus merged linker response
+    file
+  - link objects are ordered by ascending registration ordinal, then
+    translation-unit identity key
+  - startup runtime registration, imported metadata realization, and replay are
+    now proven on the two-image happy path
+- truthful boundary
+  - this issue proves cross-module packaging, link planning, registration, and
+    replay
+  - fully bound source method-body semantics across module boundaries still
+    belong to later work
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - `tests/tooling/runtime/m258_d002_cross_module_runtime_packaging_probe.cpp`
+  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`

@@ -12946,6 +12946,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // runtime-import-surface reuse payload and the local registration
            // manifest are both authoritative inputs, while cross-module link
            // packaging and runtime-registration aggregation remain unlanded.
+           // M258-D002 cross-module runtime packaging anchor:
+           // driver/runtime packaging path now materializes the ordered
+           // cross-module link plan and merged linker response file from those
+           // same authoritative artifacts, so this semantic surface remains the
+           // canonical replay boundary for downstream packaging consumers.
            << ",\"objc_cross_module_build_runtime_orchestration_contract\":"
            << BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
                   cross_module_build_runtime_orchestration)

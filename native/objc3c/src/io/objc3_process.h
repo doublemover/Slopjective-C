@@ -152,6 +152,47 @@ struct Objc3RuntimeRegistrationDescriptorArtifactInputs {
   std::string backend_artifact_relative_path;
 };
 
+struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
+  std::string module_name;
+  std::string import_surface_artifact_path;
+  std::string registration_manifest_artifact_path;
+  std::string object_artifact_path;
+  std::string discovery_artifact_path;
+  std::string linker_response_artifact_path;
+  std::string translation_unit_identity_model;
+  std::string translation_unit_identity_key;
+  std::string object_format;
+  std::string runtime_support_library_archive_relative_path;
+  std::uint64_t translation_unit_registration_order_ordinal = 0;
+  std::vector<std::string> driver_linker_flags;
+};
+
+struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
+  std::string contract_id;
+  std::string source_orchestration_contract_id;
+  std::string import_surface_contract_id;
+  std::string registration_manifest_contract_id;
+  std::string payload_model;
+  std::string artifact_relative_path;
+  std::string linker_response_artifact_relative_path;
+  std::string authority_model;
+  std::string packaging_model;
+  std::string registration_scope_model;
+  std::string link_object_order_model;
+  std::string local_module_name;
+  std::string local_import_surface_artifact_relative_path;
+  std::string local_registration_manifest_artifact_relative_path;
+  std::string local_object_artifact_relative_path;
+  std::string runtime_support_library_archive_relative_path;
+  std::string object_format;
+  std::string local_translation_unit_identity_model;
+  std::string local_translation_unit_identity_key;
+  std::uint64_t local_translation_unit_registration_order_ordinal = 0;
+  std::vector<std::string> local_driver_linker_flags;
+  std::vector<std::string> direct_import_surface_artifact_paths;
+  std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs;
+};
+
 int RunProcess(const std::string &executable, const std::vector<std::string> &args);
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
@@ -183,4 +224,9 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
     const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
     const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
     std::string &descriptor_json,
+    std::string &error);
+bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
+    const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
+    std::string &plan_json,
+    std::string &linker_response_payload,
     std::string &error);

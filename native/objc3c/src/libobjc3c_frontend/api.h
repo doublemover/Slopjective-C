@@ -78,6 +78,11 @@ extern "C" {
  *   launch surface. The truthful boundary remains the emitted
  *   `module.runtime-import-surface.json` artifact plus the local
  *   `module.runtime-registration-manifest.json` artifact.
+ * - M258-D002 cross-module runtime packaging anchor: lane D now realizes that
+ *   filesystem-emitted link plans and runtime-registration artifacts can drive
+ *   real downstream packaging and multi-image runtime registration, but this
+ *   public C ABI still exposes no in-memory cross-module packaging handle or
+ *   orchestration object model.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

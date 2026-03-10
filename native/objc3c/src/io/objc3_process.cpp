@@ -9,12 +9,14 @@
 #include <sys/wait.h>
 #endif
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace {
@@ -305,6 +307,22 @@ std::string MakeIdentifierSafeSuffix(const std::string &text) {
     suffix = "translation_unit";
   }
   return suffix;
+}
+
+std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
+                                         const std::string &indent) {
+  std::ostringstream out;
+  out << "[\n";
+  for (std::size_t index = 0; index < values.size(); ++index) {
+    out << indent << "\"" << EscapeJsonString(values[index]) << "\"";
+    if (index + 1u < values.size()) {
+      out << ",";
+    }
+    out << "\n";
+  }
+  out << indent.substr(0, indent.size() >= 2u ? indent.size() - 2u : 0u)
+      << "]";
+  return out.str();
 }
 
 }  // namespace
@@ -1265,5 +1283,345 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       << "  \"ready_for_registration_descriptor_lowering\": true\n"
       << "}\n";
   descriptor_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
+    const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
+    std::string &plan_json,
+    std::string &linker_response_payload,
+    std::string &error) {
+  plan_json.clear();
+  linker_response_payload.clear();
+  error.clear();
+
+  if (inputs.contract_id.empty() ||
+      inputs.source_orchestration_contract_id.empty() ||
+      inputs.import_surface_contract_id.empty() ||
+      inputs.registration_manifest_contract_id.empty() ||
+      inputs.payload_model.empty() ||
+      inputs.artifact_relative_path.empty() ||
+      inputs.linker_response_artifact_relative_path.empty() ||
+      inputs.authority_model.empty() ||
+      inputs.packaging_model.empty() ||
+      inputs.registration_scope_model.empty() ||
+      inputs.link_object_order_model.empty() ||
+      inputs.local_module_name.empty() ||
+      inputs.local_import_surface_artifact_relative_path.empty() ||
+      inputs.local_registration_manifest_artifact_relative_path.empty() ||
+      inputs.local_object_artifact_relative_path.empty() ||
+      inputs.runtime_support_library_archive_relative_path.empty() ||
+      inputs.object_format.empty() ||
+      inputs.local_translation_unit_identity_model.empty() ||
+      inputs.local_translation_unit_identity_key.empty() ||
+      inputs.local_translation_unit_registration_order_ordinal == 0 ||
+      inputs.local_driver_linker_flags.empty() ||
+      inputs.direct_import_surface_artifact_paths.empty() ||
+      inputs.imported_inputs.empty()) {
+    error = "cross-module runtime link-plan artifact inputs are incomplete";
+    return false;
+  }
+  if (inputs.direct_import_surface_artifact_paths.size() !=
+      inputs.imported_inputs.size()) {
+    error =
+        "cross-module runtime link-plan direct import surface count does not "
+        "match imported input count";
+    return false;
+  }
+
+  std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs =
+      inputs.imported_inputs;
+  std::sort(imported_inputs.begin(), imported_inputs.end(),
+            [](const auto &lhs, const auto &rhs) {
+              if (lhs.translation_unit_registration_order_ordinal !=
+                  rhs.translation_unit_registration_order_ordinal) {
+                return lhs.translation_unit_registration_order_ordinal <
+                       rhs.translation_unit_registration_order_ordinal;
+              }
+              if (lhs.translation_unit_identity_key !=
+                  rhs.translation_unit_identity_key) {
+                return lhs.translation_unit_identity_key <
+                       rhs.translation_unit_identity_key;
+              }
+              return lhs.module_name < rhs.module_name;
+            });
+
+  std::unordered_set<std::string> seen_translation_unit_identity_keys;
+  std::unordered_set<std::uint64_t> seen_registration_ordinals;
+  std::unordered_set<std::string> seen_driver_linker_flags;
+  std::unordered_set<std::string> seen_direct_import_surface_paths;
+  std::vector<std::string> ordered_link_object_artifacts;
+  std::vector<std::string> merged_driver_linker_flags;
+  std::vector<std::string> direct_import_surface_artifact_paths =
+      inputs.direct_import_surface_artifact_paths;
+  std::sort(direct_import_surface_artifact_paths.begin(),
+            direct_import_surface_artifact_paths.end());
+
+  seen_translation_unit_identity_keys.insert(
+      inputs.local_translation_unit_identity_key);
+  seen_registration_ordinals.insert(
+      inputs.local_translation_unit_registration_order_ordinal);
+  for (const auto &surface_path : direct_import_surface_artifact_paths) {
+    if (surface_path.empty()) {
+      error =
+          "cross-module runtime link-plan direct import surface path missing";
+      return false;
+    }
+    if (!seen_direct_import_surface_paths.insert(surface_path).second) {
+      error =
+          "cross-module runtime link-plan duplicate direct import surface "
+          "path: " +
+          surface_path;
+      return false;
+    }
+  }
+  for (const auto &local_flag : inputs.local_driver_linker_flags) {
+    if (local_flag.empty()) {
+      error =
+          "cross-module runtime link-plan local driver-linker flag input missing";
+      return false;
+    }
+  }
+
+  struct OrderedLinkInput {
+    std::uint64_t registration_order_ordinal = 0;
+    std::string translation_unit_identity_key;
+    std::string module_name;
+    std::string object_artifact_path;
+    std::vector<std::string> driver_linker_flags;
+  };
+  std::vector<OrderedLinkInput> ordered_link_inputs;
+  ordered_link_inputs.reserve(imported_inputs.size() + 1u);
+
+  for (const auto &imported_input : imported_inputs) {
+    if (imported_input.module_name.empty() ||
+        imported_input.import_surface_artifact_path.empty() ||
+        imported_input.registration_manifest_artifact_path.empty() ||
+        imported_input.object_artifact_path.empty() ||
+        imported_input.discovery_artifact_path.empty() ||
+        imported_input.linker_response_artifact_path.empty() ||
+        imported_input.translation_unit_identity_model.empty() ||
+        imported_input.translation_unit_identity_key.empty() ||
+        imported_input.object_format.empty() ||
+        imported_input.runtime_support_library_archive_relative_path.empty() ||
+        imported_input.translation_unit_registration_order_ordinal == 0 ||
+        imported_input.driver_linker_flags.empty()) {
+      error =
+          "cross-module runtime link-plan imported input is incomplete for " +
+          imported_input.module_name;
+      return false;
+    }
+    if (imported_input.object_format != inputs.object_format) {
+      error = "cross-module runtime link-plan object-format mismatch for " +
+              imported_input.module_name;
+      return false;
+    }
+    if (imported_input.runtime_support_library_archive_relative_path !=
+        inputs.runtime_support_library_archive_relative_path) {
+      error =
+          "cross-module runtime link-plan runtime library path mismatch for " +
+          imported_input.module_name;
+      return false;
+    }
+    for (const auto &flag : imported_input.driver_linker_flags) {
+      if (flag.empty()) {
+        error =
+            "cross-module runtime link-plan imported linker flag is empty for " +
+            imported_input.module_name;
+        return false;
+      }
+    }
+    if (!seen_translation_unit_identity_keys
+             .insert(imported_input.translation_unit_identity_key)
+             .second) {
+      error =
+          "cross-module runtime link-plan duplicate translation-unit identity key: " +
+          imported_input.translation_unit_identity_key;
+      return false;
+    }
+    if (!seen_registration_ordinals
+             .insert(imported_input.translation_unit_registration_order_ordinal)
+             .second) {
+      error =
+          "cross-module runtime link-plan duplicate registration order ordinal: " +
+          std::to_string(
+              imported_input.translation_unit_registration_order_ordinal);
+      return false;
+    }
+    ordered_link_inputs.push_back(
+        {imported_input.translation_unit_registration_order_ordinal,
+         imported_input.translation_unit_identity_key,
+         imported_input.module_name,
+         imported_input.object_artifact_path,
+         imported_input.driver_linker_flags});
+  }
+
+  ordered_link_inputs.push_back(
+      {inputs.local_translation_unit_registration_order_ordinal,
+       inputs.local_translation_unit_identity_key,
+       inputs.local_module_name,
+       inputs.local_object_artifact_relative_path,
+       inputs.local_driver_linker_flags});
+  std::sort(ordered_link_inputs.begin(), ordered_link_inputs.end(),
+            [](const auto &lhs, const auto &rhs) {
+              if (lhs.registration_order_ordinal != rhs.registration_order_ordinal) {
+                return lhs.registration_order_ordinal <
+                       rhs.registration_order_ordinal;
+              }
+              return lhs.translation_unit_identity_key <
+                     rhs.translation_unit_identity_key;
+            });
+  for (const auto &ordered_input : ordered_link_inputs) {
+    ordered_link_object_artifacts.push_back(ordered_input.object_artifact_path);
+    for (const auto &flag : ordered_input.driver_linker_flags) {
+      if (seen_driver_linker_flags.insert(flag).second) {
+        merged_driver_linker_flags.push_back(flag);
+      }
+    }
+  }
+  if (merged_driver_linker_flags.empty()) {
+    error =
+        "cross-module runtime link-plan merged driver-linker flag list is empty";
+    return false;
+  }
+
+  std::vector<std::string> module_names_lexicographic;
+  module_names_lexicographic.reserve(imported_inputs.size() + 1u);
+  module_names_lexicographic.push_back(inputs.local_module_name);
+  for (const auto &imported_input : imported_inputs) {
+    module_names_lexicographic.push_back(imported_input.module_name);
+  }
+  std::sort(module_names_lexicographic.begin(), module_names_lexicographic.end());
+
+  std::ostringstream imported_modules_json;
+  imported_modules_json << "[\n";
+  for (std::size_t index = 0; index < imported_inputs.size(); ++index) {
+    const auto &imported_input = imported_inputs[index];
+    imported_modules_json
+        << "    {\n"
+        << "      \"module_name\": \""
+        << EscapeJsonString(imported_input.module_name) << "\",\n"
+        << "      \"import_surface_artifact_path\": \""
+        << EscapeJsonString(imported_input.import_surface_artifact_path)
+        << "\",\n"
+        << "      \"registration_manifest_artifact_path\": \""
+        << EscapeJsonString(imported_input.registration_manifest_artifact_path)
+        << "\",\n"
+        << "      \"object_artifact_path\": \""
+        << EscapeJsonString(imported_input.object_artifact_path) << "\",\n"
+        << "      \"discovery_artifact_path\": \""
+        << EscapeJsonString(imported_input.discovery_artifact_path) << "\",\n"
+        << "      \"linker_response_artifact_path\": \""
+        << EscapeJsonString(imported_input.linker_response_artifact_path)
+        << "\",\n"
+        << "      \"translation_unit_identity_model\": \""
+        << EscapeJsonString(imported_input.translation_unit_identity_model)
+        << "\",\n"
+        << "      \"translation_unit_identity_key\": \""
+        << EscapeJsonString(imported_input.translation_unit_identity_key)
+        << "\",\n"
+        << "      \"translation_unit_registration_order_ordinal\": "
+        << imported_input.translation_unit_registration_order_ordinal << ",\n"
+        << "      \"object_format\": \""
+        << EscapeJsonString(imported_input.object_format) << "\",\n"
+        << "      \"runtime_support_library_archive_relative_path\": \""
+        << EscapeJsonString(
+               imported_input.runtime_support_library_archive_relative_path)
+        << "\",\n"
+        << "      \"driver_linker_flags\": "
+        << BuildIndentedStringArrayJson(imported_input.driver_linker_flags,
+                                        "        ");
+    imported_modules_json << "\n    }";
+    if (index + 1u < imported_inputs.size()) {
+      imported_modules_json << ",";
+    }
+    imported_modules_json << "\n";
+  }
+  imported_modules_json << "  ]";
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
+      << "\",\n"
+      << "  \"source_orchestration_contract_id\": \""
+      << EscapeJsonString(inputs.source_orchestration_contract_id) << "\",\n"
+      << "  \"import_surface_contract_id\": \""
+      << EscapeJsonString(inputs.import_surface_contract_id) << "\",\n"
+      << "  \"registration_manifest_contract_id\": \""
+      << EscapeJsonString(inputs.registration_manifest_contract_id)
+      << "\",\n"
+      << "  \"payload_model\": \"" << EscapeJsonString(inputs.payload_model)
+      << "\",\n"
+      << "  \"artifact\": \"" << EscapeJsonString(inputs.artifact_relative_path)
+      << "\",\n"
+      << "  \"linker_response_artifact\": \""
+      << EscapeJsonString(inputs.linker_response_artifact_relative_path)
+      << "\",\n"
+      << "  \"authority_model\": \""
+      << EscapeJsonString(inputs.authority_model) << "\",\n"
+      << "  \"packaging_model\": \""
+      << EscapeJsonString(inputs.packaging_model) << "\",\n"
+      << "  \"registration_scope_model\": \""
+      << EscapeJsonString(inputs.registration_scope_model) << "\",\n"
+      << "  \"link_object_order_model\": \""
+      << EscapeJsonString(inputs.link_object_order_model) << "\",\n"
+      << "  \"module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(module_names_lexicographic, "    ")
+      << ",\n"
+      << "  \"module_image_count\": " << module_names_lexicographic.size()
+      << ",\n"
+      << "  \"direct_import_input_count\": "
+      << direct_import_surface_artifact_paths.size() << ",\n"
+      << "  \"direct_import_surface_artifact_paths\": "
+      << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
+                                      "    ")
+      << ",\n"
+      << "  \"runtime_support_library_archive_relative_path\": \""
+      << EscapeJsonString(inputs.runtime_support_library_archive_relative_path)
+      << "\",\n"
+      << "  \"object_format\": \"" << EscapeJsonString(inputs.object_format)
+      << "\",\n"
+      << "  \"local_module\": {\n"
+      << "    \"module_name\": \""
+      << EscapeJsonString(inputs.local_module_name) << "\",\n"
+      << "    \"import_surface_artifact_relative_path\": \""
+      << EscapeJsonString(inputs.local_import_surface_artifact_relative_path)
+      << "\",\n"
+      << "    \"registration_manifest_artifact_relative_path\": \""
+      << EscapeJsonString(
+             inputs.local_registration_manifest_artifact_relative_path)
+      << "\",\n"
+      << "    \"object_artifact_relative_path\": \""
+      << EscapeJsonString(inputs.local_object_artifact_relative_path)
+      << "\",\n"
+      << "    \"translation_unit_identity_model\": \""
+      << EscapeJsonString(inputs.local_translation_unit_identity_model)
+      << "\",\n"
+      << "    \"translation_unit_identity_key\": \""
+      << EscapeJsonString(inputs.local_translation_unit_identity_key)
+      << "\",\n"
+      << "    \"translation_unit_registration_order_ordinal\": "
+      << inputs.local_translation_unit_registration_order_ordinal << ",\n"
+      << "    \"driver_linker_flags\": "
+      << BuildIndentedStringArrayJson(inputs.local_driver_linker_flags,
+                                      "      ")
+      << "\n"
+      << "  },\n"
+      << "  \"imported_modules\": " << imported_modules_json.str() << ",\n"
+      << "  \"link_object_artifacts\": "
+      << BuildIndentedStringArrayJson(ordered_link_object_artifacts, "    ")
+      << ",\n"
+      << "  \"driver_linker_flags\": "
+      << BuildIndentedStringArrayJson(merged_driver_linker_flags, "    ")
+      << ",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  plan_json = out.str();
+
+  std::ostringstream response_out;
+  for (const auto &flag : merged_driver_linker_flags) {
+    response_out << flag << "\n";
+  }
+  linker_response_payload = response_out.str();
   return true;
 }

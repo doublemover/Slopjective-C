@@ -9606,3 +9606,21 @@ manifest:
   `module.runtime-registration-manifest.json` authority split
 - land imported registration-manifest loading, packaging proof output, and the
   first real cross-module runtime-registration orchestration path
+
+## M258 cross-module runtime packaging and registration (D002)
+
+M258 lane-D D002 now lands the real downstream packaging/runtime happy path:
+
+- imported runtime-import-surface artifacts are paired with imported
+  registration manifests, discovery artifacts, runtime-metadata response files,
+  and object artifacts
+- the driver emits an ordered cross-module link plan and merged linker response
+  file
+- object inputs are ordered by registration ordinal and then
+  translation-unit identity key
+- runtime-library and object-format drift fail closed before the link plan is
+  published
+- the canonical proof links the provider and consumer objects with the emitted
+  response file, then verifies startup registration, imported protocol
+  conformance, and replay-stable cross-image dispatch on the two-image happy
+  path

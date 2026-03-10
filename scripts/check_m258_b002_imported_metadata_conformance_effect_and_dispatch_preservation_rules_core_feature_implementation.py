@@ -206,9 +206,27 @@ def ensure_binaries(failures: list[Finding]) -> int:
     return checks_total
 
 
-def compile_fixture(*, fixture: Path, out_dir: Path, extra_args: Sequence[str] = ()) -> subprocess.CompletedProcess[str]:
+def compile_fixture(
+    *,
+    fixture: Path,
+    out_dir: Path,
+    registration_order_ordinal: int,
+    extra_args: Sequence[str] = (),
+) -> subprocess.CompletedProcess[str]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    return run_process([str(NATIVE_EXE), str(fixture), "--out-dir", str(out_dir), "--emit-prefix", "module", *extra_args])
+    return run_process(
+        [
+            str(NATIVE_EXE),
+            str(fixture),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+            "--objc3-bootstrap-registration-order-ordinal",
+            str(registration_order_ordinal),
+            *extra_args,
+        ]
+    )
 
 
 def compute_counts_from_artifact(artifact_payload: dict[str, Any]) -> dict[str, int | list[str]]:
@@ -444,8 +462,8 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
             consumer_out = PROBE_ROOT / "consumer_positive"
             duplicate_out = PROBE_ROOT / "consumer_duplicate_path"
 
-            class_completed = compile_fixture(fixture=CLASS_FIXTURE, out_dir=class_out)
-            category_completed = compile_fixture(fixture=CATEGORY_FIXTURE, out_dir=category_out)
+            class_completed = compile_fixture(fixture=CLASS_FIXTURE, out_dir=class_out, registration_order_ordinal=1)
+            category_completed = compile_fixture(fixture=CATEGORY_FIXTURE, out_dir=category_out, registration_order_ordinal=2)
             class_manifest = class_out / "module.manifest.json"
             category_manifest = category_out / "module.manifest.json"
             class_artifact = class_out / IMPORT_ARTIFACT
@@ -468,6 +486,7 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
                 consumer_completed = compile_fixture(
                     fixture=CONSUMER_FIXTURE,
                     out_dir=consumer_out,
+                    registration_order_ordinal=3,
                     extra_args=(
                         "--objc3-import-runtime-surface",
                         str(class_artifact),
@@ -487,6 +506,7 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
                 duplicate_completed = compile_fixture(
                     fixture=CONSUMER_FIXTURE,
                     out_dir=duplicate_out,
+                    registration_order_ordinal=4,
                     extra_args=(
                         "--objc3-import-runtime-surface",
                         str(class_artifact),

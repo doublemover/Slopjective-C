@@ -7931,3 +7931,23 @@ registration manifest.
     runtime registration, and public orchestration ABI
 - canonical contract evidence:
   - `tmp/reports/m258/M258-D001/cross_module_build_runtime_orchestration_contract_summary.json`
+
+## M258 cross-module runtime packaging and registration anchors (D002)
+
+`M258-D002` converts the D001 orchestration freeze into real downstream
+packaging artifacts.
+
+- contract id
+  `objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1`
+- authoritative artifacts
+  - `module.cross-module-runtime-link-plan.json`
+  - `module.cross-module-runtime-linker-options.rsp`
+- canonical payload anchors:
+  - imported registration-manifest peer-artifact validation
+  - runtime-library and object-format consistency checks
+  - ordered link-object inventory derived from registration ordinals and
+    translation-unit identity keys
+  - merged linker-anchor response lines for imported plus local images
+  - replay-stable two-image runtime registration evidence
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`

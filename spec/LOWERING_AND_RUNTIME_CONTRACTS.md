@@ -6945,3 +6945,27 @@ serialized import payload and the emitted local runtime registration manifest.
   - runtime-archive aggregation is not landed
   - cross-module runtime-registration launch orchestration is not landed
   - no public cross-module orchestration ABI is exposed in this lane
+
+## M258 cross-module runtime packaging, linking, and registration (D002)
+
+`M258-D002` lands the first real lane-D packaging/runtime path that consumes
+the frozen D001 orchestration inputs and emits deterministic cross-module link
+artifacts.
+
+- contract id
+  `objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1`
+- authoritative artifacts
+  - `module.cross-module-runtime-link-plan.json`
+  - `module.cross-module-runtime-linker-options.rsp`
+- source contracts
+  - `objc3c-cross-module-build-runtime-orchestration/m258-d001-v1`
+  - `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
+  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
+- compiler/runtime behavior
+  - imported peer registration artifacts are validated fail closed
+  - the emitted link plan orders object inputs by
+    `ascending-registration-ordinal-then-translation-unit-identity-key`
+  - the merged linker response file preserves the deterministic imported/local
+    linker-anchor order
+  - the happy path now proves two-image runtime registration and replay through
+    the emitted artifacts

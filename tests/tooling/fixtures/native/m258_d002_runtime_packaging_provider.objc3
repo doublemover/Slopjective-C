@@ -1,0 +1,21 @@
+module runtimePackagingProvider;
+
+@protocol ImportedWorker
+@required
++ (i32) importedProtocolValue;
+@end
+
+@interface ImportedProvider <ImportedWorker>
++ (i32) importedProtocolValue;
++ (i32) providerClassValue;
+@end
+
+@implementation ImportedProvider
++ (i32) importedProtocolValue {
+  return 41;
+}
+
++ (i32) providerClassValue {
+  return 43;
+}
+@end

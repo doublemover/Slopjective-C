@@ -244,7 +244,7 @@ def run_native_probe(args: argparse.Namespace, failures: list[Finding]) -> tuple
     checks_total += 1
     checks_passed += require('@__objc3_image_info = internal global { i32, i32 } zeroinitializer' in ir_text, display_path(ir_path), "M253-C001-NATIVE-IMAGE-INFO", "IR must keep zeroinitializer image-info payloads", failures)
     checks_total += 1
-    checks_passed += require('@__objc3_sec_class_descriptors = internal global { i64 } { i64 0 }' in ir_text, display_path(ir_path), "M253-C001-NATIVE-CLASS-AGGREGATE", "IR must keep zero-sentinel class aggregates on the hello probe", failures)
+    checks_passed += require('@__objc3_sec_class_descriptors = internal global { i64 } { i64 0 }' in ir_text or '@__objc3_sec_class_descriptors = internal constant { i64 } { i64 0 }' in ir_text, display_path(ir_path), "M253-C001-NATIVE-CLASS-AGGREGATE", "IR must keep zero-sentinel class aggregates on the hello probe", failures)
     checks_total += 1
     checks_passed += require(bool(llvm_used_line), display_path(ir_path), "M253-C001-NATIVE-LLVM-USED", "IR must retain metadata through @llvm.used", failures)
     checks_total += 1

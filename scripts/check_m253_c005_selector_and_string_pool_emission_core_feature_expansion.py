@@ -281,7 +281,7 @@ def make_probe_specs(args: argparse.Namespace) -> tuple[ProbeSpec, ...]:
             symbol_tokens=(
                 "@__objc3_sel_pool_0000",
                 "@__objc3_sec_selector_pool",
-                "@__objc3_sec_string_pool = internal global { i64 } { i64 0 }",
+                "@__objc3_sec_string_pool = internal constant { i64 } { i64 0 }",
                 "= getelementptr inbounds [10 x i8], ptr @__objc3_sel_pool_0000",
             ),
             boundary_tokens=(

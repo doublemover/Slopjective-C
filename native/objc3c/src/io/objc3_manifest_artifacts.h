@@ -24,6 +24,12 @@ std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
@@ -51,3 +57,11 @@ void WriteRuntimeRegistrationDescriptorArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &descriptor_json);
+void WriteCrossModuleRuntimeLinkPlanArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &plan_json);
+void WriteCrossModuleRuntimeLinkerResponseArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &response_payload);

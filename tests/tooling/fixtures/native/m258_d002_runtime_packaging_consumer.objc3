@@ -1,0 +1,11 @@
+module runtimePackagingConsumer;
+
+@interface LocalConsumer
++ (i32) localClassValue;
+@end
+
+@implementation LocalConsumer
++ (i32) localClassValue {
+  return 53;
+}
+@end

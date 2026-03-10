@@ -64,6 +64,19 @@ std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
           kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix);
 }
 
+std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix);
+}
+
+std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir /
+         (emit_prefix + kObjc3CrossModuleRuntimeLinkerResponseArtifactSuffix);
+}
+
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
                            const std::string &manifest_json) {
@@ -115,4 +128,21 @@ void WriteRuntimeRegistrationDescriptorArtifact(
     const std::string &descriptor_json) {
   WriteText(BuildRuntimeRegistrationDescriptorArtifactPath(out_dir, emit_prefix),
             descriptor_json);
+}
+
+void WriteCrossModuleRuntimeLinkPlanArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &plan_json) {
+  WriteText(BuildCrossModuleRuntimeLinkPlanArtifactPath(out_dir, emit_prefix),
+            plan_json);
+}
+
+void WriteCrossModuleRuntimeLinkerResponseArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &response_payload) {
+  WriteText(
+      BuildCrossModuleRuntimeLinkerResponseArtifactPath(out_dir, emit_prefix),
+      response_payload);
 }

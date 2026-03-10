@@ -340,7 +340,7 @@ def run_native_probe(args: argparse.Namespace, failures: list[Finding]) -> tuple
     checks_passed += require("!\"zero-sentinel-or-count-plus-pointer-vector\"" in ir_text, display_path(ir_path), "M253-B002-NATIVE-METADATA-RELOCATION", "!55 must preserve the relocation token", failures)
     checks_passed += require("!\"local-linkage-omits-explicit-ir-visibility\"" in ir_text, display_path(ir_path), "M253-B002-NATIVE-METADATA-VISIBILITY", "!55 must preserve the visibility spelling token", failures)
     checks_passed += require("!\"llvm.used\"" in ir_text, display_path(ir_path), "M253-B002-NATIVE-METADATA-RETENTION", "!55 must preserve the retention token", failures)
-    checks_passed += require("@__objc3_sec_class_descriptors = internal global { i64 } { i64 0 }, section \"objc3.runtime.class_descriptors\", align 8" in ir_text, display_path(ir_path), "M253-B002-NATIVE-ZERO-SENTINEL", "aggregate zero-sentinel payload must stay intact", failures)
+    checks_passed += require("@__objc3_sec_class_descriptors = internal global { i64 } { i64 0 }, section \"objc3.runtime.class_descriptors\", align 8" in ir_text or "@__objc3_sec_class_descriptors = internal constant { i64 } { i64 0 }, section \"objc3.runtime.class_descriptors\", align 8" in ir_text, display_path(ir_path), "M253-B002-NATIVE-ZERO-SENTINEL", "aggregate zero-sentinel payload must stay intact", failures)
     checks_passed += require(bool(llvm_used_line), display_path(ir_path), "M253-B002-NATIVE-LLVM-USED", "IR must contain @llvm.used retention root", failures)
     checks_passed += require(obj_path.stat().st_size > 0 if obj_path.exists() else False, display_path(obj_path), "M253-B002-NATIVE-OBJ-SIZE", "module.obj must be non-empty", failures)
 

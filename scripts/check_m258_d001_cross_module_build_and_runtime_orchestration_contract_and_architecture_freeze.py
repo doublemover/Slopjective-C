@@ -188,9 +188,27 @@ def ensure_binaries(failures: list[Finding]) -> int:
     return checks_total
 
 
-def compile_fixture(*, fixture: Path, out_dir: Path, extra_args: Sequence[str] = ()) -> subprocess.CompletedProcess[str]:
+def compile_fixture(
+    *,
+    fixture: Path,
+    out_dir: Path,
+    registration_order_ordinal: int,
+    extra_args: Sequence[str] = (),
+) -> subprocess.CompletedProcess[str]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    return run_process([str(NATIVE_EXE), str(fixture), "--out-dir", str(out_dir), "--emit-prefix", "module", *extra_args])
+    return run_process(
+        [
+            str(NATIVE_EXE),
+            str(fixture),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+            "--objc3-bootstrap-registration-order-ordinal",
+            str(registration_order_ordinal),
+            *extra_args,
+        ]
+    )
 
 
 def validate_manifest_surface(
@@ -278,7 +296,7 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
             mid_out = PROBE_ROOT / "mid"
             downstream_out = PROBE_ROOT / "downstream"
 
-            upstream_completed = compile_fixture(fixture=UPSTREAM_FIXTURE, out_dir=upstream_out)
+            upstream_completed = compile_fixture(fixture=UPSTREAM_FIXTURE, out_dir=upstream_out, registration_order_ordinal=1)
             upstream_artifact_path = upstream_out / IMPORT_ARTIFACT
             checks_total += require(upstream_completed.returncode == 0, display_path(UPSTREAM_FIXTURE), "M258-D001-UPSTREAM-COMPILE", upstream_completed.stderr or upstream_completed.stdout or "upstream compile failed", failures)
             checks_total += require(upstream_artifact_path.exists(), display_path(upstream_artifact_path), "M258-D001-UPSTREAM-ARTIFACT", "upstream import artifact missing", failures)
@@ -290,6 +308,7 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
                 mid_completed = compile_fixture(
                     fixture=MID_FIXTURE,
                     out_dir=mid_out,
+                    registration_order_ordinal=2,
                     extra_args=("--objc3-import-runtime-surface", str(upstream_artifact_path)),
                 )
                 mid_artifact_path = mid_out / IMPORT_ARTIFACT
@@ -303,6 +322,7 @@ def build_summary(skip_dynamic_probes: bool) -> tuple[dict[str, object], list[Fi
                     downstream_completed = compile_fixture(
                         fixture=DOWNSTREAM_FIXTURE,
                         out_dir=downstream_out,
+                        registration_order_ordinal=3,
                         extra_args=("--objc3-import-runtime-surface", str(mid_artifact_path)),
                     )
                     downstream_artifact_path = downstream_out / IMPORT_ARTIFACT

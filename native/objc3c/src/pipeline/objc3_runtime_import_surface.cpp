@@ -1,5 +1,6 @@
 #include "pipeline/objc3_runtime_import_surface.h"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <fstream>
@@ -10,6 +11,9 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include "io/objc3_manifest_artifacts.h"
+#include "lower/objc3_lowering_contract.h"
 
 namespace {
 
@@ -456,6 +460,40 @@ bool ReadStringArrayMember(const JsonValue::Object &object,
     values.push_back(*string_value);
   }
   return true;
+}
+
+bool EndsWith(const std::string &text, const std::string &suffix) {
+  return text.size() >= suffix.size() &&
+         text.compare(text.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
+bool TryResolveEmitPrefixFromImportSurfacePath(const std::filesystem::path &path,
+                                               std::string &emit_prefix,
+                                               std::string &error) {
+  const std::string filename = path.filename().generic_string();
+  const std::string suffix =
+      kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix;
+  if (!EndsWith(filename, suffix) || filename.size() <= suffix.size()) {
+    error = "import surface path does not end with the canonical artifact suffix";
+    return false;
+  }
+  emit_prefix = filename.substr(0, filename.size() - suffix.size());
+  if (emit_prefix.empty()) {
+    error = "import surface path does not contain an emit prefix";
+    return false;
+  }
+  return true;
+}
+
+std::vector<std::string> SplitNonEmptyLines(const std::string &text) {
+  std::vector<std::string> lines;
+  std::istringstream input(text);
+  for (std::string line; std::getline(input, line);) {
+    if (!line.empty()) {
+      lines.push_back(std::move(line));
+    }
+  }
+  return lines;
 }
 
 bool ParseClassRecord(const JsonValue::Object &object,
@@ -947,6 +985,95 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   return true;
 }
 
+bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
+    const JsonValue::Object &root,
+    Objc3ImportedRuntimeModulePackagingPeerArtifacts &artifacts,
+    std::string &error) {
+  std::string contract_id;
+  bool ready_for_runtime_bootstrap_enforcement = false;
+  if (!ReadStringMember(root, "contract_id", contract_id, error) ||
+      !ReadStringMember(root, "runtime_support_library_archive_relative_path",
+                        artifacts.runtime_support_library_archive_relative_path,
+                        error) ||
+      !ReadStringMember(root, "translation_unit_identity_model",
+                        artifacts.translation_unit_identity_model, error) ||
+      !ReadStringMember(root, "translation_unit_identity_key",
+                        artifacts.translation_unit_identity_key, error) ||
+      !ReadStringMember(root, "object_format", artifacts.object_format, error) ||
+      !ReadUnsignedMember(root, "translation_unit_registration_order_ordinal",
+                          artifacts.translation_unit_registration_order_ordinal,
+                          error) ||
+      !ReadStringArrayMember(root, "driver_linker_flags",
+                             artifacts.driver_linker_flags, error) ||
+      !ReadBoolMember(root, "ready_for_runtime_bootstrap_enforcement",
+                      ready_for_runtime_bootstrap_enforcement, error)) {
+    return false;
+  }
+  if (contract_id !=
+      kObjc3RuntimeTranslationUnitRegistrationManifestContractId) {
+    error = "unexpected runtime registration manifest contract id";
+    return false;
+  }
+  if (!ready_for_runtime_bootstrap_enforcement) {
+    error =
+        "runtime registration manifest is not ready for runtime bootstrap enforcement";
+    return false;
+  }
+  for (const auto &flag : artifacts.driver_linker_flags) {
+    if (flag.empty()) {
+      error = "runtime registration manifest contains an empty driver linker flag";
+      return false;
+    }
+  }
+  return true;
+}
+
+bool ValidateImportedRuntimeDiscoveryPeerArtifacts(
+    const JsonValue::Object &root,
+    const Objc3ImportedRuntimeModulePackagingPeerArtifacts &artifacts,
+    std::string &object_artifact_relative_path, std::string &error) {
+  std::string contract_id;
+  std::string translation_unit_identity_model;
+  std::string translation_unit_identity_key;
+  std::string object_format;
+  std::vector<std::string> driver_linker_flags;
+  if (!ReadStringMember(root, "contract_id", contract_id, error) ||
+      !ReadStringMember(root, "object_artifact",
+                        object_artifact_relative_path, error) ||
+      !ReadStringMember(root, "translation_unit_identity_model",
+                        translation_unit_identity_model, error) ||
+      !ReadStringMember(root, "translation_unit_identity_key",
+                        translation_unit_identity_key, error) ||
+      !ReadStringMember(root, "object_format", object_format, error) ||
+      !ReadStringArrayMember(root, "driver_linker_flags", driver_linker_flags,
+                             error)) {
+    return false;
+  }
+  if (contract_id != kObjc3RuntimeLinkerRetentionContractId) {
+    error = "unexpected runtime metadata discovery contract id";
+    return false;
+  }
+  if (translation_unit_identity_model !=
+      artifacts.translation_unit_identity_model) {
+    error =
+        "runtime metadata discovery translation-unit identity model mismatch";
+    return false;
+  }
+  if (translation_unit_identity_key != artifacts.translation_unit_identity_key) {
+    error = "runtime metadata discovery translation-unit identity key mismatch";
+    return false;
+  }
+  if (object_format != artifacts.object_format) {
+    error = "runtime metadata discovery object format mismatch";
+    return false;
+  }
+  if (driver_linker_flags != artifacts.driver_linker_flags) {
+    error = "runtime metadata discovery driver linker flags mismatch";
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 bool TryLoadObjc3ImportedRuntimeModuleSurface(
@@ -981,5 +1108,124 @@ bool TryLoadObjc3ImportedRuntimeModuleSurface(
     return false;
   }
   surface = std::move(parsed_surface);
+  return true;
+}
+
+bool TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
+    const Objc3ImportedRuntimeModuleSurface &surface,
+    Objc3ImportedRuntimeModulePackagingPeerArtifacts &artifacts,
+    std::string &error) {
+  artifacts = Objc3ImportedRuntimeModulePackagingPeerArtifacts{};
+  error.clear();
+
+  std::string emit_prefix;
+  if (!TryResolveEmitPrefixFromImportSurfacePath(surface.source_path, emit_prefix,
+                                                 error)) {
+    error = surface.source_path.generic_string() + ": " + error;
+    return false;
+  }
+
+  const std::filesystem::path parent = surface.source_path.parent_path();
+  const std::filesystem::path registration_manifest_path =
+      BuildRuntimeRegistrationManifestArtifactPath(parent, emit_prefix)
+          .lexically_normal();
+  const std::filesystem::path discovery_artifact_path =
+      BuildRuntimeMetadataDiscoveryArtifactPath(parent, emit_prefix)
+          .lexically_normal();
+  const std::filesystem::path linker_response_artifact_path =
+      BuildRuntimeMetadataLinkerResponseArtifactPath(parent, emit_prefix)
+          .lexically_normal();
+
+  std::string manifest_io_error;
+  const std::string manifest_payload =
+      ReadTextFile(registration_manifest_path, manifest_io_error);
+  if (!manifest_io_error.empty()) {
+    error = registration_manifest_path.generic_string() + ": " + manifest_io_error;
+    return false;
+  }
+  JsonParser manifest_parser(manifest_payload);
+  JsonValue manifest_root_value;
+  std::string manifest_parse_error;
+  if (!manifest_parser.Parse(manifest_root_value, manifest_parse_error)) {
+    error = registration_manifest_path.generic_string() + ": " +
+            manifest_parse_error;
+    return false;
+  }
+  const JsonValue::Object *manifest_root_object = AsObject(manifest_root_value);
+  if (manifest_root_object == nullptr) {
+    error = registration_manifest_path.generic_string() +
+            ": runtime registration manifest payload must be a JSON object";
+    return false;
+  }
+
+  Objc3ImportedRuntimeModulePackagingPeerArtifacts parsed_artifacts;
+  if (!PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
+          *manifest_root_object, parsed_artifacts, manifest_parse_error)) {
+    error = registration_manifest_path.generic_string() + ": " +
+            manifest_parse_error;
+    return false;
+  }
+
+  std::string discovery_io_error;
+  const std::string discovery_payload =
+      ReadTextFile(discovery_artifact_path, discovery_io_error);
+  if (!discovery_io_error.empty()) {
+    error = discovery_artifact_path.generic_string() + ": " + discovery_io_error;
+    return false;
+  }
+  JsonParser discovery_parser(discovery_payload);
+  JsonValue discovery_root_value;
+  std::string discovery_parse_error;
+  if (!discovery_parser.Parse(discovery_root_value, discovery_parse_error)) {
+    error = discovery_artifact_path.generic_string() + ": " +
+            discovery_parse_error;
+    return false;
+  }
+  const JsonValue::Object *discovery_root_object = AsObject(discovery_root_value);
+  if (discovery_root_object == nullptr) {
+    error = discovery_artifact_path.generic_string() +
+            ": runtime metadata discovery payload must be a JSON object";
+    return false;
+  }
+
+  std::string object_artifact_relative_path;
+  if (!ValidateImportedRuntimeDiscoveryPeerArtifacts(*discovery_root_object,
+                                                     parsed_artifacts,
+                                                     object_artifact_relative_path,
+                                                     discovery_parse_error)) {
+    error = discovery_artifact_path.generic_string() + ": " +
+            discovery_parse_error;
+    return false;
+  }
+
+  std::string response_io_error;
+  const std::string linker_response_payload =
+      ReadTextFile(linker_response_artifact_path, response_io_error);
+  if (!response_io_error.empty()) {
+    error = linker_response_artifact_path.generic_string() + ": " +
+            response_io_error;
+    return false;
+  }
+  const std::vector<std::string> response_flags =
+      SplitNonEmptyLines(linker_response_payload);
+  if (response_flags != parsed_artifacts.driver_linker_flags) {
+    error = linker_response_artifact_path.generic_string() +
+            ": linker response payload drifted from imported driver linker flags";
+    return false;
+  }
+
+  const std::filesystem::path object_artifact_path =
+      (parent / object_artifact_relative_path).lexically_normal();
+  if (!std::filesystem::exists(object_artifact_path)) {
+    error = object_artifact_path.generic_string() +
+            ": imported object artifact is missing";
+    return false;
+  }
+
+  parsed_artifacts.registration_manifest_path = registration_manifest_path;
+  parsed_artifacts.discovery_artifact_path = discovery_artifact_path;
+  parsed_artifacts.linker_response_artifact_path = linker_response_artifact_path;
+  parsed_artifacts.object_artifact_path = object_artifact_path;
+  artifacts = std::move(parsed_artifacts);
   return true;
 }

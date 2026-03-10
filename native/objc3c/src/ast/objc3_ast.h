@@ -612,6 +612,33 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactRelativePath =
         "module.runtime-registration-manifest.json";
+inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanContractId =
+    "objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1";
+inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanPayloadModel =
+    "cross-module-runtime-link-plan-json-v1";
+inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix =
+    ".cross-module-runtime-link-plan.json";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkPlanArtifactRelativePath =
+        "module.cross-module-runtime-link-plan.json";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkerResponseArtifactSuffix =
+        ".cross-module-runtime-linker-options.rsp";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkerResponseArtifactRelativePath =
+        "module.cross-module-runtime-linker-options.rsp";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkPlanAuthorityModel =
+        "runtime-import-surface-plus-imported-registration-manifest-peer-artifacts-drive-cross-module-link-plan";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkPlanPackagingModel =
+        "compiler-emits-cross-module-link-plan-and-merged-linker-response";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkPlanRegistrationScopeModel =
+        "registration-ordinal-sorted-link-plan-drives-multi-image-startup-registration";
+inline constexpr const char
+    *kObjc3CrossModuleRuntimeLinkObjectOrderModel =
+        "ascending-registration-ordinal-then-translation-unit-identity-key";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix =
         "__objc3_runtime_register_image_init_stub_";

@@ -614,6 +614,10 @@ class Objc3IREmitter {
       // orchestration remain outside the IR emitter; lane D only freezes the
       // boundary between emitted import-surface reuse payloads and the local
       // runtime registration manifest here.
+      // M258-D002 cross-module runtime packaging anchor: lane D now consumes
+      // those emitted object-local artifacts to publish an ordered cross-module
+      // link plan and runtime-registration proof, but the IR emitter remains
+      // object-local and does not directly orchestrate multi-image packaging.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.
@@ -5942,7 +5946,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -6350,7 +6354,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -6611,7 +6615,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -6862,7 +6866,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -7028,7 +7032,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -7253,7 +7257,7 @@ class Objc3IREmitter {
 
           const std::string aggregate_symbol = "@" + family.aggregate_symbol_name;
           out << aggregate_symbol << " = " << layout_policy.aggregate_linkage
-              << " global ";
+              << (descriptor_symbols.empty() ? " constant " : " global ");
           if (descriptor_symbols.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {
@@ -7287,7 +7291,8 @@ class Objc3IREmitter {
                 << EscapeCStringLiteral(value) << "\\00\", section \""
                 << emitted_section_name << "\", align 1\n";
           }
-          out << aggregate_symbol << " = internal global ";
+          out << aggregate_symbol << " = internal "
+              << (pool_globals.empty() ? "constant " : "global ");
           if (pool_globals.empty()) {
             out << "{ i64 } { i64 0 }";
           } else {

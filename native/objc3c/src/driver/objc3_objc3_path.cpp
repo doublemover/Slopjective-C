@@ -14,6 +14,7 @@
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "pipeline/objc3_runtime_import_surface.h"
 
 namespace fs = std::filesystem;
 
@@ -552,6 +553,140 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   cli_options.out_dir, cli_options.emit_prefix,
                   registration_descriptor_json);
             }
+          }
+        }
+      }
+
+      if (compile_status == 0 &&
+          !cli_options.imported_runtime_surface_paths.empty()) {
+        std::vector<Objc3ImportedRuntimeModuleSurface> imported_surfaces;
+        imported_surfaces.reserve(cli_options.imported_runtime_surface_paths.size());
+        std::vector<Objc3ImportedRuntimeModulePackagingPeerArtifacts>
+            imported_peer_artifacts;
+        imported_peer_artifacts.reserve(
+            cli_options.imported_runtime_surface_paths.size());
+
+        for (const auto &import_path : cli_options.imported_runtime_surface_paths) {
+          Objc3ImportedRuntimeModuleSurface imported_surface;
+          std::string import_surface_error;
+          const fs::path absolute_import_path =
+              fs::absolute(import_path).lexically_normal();
+          if (!TryLoadObjc3ImportedRuntimeModuleSurface(
+                  absolute_import_path, imported_surface, import_surface_error)) {
+            compile_status = 125;
+            std::cerr << import_surface_error << "\n";
+            break;
+          }
+          Objc3ImportedRuntimeModulePackagingPeerArtifacts peer_artifacts;
+          std::string peer_artifacts_error;
+          if (!TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
+                  imported_surface, peer_artifacts, peer_artifacts_error)) {
+            compile_status = 125;
+            std::cerr << peer_artifacts_error << "\n";
+            break;
+          }
+          imported_surfaces.push_back(std::move(imported_surface));
+          imported_peer_artifacts.push_back(std::move(peer_artifacts));
+        }
+
+        if (compile_status == 0) {
+          Objc3CrossModuleRuntimeLinkPlanArtifactInputs link_plan_inputs;
+          link_plan_inputs.contract_id =
+              kObjc3CrossModuleRuntimeLinkPlanContractId;
+          link_plan_inputs.source_orchestration_contract_id =
+              kObjc3CrossModuleBuildRuntimeOrchestrationContractId;
+          link_plan_inputs.import_surface_contract_id =
+              kObjc3RuntimeAwareImportModuleFrontendClosureContractId;
+          link_plan_inputs.registration_manifest_contract_id =
+              kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+          link_plan_inputs.payload_model =
+              kObjc3CrossModuleRuntimeLinkPlanPayloadModel;
+          link_plan_inputs.artifact_relative_path =
+              kObjc3CrossModuleRuntimeLinkPlanArtifactRelativePath;
+          link_plan_inputs.linker_response_artifact_relative_path =
+              kObjc3CrossModuleRuntimeLinkerResponseArtifactRelativePath;
+          link_plan_inputs.authority_model =
+              kObjc3CrossModuleRuntimeLinkPlanAuthorityModel;
+          link_plan_inputs.packaging_model =
+              kObjc3CrossModuleRuntimeLinkPlanPackagingModel;
+          link_plan_inputs.registration_scope_model =
+              kObjc3CrossModuleRuntimeLinkPlanRegistrationScopeModel;
+          link_plan_inputs.link_object_order_model =
+              kObjc3CrossModuleRuntimeLinkObjectOrderModel;
+          link_plan_inputs.local_module_name =
+              artifacts.runtime_aware_import_module_frontend_closure_summary
+                  .module_name;
+          link_plan_inputs.local_import_surface_artifact_relative_path =
+              fs::absolute(BuildRuntimeAwareImportModuleArtifactPath(
+                               cli_options.out_dir, cli_options.emit_prefix))
+                  .lexically_normal()
+                  .generic_string();
+          link_plan_inputs.local_registration_manifest_artifact_relative_path =
+              fs::absolute(BuildRuntimeRegistrationManifestArtifactPath(
+                               cli_options.out_dir, cli_options.emit_prefix))
+                  .lexically_normal()
+                  .generic_string();
+          link_plan_inputs.local_object_artifact_relative_path =
+              fs::absolute(object_out).lexically_normal().generic_string();
+          link_plan_inputs.runtime_support_library_archive_relative_path =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .runtime_support_library_archive_relative_path;
+          link_plan_inputs.object_format = linker_retention_artifacts.object_format;
+          link_plan_inputs.local_translation_unit_identity_model =
+              linker_retention_artifacts.translation_unit_identity_model;
+          link_plan_inputs.local_translation_unit_identity_key =
+              linker_retention_artifacts.translation_unit_identity_key;
+          link_plan_inputs.local_translation_unit_registration_order_ordinal =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .translation_unit_registration_order_ordinal;
+          link_plan_inputs.local_driver_linker_flags = {
+              linker_retention_artifacts.driver_linker_flag};
+          for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
+            link_plan_inputs.direct_import_surface_artifact_paths.push_back(
+                imported_surfaces[index].source_path.generic_string());
+            const auto &peer_artifacts = imported_peer_artifacts[index];
+            Objc3CrossModuleRuntimeLinkPlanImportedInput imported_input;
+            imported_input.module_name =
+                imported_surfaces[index].frontend_closure_summary.module_name;
+            imported_input.import_surface_artifact_path =
+                imported_surfaces[index].source_path.generic_string();
+            imported_input.registration_manifest_artifact_path =
+                peer_artifacts.registration_manifest_path.generic_string();
+            imported_input.object_artifact_path =
+                peer_artifacts.object_artifact_path.generic_string();
+            imported_input.discovery_artifact_path =
+                peer_artifacts.discovery_artifact_path.generic_string();
+            imported_input.linker_response_artifact_path =
+                peer_artifacts.linker_response_artifact_path.generic_string();
+            imported_input.translation_unit_identity_model =
+                peer_artifacts.translation_unit_identity_model;
+            imported_input.translation_unit_identity_key =
+                peer_artifacts.translation_unit_identity_key;
+            imported_input.object_format = peer_artifacts.object_format;
+            imported_input.runtime_support_library_archive_relative_path =
+                peer_artifacts.runtime_support_library_archive_relative_path;
+            imported_input.translation_unit_registration_order_ordinal =
+                peer_artifacts.translation_unit_registration_order_ordinal;
+            imported_input.driver_linker_flags =
+                peer_artifacts.driver_linker_flags;
+            link_plan_inputs.imported_inputs.push_back(std::move(imported_input));
+          }
+
+          std::string link_plan_json;
+          std::string cross_module_linker_response_payload;
+          std::string link_plan_error;
+          if (!TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
+                  link_plan_inputs, link_plan_json,
+                  cross_module_linker_response_payload, link_plan_error)) {
+            compile_status = 125;
+            std::cerr << link_plan_error << "\n";
+          } else {
+            WriteCrossModuleRuntimeLinkPlanArtifact(cli_options.out_dir,
+                                                   cli_options.emit_prefix,
+                                                   link_plan_json);
+            WriteCrossModuleRuntimeLinkerResponseArtifact(
+                cli_options.out_dir, cli_options.emit_prefix,
+                cross_module_linker_response_payload);
           }
         }
       }
