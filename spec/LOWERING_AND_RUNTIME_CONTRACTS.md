@@ -7091,3 +7091,27 @@ semantic gate.
     issue as the canonical live proof path while that source surface is still
     gated earlier
   - the next implementation issue is `M259-C001`
+
+## M259 end-to-end replay and inspection freeze (C001)
+
+`M259-C001` freezes the current replay-proof and binary-inspection evidence
+boundary for the runnable native Objective-C 3 slice before `M259-C002`
+widens that evidence into live IR/object replay and deeper metadata inspection
+proof.
+
+- contract id
+  `objc3c-runnable-replay-and-inspection-evidence-freeze/m259-c001-v1`
+- freeze model
+  `runnable-slice-replay-proof-and-single-sample-object-inspection-boundary`
+- evidence model
+  `execution-smoke-plus-replay-proof-plus-a002-object-section-anchor`
+- failure model
+  `fail-closed-on-runnable-replay-or-object-inspection-boundary-drift`
+- truthful boundary
+  - execution smoke remains the broad runnable replay corpus
+  - replay proof remains the canonical deterministic replay artifact boundary
+  - `M259-A002` remains the single integrated runnable sample allowed to drive
+    live object-section inspection in this issue
+  - archive/static-link, multi-module, multi-image, and broader binary
+    inspection expansion are deferred
+  - the next implementation issue is `M259-C002`

@@ -16,6 +16,10 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # M259-B001 runnable-core-compatibility-guard anchor: advanced unsupported features must fail closed instead of counting as replay-proof runnable coverage.
 # M259-B002 unsupported-advanced-feature-diagnostics anchor: `O3S221` fail-closed diagnostics for accepted advanced surfaces
 # must stay outside replay-proof runnable counts and never be treated as stable executable coverage.
+# M259-C001 replay-inspection-freeze anchor: replay proof remains the
+# canonical replay-proof artifact boundary for the current runnable slice.
+# Deeper object/metadata inspection is frozen onto the dedicated A002 sample
+# instead of widening the scalar replay corpus here.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"

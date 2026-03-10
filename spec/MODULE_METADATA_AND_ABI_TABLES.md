@@ -8059,3 +8059,28 @@ being misreported as runnable.
     envelope without introducing new ABI families
   - negative advanced-source probes do not publish manifest, IR, or object
     artifacts once `O3S221` fail-closed diagnostics fire
+
+## M259 replay and inspection metadata anchors (C001)
+
+`M259-C001` does not widen the emitted metadata ABI. It freezes the current
+replay-proof and binary-inspection evidence boundary above the already-landed
+runnable sample metadata families.
+
+- contract id
+  `objc3c-runnable-replay-and-inspection-evidence-freeze/m259-c001-v1`
+- canonical live inspection anchor
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+- canonical replay/inspection evidence
+  - `tmp/reports/m259/M259-C001/end_to_end_replay_and_inspection_summary.json`
+- required inspected runtime sections
+  - `objc3.runtime.class_descriptors`
+  - `objc3.runtime.protocol_descriptors`
+  - `objc3.runtime.category_descriptors`
+  - `objc3.runtime.property_descriptors`
+  - `objc3.runtime.ivar_descriptors`
+  - `objc3.runtime.selector_pool`
+  - `objc3.runtime.string_pool`
+  - `objc3.runtime.discovery_root`
+  - `objc3.runtime.linker_anchor`
+  - `objc3.runtime.image_root`
+  - `objc3.runtime.registration_descriptor`

@@ -11181,6 +11181,30 @@ outside the native Objective-C 3 runnable subset.
     gated earlier than this rejection boundary
   - the next implementation issue is `M259-C001`
 
+## M259 end-to-end replay and inspection freeze (C001)
+
+`M259-C001` freezes the current replay-proof and binary-inspection evidence
+boundary for the runnable native Objective-C 3 slice.
+
+- contract id
+  `objc3c-runnable-replay-and-inspection-evidence-freeze/m259-c001-v1`
+- freeze model
+  `runnable-slice-replay-proof-and-single-sample-object-inspection-boundary`
+- evidence model
+  `execution-smoke-plus-replay-proof-plus-a002-object-section-anchor`
+- truthful boundary
+  - scalar/core execution smoke remains the broad runnable replay corpus
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    remains the single canonical integrated object-inspection anchor
+  - one canonical object-inspection probe over the A002 sample proves the
+    runnable slice still emits inspectable manifest, IR, object, and runtime
+    metadata sections on the live path
+  - archive/static-link, multi-module, and multi-image inspection expansion do
+    not land here
+  - blocks, ARC, async/await, actors, `throws`, and other unsupported advanced
+    surfaces are still outside the runnable replay/inspection claim boundary
+  - the next implementation issue is `M259-C002`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current
