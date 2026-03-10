@@ -120,11 +120,16 @@ typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t receiver_class_binding_count;
   uint64_t attached_category_count;
   uint64_t protocol_conformance_edge_count;
+  uint64_t live_instance_count;
+  uint64_t last_allocated_receiver_identity;
+  uint64_t last_allocated_base_identity;
+  uint64_t last_allocated_instance_size_bytes;
   const char *last_realized_class_name;
   const char *last_realized_class_owner_identity;
   const char *last_realized_metaclass_owner_identity;
   const char *last_attached_category_owner_identity;
   const char *last_attached_category_name;
+  const char *last_allocated_class_name;
 } objc3_runtime_realized_class_graph_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_entry_snapshot {
@@ -136,6 +141,8 @@ typedef struct objc3_runtime_realized_class_entry_snapshot {
   uint64_t attached_category_count;
   uint64_t direct_protocol_count;
   uint64_t attached_protocol_count;
+  uint64_t runtime_property_accessor_count;
+  uint64_t runtime_instance_size_bytes;
   const char *module_name;
   const char *translation_unit_identity_key;
   const char *class_name;
@@ -211,6 +218,10 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
 // synthesized accessor cache entries, and registration/selector snapshots also
 // remain the canonical proof surface for the current single-instance
 // property/layout runtime boundary.
+// M257-D002 instance-allocation-layout-runtime anchor: the same private
+// realized-graph snapshots now also publish live instance-allocation and
+// runtime layout-consumption evidence for synthesized property access without
+// widening the public runtime header.
 int objc3_runtime_copy_realized_class_graph_state_for_testing(
     objc3_runtime_realized_class_graph_state_snapshot *snapshot);
 int objc3_runtime_copy_realized_class_entry_for_testing(

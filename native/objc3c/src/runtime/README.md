@@ -204,6 +204,19 @@ lane-C accessor work:
   - per-instance slot storage
   - reflective property registration
 
+`M257-D002` upgrades the property/layout runtime from the D001 freeze into true
+per-instance allocation:
+
+- contract id `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- runtime consumption model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout`
+- storage model
+  `synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records`
+- proof surface stays on the same public ABI plus private registration,
+  selector, realized-graph, and method-cache snapshots
+
 `M256-D002` promotes that freeze boundary into a runtime-owned realized graph:
 
 - contract id `objc3c-runtime-metaclass-graph-root-class-baseline/m256-d002-v1`

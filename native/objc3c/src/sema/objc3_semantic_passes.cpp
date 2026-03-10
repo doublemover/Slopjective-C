@@ -12311,6 +12311,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // M257-D001 runtime property/layout consumption freeze anchor: the live
       // runtime must consume these same emitted selector/binding/layout facts
       // without recovering property storage or allocator behavior from source.
+      // M257-D002 instance-allocation-layout-runtime anchor: later runtime
+      // allocation and per-instance slot storage must still consume only these
+      // emitted selector/binding/layout facts without reopening sema.
       property_metadata.effective_getter_selector =
           source.effective_getter_selector;
       property_metadata.effective_setter_available =

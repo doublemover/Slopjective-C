@@ -9398,3 +9398,20 @@ artifacts and the live bootstrap replay runtime:
   - `spec/planning/compiler/m257/m257_d001_runtime_property_and_layout_consumption_contract_and_architecture_freeze_packet.md`
   - `check:objc3c:m257-d001-runtime-property-and-layout-consumption-contract`
   - `check:objc3c:m257-d001-lane-d-readiness`
+
+## M257 instance allocation, layout, and ivar-offset runtime support (D002)
+
+`M257-D002` upgrades the runtime surface immediately above `M257-D001`.
+
+- emitted IR now publishes `; runtime_instance_allocation_layout_support = ...`
+- runtime still consumes emitted accessor implementation pointers and
+  property/layout attachment identities without source rediscovery
+- builtin `alloc` / `new` now materialize distinct runtime instance identities
+  per allocation
+- synthesized property execution now uses realized per-instance slot storage
+  derived from emitted ivar offsets and layout records
+- canonical issue assets:
+  - `docs/contracts/m257_instance_allocation_layout_and_ivar_offset_runtime_support_core_feature_implementation_d002_expectations.md`
+  - `spec/planning/compiler/m257/m257_d002_instance_allocation_layout_and_ivar_offset_runtime_support_core_feature_implementation_packet.md`
+  - `check:objc3c:m257-d002-instance-allocation-layout-runtime-support`
+  - `check:objc3c:m257-d002-lane-d-readiness`

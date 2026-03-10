@@ -64,6 +64,8 @@ enum class RuntimeBuiltinKind {
   Alloc = 1,
   Init = 2,
   New = 3,
+  PropertyGetter = 4,
+  PropertySetter = 5,
 };
 
 enum class RuntimeMethodReturnKind {
@@ -72,6 +74,8 @@ enum class RuntimeMethodReturnKind {
   Bool = 2,
   Void = 3,
 };
+
+struct RealizedPropertyAccessor;
 
 struct MethodCacheKey {
   std::uint64_t normalized_receiver_identity = 0;
@@ -104,6 +108,7 @@ struct MethodCacheEntry {
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
+  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
 };
 
 struct SlowPathResolution {
@@ -121,6 +126,7 @@ struct SlowPathResolution {
   std::uint64_t protocol_probe_count = 0;
   const void *implementation = nullptr;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
+  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
 };
 
 struct EmittedMethodListRef {
@@ -188,10 +194,74 @@ struct EmittedCategoryRecord {
   std::uint64_t class_method_count;
 };
 
+struct EmittedPropertyDescriptor {
+  const char *property_name;
+  const char *type_name;
+  const char *owner_identity;
+  const char *declaration_owner_identity;
+  const char *export_owner_identity;
+  const char *getter_selector;
+  const char *setter_selector;
+  const char *effective_getter_selector;
+  const char *effective_setter_selector;
+  const char *ivar_binding_symbol;
+  const char *synthesized_binding_symbol;
+  const char *ivar_layout_symbol;
+  const void *getter_implementation;
+  const void *setter_implementation;
+  std::uint64_t ivar_layout_slot_index;
+  std::uint64_t ivar_layout_size_bytes;
+  std::uint64_t ivar_layout_alignment_bytes;
+  bool has_getter;
+  bool has_setter;
+  bool effective_setter_available;
+};
+
+struct EmittedIvarLayoutRecord {
+  const char *layout_symbol;
+  std::uint64_t slot_index;
+  std::uint64_t offset_bytes;
+  std::uint64_t size_bytes;
+  std::uint64_t alignment_bytes;
+};
+
+struct EmittedIvarDescriptor {
+  const char *owner_identity;
+  const char *declaration_owner_identity;
+  const char *export_owner_identity;
+  const char *property_owner_identity;
+  const char *property_name;
+  const char *ivar_binding_symbol;
+  const EmittedIvarLayoutRecord *layout_record;
+  const std::uint64_t *offset_global;
+  std::uint64_t slot_index;
+  std::uint64_t offset_bytes;
+  std::uint64_t size_bytes;
+  std::uint64_t alignment_bytes;
+};
+
+struct RealizedPropertyAccessor {
+  const EmittedPropertyDescriptor *property_descriptor = nullptr;
+  const EmittedIvarDescriptor *ivar_descriptor = nullptr;
+  RuntimeMethodReturnKind getter_return_kind = RuntimeMethodReturnKind::Unsupported;
+  std::string getter_owner_identity;
+  std::string setter_owner_identity;
+};
+
+struct RuntimeInstanceRecord {
+  std::uint64_t receiver_identity = 0;
+  std::uint64_t base_identity = 0;
+  std::string class_name;
+  std::size_t instance_size_bytes = 0;
+  std::vector<unsigned char> storage_bytes;
+};
+
 struct RealizedClassNode {
   std::string module_name;
   std::string translation_unit_identity_key;
   std::string class_name;
+  std::string bundle_owner_identity;
+  std::string interface_owner_identity;
   std::string class_owner_identity;
   std::string metaclass_owner_identity;
   std::string super_class_owner_identity;
@@ -201,9 +271,12 @@ struct RealizedClassNode {
   bool is_root_class = false;
   bool implementation_backed = false;
   bool runtime_attachment_ready = false;
+  bool runtime_layout_ready = false;
+  std::size_t runtime_instance_size_bytes = 0;
   const RegisteredImageMetadata *image = nullptr;
   const EmittedClassBundle *bundle = nullptr;
   std::vector<const EmittedCategoryRecord *> attached_category_records;
+  std::vector<RealizedPropertyAccessor> runtime_property_accessors;
   std::size_t super_node_index = 0;
   bool has_super_node = false;
 };
@@ -295,6 +368,13 @@ struct RuntimeState {
   std::string last_protocol_conformance_protocol_name;
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
+  std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
+  int next_runtime_instance_receiver = 0x100000;
+  std::uint64_t live_runtime_instance_count = 0;
+  std::uint64_t last_allocated_runtime_instance_receiver = 0;
+  std::uint64_t last_allocated_runtime_instance_base_identity = 0;
+  std::uint64_t last_allocated_runtime_instance_size_bytes = 0;
+  std::string last_allocated_runtime_instance_class_name;
 };
 
 RuntimeState &State() {
@@ -352,6 +432,30 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_protocol_conformance_protocol_name.clear();
   state.last_protocol_conformance_owner_identity.clear();
   state.last_protocol_conformance_attachment_owner_identity.clear();
+}
+
+void ClearRuntimeInstanceStateUnlocked(RuntimeState &state) {
+  state.runtime_instances_by_receiver.clear();
+  state.next_runtime_instance_receiver = 0x100000;
+  state.live_runtime_instance_count = 0;
+  state.last_allocated_runtime_instance_receiver = 0;
+  state.last_allocated_runtime_instance_base_identity = 0;
+  state.last_allocated_runtime_instance_size_bytes = 0;
+  state.last_allocated_runtime_instance_class_name.clear();
+}
+
+std::size_t AlignTo(std::size_t value, std::size_t alignment) {
+  const std::size_t effective_alignment = std::max<std::size_t>(alignment, 1u);
+  const std::size_t remainder = value % effective_alignment;
+  return remainder == 0u ? value : value + (effective_alignment - remainder);
+}
+
+std::string BuildSynthesizedInstanceMethodOwnerIdentity(
+    const char *declaration_owner_identity, const char *selector) {
+  const std::string owner =
+      declaration_owner_identity != nullptr ? declaration_owner_identity : "";
+  const std::string selector_text = selector != nullptr ? selector : "";
+  return owner + "::instance_method:" + selector_text;
 }
 
 std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal) {
@@ -719,6 +823,214 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
   return true;
 }
 
+RuntimeMethodReturnKind ClassifySynthesizedPropertyReturnType(
+    const EmittedPropertyDescriptor &descriptor) {
+  const std::string type_name =
+      descriptor.type_name != nullptr ? descriptor.type_name : "";
+  if (type_name == "bool" || type_name == "BOOL") {
+    return RuntimeMethodReturnKind::Bool;
+  }
+  if (!type_name.empty()) {
+    return RuntimeMethodReturnKind::I32Like;
+  }
+  return RuntimeMethodReturnKind::Unsupported;
+}
+
+bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
+                                                 RealizedClassNode &node) {
+  // M257-D002 instance-allocation-layout-runtime anchor: realized classes now
+  // eagerly consume emitted property and ivar metadata into a runtime-owned
+  // layout/accessor view so alloc/new and synthesized accessors can execute
+  // against per-instance storage instead of lane-C globals.
+  (void)state;
+  node.runtime_property_accessors.clear();
+  node.runtime_layout_ready = false;
+  node.runtime_instance_size_bytes = 0;
+  if (node.image == nullptr || node.image->property_descriptor_root == nullptr ||
+      node.image->ivar_descriptor_root == nullptr ||
+      node.bundle_owner_identity.empty()) {
+    return false;
+  }
+  const std::string ivar_owner_identity =
+      node.interface_owner_identity.empty() ? node.bundle_owner_identity
+                                            : node.interface_owner_identity;
+  std::unordered_map<std::string, const EmittedIvarDescriptor *> ivar_by_binding;
+  std::unordered_map<std::string, const EmittedIvarDescriptor *> ivar_by_property;
+  std::size_t max_end = 0u;
+  std::size_t max_alignment = 1u;
+  for (std::uint64_t index = 0; index < node.image->ivar_descriptor_count; ++index) {
+    const auto *descriptor = static_cast<const EmittedIvarDescriptor *>(
+        AggregateEntry(node.image->ivar_descriptor_root, index));
+    if (descriptor == nullptr || descriptor->declaration_owner_identity == nullptr ||
+        descriptor->property_name == nullptr || descriptor->ivar_binding_symbol == nullptr) {
+      return false;
+    }
+    if (ivar_owner_identity != descriptor->declaration_owner_identity) {
+      continue;
+    }
+    const std::size_t offset = descriptor->offset_global != nullptr
+                                   ? static_cast<std::size_t>(*descriptor->offset_global)
+                                   : static_cast<std::size_t>(descriptor->offset_bytes);
+    const std::size_t size = static_cast<std::size_t>(descriptor->size_bytes);
+    const std::size_t alignment =
+        std::max<std::size_t>(static_cast<std::size_t>(descriptor->alignment_bytes),
+                              1u);
+    if (size != 0u) {
+      max_end = std::max(max_end, offset + size);
+      max_alignment = std::max(max_alignment, alignment);
+    }
+    ivar_by_binding.emplace(descriptor->ivar_binding_symbol, descriptor);
+    ivar_by_property.emplace(descriptor->property_name, descriptor);
+  }
+  node.runtime_instance_size_bytes = AlignTo(max_end, max_alignment);
+
+  for (std::uint64_t index = 0; index < node.image->property_descriptor_count; ++index) {
+    const auto *descriptor = static_cast<const EmittedPropertyDescriptor *>(
+        AggregateEntry(node.image->property_descriptor_root, index));
+    if (descriptor == nullptr || descriptor->declaration_owner_identity == nullptr ||
+        descriptor->property_name == nullptr ||
+        descriptor->effective_getter_selector == nullptr) {
+      return false;
+    }
+    if (node.bundle_owner_identity != descriptor->declaration_owner_identity) {
+      continue;
+    }
+    if (descriptor->synthesized_binding_symbol == nullptr ||
+        descriptor->synthesized_binding_symbol[0] == '\0') {
+      continue;
+    }
+    const EmittedIvarDescriptor *ivar_descriptor = nullptr;
+    if (descriptor->ivar_binding_symbol != nullptr &&
+        descriptor->ivar_binding_symbol[0] != '\0') {
+      const auto ivar_by_binding_it =
+          ivar_by_binding.find(descriptor->ivar_binding_symbol);
+      if (ivar_by_binding_it != ivar_by_binding.end()) {
+        ivar_descriptor = ivar_by_binding_it->second;
+      }
+    }
+    if (ivar_descriptor == nullptr) {
+      const auto ivar_by_property_it =
+          ivar_by_property.find(descriptor->property_name);
+      if (ivar_by_property_it != ivar_by_property.end()) {
+        ivar_descriptor = ivar_by_property_it->second;
+      }
+    }
+    if (ivar_descriptor == nullptr) {
+      continue;
+    }
+    RealizedPropertyAccessor accessor;
+    accessor.property_descriptor = descriptor;
+    accessor.ivar_descriptor = ivar_descriptor;
+    accessor.getter_return_kind =
+        ClassifySynthesizedPropertyReturnType(*descriptor);
+    accessor.getter_owner_identity = BuildSynthesizedInstanceMethodOwnerIdentity(
+        descriptor->declaration_owner_identity,
+        descriptor->effective_getter_selector);
+    if (descriptor->effective_setter_available &&
+        descriptor->effective_setter_selector != nullptr &&
+        descriptor->effective_setter_selector[0] != '\0') {
+      accessor.setter_owner_identity = BuildSynthesizedInstanceMethodOwnerIdentity(
+          descriptor->declaration_owner_identity,
+          descriptor->effective_setter_selector);
+    }
+    node.runtime_property_accessors.push_back(std::move(accessor));
+  }
+
+  std::sort(node.runtime_property_accessors.begin(),
+            node.runtime_property_accessors.end(),
+            [](const RealizedPropertyAccessor &lhs,
+               const RealizedPropertyAccessor &rhs) {
+              const std::string lhs_owner =
+                  lhs.property_descriptor != nullptr &&
+                          lhs.property_descriptor->declaration_owner_identity != nullptr
+                      ? lhs.property_descriptor->declaration_owner_identity
+                      : "";
+              const std::string rhs_owner =
+                  rhs.property_descriptor != nullptr &&
+                          rhs.property_descriptor->declaration_owner_identity != nullptr
+                      ? rhs.property_descriptor->declaration_owner_identity
+                      : "";
+              const std::string lhs_name =
+                  lhs.property_descriptor != nullptr &&
+                          lhs.property_descriptor->property_name != nullptr
+                      ? lhs.property_descriptor->property_name
+                      : "";
+              const std::string rhs_name =
+                  rhs.property_descriptor != nullptr &&
+                          rhs.property_descriptor->property_name != nullptr
+                      ? rhs.property_descriptor->property_name
+                      : "";
+              return std::tie(lhs_owner, lhs_name, lhs.getter_owner_identity,
+                              lhs.setter_owner_identity) <
+                     std::tie(rhs_owner, rhs_name, rhs.getter_owner_identity,
+                              rhs.setter_owner_identity);
+            });
+  node.runtime_layout_ready = !node.runtime_property_accessors.empty() ||
+                              node.runtime_instance_size_bytes != 0u;
+  return true;
+}
+
+bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
+    const RuntimeState &state, const RealizedClassNode &start_node,
+    std::uint64_t normalized_receiver_identity, std::uint64_t selector_stable_id,
+    const char *selector_spelling, SlowPathResolution &resolution) {
+  if (selector_spelling == nullptr || selector_spelling[0] == '\0') {
+    return false;
+  }
+  std::unordered_set<const RealizedClassNode *> visited;
+  const RealizedClassNode *node = &start_node;
+  while (node != nullptr && visited.insert(node).second) {
+    if (node->runtime_layout_ready) {
+      for (const RealizedPropertyAccessor &accessor :
+           node->runtime_property_accessors) {
+        if (accessor.property_descriptor == nullptr ||
+            accessor.ivar_descriptor == nullptr ||
+            accessor.getter_return_kind == RuntimeMethodReturnKind::Unsupported) {
+          continue;
+        }
+        if (accessor.property_descriptor->effective_getter_selector != nullptr &&
+            std::strcmp(accessor.property_descriptor->effective_getter_selector,
+                        selector_spelling) == 0) {
+          resolution.resolved = true;
+          resolution.dispatch_family_is_class = false;
+          resolution.selector_storage = selector_spelling;
+          resolution.class_name = node->class_name;
+          resolution.owner_identity = accessor.getter_owner_identity;
+          resolution.normalized_receiver_identity = normalized_receiver_identity;
+          resolution.selector_stable_id = selector_stable_id;
+          resolution.parameter_count = 0;
+          resolution.return_kind = accessor.getter_return_kind;
+          resolution.implementation = nullptr;
+          resolution.builtin_kind = RuntimeBuiltinKind::PropertyGetter;
+          resolution.runtime_property_accessor = &accessor;
+          return true;
+        }
+        if (accessor.property_descriptor->effective_setter_available &&
+            accessor.property_descriptor->effective_setter_selector != nullptr &&
+            std::strcmp(accessor.property_descriptor->effective_setter_selector,
+                        selector_spelling) == 0) {
+          resolution.resolved = true;
+          resolution.dispatch_family_is_class = false;
+          resolution.selector_storage = selector_spelling;
+          resolution.class_name = node->class_name;
+          resolution.owner_identity = accessor.setter_owner_identity;
+          resolution.normalized_receiver_identity = normalized_receiver_identity;
+          resolution.selector_stable_id = selector_stable_id;
+          resolution.parameter_count = 1;
+          resolution.return_kind = RuntimeMethodReturnKind::Void;
+          resolution.implementation = nullptr;
+          resolution.builtin_kind = RuntimeBuiltinKind::PropertySetter;
+          resolution.runtime_property_accessor = &accessor;
+          return true;
+        }
+      }
+    }
+    node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
+                                : nullptr;
+  }
+  return false;
+}
+
 bool TryResolveMethodFromAttachedCategoriesUnlocked(
     RuntimeState &state, const RealizedClassNode &node, DispatchFamily family,
     std::uint64_t normalized_receiver_identity, std::uint64_t selector_stable_id,
@@ -792,10 +1104,12 @@ bool TryResolveRuntimeBuiltinObjectSampleMethod(
   }
   const std::string selector = selector_spelling;
   // M257-D001 runtime property/layout consumption freeze anchor: builtin
-  // alloc/new still materialize one canonical realized instance identity per
-  // class, and synthesized property accessors continue to execute through the
-  // emitted method-cache path plus lane-C storage globals until D002 introduces
-  // true per-instance slot allocation.
+  // alloc/new and synthesized property access remain on the runtime-owned
+  // lookup/dispatch surface instead of rederiving storage from source.
+  // M257-D002 instance-allocation-layout-runtime anchor: builtin alloc/new now
+  // materialize distinct runtime instance identities backed by realized class
+  // layout, and synthesized property accessors execute against per-instance
+  // storage instead of lane-C globals.
   if (family == DispatchFamily::Class &&
       (selector == "alloc" || selector == "new")) {
     resolution.resolved = true;
@@ -825,12 +1139,19 @@ bool TryResolveRuntimeBuiltinObjectSampleMethod(
   return false;
 }
 
-bool DecodeReceiverIdentity(int receiver,
+bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
                             std::uint64_t &base_identity,
                             DispatchFamily &family,
                             std::uint64_t &normalized_receiver_identity) {
   if (receiver <= 0) {
     return false;
+  }
+  const auto runtime_instance_it = state.runtime_instances_by_receiver.find(receiver);
+  if (runtime_instance_it != state.runtime_instances_by_receiver.end()) {
+    base_identity = runtime_instance_it->second.base_identity;
+    family = DispatchFamily::Instance;
+    normalized_receiver_identity = base_identity + 1u;
+    return true;
   }
   const std::int64_t signed_receiver = receiver;
   if (signed_receiver < static_cast<std::int64_t>(kReceiverIdentityBase)) {
@@ -970,6 +1291,29 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         node.module_name = record->module_name;
         node.translation_unit_identity_key = record->translation_unit_identity_key;
         node.class_name = class_name;
+        node.bundle_owner_identity =
+            bundle->class_record.bundle_owner_identity != nullptr
+                ? bundle->class_record.bundle_owner_identity
+                : "";
+        node.interface_owner_identity = node.bundle_owner_identity;
+        for (std::uint64_t candidate_index = 0;
+             candidate_index < record->class_descriptor_count; ++candidate_index) {
+          const auto *candidate = static_cast<const EmittedClassBundle *>(
+              AggregateEntry(record->class_descriptor_root, candidate_index));
+          if (candidate == nullptr || candidate->class_record.class_name == nullptr ||
+              candidate->class_record.bundle_owner_identity == nullptr) {
+            continue;
+          }
+          if (class_name != candidate->class_record.class_name) {
+            continue;
+          }
+          if (std::string(candidate->class_record.bundle_owner_identity).rfind(
+                  "interface:", 0) == 0) {
+            node.interface_owner_identity =
+                candidate->class_record.bundle_owner_identity;
+            break;
+          }
+        }
         node.class_owner_identity =
             bundle->class_record.object_owner_identity != nullptr
                 ? bundle->class_record.object_owner_identity
@@ -1021,6 +1365,7 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       ++state.realized_root_class_count;
     }
     (void)AttachRealizedCategoryRecordsUnlocked(state, node);
+    (void)AttachRealizedPropertyLayoutRecordsUnlocked(state, node);
   }
 
   if (!state.realized_class_nodes.empty()) {
@@ -1198,6 +1543,15 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     }
     category_probe_count += image_category_probe_count;
     protocol_probe_count += image_protocol_probe_count;
+    if (family == DispatchFamily::Instance &&
+        TryResolveRuntimeManagedPropertyAccessorUnlocked(
+            state, node, normalized_receiver_identity, selector_stable_id,
+            selector_spelling, image_resolution)) {
+      image_resolution.category_probe_count =
+          category_probe_count + image_category_probe_count;
+      image_resolution.protocol_probe_count =
+          protocol_probe_count + image_protocol_probe_count;
+    }
     if (image_resolution.resolved) {
       if (resolution.resolved &&
           (resolution.implementation != image_resolution.implementation ||
@@ -1317,14 +1671,159 @@ int InvokeResolvedMethod(const void *implementation,
   return 0;
 }
 
-int InvokeRuntimeBuiltinMethod(RuntimeBuiltinKind builtin_kind, int receiver,
-                               std::uint64_t base_identity) {
+const RealizedClassNode *FindRealizedClassNodeByBaseIdentityUnlocked(
+    const RuntimeState &state, std::uint64_t base_identity) {
+  const auto class_name_it = state.realized_class_name_by_base_identity.find(base_identity);
+  if (class_name_it == state.realized_class_name_by_base_identity.end()) {
+    return nullptr;
+  }
+  const auto node_indexes_it =
+      state.realized_class_node_indices_by_name.find(class_name_it->second);
+  if (node_indexes_it == state.realized_class_node_indices_by_name.end()) {
+    return nullptr;
+  }
+  for (const std::size_t node_index : node_indexes_it->second) {
+    if (node_index >= state.realized_class_nodes.size()) {
+      continue;
+    }
+    const RealizedClassNode &node = state.realized_class_nodes[node_index];
+    if (node.base_identity == base_identity) {
+      return &node;
+    }
+  }
+  return nullptr;
+}
+
+std::size_t EffectiveIvarOffset(const RealizedPropertyAccessor &accessor) {
+  if (accessor.ivar_descriptor == nullptr) {
+    return 0u;
+  }
+  if (accessor.ivar_descriptor->offset_global != nullptr) {
+    return static_cast<std::size_t>(*accessor.ivar_descriptor->offset_global);
+  }
+  return static_cast<std::size_t>(accessor.ivar_descriptor->offset_bytes);
+}
+
+std::size_t EffectiveIvarSize(const RealizedPropertyAccessor &accessor) {
+  return accessor.ivar_descriptor != nullptr
+             ? static_cast<std::size_t>(accessor.ivar_descriptor->size_bytes)
+             : 0u;
+}
+
+bool ReadRuntimeManagedPropertyValue(const RuntimeInstanceRecord &instance,
+                                     const RealizedPropertyAccessor &accessor,
+                                     int &value) {
+  const std::size_t offset = EffectiveIvarOffset(accessor);
+  const std::size_t size = EffectiveIvarSize(accessor);
+  if (size == 0u || offset + size > instance.storage_bytes.size()) {
+    return false;
+  }
+  std::uint64_t raw = 0;
+  std::memcpy(&raw, instance.storage_bytes.data() + offset,
+              std::min<std::size_t>(size, sizeof(raw)));
+  if (accessor.getter_return_kind == RuntimeMethodReturnKind::Bool) {
+    value = raw != 0u ? 1 : 0;
+    return true;
+  }
+  value = static_cast<int>(raw & 0xffffffffu);
+  return true;
+}
+
+bool WriteRuntimeManagedPropertyValue(RuntimeInstanceRecord &instance,
+                                      const RealizedPropertyAccessor &accessor,
+                                      int value) {
+  const std::size_t offset = EffectiveIvarOffset(accessor);
+  const std::size_t size = EffectiveIvarSize(accessor);
+  if (size == 0u || offset + size > instance.storage_bytes.size()) {
+    return false;
+  }
+  std::uint64_t raw = accessor.getter_return_kind == RuntimeMethodReturnKind::Bool
+                          ? static_cast<std::uint64_t>(value != 0 ? 1 : 0)
+                          : static_cast<std::uint64_t>(
+                                static_cast<std::uint32_t>(value));
+  std::memcpy(instance.storage_bytes.data() + offset, &raw,
+              std::min<std::size_t>(size, sizeof(raw)));
+  if (size > sizeof(raw)) {
+    std::fill(instance.storage_bytes.begin() + static_cast<std::ptrdiff_t>(offset + sizeof(raw)),
+              instance.storage_bytes.begin() + static_cast<std::ptrdiff_t>(offset + size),
+              0);
+  }
+  return true;
+}
+
+int InvokeRuntimeBuiltinMethod(RuntimeState &state,
+                               RuntimeBuiltinKind builtin_kind, int receiver,
+                               std::uint64_t base_identity,
+                               const RealizedPropertyAccessor *runtime_property_accessor,
+                               int a0, int a1, int a2, int a3) {
+  (void)a1;
+  (void)a2;
+  (void)a3;
   switch (builtin_kind) {
     case RuntimeBuiltinKind::Alloc:
-    case RuntimeBuiltinKind::New:
-      return static_cast<int>(base_identity + 1u);
+    case RuntimeBuiltinKind::New: {
+      std::lock_guard<std::mutex> lock(state.mutex);
+      const RealizedClassNode *node =
+          FindRealizedClassNodeByBaseIdentityUnlocked(state, base_identity);
+      if (node == nullptr) {
+        return static_cast<int>(base_identity + 1u);
+      }
+      int receiver_identity = state.next_runtime_instance_receiver;
+      while (receiver_identity <= 0 ||
+             state.runtime_instances_by_receiver.find(receiver_identity) !=
+                 state.runtime_instances_by_receiver.end()) {
+        ++receiver_identity;
+      }
+      state.next_runtime_instance_receiver = receiver_identity + 1;
+      RuntimeInstanceRecord instance;
+      instance.receiver_identity = static_cast<std::uint64_t>(receiver_identity);
+      instance.base_identity = base_identity;
+      instance.class_name = node->class_name;
+      instance.instance_size_bytes =
+          std::max<std::size_t>(node->runtime_instance_size_bytes, 1u);
+      instance.storage_bytes.assign(instance.instance_size_bytes, 0u);
+      state.runtime_instances_by_receiver.emplace(receiver_identity,
+                                                 std::move(instance));
+      state.live_runtime_instance_count =
+          static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
+      state.last_allocated_runtime_instance_receiver =
+          static_cast<std::uint64_t>(receiver_identity);
+      state.last_allocated_runtime_instance_base_identity = base_identity;
+      state.last_allocated_runtime_instance_size_bytes =
+          std::max<std::size_t>(node->runtime_instance_size_bytes, 1u);
+      state.last_allocated_runtime_instance_class_name = node->class_name;
+      return receiver_identity;
+    }
     case RuntimeBuiltinKind::Init:
       return receiver;
+    case RuntimeBuiltinKind::PropertyGetter: {
+      if (runtime_property_accessor == nullptr) {
+        return 0;
+      }
+      std::lock_guard<std::mutex> lock(state.mutex);
+      const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
+      if (instance_it == state.runtime_instances_by_receiver.end()) {
+        return 0;
+      }
+      int value = 0;
+      return ReadRuntimeManagedPropertyValue(instance_it->second,
+                                            *runtime_property_accessor, value)
+                 ? value
+                 : 0;
+    }
+    case RuntimeBuiltinKind::PropertySetter: {
+      if (runtime_property_accessor == nullptr) {
+        return 0;
+      }
+      std::lock_guard<std::mutex> lock(state.mutex);
+      const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
+      if (instance_it == state.runtime_instances_by_receiver.end()) {
+        return 0;
+      }
+      (void)WriteRuntimeManagedPropertyValue(instance_it->second,
+                                             *runtime_property_accessor, a0);
+      return 0;
+    }
     case RuntimeBuiltinKind::None:
       return 0;
   }
@@ -1640,6 +2139,7 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_materialized_from_metadata = false;
   ClearMethodCacheStateUnlocked(state);
   ClearRealizedClassGraphUnlocked(state);
+  ClearRuntimeInstanceStateUnlocked(state);
   state.staged_registration_table = nullptr;
   state.walked_image_count = 0;
   ClearImageWalkSnapshotUnlocked(state);
@@ -2156,7 +2656,7 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
   std::uint64_t base_identity = 0;
   std::uint64_t normalized_receiver_identity = 0;
   DispatchFamily family = DispatchFamily::Invalid;
-  if (!DecodeReceiverIdentity(receiver, base_identity, family,
+  if (!DecodeReceiverIdentity(state, receiver, base_identity, family,
                               normalized_receiver_identity)) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
@@ -2206,6 +2706,13 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->attached_category_count = state.realized_attached_category_count;
   snapshot->protocol_conformance_edge_count =
       state.realized_protocol_conformance_edge_count;
+  snapshot->live_instance_count = state.live_runtime_instance_count;
+  snapshot->last_allocated_receiver_identity =
+      state.last_allocated_runtime_instance_receiver;
+  snapshot->last_allocated_base_identity =
+      state.last_allocated_runtime_instance_base_identity;
+  snapshot->last_allocated_instance_size_bytes =
+      state.last_allocated_runtime_instance_size_bytes;
   snapshot->last_realized_class_name =
       StableCString(state.last_realized_class_name);
   snapshot->last_realized_class_owner_identity =
@@ -2216,6 +2723,8 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
       StableCString(state.last_attached_category_owner_identity);
   snapshot->last_attached_category_name =
       StableCString(state.last_attached_category_name);
+  snapshot->last_allocated_class_name =
+      StableCString(state.last_allocated_runtime_instance_class_name);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -2233,6 +2742,8 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
   snapshot->attached_category_count = 0;
   snapshot->direct_protocol_count = 0;
   snapshot->attached_protocol_count = 0;
+  snapshot->runtime_property_accessor_count = 0;
+  snapshot->runtime_instance_size_bytes = 0;
   snapshot->module_name = nullptr;
   snapshot->translation_unit_identity_key = nullptr;
   snapshot->class_name = nullptr;
@@ -2266,6 +2777,10 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
   snapshot->implementation_backed = node.implementation_backed ? 1 : 0;
   snapshot->attached_category_count =
       static_cast<std::uint64_t>(node.attached_category_records.size());
+  snapshot->runtime_property_accessor_count =
+      static_cast<std::uint64_t>(node.runtime_property_accessors.size());
+  snapshot->runtime_instance_size_bytes =
+      static_cast<std::uint64_t>(node.runtime_instance_size_bytes);
   snapshot->direct_protocol_count =
       (node.bundle != nullptr &&
        node.bundle->class_record.adopted_protocol_refs != nullptr)
@@ -2441,6 +2956,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   RuntimeState &state = State();
   const void *resolved_implementation = nullptr;
+  const RealizedPropertyAccessor *resolved_runtime_property_accessor = nullptr;
   std::uint64_t resolved_parameter_count = 0;
   RuntimeMethodReturnKind resolved_return_kind =
       RuntimeMethodReturnKind::Unsupported;
@@ -2467,7 +2983,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
       std::uint64_t base_identity = 0;
       std::uint64_t normalized_receiver_identity = 0;
       DispatchFamily family = DispatchFamily::Invalid;
-      if (DecodeReceiverIdentity(receiver, base_identity, family,
+      if (DecodeReceiverIdentity(state, receiver, base_identity, family,
                                  normalized_receiver_identity)) {
         receiver_base_identity = base_identity;
         state.last_dispatch_normalized_receiver_identity =
@@ -2489,6 +3005,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
             resolved_live_method = true;
             resolved_builtin_kind = entry.builtin_kind;
             resolved_implementation = entry.implementation;
+            resolved_runtime_property_accessor = entry.runtime_property_accessor;
             resolved_parameter_count = entry.parameter_count;
             resolved_return_kind = entry.return_kind;
             ++state.live_dispatch_count;
@@ -2517,6 +3034,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           cache_entry.protocol_probe_count = resolution.protocol_probe_count;
           cache_entry.implementation = resolution.implementation;
           cache_entry.builtin_kind = resolution.builtin_kind;
+          cache_entry.runtime_property_accessor =
+              resolution.runtime_property_accessor;
           state.method_cache.emplace(cache_key, std::move(cache_entry));
           state.last_dispatch_resolved_live_method = resolution.resolved;
           state.last_dispatch_fell_back = !resolution.resolved;
@@ -2528,6 +3047,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
             resolved_live_method = true;
             resolved_builtin_kind = resolution.builtin_kind;
             resolved_implementation = resolution.implementation;
+            resolved_runtime_property_accessor =
+                resolution.runtime_property_accessor;
             resolved_parameter_count = resolution.parameter_count;
             resolved_return_kind = resolution.return_kind;
             ++state.live_dispatch_count;
@@ -2552,8 +3073,9 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                 resolved_parameter_count, a0, a1, a2, a3);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
-    return InvokeRuntimeBuiltinMethod(resolved_builtin_kind, receiver,
-                                      receiver_base_identity);
+    return InvokeRuntimeBuiltinMethod(
+        state, resolved_builtin_kind, receiver, receiver_base_identity,
+        resolved_runtime_property_accessor, a0, a1, a2, a3);
   }
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }

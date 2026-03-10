@@ -484,6 +484,25 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
         "no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet";
+// M257-D002 instance-allocation-layout-runtime anchor: lane-D upgrades the
+// frozen D001 runtime-consumption boundary into true per-instance allocation
+// backed by realized class layout, emitted ivar offsets, and runtime-owned slot
+// storage without reopening source-driven layout recovery.
+inline constexpr const char
+    *kObjc3RuntimeInstanceAllocationLayoutSupportContractId =
+        "objc3c-runtime-instance-allocation-layout-support/m257-d002-v1";
+inline constexpr const char
+    *kObjc3RuntimeInstanceAllocationLayoutSupportDescriptorModel =
+        "runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery";
+inline constexpr const char
+    *kObjc3RuntimeInstanceAllocationLayoutSupportAllocatorModel =
+        "alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout";
+inline constexpr const char
+    *kObjc3RuntimeInstanceAllocationLayoutSupportStorageModel =
+        "synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records";
+inline constexpr const char
+    *kObjc3RuntimeInstanceAllocationLayoutSupportFailClosedModel =
+        "no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1487,6 +1506,7 @@ std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
 std::string Objc3ExecutableIvarLayoutEmissionSummary();
 std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
 std::string Objc3RuntimePropertyLayoutConsumptionSummary();
+std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

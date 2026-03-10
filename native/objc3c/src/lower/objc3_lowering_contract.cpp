@@ -639,6 +639,26 @@ std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary() {
+  std::ostringstream out;
+  // M257-D002 instance-allocation-layout-runtime anchor: runtime now
+  // materializes distinct instance identities from the realized class graph and
+  // executes synthesized property access through per-instance slot storage
+  // derived from emitted ivar offset/layout metadata rather than lane-C
+  // storage globals.
+  out << "contract=" << kObjc3RuntimeInstanceAllocationLayoutSupportContractId
+      << ";descriptor_model="
+      << kObjc3RuntimeInstanceAllocationLayoutSupportDescriptorModel
+      << ";allocator_model="
+      << kObjc3RuntimeInstanceAllocationLayoutSupportAllocatorModel
+      << ";storage_model="
+      << kObjc3RuntimeInstanceAllocationLayoutSupportStorageModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeInstanceAllocationLayoutSupportFailClosedModel
+      << ";non_goals=no-source-layout-rederivation-no-reflective-property-registration";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -388,6 +388,19 @@ class Objc3IREmitter {
             << frontend_metadata_.executable_ivar_layout_owner_entries
             << ";synthesized_accessor_entries="
             << synthesized_property_accessor_count_ << "\n";
+        // M257-D002 instance-allocation-layout-runtime anchor: lane-D now
+        // upgrades the emitted property/layout runtime surface from the D001
+        // freeze into true per-instance allocation backed by emitted ivar
+        // offsets and realized class layout tables.
+        out << "; runtime_instance_allocation_layout_support = "
+            << Objc3RuntimeInstanceAllocationLayoutSupportSummary()
+            << ";property_descriptor_entries="
+            << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                   .size()
+            << ";ivar_layout_owner_entries="
+            << frontend_metadata_.executable_ivar_layout_owner_entries
+            << ";synthesized_accessor_entries="
+            << synthesized_property_accessor_count_ << "\n";
       }
     }
     if (!frontend_metadata_.runtime_metadata_source_ownership_contract_id.empty()) {

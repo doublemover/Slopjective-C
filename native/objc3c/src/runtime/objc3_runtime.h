@@ -65,9 +65,11 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // samples also stay behind this same ABI rather than adding dedicated public
 // allocation or sample-only helper entrypoints.
 // M257-D001 property-layout-runtime anchor: runtime-owned property/layout
-// consumption, canonical alloc/new single-instance behavior, and synthesized
-// accessor-backed storage must also stay behind this same ABI until D002
-// introduces real per-instance slot allocation.
+// consumption and synthesized accessor-backed storage must stay behind this
+// same ABI surface.
+// M257-D002 instance-allocation-layout-runtime anchor: the same ABI now also
+// carries true per-instance allocation and slot-backed synthesized accessors
+// without widening the public runtime header.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

@@ -6674,3 +6674,19 @@ published operator runbook and one stable bootstrap matrix summary.
   `synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots`
 - fail-closed model
   `no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet`
+
+## M257 instance allocation, layout, and ivar-offset runtime support (D002)
+
+`M257-D002` upgrades the runtime above `M257-D001` into true instance
+allocation and per-instance synthesized accessor execution.
+
+- contract id
+  `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- descriptor model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout`
+- storage model
+  `synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records`
+- fail-closed model
+  `no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet`

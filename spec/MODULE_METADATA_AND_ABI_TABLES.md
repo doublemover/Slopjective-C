@@ -7667,3 +7667,24 @@ the already-live startup paths.
 - canonical proof assets:
   - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
   - `tmp/reports/m257/M257-D001/property_layout_runtime_contract_summary.json`
+
+## M257 runtime instance-allocation and layout metadata anchors (D002)
+
+`M257-D002` consumes the same emitted property and ivar metadata from `M257-C003`
+and `M257-C002`, but now drives true per-instance runtime storage instead of
+the historical shared storage fallback.
+
+- contract id
+  `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- runtime still consumes descriptor-carried attachments for:
+  - `effective_getter_selector`
+  - `effective_setter_selector`
+  - `synthesized_binding_symbol`
+  - `ivar_layout_symbol`
+  - `getter_implementation_pointer`
+  - `setter_implementation_pointer`
+- canonical IR boundary:
+  - `; runtime_instance_allocation_layout_support = contract=objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- canonical proof assets:
+  - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
+  - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`

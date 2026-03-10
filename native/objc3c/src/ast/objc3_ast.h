@@ -1138,6 +1138,10 @@ struct Objc3PropertyDecl {
   // M257-D001 runtime property/layout consumption freeze anchor: lane-D must
   // consume the same emitted binding and layout identities below rather than
   // rederiving property storage or allocator state from source.
+  // M257-D002 instance-allocation-layout-runtime anchor: the same emitted
+  // binding and layout identities must also be sufficient for true
+  // per-instance allocation and slot storage without rederiving layout from
+  // source.
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;

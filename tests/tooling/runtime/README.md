@@ -290,6 +290,18 @@ lookup/dispatch surface:
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
 
+`M257-D002` upgrades the same lookup/dispatch surface to true per-instance
+allocation:
+
+- contract id `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- repeated `alloc` / `new` now produce distinct realized instance identities
+- synthesized property accessors now execute through realized per-instance slot
+  storage instead of the lane-C storage globals
+- proof surface now additionally relies on:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
+
 `M256-D002` proves the runtime-owned realized class graph and root-class
 baseline above that same lookup/dispatch surface:
 

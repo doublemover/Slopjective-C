@@ -16034,3 +16034,25 @@ For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forw
   - true instance allocation
   - per-instance slot storage
   - reflective property registration
+
+## Instance allocation, layout, and ivar-offset runtime support (M257-D002)
+
+`M257-D002` upgrades the live runtime above `M257-D001` from the historical
+single-instance freeze into true per-instance allocation.
+
+- contract id
+  `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
+- descriptor model
+  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
+- allocator model
+  `alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout`
+- storage model
+  `synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records`
+- live runtime now:
+  - materializes distinct instance identities per `alloc` / `new`
+  - sizes instance storage from realized ivar layout
+  - resolves synthesized accessors through runtime-owned per-instance slots
+- canonical proof assets:
+  - `tests/tooling/fixtures/native/m257_d002_instance_allocation_runtime_positive.objc3`
+  - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
+  - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`
