@@ -9624,3 +9624,17 @@ M258 lane-D D002 now lands the real downstream packaging/runtime happy path:
   response file, then verifies startup registration, imported protocol
   conformance, and replay-stable cross-image dispatch on the two-image happy
   path
+
+## M258 cross-module object-model gate (E001)
+
+`M258-E001` freezes the first lane-E proof gate for runnable cross-module
+object programs.
+
+- consume the `M258-A002`, `M258-B002`, `M258-C002`, and `M258-D002` summary
+  chain exactly as landed
+- fail closed if the imported-frontend closure, imported semantic rules,
+  serialized metadata reuse, or cross-module runtime packaging proofs drift
+- preserve the truthful boundary that the current runnable proof is the
+  two-image path already landed by `M258-D002`
+- `M258-E002` is the first issue allowed to broaden this freeze into a larger
+  runnable execution matrix and docs closeout

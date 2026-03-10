@@ -12951,6 +12951,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // cross-module link plan and merged linker response file from those
            // same authoritative artifacts, so this semantic surface remains the
            // canonical replay boundary for downstream packaging consumers.
+           // M258-E001 cross-module object-model gate anchor: lane-E consumes
+           // the A002/B002/C002/D002 summary chain and freezes the current
+           // runnable two-image proof boundary before E002 broadens the
+           // execution matrix.
            << ",\"objc_cross_module_build_runtime_orchestration_contract\":"
            << BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
                   cross_module_build_runtime_orchestration)

@@ -7951,3 +7951,17 @@ packaging artifacts.
   - replay-stable two-image runtime registration evidence
 - canonical contract evidence:
   - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
+
+## M258 cross-module object-model gate metadata anchors (E001)
+
+`M258-E001` freezes the lane-E summary chain proving the current module/import
+object-model boundary is runnable across module boundaries.
+
+- contract id
+  `objc3c-cross-module-object-model-gate/m258-e001-v1`
+- canonical summary-chain anchors:
+  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
+  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
+  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
+  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
+  - `tmp/reports/m258/M258-E001/cross_module_object_model_gate_summary.json`

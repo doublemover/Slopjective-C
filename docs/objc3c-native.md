@@ -16360,3 +16360,26 @@ frozen D001 orchestration boundary.
   - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
   - `tests/tooling/runtime/m258_d002_cross_module_runtime_packaging_probe.cpp`
   - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
+
+## Cross-module object-model gate (M258-E001)
+
+`M258-E001` freezes the first lane-E proof gate for runnable cross-module
+object programs.
+
+- contract id
+  `objc3c-cross-module-object-model-gate/m258-e001-v1`
+- evidence model
+  `a002-b002-c002-d002-summary-chain`
+- execution gate model
+  `cross-module-runnable-object-model-evidence-consumes-import-sema-reuse-and-runtime-packaging-proofs`
+- truthful boundary
+  - the gate consumes the `M258-A002`, `M258-B002`, `M258-C002`, and
+    `M258-D002` summaries exactly as they exist today
+  - no broader execution matrix lands here; that belongs to `M258-E002`
+  - no new cross-module method-body binding claims land here
+- canonical proof assets
+  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
+  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
+  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
+  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
+  - `tmp/reports/m258/M258-E001/cross_module_object_model_gate_summary.json`

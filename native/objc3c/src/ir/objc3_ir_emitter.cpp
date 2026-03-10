@@ -618,6 +618,9 @@ class Objc3IREmitter {
       // those emitted object-local artifacts to publish an ordered cross-module
       // link plan and runtime-registration proof, but the IR emitter remains
       // object-local and does not directly orchestrate multi-image packaging.
+      // M258-E001 cross-module object-model gate anchor: the truthful gate
+      // still lives in the emitted evidence chain and not in any new
+      // cross-module IR emitter surface.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.

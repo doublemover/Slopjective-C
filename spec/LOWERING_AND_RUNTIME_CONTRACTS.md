@@ -6966,6 +6966,23 @@ artifacts.
   - the emitted link plan orders object inputs by
     `ascending-registration-ordinal-then-translation-unit-identity-key`
   - the merged linker response file preserves the deterministic imported/local
-    linker-anchor order
-  - the happy path now proves two-image runtime registration and replay through
-    the emitted artifacts
+  linker-anchor order
+- the happy path now proves two-image runtime registration and replay through
+  the emitted artifacts
+
+## M258 cross-module object-model gate (E001)
+
+`M258-E001` freezes the first lane-E proof gate over the runnable cross-module
+object-model surface.
+
+- contract id
+  `objc3c-cross-module-object-model-gate/m258-e001-v1`
+- evidence model
+  `a002-b002-c002-d002-summary-chain`
+- failure model
+  `fail-closed-on-cross-module-object-model-evidence-drift`
+- gate boundary
+  - `M258-E001` consumes the emitted evidence from A002, B002, C002, and D002
+    without landing any new parser, sema, lowering, or runtime behavior
+  - `M258-E002` is the first issue allowed to broaden this freeze into a
+    larger runnable import/module execution matrix

@@ -83,6 +83,10 @@ extern "C" {
  *   real downstream packaging and multi-image runtime registration, but this
  *   public C ABI still exposes no in-memory cross-module packaging handle or
  *   orchestration object model.
+ * - M258-E001 cross-module object-model gate anchor: the truthful lane-E gate
+ *   is still the emitted A002/B002/C002/D002 evidence chain. This public C ABI
+ *   exposes no public in-memory cross-module object-model gate handle and
+ *   broad runnable matrix work remains deferred to later milestones.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 
