@@ -4822,6 +4822,9 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // canonical method owner identity per executable declaration so lane-C can
   // attach method-list entries to concrete LLVM body symbols without
   // rediscovering selector ownership from syntax.
+  // M256-C003 executable realization-record expansion anchor: parser still
+  // stops at canonical bundle/object/attachment identities only. Realization
+  // record serialization remains a downstream lowering responsibility.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

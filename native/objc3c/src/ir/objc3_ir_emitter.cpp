@@ -5310,6 +5310,22 @@ class Objc3IREmitter {
           << executable_method_entry_count
           << ";bound_method_entry_count=" << bound_method_entry_count
           << "\n";
+      // M256-C003 executable realization-record expansion anchor: lane-C now
+      // publishes the realization-ready class/protocol/category record contract
+      // separately from the older C001/C002 boundary lines so later runtime
+      // work can consume the preserved owner/super/adoption edges directly.
+      out << "; executable_realization_records = "
+          << Objc3ExecutableRealizationRecordsSummary()
+          << ";class_record_count="
+          << frontend_metadata_
+                 .runtime_metadata_class_metaclass_bundles_lexicographic.size()
+          << ";protocol_record_count="
+          << frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic
+                 .size()
+          << ";category_record_count="
+          << frontend_metadata_.runtime_metadata_category_bundles_lexicographic
+                 .size()
+          << "\n";
     }
     if (!selector_pool_globals_.empty() || !runtime_string_pool_globals_.empty()) {
       out << "; runtime_metadata_selector_string_pool_emission = "
@@ -5984,6 +6000,14 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
                     "owner_identity", i);
+            const std::string class_object_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "class_object_identity", i);
+            const std::string metaclass_object_identity_symbol =
+                BuildRuntimeMetadataAuxiliarySymbol(
+                    layout_policy.descriptor_symbol_prefix, family.kind,
+                    "metaclass_object_identity", i);
             const std::string instance_method_list_ref_symbol =
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
@@ -5992,6 +6016,18 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, "metaclass",
                     "method_list_ref", i);
+            std::string class_super_object_identity_symbol = "null";
+            std::string metaclass_super_object_identity_symbol = "null";
+            if (bundle.has_super) {
+              class_super_object_identity_symbol =
+                  BuildRuntimeMetadataAuxiliarySymbol(
+                      layout_policy.descriptor_symbol_prefix, family.kind,
+                      "super_class_object_identity", i);
+              metaclass_super_object_identity_symbol =
+                  BuildRuntimeMetadataAuxiliarySymbol(
+                      layout_policy.descriptor_symbol_prefix, family.kind,
+                      "super_metaclass_object_identity", i);
+            }
             std::string instance_method_list_symbol = "null";
             const auto instance_method_list_it = method_list_symbols_by_key.find(
                 build_method_list_key(family.kind, bundle.owner_identity,
@@ -6035,6 +6071,10 @@ class Objc3IREmitter {
             const std::size_t storage_len = bundle.class_name.size() + 1u;
             const std::size_t owner_identity_storage_len =
                 bundle.owner_identity.size() + 1u;
+            const std::size_t class_object_identity_storage_len =
+                bundle.class_owner_identity.size() + 1u;
+            const std::size_t metaclass_object_identity_storage_len =
+                bundle.metaclass_owner_identity.size() + 1u;
             descriptor_symbols.push_back(descriptor_symbol);
 
             out << name_symbol << " = private constant [" << storage_len
@@ -6047,6 +6087,32 @@ class Objc3IREmitter {
                 << EscapeCStringLiteral(bundle.owner_identity)
                 << "\\00\", section \"" << family.emitted_section_name
                 << "\", align 1\n";
+            out << class_object_identity_symbol << " = private constant ["
+                << class_object_identity_storage_len << " x i8] c\""
+                << EscapeCStringLiteral(bundle.class_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            out << metaclass_object_identity_symbol << " = private constant ["
+                << metaclass_object_identity_storage_len << " x i8] c\""
+                << EscapeCStringLiteral(bundle.metaclass_owner_identity)
+                << "\\00\", section \"" << family.emitted_section_name
+                << "\", align 1\n";
+            if (bundle.has_super) {
+              out << class_super_object_identity_symbol
+                  << " = private constant ["
+                  << (bundle.super_class_owner_identity.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.super_class_owner_identity)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+              out << metaclass_super_object_identity_symbol
+                  << " = private constant ["
+                  << (bundle.super_metaclass_owner_identity.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.super_metaclass_owner_identity)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
             out << instance_method_list_ref_symbol
                 << " = private global { i64, ptr, ptr } { i64 "
                 << instance_method_list_entry_count << ", ptr "
@@ -6061,12 +6127,23 @@ class Objc3IREmitter {
                 << metaclass_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
+            // M256-C003 executable realization-record expansion anchor: each
+            // class/metaclass record now preserves bundle-owner, object-owner,
+            // and super-object identities in-line with the realized bundle
+            // pointer plus the existing owner-scoped method-list ref.
             out << descriptor_symbol
-                << " = private global { { ptr, ptr, ptr }, { ptr, ptr, ptr } } "
-                   "{ { ptr, ptr, ptr } { ptr "
-                << name_symbol << ", ptr " << super_bundle_symbol << ", ptr "
-                << instance_method_list_ref_symbol << " }, { ptr, ptr, ptr } { ptr "
-                << name_symbol << ", ptr " << super_bundle_symbol << ", ptr "
+                << " = private global { { ptr, ptr, ptr, ptr, ptr, ptr }, { ptr, ptr, ptr, ptr, ptr, ptr } } "
+                   "{ { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
+                << class_object_identity_symbol << ", ptr "
+                << class_super_object_identity_symbol << ", ptr "
+                << super_bundle_symbol << ", ptr "
+                << instance_method_list_ref_symbol
+                << " }, { ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
+                << metaclass_object_identity_symbol << ", ptr "
+                << metaclass_super_object_identity_symbol << ", ptr "
+                << super_bundle_symbol << ", ptr "
                 << metaclass_method_list_ref_symbol << " } }, section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(descriptor_symbol);
@@ -6219,13 +6296,19 @@ class Objc3IREmitter {
                 << owner_identity_symbol << ", ptr " << class_method_list_symbol
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
+            // M256-C003 executable realization-record expansion anchor:
+            // protocol records now preserve split instance/class method counts
+            // alongside inherited protocol edges so runtime conformance checks
+            // do not need to reconstruct that split from sidecar summaries.
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, i64, i64, i1 } { ptr "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i1 } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
                 << inherited_refs_symbol << ", ptr "
                 << instance_method_list_ref_symbol << ", ptr "
                 << class_method_list_ref_symbol << ", i64 "
                 << bundle.property_count << ", i64 " << bundle.method_count
+                << ", i64 " << instance_method_list_entry_count << ", i64 "
+                << class_method_list_entry_count
                 << ", i1 "
                 << (bundle.is_forward_declaration ? 1 : 0) << " }, section \""
                 << family.emitted_section_name << "\", align 8\n";
@@ -6433,12 +6516,18 @@ class Objc3IREmitter {
                 << class_method_list_symbol << " }, section \""
                 << family.emitted_section_name << "\", align 8\n";
 
+            // M256-C003 executable realization-record expansion anchor:
+            // category records now preserve explicit class/category owner
+            // identities in-line while retaining the earlier attachment and
+            // adopted-protocol aggregates for backward-compatible proofing.
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 } "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64 } "
                    "{ ptr "
                 << class_name_symbol << ", ptr " << category_name_symbol
                 << ", ptr " << record_kind_symbol << ", ptr "
                 << owner_identity_symbol << ", ptr "
+                << class_owner_identity_symbol << ", ptr "
+                << category_owner_identity_symbol << ", ptr "
                 << attachment_list_symbol << ", ptr "
                 << adopted_protocol_refs_symbol << ", ptr "
                 << instance_method_list_ref_symbol << ", ptr "

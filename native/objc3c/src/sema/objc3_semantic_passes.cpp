@@ -11437,6 +11437,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // canonical method owner identities and realized legality; IR/object
   // emission must fail closed if those implementation-owned method identities
   // do not attach to exactly one concrete LLVM body symbol.
+  // M256-C003 executable realization-record expansion anchor: sema is also the
+  // last stop for canonical superclass, class-object, metaclass-object,
+  // protocol-inheritance, and category-attachment identities before lowering
+  // serializes them into realization-ready records.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,

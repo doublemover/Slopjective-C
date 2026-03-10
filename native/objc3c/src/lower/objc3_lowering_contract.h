@@ -413,6 +413,21 @@ inline constexpr const char *kObjc3ExecutableMethodBodyBindingRuntimeModel =
     "emitted-method-entry-implementation-pointer-dispatches-through-objc3_runtime_dispatch_i32";
 inline constexpr const char *kObjc3ExecutableMethodBodyBindingFailClosedModel =
     "error-on-missing-or-duplicate-implementation-binding";
+// M256-C003 executable realization-record expansion anchor: lane-C extends the
+// executable object surface with realization-ready class, protocol, and
+// category records that preserve the frontend-owned owner/super/adoption edges
+// directly in emitted artifacts instead of forcing later runtime work to
+// recover them out-of-band.
+inline constexpr const char *kObjc3ExecutableRealizationRecordsContractId =
+    "objc3c-executable-realization-records/m256-c003-v1";
+inline constexpr const char *kObjc3ExecutableRealizationClassRecordModel =
+    "class-and-metaclass-records-carry-bundle-object-and-super-owner-identities-plus-method-list-refs";
+inline constexpr const char *kObjc3ExecutableRealizationProtocolRecordModel =
+    "protocol-records-carry-owner-inherited-protocol-edges-and-split-instance-class-method-counts";
+inline constexpr const char *kObjc3ExecutableRealizationCategoryRecordModel =
+    "category-records-carry-explicit-class-and-category-owner-identities-plus-attachment-and-adopted-protocol-edges";
+inline constexpr const char *kObjc3ExecutableRealizationFailClosedModel =
+    "no-identity-edge-elision-no-out-of-band-graph-reconstruction";
 // M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
@@ -1341,6 +1356,7 @@ std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
+std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();

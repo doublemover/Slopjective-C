@@ -573,6 +573,26 @@ std::string Objc3ExecutableMethodBodyBindingSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableRealizationRecordsSummary() {
+  std::ostringstream out;
+  // M256-C003 executable realization-record expansion anchor: emitted
+  // class/protocol/category records now preserve the owner and graph edges that
+  // D-lane runtime realization will consume directly. Parser/sema still own the
+  // legality and canonical identities; lowering only serializes that closure
+  // into stable artifact layouts.
+  out << "contract=" << kObjc3ExecutableRealizationRecordsContractId
+      << ";class_record_model="
+      << kObjc3ExecutableRealizationClassRecordModel
+      << ";protocol_record_model="
+      << kObjc3ExecutableRealizationProtocolRecordModel
+      << ";category_record_model="
+      << kObjc3ExecutableRealizationCategoryRecordModel
+      << ";fail_closed_model="
+      << kObjc3ExecutableRealizationFailClosedModel
+      << ";scope_model=" << kObjc3ExecutableObjectArtifactLoweringScopeModel;
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
   // M253-C006 binary inspection harness expansion anchor: lane-C now proves

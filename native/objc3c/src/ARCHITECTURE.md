@@ -8965,6 +8965,28 @@ fail-closed executable capability:
   - `check:objc3c:m256-c002-bind-method-bodies-to-runtime-metadata-entries`
   - `check:objc3c:m256-c002-lane-c-readiness`
 
+## M256 executable realization records (C003)
+
+`M256-C003` extends the executable lowering surface again so emitted
+class/protocol/category records preserve the exact owner and graph edges the
+runtime realization work will consume:
+
+- parser still stops at canonical bundle/object/attachment identities
+- sema still owns legality plus canonical superclass/protocol/category
+  identities
+- IR/object emission now serializes:
+  - class/metaclass bundle owner, object owner, and super-object identities
+  - protocol inherited edges plus split instance/class method counts
+  - category class/category owner identities in-line with the existing
+    attachment and adopted-protocol aggregates
+- lane-C still fails closed instead of reconstructing or synthesizing graph
+  edges out-of-band
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_realization_records_for_class_protocol_and_category_artifacts_core_feature_expansion_c003_expectations.md`
+  - `spec/planning/compiler/m256/m256_c003_realization_records_for_class_protocol_and_category_artifacts_core_feature_expansion_packet.md`
+  - `check:objc3c:m256-c003-realization-records-for-class-protocol-and-category-artifacts`
+  - `check:objc3c:m256-c003-lane-c-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

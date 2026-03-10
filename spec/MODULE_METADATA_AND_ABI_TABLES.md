@@ -7019,6 +7019,28 @@ the frozen `M256-C001` object-artifact boundary.
   - `tests/tooling/fixtures/native/m256_c002_method_body_binding.objc3`
   - `tests/tooling/runtime/m256_c002_method_binding_probe.cpp`
   - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
+
+## M256 executable realization-record metadata anchors (C003)
+
+`M256-C003` promotes the earlier class/protocol/category descriptors into one
+realization-ready metadata surface for the runtime tranche.
+
+- contract id `objc3c-executable-realization-records/m256-c003-v1`
+- emitted IR summary path
+  `; executable_realization_records = contract=objc3c-executable-realization-records/m256-c003-v1`
+- canonical payload anchors:
+  - class/metaclass records now carry bundle owner identity, object identity,
+    super-object identity, super-bundle pointer, and owner-scoped method-list
+    refs
+  - protocol records now publish split instance/class method counts alongside
+    inherited protocol refs
+  - category records now carry explicit class/category owner identities while
+    retaining attachment and adopted-protocol aggregates
+- canonical runnable proof artifacts:
+  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+  - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
+  - `tests/tooling/fixtures/native/m256_category_merge_positive.objc3`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

@@ -125,6 +125,9 @@ struct EmittedMethodListEntry {
 
 struct EmittedClassRecord {
   const char *class_name;
+  const char *bundle_owner_identity;
+  const char *object_owner_identity;
+  const char *super_owner_identity;
   const void *super_bundle;
   const EmittedMethodListRef *method_list_ref;
 };
@@ -142,6 +145,8 @@ struct EmittedProtocolRecord {
   const EmittedMethodListRef *class_method_list_ref;
   std::uint64_t property_count;
   std::uint64_t method_count;
+  std::uint64_t instance_method_count;
+  std::uint64_t class_method_count;
   bool is_forward_declaration;
 };
 
@@ -150,6 +155,8 @@ struct EmittedCategoryRecord {
   const char *category_name;
   const char *record_kind;
   const char *owner_identity;
+  const char *class_owner_identity;
+  const char *category_owner_identity;
   const objc3_runtime_pointer_aggregate *attachments;
   const objc3_runtime_pointer_aggregate *adopted_protocol_refs;
   const EmittedMethodListRef *instance_method_list_ref;

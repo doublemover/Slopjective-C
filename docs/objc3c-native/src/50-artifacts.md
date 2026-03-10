@@ -151,6 +151,28 @@ fail-closed executable binding capability.
 - evidence path
   - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 
+## Executable realization records (M256-C003)
+
+`M256-C003` expands the executable lowering surface so emitted
+class/protocol/category records preserve the runtime graph edges directly.
+
+- contract id
+  `objc3c-executable-realization-records/m256-c003-v1`
+- emitted IR summary
+  `; executable_realization_records = ...`
+- class record model
+  `class-and-metaclass-records-carry-bundle-object-and-super-owner-identities-plus-method-list-refs`
+- protocol record model
+  `protocol-records-carry-owner-inherited-protocol-edges-and-split-instance-class-method-counts`
+- category record model
+  `category-records-carry-explicit-class-and-category-owner-identities-plus-attachment-and-adopted-protocol-edges`
+- runnable proof surface
+  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+  - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
+  - `tests/tooling/fixtures/native/m256_category_merge_positive.objc3`
+- evidence path
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime
