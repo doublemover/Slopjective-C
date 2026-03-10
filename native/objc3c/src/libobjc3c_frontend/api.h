@@ -67,6 +67,11 @@ extern "C" {
  *   imported-metadata reuse hooks, or direct imported-payload IR-lowering
  *   entrypoints. Cross-module import consumption remains filesystem-artifact
  *   driven and fail-closed until later runtime/lowering milestones land.
+ * - M258-C002 serialized metadata artifact reuse anchor: emitted
+ *   runtime-import-surface filesystem artifacts may now carry transitive
+ *   serialized runtime metadata for downstream frontend reuse, but this public
+ *   C ABI still does not expose direct serialized-payload handles or imported
+ *   IR-lowering entrypoints.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

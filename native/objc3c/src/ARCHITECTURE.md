@@ -9560,3 +9560,15 @@ metadata handling must preserve:
 - keep `ir/objc3_ir_emitter.cpp` and `libobjc3c_frontend/api.h` explicit that
   no live serialized imported-payload ABI or IR lowering entrypoint exists in
   this lane
+
+`M258-C002` is the follow-on lane-C implementation step:
+
+- emit a nested `serialized_runtime_metadata_reuse_payload` inside
+  `module.runtime-import-surface.json`
+- populate that payload from the transitive imported runtime metadata plus the
+  current module's local runtime metadata
+- teach downstream frontend imports to prefer the serialized reuse payload when
+  present so imported modules can recover upstream object-model metadata
+  without reparsing source
+- keep IR and the public embedding ABI explicit that runtime registration and
+  direct imported-payload IR lowering are still later-lane responsibilities

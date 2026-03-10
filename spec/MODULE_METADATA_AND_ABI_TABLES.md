@@ -7882,3 +7882,24 @@ runtime-import-surface artifacts:
   - public live imported-payload ABI exposure is not landed
 - canonical contract evidence:
   - `tmp/reports/m258/M258-C001/serialized_metadata_import_and_lowering_contract_summary.json`
+
+## M258 serialized metadata artifact reuse anchors (C002)
+
+`M258-C002` adds one more semantic-surface contract and one nested artifact
+payload over the runtime-import-surface handoff:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_artifact_reuse`
+- contract id
+  `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+- source contract
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- artifact member
+  `serialized_runtime_metadata_reuse_payload`
+- canonical payload anchors:
+  - reused module names
+  - transitive class/protocol/category/property/method/ivar counts
+  - transitive metadata-reference count
+  - ready replay key for downstream consumption
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`

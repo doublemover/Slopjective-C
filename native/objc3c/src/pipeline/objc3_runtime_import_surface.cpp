@@ -647,6 +647,167 @@ bool PopulateFrontendClosureSummary(const JsonValue::Object &root,
   return true;
 }
 
+bool ParseRuntimeMetadataSourceRecordSet(
+    const JsonValue::Object &root, const std::string &declarations_name,
+    Objc3RuntimeMetadataSourceRecordSet &record_set, std::string &error) {
+  if (!ParseRecordArray(root, declarations_name, "classes",
+                        record_set.classes_lexicographic, ParseClassRecord,
+                        error) ||
+      !ParseRecordArray(root, declarations_name, "protocols",
+                        record_set.protocols_lexicographic,
+                        ParseProtocolRecord, error) ||
+      !ParseRecordArray(root, declarations_name, "categories",
+                        record_set.categories_lexicographic, ParseCategoryRecord,
+                        error) ||
+      !ParseRecordArray(root, declarations_name, "properties",
+                        record_set.properties_lexicographic, ParsePropertyRecord,
+                        error) ||
+      !ParseRecordArray(root, declarations_name, "methods",
+                        record_set.methods_lexicographic, ParseMethodRecord,
+                        error) ||
+      !ParseRecordArray(root, declarations_name, "ivars",
+                        record_set.ivars_lexicographic, ParseIvarRecord,
+                        error)) {
+    return false;
+  }
+  record_set.deterministic = true;
+  return true;
+}
+
+std::size_t CountRuntimeMetadataSourceRecordSetDeclarations(
+    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
+  return record_set.classes_lexicographic.size() +
+         record_set.protocols_lexicographic.size() +
+         record_set.categories_lexicographic.size() +
+         record_set.properties_lexicographic.size() +
+         record_set.methods_lexicographic.size() +
+         record_set.ivars_lexicographic.size();
+}
+
+std::size_t CountRuntimeMetadataSourceRecordSetReferences(
+    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
+  std::size_t references = 0;
+  for (const auto &class_record : record_set.classes_lexicographic) {
+    if (class_record.has_super && !class_record.super_name.empty()) {
+      ++references;
+    }
+    references += class_record.adopted_protocols_lexicographic.size();
+  }
+  for (const auto &protocol_record : record_set.protocols_lexicographic) {
+    references += protocol_record.inherited_protocols_lexicographic.size();
+  }
+  for (const auto &category_record : record_set.categories_lexicographic) {
+    references += category_record.adopted_protocols_lexicographic.size();
+  }
+  for (const auto &property_record : record_set.properties_lexicographic) {
+    if (!property_record.effective_getter_selector.empty()) {
+      ++references;
+    }
+    if (property_record.effective_setter_available &&
+        !property_record.effective_setter_selector.empty()) {
+      ++references;
+    }
+    if (!property_record.ivar_binding_symbol.empty()) {
+      ++references;
+    }
+  }
+  for (const auto &method_record : record_set.methods_lexicographic) {
+    if (!method_record.selector.empty()) {
+      ++references;
+    }
+  }
+  return references;
+}
+
+bool ParseSerializedRuntimeMetadataReusePayload(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *payload_value =
+      FindMember(root, kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName);
+  if (payload_value == nullptr) {
+    surface.reused_module_names_lexicographic = {
+        surface.frontend_closure_summary.module_name};
+    surface.uses_serialized_runtime_metadata_payload = false;
+    return true;
+  }
+  const JsonValue::Object *payload_object = AsObject(*payload_value);
+  if (payload_object == nullptr) {
+    error = "serialized runtime metadata reuse payload must be an object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string module_name;
+  std::string replay_key;
+  std::vector<std::string> reused_module_names;
+  std::size_t runtime_owned_declaration_count = 0;
+  std::size_t metadata_reference_count = 0;
+  bool ready = false;
+  if (!ReadStringMember(*payload_object, "contract_id", contract_id, error) ||
+      !ReadStringMember(*payload_object, "module_name", module_name, error) ||
+      !ReadStringArrayMember(*payload_object, "reused_module_names_lexicographic",
+                             reused_module_names, error) ||
+      !ReadSizeMember(*payload_object, "runtime_owned_declaration_count",
+                      runtime_owned_declaration_count, error) ||
+      !ReadSizeMember(*payload_object, "metadata_reference_count",
+                      metadata_reference_count, error) ||
+      !ReadBoolMember(*payload_object, "ready", ready, error) ||
+      !ReadStringMember(*payload_object, "replay_key", replay_key, error)) {
+    return false;
+  }
+  if (contract_id != kObjc3SerializedRuntimeMetadataArtifactReuseContractId) {
+    error = "unexpected serialized runtime metadata reuse payload contract id";
+    return false;
+  }
+  if (!ready) {
+    error = "serialized runtime metadata reuse payload is not ready";
+    return false;
+  }
+  if (reused_module_names.empty()) {
+    error = "serialized runtime metadata reuse payload must list reused modules";
+    return false;
+  }
+
+  Objc3RuntimeMetadataSourceRecordSet payload_record_set;
+  if (!ParseRuntimeMetadataSourceRecordSet(*payload_object,
+                                           "runtime_owned_declarations",
+                                           payload_record_set, error)) {
+    return false;
+  }
+  const JsonValue *references_value =
+      FindMember(*payload_object, "metadata_references");
+  if (references_value == nullptr) {
+    error = "serialized runtime metadata reuse payload is missing metadata_references";
+    return false;
+  }
+  const JsonValue::Array *references_array = AsArray(*references_value);
+  if (references_array == nullptr) {
+    error =
+        "serialized runtime metadata reuse payload metadata_references must be an array";
+    return false;
+  }
+  if (CountRuntimeMetadataSourceRecordSetDeclarations(payload_record_set) !=
+      runtime_owned_declaration_count) {
+    error =
+        "serialized runtime metadata reuse payload declaration count does not match payload inventory";
+    return false;
+  }
+  if (references_array->size() != metadata_reference_count ||
+      CountRuntimeMetadataSourceRecordSetReferences(payload_record_set) !=
+          metadata_reference_count) {
+    error =
+        "serialized runtime metadata reuse payload reference count does not match payload inventory";
+    return false;
+  }
+
+  surface.runtime_metadata_source_records = std::move(payload_record_set);
+  surface.reused_module_names_lexicographic = std::move(reused_module_names);
+  surface.uses_serialized_runtime_metadata_payload = true;
+  (void)module_name;
+  (void)replay_key;
+  return true;
+}
+
 bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
                                        Objc3ImportedRuntimeModuleSurface &surface,
                                        std::string &error) {
@@ -655,51 +816,12 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
                                       error)) {
     return false;
   }
-  if (!ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "classes",
-                        surface.runtime_metadata_source_records
-                            .classes_lexicographic,
-                        ParseClassRecord,
-                        error) ||
-      !ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "protocols",
-                        surface.runtime_metadata_source_records
-                            .protocols_lexicographic,
-                        ParseProtocolRecord,
-                        error) ||
-      !ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "categories",
-                        surface.runtime_metadata_source_records
-                            .categories_lexicographic,
-                        ParseCategoryRecord,
-                        error) ||
-      !ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "properties",
-                        surface.runtime_metadata_source_records
-                            .properties_lexicographic,
-                        ParsePropertyRecord,
-                        error) ||
-      !ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "methods",
-                        surface.runtime_metadata_source_records
-                            .methods_lexicographic,
-                        ParseMethodRecord,
-                        error) ||
-      !ParseRecordArray(root,
-                        "runtime_owned_declarations",
-                        "ivars",
-                        surface.runtime_metadata_source_records
-                            .ivars_lexicographic,
-                        ParseIvarRecord,
-                        error)) {
+  Objc3RuntimeMetadataSourceRecordSet local_runtime_metadata_source_records;
+  if (!ParseRuntimeMetadataSourceRecordSet(root, "runtime_owned_declarations",
+                                           local_runtime_metadata_source_records,
+                                           error)) {
     return false;
   }
-  surface.runtime_metadata_source_records.deterministic = true;
   surface.frontend_closure_summary.runtime_metadata_source_records_ready = true;
 
   const JsonValue *references_value = FindMember(root, "metadata_references");
@@ -714,17 +836,17 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
 
   surface.frontend_closure_summary.class_record_count =
-      surface.runtime_metadata_source_records.classes_lexicographic.size();
+      local_runtime_metadata_source_records.classes_lexicographic.size();
   surface.frontend_closure_summary.protocol_record_count =
-      surface.runtime_metadata_source_records.protocols_lexicographic.size();
+      local_runtime_metadata_source_records.protocols_lexicographic.size();
   surface.frontend_closure_summary.category_record_count =
-      surface.runtime_metadata_source_records.categories_lexicographic.size();
+      local_runtime_metadata_source_records.categories_lexicographic.size();
   surface.frontend_closure_summary.property_record_count =
-      surface.runtime_metadata_source_records.properties_lexicographic.size();
+      local_runtime_metadata_source_records.properties_lexicographic.size();
   surface.frontend_closure_summary.method_record_count =
-      surface.runtime_metadata_source_records.methods_lexicographic.size();
+      local_runtime_metadata_source_records.methods_lexicographic.size();
   surface.frontend_closure_summary.ivar_record_count =
-      surface.runtime_metadata_source_records.ivars_lexicographic.size();
+      local_runtime_metadata_source_records.ivars_lexicographic.size();
 
   surface.frontend_closure_summary.superclass_reference_count = 0;
   surface.frontend_closure_summary.protocol_reference_count = 0;
@@ -759,12 +881,8 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
 
   const std::size_t declaration_count =
-      surface.runtime_metadata_source_records.classes_lexicographic.size() +
-      surface.runtime_metadata_source_records.protocols_lexicographic.size() +
-      surface.runtime_metadata_source_records.categories_lexicographic.size() +
-      surface.runtime_metadata_source_records.properties_lexicographic.size() +
-      surface.runtime_metadata_source_records.methods_lexicographic.size() +
-      surface.runtime_metadata_source_records.ivars_lexicographic.size();
+      CountRuntimeMetadataSourceRecordSetDeclarations(
+          local_runtime_metadata_source_records);
   if (surface.frontend_closure_summary.runtime_owned_declaration_count !=
       declaration_count) {
     error = "runtime-owned declaration count does not match imported record inventory";
@@ -818,6 +936,13 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
           surface.frontend_closure_summary)) {
     error = "import-surface closure summary is incomplete";
     return false;
+  }
+  if (!ParseSerializedRuntimeMetadataReusePayload(root, surface, error)) {
+    return false;
+  }
+  if (!surface.uses_serialized_runtime_metadata_payload) {
+    surface.runtime_metadata_source_records =
+        std::move(local_runtime_metadata_source_records);
   }
   return true;
 }

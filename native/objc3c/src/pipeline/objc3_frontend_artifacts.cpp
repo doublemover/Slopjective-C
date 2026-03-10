@@ -1219,76 +1219,336 @@ std::string BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
   return out.str();
 }
 
-std::string BuildRuntimeAwareImportModuleArtifactJson(
-    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+std::string BuildRuntimeMetadataClassRecordMergeKey(
+    const Objc3RuntimeMetadataClassSourceRecord &record) {
+  return record.record_kind + "|" + record.name;
+}
+
+std::string BuildRuntimeMetadataProtocolRecordMergeKey(
+    const Objc3RuntimeMetadataProtocolSourceRecord &record) {
+  return record.name;
+}
+
+std::string BuildRuntimeMetadataCategoryRecordMergeKey(
+    const Objc3RuntimeMetadataCategorySourceRecord &record) {
+  return record.record_kind + "|" + record.class_name + "|" +
+         record.category_name;
+}
+
+std::string BuildRuntimeMetadataPropertyRecordMergeKey(
+    const Objc3RuntimeMetadataPropertySourceRecord &record) {
+  return record.owner_kind + "|" + record.owner_name + "|" +
+         record.property_name;
+}
+
+std::string BuildRuntimeMetadataMethodRecordMergeKey(
+    const Objc3RuntimeMetadataMethodSourceRecord &record) {
+  return record.owner_kind + "|" + record.owner_name + "|" + record.selector +
+         "|" + (record.is_class_method ? "class" : "instance");
+}
+
+std::string BuildRuntimeMetadataIvarRecordMergeKey(
+    const Objc3RuntimeMetadataIvarSourceRecord &record) {
+  return record.owner_kind + "|" + record.owner_name + "|" +
+         record.property_name + "|" + record.ivar_binding_symbol;
+}
+
+template <typename RecordT, typename KeyFn>
+std::vector<RecordT> BuildMergedRuntimeMetadataRecordVector(
+    const std::vector<const std::vector<RecordT> *> &imported_record_vectors,
+    const std::vector<RecordT> &local_records, KeyFn key_fn) {
+  std::unordered_map<std::string, RecordT> merged_by_key;
+  for (const auto *records : imported_record_vectors) {
+    for (const auto &record : *records) {
+      merged_by_key.emplace(key_fn(record), record);
+    }
+  }
+  for (const auto &record : local_records) {
+    merged_by_key[key_fn(record)] = record;
+  }
+  std::vector<std::pair<std::string, RecordT>> ordered_records;
+  ordered_records.reserve(merged_by_key.size());
+  for (auto &entry : merged_by_key) {
+    ordered_records.push_back(std::move(entry));
+  }
+  std::sort(ordered_records.begin(), ordered_records.end(),
+            [](const auto &lhs, const auto &rhs) { return lhs.first < rhs.first; });
+  std::vector<RecordT> merged;
+  merged.reserve(ordered_records.size());
+  for (auto &entry : ordered_records) {
+    merged.push_back(std::move(entry.second));
+  }
+  return merged;
+}
+
+std::vector<const Objc3ImportedRuntimeModuleSurface *>
+BuildSortedImportedRuntimeModuleSurfacePointers(
+    const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces) {
+  std::vector<const Objc3ImportedRuntimeModuleSurface *> sorted;
+  sorted.reserve(imported_surfaces.size());
+  for (const auto &surface : imported_surfaces) {
+    sorted.push_back(&surface);
+  }
+  std::sort(sorted.begin(), sorted.end(),
+            [](const auto *lhs, const auto *rhs) {
+              return lhs->frontend_closure_summary.module_name <
+                     rhs->frontend_closure_summary.module_name;
+            });
+  return sorted;
+}
+
+std::vector<std::string> BuildSerializedRuntimeMetadataReusedModuleNames(
+    const std::string &local_module_name,
+    const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces) {
+  std::set<std::string> names;
+  if (!local_module_name.empty()) {
+    names.insert(local_module_name);
+  }
+  for (const auto *surface :
+       BuildSortedImportedRuntimeModuleSurfacePointers(imported_surfaces)) {
+    if (surface->uses_serialized_runtime_metadata_payload &&
+        !surface->reused_module_names_lexicographic.empty()) {
+      names.insert(surface->reused_module_names_lexicographic.begin(),
+                   surface->reused_module_names_lexicographic.end());
+    } else if (!surface->frontend_closure_summary.module_name.empty()) {
+      names.insert(surface->frontend_closure_summary.module_name);
+    }
+  }
+  return std::vector<std::string>(names.begin(), names.end());
+}
+
+Objc3RuntimeMetadataSourceRecordSet BuildSerializedRuntimeMetadataReuseRecordSet(
+    const Objc3RuntimeMetadataSourceRecordSet &local_runtime_metadata_source_records,
+    const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces) {
+  std::vector<const std::vector<Objc3RuntimeMetadataClassSourceRecord> *>
+      imported_classes;
+  std::vector<const std::vector<Objc3RuntimeMetadataProtocolSourceRecord> *>
+      imported_protocols;
+  std::vector<const std::vector<Objc3RuntimeMetadataCategorySourceRecord> *>
+      imported_categories;
+  std::vector<const std::vector<Objc3RuntimeMetadataPropertySourceRecord> *>
+      imported_properties;
+  std::vector<const std::vector<Objc3RuntimeMetadataMethodSourceRecord> *>
+      imported_methods;
+  std::vector<const std::vector<Objc3RuntimeMetadataIvarSourceRecord> *>
+      imported_ivars;
+  for (const auto *surface :
+       BuildSortedImportedRuntimeModuleSurfacePointers(imported_surfaces)) {
+    imported_classes.push_back(
+        &surface->runtime_metadata_source_records.classes_lexicographic);
+    imported_protocols.push_back(
+        &surface->runtime_metadata_source_records.protocols_lexicographic);
+    imported_categories.push_back(
+        &surface->runtime_metadata_source_records.categories_lexicographic);
+    imported_properties.push_back(
+        &surface->runtime_metadata_source_records.properties_lexicographic);
+    imported_methods.push_back(
+        &surface->runtime_metadata_source_records.methods_lexicographic);
+    imported_ivars.push_back(
+        &surface->runtime_metadata_source_records.ivars_lexicographic);
+  }
+
+  Objc3RuntimeMetadataSourceRecordSet merged;
+  merged.classes_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_classes, local_runtime_metadata_source_records.classes_lexicographic,
+      BuildRuntimeMetadataClassRecordMergeKey);
+  merged.protocols_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_protocols,
+      local_runtime_metadata_source_records.protocols_lexicographic,
+      BuildRuntimeMetadataProtocolRecordMergeKey);
+  merged.categories_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_categories,
+      local_runtime_metadata_source_records.categories_lexicographic,
+      BuildRuntimeMetadataCategoryRecordMergeKey);
+  merged.properties_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_properties,
+      local_runtime_metadata_source_records.properties_lexicographic,
+      BuildRuntimeMetadataPropertyRecordMergeKey);
+  merged.methods_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_methods, local_runtime_metadata_source_records.methods_lexicographic,
+      BuildRuntimeMetadataMethodRecordMergeKey);
+  merged.ivars_lexicographic = BuildMergedRuntimeMetadataRecordVector(
+      imported_ivars, local_runtime_metadata_source_records.ivars_lexicographic,
+      BuildRuntimeMetadataIvarRecordMergeKey);
+  merged.deterministic = true;
+  return merged;
+}
+
+std::size_t CountRuntimeMetadataSourceRecordSetDeclarations(
+    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
+  return record_set.classes_lexicographic.size() +
+         record_set.protocols_lexicographic.size() +
+         record_set.categories_lexicographic.size() +
+         record_set.properties_lexicographic.size() +
+         record_set.methods_lexicographic.size() +
+         record_set.ivars_lexicographic.size();
+}
+
+std::size_t CountRuntimeMetadataSourceRecordSetReferences(
+    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
+  std::size_t references = 0;
+  for (const auto &class_record : record_set.classes_lexicographic) {
+    if (class_record.has_super && !class_record.super_name.empty()) {
+      ++references;
+    }
+    references += class_record.adopted_protocols_lexicographic.size();
+  }
+  for (const auto &protocol_record : record_set.protocols_lexicographic) {
+    references += protocol_record.inherited_protocols_lexicographic.size();
+  }
+  for (const auto &category_record : record_set.categories_lexicographic) {
+    references += category_record.adopted_protocols_lexicographic.size();
+  }
+  for (const auto &property_record : record_set.properties_lexicographic) {
+    if (!property_record.effective_getter_selector.empty()) {
+      ++references;
+    }
+    if (property_record.effective_setter_available &&
+        !property_record.effective_setter_selector.empty()) {
+      ++references;
+    }
+    if (!property_record.ivar_binding_symbol.empty()) {
+      ++references;
+    }
+  }
+  for (const auto &method_record : record_set.methods_lexicographic) {
+    if (!method_record.selector.empty()) {
+      ++references;
+    }
+  }
+  return references;
+}
+
+std::string BuildSerializedRuntimeMetadataArtifactReuseReplayKey(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source_contract="
+      << summary.source_serialized_import_lowering_contract_id
+      << ";artifact=" << summary.artifact_relative_path
+      << ";reused_module_count=" << summary.reused_module_count
+      << ";runtime_owned_declaration_count="
+      << summary.runtime_owned_declaration_count
+      << ";metadata_reference_count=" << summary.metadata_reference_count
+      << ";modules=";
+  for (std::size_t i = 0; i < summary.reused_module_names_lexicographic.size();
+       ++i) {
+    if (i != 0u) {
+      out << ",";
+    }
+    out << summary.reused_module_names_lexicographic[i];
+  }
+  return out.str();
+}
+
+Objc3SerializedRuntimeMetadataArtifactReuseSummary
+BuildSerializedRuntimeMetadataArtifactReuseSummary(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary
+        &serialized_import_lowering,
+    const std::string &local_module_name,
+    const Objc3RuntimeMetadataSourceRecordSet &reused_runtime_metadata_source_records,
+    const std::vector<std::string> &reused_module_names_lexicographic) {
+  Objc3SerializedRuntimeMetadataArtifactReuseSummary summary;
+  summary.reused_module_names_lexicographic = reused_module_names_lexicographic;
+  summary.reused_module_count = reused_module_names_lexicographic.size();
+  summary.class_record_count =
+      reused_runtime_metadata_source_records.classes_lexicographic.size();
+  summary.protocol_record_count =
+      reused_runtime_metadata_source_records.protocols_lexicographic.size();
+  summary.category_record_count =
+      reused_runtime_metadata_source_records.categories_lexicographic.size();
+  summary.property_record_count =
+      reused_runtime_metadata_source_records.properties_lexicographic.size();
+  summary.method_record_count =
+      reused_runtime_metadata_source_records.methods_lexicographic.size();
+  summary.ivar_record_count =
+      reused_runtime_metadata_source_records.ivars_lexicographic.size();
+  summary.runtime_owned_declaration_count =
+      CountRuntimeMetadataSourceRecordSetDeclarations(
+          reused_runtime_metadata_source_records);
+  summary.metadata_reference_count =
+      CountRuntimeMetadataSourceRecordSetReferences(
+          reused_runtime_metadata_source_records);
+  summary.fail_closed = true;
+  summary.source_serialized_import_lowering_ready =
+      IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
+          serialized_import_lowering);
+  summary.semantic_surface_published = true;
+  summary.serialized_metadata_rehydration_landed =
+      summary.source_serialized_import_lowering_ready;
+  summary.artifact_reuse_landed =
+      summary.source_serialized_import_lowering_ready;
+  summary.downstream_module_consumption_ready =
+      summary.source_serialized_import_lowering_ready;
+  if (summary.source_serialized_import_lowering_ready) {
+    summary.replay_key =
+        BuildSerializedRuntimeMetadataArtifactReuseReplayKey(summary);
+  } else {
+    summary.failure_reason =
+        "serialized runtime metadata artifact reuse summary is incomplete";
+  }
+  if (!IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(summary) &&
+      summary.failure_reason.empty()) {
+    summary.failure_reason =
+        "serialized runtime metadata artifact reuse summary is incomplete";
+  }
+  (void)local_module_name;
+  return summary;
+}
+
+std::string BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_serialized_import_lowering_contract_id\":\""
+      << EscapeJsonString(summary.source_serialized_import_lowering_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"artifact_relative_path\":\""
+      << EscapeJsonString(summary.artifact_relative_path)
+      << "\",\"payload_member_name\":\""
+      << EscapeJsonString(summary.payload_member_name)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"input_model\":\"" << EscapeJsonString(summary.input_model)
+      << "\",\"reused_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.reused_module_names_lexicographic)
+      << ",\"reused_module_count\":" << summary.reused_module_count
+      << ",\"class_record_count\":" << summary.class_record_count
+      << ",\"protocol_record_count\":" << summary.protocol_record_count
+      << ",\"category_record_count\":" << summary.category_record_count
+      << ",\"property_record_count\":" << summary.property_record_count
+      << ",\"method_record_count\":" << summary.method_record_count
+      << ",\"ivar_record_count\":" << summary.ivar_record_count
+      << ",\"runtime_owned_declaration_count\":"
+      << summary.runtime_owned_declaration_count
+      << ",\"metadata_reference_count\":" << summary.metadata_reference_count
+      << ",\"ready\":"
+      << (IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"source_serialized_import_lowering_ready\":"
+      << (summary.source_serialized_import_lowering_ready ? "true" : "false")
+      << ",\"semantic_surface_published\":"
+      << (summary.semantic_surface_published ? "true" : "false")
+      << ",\"serialized_metadata_rehydration_landed\":"
+      << (summary.serialized_metadata_rehydration_landed ? "true" : "false")
+      << ",\"artifact_reuse_landed\":"
+      << (summary.artifact_reuse_landed ? "true" : "false")
+      << ",\"downstream_module_consumption_ready\":"
+      << (summary.downstream_module_consumption_ready ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
+std::string BuildRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
   std::ostringstream out;
   out << "{\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(summary.contract_id)
-      << "\",\n"
-      << "  \"source_surface_contract_id\": \""
-      << EscapeJsonString(summary.source_surface_contract_id) << "\",\n"
-      << "  \"frontend_surface_path\": \""
-      << EscapeJsonString(summary.frontend_surface_path) << "\",\n"
-      << "  \"artifact\": \""
-      << EscapeJsonString(summary.artifact_relative_path) << "\",\n"
-      << "  \"payload_model\": \""
-      << EscapeJsonString(summary.payload_model) << "\",\n"
-      << "  \"authority_model\": \""
-      << EscapeJsonString(summary.authority_model) << "\",\n"
-      << "  \"payload_ownership_model\": \""
-      << EscapeJsonString(summary.payload_ownership_model) << "\",\n"
-      << "  \"module_name\": \"" << EscapeJsonString(summary.module_name)
-      << "\",\n"
-      << "  \"protocol_decl_count\": " << summary.protocol_decl_count << ",\n"
-      << "  \"interface_decl_count\": " << summary.interface_decl_count
-      << ",\n"
-      << "  \"implementation_decl_count\": "
-      << summary.implementation_decl_count << ",\n"
-      << "  \"interface_category_decl_count\": "
-      << summary.interface_category_decl_count << ",\n"
-      << "  \"implementation_category_decl_count\": "
-      << summary.implementation_category_decl_count << ",\n"
-      << "  \"function_decl_count\": " << summary.function_decl_count << ",\n"
-      << "  \"module_import_graph_sites\": " << summary.module_import_graph_sites
-      << ",\n"
-      << "  \"import_edge_candidate_sites\": "
-      << summary.import_edge_candidate_sites << ",\n"
-      << "  \"namespace_segment_sites\": " << summary.namespace_segment_sites
-      << ",\n"
-      << "  \"object_pointer_type_sites\": "
-      << summary.object_pointer_type_sites << ",\n"
-      << "  \"pointer_declarator_sites\": "
-      << summary.pointer_declarator_sites << ",\n"
-      << "  \"normalized_sites\": " << summary.normalized_sites << ",\n"
-      << "  \"contract_violation_sites\": "
-      << summary.contract_violation_sites << ",\n"
-      << "  \"runtime_owned_declaration_count\": "
-      << summary.runtime_owned_declaration_count << ",\n"
-      << "  \"metadata_reference_count\": "
-      << summary.metadata_reference_count << ",\n"
-      << "  \"runtime_aware_import_declarations_landed\": "
-      << (summary.runtime_aware_import_declarations_landed ? "true" : "false")
-      << ",\n"
-      << "  \"module_metadata_import_surface_landed\": "
-      << (summary.module_metadata_import_surface_landed ? "true" : "false")
-      << ",\n"
-      << "  \"runtime_owned_declaration_import_landed\": "
-      << (summary.runtime_owned_declaration_import_landed ? "true" : "false")
-      << ",\n"
-      << "  \"runtime_metadata_reference_import_landed\": "
-      << (summary.runtime_metadata_reference_import_landed ? "true" : "false")
-      << ",\n"
-      << "  \"public_frontend_api_module_surface_landed\": "
-      << (summary.public_frontend_api_module_surface_landed ? "true" : "false")
-      << ",\n"
-      << "  \"ready_for_import_artifact_emission\": "
-      << (summary.ready_for_import_artifact_emission ? "true" : "false")
-      << ",\n"
-      << "  \"ready_for_frontend_module_consumption\": "
-      << (summary.ready_for_frontend_module_consumption ? "true" : "false")
-      << ",\n"
-      << "  \"runtime_owned_declarations\": {\n"
       << "    \"classes\": [\n";
   for (std::size_t i = 0; i < runtime_metadata_source_records.classes_lexicographic.size(); ++i) {
     const auto &class_record = runtime_metadata_source_records.classes_lexicographic[i];
@@ -1437,8 +1697,14 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     out << "\n";
   }
   out << "    ]\n"
-      << "  },\n"
-      << "  \"metadata_references\": [\n";
+      << "  }";
+  return out.str();
+}
+
+std::string BuildRuntimeMetadataReferencesJson(
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
+  std::ostringstream out;
+  out << "[\n";
   bool first_reference = true;
   auto emit_reference = [&](const std::string &reference_kind,
                             const std::string &owner_kind,
@@ -1513,7 +1779,129 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
   if (!first_reference) {
     out << "\n";
   }
-  out << "  ],\n"
+  out << "  ]";
+  return out.str();
+}
+
+std::string BuildSerializedRuntimeMetadataReusePayloadJson(
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary,
+    const std::string &module_name,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
+  std::ostringstream out;
+  out << "{\n"
+      << "    \"contract_id\": \"" << EscapeJsonString(summary.contract_id)
+      << "\",\n"
+      << "    \"module_name\": \"" << EscapeJsonString(module_name) << "\",\n"
+      << "    \"reused_module_names_lexicographic\": "
+      << BuildStringArrayJson(summary.reused_module_names_lexicographic)
+      << ",\n"
+      << "    \"runtime_owned_declaration_count\": "
+      << summary.runtime_owned_declaration_count << ",\n"
+      << "    \"metadata_reference_count\": " << summary.metadata_reference_count
+      << ",\n"
+      << "    \"runtime_owned_declarations\": "
+      << BuildRuntimeOwnedDeclarationsJson(runtime_metadata_source_records)
+      << ",\n"
+      << "    \"metadata_references\": "
+      << BuildRuntimeMetadataReferencesJson(runtime_metadata_source_records)
+      << ",\n"
+      << "    \"ready\": "
+      << (IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(summary)
+              ? "true"
+              : "false")
+      << ",\n"
+      << "    \"replay_key\": \"" << EscapeJsonString(summary.replay_key)
+      << "\"\n"
+      << "  }";
+  return out.str();
+}
+
+std::string BuildRuntimeAwareImportModuleArtifactJson(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
+    const Objc3SerializedRuntimeMetadataArtifactReuseSummary
+        &serialized_runtime_metadata_artifact_reuse,
+    const Objc3RuntimeMetadataSourceRecordSet
+        &serialized_runtime_metadata_reuse_records) {
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(summary.contract_id)
+      << "\",\n"
+      << "  \"source_surface_contract_id\": \""
+      << EscapeJsonString(summary.source_surface_contract_id) << "\",\n"
+      << "  \"frontend_surface_path\": \""
+      << EscapeJsonString(summary.frontend_surface_path) << "\",\n"
+      << "  \"artifact\": \""
+      << EscapeJsonString(summary.artifact_relative_path) << "\",\n"
+      << "  \"payload_model\": \""
+      << EscapeJsonString(summary.payload_model) << "\",\n"
+      << "  \"authority_model\": \""
+      << EscapeJsonString(summary.authority_model) << "\",\n"
+      << "  \"payload_ownership_model\": \""
+      << EscapeJsonString(summary.payload_ownership_model) << "\",\n"
+      << "  \"module_name\": \"" << EscapeJsonString(summary.module_name)
+      << "\",\n"
+      << "  \"protocol_decl_count\": " << summary.protocol_decl_count << ",\n"
+      << "  \"interface_decl_count\": " << summary.interface_decl_count
+      << ",\n"
+      << "  \"implementation_decl_count\": "
+      << summary.implementation_decl_count << ",\n"
+      << "  \"interface_category_decl_count\": "
+      << summary.interface_category_decl_count << ",\n"
+      << "  \"implementation_category_decl_count\": "
+      << summary.implementation_category_decl_count << ",\n"
+      << "  \"function_decl_count\": " << summary.function_decl_count << ",\n"
+      << "  \"module_import_graph_sites\": " << summary.module_import_graph_sites
+      << ",\n"
+      << "  \"import_edge_candidate_sites\": "
+      << summary.import_edge_candidate_sites << ",\n"
+      << "  \"namespace_segment_sites\": " << summary.namespace_segment_sites
+      << ",\n"
+      << "  \"object_pointer_type_sites\": "
+      << summary.object_pointer_type_sites << ",\n"
+      << "  \"pointer_declarator_sites\": "
+      << summary.pointer_declarator_sites << ",\n"
+      << "  \"normalized_sites\": " << summary.normalized_sites << ",\n"
+      << "  \"contract_violation_sites\": "
+      << summary.contract_violation_sites << ",\n"
+      << "  \"runtime_owned_declaration_count\": "
+      << summary.runtime_owned_declaration_count << ",\n"
+      << "  \"metadata_reference_count\": "
+      << summary.metadata_reference_count << ",\n"
+      << "  \"runtime_aware_import_declarations_landed\": "
+      << (summary.runtime_aware_import_declarations_landed ? "true" : "false")
+      << ",\n"
+      << "  \"module_metadata_import_surface_landed\": "
+      << (summary.module_metadata_import_surface_landed ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_owned_declaration_import_landed\": "
+      << (summary.runtime_owned_declaration_import_landed ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_metadata_reference_import_landed\": "
+      << (summary.runtime_metadata_reference_import_landed ? "true" : "false")
+      << ",\n"
+      << "  \"public_frontend_api_module_surface_landed\": "
+      << (summary.public_frontend_api_module_surface_landed ? "true" : "false")
+      << ",\n"
+      << "  \"ready_for_import_artifact_emission\": "
+      << (summary.ready_for_import_artifact_emission ? "true" : "false")
+      << ",\n"
+      << "  \"ready_for_frontend_module_consumption\": "
+      << (summary.ready_for_frontend_module_consumption ? "true" : "false")
+      << ",\n"
+      << "  \"runtime_owned_declarations\": "
+      << BuildRuntimeOwnedDeclarationsJson(runtime_metadata_source_records)
+      << ",\n"
+      << "  \"metadata_references\": "
+      << BuildRuntimeMetadataReferencesJson(runtime_metadata_source_records)
+      << ",\n"
+      << "  \""
+      << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
+      << "\": "
+      << BuildSerializedRuntimeMetadataReusePayloadJson(
+             serialized_runtime_metadata_artifact_reuse, summary.module_name,
+             serialized_runtime_metadata_reuse_records)
+      << ",\n"
       << "  \"source_surface_replay_key\": \""
       << EscapeJsonString(summary.source_surface_replay_key) << "\",\n"
       << "  \"replay_key\": \"" << EscapeJsonString(summary.replay_key)
@@ -8048,6 +8436,29 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "serialized runtime metadata import/lowering boundary is incomplete: " +
             serialized_runtime_metadata_import_lowering.failure_reason);
   }
+  const std::vector<std::string> serialized_runtime_metadata_reused_module_names =
+      BuildSerializedRuntimeMetadataReusedModuleNames(
+          runtime_aware_import_module_frontend_closure.module_name,
+          imported_runtime_module_surfaces);
+  const Objc3RuntimeMetadataSourceRecordSet
+      serialized_runtime_metadata_reuse_records =
+          BuildSerializedRuntimeMetadataReuseRecordSet(
+              runtime_metadata_source_records, imported_runtime_module_surfaces);
+  const Objc3SerializedRuntimeMetadataArtifactReuseSummary
+      serialized_runtime_metadata_artifact_reuse =
+          BuildSerializedRuntimeMetadataArtifactReuseSummary(
+              serialized_runtime_metadata_import_lowering,
+              runtime_aware_import_module_frontend_closure.module_name,
+              serialized_runtime_metadata_reuse_records,
+              serialized_runtime_metadata_reused_module_names);
+  if (post_pipeline_failure_code.empty() &&
+      !IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(
+          serialized_runtime_metadata_artifact_reuse)) {
+    record_post_pipeline_failure(
+        "O3S266",
+        "serialized runtime metadata artifact reuse is incomplete: " +
+            serialized_runtime_metadata_artifact_reuse.failure_reason);
+  }
   const Objc3NamespaceCollisionShadowingLoweringContract
       namespace_collision_shadowing_lowering_contract =
           BuildNamespaceCollisionShadowingLoweringContract(
@@ -12332,6 +12743,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_serialized_runtime_metadata_import_lowering_contract\":"
            << BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
                   serialized_runtime_metadata_import_lowering)
+           // M258-C002 serialized metadata artifact reuse anchor: lane-C now
+           // emits and reloads a transitive serialized runtime-metadata payload
+           // through the runtime-import-surface artifact so downstream modules
+           // can recover object-model semantics without reparsing source.
+           << ",\"objc_serialized_runtime_metadata_artifact_reuse\":"
+           << BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
+                  serialized_runtime_metadata_artifact_reuse)
            << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":" 
            << namespace_collision_shadowing_lowering_contract
                   .namespace_collision_shadowing_sites
@@ -12955,7 +13373,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     bundle.runtime_aware_import_module_artifact_json =
         BuildRuntimeAwareImportModuleArtifactJson(
             runtime_aware_import_module_frontend_closure,
-            runtime_metadata_source_records);
+            runtime_metadata_source_records,
+            serialized_runtime_metadata_artifact_reuse,
+            serialized_runtime_metadata_reuse_records);
   }
   bundle.runtime_aware_import_module_frontend_closure_summary =
       runtime_aware_import_module_frontend_closure;

@@ -16270,3 +16270,33 @@ payloads are rehydrated, reused incrementally, or lowered into IR.
 - canonical proof assets
   - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
   - `tmp/reports/m258/M258-C001/serialized_metadata_import_and_lowering_contract_summary.json`
+
+## Serialized metadata artifact reuse (M258-C002)
+
+`M258-C002` turns the frozen lane-C boundary into a real reuse capability by
+embedding a transitive serialized runtime-metadata payload inside the emitted
+`module.runtime-import-surface.json` artifact and teaching downstream imports to
+prefer that payload when present.
+
+- contract id
+  `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_artifact_reuse`
+- source contract
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- artifact member
+  `serialized_runtime_metadata_reuse_payload`
+- landed truths
+  - emitted runtime-import-surface artifacts now carry a transitive serialized
+    runtime-metadata reuse payload
+  - downstream imports can deserialize that payload and recover upstream
+    object-model metadata without reparsing source
+  - the emitted payload publishes the reused module set deterministically
+- current boundary
+  - the payload is reused by the frontend, not lowered directly into LLVM IR in
+    this lane
+  - runtime registration across module boundaries still belongs to lane-D
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
+  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
+  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`

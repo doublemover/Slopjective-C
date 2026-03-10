@@ -6892,3 +6892,28 @@ lowering.
   - imported metadata payloads are not lowered into IR in this lane
   - the public embedding ABI still does not expose serialized imported payload
     handles or incremental lowering hooks
+
+## M258 module metadata serialization, deserialization, and artifact reuse (C002)
+
+`M258-C002` lands the real frontend reuse path above direct imported-payload IR
+lowering.
+
+- contract id
+  `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_artifact_reuse`
+- source contract
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- artifact member
+  `serialized_runtime_metadata_reuse_payload`
+- compiler behavior
+  - emitted `module.runtime-import-surface.json` artifacts now carry a nested
+    serialized runtime-metadata reuse payload
+  - downstream imports prefer that payload when present and deserialize it back
+    into runtime metadata source records
+  - reused module names and transitive metadata counts are published
+    deterministically
+- current boundary
+  - payload reuse is a frontend capability in this lane
+  - runtime registration and cross-module realization remain lane-D work
+  - imported payloads still are not lowered directly into LLVM IR in this lane

@@ -605,6 +605,10 @@ class Objc3IREmitter {
       // runtime surface artifacts now freeze the semantic handoff boundary,
       // but serialized imported metadata payloads still are not rehydrated,
       // reused incrementally, or lowered into IR in this lane.
+      // M258-C002 serialized metadata artifact reuse anchor: emitted
+      // runtime-import-surface artifacts may now carry a transitive serialized
+      // runtime-metadata payload for downstream frontend reuse, but imported
+      // payloads still are not lowered directly into IR in this lane.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.
