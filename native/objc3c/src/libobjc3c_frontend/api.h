@@ -87,6 +87,10 @@ extern "C" {
  *   is still the emitted A002/B002/C002/D002 evidence chain. This public C ABI
  *   exposes no public in-memory cross-module object-model gate handle and
  *   broad runnable matrix work remains deferred to later milestones.
+ * - M258-E002 runnable import/module execution-matrix anchor: lane E now
+ *   closes one live cross-module execution matrix above those same emitted
+ *   filesystem artifacts, but this public C ABI still exposes no in-memory
+ *   cross-module execution-matrix handle or imported module object graph.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

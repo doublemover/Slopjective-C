@@ -12955,6 +12955,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // the A002/B002/C002/D002 summary chain and freezes the current
            // runnable two-image proof boundary before E002 broadens the
            // execution matrix.
+           // M258-E002 runnable import/module execution-matrix anchor:
+           // the same emitted frontend surface remains the canonical replay
+           // boundary while lane-E closes the runnable matrix around it.
            << ",\"objc_cross_module_build_runtime_orchestration_contract\":"
            << BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
                   cross_module_build_runtime_orchestration)

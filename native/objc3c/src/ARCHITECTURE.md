@@ -9638,3 +9638,19 @@ object programs.
   two-image path already landed by `M258-D002`
 - `M258-E002` is the first issue allowed to broaden this freeze into a larger
   runnable execution matrix and docs closeout
+
+## M258 runnable import/module execution matrix (E002)
+
+`M258-E002` broadens the frozen `M258-E001` gate into one live cross-module
+execution matrix:
+
+- replay the emitted A002/B002/C002/D002/E001 chain directly
+- compile the provider and consumer modules separately on the same emitted
+  import/registration/link-plan path landed by `M258-D002`
+- link one runtime probe through the emitted response file and prove startup
+  registration, selector lookup, method-cache resolution, protocol conformance,
+  reset, and replay
+- keep the truthful boundary that the IR emitter and frontend ABI remain
+  object-local and filesystem-artifact driven while lane E closes the runnable
+  matrix around them
+- the next implementation issue is `M259-A001`

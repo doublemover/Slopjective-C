@@ -621,6 +621,9 @@ class Objc3IREmitter {
       // M258-E001 cross-module object-model gate anchor: the truthful gate
       // still lives in the emitted evidence chain and not in any new
       // cross-module IR emitter surface.
+      // M258-E002 runnable import/module execution-matrix anchor: the IR
+      // emitter still stays object-local while lane-E proves the integrated
+      // multi-image path above it.
       // Imported runtime-owned declarations and foreign metadata references
       // therefore
       // remain fail-closed in IR until the later lowering/runtime milestones.

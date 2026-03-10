@@ -16383,3 +16383,34 @@ object programs.
   - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
   - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
   - `tmp/reports/m258/M258-E001/cross_module_object_model_gate_summary.json`
+
+## Runnable import and module execution matrix (M258-E002)
+
+`M258-E002` broadens the frozen `M258-E001` gate into one live runnable
+cross-module execution matrix.
+
+- contract id
+  `objc3c-runnable-import-module-execution-matrix/m258-e002-v1`
+- evidence model
+  `a002-b002-c002-d002-e001-summary-chain-plus-live-cross-module-runtime-execution`
+- execution matrix model
+  `runnable-import-module-matrix-composes-upstream-summaries-with-live-two-image-startup-dispatch-selector-cache-and-replay-proof`
+- truthful boundary
+  - provider and consumer modules are still compiled separately and linked only
+    through the emitted D002 cross-module link plan and response file
+  - the live matrix proves startup registration, selector lookup, method-cache
+    resolution, protocol conformance, reset, and replay on the real integrated
+    runtime path
+  - the canonical dispatch proof is still the current fallback-backed,
+    non-zero, replay-stable runtime path for:
+    - `ImportedProvider::providerClassValue`
+    - `ImportedProvider::importedProtocolValue`
+    - `LocalConsumer::localClassValue`
+  - fully bound source method-body execution across module boundaries still
+    belongs to later milestones
+  - the next implementation issue is `M259-A001`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tmp/reports/m258/M258-E002/runnable_import_module_execution_matrix_summary.json`

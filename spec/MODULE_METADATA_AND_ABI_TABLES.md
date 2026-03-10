@@ -7965,3 +7965,20 @@ object-model boundary is runnable across module boundaries.
   - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
   - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
   - `tmp/reports/m258/M258-E001/cross_module_object_model_gate_summary.json`
+## M258 runnable import/module execution matrix metadata anchors (E002)
+
+`M258-E002` does not add a new emitted metadata family. It binds the already
+emitted import surfaces, registration manifests, link plans, selector pools,
+and realized runtime metadata into one live cross-module execution matrix.
+
+- contract id
+  `objc3c-runnable-import-module-execution-matrix/m258-e002-v1`
+- canonical proof assets
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tmp/reports/m258/M258-E002/runnable_import_module_execution_matrix_summary.json`
+- emitted metadata truth
+  - the provider module still owns the imported class/protocol metadata
+  - the consumer module still owns the local class metadata
+  - the matrix proves those emitted families survive separate compilation,
+    link-plan assembly, startup registration, selector lookup, method-cache
+    resolution, and replay without widening the emitted metadata ABI

@@ -6986,3 +6986,22 @@ object-model surface.
     without landing any new parser, sema, lowering, or runtime behavior
   - `M258-E002` is the first issue allowed to broaden this freeze into a
     larger runnable import/module execution matrix
+
+## M258 runnable import/module execution matrix (E002)
+
+`M258-E002` broadens the frozen `M258-E001` gate into one live runnable import
+and module execution matrix.
+
+- contract id
+  `objc3c-runnable-import-module-execution-matrix/m258-e002-v1`
+- evidence model
+  `a002-b002-c002-d002-e001-summary-chain-plus-live-cross-module-runtime-execution`
+- execution matrix model
+  `runnable-import-module-matrix-composes-upstream-summaries-with-live-two-image-startup-dispatch-selector-cache-and-replay-proof`
+- truthful boundary
+  - the IR/lowering surface remains the same object-local surface landed by
+    `M258-D002`
+  - lane E now proves the integrated multi-image runtime path above that
+    surface, including startup registration, selector lookup, method-cache
+    resolution, protocol conformance, reset, and replay
+  - the matrix closes out onto `M259-A001`
