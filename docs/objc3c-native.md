@@ -16239,3 +16239,34 @@ preservation as a real frontend capability by consuming emitted
 - canonical proof assets
   - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
   - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
+
+## Serialized metadata import and lowering freeze (M258-C001)
+
+`M258-C001` freezes the next lane-C boundary over imported runtime metadata:
+the frontend now publishes a semantic surface describing the serialized
+import/lowering contract, but it still does not claim that serialized imported
+payloads are rehydrated, reused incrementally, or lowered into IR.
+
+- contract id
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- canonical semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_import_lowering_contract`
+- source semantic-rule contract
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- landed truths
+  - emitted runtime-import-surface artifacts may now drive imported semantic
+    surfaces before IR emission
+  - the compiler publishes a deterministic fail-closed summary for the current
+    serialized import/lowering boundary
+- current non-goals
+  - serialized imported metadata payloads are not rehydrated into live
+    frontend/runtime objects in this lane
+  - incremental reuse of imported metadata payloads is not landed in this lane
+  - imported metadata payloads are not lowered into LLVM IR in this lane
+  - the public embedding ABI still does not expose serialized imported payload
+    handles or direct imported-payload lowering hooks
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
+  - `tmp/reports/m258/M258-C001/serialized_metadata_import_and_lowering_contract_summary.json`

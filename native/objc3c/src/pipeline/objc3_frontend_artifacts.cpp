@@ -1117,6 +1117,108 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
   return out.str();
 }
 
+std::string BuildSerializedRuntimeMetadataImportLoweringReplayKey(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source_contract="
+      << summary.source_imported_semantic_rules_contract_id
+      << ";input_model=" << summary.input_model
+      << ";imported_input_path_count=" << summary.imported_input_path_count
+      << ";imported_module_count=" << summary.imported_module_count
+      << ";imported_surface_ingest_landed="
+      << (summary.imported_surface_ingest_landed ? "true" : "false")
+      << ";serialized_metadata_rehydration_landed="
+      << (summary.serialized_metadata_rehydration_landed ? "true" : "false")
+      << ";incremental_reuse_landed="
+      << (summary.incremental_reuse_landed ? "true" : "false")
+      << ";imported_metadata_ir_lowering_landed="
+      << (summary.imported_metadata_ir_lowering_landed ? "true" : "false")
+      << ";public_live_imported_payload_abi_landed="
+      << (summary.public_live_imported_payload_abi_landed ? "true" : "false");
+  return out.str();
+}
+
+Objc3SerializedRuntimeMetadataImportLoweringSummary
+BuildSerializedRuntimeMetadataImportLoweringSummary(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary
+        &imported_runtime_metadata_semantic_rules) {
+  Objc3SerializedRuntimeMetadataImportLoweringSummary summary;
+  summary.imported_input_path_count =
+      imported_runtime_metadata_semantic_rules.imported_input_path_count;
+  summary.imported_module_count =
+      imported_runtime_metadata_semantic_rules.imported_module_count;
+  summary.fail_closed = true;
+  summary.source_imported_semantic_rules_ready =
+      IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
+          imported_runtime_metadata_semantic_rules);
+  summary.semantic_surface_published = true;
+  summary.imported_surface_ingest_landed =
+      imported_runtime_metadata_semantic_rules
+          .ready_for_imported_metadata_semantic_rules;
+  if (summary.source_imported_semantic_rules_ready) {
+    summary.replay_key =
+        BuildSerializedRuntimeMetadataImportLoweringReplayKey(summary);
+  } else {
+    summary.failure_reason =
+        "serialized runtime metadata import/lowering summary is incomplete";
+  }
+  if (!IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(summary) &&
+      summary.failure_reason.empty()) {
+    summary.failure_reason =
+        "serialized runtime metadata import/lowering summary is incomplete";
+  }
+  return summary;
+}
+
+std::string BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_imported_semantic_rules_contract_id\":\""
+      << EscapeJsonString(summary.source_imported_semantic_rules_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_artifact_relative_path\":\""
+      << EscapeJsonString(summary.source_artifact_relative_path)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"input_model\":\""
+      << EscapeJsonString(summary.input_model)
+      << "\",\"imported_input_path_count\":"
+      << summary.imported_input_path_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"ready\":"
+      << (IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(summary)
+              ? "true"
+              : "false")
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"source_imported_semantic_rules_ready\":"
+      << (summary.source_imported_semantic_rules_ready ? "true" : "false")
+      << ",\"semantic_surface_published\":"
+      << (summary.semantic_surface_published ? "true" : "false")
+      << ",\"imported_surface_ingest_landed\":"
+      << (summary.imported_surface_ingest_landed ? "true" : "false")
+      << ",\"serialized_metadata_rehydration_landed\":"
+      << (summary.serialized_metadata_rehydration_landed ? "true" : "false")
+      << ",\"incremental_reuse_landed\":"
+      << (summary.incremental_reuse_landed ? "true" : "false")
+      << ",\"imported_metadata_ir_lowering_landed\":"
+      << (summary.imported_metadata_ir_lowering_landed ? "true" : "false")
+      << ",\"public_live_imported_payload_abi_landed\":"
+      << (summary.public_live_imported_payload_abi_landed ? "true" : "false")
+      << ",\"ready_for_serialized_metadata_lowering_impl\":"
+      << (summary.ready_for_serialized_metadata_lowering_impl ? "true"
+                                                              : "false")
+      << ",\"ready_for_incremental_reuse_impl\":"
+      << (summary.ready_for_incremental_reuse_impl ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason) << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
@@ -7934,6 +8036,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "imported runtime metadata semantic rules are incomplete: " +
             imported_runtime_metadata_semantic_rules.failure_reason);
   }
+  const Objc3SerializedRuntimeMetadataImportLoweringSummary
+      serialized_runtime_metadata_import_lowering =
+          BuildSerializedRuntimeMetadataImportLoweringSummary(
+              imported_runtime_metadata_semantic_rules);
+  if (post_pipeline_failure_code.empty() &&
+      !IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
+          serialized_runtime_metadata_import_lowering)) {
+    record_post_pipeline_failure(
+        "O3S265",
+        "serialized runtime metadata import/lowering boundary is incomplete: " +
+            serialized_runtime_metadata_import_lowering.failure_reason);
+  }
   const Objc3NamespaceCollisionShadowingLoweringContract
       namespace_collision_shadowing_lowering_contract =
           BuildNamespaceCollisionShadowingLoweringContract(
@@ -12210,6 +12324,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_imported_runtime_metadata_semantic_rules\":"
            << BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
                   imported_runtime_metadata_semantic_rules)
+           // M258-C001 serialized metadata import/lowering anchor: lane-C
+           // freezes the boundary where emitted runtime-import-surface
+           // artifacts already influence frontend semantic surfaces, but
+           // imported metadata payloads still are not rehydrated, reused
+           // incrementally, or lowered into IR.
+           << ",\"objc_serialized_runtime_metadata_import_lowering_contract\":"
+           << BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
+                  serialized_runtime_metadata_import_lowering)
            << ",\"objc_namespace_collision_shadowing_lowering_surface\":{\"namespace_collision_shadowing_sites\":" 
            << namespace_collision_shadowing_lowering_contract
                   .namespace_collision_shadowing_sites

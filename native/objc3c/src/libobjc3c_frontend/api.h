@@ -62,6 +62,11 @@ extern "C" {
  *   the frontend driver to consume emitted runtime-import-surface filesystem
  *   artifacts, but this public C ABI still does not expose live imported
  *   module semantic handles or in-memory foreign metadata payload injection.
+ * - M258-C001 serialized metadata import/lowering anchor: this public C ABI
+ *   still does not expose serialized imported payload handles, incremental
+ *   imported-metadata reuse hooks, or direct imported-payload IR-lowering
+ *   entrypoints. Cross-module import consumption remains filesystem-artifact
+ *   driven and fail-closed until later runtime/lowering milestones land.
  */
 typedef struct objc3c_frontend_context objc3c_frontend_context_t;
 

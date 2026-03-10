@@ -1690,6 +1690,66 @@ inline bool IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringContractId =
+    "objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1";
+inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_serialized_runtime_metadata_import_lowering_contract";
+inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringAuthorityModel =
+    "serialized-metadata-import-lowering-freeze-derived-from-imported-runtime-semantic-rules";
+inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringInputModel =
+    "filesystem-runtime-import-surface-artifact-path-list";
+
+struct Objc3SerializedRuntimeMetadataImportLoweringSummary {
+  std::string contract_id =
+      kObjc3SerializedRuntimeMetadataImportLoweringContractId;
+  std::string source_imported_semantic_rules_contract_id =
+      kObjc3ImportedRuntimeMetadataSemanticRulesContractId;
+  std::string frontend_surface_path =
+      kObjc3SerializedRuntimeMetadataImportLoweringSurfacePath;
+  std::string source_artifact_relative_path =
+      kObjc3RuntimeAwareImportModuleFrontendClosureArtifactRelativePath;
+  std::string authority_model =
+      kObjc3SerializedRuntimeMetadataImportLoweringAuthorityModel;
+  std::string input_model =
+      kObjc3SerializedRuntimeMetadataImportLoweringInputModel;
+  std::size_t imported_input_path_count = 0;
+  std::size_t imported_module_count = 0;
+  bool fail_closed = false;
+  bool source_imported_semantic_rules_ready = false;
+  bool semantic_surface_published = false;
+  bool imported_surface_ingest_landed = false;
+  bool serialized_metadata_rehydration_landed = false;
+  bool incremental_reuse_landed = false;
+  bool imported_metadata_ir_lowering_landed = false;
+  bool public_live_imported_payload_abi_landed = false;
+  bool ready_for_serialized_metadata_lowering_impl = false;
+  bool ready_for_incremental_reuse_impl = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
+    const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.source_imported_semantic_rules_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.source_artifact_relative_path.empty() &&
+         !summary.authority_model.empty() && !summary.input_model.empty() &&
+         summary.imported_input_path_count >= summary.imported_module_count &&
+         summary.fail_closed &&
+         summary.source_imported_semantic_rules_ready &&
+         summary.semantic_surface_published &&
+         summary.imported_surface_ingest_landed &&
+         !summary.serialized_metadata_rehydration_landed &&
+         !summary.incremental_reuse_landed &&
+         !summary.imported_metadata_ir_lowering_landed &&
+         !summary.public_live_imported_payload_abi_landed &&
+         !summary.ready_for_serialized_metadata_lowering_impl &&
+         !summary.ready_for_incremental_reuse_impl &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphContractId =
     "objc3c-executable-metadata-source-graph-completeness/m252-a002-v1";
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphOwnerIdentityModel =

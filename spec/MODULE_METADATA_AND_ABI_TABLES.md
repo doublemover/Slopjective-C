@@ -7860,3 +7860,25 @@ runtime-import-surface artifacts:
     - executable binding traits
 - canonical contract evidence:
   - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
+
+## M258 serialized metadata import/lowering anchors (C001)
+
+`M258-C001` adds one additional semantic-surface contract over consumed
+runtime-import-surface artifacts:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_import_lowering_contract`
+- contract id
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- source semantic-rule contract
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- canonical boundary anchors:
+  - imported-surface ingest is landed
+  - serialized metadata rehydration is not landed
+  - incremental reuse is not landed
+  - imported metadata IR lowering is not landed
+  - public live imported-payload ABI exposure is not landed
+- canonical contract evidence:
+  - `tmp/reports/m258/M258-C001/serialized_metadata_import_and_lowering_contract_summary.json`

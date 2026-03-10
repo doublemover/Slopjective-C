@@ -6865,3 +6865,30 @@ frontend capability that consumes emitted runtime import-surface artifacts.
   - ready-for-imported-metadata-semantic-rules is `true` when the imported
     surfaces load successfully and the source `M258-B001` contract is ready
 - imported runtime metadata payloads still are not lowered into IR in this lane
+
+## M258 serialized metadata import and lowering freeze (C001)
+
+`M258-C001` freezes the lane-C boundary directly above real imported-payload
+lowering.
+
+- contract id
+  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
+- semantic-surface path
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_import_lowering_contract`
+- source semantic-rule contract
+  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
+- input model
+  `filesystem-runtime-import-surface-artifact-path-list`
+- compiler behavior
+  - the frontend publishes one deterministic fail-closed summary whenever
+    imported runtime surface artifacts are consumed
+  - the summary truthfully states that imported-surface ingest is landed
+  - the summary truthfully states that serialized imported metadata
+    rehydration, incremental reuse, and imported-payload IR lowering are not
+    landed yet
+- fail-closed non-goals
+  - serialized imported metadata payloads are not rehydrated in this lane
+  - incremental imported metadata reuse is not landed in this lane
+  - imported metadata payloads are not lowered into IR in this lane
+  - the public embedding ABI still does not expose serialized imported payload
+    handles or incremental lowering hooks

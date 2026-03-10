@@ -9546,3 +9546,17 @@ metadata handling must preserve:
   `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
 - imported runtime metadata payloads still are not lowered into IR until the
   later lowering/runtime lanes land
+
+`M258-C001` is the next lane-C step:
+
+- publish one deterministic semantic-surface summary at
+  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_import_lowering_contract`
+- freeze the current truthful boundary:
+  - emitted runtime-import-surface artifacts influence frontend semantic
+    surfaces
+  - serialized imported metadata payloads are not rehydrated yet
+  - incremental imported metadata reuse is not landed yet
+  - imported metadata payloads are not lowered into IR yet
+- keep `ir/objc3_ir_emitter.cpp` and `libobjc3c_frontend/api.h` explicit that
+  no live serialized imported-payload ABI or IR lowering entrypoint exists in
+  this lane
