@@ -2,8 +2,24 @@ name: ObjC3C Core CI
 
 on:
   pull_request:
+    paths:
+      - ".github/workflows/task-hygiene.yml"
+      - ".npmrc"
+      - "package.json"
+      - "package-lock.json"
+      - "native/**"
+      - "scripts/**"
+      - "tests/tooling/**"
   push:
     branches: ["main"]
+    paths:
+      - ".github/workflows/task-hygiene.yml"
+      - ".npmrc"
+      - "package.json"
+      - "package-lock.json"
+      - "native/**"
+      - "scripts/**"
+      - "tests/tooling/**"
 
 permissions:
   contents: read

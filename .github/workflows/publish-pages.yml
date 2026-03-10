@@ -3,6 +3,15 @@ name: Publish Spec
 on:
   push:
     branches: ["main"]
+    paths:
+      - ".github/workflows/publish-pages.yml"
+      - "docs/**"
+      - "site/**"
+      - "spec/**"
+      - "scripts/build_objc3c_native_docs.py"
+      - "scripts/build_site_index.py"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 permissions:
