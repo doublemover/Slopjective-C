@@ -6118,6 +6118,31 @@ class/protocol/category surface without broadening the runtime matrix yet.
   - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
 - the next implementation issue is `M256-E002`
 
+## M256 runnable class/protocol/category execution matrix (E002)
+
+`M256-E002` broadens the frozen `M256-E001` gate into the first live runnable
+execution matrix for executable classes, protocols, and categories.
+
+- contract id
+  `objc3c-runnable-class-protocol-category-execution-matrix/m256-e002-v1`
+- evidence model
+  `a003-b004-c003-d004-e001-summary-chain-plus-live-inheritance-execution`
+- execution matrix model
+  `runnable-class-protocol-category-matrix-composes-upstream-summaries-with-live-inheritance-and-runtime-dispatch-proof`
+- failure model
+  `fail-closed-on-runnable-object-matrix-drift-or-missing-live-runtime-proof`
+- canonical upstream evidence:
+  - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+  - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
+- live matrix case:
+  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+  - `artifacts/lib/objc3_runtime.lib`
+  - expected exit code `4`
+- the next implementation issue is `M257-A001`
+
 ## M263 registration descriptor and image-root source surface (A001)
 
 `M263-A001` freezes the frontend-visible naming surface that closes the

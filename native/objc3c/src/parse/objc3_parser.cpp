@@ -4843,6 +4843,10 @@ static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method)
   // M256-E001 class-protocol-category conformance gate anchor: lane-E consumes
   // the A003/B004/C003/D004 evidence chain and therefore still depends on this
   // parser-owned syntax preservation instead of any gate-specific rewrite.
+  // M256-E002 runnable class-protocol-category execution-matrix anchor: the
+  // live matrix still depends on parser-stable superclass sends and
+  // class/category surface spelling rather than any execution-matrix-specific
+  // syntax reconstruction.
   return (method.is_class_method ? "class_method:" : "instance_method:") + method.selector;
 }
 

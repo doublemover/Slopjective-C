@@ -5388,6 +5388,10 @@ class Objc3IREmitter {
       // A003/B004/C003/D004 remain the canonical proof surface that lane-E
       // consumes to decide whether classes/protocols/categories are executable
       // rather than merely modeled.
+      // M256-E002 runnable class-protocol-category execution-matrix anchor:
+      // the next lane-E matrix reuses those same emitted realization/runtime
+      // boundaries and adds one linked inheritance executable instead of
+      // broadening lowering with matrix-only metadata.
       out << "; runtime_canonical_runnable_object_sample_support = "
           << Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary()
           << ";class_bundle_count="

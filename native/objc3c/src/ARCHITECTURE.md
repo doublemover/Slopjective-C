@@ -9069,6 +9069,22 @@ protocols, and categories:
   - `check:objc3c:m256-e001-class-protocol-and-category-conformance-gate`
   - `check:objc3c:m256-e001-lane-e-readiness`
 
+## M256 runnable class/protocol/category execution matrix (E002)
+
+`M256-E002` broadens the frozen `M256-E001` gate into the first live runnable execution matrix:
+
+- lane-E now consumes the canonical `A003/B004/C003/D004/E001` proof chain and
+  adds one real linked inheritance executable rather than inventing a parallel
+  validation surface
+- the matrix is fail closed on summary disappearance, contract drift, dynamic
+  proof loss, or executable inheritance regression
+- `M257-A001` is the next issue after this matrix closes
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m256_runnable_class_protocol_and_category_execution_matrix_cross_lane_integration_sync_e002_expectations.md`
+  - `spec/planning/compiler/m256/m256_e002_runnable_class_protocol_and_category_execution_matrix_cross_lane_integration_sync_packet.md`
+  - `check:objc3c:m256-e002-runnable-class-protocol-and-category-execution-matrix`
+  - `check:objc3c:m256-e002-lane-e-readiness`
+
 ## M263 bootstrap legality, duplicate policy, and failure contract (B001)
 
 `M263-B001` freezes one semantic legality bridge over the residual bootstrap

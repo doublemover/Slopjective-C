@@ -7131,6 +7131,28 @@ chain is sufficient to claim executable behavior.
 - canonical gate evidence:
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 
+## M256 runnable class/protocol/category execution matrix metadata anchors (E002)
+
+`M256-E002` does not introduce a new emitted metadata family. It binds the
+already-landed source, legality, realization, runtime, and gate summaries to
+one live executable inheritance matrix.
+
+- contract id `objc3c-runnable-class-protocol-category-execution-matrix/m256-e002-v1`
+- evidence model
+  `a003-b004-c003-d004-e001-summary-chain-plus-live-inheritance-execution`
+- execution matrix model
+  `runnable-class-protocol-category-matrix-composes-upstream-summaries-with-live-inheritance-and-runtime-dispatch-proof`
+- canonical upstream anchors:
+  - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+  - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
+- canonical matrix evidence:
+  - `tmp/reports/m256/M256-E002/runnable_class_protocol_category_execution_matrix_summary.json`
+- live matrix fixture:
+  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+
 ## M263 registration descriptor and image-root metadata anchors (A001)
 
 `M263-A001` publishes the residual bootstrap source surface at

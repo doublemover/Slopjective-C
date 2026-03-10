@@ -6649,6 +6649,31 @@ class/protocol/category surface.
 - evidence path
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 
+## Runnable class, protocol, and category execution matrix (M256-E002)
+
+`M256-E002` broadens the frozen `M256-E001` gate into the first live runnable
+execution matrix for the current executable class/protocol/category surface.
+
+- contract id
+  `objc3c-runnable-class-protocol-category-execution-matrix/m256-e002-v1`
+- evidence model
+  `a003-b004-c003-d004-e001-summary-chain-plus-live-inheritance-execution`
+- execution matrix model
+  `runnable-class-protocol-category-matrix-composes-upstream-summaries-with-live-inheritance-and-runtime-dispatch-proof`
+- fail-closed model
+  `fail-closed-on-runnable-object-matrix-drift-or-missing-live-runtime-proof`
+- upstream evidence chain
+  - `tmp/reports/m256/M256-A003/protocol_category_source_surface_completion_for_executable_runtime_summary.json`
+  - `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`
+  - `tmp/reports/m256/M256-C003/realization_records_summary.json`
+  - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
+  - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
+- live execution matrix case
+  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+  - expected exit code `4`
+- evidence path
+  - `tmp/reports/m256/M256-E002/runnable_class_protocol_category_execution_matrix_summary.json`
+
 ## Live bootstrap semantics (M254-B002)
 
 `M254-B002` turns the frozen startup/bootstrap semantics into a live runtime

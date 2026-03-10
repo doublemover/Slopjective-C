@@ -11515,6 +11515,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // the aggregated evidence boundary over these sema-owned inheritance,
   // conformance, and category-merge decisions before execution-matrix
   // expansion in M256-E002.
+  // M256-E002 runnable class-protocol-category execution-matrix anchor: the
+  // live matrix consumes these sema-owned inheritance, protocol-conformance,
+  // and category-merge decisions directly when replaying the linked
+  // inheritance executable case.
   surface.protocol_category_composition_summary = BuildProtocolCategoryCompositionSummaryFromSurface(surface);
   surface.class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(surface.interface_implementation_summary,
