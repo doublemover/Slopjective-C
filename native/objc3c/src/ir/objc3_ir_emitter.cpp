@@ -1118,6 +1118,7 @@ class Objc3IREmitter {
     out << "; simd_vector_function_signatures = " << vector_signature_function_count_ << "\n";
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", compatibility_mode=" << frontend_metadata_.compatibility_mode
+        << ", arc_mode=" << frontend_metadata_.arc_mode
         << ", migration_assist=" << (frontend_metadata_.migration_assist ? "true" : "false")
         << ", migration_legacy_total=" << frontend_metadata_.migration_legacy_total() << "\n";
     out << "; frontend_objc_interface_implementation_profile = declared_interfaces="
@@ -1470,6 +1471,11 @@ class Objc3IREmitter {
     // executable ownership-qualified function/method path are actually live.
     out << "; arc_source_mode_boundary = "
         << Objc3ArcSourceModeBoundarySummary() << "\n";
+    // M262-A002 ARC mode-handling core implementation anchor: publish the
+    // explicit ARC-mode execution boundary so manifests and emitted IR stay
+    // aligned on when ownership-qualified executable signatures are runnable.
+    out << "; arc_mode_handling = "
+        << Objc3ArcModeHandlingSummary(frontend_metadata_.arc_mode_enabled) << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2686,6 +2692,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runnable_block_runtime_gate = !{!73}\n";
     out << "!objc3.objc_runnable_block_execution_matrix = !{!74}\n";
     out << "!objc3.objc_arc_source_mode_boundary = !{!75}\n";
+    out << "!objc3.objc_arc_mode_handling = !{!76}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3973,6 +3980,31 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryNonGoalModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryFailClosedModel)
+        << "\"}\n";
+    out << "!76 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingModeModel)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.arc_mode)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipQualifierLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RetainReleaseOperationLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3AutoreleasePoolScopeLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3WeakUnownedSemanticsLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcDiagnosticsFixitLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

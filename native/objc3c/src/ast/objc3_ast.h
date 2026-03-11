@@ -213,6 +213,16 @@ struct Expr {
       "no-fobjc-arc-cli-mode-no-fno-objc-arc-cli-mode-no-automatic-arc-cleanup-insertion-no-user-visible-arc-runtime-mode-split";
   static inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
       "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
+  static inline constexpr const char *kObjc3ArcModeHandlingContractId =
+      "objc3c-arc-mode-handling/m262-a002-v1";
+  static inline constexpr const char *kObjc3ArcModeHandlingSourceModel =
+      "ownership-qualified-method-property-return-and-block-capture-surfaces-are-runnable-under-explicit-arc-mode";
+  static inline constexpr const char *kObjc3ArcModeHandlingModeModel =
+      "driver-admits-fobjc-arc-and-fno-objc-arc-and-threads-arc-mode-through-frontend-sema-and-ir";
+  static inline constexpr const char *kObjc3ArcModeHandlingFailClosedModel =
+      "non-arc-mode-still-rejects-executable-ownership-qualified-method-and-function-signatures";
+  static inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
+      "no-generalized-arc-cleanup-synthesis-no-implicit-nonarc-promotion-no-full-arc-automation-yet";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

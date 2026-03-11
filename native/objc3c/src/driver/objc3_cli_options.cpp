@@ -123,6 +123,7 @@ std::string Objc3CliUsage() {
   return "usage: objc3c-native <input> [--out-dir <dir>] [--emit-prefix <name>] [--clang <path>] "
          "[--llc <path>] [--objc3-import-runtime-surface <path>]... "
          "[-fobjc-version=<N>] [--objc3-language-version <N>] "
+         "[-fobjc-arc] [-fno-objc-arc] "
          "[--objc3-compat-mode <canonical|legacy>] [--objc3-migration-assist] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
@@ -152,6 +153,14 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
         return false;
       }
       options.language_version = parsed_version;
+      continue;
+    }
+    if (flag == "-fobjc-arc") {
+      options.arc_mode = Objc3ArcMode::kEnabled;
+      continue;
+    }
+    if (flag == "-fno-objc-arc") {
+      options.arc_mode = Objc3ArcMode::kDisabled;
       continue;
     }
 

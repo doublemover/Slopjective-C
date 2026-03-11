@@ -7,11 +7,11 @@
 #include "lower/objc3_lowering_contract.h"
 
 struct Objc3OwnershipAwareLoweringBehaviorScaffold {
-  // M262-A001 ARC source-surface/mode-boundary anchor: this scaffold remains
-  // the truthful source-side inventory for ownership qualifiers, weak/unowned
-  // semantics, autoreleasepool profiling, and ARC fix-it summaries while the
-  // native driver still rejects `-fobjc-arc` and ARC automation remains
-  // deferred.
+  // M262-A002 ARC mode-handling anchor: this scaffold remains the truthful
+  // source-side inventory for ownership qualifiers, weak/unowned semantics,
+  // autoreleasepool profiling, and ARC fix-it summaries while explicit
+  // -fobjc-arc mode only widens the executable signature boundary rather than
+  // claiming full ARC automation.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

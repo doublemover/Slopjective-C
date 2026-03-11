@@ -16,6 +16,11 @@ enum class Objc3CompatMode {
   kLegacy,
 };
 
+enum class Objc3ArcMode {
+  kDisabled,
+  kEnabled,
+};
+
 struct Objc3CliOptions {
   std::filesystem::path input;
   std::filesystem::path out_dir = std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
@@ -29,6 +34,7 @@ struct Objc3CliOptions {
   Objc3IrObjectBackend ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
   std::uint32_t language_version = 3;
   Objc3CompatMode compat_mode = Objc3CompatMode::kCanonical;
+  Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
   bool migration_assist = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1;
   std::vector<std::filesystem::path> imported_runtime_surface_paths;

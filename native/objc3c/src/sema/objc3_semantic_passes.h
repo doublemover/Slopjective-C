@@ -8,6 +8,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                                                 bool legacy_compatibility_mode,
                                                                 bool migration_assist_enabled,
                                                                 bool allow_source_only_block_literals,
+                                                                bool arc_mode_enabled,
                                                                 std::vector<std::string> &diagnostics);
 Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
 bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);

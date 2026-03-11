@@ -67,6 +67,10 @@ const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
   }
 }
 
+const char *ArcModeName(Objc3FrontendArcMode mode) {
+  return mode == Objc3FrontendArcMode::kEnabled ? "enabled" : "disabled";
+}
+
 std::string EscapeJsonString(const std::string &value);
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {
@@ -9201,6 +9205,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   manifest << "  \"frontend\": {\n";
   manifest << "    \"language_version\":" << static_cast<unsigned>(options.language_version) << ",\n";
   manifest << "    \"compatibility_mode\":\"" << CompatibilityModeName(options.compatibility_mode) << "\",\n";
+  manifest << "    \"arc_mode\":\"" << ArcModeName(options.arc_mode) << "\",\n";
   manifest << "    \"default_compatibility_mode\":\"canonical\",\n";
   manifest << "    \"migration_assist\":" << (options.migration_assist ? "true" : "false") << ",\n";
   manifest << "    \"language_version_selection_supported\":true,\n";
@@ -14219,6 +14224,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   Objc3IRFrontendMetadata ir_frontend_metadata;
   ir_frontend_metadata.language_version = options.language_version;
   ir_frontend_metadata.compatibility_mode = CompatibilityModeName(options.compatibility_mode);
+  ir_frontend_metadata.arc_mode = ArcModeName(options.arc_mode);
+  ir_frontend_metadata.arc_mode_enabled =
+      options.arc_mode == Objc3FrontendArcMode::kEnabled;
   ir_frontend_metadata.migration_assist = options.migration_assist;
   ir_frontend_metadata.migration_legacy_yes = pipeline_result.migration_hints.legacy_yes_count;
   ir_frontend_metadata.migration_legacy_no = pipeline_result.migration_hints.legacy_no_count;

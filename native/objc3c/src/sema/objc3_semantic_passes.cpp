@@ -577,6 +577,7 @@ struct Objc3UnsupportedFeatureClaimContext {
   std::size_t owned_runtime_backed_object_property_sites = 0;
   bool has_owned_runtime_backed_object_storage = false;
   bool allow_source_only_block_literals = false;
+  bool arc_mode_enabled = false;
 };
 
 static bool IsRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
@@ -594,7 +595,8 @@ static bool IsOwnedRuntimeBackedObjectProperty(const Objc3PropertyDecl &property
 
 static Objc3UnsupportedFeatureClaimContext
 BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
-                                    bool allow_source_only_block_literals) {
+                                    bool allow_source_only_block_literals,
+                                    bool arc_mode_enabled) {
   Objc3UnsupportedFeatureClaimContext context;
   std::unordered_set<std::string> seen_owned_storage_sites;
   const auto record_properties = [&](const auto &owner_name,
@@ -620,6 +622,7 @@ BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
   context.has_owned_runtime_backed_object_storage =
       context.owned_runtime_backed_object_property_sites > 0u;
   context.allow_source_only_block_literals = allow_source_only_block_literals;
+  context.arc_mode_enabled = arc_mode_enabled;
   return context;
 }
 
@@ -1295,10 +1298,9 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
-  // M262-A001 ARC source-surface/mode-boundary anchor: executable function
-  // ownership qualifiers stay fail-closed with O3S221 while ownership
-  // qualifier parsing, weak/unowned summaries, autoreleasepool profiling, and
-  // ARC fix-it metadata remain live source-side surfaces.
+  // M262-A002 ARC mode-handling core implementation anchor: executable
+  // function ownership qualifiers become runnable only under explicit
+  // -fobjc-arc mode while the non-ARC path remains fail-closed.
   // M260-A001 runtime-backed-object-ownership freeze anchor: the current
   // runnable ownership slice is still limited to object/property/accessor
   // ownership profiles plus the legacy ownership summary lanes below. ARC
@@ -1326,12 +1328,14 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
       FunctionBodyContainsBlockLiteral(fn);
   const bool allow_runnable_block_owned_bindings =
       FunctionBodyContainsRunnableBlockLiteral(fn);
+  const bool allow_arc_mode_owned_bindings = context.arc_mode_enabled;
   for (const auto &param : fn.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
     if (allow_source_only_block_owned_bindings ||
-        allow_runnable_block_owned_bindings) {
+        allow_runnable_block_owned_bindings ||
+        allow_arc_mode_owned_bindings) {
       // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -1348,7 +1352,8 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   }
   if (fn.has_return_ownership_qualifier &&
       !allow_source_only_block_owned_bindings &&
-      !allow_runnable_block_owned_bindings) {
+      !allow_runnable_block_owned_bindings &&
+      !allow_arc_mode_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -1369,9 +1374,9 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
-  // M262-A001 ARC source-surface/mode-boundary anchor: executable method
-  // ownership qualifiers stay fail-closed with O3S221 while the ARC-adjacent
-  // parser/sema inventory remains preserved for later automation work.
+  // M262-A002 ARC mode-handling core implementation anchor: executable method
+  // ownership qualifiers become runnable only under explicit -fobjc-arc mode
+  // while the non-ARC path remains fail-closed.
   // M260-A001 runtime-backed-object-ownership freeze anchor: method-level ARC
   // ownership qualifiers still sit outside the truthful runnable object-model
   // claim even though property/member ownership profiles are already preserved
@@ -1397,12 +1402,14 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
       MethodBodyContainsBlockLiteral(method);
   const bool allow_runnable_block_owned_bindings =
       MethodBodyContainsRunnableBlockLiteral(method);
+  const bool allow_arc_mode_owned_bindings = context.arc_mode_enabled;
   for (const auto &param : method.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
     if (allow_source_only_block_owned_bindings ||
-        allow_runnable_block_owned_bindings) {
+        allow_runnable_block_owned_bindings ||
+        allow_arc_mode_owned_bindings) {
       // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -1419,7 +1426,8 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   }
   if (method.has_return_ownership_qualifier &&
       !allow_source_only_block_owned_bindings &&
-      !allow_runnable_block_owned_bindings) {
+      !allow_runnable_block_owned_bindings &&
+      !allow_arc_mode_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -1439,13 +1447,16 @@ static Objc3UnsupportedFeatureClaimEnforcementStats
 DiagnoseUnsupportedFeatureClaimSources(
     const Objc3Program &ast,
     bool allow_source_only_block_literals,
+    bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
   // runnable-core positive path at zero-site readiness and reject accepted
   // unsupported advanced sources deterministically with O3S221.
   Objc3UnsupportedFeatureClaimEnforcementStats stats;
   const Objc3UnsupportedFeatureClaimContext context =
-      BuildUnsupportedFeatureClaimContext(ast, allow_source_only_block_literals);
+      BuildUnsupportedFeatureClaimContext(ast,
+                                          allow_source_only_block_literals,
+                                          arc_mode_enabled);
   for (const auto &fn : ast.functions) {
     DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats, context);
   }
@@ -12087,6 +12098,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     bool legacy_compatibility_mode,
     bool migration_assist_enabled,
     bool allow_source_only_block_literals,
+    bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3SemanticIntegrationSurface surface;
@@ -13190,7 +13202,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   const Objc3UnsupportedFeatureClaimEnforcementStats
       unsupported_feature_enforcement =
           DiagnoseUnsupportedFeatureClaimSources(
-              ast, allow_source_only_block_literals, diagnostics);
+              ast, allow_source_only_block_literals, arc_mode_enabled, diagnostics);
   // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed
   // legality summary that classifies live compatibility/migration selections,
   // source-only claim downgrades, and unsupported strictness/macro claim

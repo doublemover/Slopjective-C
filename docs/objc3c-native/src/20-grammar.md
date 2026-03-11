@@ -1429,6 +1429,38 @@ Recommended M262 lane-A freeze check:
 - `python scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
 - `M262-A002` is the next issue.
 
+## M262 ARC mode handling for methods, properties, returns, and block captures (M262-A002)
+
+`M262-A002` turns the frozen ARC-adjacent source boundary into a real explicit
+ARC mode for a narrow runnable slice.
+
+- contract id
+  `objc3c-arc-mode-handling/m262-a002-v1`
+- explicit mode behavior:
+  - the native driver now accepts `-fobjc-arc` and `-fno-objc-arc`
+  - frontend manifests and emitted IR now carry the selected ARC mode
+- runnable ARC-mode surface:
+  - ownership-qualified method and function signatures are admitted under
+    `-fobjc-arc`
+  - ownership-qualified property surfaces compile under explicit ARC mode
+  - block captures over ownership-qualified values compile under explicit ARC
+    mode
+- non-ARC boundary still remains fail-closed:
+  - the same executable ownership-qualified method/function signatures still
+    terminate in `O3S221` without ARC mode
+- emitted IR now carries:
+  - `; arc_mode_handling = ...`
+  - `!objc3.objc_arc_mode_handling`
+- still explicitly deferred:
+  - no generalized ARC cleanup or retain/release synthesis
+  - no claim of full ARC lifetime automation
+  - no claim that forbidden ARC forms are complete yet
+
+Recommended M262 lane-A implementation check:
+
+- `python scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
+- `M262-B001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

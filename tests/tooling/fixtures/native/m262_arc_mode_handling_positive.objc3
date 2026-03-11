@@ -1,0 +1,24 @@
+module m262_arc_mode_handling_positive;
+
+@interface Box
+@property (nonatomic, strong) __strong id currentValue;
+- (__strong id) currentValueToken:(__strong id) value;
+@end
+
+@implementation Box
+@property (nonatomic, strong) __strong id currentValue;
+
+- (__strong id) currentValueToken:(__strong id) value {
+  let closure = ^() { return value; };
+  return closure();
+}
+@end
+
+fn project(value: __strong id) -> __strong id {
+  let closure = ^() { return value; };
+  return closure();
+}
+
+fn main() -> i32 {
+  return project(17);
+}

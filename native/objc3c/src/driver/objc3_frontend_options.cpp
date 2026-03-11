@@ -6,6 +6,9 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
   options.compatibility_mode = cli_options.compat_mode == Objc3CompatMode::kLegacy
                                    ? Objc3FrontendCompatibilityMode::kLegacy
                                    : Objc3FrontendCompatibilityMode::kCanonical;
+  options.arc_mode = cli_options.arc_mode == Objc3ArcMode::kEnabled
+                         ? Objc3FrontendArcMode::kEnabled
+                         : Objc3FrontendArcMode::kDisabled;
   options.migration_assist = cli_options.migration_assist;
   options.emit_manifest = true;
   options.emit_ir = true;

@@ -688,6 +688,16 @@ inline constexpr const char *kObjc3ArcSourceModeBoundaryNonGoalModel =
     "no-fobjc-arc-cli-mode-no-fno-objc-arc-cli-mode-no-automatic-arc-cleanup-insertion-no-user-visible-arc-runtime-mode-split";
 inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
     "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
+inline constexpr const char *kObjc3ArcModeHandlingContractId =
+    "objc3c-arc-mode-handling/m262-a002-v1";
+inline constexpr const char *kObjc3ArcModeHandlingSourceModel =
+    "ownership-qualified-method-property-return-and-block-capture-surfaces-are-runnable-under-explicit-arc-mode";
+inline constexpr const char *kObjc3ArcModeHandlingModeModel =
+    "driver-admits-fobjc-arc-and-fno-objc-arc-and-threads-arc-mode-through-frontend-sema-and-ir";
+inline constexpr const char *kObjc3ArcModeHandlingFailClosedModel =
+    "non-arc-mode-still-rejects-executable-ownership-qualified-method-and-function-signatures";
+inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
+    "no-generalized-arc-cleanup-synthesis-no-implicit-nonarc-promotion-no-full-arc-automation-yet";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1813,6 +1823,7 @@ std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3RunnableBlockExecutionMatrixSummary();
 std::string Objc3ArcSourceModeBoundarySummary();
+std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

@@ -8081,3 +8081,34 @@ truthfully present in the compiler.
   - `spec/planning/compiler/m262/m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
   - `M262-A002` is the next issue.
+
+## M262 ARC mode handling for methods, properties, returns, and block captures (A002)
+
+`M262-A002` promotes the frozen ARC-adjacent boundary into a real explicit ARC
+mode without claiming full ARC automation.
+
+- contract id
+  `objc3c-arc-mode-handling/m262-a002-v1`
+- source model
+  `ownership-qualified-method-property-return-and-block-capture-surfaces-are-runnable-under-explicit-arc-mode`
+- mode model
+  `driver-admits-fobjc-arc-and-fno-objc-arc-and-threads-arc-mode-through-frontend-sema-and-ir`
+- current boundary:
+  - `-fobjc-arc` admits ownership-qualified executable methods/functions
+  - ownership-qualified property surfaces and block captures compile under
+    explicit ARC mode
+  - manifests and IR carry explicit ARC mode state
+  - non-ARC mode still rejects executable ownership-qualified method/function
+    signatures with `O3S221`
+  - emitted IR now carries:
+    `; arc_mode_handling = ...`
+    and `!objc3.objc_arc_mode_handling`
+- still explicitly deferred:
+  - no generalized ARC cleanup/retain-release insertion
+  - no claim of full ARC lifetime automation
+  - no claim that forbidden ARC forms are complete yet
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m262_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation_a002_expectations.md`
+  - `spec/planning/compiler/m262/m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation_packet.md`
+  - `python scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
+  - `M262-B001` is the next issue.

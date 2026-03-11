@@ -115,6 +115,8 @@ struct Objc3IRRuntimeMetadataIvarBundle {
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
   std::string compatibility_mode = "canonical";
+  std::string arc_mode = "disabled";
+  bool arc_mode_enabled = false;
   bool migration_assist = false;
   std::size_t migration_legacy_yes = 0;
   std::size_t migration_legacy_no = 0;

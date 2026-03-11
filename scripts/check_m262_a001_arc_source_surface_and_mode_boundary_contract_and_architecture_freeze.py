@@ -50,6 +50,7 @@ PROBE_ROOT = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "m26
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "m262" / "M262-A001" / "arc_source_mode_boundary_summary.json"
 BOUNDARY_PREFIX = "; arc_source_mode_boundary = "
 NAMED_METADATA_LINE = "!objc3.objc_arc_source_mode_boundary = !{!75}"
+FORWARD_COMPAT_ARC_BOUNDARY_PREFIX = "; arc_mode_handling = contract=objc3c-arc-mode-handling/m262-a002-v1"
 
 
 @dataclass(frozen=True)
@@ -104,15 +105,15 @@ STATIC_SNIPPETS: dict[Path, tuple[SnippetCheck, ...]] = {
         SnippetCheck("M262-A001-ARCH-03", "the next issue is `M262-A002`"),
     ),
     SEMA_CPP: (
-        SnippetCheck("M262-A001-SEMA-01", "M262-A001 ARC source-surface/mode-boundary anchor"),
+        SnippetCheck("M262-A001-SEMA-01", "ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode"),
         SnippetCheck("M262-A001-SEMA-02", "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode"),
     ),
     SEMA_PASS_MANAGER_CPP: (
-        SnippetCheck("M262-A001-PM-01", "M262-A001 ARC source-surface/mode-boundary anchor"),
-        SnippetCheck("M262-A001-PM-02", "native driver still rejects `-fobjc-arc`"),
+        SnippetCheck("M262-A001-PM-01", "weak/unowned summaries, ARC fix-it summaries"),
+        SnippetCheck("M262-A001-PM-02", "ARC mode now widens executable ownership-qualified"),
     ),
     SCAFFOLD_HEADER: (
-        SnippetCheck("M262-A001-SCAF-01", "M262-A001 ARC source-surface/mode-boundary anchor"),
+        SnippetCheck("M262-A001-SCAF-01", "source-side inventory for ownership qualifiers, weak/unowned semantics"),
         SnippetCheck("M262-A001-SCAF-02", "ownership qualifiers, weak/unowned"),
     ),
     LOWERING_HEADER: (
@@ -293,13 +294,29 @@ def run_dynamic_probes(failures: list[Finding]) -> tuple[int, dict[str, Any]]:
         ]
     )
     mode_output = (mode_completed.stdout or "") + (mode_completed.stderr or "")
-    checks_total += require(mode_completed.returncode != 0, display_path(mode_out_dir), "M262-A001-DYN-20", "driver must still reject -fobjc-arc", failures)
-    checks_total += require("unknown arg: -fobjc-arc" in mode_output, display_path(mode_out_dir), "M262-A001-DYN-21", f"expected unknown-arg rejection for -fobjc-arc, observed: {mode_output.strip()}", failures)
-    payload["arc_mode_flag_case"] = {
-        "out_dir": display_path(mode_out_dir),
-        "returncode": mode_completed.returncode,
-        "output": mode_output.strip(),
-    }
+    mode_ir = mode_out_dir / "module.ll"
+    mode_manifest = mode_out_dir / "module.manifest.json"
+    if mode_completed.returncode != 0:
+        checks_total += require("unknown arg: -fobjc-arc" in mode_output, display_path(mode_out_dir), "M262-A001-DYN-20", f"expected unknown-arg rejection for -fobjc-arc, observed: {mode_output.strip()}", failures)
+        payload["arc_mode_flag_case"] = {
+            "out_dir": display_path(mode_out_dir),
+            "returncode": mode_completed.returncode,
+            "forward_compatible": False,
+            "output": mode_output.strip(),
+        }
+    else:
+        checks_total += require(mode_ir.exists(), display_path(mode_ir), "M262-A001-DYN-20", "forward-compatible -fobjc-arc compile is missing IR output", failures)
+        checks_total += require(mode_manifest.exists(), display_path(mode_manifest), "M262-A001-DYN-21", "forward-compatible -fobjc-arc compile is missing manifest output", failures)
+        mode_ir_text = mode_ir.read_text(encoding="utf-8") if mode_ir.exists() else ""
+        mode_manifest_payload = load_json(mode_manifest) if mode_manifest.exists() else {}
+        checks_total += require(FORWARD_COMPAT_ARC_BOUNDARY_PREFIX in mode_ir_text, display_path(mode_ir), "M262-A001-DYN-22", "forward-compatible -fobjc-arc compile is missing the M262-A002 arc-mode-handling boundary", failures)
+        checks_total += require(mode_manifest_payload.get("frontend", {}).get("arc_mode") == "enabled", display_path(mode_manifest), "M262-A001-DYN-23", f"expected forward-compatible frontend.arc_mode=enabled, observed {mode_manifest_payload.get('frontend', {}).get('arc_mode')!r}", failures)
+        payload["arc_mode_flag_case"] = {
+            "out_dir": display_path(mode_out_dir),
+            "returncode": mode_completed.returncode,
+            "forward_compatible": True,
+            "frontend_arc_mode": mode_manifest_payload.get("frontend", {}).get("arc_mode"),
+        }
 
     return checks_total, payload
 

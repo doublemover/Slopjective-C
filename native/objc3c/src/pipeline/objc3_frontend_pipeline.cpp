@@ -4400,6 +4400,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     // fail closed until runnable block lowering lands.
     semantic_options.allow_source_only_block_literals =
         !options.emit_ir && !options.emit_object;
+    semantic_options.arc_mode_enabled =
+        options.arc_mode == Objc3FrontendArcMode::kEnabled;
 
     Objc3SemaPassManagerInput sema_input;
     sema_input.program = &result.program;

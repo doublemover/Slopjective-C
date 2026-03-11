@@ -1214,6 +1214,32 @@ std::string Objc3ArcSourceModeBoundarySummary() {
   return out.str();
 }
 
+std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled) {
+  std::ostringstream out;
+  // M262-A002 ARC mode-handling core implementation anchor: the native driver
+  // now admits explicit ARC mode, threads it through frontend/sema/IR, and
+  // keeps non-ARC ownership-qualified executable signatures fail-closed.
+  out << "contract=" << Expr::kObjc3ArcModeHandlingContractId
+      << ";source_model=" << Expr::kObjc3ArcModeHandlingSourceModel
+      << ";mode_model=" << Expr::kObjc3ArcModeHandlingModeModel
+      << ";arc_mode=" << (arc_mode_enabled ? "enabled" : "disabled")
+      << ";ownership_qualifier_lane="
+      << kObjc3OwnershipQualifierLoweringLaneContract
+      << ";retain_release_lane="
+      << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";autoreleasepool_lane="
+      << kObjc3AutoreleasePoolScopeLoweringLaneContract
+      << ";weak_unowned_lane="
+      << kObjc3WeakUnownedSemanticsLoweringLaneContract
+      << ";arc_fixit_lane="
+      << kObjc3ArcDiagnosticsFixitLoweringLaneContract
+      << ";block_runtime_gate=" << Expr::kObjc3RunnableBlockRuntimeGateContractId
+      << ";fail_closed_model=" << Expr::kObjc3ArcModeHandlingFailClosedModel
+      << ";non_goal_model=" << Expr::kObjc3ArcModeHandlingNonGoalModel
+      << ";next_issue=M262-B001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

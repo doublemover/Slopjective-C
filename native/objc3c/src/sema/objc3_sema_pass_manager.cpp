@@ -954,6 +954,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,
               input.migration_assist,
               input.validation_options.allow_source_only_block_literals,
+              input.validation_options.arc_mode_enabled,
               pass_diagnostics);
     } else if (pass == Objc3SemaPassId::ValidateBodies) {
       ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);
@@ -2271,11 +2272,12 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.weak_unowned_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
               result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
-  // M262-A001 ARC source-surface/mode-boundary anchor: the handoff keeps
-  // ownership qualifiers, weak/unowned summaries, ARC fix-it summaries, and
-  // autoreleasepool scope accounting live and deterministic even though the
-  // native driver still rejects `-fobjc-arc` and executable ARC ownership
-  // qualifiers remain fail-closed.
+  // M262-A002 ARC mode-handling anchor: the handoff keeps ownership
+  // qualifiers, weak/unowned summaries, ARC fix-it summaries, and
+  // autoreleasepool scope accounting live and deterministic while explicit
+  // ARC mode now widens executable ownership-qualified
+  // function/method
+  // signatures without claiming full ARC automation.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

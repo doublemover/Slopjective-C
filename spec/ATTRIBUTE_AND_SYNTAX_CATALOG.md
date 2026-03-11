@@ -64,6 +64,20 @@ Current implementation status (`M262-A001`):
 - executable function/method ownership qualifiers are still rejected with the
   current unsupported-feature gate until later ARC automation issues land
 
+### B.2.4 Explicit ARC mode handling for executable ownership surfaces (implementation note) {#b-2-4}
+
+Current implementation status (`M262-A002`):
+
+- the native driver now accepts `-fobjc-arc` and `-fno-objc-arc`
+- ownership-qualified executable methods and functions are admitted under
+  explicit ARC mode
+- ownership-qualified property surfaces and block captures compile under
+  explicit ARC mode
+- non-ARC mode still rejects the same executable ownership-qualified
+  method/function signatures with `O3S221`
+- generalized ARC cleanup synthesis and full ARC lifetime automation are still
+  deferred to later `M262` issues
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

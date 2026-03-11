@@ -21,9 +21,15 @@ enum class Objc3FrontendCompatibilityMode : std::uint8_t {
   kLegacy = 1u,
 };
 
+enum class Objc3FrontendArcMode : std::uint8_t {
+  kDisabled = 0u,
+  kEnabled = 1u,
+};
+
 struct Objc3FrontendOptions {
   std::uint8_t language_version = kObjc3DefaultLanguageVersion;
   Objc3FrontendCompatibilityMode compatibility_mode = Objc3FrontendCompatibilityMode::kCanonical;
+  Objc3FrontendArcMode arc_mode = Objc3FrontendArcMode::kDisabled;
   bool migration_assist = false;
   bool emit_manifest = true;
   bool emit_ir = true;

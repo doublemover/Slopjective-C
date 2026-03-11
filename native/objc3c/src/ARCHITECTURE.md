@@ -9835,6 +9835,24 @@ automation starts.
   `!objc3.objc_arc_source_mode_boundary`
 - the next issue is `M262-A002`
 
+## M262 ARC Mode Handling For Methods, Properties, Returns, And Block Captures (A002)
+
+`M262-A002` turns the frozen ARC-adjacent boundary into a real explicit ARC
+mode for the currently supported ownership-qualified executable slice.
+
+- the native driver now accepts `-fobjc-arc` and `-fno-objc-arc`
+- frontend options, manifests, semantic validation, and emitted IR now all
+  carry explicit ARC mode state
+- ownership-qualified executable method and function signatures are admitted
+  under `-fobjc-arc`
+- ownership-qualified property surfaces and block captures compile under
+  explicit ARC mode
+- non-ARC mode still rejects the same executable ownership-qualified
+  method/function signatures with `O3S221`
+- emitted IR now publishes the `arc_mode_handling` comment and
+  `!objc3.objc_arc_mode_handling`
+- the next issue is `M262-B001`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already
