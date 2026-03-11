@@ -1156,6 +1156,36 @@ std::string Objc3RunnableBlockRuntimeGateSummary() {
   return out.str();
 }
 
+std::string Objc3RunnableBlockExecutionMatrixSummary() {
+  std::ostringstream out;
+  // M261-E002 runnable-block execution-matrix anchor: lane-E now closes M261
+  // with one truthful executable matrix over the retained source, sema,
+  // lowering, runtime, and E001 gate surfaces. This repackages the already
+  // supported block slice into an operator-facing closeout proof without
+  // widening the public block ABI or helper boundary.
+  out << "contract=" << Expr::kObjc3RunnableBlockExecutionMatrixContractId
+      << ";evidence_model="
+      << Expr::kObjc3RunnableBlockExecutionMatrixEvidenceModel
+      << ";active_model="
+      << Expr::kObjc3RunnableBlockExecutionMatrixActiveModel
+      << ";source_contract="
+      << Expr::kObjc3ExecutableBlockSourceStorageAnnotationContractId
+      << ";semantic_contract="
+      << Expr::kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId
+      << ";lowering_contract="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId
+      << ";runtime_contract="
+      << kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId
+      << ";gate_contract="
+      << Expr::kObjc3RunnableBlockRuntimeGateContractId
+      << ";non_goals="
+      << Expr::kObjc3RunnableBlockExecutionMatrixNonGoalModel
+      << ";fail_closed_model="
+      << Expr::kObjc3RunnableBlockExecutionMatrixFailClosedModel
+      << ";next_issue=M262-A001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -1458,6 +1458,12 @@ class Objc3IREmitter {
     // cannot substitute metadata-only evidence.
     out << "; runnable_block_runtime_gate = "
         << Objc3RunnableBlockRuntimeGateSummary() << "\n";
+    // M261-E002 runnable-block execution-matrix anchor: lane-E now closes the
+    // current M261 slice by requiring integrated executable block probes above
+    // the retained gate, without widening the public block ABI or helper
+    // surface.
+    out << "; runnable_block_execution_matrix = "
+        << Objc3RunnableBlockExecutionMatrixSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2672,6 +2678,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_memory_management_implementation = !{!71}\n";
     out << "!objc3.objc_ownership_runtime_gate = !{!72}\n";
     out << "!objc3.objc_runnable_block_runtime_gate = !{!73}\n";
+    out << "!objc3.objc_runnable_block_execution_matrix = !{!74}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3920,6 +3927,24 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId)
+        << "\"}\n";
+    out << "!74 = !{!\""
+        << EscapeCStringLiteral(
+               Expr::kObjc3RunnableBlockExecutionMatrixContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               Expr::kObjc3RunnableBlockExecutionMatrixEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               Expr::kObjc3RunnableBlockExecutionMatrixActiveModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               Expr::kObjc3RunnableBlockExecutionMatrixNonGoalModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               Expr::kObjc3RunnableBlockExecutionMatrixFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateContractId)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

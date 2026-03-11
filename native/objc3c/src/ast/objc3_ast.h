@@ -185,6 +185,19 @@ struct Expr {
       "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
       "fail-closed-on-runnable-block-runtime-evidence-drift";
+  // M261-E002 runnable-block execution-matrix constants: lane-E now closes
+  // the current M261 slice with one truthful executable matrix over the
+  // existing native runtime path rather than widening the supported surface.
+  static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
+      "objc3c-runnable-block-execution-matrix/m261-e002-v1";
+  static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixEvidenceModel =
+      "a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix";
+  static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixActiveModel =
+      "closeout-matrix-runs-owned-nonowning-byref-and-escaping-block-fixtures-against-the-native-runtime";
+  static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
+      "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
+  static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
+      "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

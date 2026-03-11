@@ -10124,3 +10124,30 @@ blocks above the retained `A003/B003/C004/D003` chain.
   - no generalized foreign block ABI interop
   - no caller-frame forwarding bridge
 - the next issue is `M261-E002`
+
+## M261 Runnable Block Execution Matrix And Docs (E002)
+
+`M261-E002` closes M261 with one truthful executable matrix above the retained
+gate and runtime proofs.
+
+- closeout behavior now includes:
+  - real native fixture runs for:
+    - `m261_owned_object_capture_runtime_positive.objc3` -> exit `11`
+    - `m261_nonowning_object_capture_runtime_positive.objc3` -> exit `9`
+    - `m261_byref_cell_copy_dispose_runtime_positive.objc3` -> exit `14`
+    - `m261_escaping_block_runtime_hook_argument_positive.objc3` -> exit `14`
+    - `m261_escaping_block_runtime_hook_return_positive.objc3` -> exit `0`
+  - retained `M261-D003` runtime-probe continuity for escaping pointer-capture
+    forwarding and helper interop:
+    - copy helper count after promotion = `1`
+    - second invoke result = `25`
+    - dispose count after final release = `1`
+  - emitted IR republishes:
+    `; runnable_block_execution_matrix = ...`
+    and `!objc3.objc_runnable_block_execution_matrix`
+- explicit non-goals stay fixed:
+  - no public block-object ABI
+  - no public stable runtime helper declarations
+  - no generalized foreign block ABI interop
+  - no caller-frame forwarding bridge
+- the next issue is `M262-A001`

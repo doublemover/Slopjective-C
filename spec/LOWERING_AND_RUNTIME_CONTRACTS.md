@@ -8015,3 +8015,35 @@ retained source, sema, lowering, and runtime evidence chain.
   - `spec/planning/compiler/m261/m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
   - `M261-E002` is the next issue.
+
+## M261 runnable block execution matrix and docs (E002)
+
+`M261-E002` closes the current M261 block-runtime tranche with one truthful
+execution matrix above the retained `A003/B003/C004/D003/E001` chain.
+
+- contract id
+  `objc3c-runnable-block-execution-matrix/m261-e002-v1`
+- evidence model
+  `a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix`
+- closeout matrix claims:
+  - the supported runnable block slice is proved through real native fixtures:
+    - `m261_owned_object_capture_runtime_positive.objc3` exits `11`
+    - `m261_nonowning_object_capture_runtime_positive.objc3` exits `9`
+    - `m261_byref_cell_copy_dispose_runtime_positive.objc3` exits `14`
+    - `m261_escaping_block_runtime_hook_argument_positive.objc3` exits `14`
+    - `m261_escaping_block_runtime_hook_return_positive.objc3` exits `0`
+  - `M261-D003` remains the authoritative escaping pointer-capture/byref
+    runtime proof through its forwarding-cell runtime probe
+  - emitted IR republishes:
+    `; runnable_block_execution_matrix = ...`
+    and `!objc3.objc_runnable_block_execution_matrix`
+- still explicitly deferred:
+  - no public block-object ABI
+  - no public stable runtime helper declarations
+  - no generalized foreign block ABI interop
+  - no caller-frame forwarding bridge back into a still-live outer frame
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks_cross_lane_integration_sync_e002_expectations.md`
+  - `spec/planning/compiler/m261/m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks_cross_lane_integration_sync_packet.md`
+  - `python scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
+  - `M262-A001` is the next issue.

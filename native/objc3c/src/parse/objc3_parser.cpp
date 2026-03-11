@@ -10654,6 +10654,9 @@ class Objc3Parser {
     // parser-owned capture and escape inventory as the source side of the
     // runnable block proof chain and must fail closed if the source truth
     // drifts behind the integrated gate.
+    // M261-E002 runnable-block execution-matrix anchor: lane-E closes M261 on
+    // the same parser-owned capture and escape inventory together with live executable block programs,
+    // without widening the supported source surface.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

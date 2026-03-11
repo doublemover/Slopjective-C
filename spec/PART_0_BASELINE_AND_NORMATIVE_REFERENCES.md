@@ -207,6 +207,11 @@ Current implementation boundary:
     block behavior is claimed only against the retained A003/B003/C004/D003
     proof chain, so runnable block closeout cannot regress to metadata-only
     evidence.
+  - lane-E now also closes that tranche truthfully (`M261-E002`): real native
+    fixture runs prove the current owned-capture, nonowning-capture, byref,
+    and readonly-scalar escaping block slice, while the retained D003 runtime
+    probe remains the authoritative escaping pointer-capture/byref forwarding
+    proof.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

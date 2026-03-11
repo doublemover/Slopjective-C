@@ -660,6 +660,20 @@ inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
     "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
     "fail-closed-on-runnable-block-runtime-evidence-drift";
+// M261-E002 runnable-block execution-matrix anchor: lane-E now closes the
+// current runnable block tranche with one integrated executable matrix over
+// the retained A003/B003/C004/D003/E001 chain without widening the public
+// block ABI or helper surface.
+inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
+    "objc3c-runnable-block-execution-matrix/m261-e002-v1";
+inline constexpr const char *kObjc3RunnableBlockExecutionMatrixEvidenceModel =
+    "a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix";
+inline constexpr const char *kObjc3RunnableBlockExecutionMatrixActiveModel =
+    "closeout-matrix-runs-owned-nonowning-byref-and-escaping-block-fixtures-against-the-native-runtime";
+inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
+    "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
+inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
+    "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1783,6 +1797,7 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary();
 std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3RunnableBlockRuntimeGateSummary();
+std::string Objc3RunnableBlockExecutionMatrixSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

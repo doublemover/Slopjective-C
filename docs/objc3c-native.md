@@ -1433,6 +1433,44 @@ Recommended M261 lane-E gate check:
 - `python scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
 - `M261-E002` is the next issue.
 
+## M261 runnable block execution matrix and docs (M261-E002)
+
+`M261-E002` closes the current M261 block-runtime tranche with one truthful
+execution matrix over the already-landed runnable slice.
+
+- contract id
+  `objc3c-runnable-block-execution-matrix/m261-e002-v1`
+
+Current closeout claims:
+
+- lane-E consumes the retained `A003/B003/C004/D003/E001` chain and then proves
+  integrated executable behavior through real native fixtures:
+  - `m261_owned_object_capture_runtime_positive.objc3` with exit `11`
+  - `m261_nonowning_object_capture_runtime_positive.objc3` with exit `9`
+  - `m261_byref_cell_copy_dispose_runtime_positive.objc3` with exit `14`
+  - `m261_escaping_block_runtime_hook_argument_positive.objc3` with exit `14`
+  - `m261_escaping_block_runtime_hook_return_positive.objc3` with exit `0`
+- the retained `M261-D003` runtime probe still proves escaping pointer-capture
+  forwarding and helper interop:
+  - copy helper count after promotion = `1`
+  - second invoke result = `25`
+  - dispose count after final release = `1`
+- emitted IR now carries:
+  - `; runnable_block_execution_matrix = ...`
+  - `!objc3.objc_runnable_block_execution_matrix`
+
+Still explicitly deferred:
+
+- no public block-object ABI
+- no public stable block runtime helper declarations
+- no generalized foreign block ABI interop
+- no caller-frame forwarding bridge back into still-live outer stack cells
+
+Recommended M261 lane-E closeout check:
+
+- `python scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
+- `M262-A001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint
