@@ -198,31 +198,35 @@ npm run build:spec
 
 ## Spec Structure
 
-The spec is split into a small set of cross-cutting reference documents plus the numbered language parts.
+The spec is organized as a small set of cross-cutting reference documents plus the numbered language parts.
 
-Important entry points:
+Start here:
 
-- [`spec/INTRODUCTION.md`](spec/INTRODUCTION.md)
-- [`spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md`](spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md)
-- [`spec/LOWERING_AND_RUNTIME_CONTRACTS.md`](spec/LOWERING_AND_RUNTIME_CONTRACTS.md)
-- [`spec/MODULE_METADATA_AND_ABI_TABLES.md`](spec/MODULE_METADATA_AND_ABI_TABLES.md)
-- [`spec/CONFORMANCE_PROFILE_CHECKLIST.md`](spec/CONFORMANCE_PROFILE_CHECKLIST.md)
+- [Spec root](spec/)
+- [Table of contents](spec/TABLE_OF_CONTENTS.md)
+- [Introduction](spec/INTRODUCTION.md)
+- [Syntax catalog](spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md)
+- [Lowering and runtime contracts](spec/LOWERING_AND_RUNTIME_CONTRACTS.md)
+- [Module metadata and ABI tables](spec/MODULE_METADATA_AND_ABI_TABLES.md)
+- [Conformance profile checklist](spec/CONFORMANCE_PROFILE_CHECKLIST.md)
 
 Language parts:
 
-- [`spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md`](spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md)
-- [`spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md`](spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md)
-- [`spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md`](spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md)
-- [`spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`](spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md)
-- [`spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md`](spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md)
-- [`spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md`](spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md)
-- [`spec/PART_6_ERRORS_RESULTS_THROWS.md`](spec/PART_6_ERRORS_RESULTS_THROWS.md)
-- [`spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`](spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md)
-- [`spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md`](spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md)
-- [`spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md`](spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md)
-- [`spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md`](spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md)
-- [`spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md`](spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md)
-- [`spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md`](spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md)
+| Part | Focus |
+| --- | --- |
+| [Part 0](spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md) | Baseline rules, terminology, and normative references |
+| [Part 1](spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md) | Versioning, compatibility, and conformance claims |
+| [Part 2](spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md) | Modules, namespacing, and public API surfaces |
+| [Part 3](spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md) | Types, nullability, optionals, generics, and key paths |
+| [Part 4](spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md) | Ownership, retainable objects, and lifetime rules |
+| [Part 5](spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md) | Control flow, safety constructs, and execution behavior |
+| [Part 6](spec/PART_6_ERRORS_RESULTS_THROWS.md) | Errors, `Result`, and `throws` |
+| [Part 7](spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md) | Async/await, actors, and concurrency rules |
+| [Part 8](spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md) | System programming extensions and low-level features |
+| [Part 9](spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md) | Performance controls and runtime dynamism boundaries |
+| [Part 10](spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md) | Metaprogramming, derives, macros, and property behaviors |
+| [Part 11](spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md) | Interoperability with C, C++, and Swift-facing surfaces |
+| [Part 12](spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md) | Diagnostics, tooling, and conformance testing |
 
 ## License
 
