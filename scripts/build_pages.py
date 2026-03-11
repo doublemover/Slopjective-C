@@ -11,6 +11,8 @@ OUTPUT_DIR = ROOT / "site"
 OUTPUT_PATH = OUTPUT_DIR / "index.md"
 EXCLUDE = {"README.md"}
 HEADING_ANCHOR_RE = re.compile(r"^(#{1,6})\s+(.*?)\s+\{#([A-Za-z0-9_.-]+)\}\s*$")
+SITE_EXCLUDE_START = "<!-- SITE:EXCLUDE-START -->"
+SITE_EXCLUDE_END = "<!-- SITE:EXCLUDE-END -->"
 
 
 def parse_toc(path: Path) -> list[str]:
@@ -51,11 +53,31 @@ def stitch(paths: list[Path]) -> str:
     sections: list[str] = []
     for path in paths:
         text = path.read_text(encoding="utf-8").rstrip("\n")
+        text = strip_site_excluded_blocks(text)
         text = rewrite_heading_anchors(text)
         header = f"<!-- BEGIN {path.name} -->"
         footer = f"<!-- END {path.name} -->"
         sections.append(f"{header}\n{text}\n{footer}")
     return "\n\n---\n\n".join(sections) + "\n"
+
+
+def strip_site_excluded_blocks(text: str) -> str:
+    lines = text.splitlines(keepends=True)
+    filtered: list[str] = []
+    skipping = False
+
+    for line in lines:
+        marker = line.strip()
+        if marker == SITE_EXCLUDE_START:
+            skipping = True
+            continue
+        if marker == SITE_EXCLUDE_END:
+            skipping = False
+            continue
+        if not skipping:
+            filtered.append(line)
+
+    return "".join(filtered)
 
 
 def rewrite_heading_anchors(text: str) -> str:

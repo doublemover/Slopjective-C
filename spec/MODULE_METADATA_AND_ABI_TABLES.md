@@ -1,3 +1,195 @@
+# Objective-C 3.0 - Module Metadata and ABI Surface Tables {#d}
+
+_Working draft v0.11 - last updated 2026-03-11_
+
+## D.0 Purpose {#d-0}
+
+Section D defines what Objective-C 3.0 information must survive module
+boundaries, which exported surfaces are ABI-affecting, and what the current
+implementation actually supports today.
+
+This section is intentionally narrow. It specifies the metadata and textual
+interface information that importers and downstream toolchains must be able to
+rely on. It does not require a specific serialized format.
+
+## D.1 Scope and terminology {#d-1}
+
+- **Module metadata**: any compiled representation used for import instead of reparsing source headers or implementation files.
+- **Textual interface**: a generated textual form that preserves the same import-time semantics as compiled metadata.
+- **ABI-affecting**: any surface that changes symbol identity, calling convention, layout, dispatch behavior, runtime registration, or object-model realization.
+
+This section applies to:
+
+- exported declarations and their semantic signatures,
+- emitted object-model metadata needed for runtime realization,
+- cross-module import and compatibility checks,
+- textual interfaces used for distribution or debugging.
+
+## D.2 Required module metadata surface {#d-2}
+
+A conforming implementation shall preserve enough metadata for an importer to
+reconstruct the exported semantic surface without guessing.
+
+At minimum, exported metadata shall include:
+
+1. **Module identity and compatibility information**
+   - module name,
+   - language version requirement,
+   - metadata format version,
+   - required feature level for successful import.
+
+2. **Declaration signatures**
+   - full parameter and result types,
+   - nullability and ownership qualifiers,
+   - generic arguments where they affect checking,
+   - effects such as `throws` or `async` when present,
+   - dispatch-affecting attributes and visibility.
+
+3. **Object-model declaration metadata**
+   - class and metaclass identities,
+   - superclass relationships,
+   - protocol adoption,
+   - category attachment ownership,
+   - property and ivar declarations,
+   - method selector identity and method-family-relevant attributes.
+
+4. **Runtime realization metadata for exported object-model declarations**
+   - descriptor identities for classes, protocols, categories, properties, ivars, and methods,
+   - selector and string pool entries required by runtime lookup,
+   - layout and offset information when instance layout is part of the exported contract,
+   - registration and bootstrap records required to make emitted metadata discoverable at runtime.
+
+5. **Importer validation data**
+   - whether a field is required or optional for compatibility,
+   - whether a missing field is a hard import failure,
+   - whether an unknown field may be ignored safely.
+
+## D.3 Required textual interface content {#d-3}
+
+A generated textual interface shall preserve the same externally observable
+semantics as compiled module metadata.
+
+At minimum, a textual interface shall preserve:
+
+- exported module identity and language-version requirements,
+- exported declaration signatures and attributes,
+- nullability, ownership, and dispatch-affecting qualifiers,
+- object-model declarations needed for type checking and legality checks,
+- any feature gates required for successful import.
+
+A textual interface need not reproduce the on-disk metadata format, but it shall
+not silently weaken required semantics.
+
+## D.4 ABI-affecting surface summary {#d-4}
+
+The following categories are ABI-affecting and shall fail closed when missing,
+inconsistent, or unsupported across module boundaries:
+
+1. **Call ABI**
+   - symbol names,
+   - parameter and result lowering,
+   - calling convention,
+   - error and result lowering where applicable.
+
+2. **Dispatch ABI**
+   - selector identity,
+   - direct, final, and sealed dispatch controls,
+   - superclass and metaclass relationships that affect method resolution,
+   - runtime lookup and registration entry points.
+
+3. **Layout ABI**
+   - field order,
+   - ivar offsets,
+   - instance size and alignment,
+   - property-to-storage bindings where layout is part of the realized contract.
+
+4. **Runtime object-model ABI**
+   - class, protocol, category, property, ivar, and method descriptor identity,
+   - descriptor ordering rules where the runtime depends on deterministic layout,
+   - bootstrap and registration roots required to discover metadata at load time.
+
+5. **Compatibility gates**
+   - metadata version mismatches,
+   - unsupported required language features,
+   - unsupported required runtime features.
+
+## D.5 Compatibility and versioning rules {#d-5}
+
+Importers shall fail closed when:
+
+- the metadata format is newer than the importer understands,
+- a required ABI-affecting field is missing,
+- an imported module requires a language or runtime feature the importer does not support,
+- textual interface content disagrees with compiled metadata in an ABI-affecting way.
+
+Importers may ignore unknown fields only when those fields are explicitly
+non-required and non-ABI-affecting.
+
+Additive evolution is valid only when older importers can still reject or ignore
+newer metadata deterministically.
+
+## D.6 Current implementation status {#d-6}
+
+The current implementation has a real native compiler and a real runnable subset,
+but it does not yet implement the full Objective-C 3.0 object model.
+
+### D.6.1 Implemented and runnable {#d-6-1}
+
+The current native toolchain can compile and run:
+
+- the native `objc3c` frontend and driver,
+- LLVM IR emission and native object emission,
+- a runnable scalar, control-flow, and function subset,
+- bracket message-send syntax lowered through the current runtime dispatch path,
+- deterministic selector and string pools plus emitted metadata sections,
+- the current ownership baseline for runtime-backed objects,
+- native execution smoke for the supported subset.
+
+### D.6.2 Implemented in compiler and emitted artifacts, but not yet fully realized at runtime {#d-6-2}
+
+The compiler already parses, validates, and emits substantial metadata for:
+
+- `@interface` and `@implementation`,
+- protocols and categories,
+- methods, properties, and ivars,
+- class, metaclass, protocol, category, property, and ivar descriptor families,
+- source-closure and legality rules for conformance, category merge, and related object-model semantics.
+
+That surface is broader than the current runnable subset. In particular, emitted
+metadata now exists for many object-model constructs whose full live runtime
+registration and realization is still being completed.
+
+### D.6.3 Not yet complete {#d-6-3}
+
+The following major areas remain incomplete:
+
+- full runtime bootstrap and multi-image registration completion,
+- binding emitted metadata to fully live class, protocol, and category realization,
+- full property, ivar, and accessor runtime behavior and reflective consumption,
+- cross-module import and module runtime semantics,
+- executable blocks, captures, and byref runtime support,
+- ARC automation beyond the current ownership baseline,
+- advanced language areas such as `throws`, richer error propagation,
+  `async` and `await`, actors, tasks, macros, derives, and broader interop closure.
+
+## D.7 Current implementation priorities {#d-7}
+
+The next implementation priorities are:
+
+1. finish runtime bootstrap and registration completion,
+2. bind emitted method, property, and ivar metadata to live runtime realization,
+3. complete class, protocol, category, and property runtime behavior,
+4. close cross-module runtime import and packaging semantics,
+5. finish blocks and ARC,
+6. then extend outward into advanced error, concurrency, metaprogramming, and interop features.
+
+<!-- SITE:EXCLUDE-START -->
+## Legacy machine appendix (excluded from generated site output)
+
+This appendix preserves issue-era checker anchors and compatibility snippets that
+are still consumed by local validation scripts. It is intentionally excluded from
+the generated site so the published Section D stays human-readable.
+
 # Objective‑C 3.0 — Module Metadata and ABI Surface Tables {#d}
 
 _Working draft v0.11 — last updated 2026-02-27_
@@ -8476,3 +8668,5 @@ runnable smoke matrix.
 - truthful boundary
   - this issue proves the existing metadata surface is runnable enough for the
     supported ownership slice and nothing more
+
+<!-- SITE:EXCLUDE-END -->

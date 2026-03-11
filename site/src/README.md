@@ -17,6 +17,7 @@ Generation input ownership is deterministic and ordered:
 2. `spec/TABLE_OF_CONTENTS.md` defines the ordered include list.
 3. Markdown files listed in `spec/TABLE_OF_CONTENTS.md` are stitched in that exact order.
 4. `README.md` inputs are excluded from stitched output.
+5. Spec files may mark machine-facing appendices with `<!-- SITE:EXCLUDE-START -->` / `<!-- SITE:EXCLUDE-END -->`; those blocks are omitted from generated site output.
 
 ## Ownership
 

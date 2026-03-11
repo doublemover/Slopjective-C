@@ -13,7 +13,7 @@ Each part is a separate Markdown file intended to be read independently, but the
 - **[DECISIONS_LOG.md](#decisions)** — Explicit design decisions (ship/no‑ship) made to keep v1 implementable
 - **[ATTRIBUTE_AND_SYNTAX_CATALOG.md](#b)** — Canonical spellings for pragmas/attributes and module-interface emission requirements
 - **[LOWERING_AND_RUNTIME_CONTRACTS.md](#c)** — Implementation contracts for lowering, ABI stability, and runtime hooks
-- **[MODULE_METADATA_AND_ABI_TABLES.md](#d)** — Normative tables for required module metadata and ABI boundaries (implementer checklist)
+- **[MODULE_METADATA_AND_ABI_TABLES.md](#d)** — Module metadata requirements, ABI boundaries, compatibility rules, and current implementation status
 - **[CONFORMANCE_PROFILE_CHECKLIST.md](#e)** — Conformance profiles and implementer checklists (compiler/toolchain + optional feature sets)
 - **[STANDARD_LIBRARY_CONTRACT.md](#s)** — Minimum required standard-library modules, APIs, semantics, and versioning contracts
 - **[ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md](#am)** — Unified abstract-machine semantics for evaluation order, lifetimes, cleanup, and suspension
