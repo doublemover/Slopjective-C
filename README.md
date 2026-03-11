@@ -261,6 +261,20 @@ shared helper.
   - full builds reserved for closeout, CI, and deliberately cross-cutting proof
     paths
 
+`M276-D003` preserves compatibility for older raw-build callers during the
+transition.
+
+- historical raw-build callers remain supported through the public default build
+  command:
+  - `npm run build:objc3c-native`
+- that compatibility path is truthful but narrow:
+  - canonical native binaries are refreshed at `artifacts/`
+  - packet generation is not implied
+  - downstream historical checkers remain responsible for their own proof work
+- representative coexistence proof now uses:
+  - active helper runner: `scripts/run_m262_a001_lane_a_readiness.py`
+  - historical raw-build runner: `scripts/run_m257_a001_lane_a_readiness.py`
+
 ## Quickstart
 
 Build the public site overview:

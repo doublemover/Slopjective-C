@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run M257-A001 lane-A readiness while preserving the live summary."""
+"""Run M257-A001 lane-A readiness on the raw package-default compatibility build path."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ COMMAND_CHAIN: tuple[Sequence[str], ...] = (
 def run_chain() -> int:
     print(
         "[info] dependency continuity token: "
-        f"{DEPENDENCY_TOKEN} (native build is refreshed first, then the static test is replayed before the live property/ivar source-closure proof rewrites the final summary)",
+        f"{DEPENDENCY_TOKEN} (this historical runner intentionally keeps the raw package-default compatibility build path, then replays the static test before the live property/ivar source-closure proof rewrites the final summary)",
         flush=True,
     )
     for command in COMMAND_CHAIN:

@@ -7240,6 +7240,25 @@ issue-work readiness range.
 - next issue
   - `M276-D003`
 
+## Historical raw-build compatibility during migration (M276-D003)
+
+`M276-D003` defines the truthful compatibility contract for older readiness
+runners that still call the public default build command directly.
+
+- contract id
+  `objc3c-historical-runner-build-surface-compatibility/m276-d003-v1`
+- compatibility truth
+  - `npm run build:objc3c-native` remains supported for historical callers
+  - that path guarantees canonical native binaries at `artifacts/`
+  - that path does not imply packet generation or milestone-closeout semantics
+- representative coexistence proof
+  - active helper runner
+    - `scripts/run_m262_a001_lane_a_readiness.py`
+  - historical raw-build runner
+    - `scripts/run_m257_a001_lane_a_readiness.py`
+- next issue
+  - `M276-E001`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented

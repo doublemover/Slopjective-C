@@ -10422,3 +10422,21 @@ that range.
 - truthful remaining boundary
   - broader historical runner-compatibility backfill remains deferred to
     `M276-D003`
+
+## M276 Historical Raw-Build Compatibility During Migration (D003)
+
+`M276-D003` freezes the truthful compatibility contract for older readiness
+runners that still call the public default build command directly.
+
+- contract id
+  `objc3c-historical-runner-build-surface-compatibility/m276-d003-v1`
+- implementation truths
+  - `npm run build:objc3c-native` remains the supported raw compatibility path
+    for historical runners
+  - that raw path guarantees canonical native binaries at `artifacts/`
+  - that raw path does not imply packet regeneration, closeout, or helper-style
+    summary semantics
+  - representative coexistence is proven between active helper-based
+    `M262-A001` and historical raw-build `M257-A001`
+- explicit handoff
+  - `M276-E001` closes out the operator-facing command/runbook migration
