@@ -7259,6 +7259,53 @@ runners that still call the public default build command directly.
 - next issue
   - `M276-E001`
 
+## Operator workflow and public reconfigure path (M276-E001)
+
+`M276-E001` closes the operator-facing migration layer for the incremental
+native build surface.
+
+- contract id
+  `objc3c-incremental-native-build-operator-surface/m276-e001-v1`
+- public command surface
+  - `npm run build:objc3c-native`
+  - `npm run build:objc3c-native:contracts`
+  - `npm run build:objc3c-native:full`
+  - `npm run build:objc3c-native:reconfigure`
+- persistent build-tree facts
+  - build tree
+    - `tmp/build-objc3c-native`
+  - compile database
+    - `tmp/build-objc3c-native/compile_commands.json`
+  - fingerprint
+    - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
+- fingerprint inputs
+  - `generator`
+  - `cmake`
+  - `ninja`
+  - `clangxx`
+  - `llvm_root`
+  - `llvm_include_dir`
+  - `libclang`
+  - `build_dir`
+  - `source_dir`
+  - `runtime_output_dir`
+  - `library_output_dir`
+  - direct-object-emission and warning-parity flags
+- operator decision boundary
+  - ordinary local native work
+    - `build:objc3c-native`
+  - packet/checker work
+    - `build:objc3c-native:contracts`
+  - closeout / broad validation
+    - `build:objc3c-native:full`
+  - stale-tree or toolchain-path drift
+    - `build:objc3c-native:reconfigure`
+- stale-tree diagnosis
+  - use reconfigure rather than deletion
+  - `compile_commands.json` missing after configure is a fail-closed wrapper error
+- next issue
+  - `M276-E002`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented

@@ -349,3 +349,25 @@ runtime-owned graph:
 - additional proof surface:
   - `objc3_runtime_copy_property_registry_state_for_testing`
   - `objc3_runtime_copy_property_entry_for_testing`
+
+## Incremental native build commands
+
+Use the public build surface this way:
+
+- `npm run build:objc3c-native`
+  - ordinary local native binary refresh
+- `npm run build:objc3c-native:contracts`
+  - contract packet refresh
+- `npm run build:objc3c-native:full`
+  - closeout / broad validation path
+- `npm run build:objc3c-native:reconfigure`
+  - fingerprint or toolchain drift recovery without deleting the build tree
+
+Relevant paths:
+
+- persistent build tree
+  - `tmp/build-objc3c-native`
+- compile database
+  - `tmp/build-objc3c-native/compile_commands.json`
+- fingerprint
+  - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`

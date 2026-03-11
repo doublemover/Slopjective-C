@@ -10440,3 +10440,46 @@ runners that still call the public default build command directly.
     `M262-A001` and historical raw-build `M257-A001`
 - explicit handoff
   - `M276-E001` closes out the operator-facing command/runbook migration
+
+## M276 Operator Workflow And Public Reconfigure Path (E001)
+
+`M276-E001` closes the operator-facing migration layer for the incremental
+native build surface.
+
+- contract id
+  `objc3c-incremental-native-build-operator-surface/m276-e001-v1`
+- public command surface
+  - `build:objc3c-native`
+  - `build:objc3c-native:contracts`
+  - `build:objc3c-native:full`
+  - `build:objc3c-native:reconfigure`
+- persistent build-tree facts
+  - build tree
+    - `tmp/build-objc3c-native`
+  - compile database
+    - `tmp/build-objc3c-native/compile_commands.json`
+  - fingerprint
+    - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
+- fingerprint inputs
+  - `generator`
+  - `cmake`
+  - `ninja`
+  - `clangxx`
+  - `llvm_root`
+  - `llvm_include_dir`
+  - `libclang`
+  - `build_dir`
+  - `source_dir`
+  - `runtime_output_dir`
+  - `library_output_dir`
+  - direct-object-emission and warning-parity flags
+- operator decision boundary
+  - ordinary local native work uses `build:objc3c-native`
+  - packet/checker work uses `build:objc3c-native:contracts`
+  - closeout and intentionally broad validation use `build:objc3c-native:full`
+  - stale-tree/path/toolchain drift uses `build:objc3c-native:reconfigure`
+- stale-tree diagnosis remains non-destructive:
+  - use reconfigure instead of deletion
+  - missing `compile_commands.json` after configure remains fail-closed
+- explicit handoff
+  - `M276-E002` closes the milestone with CI adoption and closeout evidence

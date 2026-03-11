@@ -183,7 +183,7 @@ Planned policy boundary:
 - persistent local build trees will live under `tmp/`
 - published binaries and libraries will remain under `artifacts/`
 
-That command split is not fully implemented yet.
+The command split is fully implemented now.
 
 Parity freeze (`M276-A002`):
 
@@ -232,8 +232,9 @@ Current truthful boundary after `M276-C002`:
 - `npm run build:objc3c-native:full`
   - public full binary-plus-packet path
   - uses `full`
-- direct script callers still default to the full wrapper path until the
-  helper/runner migration issues land
+- `npm run build:objc3c-native:reconfigure`
+  - public forced-configure binary-build path
+  - uses `binaries-only` plus `-ForceReconfigure`
 
 `M276-D002` now adds the shared native build helper:
 
@@ -274,6 +275,44 @@ transition.
 - representative coexistence proof now uses:
   - active helper runner: `scripts/run_m262_a001_lane_a_readiness.py`
   - historical raw-build runner: `scripts/run_m257_a001_lane_a_readiness.py`
+
+## When to use each command
+
+| Command | Use when | Result |
+| --- | --- | --- |
+| `npm run build:objc3c-native` | ordinary local native compiler work | refreshes native binaries through the persistent CMake/Ninja tree |
+| `npm run build:objc3c-native:contracts` | packet/checker work that needs the public contract packet surface | refreshes the source-derived plus binary-derived packet surface |
+| `npm run build:objc3c-native:full` | milestone closeout or deliberately broad validation | refreshes native binaries and the full packet family |
+| `npm run build:objc3c-native:reconfigure` | toolchain drift, path drift, or stale fingerprint mismatch | forces a fresh configure against `tmp/build-objc3c-native`, then rebuilds binaries |
+
+Build-tree facts:
+
+- persistent build tree:
+  - `tmp/build-objc3c-native`
+- compile database:
+  - `tmp/build-objc3c-native/compile_commands.json`
+- fingerprint:
+  - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
+
+Fingerprint inputs:
+
+- `generator`
+- `cmake`
+- `ninja`
+- `clangxx`
+- `llvm_root`
+- `llvm_include_dir`
+- `libclang`
+- `build_dir`
+- `source_dir`
+- `runtime_output_dir`
+- `library_output_dir`
+- direct-object-emission and warning-parity flags
+
+Supported stale-tree recovery:
+
+- use `npm run build:objc3c-native:reconfigure`
+- do not delete the build tree
 
 ## Quickstart
 
