@@ -5155,6 +5155,11 @@ static std::vector<std::string> BuildSortedUniqueStrings(std::vector<std::string
   return values;
 }
 
+static bool IsSortedUniqueStrings(const std::vector<std::string> &values) {
+  return std::adjacent_find(values.begin(), values.end()) == values.end() &&
+         std::is_sorted(values.begin(), values.end());
+}
+
 static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
     const std::vector<std::string> &protocol_names) {
   // M252-A003 completion: protocol inheritance/adoption targets remain on the
@@ -5278,6 +5283,29 @@ static std::vector<std::string> BuildObjcIvarBindingSymbolsLexicographic(
 class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
+
+  enum class BlockLiteralSourceUseKind {
+    ExpressionSite,
+    GlobalInitializer,
+    LocalBindingInitializer,
+    AssignmentValue,
+    ReturnValue,
+    CallArgument,
+    MessageArgument,
+  };
+
+  struct ScopedBlockLiteralSourceUse {
+    explicit ScopedBlockLiteralSourceUse(std::vector<BlockLiteralSourceUseKind> &stack,
+                                         BlockLiteralSourceUseKind kind)
+        : stack_(stack) {
+      stack_.push_back(kind);
+    }
+
+    ~ScopedBlockLiteralSourceUse() { stack_.pop_back(); }
+
+   private:
+    std::vector<BlockLiteralSourceUseKind> &stack_;
+  };
 
   Objc3ParsedProgram Parse() {
     Objc3ParsedProgram program = ast_builder_.BeginProgram();
@@ -5858,7 +5886,8 @@ class Objc3Parser {
       return nullptr;
     }
 
-    decl->value = ParseExpression();
+    decl->value = ParseExpressionWithBlockLiteralSourceUse(
+        BlockLiteralSourceUseKind::GlobalInitializer);
     if (decl->value == nullptr) {
       SynchronizeTopLevel();
       return nullptr;
@@ -9122,7 +9151,8 @@ class Objc3Parser {
         return nullptr;
       }
 
-      stmt->let_stmt->value = ParseExpression();
+      stmt->let_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::LocalBindingInitializer);
       if (stmt->let_stmt->value == nullptr) {
         return nullptr;
       }
@@ -9147,7 +9177,8 @@ class Objc3Parser {
       if (Match(TokenKind::Semicolon)) {
         return stmt;
       }
-      stmt->return_stmt->value = ParseExpression();
+      stmt->return_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ReturnValue);
       if (stmt->return_stmt->value == nullptr) {
         return nullptr;
       }
@@ -9276,7 +9307,8 @@ class Objc3Parser {
             return nullptr;
           }
 
-          stmt->for_stmt->init.value = ParseExpression();
+          stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
           if (stmt->for_stmt->init.value == nullptr) {
             return nullptr;
           }
@@ -9294,7 +9326,8 @@ class Objc3Parser {
           if (op == "++" || op == "--") {
             stmt->for_stmt->init.value = nullptr;
           } else {
-            stmt->for_stmt->init.value = ParseExpression();
+            stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+                BlockLiteralSourceUseKind::AssignmentValue);
             if (stmt->for_stmt->init.value == nullptr) {
               return nullptr;
             }
@@ -9318,7 +9351,8 @@ class Objc3Parser {
           stmt->for_stmt->init.kind = ForClause::Kind::Expr;
           stmt->for_stmt->init.line = Peek().line;
           stmt->for_stmt->init.column = Peek().column;
-          stmt->for_stmt->init.value = ParseExpression();
+          stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
           if (stmt->for_stmt->init.value == nullptr) {
             return nullptr;
           }
@@ -9333,7 +9367,8 @@ class Objc3Parser {
       if (Match(TokenKind::Semicolon)) {
         stmt->for_stmt->condition = nullptr;
       } else {
-        stmt->for_stmt->condition = ParseExpression();
+        stmt->for_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+            BlockLiteralSourceUseKind::ExpressionSite);
         if (stmt->for_stmt->condition == nullptr) {
           return nullptr;
         }
@@ -9361,7 +9396,8 @@ class Objc3Parser {
           if (op == "++" || op == "--") {
             stmt->for_stmt->step.value = nullptr;
           } else {
-            stmt->for_stmt->step.value = ParseExpression();
+            stmt->for_stmt->step.value = ParseExpressionWithBlockLiteralSourceUse(
+                BlockLiteralSourceUseKind::AssignmentValue);
             if (stmt->for_stmt->step.value == nullptr) {
               return nullptr;
             }
@@ -9385,7 +9421,8 @@ class Objc3Parser {
           stmt->for_stmt->step.kind = ForClause::Kind::Expr;
           stmt->for_stmt->step.line = Peek().line;
           stmt->for_stmt->step.column = Peek().column;
-          stmt->for_stmt->step.value = ParseExpression();
+          stmt->for_stmt->step.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
           if (stmt->for_stmt->step.value == nullptr) {
             return nullptr;
           }
@@ -9419,7 +9456,8 @@ class Objc3Parser {
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after switch"));
         return nullptr;
       }
-      stmt->switch_stmt->condition = ParseExpression();
+      stmt->switch_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
       if (stmt->switch_stmt->condition == nullptr) {
         return nullptr;
       }
@@ -9553,7 +9591,8 @@ class Objc3Parser {
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after while"));
         return nullptr;
       }
-      stmt->while_stmt->condition = ParseExpression();
+      stmt->while_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
       if (stmt->while_stmt->condition == nullptr) {
         return nullptr;
       }
@@ -9615,7 +9654,8 @@ class Objc3Parser {
       if (op == "++" || op == "--") {
         stmt->assign_stmt->value = nullptr;
       } else {
-        stmt->assign_stmt->value = ParseExpression();
+        stmt->assign_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+            BlockLiteralSourceUseKind::AssignmentValue);
         if (stmt->assign_stmt->value == nullptr) {
           return nullptr;
         }
@@ -9662,7 +9702,8 @@ class Objc3Parser {
     stmt->column = Peek().column;
     stmt->expr_stmt->line = Peek().line;
     stmt->expr_stmt->column = Peek().column;
-    stmt->expr_stmt->value = ParseExpression();
+    stmt->expr_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+        BlockLiteralSourceUseKind::ExpressionSite);
     if (stmt->expr_stmt->value == nullptr) {
       return nullptr;
     }
@@ -9672,6 +9713,19 @@ class Objc3Parser {
       return nullptr;
     }
     return stmt;
+  }
+
+  BlockLiteralSourceUseKind CurrentBlockLiteralSourceUseKind() const {
+    if (block_literal_source_use_stack_.empty()) {
+      return BlockLiteralSourceUseKind::ExpressionSite;
+    }
+    return block_literal_source_use_stack_.back();
+  }
+
+  std::unique_ptr<Expr> ParseExpressionWithBlockLiteralSourceUse(
+      BlockLiteralSourceUseKind kind) {
+    ScopedBlockLiteralSourceUse scope(block_literal_source_use_stack_, kind);
+    return ParseConditional();
   }
 
   std::unique_ptr<Expr> ParseExpression() { return ParseConditional(); }
@@ -10016,7 +10070,8 @@ class Objc3Parser {
       call->ident = expr->ident;
       if (!At(TokenKind::RParen)) {
         while (true) {
-          auto arg = ParseExpression();
+          auto arg = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::CallArgument);
           if (arg == nullptr) {
             return nullptr;
           }
@@ -10217,6 +10272,178 @@ class Objc3Parser {
     return BuildSortedUniqueStrings(std::move(capture_names));
   }
 
+  static std::string BuildBlockEscapeShapeSymbol(BlockLiteralSourceUseKind use_kind) {
+    switch (use_kind) {
+      case BlockLiteralSourceUseKind::ExpressionSite:
+        return "expression-site";
+      case BlockLiteralSourceUseKind::GlobalInitializer:
+        return "global-initializer";
+      case BlockLiteralSourceUseKind::LocalBindingInitializer:
+        return "binding-initializer";
+      case BlockLiteralSourceUseKind::AssignmentValue:
+        return "assignment-value";
+      case BlockLiteralSourceUseKind::ReturnValue:
+        return "return-value";
+      case BlockLiteralSourceUseKind::CallArgument:
+        return "call-argument";
+      case BlockLiteralSourceUseKind::MessageArgument:
+        return "message-argument";
+    }
+    return "expression-site";
+  }
+
+  static bool BlockEscapeShapePromotesToHeapCandidate(
+      BlockLiteralSourceUseKind use_kind) {
+    return use_kind != BlockLiteralSourceUseKind::ExpressionSite;
+  }
+
+  static std::string BuildBlockHelperIntentProfile(
+      std::size_t mutated_capture_count,
+      std::size_t byref_capture_count,
+      bool copy_helper_intent_required,
+      bool dispose_helper_intent_required,
+      BlockLiteralSourceUseKind use_kind) {
+    std::ostringstream out;
+    out << "block-helper-intent:mutable-captures=" << mutated_capture_count
+        << ";byref-captures=" << byref_capture_count
+        << ";copy-helper="
+        << (copy_helper_intent_required ? "candidate" : "elided")
+        << ";dispose-helper="
+        << (dispose_helper_intent_required ? "candidate" : "elided")
+        << ";escape-shape=" << BuildBlockEscapeShapeSymbol(use_kind);
+    return out.str();
+  }
+
+  static std::string BuildBlockEscapeShapeProfile(
+      BlockLiteralSourceUseKind use_kind,
+      bool promotes_to_heap_candidate,
+      std::size_t capture_count,
+      std::size_t byref_capture_count) {
+    std::ostringstream out;
+    out << "block-escape-shape:site=" << BuildBlockEscapeShapeSymbol(use_kind)
+        << ";heap-candidate="
+        << (promotes_to_heap_candidate ? "true" : "false")
+        << ";captures=" << capture_count
+        << ";byref-captures=" << byref_capture_count;
+    return out.str();
+  }
+
+  void CollectBlockLiteralMutatedIdentifiersFromForClause(
+      const ForClause &clause,
+      std::vector<std::string> &mutated_identifiers) {
+    if (clause.kind == ForClause::Kind::Assign && !clause.name.empty()) {
+      mutated_identifiers.push_back(clause.name);
+    }
+  }
+
+  void CollectBlockLiteralMutatedIdentifiersFromStatement(
+      const Stmt *stmt,
+      std::vector<std::string> &mutated_identifiers) {
+    if (stmt == nullptr) {
+      return;
+    }
+    switch (stmt->kind) {
+      case Stmt::Kind::Let:
+      case Stmt::Kind::Return:
+      case Stmt::Kind::Expr:
+      case Stmt::Kind::Break:
+      case Stmt::Kind::Continue:
+      case Stmt::Kind::Empty:
+        return;
+      case Stmt::Kind::Assign:
+        if (stmt->assign_stmt != nullptr &&
+            !stmt->assign_stmt->name.empty()) {
+          mutated_identifiers.push_back(stmt->assign_stmt->name);
+        }
+        return;
+      case Stmt::Kind::If:
+        if (stmt->if_stmt != nullptr) {
+          for (const auto &then_stmt : stmt->if_stmt->then_body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                then_stmt.get(), mutated_identifiers);
+          }
+          for (const auto &else_stmt : stmt->if_stmt->else_body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                else_stmt.get(), mutated_identifiers);
+          }
+        }
+        return;
+      case Stmt::Kind::DoWhile:
+        if (stmt->do_while_stmt != nullptr) {
+          for (const auto &body_stmt : stmt->do_while_stmt->body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                body_stmt.get(), mutated_identifiers);
+          }
+        }
+        return;
+      case Stmt::Kind::For:
+        if (stmt->for_stmt != nullptr) {
+          CollectBlockLiteralMutatedIdentifiersFromForClause(
+              stmt->for_stmt->init, mutated_identifiers);
+          CollectBlockLiteralMutatedIdentifiersFromForClause(
+              stmt->for_stmt->step, mutated_identifiers);
+          for (const auto &body_stmt : stmt->for_stmt->body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                body_stmt.get(), mutated_identifiers);
+          }
+        }
+        return;
+      case Stmt::Kind::Switch:
+        if (stmt->switch_stmt != nullptr) {
+          for (const auto &switch_case : stmt->switch_stmt->cases) {
+            for (const auto &case_stmt : switch_case.body) {
+              CollectBlockLiteralMutatedIdentifiersFromStatement(
+                  case_stmt.get(), mutated_identifiers);
+            }
+          }
+        }
+        return;
+      case Stmt::Kind::While:
+        if (stmt->while_stmt != nullptr) {
+          for (const auto &body_stmt : stmt->while_stmt->body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                body_stmt.get(), mutated_identifiers);
+          }
+        }
+        return;
+      case Stmt::Kind::Block:
+        if (stmt->block_stmt != nullptr) {
+          for (const auto &body_stmt : stmt->block_stmt->body) {
+            CollectBlockLiteralMutatedIdentifiersFromStatement(
+                body_stmt.get(), mutated_identifiers);
+          }
+        }
+        return;
+    }
+  }
+
+  std::vector<std::string> BuildBlockLiteralMutatedCaptureSet(
+      const std::vector<std::unique_ptr<Stmt>> &body,
+      const std::vector<std::string> &capture_names) {
+    std::vector<std::string> mutated_identifiers;
+    for (const auto &stmt : body) {
+      CollectBlockLiteralMutatedIdentifiersFromStatement(
+          stmt.get(), mutated_identifiers);
+    }
+
+    std::unordered_set<std::string> capture_name_set;
+    for (const auto &capture_name : capture_names) {
+      if (!capture_name.empty()) {
+        capture_name_set.insert(capture_name);
+      }
+    }
+
+    std::vector<std::string> mutated_capture_names;
+    mutated_capture_names.reserve(mutated_identifiers.size());
+    for (const auto &mutated_identifier : mutated_identifiers) {
+      if (!mutated_identifier.empty() &&
+          capture_name_set.count(mutated_identifier) != 0u) {
+        mutated_capture_names.push_back(mutated_identifier);
+      }
+    }
+    return BuildSortedUniqueStrings(std::move(mutated_capture_names));
+  }
+
   std::unique_ptr<Expr> ParseBlockLiteralExpression() {
     const Token caret = Previous();
     auto block = std::make_unique<Expr>();
@@ -10297,6 +10524,15 @@ class Objc3Parser {
             block->block_capture_names_lexicographic);
     block->block_byvalue_readonly_capture_count =
         block->block_capture_count;
+    block->block_mutated_capture_names_lexicographic =
+        BuildBlockLiteralMutatedCaptureSet(
+            body, block->block_capture_names_lexicographic);
+    block->block_mutated_capture_count =
+        block->block_mutated_capture_names_lexicographic.size();
+    block->block_byref_capture_names_lexicographic =
+        block->block_mutated_capture_names_lexicographic;
+    block->block_byref_capture_count =
+        block->block_byref_capture_names_lexicographic.size();
     block->block_capture_inventory_profile =
         BuildBlockCaptureInventoryProfile(
             block->block_capture_count,
@@ -10329,6 +10565,43 @@ class Objc3Parser {
     block->block_abi_has_invoke_trampoline = true;
     block->block_abi_layout_is_normalized =
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
+    const BlockLiteralSourceUseKind source_use_kind =
+        CurrentBlockLiteralSourceUseKind();
+    // M261-A003 block-source-storage-annotation anchor: parser now classifies
+    // mutated/byref/helper/escape-shape source annotations directly from the
+    // block body and surrounding expression context so later runnable block
+    // lanes consume deterministic source truth instead of reconstructing it.
+    block->block_copy_helper_intent_required =
+        block->block_byref_capture_count > 0u;
+    block->block_dispose_helper_intent_required =
+        block->block_byref_capture_count > 0u;
+    block->block_escape_shape_symbol =
+        BuildBlockEscapeShapeSymbol(source_use_kind);
+    block->block_escape_shape_promotes_to_heap_candidate =
+        BlockEscapeShapePromotesToHeapCandidate(source_use_kind);
+    block->block_helper_intent_profile =
+        BuildBlockHelperIntentProfile(
+            block->block_mutated_capture_count,
+            block->block_byref_capture_count,
+            block->block_copy_helper_intent_required,
+            block->block_dispose_helper_intent_required,
+            source_use_kind);
+    block->block_escape_shape_profile =
+        BuildBlockEscapeShapeProfile(
+            source_use_kind,
+            block->block_escape_shape_promotes_to_heap_candidate,
+            block->block_capture_count,
+            block->block_byref_capture_count);
+    block->block_source_storage_annotations_are_normalized =
+        block->block_literal_is_normalized &&
+        block->block_capture_set_deterministic &&
+        IsSortedUniqueStrings(
+            block->block_mutated_capture_names_lexicographic) &&
+        IsSortedUniqueStrings(
+            block->block_byref_capture_names_lexicographic) &&
+        !block->block_helper_intent_profile.empty() &&
+        !block->block_escape_shape_symbol.empty() &&
+        !block->block_escape_shape_profile.empty();
     block->block_storage_mutable_capture_count = 0;
     block->block_storage_byref_slot_count = 0;
     block->block_storage_requires_byref_cells = false;
@@ -10521,7 +10794,8 @@ class Objc3Parser {
       head_piece.has_argument = true;
       message->selector_lowering_pieces.push_back(head_piece);
       message->selector += ":";
-      auto first_arg = ParseExpression();
+      auto first_arg = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::MessageArgument);
       if (first_arg == nullptr) {
         return nullptr;
       }
@@ -10554,7 +10828,8 @@ class Objc3Parser {
         message->selector_lowering_pieces.push_back(std::move(keyword_piece));
         message->selector += keyword.text;
         message->selector += ":";
-        auto arg = ParseExpression();
+        auto arg = ParseExpressionWithBlockLiteralSourceUse(
+            BlockLiteralSourceUseKind::MessageArgument);
         if (arg == nullptr) {
           return nullptr;
         }
@@ -10686,6 +10961,7 @@ class Objc3Parser {
   const std::vector<Token> &tokens_;
   std::size_t index_ = 0;
   std::vector<std::string> diagnostics_;
+  std::vector<BlockLiteralSourceUseKind> block_literal_source_use_stack_;
   bool saw_module_declaration_ = false;
   bool block_failed_ = false;
   unsigned autoreleasepool_scope_depth_ = 0;

@@ -161,6 +161,9 @@ Current implementation boundary:
 - source-only frontend runs may now admit block literals and publish completed
   signature/capture/invoke source modeling (`M261-A002`) when both IR and
   object emission are disabled.
+- source-only frontend runs now also publish truthful byref/helper/escape-shape
+  source annotations (`M261-A003`) before runnable byref lowering, helper
+  emission, or heap-promotion runtime support exists.
 - explicit block pointer declarator spellings and explicit byref storage
   spellings are not yet part of the supported source surface.
 

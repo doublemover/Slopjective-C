@@ -1,0 +1,14 @@
+module m261_block_source_storage_annotations_positive;
+
+fn source_storage_annotation_probe() -> i32 {
+  let seed = 7;
+  let extra = 3;
+  let closure = ^() {
+    seed = seed + 1;
+    return seed;
+  };
+  ^() {
+    return extra;
+  };
+  return seed + extra;
+}

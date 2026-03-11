@@ -961,6 +961,45 @@ Recommended M261 lane-A implementation check:
 - `python scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
 - `M261-B001` is the next issue.
 
+## M261 block source storage annotations (M261-A003)
+
+`M261-A003` expands the truthful source-only block model so later runtime lanes
+can distinguish byref candidates, helper intent, and heap-promotion-relevant
+escape shapes without pretending runnable block lowering already exists.
+
+- contract id
+  `objc3c-executable-block-source-storage-annotation/m261-a003-v1`
+
+Current source-annotation details:
+
+- source-only frontend positive path:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+    may now admit block literals and publish
+    `objc_block_source_storage_annotation_surface`.
+- truthful storage/helper/escape annotations now include:
+  - mutated captured bindings classified as byref-capture candidates before any
+    explicit `__block` spelling exists.
+  - copy/dispose helper intent bits derived from the byref-candidate inventory.
+  - deterministic escape-shape classes:
+    `expression-site`, `global-initializer`, `binding-initializer`,
+    `assignment-value`, `return-value`, `call-argument`, and
+    `message-argument`.
+  - heap-promotion candidate truth for every non-`expression-site` block
+    literal.
+- emitted/native boundary details:
+  - the native IR boundary now carries
+    `; executable_block_source_storage_annotations = ...`.
+  - runnable native emit paths still fail closed with `O3S221`.
+- explicit non-goals in this implementation:
+  - no explicit `__block` storage spelling yet.
+  - no copy/dispose helper lowering yet.
+  - no runnable block object lowering, helper emission, or heap promotion yet.
+
+Recommended M261 lane-A expansion check:
+
+- `python scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
+- `M261-B001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

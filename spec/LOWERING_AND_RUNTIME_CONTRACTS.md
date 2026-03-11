@@ -7643,3 +7643,37 @@ consume directly.
   - `spec/planning/compiler/m261/m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation_packet.md`
   - `python scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
   - `M261-B001` is the next issue.
+
+## M261 block source storage annotations (A003)
+
+`M261-A003` expands the deterministic lane-A block source model with truthful
+byref-candidate, helper-intent, and escape-shape annotations that later lane-B
+through lane-D runnable work must consume directly.
+
+- contract id
+  `objc3c-executable-block-source-storage-annotation/m261-a003-v1`
+- source-only positive path:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+    admits block literals and emits the
+    `objc_block_source_storage_annotation_surface` manifest object.
+- source annotation content:
+  - mutated-capture inventory and derived byref-candidate counts
+  - copy/dispose helper intent counts derived from byref-candidate sites
+  - deterministic escape-shape categories for expression, initializer,
+    assignment, return, call, and message positions
+  - heap-candidate truth derived from the escape-shape class
+  - deterministic replay key
+- emitted IR boundary:
+  - `; executable_block_source_storage_annotations = ...`
+- fail-closed rule:
+  - runnable native emit paths still reject block literals with `O3S221`.
+- non-goals:
+  - explicit `__block` spelling
+  - runnable byref lowering
+  - copy/dispose helper lowering
+  - heap-promotion runtime support
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion_a003_expectations.md`
+  - `spec/planning/compiler/m261/m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion_packet.md`
+  - `python scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
+  - `M261-B001` is the next issue.

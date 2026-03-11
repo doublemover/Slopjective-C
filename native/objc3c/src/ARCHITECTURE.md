@@ -9858,3 +9858,26 @@ source-only frontend capability.
   - block copy/dispose helper emission
   - runnable block object/runtime lowering
 - the next issue is `M261-B001`
+
+## M261 Block Source Storage Annotations (A003)
+
+`M261-A003` expands the source-only block surface with truthful byref,
+copy/dispose helper-intent, and escape-shape annotations.
+
+- source-only frontend runner still owns the positive path:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+- the emitted manifest now carries:
+  - deterministic mutated-capture and byref-candidate counts
+  - copy/dispose helper-intent site counts
+  - escape-shape counts for expression, initializer, assignment, return, call,
+    and message positions
+  - heap-candidate truth and a deterministic replay key
+- the emitted IR boundary now carries:
+  - `; executable_block_source_storage_annotations = ...`
+- native emit paths still fail closed with `O3S221`
+- non-goals remain:
+  - explicit `__block` storage spelling
+  - runnable byref lowering
+  - copy/dispose helper lowering
+  - heap promotion or runnable block-object execution
+- the next issue is `M261-B001`

@@ -898,6 +898,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // integration surface receives the explicit source-only
           // block-literal admission bit so lane-A can publish the completed
           // source model without widening runnable block support.
+          // M261-A003 block-source-storage-annotation anchor: byref/helper/
+          // escape-shape source annotations remain parser-owned at this stage
+          // and ride the same source-only admission path without claiming that
+          // runnable block lowering or helper emission already exists.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

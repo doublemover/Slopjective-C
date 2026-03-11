@@ -1375,6 +1375,16 @@ class Objc3IREmitter {
         << ";replay_key="
         << frontend_metadata_.lowering_block_source_model_completion_replay_key
         << "\n";
+    // M261-A003 block-source-storage-annotation anchor: emit the truthful
+    // byref/helper/escape-shape replay boundary so source-only manifests and
+    // later runnable block lowering consume the same deterministic source
+    // annotations while native block execution remains fail closed.
+    out << "; executable_block_source_storage_annotations = "
+        << Objc3ExecutableBlockSourceStorageAnnotationSummary()
+        << ";replay_key="
+        << frontend_metadata_
+               .lowering_block_source_storage_annotation_replay_key
+        << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

@@ -7211,6 +7211,204 @@ Objc3BlockSourceModelCompletionContract BuildBlockSourceModelCompletionContract(
   return contract;
 }
 
+void AccumulateBlockSourceStorageAnnotationFromStmt(
+    const Stmt *stmt,
+    Objc3BlockSourceStorageAnnotationContract &contract);
+
+void AccumulateBlockSourceStorageAnnotationFromExpr(
+    const Expr *expr,
+    Objc3BlockSourceStorageAnnotationContract &contract) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    ++contract.block_literal_sites;
+    contract.capture_entries_total += expr->block_capture_count;
+    contract.mutated_capture_entries_total += expr->block_mutated_capture_count;
+    contract.byref_capture_entries_total += expr->block_byref_capture_count;
+    if (expr->block_copy_helper_intent_required) {
+      ++contract.copy_helper_intent_sites;
+    }
+    if (expr->block_dispose_helper_intent_required) {
+      ++contract.dispose_helper_intent_sites;
+    }
+    if (expr->block_escape_shape_promotes_to_heap_candidate) {
+      ++contract.heap_candidate_sites;
+    }
+
+    if (expr->block_escape_shape_symbol == "expression-site") {
+      ++contract.expression_sites;
+    } else if (expr->block_escape_shape_symbol == "global-initializer") {
+      ++contract.global_initializer_sites;
+    } else if (expr->block_escape_shape_symbol == "binding-initializer") {
+      ++contract.binding_initializer_sites;
+    } else if (expr->block_escape_shape_symbol == "assignment-value") {
+      ++contract.assignment_value_sites;
+    } else if (expr->block_escape_shape_symbol == "return-value") {
+      ++contract.return_value_sites;
+    } else if (expr->block_escape_shape_symbol == "call-argument") {
+      ++contract.call_argument_sites;
+    } else if (expr->block_escape_shape_symbol == "message-argument") {
+      ++contract.message_argument_sites;
+    } else {
+      ++contract.contract_violation_sites;
+    }
+
+    if (!expr->block_source_storage_annotations_are_normalized) {
+      ++contract.non_normalized_sites;
+    }
+
+    bool contract_violation = false;
+    contract_violation |= expr->block_mutated_capture_count >
+                          expr->block_capture_count;
+    contract_violation |= expr->block_byref_capture_count >
+                          expr->block_mutated_capture_count;
+    contract_violation |= !IsStrictlySortedUniqueStrings(
+        expr->block_mutated_capture_names_lexicographic);
+    contract_violation |= !IsStrictlySortedUniqueStrings(
+        expr->block_byref_capture_names_lexicographic);
+    contract_violation |= expr->block_escape_shape_symbol.empty();
+    contract_violation |= expr->block_escape_shape_profile.empty();
+    contract_violation |= expr->block_helper_intent_profile.empty();
+    contract_violation |= expr->block_copy_helper_intent_required !=
+                          (expr->block_byref_capture_count > 0u);
+    contract_violation |= expr->block_dispose_helper_intent_required !=
+                          (expr->block_byref_capture_count > 0u);
+    contract_violation |= expr->block_escape_shape_promotes_to_heap_candidate !=
+                          (expr->block_escape_shape_symbol != "expression-site");
+    if (contract_violation) {
+      ++contract.contract_violation_sites;
+    }
+  }
+
+  AccumulateBlockSourceStorageAnnotationFromExpr(expr->receiver.get(), contract);
+  AccumulateBlockSourceStorageAnnotationFromExpr(expr->left.get(), contract);
+  AccumulateBlockSourceStorageAnnotationFromExpr(expr->right.get(), contract);
+  AccumulateBlockSourceStorageAnnotationFromExpr(expr->third.get(), contract);
+  for (const auto &arg : expr->args) {
+    AccumulateBlockSourceStorageAnnotationFromExpr(arg.get(), contract);
+  }
+}
+
+void AccumulateBlockSourceStorageAnnotationFromStmt(
+    const Stmt *stmt,
+    Objc3BlockSourceStorageAnnotationContract &contract) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->let_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::Assign:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->assign_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::Return:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->return_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::Expr:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->expr_stmt->value.get(), contract);
+      return;
+    case Stmt::Kind::If:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->if_stmt->condition.get(), contract);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(then_stmt.get(), contract);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(else_stmt.get(), contract);
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(), contract);
+      }
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->do_while_stmt->condition.get(), contract);
+      return;
+    case Stmt::Kind::For:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->for_stmt->init.value.get(), contract);
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->for_stmt->condition.get(), contract);
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->for_stmt->step.value.get(), contract);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Switch:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->switch_stmt->condition.get(), contract);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          AccumulateBlockSourceStorageAnnotationFromStmt(case_stmt.get(), contract);
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      AccumulateBlockSourceStorageAnnotationFromExpr(
+          stmt->while_stmt->condition.get(), contract);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Block:
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(), contract);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+Objc3BlockSourceStorageAnnotationContract BuildBlockSourceStorageAnnotationContract(
+    const Objc3Program &program) {
+  Objc3BlockSourceStorageAnnotationContract contract;
+
+  for (const auto &global : program.globals) {
+    AccumulateBlockSourceStorageAnnotationFromExpr(global.value.get(), contract);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      AccumulateBlockSourceStorageAnnotationFromStmt(stmt.get(), contract);
+    }
+  }
+  for (const auto &protocol : program.protocols) {
+    for (const auto &method : protocol.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceStorageAnnotationFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+
+  contract.deterministic = contract.non_normalized_sites == 0u &&
+                           contract.contract_violation_sites == 0u;
+  return contract;
+}
+
 Objc3BlockAbiInvokeTrampolineLoweringContract BuildBlockAbiInvokeTrampolineLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3BlockAbiInvokeTrampolineLoweringContract contract;
@@ -8677,6 +8875,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string block_source_model_completion_replay_key =
       Objc3BlockSourceModelCompletionReplayKey(
           block_source_model_completion_contract);
+  // M261-A003 block-source-storage-annotation anchor: frontend artifacts now
+  // publish the truthful byref/helper/escape-shape source inventory directly
+  // from the parser-owned block model so later sema and runtime lanes can
+  // consume something real without rewriting the old synthetic M168/M169
+  // packets in place.
+  const Objc3BlockSourceStorageAnnotationContract
+      block_source_storage_annotation_contract =
+          BuildBlockSourceStorageAnnotationContract(
+              pipeline_result.program.ast);
+  if (!IsValidObjc3BlockSourceStorageAnnotationContract(
+          block_source_storage_annotation_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid block source storage annotation contract");
+  }
+  const std::string block_source_storage_annotation_replay_key =
+      Objc3BlockSourceStorageAnnotationReplayKey(
+          block_source_storage_annotation_contract);
   const Objc3BlockAbiInvokeTrampolineLoweringContract block_abi_invoke_trampoline_lowering_contract =
       BuildBlockAbiInvokeTrampolineLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
@@ -11812,6 +12028,48 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_block_source_model_completion_replay_key\":\""
            << block_source_model_completion_replay_key
            << "\""
+           << ",\"deterministic_block_source_storage_annotation_handoff\":"
+           << (block_source_storage_annotation_contract.deterministic ? "true"
+                                                                     : "false")
+           << ",\"block_source_storage_annotation_block_literal_sites\":"
+           << block_source_storage_annotation_contract.block_literal_sites
+           << ",\"block_source_storage_annotation_capture_entries_total\":"
+           << block_source_storage_annotation_contract.capture_entries_total
+           << ",\"block_source_storage_annotation_mutated_capture_entries_total\":"
+           << block_source_storage_annotation_contract
+                  .mutated_capture_entries_total
+           << ",\"block_source_storage_annotation_byref_capture_entries_total\":"
+           << block_source_storage_annotation_contract.byref_capture_entries_total
+           << ",\"block_source_storage_annotation_copy_helper_intent_sites\":"
+           << block_source_storage_annotation_contract.copy_helper_intent_sites
+           << ",\"block_source_storage_annotation_dispose_helper_intent_sites\":"
+           << block_source_storage_annotation_contract
+                  .dispose_helper_intent_sites
+           << ",\"block_source_storage_annotation_heap_candidate_sites\":"
+           << block_source_storage_annotation_contract.heap_candidate_sites
+           << ",\"block_source_storage_annotation_expression_sites\":"
+           << block_source_storage_annotation_contract.expression_sites
+           << ",\"block_source_storage_annotation_global_initializer_sites\":"
+           << block_source_storage_annotation_contract
+                  .global_initializer_sites
+           << ",\"block_source_storage_annotation_binding_initializer_sites\":"
+           << block_source_storage_annotation_contract
+                  .binding_initializer_sites
+           << ",\"block_source_storage_annotation_assignment_value_sites\":"
+           << block_source_storage_annotation_contract.assignment_value_sites
+           << ",\"block_source_storage_annotation_return_value_sites\":"
+           << block_source_storage_annotation_contract.return_value_sites
+           << ",\"block_source_storage_annotation_call_argument_sites\":"
+           << block_source_storage_annotation_contract.call_argument_sites
+           << ",\"block_source_storage_annotation_message_argument_sites\":"
+           << block_source_storage_annotation_contract.message_argument_sites
+           << ",\"block_source_storage_annotation_non_normalized_sites\":"
+           << block_source_storage_annotation_contract.non_normalized_sites
+           << ",\"block_source_storage_annotation_contract_violation_sites\":"
+           << block_source_storage_annotation_contract.contract_violation_sites
+           << ",\"lowering_block_source_storage_annotation_replay_key\":\""
+           << block_source_storage_annotation_replay_key
+           << "\""
            << ",\"deterministic_block_abi_invoke_trampoline_lowering_handoff\":"
            << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
            << ",\"block_abi_invoke_trampoline_lowering_sites\":"
@@ -12972,6 +13230,49 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (block_source_model_completion_contract.deterministic ? "true"
                                                                    : "false")
+           << "}"
+           << ",\"objc_block_source_storage_annotation_surface\":{\"block_literal_sites\":"
+           << block_source_storage_annotation_contract.block_literal_sites
+           << ",\"capture_entries_total\":"
+           << block_source_storage_annotation_contract.capture_entries_total
+           << ",\"mutated_capture_entries_total\":"
+           << block_source_storage_annotation_contract
+                  .mutated_capture_entries_total
+           << ",\"byref_capture_entries_total\":"
+           << block_source_storage_annotation_contract
+                  .byref_capture_entries_total
+           << ",\"copy_helper_intent_sites\":"
+           << block_source_storage_annotation_contract.copy_helper_intent_sites
+           << ",\"dispose_helper_intent_sites\":"
+           << block_source_storage_annotation_contract
+                  .dispose_helper_intent_sites
+           << ",\"heap_candidate_sites\":"
+           << block_source_storage_annotation_contract.heap_candidate_sites
+           << ",\"expression_sites\":"
+           << block_source_storage_annotation_contract.expression_sites
+           << ",\"global_initializer_sites\":"
+           << block_source_storage_annotation_contract
+                  .global_initializer_sites
+           << ",\"binding_initializer_sites\":"
+           << block_source_storage_annotation_contract
+                  .binding_initializer_sites
+           << ",\"assignment_value_sites\":"
+           << block_source_storage_annotation_contract.assignment_value_sites
+           << ",\"return_value_sites\":"
+           << block_source_storage_annotation_contract.return_value_sites
+           << ",\"call_argument_sites\":"
+           << block_source_storage_annotation_contract.call_argument_sites
+           << ",\"message_argument_sites\":"
+           << block_source_storage_annotation_contract.message_argument_sites
+           << ",\"non_normalized_sites\":"
+           << block_source_storage_annotation_contract.non_normalized_sites
+           << ",\"contract_violation_sites\":"
+           << block_source_storage_annotation_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << block_source_storage_annotation_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (block_source_storage_annotation_contract.deterministic ? "true"
+                                                                      : "false")
            << "}"
            << ",\"objc_block_abi_invoke_trampoline_lowering_surface\":{\"block_literal_sites\":"
            << block_abi_invoke_trampoline_lowering_contract.block_literal_sites
@@ -14210,6 +14511,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_source_model_completion_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_block_source_model_completion_handoff =
       block_source_model_completion_contract.deterministic;
+  ir_frontend_metadata.lowering_block_source_storage_annotation_replay_key =
+      block_source_storage_annotation_replay_key;
+  ir_frontend_metadata.block_source_storage_annotation_block_literal_sites =
+      block_source_storage_annotation_contract.block_literal_sites;
+  ir_frontend_metadata.block_source_storage_annotation_capture_entries_total =
+      block_source_storage_annotation_contract.capture_entries_total;
+  ir_frontend_metadata
+      .block_source_storage_annotation_mutated_capture_entries_total =
+      block_source_storage_annotation_contract
+          .mutated_capture_entries_total;
+  ir_frontend_metadata
+      .block_source_storage_annotation_byref_capture_entries_total =
+      block_source_storage_annotation_contract.byref_capture_entries_total;
+  ir_frontend_metadata.block_source_storage_annotation_copy_helper_intent_sites =
+      block_source_storage_annotation_contract.copy_helper_intent_sites;
+  ir_frontend_metadata
+      .block_source_storage_annotation_dispose_helper_intent_sites =
+      block_source_storage_annotation_contract
+          .dispose_helper_intent_sites;
+  ir_frontend_metadata.block_source_storage_annotation_heap_candidate_sites =
+      block_source_storage_annotation_contract.heap_candidate_sites;
+  ir_frontend_metadata.block_source_storage_annotation_expression_sites =
+      block_source_storage_annotation_contract.expression_sites;
+  ir_frontend_metadata.block_source_storage_annotation_global_initializer_sites =
+      block_source_storage_annotation_contract.global_initializer_sites;
+  ir_frontend_metadata.block_source_storage_annotation_binding_initializer_sites =
+      block_source_storage_annotation_contract.binding_initializer_sites;
+  ir_frontend_metadata.block_source_storage_annotation_assignment_value_sites =
+      block_source_storage_annotation_contract.assignment_value_sites;
+  ir_frontend_metadata.block_source_storage_annotation_return_value_sites =
+      block_source_storage_annotation_contract.return_value_sites;
+  ir_frontend_metadata.block_source_storage_annotation_call_argument_sites =
+      block_source_storage_annotation_contract.call_argument_sites;
+  ir_frontend_metadata.block_source_storage_annotation_message_argument_sites =
+      block_source_storage_annotation_contract.message_argument_sites;
+  ir_frontend_metadata.block_source_storage_annotation_non_normalized_sites =
+      block_source_storage_annotation_contract.non_normalized_sites;
+  ir_frontend_metadata.block_source_storage_annotation_contract_violation_sites =
+      block_source_storage_annotation_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_block_source_storage_annotation_handoff =
+      block_source_storage_annotation_contract.deterministic;
   ir_frontend_metadata.lowering_block_abi_invoke_trampoline_replay_key =
       block_abi_invoke_trampoline_lowering_replay_key;
   ir_frontend_metadata.block_abi_invoke_trampoline_lowering_block_literal_sites =

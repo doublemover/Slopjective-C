@@ -59,6 +59,20 @@ struct Expr {
       "fail-closed-on-block-signature-capture-or-invoke-source-model-drift-before-runnable-block-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockSourceModelLaneContract =
       "m261-block-source-model-v1";
+  // M261-A003 block-source-storage-annotation constants: lane-A now extends
+  // the truthful source-only block model with parser-owned byref/helper/
+  // escape-shape annotations while runnable block lowering remains out of
+  // scope.
+  static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationContractId =
+      "objc3c-executable-block-source-storage-annotation/m261-a003-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockByrefStorageModel =
+      "block-source-model-publishes-deterministic-byref-capture-candidates-before-runnable-block-byref-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockHelperIntentModel =
+      "block-source-model-publishes-copy-dispose-helper-intent-before-runnable-block-helper-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeShapeModel =
+      "block-source-model-publishes-heap-promotion-relevant-escape-shape-categories-before-runnable-block-escape-analysis";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationLaneContract =
+      "m261-block-source-storage-annotations-v1";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -141,6 +155,10 @@ struct Expr {
   std::vector<std::string> block_capture_inventory_entries_lexicographic;
   std::size_t block_byvalue_readonly_capture_count = 0;
   std::string block_capture_inventory_profile;
+  std::vector<std::string> block_mutated_capture_names_lexicographic;
+  std::size_t block_mutated_capture_count = 0;
+  std::vector<std::string> block_byref_capture_names_lexicographic;
+  std::size_t block_byref_capture_count = 0;
   std::size_t block_body_statement_count = 0;
   std::string block_capture_profile;
   bool block_capture_set_deterministic = false;
@@ -170,6 +188,13 @@ struct Expr {
   std::string block_copy_dispose_profile;
   std::string block_copy_helper_symbol;
   std::string block_dispose_helper_symbol;
+  bool block_copy_helper_intent_required = false;
+  bool block_dispose_helper_intent_required = false;
+  bool block_escape_shape_promotes_to_heap_candidate = false;
+  bool block_source_storage_annotations_are_normalized = false;
+  std::string block_helper_intent_profile;
+  std::string block_escape_shape_symbol;
+  std::string block_escape_shape_profile;
   std::size_t block_determinism_perf_baseline_weight = 0;
   bool block_determinism_perf_baseline_profile_is_normalized = false;
   std::string block_determinism_perf_baseline_profile;
