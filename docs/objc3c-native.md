@@ -7026,12 +7026,16 @@ switches away from the current monolithic build path.
 
 - contract id
   `objc3c-native-build-command-surface/m276-a001-v1`
-- current truthful state
-  - `npm run build:objc3c-native` still routes to the monolithic PowerShell build
-    path in `scripts/build_objc3c_native.ps1`
-  - that path currently builds `objc3c-native`,
-    `objc3c-frontend-c-api-runner`, and `objc3_runtime.lib`, then regenerates
-    the current frontend packet family in the same invocation
+- historical freeze state when `M276-A001` landed
+  - `npm run build:objc3c-native` still routed to the monolithic PowerShell
+    build path in `scripts/build_objc3c_native.ps1`
+  - that path built `objc3c-native`, `objc3c-frontend-c-api-runner`, and
+    `objc3_runtime.lib`, then regenerated the current frontend packet family in
+    the same invocation
+- current state after `M276-C001`
+  - `npm run build:objc3c-native` now keeps the same wrapper entrypoint but
+    routes native binary compilation through the persistent CMake/Ninja backend
+    under `tmp/build-objc3c-native`
 - frozen future command taxonomy
   - `build:objc3c-native`
     - eventual fast local binary-build default after parity proof lands
@@ -7073,17 +7077,54 @@ PowerShell build and the future incremental backend.
   - compile database emission at `tmp/build-objc3c-native/compile_commands.json`
   - authoritative toolchain-root flow from `LLVM_ROOT` through the wrapper into
     future configure steps
-- current known parity gaps that later `M276` issues must close
-  - `scripts/build_objc3c_native.ps1` resolves `LLVM_ROOT`, `clang++`,
+- historical parity gaps frozen by `M276-A002`
+  - `scripts/build_objc3c_native.ps1` resolved `LLVM_ROOT`, `clang++`,
     `llvm-lib`, and `libclang` directly
-  - `native/objc3c/CMakeLists.txt` does not yet carry that external toolchain
+  - `native/objc3c/CMakeLists.txt` did not yet carry that external toolchain
     discovery/link contract
-  - the script publishes final outputs into `artifacts/`, while `CMakeLists.txt`
-    does not yet freeze runtime/archive/output-directory publication there
-  - the script applies `OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1` broadly,
-    while `CMakeLists.txt` only wires that define on `objc3c_runtime_abi`
+  - the script published final outputs into `artifacts/`, while
+    `CMakeLists.txt` did not yet freeze runtime/archive/output-directory
+    publication there
+  - the script applied `OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1` broadly,
+    while `CMakeLists.txt` only wired that define on `objc3c_runtime_abi`
+- current state after `M276-C001`
+  - the wrapper still owns toolchain discovery and passes it into the CMake
+    configure step
+  - the CMake target graph now consumes the LLVM include/libclang inputs and
+    publishes the canonical artifact paths directly
+  - the CMake target graph now applies the canonical warning/define surface to
+    the native binary targets
 - next issue
   - `M276-C001`
+
+## Persistent CMake/Ninja incremental backend (M276-C001)
+
+`M276-C001` lands the first real implementation step of the new native build
+surface while keeping packet generation on the existing wrapper path.
+
+- contract id
+  `objc3c-persistent-cmake-ninja-native-build-backend/m276-c001-v1`
+- current truthful state
+  - `scripts/build_objc3c_native.ps1` now configures and reuses a persistent
+    CMake/Ninja build tree under `tmp/build-objc3c-native`
+  - native binary builds for `objc3c-native`, `objc3c-frontend-c-api-runner`,
+    and `objc3_runtime.lib` now route through CMake/Ninja instead of per-file
+    wrapper compilation
+  - canonical published artifacts remain:
+    - `artifacts/bin/objc3c-native.exe`
+    - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+    - `artifacts/lib/objc3_runtime.lib`
+  - `tmp/build-objc3c-native/compile_commands.json` is now emitted on configure
+  - warm invocations reuse the configured build tree and can no-op at the Ninja
+    layer when no source changes are present
+- truthful remaining boundary
+  - the wrapper still regenerates the current frontend packet family in the same
+    command after the native binaries are built
+  - packet-family decomposition remains deferred to `M276-C002` and `M276-C003`
+  - broader readiness-runner migration remains deferred to `M276-D001` and
+    `M276-D002`
+- next issue
+  - `M276-C002`
 
 ## Executable class/protocol/category source closure (M256-A001)
 

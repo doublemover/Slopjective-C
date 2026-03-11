@@ -10290,3 +10290,25 @@ PowerShell build and the reserved future CMake/Ninja backend.
 - explicit handoff
   - `M276-C001` must implement the backend only after these parity boundaries
     remain machine-checkable
+
+## M276 Persistent CMake/Ninja Incremental Backend (C001)
+
+`M276-C001` lands the first real implementation step for the native build
+surface modernization.
+
+- contract id
+  `objc3c-persistent-cmake-ninja-native-build-backend/m276-c001-v1`
+- implementation truths
+  - `scripts/build_objc3c_native.ps1` now configures and reuses a persistent
+    CMake/Ninja build tree at `tmp/build-objc3c-native`
+  - native binaries now build through `cmake --build` against the in-tree
+    `native/objc3c/CMakeLists.txt` graph
+  - `tmp/build-objc3c-native/compile_commands.json` is emitted during configure
+  - canonical outputs still publish at `artifacts/bin` and `artifacts/lib`
+  - the PowerShell wrapper still owns frontend packet generation after the
+    native binary build completes
+- truthful boundary
+  - packet-family decomposition does not land here
+  - readiness-runner/helper migration does not land here
+- explicit handoff
+  - `M276-C002` is the next issue

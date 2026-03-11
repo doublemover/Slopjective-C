@@ -4,6 +4,8 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $llvmRoot = if ($env:LLVM_ROOT) { $env:LLVM_ROOT } else { "C:\Program Files\LLVM" }
 $clangxx = Join-Path $llvmRoot "bin\clang++.exe"
 $llvmLibTool = Join-Path $llvmRoot "bin\llvm-lib.exe"
+$cmakeTool = $null
+$ninjaTool = $null
 
 if (!(Test-Path -LiteralPath $clangxx -PathType Leaf)) {
   $clangCommand = Get-Command clang++ -ErrorAction SilentlyContinue
@@ -20,6 +22,16 @@ if (!(Test-Path -LiteralPath $llvmLibTool -PathType Leaf)) {
   if ($null -ne $llvmLibCommand -and (Test-Path -LiteralPath $llvmLibCommand.Source -PathType Leaf)) {
     $llvmLibTool = $llvmLibCommand.Source
   }
+}
+
+$cmakeCommand = Get-Command cmake -ErrorAction SilentlyContinue
+if ($null -ne $cmakeCommand -and (Test-Path -LiteralPath $cmakeCommand.Source -PathType Leaf)) {
+  $cmakeTool = $cmakeCommand.Source
+}
+
+$ninjaCommand = Get-Command ninja -ErrorAction SilentlyContinue
+if ($null -ne $ninjaCommand -and (Test-Path -LiteralPath $ninjaCommand.Source -PathType Leaf)) {
+  $ninjaTool = $ninjaCommand.Source
 }
 
 $libclangCandidates = @(
@@ -49,6 +61,8 @@ if ($null -eq $libclang) {
 }
 if (!(Test-Path -LiteralPath $includeDir -PathType Container)) { throw "LLVM include dir not found at $includeDir" }
 if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "native source root not found at $nativeSourceRoot" }
+if ($null -eq $cmakeTool) { throw "cmake not found. ensure cmake is on PATH" }
+if ($null -eq $ninjaTool) { throw "ninja not found. ensure ninja is on PATH" }
 
 # M276-A002 build-graph-and-toolchain-parity anchor:
 # - authoritative toolchain flow today is `LLVM_ROOT` -> direct wrapper
@@ -56,6 +70,12 @@ if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "na
 # - later incremental backend work must preserve this authoritative wrapper
 #   contract when forwarding configuration into CMake/Ninja
 # - compile database parity frozen to `tmp/build-objc3c-native/compile_commands.json`
+#
+# M276-C001 persistent-cmake-ninja-incremental-backend anchor:
+# - native binaries now build through a persistent CMake/Ninja tree rooted at
+#   `tmp/build-objc3c-native`
+# - canonical outputs remain published at `artifacts/bin` and `artifacts/lib`
+# - this script still owns frontend packet generation after the native build
 
 $outDir = Join-Path $repoRoot "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
@@ -66,6 +86,9 @@ $outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
 $outRuntimeLib = Join-Path $outLibDir "objc3_runtime.lib"
 $tmpOutDir = Join-Path $repoRoot "tmp/build-objc3c-native"
 New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
+$cmakeSourceDir = Join-Path $repoRoot "native/objc3c"
+$compileCommandsPath = Join-Path $tmpOutDir "compile_commands.json"
+$buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.json"
 
 # M276-A001 native-build-command-surface anchor:
 # - current truthful state: this script remains the monolithic authoritative
@@ -77,6 +100,14 @@ New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
 #   - build:objc3c-native:reconfigure => reserved fingerprint refresh/self-heal
 # - later M276 issues must prove parity before `build:objc3c-native` changes
 #   behavior
+
+# M276-C001 native-binary-backend anchor:
+# - native binary compilation now routes through a persistent CMake/Ninja build
+#   tree under `tmp/build-objc3c-native`
+# - final published native artifacts remain under `artifacts/bin` and
+#   `artifacts/lib`
+# - the wrapper still owns frontend packet generation after the native binaries
+#   are built
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
@@ -87,6 +118,123 @@ function Write-BuildStep {
   param([Parameter(Mandatory = $true)][string]$Message)
 
   Write-Host ("[build:objc3c-native] " + $Message)
+}
+
+function Get-BuildFingerprint {
+  param(
+    [Parameter(Mandatory = $true)][string]$Clangxx,
+    [Parameter(Mandatory = $true)][string]$CmakeTool,
+    [Parameter(Mandatory = $true)][string]$NinjaTool,
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$IncludeDir,
+    [Parameter(Mandatory = $true)][string]$Libclang,
+    [Parameter(Mandatory = $true)][string]$BuildDir,
+    [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
+    [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
+    [Parameter(Mandatory = $true)][string]$SourceDir
+  )
+
+  return [ordered]@{
+    schema_version = 1
+    generator = "Ninja"
+    cmake = $CmakeTool
+    ninja = $NinjaTool
+    clangxx = $Clangxx
+    llvm_root = $LlvmRoot
+    llvm_include_dir = $IncludeDir
+    libclang = $Libclang
+    build_dir = $BuildDir
+    source_dir = $SourceDir
+    runtime_output_dir = $RuntimeOutputDir
+    library_output_dir = $LibraryOutputDir
+    direct_object_emission = $true
+    warning_parity = $true
+  }
+}
+
+function Test-BuildFingerprintMatch {
+  param(
+    [Parameter(Mandatory = $true)][hashtable]$ExpectedFingerprint,
+    [Parameter(Mandatory = $true)][string]$FingerprintPath
+  )
+
+  if (!(Test-Path -LiteralPath $FingerprintPath -PathType Leaf)) {
+    return $false
+  }
+
+  try {
+    $actual = Get-Content -LiteralPath $FingerprintPath -Raw | ConvertFrom-Json -AsHashtable
+  } catch {
+    return $false
+  }
+
+  foreach ($key in $ExpectedFingerprint.Keys) {
+    if (!$actual.ContainsKey($key)) {
+      return $false
+    }
+    if ([string]$actual[$key] -ne [string]$ExpectedFingerprint[$key]) {
+      return $false
+    }
+  }
+
+  return $true
+}
+
+function Invoke-CMakeConfigure {
+  param(
+    [Parameter(Mandatory = $true)][string]$CmakeTool,
+    [Parameter(Mandatory = $true)][string]$NinjaTool,
+    [Parameter(Mandatory = $true)][string]$SourceDir,
+    [Parameter(Mandatory = $true)][string]$BuildDir,
+    [Parameter(Mandatory = $true)][string]$Clangxx,
+    [Parameter(Mandatory = $true)][string]$LlvmRoot,
+    [Parameter(Mandatory = $true)][string]$IncludeDir,
+    [Parameter(Mandatory = $true)][string]$Libclang,
+    [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
+    [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
+    [Parameter(Mandatory = $true)][string]$FingerprintPath,
+    [Parameter(Mandatory = $true)][hashtable]$Fingerprint
+  )
+
+  $cachePath = Join-Path $BuildDir "CMakeCache.txt"
+  $needsConfigure = !(Test-Path -LiteralPath $cachePath -PathType Leaf) -or !(Test-BuildFingerprintMatch -ExpectedFingerprint $Fingerprint -FingerprintPath $FingerprintPath)
+  if ($needsConfigure) {
+    if (Test-Path -LiteralPath $cachePath -PathType Leaf) {
+      Write-BuildStep "cmake_configure=refresh-fingerprint"
+    } else {
+      Write-BuildStep "cmake_configure=cold"
+    }
+    & $CmakeTool `
+      -S $SourceDir `
+      -B $BuildDir `
+      -G Ninja `
+      "-DCMAKE_MAKE_PROGRAM=$NinjaTool" `
+      "-DCMAKE_CXX_COMPILER=$Clangxx" `
+      "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" `
+      "-DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=ON" `
+      "-DOBJC3C_ENABLE_WARNING_PARITY=ON" `
+      "-DOBJC3C_LLVM_ROOT=$LlvmRoot" `
+      "-DOBJC3C_LLVM_INCLUDE_DIR=$IncludeDir" `
+      "-DOBJC3C_LIBCLANG_LIBRARY=$Libclang" `
+      "-DOBJC3C_RUNTIME_OUTPUT_DIR=$RuntimeOutputDir" `
+      "-DOBJC3C_LIBRARY_OUTPUT_DIR=$LibraryOutputDir"
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    $Fingerprint | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $FingerprintPath -Encoding utf8
+  } else {
+    Write-BuildStep "cmake_configure=reuse"
+  }
+}
+
+function Invoke-CMakeNativeBuild {
+  param(
+    [Parameter(Mandatory = $true)][string]$CmakeTool,
+    [Parameter(Mandatory = $true)][string]$BuildDir
+  )
+
+  Write-BuildStep "cmake_build_start=native-binaries"
+  & $CmakeTool --build $BuildDir --parallel --target objc3c-native objc3c-frontend-c-api-runner objc3_runtime
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  Write-BuildStep "cmake_build_done=native-binaries"
 }
 
 function Publish-ArtifactWithRetry {
@@ -1194,70 +1342,50 @@ foreach ($runtimePath in @($runtimeLibrarySourcePath, $runtimeLibraryHeaderPath)
 Write-BuildStep ("repo_root=" + $repoRoot)
 Write-BuildStep ("llvm_root=" + $llvmRoot)
 Write-BuildStep ("clangxx=" + $clangxx)
+Write-BuildStep ("cmake=" + $cmakeTool)
+Write-BuildStep ("ninja=" + $ninjaTool)
 Write-BuildStep ("llvm_lib=" + $llvmLibTool)
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
-Write-BuildStep ("compile_start=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-$nativeObjectDir = Join-Path $tmpOutDir ("objects.native." + $runSuffix)
-$nativeObjectPaths = Compile-ObjectFiles `
-  -TargetName "objc3c-native" `
-  -SourcePaths $nativeSourcePaths `
-  -ObjectDir $nativeObjectDir `
+
+$buildFingerprint = Get-BuildFingerprint `
   -Clangxx $clangxx `
+  -CmakeTool $cmakeTool `
+  -NinjaTool $ninjaTool `
+  -LlvmRoot $llvmRoot `
   -IncludeDir $includeDir `
-  -NativeSourceRoot $nativeSourceRoot `
-  -EnableLlvmDirectObjectEmission $true
-Link-ExecutableFromObjects `
-  -TargetName "objc3c-native" `
-  -ObjectPaths $nativeObjectPaths `
   -Libclang $libclang `
+  -BuildDir $tmpOutDir `
+  -RuntimeOutputDir $outDir `
+  -LibraryOutputDir $outLibDir `
+  -SourceDir $cmakeSourceDir
+
+Invoke-CMakeConfigure `
+  -CmakeTool $cmakeTool `
+  -NinjaTool $ninjaTool `
+  -SourceDir $cmakeSourceDir `
+  -BuildDir $tmpOutDir `
   -Clangxx $clangxx `
-  -StagedOutput $stagedOutExe `
-  -RepoRoot $repoRoot
-Publish-ArtifactWithRetry -StagedPath $stagedOutExe -FinalPath $outExe
-Write-BuildStep ("compile_done=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-Write-BuildStep ("compile_start=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-$capiObjectDir = Join-Path $tmpOutDir ("objects.capi." + $runSuffix)
-$capiObjectPaths = Compile-ObjectFiles `
-  -TargetName "objc3c-frontend-c-api-runner" `
-  -SourcePaths $capiRunnerSourcePaths `
-  -ObjectDir $capiObjectDir `
-  -Clangxx $clangxx `
+  -LlvmRoot $llvmRoot `
   -IncludeDir $includeDir `
-  -NativeSourceRoot $nativeSourceRoot `
-  -EnableLlvmDirectObjectEmission $true
-Link-ExecutableFromObjects `
-  -TargetName "objc3c-frontend-c-api-runner" `
-  -ObjectPaths $capiObjectPaths `
   -Libclang $libclang `
-  -Clangxx $clangxx `
-  -StagedOutput $stagedOutCapiExe `
-  -RepoRoot $repoRoot
-Publish-ArtifactWithRetry -StagedPath $stagedOutCapiExe -FinalPath $outCapiExe
-Write-BuildStep ("compile_done=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-Write-BuildStep ("compile_start=objc3_runtime.obj -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $stagedRuntimeObj))
+  -RuntimeOutputDir $outDir `
+  -LibraryOutputDir $outLibDir `
+  -FingerprintPath $buildFingerprintPath `
+  -Fingerprint $buildFingerprint
 
-& $clangxx `
-  -std=c++20 `
-  -Wall `
-  -Wextra `
-  -pedantic `
-  "-I$nativeSourceRoot" `
-  -c `
-  $runtimeLibrarySourcePath `
-  -o $stagedRuntimeObj
+Invoke-CMakeNativeBuild `
+  -CmakeTool $cmakeTool `
+  -BuildDir $tmpOutDir
 
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Write-BuildStep ("compile_done=objc3_runtime.obj -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $stagedRuntimeObj))
-Write-BuildStep ("archive_start=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+if (!(Test-Path -LiteralPath $outExe -PathType Leaf)) { throw "native binary missing after CMake/Ninja build: $outExe" }
+if (!(Test-Path -LiteralPath $outCapiExe -PathType Leaf)) { throw "c-api runner missing after CMake/Ninja build: $outCapiExe" }
+if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
+if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
 
-& $llvmLibTool `
-  /NOLOGO `
-  "/OUT:$stagedRuntimeLib" `
-  $stagedRuntimeObj
-
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-Publish-ArtifactWithRetry -StagedPath $stagedRuntimeLib -FinalPath $outRuntimeLib
-Write-BuildStep ("archive_done=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+Write-BuildStep ("compile_commands=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
 Write-BuildStep "artifact_generation_start=frontend_contract_packets"
 Write-FrontendModuleScaffoldArtifact `
   -RepoRoot $repoRoot `

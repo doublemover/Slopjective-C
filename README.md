@@ -157,9 +157,11 @@ Expected artifacts:
 
 Current truthful state:
 
-- `npm run build:objc3c-native` still uses the monolithic PowerShell build path.
-- That command currently rebuilds the native binaries, the runtime archive, and
-  the current frontend packet family together.
+- `npm run build:objc3c-native` is now a PowerShell wrapper over a persistent
+  CMake/Ninja build tree under `tmp/build-objc3c-native`.
+- That command reuses the configured build tree across invocations, publishes
+  the native binaries and runtime archive into `artifacts/`, and then
+  regenerates the current frontend packet family.
 
 Frozen future command surface (`M276-A001`):
 
@@ -195,7 +197,14 @@ Parity freeze (`M276-A002`):
 - the authoritative toolchain root remains `LLVM_ROOT`, with the wrapper
   responsible for carrying that into any future configure step
 
-`M276-C001` is the first implementation issue after that parity freeze.
+`M276-C001` is now the first landed implementation step after that parity freeze:
+
+- native binary builds route through CMake/Ninja
+- `tmp/build-objc3c-native/compile_commands.json` is emitted on configure
+- warm invocations reuse the persistent build tree
+- canonical binaries still publish to `artifacts/bin` and `artifacts/lib`
+
+`M276-C002` is the next issue.
 
 ## Quickstart
 
