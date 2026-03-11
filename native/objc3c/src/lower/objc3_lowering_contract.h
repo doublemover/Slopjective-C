@@ -635,6 +635,21 @@ inline constexpr const char *kObjc3RuntimeReleaseI32Symbol =
     "objc3_runtime_release_i32";
 inline constexpr const char *kObjc3RuntimeAutoreleaseI32Symbol =
     "objc3_runtime_autorelease_i32";
+// M260-D001 runtime memory-management API freeze anchor: the stable public
+// runtime ABI remains register/lookup/dispatch only, while lowered
+// retain/release/autorelease/current-property/weak helper entrypoints stay on
+// the private bootstrap-internal surface until later runtime work decides
+// whether any of that memory-management API should become public.
+inline constexpr const char *kObjc3RuntimeMemoryManagementApiContractId =
+    "objc3c-runtime-memory-management-api-freeze/m260-d001-v1";
+inline constexpr const char *kObjc3RuntimeMemoryManagementApiReferenceModel =
+    "public-runtime-abi-stays-register-lookup-dispatch-while-reference-counting-helpers-remain-private-runtime-entrypoints";
+inline constexpr const char *kObjc3RuntimeMemoryManagementApiWeakModel =
+    "weak-storage-remains-served-through-private-runtime-helper-entrypoints-and-runtime-side-tables";
+inline constexpr const char *kObjc3RuntimeMemoryManagementApiAutoreleasepoolModel =
+    "no-public-autoreleasepool-push-pop-api-yet-autorelease-helper-drains-only-on-dispatch-frame-return";
+inline constexpr const char *kObjc3RuntimeMemoryManagementApiFailClosedModel =
+    "no-public-memory-management-header-widening-no-user-facing-arc-entrypoints-yet";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1646,6 +1661,7 @@ std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
 std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
 std::string Objc3OwnershipLoweringBaselineSummary();
 std::string Objc3OwnershipRuntimeHookEmissionSummary();
+std::string Objc3RuntimeMemoryManagementApiSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

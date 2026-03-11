@@ -288,6 +288,10 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 // synthesized accessors target these private runtime helpers so retain/release,
 // autorelease, and weak property paths execute against realized runtime-backed
 // storage without widening the stable public runtime header yet.
+// M260-D001 runtime-memory-management-api anchor: this private bootstrap
+// internal header is the canonical home for lowered ownership helper
+// entrypoints until later runtime work decides whether any part of the memory
+// management surface should become public.
 int objc3_runtime_read_current_property_i32(void);
 void objc3_runtime_write_current_property_i32(int value);
 int objc3_runtime_exchange_current_property_i32(int value);

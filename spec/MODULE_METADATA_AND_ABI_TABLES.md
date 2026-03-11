@@ -8389,3 +8389,23 @@ accessors now carry live ownership hook execution behavior.
 - truthful boundary
   - live autoreleasepool push/pop lowering still remains outside this issue
   - `M260-D001` is the next issue
+
+## M260 runtime memory-management API metadata anchors (D001)
+
+`M260-D001` does not add a new object metadata descriptor family, but it does
+freeze how emitted IR advertises the runtime memory-management helper ABI.
+
+- contract id
+  `objc3c-runtime-memory-management-api-freeze/m260-d001-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/d001/positive/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m260/d001/positive/module.obj`
+  - `tmp/reports/m260/M260-D001/runtime_memory_management_api_contract_summary.json`
+- emitted metadata truths
+  - emitted IR now carries `!objc3.objc_runtime_memory_management_api`
+  - emitted IR publishes the frozen helper symbol names for retain/release,
+    autorelease, current-property, and weak load/store entrypoints
+  - the public runtime header still omits those helper entrypoints
+- truthful boundary
+  - live public autoreleasepool push/pop APIs still remain outside this issue
+  - `M260-D002` is the next issue

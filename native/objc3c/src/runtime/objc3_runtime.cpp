@@ -3546,6 +3546,10 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
   return LookupSelectorUnlocked(selector);
 }
 
+// M260-D001 runtime memory-management API freeze anchor: lowered ownership
+// helpers remain private runtime entrypoints reached through IR and runtime
+// probes, while the stable public runtime header stays limited to
+// registration/lookup/dispatch plus snapshot helpers.
 extern "C" int objc3_runtime_read_current_property_i32(void) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||

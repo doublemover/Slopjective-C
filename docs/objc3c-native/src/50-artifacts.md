@@ -5260,6 +5260,31 @@ summary-only ownership lane into live runtime helper calls.
   - live autoreleasepool push/pop lowering still remains outside this issue
   - `M260-D001` is the next issue
 
+## M260 runtime memory-management API freeze (D001)
+
+`M260-D001` freezes the truthful runtime API boundary for reference counting,
+weak storage, and autorelease semantics after `M260-C002`.
+
+- contract id
+  `objc3c-runtime-memory-management-api-freeze/m260-d001-v1`
+- canonical proof artifacts
+  - `tests/tooling/fixtures/native/m260_ownership_runtime_hook_emission_positive.objc3`
+  - `tests/tooling/runtime/m260_d001_runtime_memory_management_api_probe.cpp`
+- frozen runtime truths
+  - the stable public runtime header remains register/lookup/dispatch plus
+    testing snapshots
+  - lowered retain/release/autorelease/current-property/weak helper entrypoints
+    remain private to `objc3_runtime_bootstrap_internal.h`
+  - `objc3_runtime_autorelease_i32` remains a private helper that drains only
+    when a runtime dispatch frame is active
+  - no public autoreleasepool push/pop runtime API lands here
+- validation
+  - `check:objc3c:m260-d001-lane-d-readiness`
+- truthful boundary
+  - the helper surface is now frozen, but live public autoreleasepool runtime
+    APIs still remain outside this issue
+  - `M260-D002` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

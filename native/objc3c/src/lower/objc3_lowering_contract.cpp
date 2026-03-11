@@ -799,6 +799,34 @@ std::string Objc3OwnershipRuntimeHookEmissionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMemoryManagementApiSummary() {
+  std::ostringstream out;
+  // M260-D001 runtime memory-management API freeze anchor: the public runtime
+  // ABI still stops at registration/lookup/dispatch, while lowered ownership
+  // helpers remain private bootstrap-internal entrypoints that runtime probes
+  // and lowered IR may consume without widening the stable public header yet.
+  out << "contract=" << kObjc3RuntimeMemoryManagementApiContractId
+      << ";reference_model="
+      << kObjc3RuntimeMemoryManagementApiReferenceModel
+      << ";weak_model=" << kObjc3RuntimeMemoryManagementApiWeakModel
+      << ";autoreleasepool_model="
+      << kObjc3RuntimeMemoryManagementApiAutoreleasepoolModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeMemoryManagementApiFailClosedModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";read_property_symbol=" << kObjc3RuntimeReadCurrentPropertyI32Symbol
+      << ";write_property_symbol=" << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+      << ";exchange_property_symbol="
+      << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+      << ";weak_load_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";weak_store_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

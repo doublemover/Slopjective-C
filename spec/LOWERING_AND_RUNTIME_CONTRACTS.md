@@ -7493,3 +7493,27 @@ runtime hook emission.
 - truthful boundary
   - live autoreleasepool push/pop lowering still remains outside this issue
   - `M260-D001` is the next implementation issue
+
+## M260 runtime memory-management API freeze (D001)
+
+`M260-D001` freezes the runtime memory-management API boundary after
+`M260-C002`.
+
+- contract id
+  `objc3c-runtime-memory-management-api-freeze/m260-d001-v1`
+- reference model
+  `public-runtime-abi-stays-register-lookup-dispatch-while-reference-counting-helpers-remain-private-runtime-entrypoints`
+- weak model
+  `weak-storage-remains-served-through-private-runtime-helper-entrypoints-and-runtime-side-tables`
+- autoreleasepool model
+  `no-public-autoreleasepool-push-pop-api-yet-autorelease-helper-drains-only-on-dispatch-frame-return`
+- failure model
+  `no-public-memory-management-header-widening-no-user-facing-arc-entrypoints-yet`
+- frozen runtime surface
+  - LLVM IR now publishes `runtime_memory_management_api` summaries and
+    `!objc3.objc_runtime_memory_management_api`
+  - lowered ownership helpers remain private runtime entrypoints consumed by
+    IR and runtime probes, not public runtime header declarations
+  - live public autoreleasepool push/pop APIs still do not exist here
+- truthful boundary
+  - `M260-D002` is the next implementation issue

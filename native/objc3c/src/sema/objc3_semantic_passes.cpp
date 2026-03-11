@@ -12493,6 +12493,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // M260-C002 ownership runtime hook emission anchor: lowering now treats
       // the sema-approved lifetime/runtime-hook/accessor-ownership trio as the
       // authoritative executable hook surface for synthesized property access.
+      // M260-D001 runtime memory-management API freeze anchor: sema still only
+      // publishes the canonical ownership profile surface, while the actual
+      // retain/release/autorelease/weak helper ABI stays private to runtime
+      // lowering and must not widen the public runtime header here.
       property_metadata.accessor_ownership_profile =
           source.accessor_ownership_profile;
       property_metadata.executable_ivar_layout_symbol =

@@ -9766,3 +9766,16 @@ summary-only lane into live runtime-owned helper calls.
 - legacy synthesized property storage globals remain emitted for historical
   `M257-C003` artifact compatibility
 - the next issue is `M260-D001`
+
+## M260 Runtime Memory-Management API Freeze (D001)
+
+`M260-D001` freezes the truthful runtime API boundary for ownership helpers.
+
+- the stable public runtime header remains register/lookup/dispatch plus
+  private-testing snapshots
+- retain/release/autorelease/current-property/weak helper entrypoints remain
+  private to the bootstrap-internal header and lowered IR
+- LLVM IR now publishes the `runtime_memory_management_api` boundary comment
+  and `!objc3.objc_runtime_memory_management_api`
+- no public autoreleasepool push/pop runtime API lands here
+- the next issue is `M260-D002`

@@ -1326,6 +1326,15 @@ class Objc3IREmitter {
           << synthesized_property_accessor_count_
           << ";synthesized_storage_globals="
           << synthesized_property_storages_.size() << "\n";
+      // M260-D001 runtime memory-management API freeze anchor: the public
+      // runtime ABI remains narrow while lane-C emits the private helper
+      // surface consumed by synthesized ownership accessors.
+      out << "; runtime_memory_management_api = "
+          << Objc3RuntimeMemoryManagementApiSummary()
+          << ";synthesized_accessor_entries="
+          << synthesized_property_accessor_count_
+          << ";synthesized_storage_globals="
+          << synthesized_property_storages_.size() << "\n";
     }
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
@@ -2522,6 +2531,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_executable_ivar_layout_emission = !{!67}\n";
     out << "!objc3.objc_executable_synthesized_accessor_property_lowering = !{!68}\n";
     out << "!objc3.objc_runtime_ownership_hook_emission = !{!69}\n";
+    out << "!objc3.objc_runtime_memory_management_api = !{!70}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3654,6 +3664,35 @@ class Objc3IREmitter {
                kObjc3OwnershipRuntimeHookEmissionFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReadCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeWriteCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeExchangeCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
+        << "\", i64 "
+        << static_cast<unsigned long long>(synthesized_property_accessor_count_)
+        << ", i64 "
+        << static_cast<unsigned long long>(synthesized_property_storages_.size())
+        << "}\n";
+    out << "!70 = !{!\""
+        << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiReferenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiWeakModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementApiAutoreleasepoolModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiFailClosedModel)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
         << "\", !\""

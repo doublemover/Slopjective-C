@@ -70,6 +70,11 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // M257-D002 instance-allocation-layout-runtime anchor: the same ABI now also
 // carries true per-instance allocation and slot-backed synthesized accessors
 // without widening the public runtime header.
+// M260-D001 runtime-memory-management-api anchor: retain/release/autorelease,
+// current-property, and weak helper entrypoints remain private lowering/runtime
+// mechanics rather than public runtime ABI. The stable public header must stay
+// at registration, lookup, dispatch, and testing snapshots until later runtime
+// work makes a deliberate widening decision.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary
