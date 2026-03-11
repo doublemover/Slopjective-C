@@ -1090,6 +1090,25 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
+  std::ostringstream out;
+  // M261-D002 block-runtime allocation/copy-dispose/invoke implementation
+  // anchor: promoted runtime block records now preserve helper pointers and
+  // aligned copied storage so pointer-capture block records can run copy,
+  // invoke, and final-dispose behavior without claiming byref/ownership
+  // interop is solved yet.
+  out << "contract="
+      << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
+      << ";previous_contract=" << kObjc3RuntimeBlockApiObjectLayoutContractId
+      << ";allocation_model=runtime-block-records-copy-promoted-storage-into-aligned-word-buffers"
+      << ";copy_dispose_model=pointer-capture-promotion-runs-copy-helper-and-final-release-runs-dispose-helper"
+      << ";invoke_model=runtime-invoke-supports-readonly-scalar-and-pointer-capture-block-records"
+      << ";handle_lifetime_model=i32-block-handles-participate-in-runtime-retain-release"
+      << ";fail_closed_model=byref-forwarding-runtime-reentrant-helper-bodies-and-owned-capture-escape-interop-remain-deferred-until-m261-d003"
+      << ";non_goals=no-public-block-object-abi-no-generalized-public-runtime-helper-surface";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

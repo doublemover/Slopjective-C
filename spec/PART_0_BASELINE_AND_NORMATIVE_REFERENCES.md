@@ -195,6 +195,10 @@ Current implementation boundary:
   - lane-D now also freezes that private runtime boundary (`M261-D001`): block
     promotion/invoke helpers remain internal-only runtime API with opaque
     runtime-owned block records rather than a public block-object ABI.
+  - lane-D now also upgrades that boundary (`M261-D002`): runtime-managed block
+    records now support helper-mediated copy/dispose and pointer-capture invoke
+    behavior for promoted blocks, while byref-forwarded and ownership-reentrant
+    escaping helper interop remains deferred until `M261-D003`.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

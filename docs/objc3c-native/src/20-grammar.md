@@ -1266,6 +1266,37 @@ Recommended M261 lane-D contract check:
 - `python scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
 - `M261-D002` is the next issue.
 
+## M261 block object allocation, copy-dispose, and invoke support (M261-D002)
+
+`M261-D002` turns the frozen D001 block helper boundary into a live runtime
+capability for promoted block records.
+
+- contract id
+  `objc3c-runtime-block-allocation-copy-dispose-invoke-support/m261-d002-v1`
+
+Current live runtime behavior:
+
+- promotion copies block storage into aligned runtime-owned buffers
+- pointer-capture block promotion preserves copy/dispose helper pointers
+- promotion runs the copy helper before the runtime block handle is published
+- final runtime release runs the dispose helper before the runtime record is
+  erased
+- runtime block invocation now supports pointer-capture promoted blocks as well
+  as the earlier readonly-scalar slice
+- the emitted IR now carries
+  `; runtime_block_allocation_copy_dispose_invoke_support = ...`
+
+Still explicitly deferred:
+
+- byref-forwarded escaping blocks
+- runtime-reentrant ownership helper interop
+- public block-object ABI or public block runtime helper declarations
+
+Recommended M261 lane-D implementation check:
+
+- `python scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
+- `M261-D003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

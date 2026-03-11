@@ -317,6 +317,10 @@ int objc3_runtime_autorelease_i32(int value);
 // lowering/runtime entrypoints in this internal header; they are not public
 // runtime ABI and later lane-D issues must preserve that boundary unless they
 // deliberately widen it.
+// M261-D002 block-runtime allocation/copy-dispose/invoke anchor: helper-backed
+// promotion now supports pointer-capture block records with runtime-managed
+// copy/dispose and invoke behavior, but the helper ABI remains private to this
+// internal header.
 int objc3_runtime_promote_block_i32(const void *storage,
                                     uint64_t storage_size_bytes,
                                     int has_pointer_capture_storage);

@@ -933,6 +933,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // pass-manager handoff remains the only semantic input to the
           // frozen private block-runtime ABI boundary; no parallel runtime
           // re-derivation path is permitted.
+          // M261-D002 block-runtime allocation/copy-dispose/invoke anchor:
+          // lane-D widens runtime execution for promoted block records without
+          // widening the source-level sema contract that this handoff
+          // publishes.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

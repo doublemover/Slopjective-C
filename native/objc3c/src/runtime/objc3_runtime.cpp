@@ -268,17 +268,25 @@ struct RuntimeInstanceRecord {
 };
 
 using RuntimeBlockInvokeFn = int (*)(void *, int, int, int, int);
+using RuntimeBlockCopyHelperFn = void (*)(void *);
+using RuntimeBlockDisposeHelperFn = void (*)(void *);
 
 // M261-D001 block-runtime API/object-layout freeze anchor: the current block
 // handle/object layout remains private runtime state. The compiler/runtime
 // contract is one opaque copied storage blob plus a private invoke pointer; no
 // public block-object memory layout is promised yet.
+// M261-D002 block-runtime allocation/copy-dispose/invoke anchor: runtime block
+// records now preserve aligned copied storage plus optional helper pointers so
+// promotion/invoke/final-dispose behavior for pointer-capture blocks executes
+// inside the private runtime model.
 struct RuntimeBlockRecord {
   int block_handle = 0;
   bool has_pointer_capture_storage = false;
   std::size_t storage_size_bytes = 0;
-  std::vector<unsigned char> storage_bytes;
+  std::vector<std::uint64_t> storage_words;
   RuntimeBlockInvokeFn invoke = nullptr;
+  RuntimeBlockCopyHelperFn copy_helper = nullptr;
+  RuntimeBlockDisposeHelperFn dispose_helper = nullptr;
   std::uint64_t retain_count = 1;
 };
 
@@ -2202,6 +2210,13 @@ void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
     --block_it->second.retain_count;
     return;
   }
+  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: final
+  // block-handle release now runs the optional dispose helper before erasing
+  // the runtime-owned block record.
+  if (block_it->second.dispose_helper != nullptr &&
+      !block_it->second.storage_words.empty()) {
+    block_it->second.dispose_helper(block_it->second.storage_words.data());
+  }
   state.runtime_blocks_by_handle.erase(block_it);
 }
 
@@ -3760,8 +3775,11 @@ extern "C" int objc3_runtime_autorelease_i32(int value) {
 extern "C" int objc3_runtime_promote_block_i32(
     const void *storage, std::uint64_t storage_size_bytes,
     int has_pointer_capture_storage) {
-  if (storage == nullptr || storage_size_bytes == 0u ||
-      has_pointer_capture_storage != 0) {
+  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: promotion
+  // now admits pointer-capture block storage, preserves helper pointers, and
+  // executes copy-helper setup before publishing the runtime-owned block
+  // handle.
+  if (storage == nullptr || storage_size_bytes == 0u) {
     return 0;
   }
   RuntimeState &state = State();
@@ -3777,13 +3795,31 @@ extern "C" int objc3_runtime_promote_block_i32(
   state.next_runtime_block_handle = block_handle + 1;
   RuntimeBlockRecord record;
   record.block_handle = block_handle;
-  record.has_pointer_capture_storage = false;
+  record.has_pointer_capture_storage = has_pointer_capture_storage != 0;
   record.storage_size_bytes =
       static_cast<std::size_t>(std::max<std::uint64_t>(storage_size_bytes, 1u));
-  record.storage_bytes.assign(record.storage_size_bytes, 0u);
-  std::memcpy(record.storage_bytes.data(), storage, record.storage_size_bytes);
-  record.invoke =
-      *reinterpret_cast<RuntimeBlockInvokeFn *>(record.storage_bytes.data());
+  const std::size_t storage_word_count =
+      (record.storage_size_bytes + sizeof(std::uint64_t) - 1u) /
+      sizeof(std::uint64_t);
+  record.storage_words.assign(storage_word_count, 0u);
+  std::memcpy(record.storage_words.data(), storage, record.storage_size_bytes);
+  std::memcpy(&record.invoke, record.storage_words.data(), sizeof(record.invoke));
+  if (record.has_pointer_capture_storage) {
+    if (record.storage_size_bytes < sizeof(void *) * 3u) {
+      return 0;
+    }
+    std::memcpy(&record.copy_helper,
+                reinterpret_cast<const unsigned char *>(record.storage_words.data()) +
+                    sizeof(void *),
+                sizeof(record.copy_helper));
+    std::memcpy(&record.dispose_helper,
+                reinterpret_cast<const unsigned char *>(record.storage_words.data()) +
+                    sizeof(void *) * 2u,
+                sizeof(record.dispose_helper));
+    if (record.copy_helper != nullptr) {
+      record.copy_helper(record.storage_words.data());
+    }
+  }
   if (record.invoke == nullptr) {
     return 0;
   }
@@ -3793,24 +3829,27 @@ extern "C" int objc3_runtime_promote_block_i32(
 
 extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
                                               int a2, int a3) {
+  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: invoke now
+  // works for any promoted runtime block record with a concrete invoke thunk,
+  // including pointer-capture storage promoted through the private helper
+  // surface.
   RuntimeBlockInvokeFn invoke = nullptr;
-  std::vector<unsigned char> storage_bytes;
+  std::vector<std::uint64_t> storage_words;
   {
     RuntimeState &state = State();
     std::lock_guard<std::mutex> lock(state.mutex);
     const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
     if (block_it == state.runtime_blocks_by_handle.end() ||
-        block_it->second.has_pointer_capture_storage ||
         block_it->second.invoke == nullptr) {
       return 0;
     }
     invoke = block_it->second.invoke;
-    storage_bytes = block_it->second.storage_bytes;
+    storage_words = block_it->second.storage_words;
   }
-  if (invoke == nullptr || storage_bytes.empty()) {
+  if (invoke == nullptr || storage_words.empty()) {
     return 0;
   }
-  return invoke(storage_bytes.data(), a0, a1, a2, a3);
+  return invoke(storage_words.data(), a0, a1, a2, a3);
 }
 
 // M260-D002 runtime-memory-management implementation anchor: autoreleasepool

@@ -10055,3 +10055,25 @@ escaping-block lowering path uses.
   - no byref-forwarded escaping block realization
   - no owned-object escaping block lifetime realization
 - the next issue is `M261-D002`
+
+## M261 Block Object Allocation, Copy-Dispose, And Invoke Support (D002)
+
+`M261-D002` upgrades the frozen D001 helper boundary into a real runtime
+capability for promoted block records.
+
+- runtime behavior now includes:
+  - aligned runtime-owned copies of promoted block storage
+  - preserved copy/dispose helper pointers for pointer-capture block records
+  - copy-helper execution during promotion
+  - dispose-helper execution on final release
+  - runtime invoke support for pointer-capture promoted block records
+  - emitted IR republishes
+    `; runtime_block_allocation_copy_dispose_invoke_support = ...`
+- public/runtime surface still remains intentionally narrow:
+  - no public block-object ABI
+  - no public stable-header declaration for block helper entrypoints
+- deferred work stays explicit:
+  - byref-forwarded escaping block realization
+  - runtime-reentrant ownership helper interop
+  - owned capture escape lifetimes through runtime-managed helper bodies
+- the next issue is `M261-D003`

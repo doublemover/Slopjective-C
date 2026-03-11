@@ -1439,6 +1439,12 @@ class Objc3IREmitter {
     // contract instead of widening it ad hoc.
     out << "; runtime_block_api_object_layout = "
         << Objc3RuntimeBlockApiObjectLayoutSummary() << "\n";
+    // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: emitted
+    // IR now republishes the live runtime capability boundary for promoted
+    // block records with helper-mediated copy/dispose support while byref and
+    // ownership-interoperating escape paths remain deferred.
+    out << "; runtime_block_allocation_copy_dispose_invoke_support = "
+        << Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

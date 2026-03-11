@@ -7929,3 +7929,31 @@ that the runnable `M261-C004` block lowering slice currently consumes.
   - `spec/planning/compiler/m261/m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
   - `M261-D002` is the next issue.
+
+## M261 block object allocation, copy-dispose, and invoke support (D002)
+
+`M261-D002` upgrades the frozen D001 runtime helper boundary into a live
+runtime capability for promoted block records.
+
+- contract id
+  `objc3c-runtime-block-allocation-copy-dispose-invoke-support/m261-d002-v1`
+- current live behavior:
+  - promoted runtime block records copy block storage into aligned runtime-owned
+    word buffers
+  - pointer-capture promotion preserves copy/dispose helper pointers
+  - promotion runs the copy helper before publishing the runtime block handle
+  - final runtime release runs the dispose helper before erasing the block
+    record
+  - `objc3_runtime_invoke_block_i32` now accepts promoted pointer-capture block
+    records as well as the earlier readonly-scalar slice
+  - emitted IR now carries
+    `; runtime_block_allocation_copy_dispose_invoke_support = ...`
+- still explicitly deferred:
+  - byref-forwarded escaping block realization
+  - runtime-reentrant ownership helper interop
+  - public block-object ABI or public block runtime helper declarations
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation_d002_expectations.md`
+  - `spec/planning/compiler/m261/m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation_packet.md`
+  - `python scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
+  - `M261-D003` is the next issue.

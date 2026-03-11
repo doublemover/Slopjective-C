@@ -20,6 +20,9 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
     // M261-D001 block-runtime API/object-layout freeze anchor: the compilation
     // driver keeps block runtime mechanics behind the native objc3 path only;
     // no extra CLI surface or public runtime ABI routing is introduced here.
+    // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: driver
+    // orchestration now also republishes the live runtime helper capability
+    // without changing the public CLI surface or source acceptance model.
     return RunObjc3LanguagePath(cli_options);
   }
   return RunObjectiveCPath(cli_options);

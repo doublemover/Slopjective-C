@@ -10642,6 +10642,10 @@ class Objc3Parser {
     // M261-D001 block-runtime API/object-layout freeze anchor: parser does not
     // widen the runtime ABI here; it only preserves the source-truth escape
     // inventory that the frozen private runtime boundary consumes downstream.
+    // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: parser
+    // still does not widen the source surface; runtime helper realization
+    // remains an internal lowering/runtime concern layered on this same source
+    // inventory.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =
