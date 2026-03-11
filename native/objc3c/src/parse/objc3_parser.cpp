@@ -10650,6 +10650,10 @@ class Objc3Parser {
     // parser still only publishes the truthful capture and escape inventory;
     // runtime-owned forwarding cells for escaping pointer-capture blocks are
     // layered later without widening this source contract.
+    // M261-E001 runnable-block-runtime gate anchor: lane-E consumes this exact
+    // parser-owned capture and escape inventory as the source side of the
+    // runnable block proof chain and must fail closed if the source truth
+    // drifts behind the integrated gate.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

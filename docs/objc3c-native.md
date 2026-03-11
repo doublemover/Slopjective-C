@@ -1399,6 +1399,40 @@ Recommended M261 lane-D expansion check:
 - `python scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
 - `M261-E001` is the next issue.
 
+## M261 runnable block-runtime gate (M261-E001)
+
+`M261-E001` freezes the first truthful lane-E gate for runnable blocks above
+the retained source, sema, lowering, and runtime proof chain.
+
+- contract id
+  `objc3c-runnable-block-runtime-gate/m261-e001-v1`
+
+Current gate claims:
+
+- lane-E consumes the existing `A003/B003/C004/D003` proof chain rather than
+  metadata-only summaries
+- supported runnable slice includes:
+  - nonescaping byref and owned-capture blocks through emitted helper bodies
+  - escaping readonly-scalar blocks through private runtime promotion/invoke
+    hooks
+  - escaping pointer-capture blocks through runtime-owned forwarding cells and
+    helper interop after the source frame returns
+- emitted IR now carries:
+  - `; runnable_block_runtime_gate = ...`
+  - `!objc3.objc_runnable_block_runtime_gate`
+
+Still explicitly deferred:
+
+- no public block-object ABI
+- no public stable block runtime helper declarations
+- no generalized foreign block ABI interop
+- no caller-frame forwarding bridge back into still-live outer stack cells
+
+Recommended M261 lane-E gate check:
+
+- `python scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
+- `M261-E002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

@@ -10099,3 +10099,28 @@ addresses.
   - no caller-frame forwarding bridge for still-live outer stack cells
   - no generalized foreign block ABI interop
 - the next issue is `M261-E001`
+
+## M261 Runnable Block-Runtime Gate (E001)
+
+`M261-E001` freezes the first integrated lane-E proof boundary for runnable
+blocks above the retained `A003/B003/C004/D003` chain.
+
+- gate behavior now includes:
+  - source and sema continuity from the A003/B003 block inventory and ownership
+    rules
+  - lowering continuity from the C004 escaping-block promotion hook surface
+  - runtime continuity from the D003 forwarding-cell and helper-interop proof
+  - emitted IR republishes:
+    `; runnable_block_runtime_gate = ...`
+    and `!objc3.objc_runnable_block_runtime_gate`
+- the truthful supported runnable slice is still intentionally narrow:
+  - nonescaping byref and owned-capture helper-backed blocks
+  - escaping readonly-scalar blocks through private runtime promotion/invoke
+    hooks
+  - escaping pointer-capture blocks through runtime-owned forwarding cells
+- explicit non-goals stay fixed:
+  - no public block-object ABI
+  - no public block runtime helper header
+  - no generalized foreign block ABI interop
+  - no caller-frame forwarding bridge
+- the next issue is `M261-E002`

@@ -647,6 +647,19 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId =
         "objc3c-runtime-block-byref-forwarding-heap-promotion-interop/m261-d003-v1";
+// M261-E001 runnable-block-runtime gate anchor: lane-E now freezes the
+// truthful integrated block-runtime boundary above the retained A003/B003/C004
+// and D003 evidence chain so later closeout samples cannot overclaim support.
+inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
+    "objc3c-runnable-block-runtime-gate/m261-e001-v1";
+inline constexpr const char *kObjc3RunnableBlockRuntimeGateEvidenceModel =
+    "a003-b003-c004-d003-summary-chain";
+inline constexpr const char *kObjc3RunnableBlockRuntimeGateActiveModel =
+    "runnable-block-gate-consumes-source-sema-lowering-and-runtime-proofs-rather-than-metadata-only-summaries";
+inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
+    "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
+inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
+    "fail-closed-on-runnable-block-runtime-evidence-drift";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1769,6 +1782,7 @@ std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary();
 std::string Objc3RuntimeBlockApiObjectLayoutSummary();
 std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
+std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

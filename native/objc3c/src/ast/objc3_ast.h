@@ -171,6 +171,20 @@ struct Expr {
       "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-until-m261-d002-and-m261-d003";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-returned-and-argument-passed-readonly-scalar-block-values-through-runtime-promotion-hooks";
+  // M261-E001 runnable-block-runtime gate constants: lane-E now freezes the
+  // truthful integrated block-runtime proof boundary above the retained source,
+  // sema, lowering, and runtime evidence chain before broader block closeout
+  // samples expand it.
+  static inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
+      "objc3c-runnable-block-runtime-gate/m261-e001-v1";
+  static inline constexpr const char *kObjc3RunnableBlockRuntimeGateEvidenceModel =
+      "a003-b003-c004-d003-summary-chain";
+  static inline constexpr const char *kObjc3RunnableBlockRuntimeGateActiveModel =
+      "runnable-block-gate-consumes-source-sema-lowering-and-runtime-proofs-rather-than-metadata-only-summaries";
+  static inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
+      "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
+  static inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
+      "fail-closed-on-runnable-block-runtime-evidence-drift";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

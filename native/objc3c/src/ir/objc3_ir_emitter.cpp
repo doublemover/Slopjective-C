@@ -1452,6 +1452,12 @@ class Objc3IREmitter {
     // the source frame returns.
     out << "; runtime_block_byref_forwarding_heap_promotion_ownership_interop = "
         << Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() << "\n";
+    // M261-E001 runnable-block-runtime gate anchor: lane-E now freezes the
+    // integrated block-runtime gate above the retained A003/B003/C004/D003
+    // source, sema, lowering, and runtime proofs so later closeout work
+    // cannot substitute metadata-only evidence.
+    out << "; runnable_block_runtime_gate = "
+        << Objc3RunnableBlockRuntimeGateSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2665,6 +2671,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_memory_management_api = !{!70}\n";
     out << "!objc3.objc_runtime_memory_management_implementation = !{!71}\n";
     out << "!objc3.objc_ownership_runtime_gate = !{!72}\n";
+    out << "!objc3.objc_runnable_block_runtime_gate = !{!73}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3894,6 +3901,25 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3RuntimeMemoryManagementImplementationContractId)
+        << "\"}\n";
+    out << "!73 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateActiveModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateNonGoalModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ExecutableBlockSourceStorageAnnotationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

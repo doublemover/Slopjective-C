@@ -7983,3 +7983,35 @@ blocks no longer borrow stack-cell addresses after promotion.
   - `spec/planning/compiler/m261/m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion_packet.md`
   - `python scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
   - `M261-E001` is the next issue.
+
+## M261 runnable block-runtime gate (E001)
+
+`M261-E001` freezes the first lane-E proof gate for runnable blocks above the
+retained source, sema, lowering, and runtime evidence chain.
+
+- contract id
+  `objc3c-runnable-block-runtime-gate/m261-e001-v1`
+- evidence model
+  `a003-b003-c004-d003-summary-chain`
+- current gate claims:
+  - runnable block support is validated against the retained A003/B003/C004/D003
+    summaries rather than metadata-only summaries
+  - the supported slice includes:
+    - nonescaping byref and owned-capture helper-backed blocks
+    - escaping readonly-scalar blocks through private runtime promotion/invoke
+      hooks
+    - escaping pointer-capture blocks through runtime-owned forwarding cells
+      and helper interop after the source frame returns
+  - emitted IR now carries:
+    `; runnable_block_runtime_gate = ...`
+    and `!objc3.objc_runnable_block_runtime_gate`
+- still explicitly deferred:
+  - no public block-object ABI
+  - no public stable runtime helper declarations
+  - no generalized foreign block ABI interop
+  - no caller-frame forwarding bridge back into a still-live outer frame
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_runnable_block_runtime_gate_contract_and_architecture_freeze_e001_expectations.md`
+  - `spec/planning/compiler/m261/m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m261_e001_runnable_block_runtime_gate_contract_and_architecture_freeze.py`
+  - `M261-E002` is the next issue.

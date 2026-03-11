@@ -1129,6 +1129,33 @@ std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
   return out.str();
 }
 
+std::string Objc3RunnableBlockRuntimeGateSummary() {
+  std::ostringstream out;
+  // M261-E001 runnable-block-runtime gate anchor: lane-E now freezes one
+  // integrated proof boundary above the retained source, sema, lowering, and
+  // runtime summaries so runnable block behavior is validated against the live
+  // native path rather than metadata-only claims.
+  out << "contract=" << Expr::kObjc3RunnableBlockRuntimeGateContractId
+      << ";evidence_model="
+      << Expr::kObjc3RunnableBlockRuntimeGateEvidenceModel
+      << ";active_model="
+      << Expr::kObjc3RunnableBlockRuntimeGateActiveModel
+      << ";source_contract="
+      << Expr::kObjc3ExecutableBlockSourceStorageAnnotationContractId
+      << ";semantic_contract="
+      << Expr::kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId
+      << ";lowering_contract="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId
+      << ";runtime_contract="
+      << kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId
+      << ";non_goals="
+      << Expr::kObjc3RunnableBlockRuntimeGateNonGoalModel
+      << ";fail_closed_model="
+      << Expr::kObjc3RunnableBlockRuntimeGateFailClosedModel
+      << ";next_issue=M261-E002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

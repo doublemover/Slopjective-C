@@ -941,6 +941,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // the same sema handoff now feeds runtime-owned forwarding-cell
           // promotion for escaping pointer-capture blocks without changing the
           // source-facing capture legality contract.
+          // M261-E001 runnable-block-runtime gate anchor: lane-E now freezes
+          // this exact source+sema handoff together with the C004 and D003
+          // lowering/runtime proofs so runnable block closeout cannot drift
+          // back to metadata-only evidence.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

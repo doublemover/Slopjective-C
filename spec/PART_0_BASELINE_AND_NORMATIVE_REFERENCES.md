@@ -203,6 +203,10 @@ Current implementation boundary:
     forwarding cells so byref mutation and owned-capture helper interop survive
     after the source frame returns, while public block ABI widening still
     remains deferred.
+  - lane-E now freezes that truthful runnable gate (`M261-E001`): supported
+    block behavior is claimed only against the retained A003/B003/C004/D003
+    proof chain, so runnable block closeout cannot regress to metadata-only
+    evidence.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 
