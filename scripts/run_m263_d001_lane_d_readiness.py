@@ -8,8 +8,18 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+BUILD_HELPER = ROOT / "scripts" / "ensure_objc3c_native_build.py"
 COMMANDS = (
-    ["npm.cmd", "run", "build:objc3c-native"],
+    [
+        sys.executable,
+        str(BUILD_HELPER),
+        "--mode",
+        "fast",
+        "--reason",
+        "m263-d001-lane-d-readiness",
+        "--summary-out",
+        "tmp/reports/m263/M263-D001/ensure_objc3c_native_build_summary.json",
+    ],
     [sys.executable, "scripts/check_m263_c002_registration_descriptor_lowering_and_multi_image_root_emission_core_feature_implementation.py"],
     [sys.executable, "scripts/check_m263_c003_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion.py"],
     [sys.executable, "scripts/check_m263_d001_runtime_bootstrap_table_consumption_contract_and_architecture_freeze.py"],

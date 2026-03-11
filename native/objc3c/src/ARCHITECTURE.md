@@ -10386,3 +10386,39 @@ readiness runners/checkers will consume.
   - active-runner adoption starts here before the broader migration issue
 - explicit handoff
   - `M276-D001` migrates the broader active readiness range onto this helper
+
+## M276 Active Readiness-Runner Fast-Path Migration (D001)
+
+`M276-D001` applies the shared helper across the active `M262`/`M263`
+issue-work readiness range and freezes the truthful fast-vs-full boundary for
+that range.
+
+- contract id
+  `objc3c-readiness-runner-fast-vs-full-migration/m276-d001-v1`
+- active migrated range
+  - `M262-A001`
+  - `M262-A002`
+  - `M262-B001`
+  - `M262-B002`
+  - `M263-A001`
+  - `M263-A002`
+  - `M263-B001`
+  - `M263-B002`
+  - `M263-B003`
+  - `M263-C001`
+  - `M263-C002`
+  - `M263-C003`
+  - `M263-D001`
+  - `M263-D002`
+  - `M263-D003`
+- implementation truths
+  - active lane `A` through `D` readiness runners now acquire native binaries
+    through `scripts/ensure_objc3c_native_build.py --mode fast`
+  - lane `E` aggregators remain orchestration layers over the migrated lane
+    runners rather than becoming independent build-acquisition owners
+  - deterministic helper summaries under `tmp/reports/` are now part of the
+    active readiness contract
+  - issue-local dependency chains remain unchanged after migration
+- truthful remaining boundary
+  - broader historical runner-compatibility backfill remains deferred to
+    `M276-D003`

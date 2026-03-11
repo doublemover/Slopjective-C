@@ -45,7 +45,7 @@ def run_chain() -> int:
     for command in COMMAND_CHAIN:
         command_text = " ".join(command)
         print(f"[run] {command_text}")
-        completed = subprocess.run(command, check=False)
+        completed = subprocess.run(command, cwd=ROOT, check=False)
         if completed.returncode != 0:
             print(
                 f"[error] command failed with exit code {completed.returncode}: {command_text}",

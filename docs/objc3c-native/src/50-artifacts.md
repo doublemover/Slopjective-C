@@ -210,8 +210,44 @@ surface.
   - the helper hides wrapper execution-mode selection from migrated runners
   - the helper emits stable summaries under `tmp/reports/`
   - active runner adoption begins here with a small current-work slice
+
+## Active readiness-runner fast-path migration (M276-D001)
+
+`M276-D001` applies the helper introduced by `M276-D002` across the active
+issue-work readiness range.
+
+- contract id
+  `objc3c-readiness-runner-fast-vs-full-migration/m276-d001-v1`
+- active migrated range
+  - `M262-A001`
+  - `M262-A002`
+  - `M262-B001`
+  - `M262-B002`
+  - `M263-A001`
+  - `M263-A002`
+  - `M263-B001`
+  - `M263-B002`
+  - `M263-B003`
+  - `M263-C001`
+  - `M263-C002`
+  - `M263-C003`
+  - `M263-D001`
+  - `M263-D002`
+  - `M263-D003`
+- current truthful state
+  - active lane `A` through `D` readiness runners now acquire native binaries
+    through `scripts/ensure_objc3c_native_build.py --mode fast`
+  - active lane `E` aggregators remain orchestration layers over those lane
+    runners instead of reacquiring native builds themselves
+  - the deterministic helper summary path is now part of the readiness
+    contract:
+    - `tmp/reports/<milestone>/<issue>/ensure_objc3c_native_build_summary.json`
+  - issue-local dependency chains remain intact; only build acquisition changed
+- truthful remaining boundary
+  - historical runner compatibility and broader backfill stay deferred to
+    `M276-D003`
 - next issue
-  - `M276-D001`
+  - `M276-D003`
 
 ## Executable class/protocol/category source closure (M256-A001)
 

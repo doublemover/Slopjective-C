@@ -130,7 +130,7 @@ STATIC_SNIPPETS: dict[Path, tuple[SnippetCheck, ...]] = {
     ),
     READINESS_RUNNER: (
         SnippetCheck("M262-B001-RUN-01", "scripts/build_objc3c_native_docs.py"),
-        SnippetCheck("M262-B001-RUN-02", "build:objc3c-native"),
+        SnippetCheck("M262-B001-RUN-02", "ensure_objc3c_native_build.py"),
         SnippetCheck("M262-B001-RUN-03", "test_check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py"),
     ),
     TEST_FILE: (

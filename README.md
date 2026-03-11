@@ -247,7 +247,19 @@ Current truthful boundary after `M276-C002`:
 - forced reconfigure now routes through the wrapper without deleting the
   persistent build tree
 
-`M276-D001` is the next issue.
+`M276-D001` now migrates the active `M262`/`M263` issue-work range onto the
+shared helper.
+
+- active lane `A` through `D` readiness runners now acquire binaries with:
+  - `python scripts/ensure_objc3c_native_build.py --mode fast`
+- those runners now emit deterministic helper summaries under:
+  - `tmp/reports/<milestone>/<issue>/ensure_objc3c_native_build_summary.json`
+- lane `E` aggregators remain orchestration layers over the migrated lane
+  runners instead of reacquiring native builds themselves
+- the truthful boundary after `M276-D001` is:
+  - fast helper mode for active issue work
+  - full builds reserved for closeout, CI, and deliberately cross-cutting proof
+    paths
 
 ## Quickstart
 
