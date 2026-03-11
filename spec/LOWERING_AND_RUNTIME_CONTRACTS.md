@@ -7590,3 +7590,25 @@ baseline.
   - no ARC automation, block ownership runtime, or public ownership ABI
     widening lands here
   - the next issue is `M261-A001`
+
+## M261 executable block source closure (A001)
+
+`M261-A001` freezes the truthful block source surface before the runtime block
+object model exists.
+
+- contract id
+  `objc3c-executable-block-source-closure/m261-a001-v1`
+- source-surface model
+  `parser-owned-block-literal-source-closure-freezes-capture-abi-storage-copy-dispose-and-baseline-profiles-before-runnable-block-realization`
+- evidence model
+  `hello-ir-boundary-plus-block-literal-o3s221-fail-closed-native-probe`
+- fail-closed model
+  `fail-closed-on-block-source-surface-drift-before-block-runtime-realization`
+- truthful boundary
+  - block literals must now parse through the shared block parser without
+    parser-surface drift.
+  - the parser/AST handoff keeps replay-stable capture, ABI, storage,
+    copy/dispose, and determinism profiles only.
+  - runnable block lowering, block pointer declarator spellings, and explicit
+    `__block` byref storage spellings remain outside this issue.
+  - `M261-A002` is the next issue.

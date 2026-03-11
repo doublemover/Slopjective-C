@@ -500,6 +500,9 @@ bool IsEquivalentIdClassSelObjectPointerTypeCheckingSummary(
          lhs.property_object_pointer_type_sites == rhs.property_object_pointer_type_sites;
 }
 
+// M261-A001 executable-block-source-closure anchor: sema parity for block
+// source closure remains summary-based at this freeze point because runnable
+// block realization has not started yet.
 bool IsEquivalentBlockLiteralCaptureSemanticsSummary(const Objc3BlockLiteralCaptureSemanticsSummary &lhs,
                                                      const Objc3BlockLiteralCaptureSemanticsSummary &rhs) {
   return lhs.block_literal_sites == rhs.block_literal_sites &&

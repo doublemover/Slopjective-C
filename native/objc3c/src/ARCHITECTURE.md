@@ -9818,3 +9818,23 @@ baseline for supported runtime-backed object programs.
   `@autoreleasepool` slice exercised by the native compile/runtime path
 - the closeout does not widen ownership semantics beyond that slice
 - the next issue is `M261-A001`
+
+## M261 Executable Block Source Closure (A001)
+
+`M261-A001` freezes the truthful block-literal source closure that already
+exists in parser/AST land.
+
+- block literals now have one canonical parser entry path:
+  - `ParseBlockLiteralExpression()` probes for the block body and hands brace
+    ownership to `ParseBlock()`
+- block literals remain source-profile carriers only:
+  - capture-set, ABI-layout, storage-escape, copy/dispose, and determinism
+    baseline metadata stay parser/AST-owned at this boundary
+- runnable semantics remain fail-closed:
+  - semantic validation still rejects block literals until later `M261`
+    runtime/lowering issues land
+- explicit non-goals:
+  - no block pointer declarator spellings yet
+  - no explicit `__block` byref storage spellings yet
+  - no runnable block lowering yet
+- the next issue is `M261-A002`

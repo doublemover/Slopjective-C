@@ -877,6 +877,21 @@ std::string Objc3OwnershipRuntimeGateSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockSourceClosureSummary() {
+  std::ostringstream out;
+  // M261-A001 executable-block-source-closure freeze anchor: this summary is
+  // intentionally truthful about the current boundary. Parser/AST/source
+  // replay for block literals is live, while runnable lowering remains a
+  // fail-closed non-goal until later M261 issues.
+  out << "contract=" << Expr::kObjc3ExecutableBlockSourceClosureContractId
+      << ";source_model=" << Expr::kObjc3ExecutableBlockSourceSurfaceModel
+      << ";evidence_model=" << Expr::kObjc3ExecutableBlockSourceEvidenceModel
+      << ";non_goal_model=" << Expr::kObjc3ExecutableBlockSourceNonGoalModel
+      << ";fail_closed_model=" << Expr::kObjc3ExecutableBlockSourceFailureModel
+      << ";capture_lane_contract=" << kObjc3BlockLiteralCaptureLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

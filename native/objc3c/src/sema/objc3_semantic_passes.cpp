@@ -754,6 +754,9 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
   }
 
   switch (expr->kind) {
+  // M261-A001 executable-block-source-closure anchor: once block literals
+  // parse successfully they still fail closed here until M261-A002 and later
+  // runtime issues make them runnable.
   case Expr::Kind::BlockLiteral:
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.blocks_source_rejection_site_count,

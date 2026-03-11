@@ -892,6 +892,41 @@ Recommended M170 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m170_frontend_block_determinism_perf_baseline_parser_contract.py -q`
 
+## M261 executable block source closure (M261-A001)
+
+`M261-A001` freezes the truthful parser/AST boundary for executable block
+literals before any runnable block lowering exists.
+
+- contract id
+  `objc3c-executable-block-source-closure/m261-a001-v1`
+
+Current source-closure details:
+
+- parser admission remains block-literal syntax only:
+  - `ParseBlockLiteralExpression()` accepts `^(...) { ... }` block literal
+    expressions.
+  - block literal bodies are consumed through the shared `ParseBlock()` helper
+    so the brace-owned block surface stays deterministic with every other
+    statement block.
+- AST ownership remains source-profile only:
+  - block literals carry capture-set, ABI-layout, storage-escape,
+    copy/dispose, and determinism baseline profiles on `Expr`.
+  - those profiles are replay-stable evidence for later `M261` runtime issues,
+    not a claim that blocks are runnable yet.
+- truthful fail-closed rule:
+  - semantic validation still rejects block literals with `O3S221` because the
+    runnable block runtime has not landed yet.
+- explicit non-goals in this freeze:
+  - no block pointer declarator spellings yet.
+  - no explicit `__block` byref storage spellings yet.
+  - no block runtime lowering, invocation, heap promotion, or helper emission
+    yet.
+
+Recommended M261 lane-A contract check:
+
+- `python scripts/check_m261_a001_executable_block_source_closure_contract_and_architecture_freeze.py`
+- `M261-A002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

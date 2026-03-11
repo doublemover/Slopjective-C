@@ -154,6 +154,13 @@ An object pointer type is a pointer to an Objective-C object, including `id` and
 
 A block pointer type is a pointer to a block literal/closure as defined by NR-BLOCKS-ABI.
 
+Current implementation boundary:
+
+- the native compiler currently freezes block literal source closure first
+  (`M261-A001`) and still fail-closes runnable block semantics after parsing.
+- explicit block pointer declarator spellings and explicit byref storage
+  spellings are not yet part of the supported source surface.
+
 ### 0.4.13 Nullability {#part-0-4-13}
 
 Nullability is a type property (for object and block pointer types) indicating whether `nil` is a valid value. Nullability kinds are defined in [Part 3](#part-3).

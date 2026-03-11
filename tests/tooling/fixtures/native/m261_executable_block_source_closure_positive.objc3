@@ -1,0 +1,9 @@
+module BlockSourceClosure;
+
+fn main() {
+  let seed = 7;
+  ^(i32 value) {
+    return seed + value;
+  };
+  return seed;
+}

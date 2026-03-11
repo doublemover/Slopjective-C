@@ -1694,6 +1694,7 @@ std::string Objc3OwnershipRuntimeHookEmissionSummary();
 std::string Objc3RuntimeMemoryManagementApiSummary();
 std::string Objc3RuntimeMemoryManagementImplementationSummary();
 std::string Objc3OwnershipRuntimeGateSummary();
+std::string Objc3ExecutableBlockSourceClosureSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

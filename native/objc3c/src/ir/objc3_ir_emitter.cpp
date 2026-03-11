@@ -1361,6 +1361,11 @@ class Objc3IREmitter {
     // proof surface for M260 closeout.
     out << "; ownership_runtime_gate = "
         << Objc3OwnershipRuntimeGateSummary() << "\n";
+    // M261-A001 executable-block-source-closure anchor: emit the truthful
+    // parser/AST boundary so lane-A can prove block literals entered the source
+    // closure before runtime lowering remains fail closed.
+    out << "; executable_block_source_closure = "
+        << Objc3ExecutableBlockSourceClosureSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

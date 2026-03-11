@@ -32,6 +32,19 @@ enum class ValueType {
 };
 
 struct Expr {
+  // M261-A001 executable-block-source-closure freeze constants: lane-A now
+  // freezes the truthful parser/AST boundary for block literals, captures,
+  // and replay-stable profiling before runnable block realization begins.
+  static inline constexpr const char *kObjc3ExecutableBlockSourceClosureContractId =
+      "objc3c-executable-block-source-closure/m261-a001-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceSurfaceModel =
+      "parser-owned-block-literal-source-closure-freezes-capture-abi-storage-copy-dispose-and-baseline-profiles-before-runnable-block-realization";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceEvidenceModel =
+      "hello-ir-boundary-plus-block-literal-o3s221-fail-closed-native-probe";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceFailureModel =
+      "fail-closed-on-block-source-surface-drift-before-block-runtime-realization";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceNonGoalModel =
+      "no-block-pointer-declarator-spellings-no-explicit-byref-storage-spellings-no-block-runtime-lowering";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
