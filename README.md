@@ -65,8 +65,8 @@ What is not fully runnable yet:
 - Public overview: [https://doublemover.github.io/Slopjective-C/](https://doublemover.github.io/Slopjective-C/)
 - Draft overview section: [Introduction](https://doublemover.github.io/Slopjective-C/#intro)
 - Current implementation / module-boundary status: [Module Metadata and ABI Surface](https://doublemover.github.io/Slopjective-C/#d)
-- Compiler implementation: `native/objc3c/`
-- Detailed spec source: `spec/`
+- Compiler implementation: [`native/objc3c/`](native/objc3c/)
+- Detailed spec source: [`spec/`](spec/)
 
 If you only want the high-level picture, read the published site first. If you want the exact language rules, use the files under `spec/`. If you want the implementation, start in `native/objc3c/`.
 
@@ -202,27 +202,27 @@ The spec is split into a small set of cross-cutting reference documents plus the
 
 Important entry points:
 
-- `spec/INTRODUCTION.md`
-- `spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md`
-- `spec/LOWERING_AND_RUNTIME_CONTRACTS.md`
-- `spec/MODULE_METADATA_AND_ABI_TABLES.md`
-- `spec/CONFORMANCE_PROFILE_CHECKLIST.md`
+- [`spec/INTRODUCTION.md`](spec/INTRODUCTION.md)
+- [`spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md`](spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md)
+- [`spec/LOWERING_AND_RUNTIME_CONTRACTS.md`](spec/LOWERING_AND_RUNTIME_CONTRACTS.md)
+- [`spec/MODULE_METADATA_AND_ABI_TABLES.md`](spec/MODULE_METADATA_AND_ABI_TABLES.md)
+- [`spec/CONFORMANCE_PROFILE_CHECKLIST.md`](spec/CONFORMANCE_PROFILE_CHECKLIST.md)
 
 Language parts:
 
-- `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md`
-- `spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md`
-- `spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md`
-- `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`
-- `spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md`
-- `spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md`
-- `spec/PART_6_ERRORS_RESULTS_THROWS.md`
-- `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`
-- `spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md`
-- `spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md`
-- `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md`
-- `spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md`
-- `spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md`
+- [`spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md`](spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md)
+- [`spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md`](spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md)
+- [`spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md`](spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md)
+- [`spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md`](spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md)
+- [`spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md`](spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md)
+- [`spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md`](spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md)
+- [`spec/PART_6_ERRORS_RESULTS_THROWS.md`](spec/PART_6_ERRORS_RESULTS_THROWS.md)
+- [`spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`](spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md)
+- [`spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md`](spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md)
+- [`spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md`](spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md)
+- [`spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md`](spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md)
+- [`spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md`](spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md)
+- [`spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md`](spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md)
 
 ## License
 
