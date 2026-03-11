@@ -7306,3 +7306,28 @@ sample references, and sign-off evidence over every predecessor issue in
   - `M259` closes the runnable object-model slice only
   - block/ARC work remains deferred to `M260+`
   - the next implementation issue is `M260-A001`
+
+## M260 runtime-backed object ownership surface freeze (A001)
+
+`M260-A001` freezes the current ownership boundary above the newly runnable
+object-model slice.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-surface-freeze/m260-a001-v1`
+- surface model
+  `runtime-backed-object-ownership-surface-freezes-property-accessor-and-legacy-lowering-ownership-profiles-before-live-arc-runtime-semantics`
+- evidence model
+  `canonical-runnable-sample-manifest-and-ir-ownership-profile-proof`
+- failure model
+  `fail-closed-on-ownership-surface-drift-or-premature-arc-runnable-claim`
+- preserved truths
+  - property/accessor ownership profiles emitted by the runnable object-model
+    slice remain authoritative
+  - legacy ownership lowering summaries remain the canonical replay surface for
+    ownership qualifier, retain/release, weak/unowned, and ARC fix-it data
+- non-goals
+  - no live ARC retain/release/autorelease runtime semantics
+  - no executable function/method ownership-qualifier support
+  - no `@autoreleasepool` runnable support
+- truthful boundary
+  - `M260-A002` is the next implementation issue

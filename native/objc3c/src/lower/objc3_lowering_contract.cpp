@@ -1599,6 +1599,11 @@ std::string Objc3RuntimeDispatchLoweringAbiBoundarySummary(
 
 bool IsValidObjc3OwnershipQualifierLoweringContract(
     const Objc3OwnershipQualifierLoweringContract &contract) {
+  // M260-A001 runtime-backed-object-ownership freeze anchor: these legacy
+  // ownership replay surfaces remain part of the truthful runtime-backed
+  // object ownership boundary until live ARC runtime behavior lands later in
+  // M260. They are preserved summary lanes, not proof that executable
+  // function/method ownership qualifiers are already runnable.
   return contract.invalid_ownership_qualifier_sites <= contract.ownership_qualifier_sites &&
          contract.ownership_qualifier_sites <= contract.object_pointer_type_annotation_sites;
 }

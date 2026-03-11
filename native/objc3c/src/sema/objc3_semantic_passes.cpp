@@ -745,6 +745,11 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
     const FunctionDecl &fn,
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  // M260-A001 runtime-backed-object-ownership freeze anchor: the current
+  // runnable ownership slice is still limited to object/property/accessor
+  // ownership profiles plus the legacy ownership summary lanes below. ARC
+  // ownership qualifiers on executable functions/methods remain fail-closed
+  // until the later M260 runtime-backed ownership implementation issues land.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
@@ -786,6 +791,10 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
     const Objc3MethodDecl &method,
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+  // M260-A001 runtime-backed-object-ownership freeze anchor: method-level ARC
+  // ownership qualifiers still sit outside the truthful runnable object-model
+  // claim even though property/member ownership profiles are already preserved
+  // through the object runtime metadata path.
   if (method.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,

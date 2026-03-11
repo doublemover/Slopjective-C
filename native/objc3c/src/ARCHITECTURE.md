@@ -9654,3 +9654,19 @@ execution matrix:
   object-local and filesystem-artifact driven while lane E closes the runnable
   matrix around them
 - the next implementation issue is `M259-A001`
+
+## M260 Runtime-Backed Object Ownership Surface Freeze (A001)
+
+`M260-A001` freezes the truthful ownership boundary that already exists above
+the runnable object-model slice:
+
+- sema remains explicit that executable function/method ownership qualifiers and
+  `@autoreleasepool` still fail closed outside the runnable slice
+- emitted runtime-backed object artifacts already preserve property/accessor
+  ownership profiles for the canonical runnable sample
+- lowering/IR still expose the legacy ownership qualifier, retain/release,
+  weak/unowned, and ARC fix-it summaries as the canonical ownership replay
+  surface
+- live ARC retain/release/autorelease runtime semantics do not land until the
+  later `M260` implementation issues
+- the next implementation issue is `M260-A002`

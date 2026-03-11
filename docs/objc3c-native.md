@@ -11437,6 +11437,36 @@ runbook and one sign-off summary over every predecessor issue in `M259`.
   - block/ARC work remains in `M260+`
   - the next implementation issue is `M260-A001`
 
+## M260 runtime-backed object ownership surface freeze (A001)
+
+`M260-A001` freezes the truthful ownership surface already visible for the
+current runtime-backed object slice.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-surface-freeze/m260-a001-v1`
+- canonical proof fixture
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+- preserved ownership evidence
+  - property attribute profiles remain emitted for the runtime-backed object
+    sample
+  - scalar `assign` properties already publish
+    `ownership_lifetime_profile=unowned-unsafe` and
+    `ownership_runtime_hook_profile=objc-unowned-unsafe-direct`
+  - the existing lowering summaries remain the canonical ownership replay
+    surfaces:
+    - `ownership_qualifier_lowering`
+    - `retain_release_operation_lowering`
+    - `weak_unowned_semantics_lowering`
+    - `arc_diagnostics_fixit_lowering`
+- truthful boundary
+  - strong/copy/weak object-member ownership remains declaration/profile level
+    only in this freeze
+  - live ARC retain/release/autorelease runtime semantics do not land here
+  - executable function/method ownership qualifiers remain fail-closed outside
+    the runnable slice
+  - `@autoreleasepool` remains outside the runnable slice
+  - `M260-A002` is the next implementation issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

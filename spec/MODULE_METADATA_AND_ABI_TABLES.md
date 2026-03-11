@@ -8246,3 +8246,25 @@ artifact chain that closes the runnable object-model tranche.
   - `tmp/reports/m259/M259-E002/`
 - truthful boundary
   - the next implementation issue is `M260-A001`
+
+## M260 runtime-backed object ownership metadata anchors (A001)
+
+`M260-A001` does not widen the runtime metadata ABI. It freezes which existing
+ownership-bearing artifacts remain authoritative for the first runtime-backed
+object ownership claim.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-surface-freeze/m260-a001-v1`
+- preserved artifact anchors
+  - `tmp/artifacts/compilation/objc3c-native/m260/a001/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/a001/positive/module.ll`
+- preserved ownership-bearing metadata fields
+  - property `property_attribute_profile`
+  - property `ownership_lifetime_profile`
+  - property `ownership_runtime_hook_profile`
+  - property `accessor_ownership_profile`
+  - lowering summaries for ownership qualifier, retain/release,
+    weak/unowned, and ARC fix-it surfaces
+- truthful boundary
+  - no new runtime metadata ABI family lands here
+  - `M260-A002` is the next implementation issue
