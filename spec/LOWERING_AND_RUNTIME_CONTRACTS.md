@@ -7260,3 +7260,27 @@ matrix promised by `M259-E002`.
 - truthful boundary
   - `M259-E001` freezes the gate only
   - the next implementation issue is `M259-E002`
+
+## M259 full runnable object-model conformance matrix (E002)
+
+`M259-E002` expands the frozen lane-E gate into a deterministic conformance
+matrix for the current runnable object-model subset.
+
+- contract id
+  `objc3c-runnable-object-model-conformance-matrix/m259-e002-v1`
+- matrix model
+  `deterministic-row-per-runnable-claim-with-fixture-or-command-proof`
+- evidence model
+  `tracked-json-matrix-over-a002-b002-c002-d003-and-live-script-anchors`
+- failure model
+  `fail-closed-on-matrix-row-drift-or-unbacked-runnable-claim`
+- matrix artifact
+  `spec/planning/compiler/m259/m259_e002_full_runnable_object_model_conformance_matrix.json`
+- row requirements
+  - every row has a stable `row_id`
+  - every row points at a concrete fixture or inspection command
+  - every row names the summary/evidence artifact that proves the claim
+- truthful boundary
+  - only the current runnable object-model subset is covered
+  - no block/ARC conformance claim yet
+  - the next implementation issue is `M259-E003`

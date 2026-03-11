@@ -5038,6 +5038,25 @@ non-goals that still remain outside the release claim.
   - `M259-E001` freezes the gate only
   - `M259-E002` widens this into the full runnable object-model conformance matrix
 
+## M259 full runnable object-model conformance matrix (E002)
+
+`M259-E002` publishes the deterministic matrix for the current runnable
+object-model subset. Each row must point at a concrete fixture, inspection
+command, or prior green evidence summary.
+
+- contract id
+  `objc3c-runnable-object-model-conformance-matrix/m259-e002-v1`
+- matrix artifact
+  `spec/planning/compiler/m259/m259_e002_full_runnable_object_model_conformance_matrix.json`
+- matrix requirements
+  - every row has a stable `row_id`
+  - every row maps to at least one concrete fixture or inspection command
+  - every row names the evidence summary that proves the claim
+- truthful boundary
+  - the matrix enumerates the current runnable object-model subset only
+  - no block/ARC conformance claim lands here
+  - docs/runbook/sign-off closeout remains deferred to `M259-E003`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

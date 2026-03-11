@@ -39,6 +39,9 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-E001 release-gate-freeze anchor: execution smoke remains one preserved
 # lane-E release-gate input alongside `M259-A002`, `M259-B002`, `M259-C002`,
 # and `M259-D003`; full matrix expansion remains deferred to `M259-E002`.
+# M259-E002 conformance-matrix anchor: execution smoke remains one concrete
+# command-backed row in the runnable conformance matrix rather than an implicit
+# blanket claim about unsupported runtime surfaces.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

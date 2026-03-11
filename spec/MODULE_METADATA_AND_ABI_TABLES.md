@@ -8202,3 +8202,22 @@ release evidence summaries and runtime proof surfaces must remain green before
 - truthful boundary
   - no full runnable conformance matrix claim yet
   - the next implementation issue is `M259-E002`
+
+## M259 runnable object-model conformance-matrix metadata anchors (E002)
+
+`M259-E002` still does not widen the metadata ABI. It publishes the tracked
+matrix that maps each current runnable claim to one concrete fixture or
+inspection command plus one proving summary.
+
+- contract id
+  `objc3c-runnable-object-model-conformance-matrix/m259-e002-v1`
+- matrix artifact
+  `spec/planning/compiler/m259/m259_e002_full_runnable_object_model_conformance_matrix.json`
+- preserved evidence summary anchors
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json`
+  - `tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json`
+- truthful boundary
+  - no block/ARC conformance claim yet
+  - the next implementation issue is `M259-E003`

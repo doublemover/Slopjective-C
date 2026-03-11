@@ -1,0 +1,78 @@
+{
+  "contract_id": "objc3c-runnable-object-model-conformance-matrix/m259-e002-v1",
+  "matrix_model": "deterministic-row-per-runnable-claim-with-fixture-or-command-proof",
+  "next_issue": "M259-E003",
+  "rows": [
+    {
+      "row_id": "canonical-class-realization",
+      "feature": "integrated class/interface/implementation realization",
+      "proof_kind": "positive-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json"
+    },
+    {
+      "row_id": "canonical-category-behavior",
+      "feature": "category-backed behavior inside the canonical runnable sample",
+      "proof_kind": "positive-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json"
+    },
+    {
+      "row_id": "canonical-protocol-adoption",
+      "feature": "protocol adoption and required-member satisfaction inside the canonical runnable sample",
+      "proof_kind": "positive-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json"
+    },
+    {
+      "row_id": "canonical-property-flow",
+      "feature": "property-backed object behavior inside the canonical runnable sample",
+      "proof_kind": "probe",
+      "probe": "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json"
+    },
+    {
+      "row_id": "unsupported-throws-fail-closed",
+      "feature": "throws remains outside the runnable boundary and fails closed",
+      "proof_kind": "negative-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_throws.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json"
+    },
+    {
+      "row_id": "unsupported-autoreleasepool-fail-closed",
+      "feature": "@autoreleasepool remains outside the runnable boundary and fails closed",
+      "proof_kind": "negative-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_autoreleasepool.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json"
+    },
+    {
+      "row_id": "unsupported-arc-ownership-fail-closed",
+      "feature": "ARC ownership qualifiers remain outside the runnable boundary and fail closed",
+      "proof_kind": "negative-fixture",
+      "fixture": "tests/tooling/fixtures/native/m259_b002_unsupported_feature_claim_arc_ownership_qualifier.objc3",
+      "evidence_summary": "tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json"
+    },
+    {
+      "row_id": "canonical-ir-object-replay",
+      "feature": "canonical runnable sample preserves deterministic IR/object replay",
+      "proof_kind": "inspection-command",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1",
+      "evidence_summary": "tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json"
+    },
+    {
+      "row_id": "canonical-runtime-section-inspection",
+      "feature": "canonical runnable sample preserves required runtime metadata sections",
+      "proof_kind": "inspection-command",
+      "command": "llvm-readobj --sections <module.obj>",
+      "evidence_summary": "tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json"
+    },
+    {
+      "row_id": "windows-bringup-docs",
+      "feature": "supported Windows prerequisites and package-root bring-up surface remain truthful",
+      "proof_kind": "documentation-command",
+      "command": "python scripts/check_m259_d003_platform_prerequisites_and_runtime_bring_up_documentation_core_feature_expansion.py",
+      "evidence_summary": "tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json"
+    }
+  ]
+}

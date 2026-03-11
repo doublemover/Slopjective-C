@@ -34,6 +34,9 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # M259-E001 release-gate-freeze anchor: execution replay proof remains one
 # preserved lane-E release-gate input alongside `M259-A002`, `M259-B002`,
 # `M259-C002`, and `M259-D003`; full matrix expansion remains deferred to `M259-E002`.
+# M259-E002 conformance-matrix anchor: execution replay proof remains one
+# command-backed row in the runnable conformance matrix and must stay truthful
+# about which canonical fixture and section-inspection path it proves.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
