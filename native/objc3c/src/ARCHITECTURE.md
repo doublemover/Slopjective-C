@@ -10253,3 +10253,40 @@ the current monolithic PowerShell build path.
 - explicit handoff
   - `M276-A002` freezes build-graph and toolchain parity before the default
     package command changes behavior
+
+## M276 Build Graph And Toolchain Parity Freeze (A002)
+
+`M276-A002` freezes the parity contract between the current authoritative
+PowerShell build and the reserved future CMake/Ninja backend.
+
+- contract id
+  `objc3c-native-build-graph-toolchain-parity/m276-a002-v1`
+- current observed source-inventory fact
+  - the current script and the current `CMakeLists.txt` cover the same in-tree
+    native source set
+- frozen parity requirements
+  - source-file coverage parity for `objc3c-native`
+  - source-file coverage parity for `objc3c-frontend-c-api-runner`
+  - source-file coverage parity for `objc3_runtime`
+  - include-directory parity
+  - compile-define parity
+  - relevant warning/standard flag parity
+  - LLVM/libclang discovery and link parity
+  - output-name and `artifacts/` publication parity
+  - compile-database emission at
+    `tmp/build-objc3c-native/compile_commands.json`
+  - authoritative toolchain-root propagation from `LLVM_ROOT`
+- current known parity gaps
+  - `scripts/build_objc3c_native.ps1` performs direct `LLVM_ROOT`, `clang++`,
+    `llvm-lib`, and `libclang` resolution
+  - `native/objc3c/CMakeLists.txt` does not yet model that external toolchain
+    discovery/link contract
+  - the current script publishes final outputs into `artifacts/`, while the
+    current CMake target graph does not yet freeze those output directories
+  - the current script applies
+    `OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=1` broadly during compilation,
+    while the current CMake target graph only wires that define on
+    `objc3c_runtime_abi`
+- explicit handoff
+  - `M276-C001` must implement the backend only after these parity boundaries
+    remain machine-checkable

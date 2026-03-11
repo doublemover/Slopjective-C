@@ -9,6 +9,10 @@ project(objc3c_native LANGUAGES CXX)
 # - include/define/link behavior
 # - final publication to artifacts/bin and artifacts/lib
 # - truthful separation of binary builds from packet generation
+#
+# M276-A002 incremental-build-parity anchor:
+# - compile database emission at `tmp/build-objc3c-native/compile_commands.json`
+# - wrapper-owned `LLVM_ROOT` / `libclang` discovery before the default command flips
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

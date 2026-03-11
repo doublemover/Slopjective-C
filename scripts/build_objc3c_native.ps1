@@ -50,6 +50,13 @@ if ($null -eq $libclang) {
 if (!(Test-Path -LiteralPath $includeDir -PathType Container)) { throw "LLVM include dir not found at $includeDir" }
 if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "native source root not found at $nativeSourceRoot" }
 
+# M276-A002 build-graph-and-toolchain-parity anchor:
+# - authoritative toolchain flow today is `LLVM_ROOT` -> direct wrapper
+#   resolution for clang++, llvm-lib, libclang, and include/library discovery
+# - later incremental backend work must preserve this authoritative wrapper
+#   contract when forwarding configuration into CMake/Ninja
+# - compile database parity frozen to `tmp/build-objc3c-native/compile_commands.json`
+
 $outDir = Join-Path $repoRoot "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 $outLibDir = Join-Path $repoRoot "artifacts/lib"

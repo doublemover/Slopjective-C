@@ -181,8 +181,21 @@ Planned policy boundary:
 - persistent local build trees will live under `tmp/`
 - published binaries and libraries will remain under `artifacts/`
 
-That command split is not fully implemented yet. `M276-A002` is the next issue
-that freezes parity requirements before the default path changes.
+That command split is not fully implemented yet.
+
+Parity freeze (`M276-A002`):
+
+- the current PowerShell build and the current `CMakeLists.txt` already cover
+  the same in-tree native source set
+- the remaining parity gaps are tool discovery, `libclang` linkage,
+  compile-definition shape, compile-database policy, and final `artifacts/`
+  publication behavior
+- the frozen compile-database target path is
+  `tmp/build-objc3c-native/compile_commands.json`
+- the authoritative toolchain root remains `LLVM_ROOT`, with the wrapper
+  responsible for carrying that into any future configure step
+
+`M276-C001` is the first implementation issue after that parity freeze.
 
 ## Quickstart
 
