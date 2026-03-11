@@ -8452,3 +8452,27 @@ evidence anchors.
     contracts instead of inventing a parallel runtime surface
 - truthful boundary
   - `M260-E002` must preserve and exercise this exact gate contract
+
+## M260 runnable ownership smoke matrix metadata anchors (E002)
+
+`M260-E002` does not add a new descriptor family. It freezes the closeout
+evidence that ties the existing ownership/runtime metadata surface to the
+runnable smoke matrix.
+
+- contract id
+  `objc3c-runnable-ownership-smoke-matrix/m260-e002-v1`
+- canonical proof artifacts
+  - `tmp/reports/m260/M260-A002/runtime_backed_object_ownership_attribute_surface_summary.json`
+  - `tmp/reports/m260/M260-B003/autoreleasepool_destruction_order_semantics_summary.json`
+  - `tmp/reports/m260/M260-C002/ownership_runtime_hook_emission_summary.json`
+  - `tmp/reports/m260/M260-D002/reference_counting_weak_autoreleasepool_summary.json`
+  - `tmp/reports/m260/M260-E001/ownership_runtime_gate_contract_summary.json`
+  - `tmp/reports/m260/M260-E002/runnable_ownership_smoke_matrix_summary.json`
+- emitted metadata truths
+  - the closeout matrix continues to consume `!objc3.objc_runtime_ownership_hook_emission`
+  - the closeout matrix continues to consume
+    `!objc3.objc_runtime_memory_management_implementation`
+  - the closeout matrix continues to consume `!objc3.objc_ownership_runtime_gate`
+- truthful boundary
+  - this issue proves the existing metadata surface is runnable enough for the
+    supported ownership slice and nothing more

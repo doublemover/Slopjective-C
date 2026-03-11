@@ -5334,6 +5334,30 @@ baseline that `M260-E002` must exercise.
   - `M260-E002` must prove this exact baseline and no more
   - `M260-E002` is the next issue
 
+## M260 runnable ownership smoke matrix and docs (E002)
+
+`M260-E002` closes the ownership baseline by publishing the compact runnable
+smoke matrix that lines up the already-landed source, semantic, lowering,
+runtime, and lane-E gate proofs.
+
+- contract id
+  `objc3c-runnable-ownership-smoke-matrix/m260-e002-v1`
+- matrix rows
+  - `A002` emitted ownership-attribute surface stays runnable and
+    compile-backed
+  - `B003` ownership-sensitive `@autoreleasepool` guardrails stay fail-closed
+  - `C002` ownership runtime hooks remain the canonical lowering boundary
+  - `D002` retain/release, weak zeroing, and autoreleasepool runtime behavior
+    stay runnable
+  - `E001` gate metadata remains the truthful integrated boundary
+- canonical evidence
+  - `tmp/reports/m260/M260-E002/runnable_ownership_smoke_matrix_summary.json`
+- validation
+  - `check:objc3c:m260-e002-lane-e-readiness`
+- truthful boundary
+  - this is a closeout matrix, not a new ownership/runtime feature
+  - the next issue is `M261-A001`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

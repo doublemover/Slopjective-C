@@ -7565,3 +7565,28 @@ baseline.
     redefining the runtime surface
 - truthful boundary
   - `M260-E002` must prove exactly this frozen runtime-backed ownership slice
+
+## M260 runnable ownership smoke matrix and docs (E002)
+
+`M260-E002` publishes the lane-E closeout matrix for the supported ownership
+baseline.
+
+- contract id
+  `objc3c-runnable-ownership-smoke-matrix/m260-e002-v1`
+- matrix model
+  `closeout-matrix-consumes-a002-b003-c002-d002-and-e001-evidence-without-widening-the-runtime-backed-ownership-slice`
+- runnable smoke model
+  `real-integrated-compile-and-runtime-probe-prove-meaningful-strong-weak-and-autoreleasepool-object-programs`
+- failure model
+  `fail-closed-on-ownership-smoke-matrix-drift-or-closeout-doc-mismatch`
+- canonical matrix rows
+  - `A002` emitted ownership attribute surface
+  - `B003` ownership-sensitive autoreleasepool destruction-order guardrail
+  - `C002` ownership runtime hook lowering boundary
+  - `D002` runtime memory-management execution proof
+  - `E001` ownership runtime gate freeze
+- truthful boundary
+  - this issue closes the current ownership slice only
+  - no ARC automation, block ownership runtime, or public ownership ABI
+    widening lands here
+  - the next issue is `M261-A001`

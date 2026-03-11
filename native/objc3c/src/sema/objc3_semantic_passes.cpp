@@ -722,6 +722,9 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       // this accepted autoreleasepool slice as part of the supported ownership
       // runtime baseline and leaves ARC/block/public-ABI widening as explicit
       // non-goals for later milestones.
+      // M260-E002 ownership-smoke closeout anchor: the runnable closeout matrix
+      // consumes this admitted ownership-sensitive autoreleasepool slice
+      // unchanged and may not widen it during M260 closeout.
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(

@@ -861,6 +861,8 @@ std::string Objc3OwnershipRuntimeGateSummary() {
   // M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes the
   // supported ownership runtime slice and its non-goals using the already-live
   // C002/D001/D002 implementation surfaces as the truthful evidence boundary.
+  // M260-E002 ownership-smoke closeout anchor: the runnable smoke matrix
+  // consumes this same gate summary unchanged for M260 closeout.
   out << "contract=" << kObjc3OwnershipRuntimeGateContractId
       << ";supported_model=" << kObjc3OwnershipRuntimeGateSupportedModel
       << ";evidence_model=" << kObjc3OwnershipRuntimeGateEvidenceModel

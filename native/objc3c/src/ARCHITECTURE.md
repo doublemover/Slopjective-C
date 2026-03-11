@@ -9807,3 +9807,14 @@ baseline for supported runtime-backed object programs.
 - ARC automation, blocks ownership runtime, and public ownership API widening
   remain non-goals here
 - the next issue is `M260-E002`
+
+## M260 Runnable Ownership Smoke Matrix And Docs (E002)
+
+`M260-E002` is the lane-E closeout for the supported ownership baseline.
+
+- the closeout matrix consumes the already-live `A002`, `B003`, `C002`, `D002`,
+  and `E001` evidence surfaces unchanged
+- the integrated runnable proof remains the runtime-backed strong/weak and
+  `@autoreleasepool` slice exercised by the native compile/runtime path
+- the closeout does not widen ownership semantics beyond that slice
+- the next issue is `M261-A001`

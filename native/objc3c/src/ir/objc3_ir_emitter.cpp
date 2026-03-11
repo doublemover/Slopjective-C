@@ -1356,6 +1356,9 @@ class Objc3IREmitter {
     // supported ownership runtime slice and its explicit non-goals as a
     // dedicated emitted boundary so later smoke/docs work can validate the
     // correct baseline without rediscovering it from prose alone.
+    // M260-E002 ownership-smoke closeout anchor: the runnable smoke matrix
+    // consumes this exact emitted gate boundary as the integrated ownership
+    // proof surface for M260 closeout.
     out << "; ownership_runtime_gate = "
         << Objc3OwnershipRuntimeGateSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="

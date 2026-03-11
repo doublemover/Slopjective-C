@@ -240,8 +240,8 @@ def main(argv: Sequence[str]) -> int:
         args.sema_source,
         (
             SnippetCheck("M260-B003-SEMA-01", "M260-B003 autoreleasepool/destruction-order semantic expansion anchor:"),
-            SnippetCheck("M260-B003-SEMA-02", "owned runtime-backed object or synthesized property storage now"),
-            SnippetCheck("M260-B003-SEMA-03", "requires destruction-order semantics"),
+            SnippetCheck("M260-B003-SEMA-02", "lane-B identified the ownership-sensitive destruction-order surface so"),
+            SnippetCheck("M260-B003-SEMA-03", "later runtime work would not need to recover it from source"),
             SnippetCheck("M260-B003-SEMA-04", "BuildUnsupportedFeatureClaimContext"),
         ),
         failures,
