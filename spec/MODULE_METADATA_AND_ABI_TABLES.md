@@ -8306,3 +8306,24 @@ semantics without over-claiming live ARC or destruction behavior.
     legacy summary-lane truths rather than live executable runtime semantics
   - destruction ordering remains deferred in this freeze
   - `M260-B002` is the next issue
+
+## M260 runtime-backed storage ownership legality metadata anchors (B002)
+
+`M260-B002` does not widen the emitted ownership metadata ABI. It hardens the
+semantic admission path so emitted runtime-backed property metadata can only be
+produced from qualifier/modifier combinations that already agree about the
+owned, weak, or unowned storage family.
+
+- contract id
+  `objc3c-runtime-backed-storage-ownership-legality/m260-b002-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b002/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b002/positive/module.ll`
+- truthful boundary
+  - emitted runtime-backed property descriptors keep the existing ownership
+    strings and runtime hook profiles from `M260-A002`
+  - conflicting explicit ownership qualifier/modifier pairs are rejected before
+    those descriptors can be emitted
+  - `unowned` remains the safe runtime-backed storage profile while explicit
+    `__unsafe_unretained` remains the unsafe storage qualifier surface
+  - `M260-B003` is the next issue

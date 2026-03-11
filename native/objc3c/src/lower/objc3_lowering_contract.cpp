@@ -711,6 +711,23 @@ std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary() {
+  std::ostringstream out;
+  // M260-B002 runtime-backed storage ownership legality anchor: explicit
+  // ownership qualifiers on Objective-C object properties now participate in
+  // live semantic legality. Weak and unsafe-unretained qualifiers must agree
+  // with the concrete runtime-backed storage modifier family before metadata
+  // emission proceeds.
+  out << "contract=" << kObjc3RuntimeBackedStorageOwnershipLegalityContractId
+      << ";owned_storage_model="
+      << kObjc3RuntimeBackedStorageOwnershipOwnedStorageModel
+      << ";weak_unowned_model="
+      << kObjc3RuntimeBackedStorageOwnershipWeakUnownedModel
+      << ";failure_model="
+      << kObjc3RuntimeBackedStorageOwnershipFailClosedModel;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

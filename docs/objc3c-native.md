@@ -11516,6 +11516,34 @@ runtime-backed objects.
   - destruction ordering remains deferred and non-runnable in this freeze
   - `M260-B002` is the next issue
 
+## M260 runtime-backed storage ownership legality (B002)
+
+`M260-B002` upgrades the frozen `M260-B001` boundary into live semantic
+legality for runtime-backed Objective-C object property storage.
+
+- contract id
+  `objc3c-runtime-backed-storage-ownership-legality/m260-b002-v1`
+- canonical proof fixtures
+  - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_legality_positive.objc3`
+  - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_weak_mismatch_negative.objc3`
+  - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_unowned_mismatch_negative.objc3`
+- implemented legality
+  - explicit `__weak` property qualifiers may target runtime-backed object
+    storage only when the property uses `weak` storage or no explicit ownership
+    modifier
+  - explicit `__unsafe_unretained` property qualifiers may target
+    runtime-backed object storage only when the property uses `assign` storage
+    or no explicit ownership modifier
+  - explicit `__strong` property qualifiers may target owned runtime-backed
+    object storage when the property uses `strong`, `copy`, or no explicit
+    ownership modifier
+- fail-closed behavior
+  - conflicting qualifier/modifier pairs now fail in semantic analysis before
+    metadata emission
+  - `unowned` remains the safe runtime-backed storage profile and is not
+    spelled by `__unsafe_unretained`
+  - `M260-B003` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

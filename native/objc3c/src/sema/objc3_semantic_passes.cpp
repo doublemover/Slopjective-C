@@ -1448,7 +1448,8 @@ static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
 
 static bool IsKnownPropertyAttributeName(const std::string &name) {
   return name == "readonly" || name == "readwrite" || name == "atomic" || name == "nonatomic" || name == "copy" ||
-         name == "strong" || name == "weak" || name == "assign" || name == "getter" || name == "setter";
+         name == "strong" || name == "weak" || name == "unowned" || name == "assign" || name == "getter" ||
+         name == "setter";
 }
 
 static bool IsValidPropertyGetterSelector(const std::string &selector) {
@@ -2123,6 +2124,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
        info.object_pointer_type_spelling);
   const bool has_runtime_managed_ownership_modifier =
       info.is_copy || info.is_strong || info.is_weak || info.is_unowned;
+  const bool has_explicit_runtime_backed_storage_modifier =
+      has_runtime_managed_ownership_modifier || info.is_assign;
   // M257-B003 accessor/ownership legality anchor: lane-B remains the
   // fail-closed source of truth for unsupported scalar ownership modifiers and
   // atomic ownership-aware property combinations until runtime storage
@@ -2143,6 +2146,62 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         "type mismatch: @property ownership modifier '" + ownership_modifier +
             "' requires an Objective-C object property for property '" +
             property.name + "' in " + owner_kind + " '" + owner_name + "'");
+  }
+  // M260-B002 runtime-backed storage ownership legality anchor: explicit
+  // `__weak`, `__unsafe_unretained`, and `__strong` qualifiers now participate
+  // in live property storage legality for runtime-backed Objective-C object
+  // properties. Conflicting explicit storage modifiers fail before metadata
+  // emission so later runtime lanes do not have to recover storage intent from
+  // inconsistent source.
+  const auto active_runtime_backed_storage_modifier = [&]() -> std::string {
+    if (info.is_copy) {
+      return "copy";
+    }
+    if (info.is_strong) {
+      return "strong";
+    }
+    if (info.is_weak) {
+      return "weak";
+    }
+    if (info.is_unowned) {
+      return "unowned";
+    }
+    if (info.is_assign) {
+      return "assign";
+    }
+    return {};
+  };
+  if (supports_runtime_managed_ownership && info.has_ownership_qualifier &&
+      !info.has_invalid_ownership_qualifier && ownership_modifiers <= 1u &&
+      has_explicit_runtime_backed_storage_modifier) {
+    const std::string explicit_modifier = active_runtime_backed_storage_modifier();
+    const auto emit_ownership_qualifier_storage_mismatch =
+        [&](const std::string &expected_storage_model) {
+          emit_property_contract_violation(
+              OwnershipQualifierLine(property.ownership_qualifier_tokens,
+                                     property.line),
+              OwnershipQualifierColumn(property.ownership_qualifier_tokens,
+                                       property.column),
+              "type mismatch: property ownership qualifier '" +
+                  property.ownership_qualifier_spelling +
+                  "' conflicts with @property ownership modifier '" +
+                  explicit_modifier + "' for property '" + property.name +
+                  "' in " + owner_kind + " '" + owner_name +
+                  "'; expected " + expected_storage_model);
+        };
+    if (property.ownership_qualifier_spelling == "__weak" &&
+        explicit_modifier != "weak") {
+      emit_ownership_qualifier_storage_mismatch(
+          "@property modifier 'weak' or no explicit ownership modifier");
+    } else if (property.ownership_qualifier_spelling == "__unsafe_unretained" &&
+               explicit_modifier != "assign") {
+      emit_ownership_qualifier_storage_mismatch(
+          "@property modifier 'assign' or no explicit ownership modifier");
+    } else if (property.ownership_qualifier_spelling == "__strong" &&
+               explicit_modifier != "strong" && explicit_modifier != "copy") {
+      emit_ownership_qualifier_storage_mismatch(
+          "@property modifier 'strong', 'copy', or no explicit ownership modifier");
+    }
   }
   if (info.is_atomic && has_runtime_managed_ownership_modifier &&
       supports_runtime_managed_ownership) {

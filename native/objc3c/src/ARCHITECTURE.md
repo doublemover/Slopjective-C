@@ -9700,3 +9700,21 @@ property/member ownership metadata is live.
   preserved autoreleasepool lowering lane
 - destruction ordering remains deferred until later `M260` runtime work
 - the next issue is `M260-B002`
+
+## M260 Runtime-Backed Storage Ownership Legality (B002)
+
+`M260-B002` turns the frozen B001 boundary into a live semantic admission rule
+for runtime-backed Objective-C object property storage.
+
+- explicit `__weak` property qualifiers are legal only with `weak` storage or
+  no explicit ownership modifier
+- explicit `__unsafe_unretained` property qualifiers are legal only with
+  `assign` storage or no explicit ownership modifier
+- explicit `__strong` property qualifiers are legal only with `strong`, `copy`,
+  or no explicit ownership modifier
+- conflicting qualifier/modifier pairs fail in semantic analysis before runtime
+  metadata emission, so later runtime lanes never have to recover storage
+  intent from contradictory source
+- `unowned` remains the safe runtime-backed storage profile and is therefore
+  not interchangeable with explicit `__unsafe_unretained`
+- the next issue is `M260-B003`

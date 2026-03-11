@@ -557,6 +557,23 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RetainableObjectSemanticRulesFailClosedModel =
         "fail-closed-on-retainable-object-semantic-drift-or-premature-live-storage-legality-claim";
+// M260-B002 runtime-backed storage ownership legality anchor: lane-B upgrades
+// the frozen B001 boundary into live semantic enforcement for runtime-backed
+// object properties by rejecting conflicting explicit ownership
+// qualifier/modifier combinations while preserving the truthful owned/weak/
+// unowned storage profiles the runtime already consumes.
+inline constexpr const char
+    *kObjc3RuntimeBackedStorageOwnershipLegalityContractId =
+        "objc3c-runtime-backed-storage-ownership-legality/m260-b002-v1";
+inline constexpr const char
+    *kObjc3RuntimeBackedStorageOwnershipOwnedStorageModel =
+        "explicit-strong-object-property-qualifiers-remain-legal-for-owned-runtime-backed-storage-while-conflicting-weak-or-unowned-modifiers-fail-closed";
+inline constexpr const char
+    *kObjc3RuntimeBackedStorageOwnershipWeakUnownedModel =
+        "explicit-weak-and-unsafe-unretained-object-property-qualifiers-bind-runtime-backed-storage-legality-and-reject-conflicting-property-modifiers";
+inline constexpr const char
+    *kObjc3RuntimeBackedStorageOwnershipFailClosedModel =
+        "fail-closed-on-runtime-backed-object-property-ownership-qualifier-modifier-drift";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1564,6 +1581,7 @@ std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
 std::string Objc3RuntimePropertyMetadataReflectionSummary();
 std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
+std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

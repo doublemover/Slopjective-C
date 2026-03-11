@@ -1285,6 +1285,12 @@ class Objc3IREmitter {
     // ownership metadata is live, but storage legality is not yet executable.
     out << "; retainable_object_semantic_rules_freeze = "
         << Objc3RetainableObjectSemanticRulesFreezeSummary() << "\n";
+    // M260-B002 runtime-backed storage ownership legality anchor: explicit
+    // object-property ownership qualifiers now participate in live semantic
+    // legality, so the IR closeout surface publishes the exact owned/weak/
+    // unowned contract now enforced before metadata emission.
+    out << "; runtime_backed_storage_ownership_legality = "
+        << Objc3RuntimeBackedStorageOwnershipLegalitySummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

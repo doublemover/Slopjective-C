@@ -8215,6 +8215,33 @@ behavior above the newly live runtime-backed property/member ownership surface.
   - no runnable destruction-order semantics
 - truthful boundary
   - `M260-B002` is the next implementation issue
+
+## M260 runtime-backed storage ownership legality (B002)
+
+`M260-B002` turns the frozen retainable-object storage boundary into a live
+semantic legality pass for runtime-backed Objective-C object properties.
+
+- contract id
+  `objc3c-runtime-backed-storage-ownership-legality/m260-b002-v1`
+- owned storage model
+  `explicit-strong-object-property-qualifiers-remain-legal-for-owned-runtime-backed-storage-while-conflicting-weak-or-unowned-modifiers-fail-closed`
+- weak/unowned model
+  `explicit-weak-and-unsafe-unretained-object-property-qualifiers-bind-runtime-backed-storage-legality-and-reject-conflicting-property-modifiers`
+- failure model
+  `fail-closed-on-runtime-backed-object-property-ownership-qualifier-modifier-drift`
+- implemented legality
+  - explicit `__weak` qualifiers are legal only with `weak` storage or no
+    explicit ownership modifier
+  - explicit `__unsafe_unretained` qualifiers are legal only with `assign`
+    storage or no explicit ownership modifier
+  - explicit `__strong` qualifiers are legal only with `strong`, `copy`, or no
+    explicit ownership modifier
+- fail-closed boundary
+  - conflicting qualifier/modifier pairs now fail in semantic analysis before
+    runtime metadata emission
+  - `unowned` remains the safe runtime-backed storage profile and therefore is
+    not treated as a synonym for explicit `__unsafe_unretained`
+  - `M260-B003` is the next implementation issue
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -16528,6 +16555,27 @@ semantics without over-claiming live ARC or destruction behavior.
     legacy summary-lane truths rather than live executable runtime semantics
   - destruction ordering remains deferred in this freeze
   - `M260-B002` is the next issue
+
+## M260 runtime-backed storage ownership legality metadata anchors (B002)
+
+`M260-B002` does not widen the emitted ownership metadata ABI. It hardens the
+semantic admission path so emitted runtime-backed property metadata can only be
+produced from qualifier/modifier combinations that already agree about the
+owned, weak, or unowned storage family.
+
+- contract id
+  `objc3c-runtime-backed-storage-ownership-legality/m260-b002-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b002/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b002/positive/module.ll`
+- truthful boundary
+  - emitted runtime-backed property descriptors keep the existing ownership
+    strings and runtime hook profiles from `M260-A002`
+  - conflicting explicit ownership qualifier/modifier pairs are rejected before
+    those descriptors can be emitted
+  - `unowned` remains the safe runtime-backed storage profile while explicit
+    `__unsafe_unretained` remains the unsafe storage qualifier surface
+  - `M260-B003` is the next issue
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---

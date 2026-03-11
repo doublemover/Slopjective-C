@@ -1,0 +1,13 @@
+module runtime_backed_storage_ownership_unowned_mismatch_probe;
+
+@interface Box
+@property (unowned) __unsafe_unretained id value;
+@end
+
+@implementation Box
+@property (unowned) __unsafe_unretained id value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}
