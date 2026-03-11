@@ -1486,6 +1486,41 @@ Recommended M262 lane-B freeze check:
 - `python scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
 - `M262-B002` is the next issue.
 
+## M262 implicit retain-release inference and lifetime-extension semantics (M262-B002)
+
+`M262-B002` promotes the supported ARC slice from explicit-only ownership
+spelling to semantic strong-owned inference for unqualified object signatures.
+
+- contract id
+  `objc3c-arc-inference-lifetime/m262-b002-v1`
+- explicit ARC inference behavior:
+  - unqualified object parameters now infer strong-owned retain/release
+    behavior under `-fobjc-arc`
+  - unqualified object returns now infer strong-owned retain/release behavior
+    under `-fobjc-arc`
+  - unqualified object property surfaces now infer a strong-owned lifetime
+    profile under `-fobjc-arc`
+  - the same source remains a zero-inference baseline without ARC mode
+- emitted IR now carries:
+  - `; arc_inference_lifetime = ...`
+  - `!objc3.objc_arc_inference_lifetime`
+  - `; frontend_objc_retain_release_operation_lowering_profile = ...`
+- current proof scope:
+  - ARC-enabled manifests show nonzero ownership-qualified, retain-insertion,
+    and release-insertion accounting for the supported fixture
+  - non-ARC manifests preserve zero inferred ownership/release activity for the
+    same fixture
+  - the block-bearing fixture still traverses the existing block escape path
+- still explicitly deferred:
+  - no full ARC cleanup synthesis
+  - no weak/autorelease-return/property-synthesis/block-interaction ARC
+    semantics yet
+
+Recommended M262 lane-B implementation check:
+
+- `python scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
+- `M262-B003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

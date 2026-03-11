@@ -1257,6 +1257,29 @@ std::string Objc3ArcSemanticRulesSummary() {
   return out.str();
 }
 
+std::string Objc3ArcInferenceLifetimeSummary() {
+  std::ostringstream out;
+  // M262-B002 ARC inference/lifetime implementation anchor: explicit ARC mode
+  // now upgrades the supported runnable slice from explicit-only ownership
+  // spelling to semantic strong-owned inference for unqualified object
+  // parameters, returns, and property surfaces, while non-ARC remains a
+  // zero-inference baseline and broader ARC cleanup/runtime interactions stay
+  // deferred.
+  out << "contract=" << Expr::kObjc3ArcInferenceLifetimeContractId
+      << ";source_model=" << Expr::kObjc3ArcInferenceLifetimeSourceModel
+      << ";semantic_model=" << Expr::kObjc3ArcInferenceLifetimeSemanticModel
+      << ";arc_mode_contract=" << Expr::kObjc3ArcModeHandlingContractId
+      << ";semantic_rules_contract=" << Expr::kObjc3ArcSemanticRulesContractId
+      << ";retain_release_lane="
+      << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";block_escape_lane=" << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";fail_closed_model="
+      << Expr::kObjc3ArcInferenceLifetimeFailClosedModel
+      << ";non_goal_model=" << Expr::kObjc3ArcInferenceLifetimeNonGoalModel
+      << ";next_issue=M262-B003";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

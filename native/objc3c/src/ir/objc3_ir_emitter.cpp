@@ -1481,6 +1481,12 @@ class Objc3IREmitter {
     // evidence stays aligned with semantic validation.
     out << "; arc_semantic_rules = "
         << Objc3ArcSemanticRulesSummary() << "\n";
+    // M262-B002 ARC inference/lifetime implementation anchor: publish the
+    // truthful semantic-upgrade boundary so emitted IR and manifests agree
+    // when ARC mode has widened the supported slice from explicit-only
+    // ownership spelling into inferred strong-owned retain/release activity.
+    out << "; arc_inference_lifetime = "
+        << Objc3ArcInferenceLifetimeSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2699,6 +2705,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_source_mode_boundary = !{!75}\n";
     out << "!objc3.objc_arc_mode_handling = !{!76}\n";
     out << "!objc3.objc_arc_semantic_rules = !{!77}\n";
+    out << "!objc3.objc_arc_inference_lifetime = !{!78}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4026,6 +4033,25 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesNonGoalModel)
+        << "\"}\n";
+    out << "!78 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeSemanticModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RetainReleaseOperationLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3BlockStorageEscapeLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

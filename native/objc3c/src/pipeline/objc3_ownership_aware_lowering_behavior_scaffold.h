@@ -15,6 +15,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // M262-B001 ARC semantic-rule freeze anchor: this scaffold remains explicit
   // about legality/inference boundaries so later ARC lifetime work cannot
   // silently treat property conflicts or inferred ownership as already live.
+  // M262-B002 ARC inference/lifetime implementation anchor: this scaffold now
+  // truthfully carries inferred strong-owned retain/release activity for the
+  // supported ARC slice, without widening into the still-deferred cleanup,
+  // weak, autorelease-return, or property-synthesis ARC behaviors.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

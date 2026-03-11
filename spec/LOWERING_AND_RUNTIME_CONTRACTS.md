@@ -8139,3 +8139,32 @@ explicit ARC mode exists.
   - `spec/planning/compiler/m262/m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
   - `M262-B002` is the next issue.
+
+## M262 implicit retain-release inference and lifetime-extension semantics (B002)
+
+`M262-B002` upgrades the supported explicit ARC slice from explicit-only
+ownership spelling to one truthful inference boundary for unqualified object
+signatures.
+
+- contract id
+  `objc3c-arc-inference-lifetime/m262-b002-v1`
+- source model
+  `explicit-arc-mode-now-infers-strong-owned-executable-object-signatures-for-the-supported-runnable-slice`
+- semantic model
+  `arc-enabled-unqualified-object-signatures-now-produce-canonical-retain-release-lifetime-accounting-while-nonarc-remains-zero-inference`
+- current boundary:
+  - under `-fobjc-arc`, unqualified object parameters and returns now infer
+    strong-owned retain/release activity in sema and lowering
+  - under `-fobjc-arc`, unqualified object property surfaces now infer a
+    strong-owned lifetime profile in sema
+  - the same source remains a zero-inference baseline without ARC mode
+  - emitted IR now carries:
+    `; arc_inference_lifetime = ...`
+    and `!objc3.objc_arc_inference_lifetime`
+  - the retain/release lowering replay profile is now the canonical live proof
+    for this boundary
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m262_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation_b002_expectations.md`
+  - `spec/planning/compiler/m262/m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation_packet.md`
+  - `python scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
+  - `M262-B003` is the next issue.

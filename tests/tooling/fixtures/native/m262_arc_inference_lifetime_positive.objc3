@@ -1,0 +1,24 @@
+module m262_arc_inference_lifetime_positive;
+
+@interface Box
+@property (nonatomic, strong) id currentValue;
+- (id) currentValueToken:(id) value;
+@end
+
+@implementation Box
+@property (nonatomic, strong) id currentValue;
+
+- (id) currentValueToken:(id) value {
+  let closure = ^() { return value; };
+  return closure();
+}
+@end
+
+fn project(value: id) -> id {
+  let closure = ^() { return value; };
+  return closure();
+}
+
+fn main() -> i32 {
+  return project(17);
+}

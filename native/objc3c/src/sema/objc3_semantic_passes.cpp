@@ -2563,6 +2563,7 @@ static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
 static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
                                            const std::string &owner_name,
                                            const std::string &owner_kind,
+                                           bool arc_mode_enabled,
                                            std::vector<std::string> &diagnostics) {
   Objc3PropertyInfo info;
   info.type = property.type;
@@ -2627,6 +2628,32 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       property.executable_ivar_layout_alignment_bytes;
   info.line = property.line;
   info.column = property.column;
+
+  const bool arc_inferred_strong_object_property =
+      arc_mode_enabled && !info.has_ownership_qualifier && !info.is_weak &&
+      !info.is_unowned && !info.is_assign &&
+      (info.id_spelling || info.instancetype_spelling ||
+       info.object_pointer_type_spelling);
+  if (arc_inferred_strong_object_property) {
+    // M262-B002 ARC inference/lifetime implementation anchor: under explicit
+    // ARC mode, unqualified object properties in the supported runnable slice
+    // now inherit a canonical strong-owned retain/release profile directly in
+    // sema so lowering and replay accounting no longer depend on explicit
+    // ownership spelling alone.
+    info.has_ownership_qualifier = true;
+    info.ownership_insert_retain = true;
+    info.ownership_insert_release = true;
+    info.ownership_insert_autorelease = false;
+    info.ownership_is_weak_reference = false;
+    info.ownership_is_unowned_reference = false;
+    info.ownership_is_unowned_safe_reference = false;
+    info.ownership_arc_diagnostic_candidate = false;
+    info.ownership_arc_fixit_available = false;
+    info.ownership_arc_diagnostic_profile.clear();
+    info.ownership_arc_fixit_hint.clear();
+    info.ownership_lifetime_profile = "strong-owned";
+    info.ownership_runtime_hook_profile.clear();
+  }
 
   std::unordered_map<std::string, std::size_t> attribute_name_counts;
   for (const auto &attribute : property.attributes) {
@@ -2990,7 +3017,8 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
 // Legacy extraction anchor retained for contract tests:
 // BuildMethodInfo(const Objc3MethodDecl &method)
 static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
-                                       const MethodSelectorNormalizationContractInfo &selector_contract) {
+                                       const MethodSelectorNormalizationContractInfo &selector_contract,
+                                       bool arc_mode_enabled) {
   Objc3MethodInfo info;
   info.selector_normalized = selector_contract.normalized_selector;
   info.selector_piece_count = selector_contract.selector_piece_count;
@@ -3065,6 +3093,29 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
     info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
     info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
     info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
+    const std::size_t param_index = info.param_has_ownership_qualifier.size() - 1u;
+    const bool arc_inferred_object_param =
+        arc_mode_enabled && !info.param_has_ownership_qualifier[param_index] &&
+        (info.param_id_spelling[param_index] ||
+         info.param_instancetype_spelling[param_index] ||
+         info.param_object_pointer_type_spelling[param_index]);
+    if (arc_inferred_object_param) {
+      // M262-B002 ARC inference/lifetime implementation anchor: under
+      // explicit ARC mode, unqualified object parameters now synthesize a
+      // canonical strong-owned retain/release profile for the supported
+      // runnable slice.
+      info.param_has_ownership_qualifier[param_index] = true;
+      info.param_ownership_insert_retain[param_index] = true;
+      info.param_ownership_insert_release[param_index] = true;
+      info.param_ownership_insert_autorelease[param_index] = false;
+      info.param_ownership_is_weak_reference[param_index] = false;
+      info.param_ownership_is_unowned_reference[param_index] = false;
+      info.param_ownership_is_unowned_safe_reference[param_index] = false;
+      info.param_ownership_arc_diagnostic_candidate[param_index] = false;
+      info.param_ownership_arc_fixit_available[param_index] = false;
+      info.param_ownership_arc_diagnostic_profile[param_index].clear();
+      info.param_ownership_arc_fixit_hint[param_index].clear();
+    }
   }
   const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromMethodReturn(method);
   info.return_has_generic_suffix = method.has_return_generic_suffix;
@@ -3100,6 +3151,26 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
   info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
   info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+  const bool arc_inferred_object_return =
+      arc_mode_enabled && !info.return_has_ownership_qualifier &&
+      (info.return_id_spelling || info.return_instancetype_spelling ||
+       info.return_object_pointer_type_spelling);
+  if (arc_inferred_object_return) {
+    // M262-B002 ARC inference/lifetime implementation anchor: under explicit
+    // ARC mode, unqualified object returns now synthesize a canonical
+    // strong-owned retain/release profile for the supported runnable slice.
+    info.return_has_ownership_qualifier = true;
+    info.return_ownership_insert_retain = true;
+    info.return_ownership_insert_release = true;
+    info.return_ownership_insert_autorelease = false;
+    info.return_ownership_is_weak_reference = false;
+    info.return_ownership_is_unowned_reference = false;
+    info.return_ownership_is_unowned_safe_reference = false;
+    info.return_ownership_arc_diagnostic_candidate = false;
+    info.return_ownership_arc_fixit_available = false;
+    info.return_ownership_arc_diagnostic_profile.clear();
+    info.return_ownership_arc_fixit_hint.clear();
+  }
   info.async_continuation_profile_is_normalized =
       method.async_continuation_profile_is_normalized;
   info.deterministic_async_continuation_handoff =
@@ -3264,6 +3335,7 @@ static std::string FormatObjcContainerName(const std::string &name,
 
 static std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
 BuildProtocolSemanticDefinitions(const Objc3Program &ast,
+                                 bool arc_mode_enabled,
                                  std::vector<std::string> &diagnostics) {
   std::unordered_map<std::string, Objc3ProtocolSemanticDefinition> definitions;
   for (const auto &protocol_decl : ast.protocols) {
@@ -3309,6 +3381,7 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
                                    diagnostics);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, kContainerLabel,
+                            arc_mode_enabled,
                             diagnostics);
       const auto property_insert =
           protocol_properties.emplace(property_decl.name, std::move(property_info));
@@ -3381,7 +3454,8 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
 
       Objc3ProtocolRequirementInfo requirement;
       requirement.selector = selector_contract.normalized_selector;
-      requirement.method = BuildMethodInfo(method_decl, selector_contract);
+      requirement.method =
+          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled);
       requirement.protocol_name = protocol_decl.name;
       requirement.line = method_decl.line;
       requirement.column = method_decl.column;
@@ -12110,7 +12184,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   Objc3InterfaceImplementationSummary interface_implementation_summary;
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions =
-          BuildProtocolSemanticDefinitions(ast, diagnostics);
+          BuildProtocolSemanticDefinitions(ast, arc_mode_enabled, diagnostics);
   // M252-B003 diagnostic precision anchor: class interface/implementation
   // summaries exclude category containers so valid class-plus-category
   // programs do not degrade into duplicate class-owner diagnostics before the
@@ -12222,6 +12296,32 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
         info.param_has_protocol_composition.push_back(protocol_composition.has_protocol_composition);
         info.param_protocol_composition_lexicographic.push_back(protocol_composition.names_lexicographic);
         info.param_has_invalid_protocol_composition.push_back(protocol_composition.has_invalid_protocol_composition);
+        const std::size_t param_index =
+            info.param_has_ownership_qualifier.size() - 1u;
+        const bool arc_inferred_object_param =
+            arc_mode_enabled &&
+            !info.param_has_ownership_qualifier[param_index] &&
+            (info.param_id_spelling[param_index] ||
+             info.param_instancetype_spelling[param_index] ||
+             info.param_object_pointer_type_spelling[param_index]);
+        if (arc_inferred_object_param) {
+          // M262-B002 ARC inference/lifetime implementation anchor: function
+          // parameters in the supported ARC slice now receive the same
+          // canonical strong-owned retain/release profile as method
+          // parameters, keeping one semantic contract for executable
+          // unqualified object signatures.
+          info.param_has_ownership_qualifier[param_index] = true;
+          info.param_ownership_insert_retain[param_index] = true;
+          info.param_ownership_insert_release[param_index] = true;
+          info.param_ownership_insert_autorelease[param_index] = false;
+          info.param_ownership_is_weak_reference[param_index] = false;
+          info.param_ownership_is_unowned_reference[param_index] = false;
+          info.param_ownership_is_unowned_safe_reference[param_index] = false;
+          info.param_ownership_arc_diagnostic_candidate[param_index] = false;
+          info.param_ownership_arc_fixit_available[param_index] = false;
+          info.param_ownership_arc_diagnostic_profile[param_index].clear();
+          info.param_ownership_arc_fixit_hint[param_index].clear();
+        }
       }
       const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
       info.return_has_generic_suffix = fn.has_return_generic_suffix;
@@ -12257,6 +12357,26 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       info.return_has_protocol_composition = return_protocol_composition.has_protocol_composition;
       info.return_protocol_composition_lexicographic = return_protocol_composition.names_lexicographic;
       info.return_has_invalid_protocol_composition = return_protocol_composition.has_invalid_protocol_composition;
+      const bool arc_inferred_object_return =
+          arc_mode_enabled && !info.return_has_ownership_qualifier &&
+          (info.return_id_spelling || info.return_instancetype_spelling ||
+           info.return_object_pointer_type_spelling);
+      if (arc_inferred_object_return) {
+        // M262-B002 ARC inference/lifetime implementation anchor: function
+        // returns in the supported ARC slice now receive the same canonical
+        // strong-owned retain/release profile as method returns.
+        info.return_has_ownership_qualifier = true;
+        info.return_ownership_insert_retain = true;
+        info.return_ownership_insert_release = true;
+        info.return_ownership_insert_autorelease = false;
+        info.return_ownership_is_weak_reference = false;
+        info.return_ownership_is_unowned_reference = false;
+        info.return_ownership_is_unowned_safe_reference = false;
+        info.return_ownership_arc_diagnostic_candidate = false;
+        info.return_ownership_arc_fixit_available = false;
+        info.return_ownership_arc_diagnostic_profile.clear();
+        info.return_ownership_arc_fixit_hint.clear();
+      }
       info.async_continuation_profile_is_normalized =
           fn.async_continuation_profile_is_normalized;
       info.deterministic_async_continuation_handoff =
@@ -12708,6 +12828,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                    container_label, diagnostics);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, container_label,
+                            arc_mode_enabled,
                             diagnostics);
       const auto property_insert = interface_info.properties.emplace(property_decl.name, std::move(property_info));
       if (!property_insert.second) {
@@ -12753,7 +12874,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       }
 
       const auto method_insert =
-          interface_info.methods.emplace(selector, BuildMethodInfo(method_decl, selector_contract));
+          interface_info.methods.emplace(
+              selector, BuildMethodInfo(method_decl, selector_contract,
+                                        arc_mode_enabled));
       if (!method_insert.second) {
         diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S200",
                                        "duplicate " + container_label +
@@ -12838,6 +12961,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                    container_label, diagnostics);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, container_label,
+                            arc_mode_enabled,
                             diagnostics);
       const auto property_insert =
           implementation_info.properties.emplace(property_decl.name,
@@ -12945,7 +13069,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                            "' must define a body"));
       }
 
-      Objc3MethodInfo method_info = BuildMethodInfo(method_decl, selector_contract);
+      Objc3MethodInfo method_info =
+          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled);
       const auto method_insert =
           implementation_info.methods.emplace(selector, std::move(method_info));
       if (!method_insert.second) {

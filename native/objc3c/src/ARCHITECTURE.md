@@ -9867,6 +9867,23 @@ explicit ARC mode admission lands.
   `!objc3.objc_arc_semantic_rules`
 - the next issue is `M262-B002`
 
+## M262 Implicit Retain-Release Inference And Lifetime-Extension Semantics (B002)
+
+`M262-B002` upgrades the current ARC slice from explicit-only ownership
+spelling to one canonical semantic inference boundary for unqualified object
+signatures.
+
+- under explicit ARC mode, unqualified object parameters and returns now
+  receive inferred strong-owned retain/release accounting
+- unqualified object property surfaces now receive an inferred strong-owned
+  lifetime profile in sema
+- non-ARC remains the truthful zero-inference baseline for the same source
+- emitted IR now publishes the `arc_inference_lifetime` comment and
+  `!objc3.objc_arc_inference_lifetime`
+- the retain/release lowering replay profile remains the operator-facing proof
+  surface for this issue
+- the next issue is `M262-B003`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

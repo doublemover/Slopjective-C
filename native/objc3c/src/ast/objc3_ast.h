@@ -233,6 +233,16 @@ struct Expr {
       "forbidden-arc-property-forms-and-non-inferred-lifetime-semantics-terminate-deterministically";
   static inline constexpr const char *kObjc3ArcSemanticRulesNonGoalModel =
       "no-implicit-retain-release-inference-no-lifetime-extension-no-method-family-based-arc-semantics-yet";
+  static inline constexpr const char *kObjc3ArcInferenceLifetimeContractId =
+      "objc3c-arc-inference-lifetime/m262-b002-v1";
+  static inline constexpr const char *kObjc3ArcInferenceLifetimeSourceModel =
+      "explicit-arc-mode-now-infers-strong-owned-executable-object-signatures-for-the-supported-runnable-slice";
+  static inline constexpr const char *kObjc3ArcInferenceLifetimeSemanticModel =
+      "arc-enabled-unqualified-object-signatures-now-produce-canonical-retain-release-lifetime-accounting-while-nonarc-remains-zero-inference";
+  static inline constexpr const char *kObjc3ArcInferenceLifetimeFailClosedModel =
+      "non-arc-mode-keeps-unqualified-object-signatures-non-inferred-and-zero-retain-release-lifetime-accounting";
+  static inline constexpr const char *kObjc3ArcInferenceLifetimeNonGoalModel =
+      "no-full-arc-cleanup-synthesis-no-weak-autorelease-return-property-synthesis-or-block-interaction-arc-semantics-yet";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

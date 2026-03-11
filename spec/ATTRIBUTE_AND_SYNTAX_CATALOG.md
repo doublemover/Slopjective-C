@@ -87,6 +87,18 @@ Current implementation status (`M262-B001`):
 - atomic ownership-aware properties still fail with deterministic diagnostics
 - broader ARC lifetime extension and method-family ARC semantics remain deferred
 
+### B.2.6 ARC inference and lifetime-extension semantics (implementation note) {#b-2-6}
+
+Current implementation status (`M262-B002`):
+
+- under `-fobjc-arc`, unqualified object parameters and returns now infer a
+  strong-owned retain/release profile for the supported runnable slice
+- under `-fobjc-arc`, unqualified object property surfaces now infer a
+  strong-owned lifetime profile in semantic integration
+- the same source remains a zero-inference baseline without ARC mode
+- full ARC cleanup synthesis and broader ARC interaction surfaces remain
+  deferred to later `M262` issues
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

@@ -2282,6 +2282,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // treats ARC semantic legality as explicit-mode-only, preserving deterministic
   // weak/unowned and ARC-fixit surfaces while broader inference remains
   // deferred.
+  // M262-B002 ARC inference/lifetime implementation anchor: the handoff now
+  // treats explicit ARC mode as permission to infer strong-owned retain/release
+  // activity for the supported unqualified object slice, while non-ARC still
+  // preserves the zero-inference baseline and later ARC cleanup work remains
+  // deferred.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&
