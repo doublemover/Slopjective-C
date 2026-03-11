@@ -1109,6 +1109,26 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
+  std::ostringstream out;
+  // M261-D003 byref-forwarding/heap-promotion/ownership-interop
+  // implementation anchor: escaping pointer-capture block promotion now
+  // rewrites capture slots onto runtime-owned heap cells before helper
+  // execution so byref mutation and owned-capture lifetime hooks survive after
+  // the source frame returns.
+  out << "contract="
+      << kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId
+      << ";previous_contract="
+      << kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId
+      << ";forwarding_model=escaping-pointer-capture-slots-rewrite-to-runtime-owned-forwarding-cells"
+      << ";heap_promotion_model=promotion-deep-copies-captured-i32-cells-before-helper-execution"
+      << ";ownership_interop_model=copy-dispose-helpers-run-against-runtime-owned-cells-for-owned-captures"
+      << ";invoke_model=escaped-byref-and-owned-capture-block-handles-invoke-after-source-frame-return"
+      << ";fail_closed_model=no-public-block-abi-widening-and-no-outer-stack-cell-forwarding-bridge-yet"
+      << ";non_goals=no-public-byref-layout-surface-no-generalized-foreign-abi-block-interoperability";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

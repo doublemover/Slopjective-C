@@ -10646,6 +10646,10 @@ class Objc3Parser {
     // still does not widen the source surface; runtime helper realization
     // remains an internal lowering/runtime concern layered on this same source
     // inventory.
+    // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+    // parser still only publishes the truthful capture and escape inventory;
+    // runtime-owned forwarding cells for escaping pointer-capture blocks are
+    // layered later without widening this source contract.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

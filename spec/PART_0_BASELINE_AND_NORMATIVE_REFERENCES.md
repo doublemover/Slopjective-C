@@ -197,8 +197,12 @@ Current implementation boundary:
     runtime-owned block records rather than a public block-object ABI.
   - lane-D now also upgrades that boundary (`M261-D002`): runtime-managed block
     records now support helper-mediated copy/dispose and pointer-capture invoke
-    behavior for promoted blocks, while byref-forwarded and ownership-reentrant
-    escaping helper interop remains deferred until `M261-D003`.
+    behavior for promoted blocks.
+  - lane-D now also widens escaping pointer-capture runtime behavior
+    (`M261-D003`): promotion rewrites capture slots onto runtime-owned
+    forwarding cells so byref mutation and owned-capture helper interop survive
+    after the source frame returns, while public block ABI widening still
+    remains deferred.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

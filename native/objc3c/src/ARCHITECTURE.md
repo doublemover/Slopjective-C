@@ -10077,3 +10077,25 @@ capability for promoted block records.
   - runtime-reentrant ownership helper interop
   - owned capture escape lifetimes through runtime-managed helper bodies
 - the next issue is `M261-D003`
+
+## M261 Byref Forwarding, Heap Promotion, And Ownership Interop For Escaping Blocks (D003)
+
+`M261-D003` upgrades the D002 runtime model so escaping pointer-capture blocks
+own durable forwarding cells after promotion rather than borrowing stack-cell
+addresses.
+
+- runtime behavior now includes:
+  - promotion rewrites pointer-capture storage slots onto runtime-owned heap
+    cells before helper execution
+  - byref mutation persists across repeated block-handle invokes after the
+    source frame returns
+  - owned-capture copy/dispose helpers run against runtime-owned capture cells
+  - emitted IR republishes
+    `; runtime_block_byref_forwarding_heap_promotion_ownership_interop = ...`
+- public/runtime surface still remains intentionally narrow:
+  - no public block-object ABI
+  - no public stable-header declaration for block helper entrypoints
+- deferred work stays explicit:
+  - no caller-frame forwarding bridge for still-live outer stack cells
+  - no generalized foreign block ABI interop
+- the next issue is `M261-E001`

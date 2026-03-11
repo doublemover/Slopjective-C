@@ -321,6 +321,10 @@ int objc3_runtime_autorelease_i32(int value);
 // promotion now supports pointer-capture block records with runtime-managed
 // copy/dispose and invoke behavior, but the helper ABI remains private to this
 // internal header.
+// M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+// escaping pointer-capture promotion now also rewrites capture slots onto
+// runtime-owned forwarding cells before helper execution, while the helper ABI
+// still remains private to this internal header.
 int objc3_runtime_promote_block_i32(const void *storage,
                                     uint64_t storage_size_bytes,
                                     int has_pointer_capture_storage);

@@ -1445,6 +1445,13 @@ class Objc3IREmitter {
     // ownership-interoperating escape paths remain deferred.
     out << "; runtime_block_allocation_copy_dispose_invoke_support = "
         << Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() << "\n";
+    // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+    // emitted IR now republishes that escaping pointer-capture block handles
+    // rewrite capture slots onto runtime-owned forwarding cells before helper
+    // execution, keeping byref mutation and owned capture lifetimes live after
+    // the source frame returns.
+    out << "; runtime_block_byref_forwarding_heap_promotion_ownership_interop = "
+        << Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -8074,7 +8081,16 @@ class Objc3IREmitter {
   }
 
   static bool BlockLiteralSupportsScalarRuntimePromotion(const Expr &expr) {
-    return !BlockLiteralUsesPointerCaptureStorage(expr);
+    return expr.block_source_model_is_normalized &&
+           expr.block_runtime_capture_ownership_is_normalized &&
+           (!expr.block_storage_requires_byref_cells ||
+            !expr.block_storage_byref_layout_symbol.empty()) &&
+           ((!expr.block_runtime_copy_helper_required &&
+             !expr.block_copy_helper_required) ||
+            !expr.block_copy_helper_symbol.empty()) &&
+           ((!expr.block_runtime_dispose_helper_required &&
+             !expr.block_dispose_helper_required) ||
+            !expr.block_dispose_helper_symbol.empty());
   }
 
   static bool BlockLiteralSupportsEscapingRuntimeHookLowering(const Expr &expr) {
@@ -8083,18 +8099,7 @@ class Objc3IREmitter {
   }
 
   static bool BlockLiteralRequiresFutureRuntimeLanes(const Expr &expr) {
-    return !expr.block_source_model_is_normalized ||
-           !expr.block_runtime_capture_ownership_is_normalized ||
-           (expr.block_storage_escape_to_heap &&
-            !BlockLiteralSupportsEscapingRuntimeHookLowering(expr)) ||
-           (expr.block_storage_requires_byref_cells &&
-            expr.block_storage_byref_layout_symbol.empty()) ||
-           ((expr.block_runtime_copy_helper_required ||
-             expr.block_copy_helper_required) &&
-            expr.block_copy_helper_symbol.empty()) ||
-           ((expr.block_runtime_dispose_helper_required ||
-             expr.block_dispose_helper_required) &&
-            expr.block_dispose_helper_symbol.empty());
+    return !BlockLiteralSupportsScalarRuntimePromotion(expr);
   }
 
   static std::string BuildBlockCopyHelperSymbol(const Expr &expr) {
@@ -8253,14 +8258,16 @@ class Objc3IREmitter {
                                      expr);
     if (!supported) {
       return EmitUnsupportedI32Value(
-          "escaping block value still requires pointer-managed heap promotion or byref forwarding that lands in later M261 runtime issues");
+          "escaping block value still requires normalized block runtime helper metadata that lands in later M261 runtime issues");
     }
+    const bool pointer_capture_storage =
+        BlockLiteralUsesPointerCaptureStorage(expr);
     const std::string promoted = NewTemp(ctx);
     ctx.code_lines.push_back(
         "  " + promoted + " = call i32 @" +
         std::string(kObjc3RuntimePromoteBlockI32Symbol) + "(ptr " + storage_ptr +
         ", i64 " + std::to_string(BlockStorageStaticSizeBytes(expr)) +
-        ", i32 0)");
+        ", i32 " + std::string(pointer_capture_storage ? "1" : "0") + ")");
     return promoted;
   }
 

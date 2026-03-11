@@ -7957,3 +7957,29 @@ runtime capability for promoted block records.
   - `spec/planning/compiler/m261/m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation_packet.md`
   - `python scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
   - `M261-D003` is the next issue.
+
+## M261 byref forwarding, heap promotion, and ownership interop for escaping blocks (D003)
+
+`M261-D003` widens the live D002 block runtime so escaping pointer-capture
+blocks no longer borrow stack-cell addresses after promotion.
+
+- contract id
+  `objc3c-runtime-block-byref-forwarding-heap-promotion-interop/m261-d003-v1`
+- current live behavior:
+  - promotion rewrites pointer-capture slots onto runtime-owned heap cells
+    before helper execution
+  - escaped byref mutation now persists across repeated block-handle invokes
+    after the source frame returns
+  - owned-capture copy/dispose helpers now run against runtime-owned capture
+    cells instead of transient stack cells
+  - emitted IR now carries
+    `; runtime_block_byref_forwarding_heap_promotion_ownership_interop = ...`
+- still explicitly deferred:
+  - no public block-object ABI
+  - no public stable runtime helper declarations
+  - no bridge that forwards mutations back into a still-live caller stack frame
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion_d003_expectations.md`
+  - `spec/planning/compiler/m261/m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion_packet.md`
+  - `python scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
+  - `M261-E001` is the next issue.

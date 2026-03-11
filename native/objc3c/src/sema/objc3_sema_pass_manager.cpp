@@ -937,6 +937,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // lane-D widens runtime execution for promoted block records without
           // widening the source-level sema contract that this handoff
           // publishes.
+          // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+          // the same sema handoff now feeds runtime-owned forwarding-cell
+          // promotion for escaping pointer-capture blocks without changing the
+          // source-facing capture legality contract.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

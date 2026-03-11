@@ -23,6 +23,9 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
     // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: driver
     // orchestration now also republishes the live runtime helper capability
     // without changing the public CLI surface or source acceptance model.
+    // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+    // driver orchestration still widens only the internal runtime behavior for
+    // escaping pointer-capture blocks; there is no new CLI or public ABI knob.
     return RunObjc3LanguagePath(cli_options);
   }
   return RunObjectiveCPath(cli_options);

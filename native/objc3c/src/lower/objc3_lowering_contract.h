@@ -644,6 +644,9 @@ inline constexpr const char *kObjc3RuntimeBlockApiObjectLayoutContractId =
 inline constexpr const char
     *kObjc3RuntimeBlockAllocationCopyDisposeInvokeSupportContractId =
         "objc3c-runtime-block-allocation-copy-dispose-invoke-support/m261-d002-v1";
+inline constexpr const char
+    *kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId =
+        "objc3c-runtime-block-byref-forwarding-heap-promotion-interop/m261-d003-v1";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1765,6 +1768,7 @@ std::string Objc3ExecutableBlockByrefHelperLoweringSummary();
 std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary();
 std::string Objc3RuntimeBlockApiObjectLayoutSummary();
 std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
+std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

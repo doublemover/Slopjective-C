@@ -1370,6 +1370,35 @@ Recommended M261 lane-D implementation check:
 - `python scripts/check_m261_d002_block_object_allocation_copy_dispose_and_invoke_support_core_feature_implementation.py`
 - `M261-D003` is the next issue.
 
+## M261 byref forwarding, heap promotion, and ownership interop for escaping blocks (M261-D003)
+
+`M261-D003` closes the main runtime gap for escaping pointer-capture blocks.
+
+- contract id
+  `objc3c-runtime-block-byref-forwarding-heap-promotion-interop/m261-d003-v1`
+
+Current live runtime behavior:
+
+- escaping pointer-capture block promotion now rewrites capture slots onto
+  runtime-owned heap cells before publishing the block handle
+- escaped byref captures mutate those runtime-owned forwarding cells across
+  repeated invokes after the source frame returns
+- owned-capture copy/dispose helpers now run against runtime-owned capture cells
+  instead of borrowed stack-cell addresses
+- emitted IR now carries
+  `; runtime_block_byref_forwarding_heap_promotion_ownership_interop = ...`
+
+Still explicitly deferred:
+
+- no public block-object ABI
+- no public block runtime helper declarations
+- no outer stack-cell forwarding bridge back into a still-live caller frame
+
+Recommended M261 lane-D expansion check:
+
+- `python scripts/check_m261_d003_byref_forwarding_cells_heap_promotion_and_ownership_interop_for_escaping_blocks_core_feature_expansion.py`
+- `M261-E001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

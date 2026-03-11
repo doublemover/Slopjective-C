@@ -1,0 +1,15 @@
+module m261_escaping_block_runtime_hook_byref_positive;
+
+fn materialize(handle: i32) -> i32 {
+  return handle;
+}
+
+fn main() -> i32 {
+  let seed = 7;
+  let delta = 2;
+  let closure = ^(i32 value) {
+    seed = seed + delta;
+    return seed + value;
+  };
+  return materialize(closure);
+}
