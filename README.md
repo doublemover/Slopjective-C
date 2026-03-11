@@ -235,6 +235,18 @@ Current truthful boundary after `M276-C002`:
 - direct script callers still default to the full wrapper path until the
   helper/runner migration issues land
 
+`M276-D002` now adds the shared native build helper:
+
+- `scripts/ensure_objc3c_native_build.py`
+  - `--mode fast`
+  - `--mode contracts`
+  - `--mode full`
+  - `--force-reconfigure`
+- active readiness runners can now ask for a usable native build without
+  hard-coding raw npm build semantics
+- forced reconfigure now routes through the wrapper without deleting the
+  persistent build tree
+
 `M276-D001` is the next issue.
 
 ## Quickstart

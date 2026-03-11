@@ -1,6 +1,7 @@
 param(
   [ValidateSet("full", "binaries-only", "packets-source", "packets-binary", "packets-closeout", "packets-all")]
-  [string]$ExecutionMode = "full"
+  [string]$ExecutionMode = "full",
+  [switch]$ForceReconfigure
 )
 
 $ErrorActionPreference = "Stop"
@@ -462,13 +463,16 @@ function Invoke-CMakeConfigure {
     [Parameter(Mandatory = $true)][string]$RuntimeOutputDir,
     [Parameter(Mandatory = $true)][string]$LibraryOutputDir,
     [Parameter(Mandatory = $true)][string]$FingerprintPath,
-    [Parameter(Mandatory = $true)][hashtable]$Fingerprint
+    [Parameter(Mandatory = $true)][hashtable]$Fingerprint,
+    [Parameter(Mandatory = $true)][bool]$ForceReconfigure
   )
 
   $cachePath = Join-Path $BuildDir "CMakeCache.txt"
-  $needsConfigure = !(Test-Path -LiteralPath $cachePath -PathType Leaf) -or !(Test-BuildFingerprintMatch -ExpectedFingerprint $Fingerprint -FingerprintPath $FingerprintPath)
+  $needsConfigure = $ForceReconfigure -or !(Test-Path -LiteralPath $cachePath -PathType Leaf) -or !(Test-BuildFingerprintMatch -ExpectedFingerprint $Fingerprint -FingerprintPath $FingerprintPath)
   if ($needsConfigure) {
-    if (Test-Path -LiteralPath $cachePath -PathType Leaf) {
+    if ($ForceReconfigure) {
+      Write-BuildStep "cmake_configure=force-reconfigure"
+    } elseif (Test-Path -LiteralPath $cachePath -PathType Leaf) {
       Write-BuildStep "cmake_configure=refresh-fingerprint"
     } else {
       Write-BuildStep "cmake_configure=cold"
@@ -1644,7 +1648,8 @@ if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
     -RuntimeOutputDir $outDir `
     -LibraryOutputDir $outLibDir `
     -FingerprintPath $buildFingerprintPath `
-    -Fingerprint $buildFingerprint
+    -Fingerprint $buildFingerprint `
+    -ForceReconfigure $ForceReconfigure
 
   Invoke-CMakeNativeBuild `
     -CmakeTool $cmakeTool `

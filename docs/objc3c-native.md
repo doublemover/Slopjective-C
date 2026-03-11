@@ -7185,6 +7185,25 @@ public npm command surface.
 - next issue
   - `M276-D001`
 
+## Shared native build helper (M276-D002)
+
+`M276-D002` introduces the first shared readiness/checker build-acquisition
+surface.
+
+- contract id
+  `objc3c-shared-native-build-helper/m276-d002-v1`
+- helper surface
+  - `scripts/ensure_objc3c_native_build.py --mode fast`
+  - `scripts/ensure_objc3c_native_build.py --mode contracts`
+  - `scripts/ensure_objc3c_native_build.py --mode full`
+  - `scripts/ensure_objc3c_native_build.py --mode full --force-reconfigure`
+- current truthful state
+  - the helper hides wrapper execution-mode selection from migrated runners
+  - the helper emits stable summaries under `tmp/reports/`
+  - active runner adoption begins here with a small current-work slice
+- next issue
+  - `M276-D001`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented

@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER = ROOT / "scripts" / "check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py"
 TEST = ROOT / "tests" / "tooling" / "test_check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py"
-NPM_EXECUTABLE = "npm.cmd" if sys.platform == "win32" else "npm"
+BUILD_HELPER = ROOT / "scripts" / "ensure_objc3c_native_build.py"
 
 
 def run(cmd: list[str]) -> None:
@@ -19,7 +19,16 @@ def run(cmd: list[str]) -> None:
 
 def main() -> int:
     run([sys.executable, "scripts/build_objc3c_native_docs.py"])
-    run([NPM_EXECUTABLE, "run", "build:objc3c-native"])
+    run([
+        sys.executable,
+        str(BUILD_HELPER),
+        "--mode",
+        "fast",
+        "--reason",
+        "m262-b001-lane-b-readiness",
+        "--summary-out",
+        "tmp/reports/m262/M262-B001/ensure_objc3c_native_build_summary.json",
+    ])
     run([sys.executable, str(CHECKER)])
     run([sys.executable, "-m", "pytest", str(TEST), "-q"])
     return 0

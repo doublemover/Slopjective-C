@@ -10366,3 +10366,23 @@ wrapper callers.
   - runner/helper migration remains deferred to `M276-D001` and `M276-D002`
 - explicit handoff
   - `M276-D001` is the next issue
+
+## M276 Shared Native Build Helper (D002)
+
+`M276-D002` introduces the shared build-acquisition helper that migrated
+readiness runners/checkers will consume.
+
+- contract id
+  `objc3c-shared-native-build-helper/m276-d002-v1`
+- helper surface
+  - `scripts/ensure_objc3c_native_build.py --mode fast`
+  - `scripts/ensure_objc3c_native_build.py --mode contracts`
+  - `scripts/ensure_objc3c_native_build.py --mode full`
+  - `scripts/ensure_objc3c_native_build.py --mode full --force-reconfigure`
+- implementation truths
+  - build-mode selection now has one shared policy surface
+  - forced reconfigure no longer requires direct runner knowledge of wrapper
+    internals
+  - active-runner adoption starts here before the broader migration issue
+- explicit handoff
+  - `M276-D001` migrates the broader active readiness range onto this helper
