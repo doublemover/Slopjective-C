@@ -8159,3 +8159,29 @@ under a local package root.
   - no system install claim
   - no cross-platform packaging claim
   - no toolchain auto-provisioning claim
+
+## M259 platform prerequisite and bring-up metadata anchors (D003)
+
+`M259-D003` still does not change the metadata ABI. It publishes the truthful
+platform and environment assumptions that packaged smoke/replay execution rely
+on when replaying the runnable slice from either the repo root or the staged
+package root.
+
+- contract id
+  `objc3c-runnable-platform-prerequisites-runtime-bringup/m259-d003-v1`
+- required tool anchors
+  - `clang`
+  - `clang++`
+  - `llc`
+  - `llvm-readobj`
+  - `llvm-lib`
+  - linker tools reachable from `clang`
+- required environment override anchors
+  - `OBJC3C_NATIVE_EXECUTABLE`
+  - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLC_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_RUN_ID`
+- truthful boundary
+  - package-root execution still assumes the staged repo-relative layout from `M259-D002`
+  - release-gate closure remains deferred to `M259-E001`

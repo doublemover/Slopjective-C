@@ -32,6 +32,10 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-D002 workflow-package anchor: this script must run unchanged from a
 # staged runnable toolchain bundle root that preserves the current repo-relative
 # scripts/artifacts/tests layout under a local package root.
+# M259-D003 platform-bringup anchor: supported repo-root/package-root execution
+# must document the live override surface for `OBJC3C_NATIVE_EXECUTABLE`,
+# `OBJC3C_NATIVE_EXECUTION_CLANG_PATH`, `OBJC3C_NATIVE_EXECUTION_LLC_PATH`, and
+# `OBJC3C_NATIVE_EXECUTION_RUN_ID` on the supported Windows host baseline.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

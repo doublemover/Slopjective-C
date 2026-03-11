@@ -28,6 +28,9 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # M259-D002 workflow-package anchor: this script must run unchanged from a
 # staged runnable toolchain bundle root that preserves the current repo-relative
 # scripts/artifacts/tests layout under a local package root.
+# M259-D003 platform-bringup anchor: supported repo-root/package-root replay
+# must document the live override surface for `OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH`
+# and `OBJC3C_NATIVE_EXECUTION_RUN_ID` on the supported Windows host baseline.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"

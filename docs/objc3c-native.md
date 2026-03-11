@@ -11341,6 +11341,40 @@ runnable Objective-C 3 core without over-claiming a system installer.
   - no toolchain auto-provisioning claim
   - `M259-D003` remains the next issue for platform bring-up documentation
 
+## M259 platform prerequisites and runtime bring-up documentation (D003)
+
+`M259-D003` closes the operator-facing bring-up documentation above `M259-D002`
+so developers know exactly which tools must exist on a supported Windows host
+and which environment overrides are allowed when running from either the repo
+root or the staged package root.
+
+- contract id
+  `objc3c-runnable-platform-prerequisites-runtime-bringup/m259-d003-v1`
+- bring-up model
+  `supported-windows-host-prereqs-and-package-root-runtime-bringup`
+- supported Windows host prerequisites
+  - Windows x64
+  - `pwsh`
+  - `python`
+  - `node`/`npm`
+  - LLVM `clang`, `clang++`, `llc`, `llvm-readobj`, `llvm-lib`
+  - MSVC/Windows SDK linker tools reachable from `clang`
+- package-root command surface
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1`
+- supported environment overrides
+  - `OBJC3C_NATIVE_EXECUTABLE`
+  - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLC_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_RUN_ID`
+- truthful boundary
+  - package-root execution assumes the repo-relative staged layout preserved by `M259-D002`
+  - no system install claim
+  - no toolchain auto-provisioning claim
+  - release-gate closure remains deferred to `M259-E001`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

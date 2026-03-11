@@ -7199,3 +7199,35 @@ local package root.
   - no cross-platform packaging claim
   - no toolchain auto-provisioning claim
   - `M259-D003` documents platform bring-up on top of this workflow
+
+## M259 platform prerequisites and runtime bring-up documentation (D003)
+
+`M259-D003` does not widen the runnable boundary again. It documents the exact
+supported Windows bring-up requirements and environment override surface above
+`M259-D002` so repo-root and package-root workflows remain truthful.
+
+- contract id
+  `objc3c-runnable-platform-prerequisites-runtime-bringup/m259-d003-v1`
+- bring-up model
+  `supported-windows-host-prereqs-and-package-root-runtime-bringup`
+- evidence model
+  `docs-and-script-anchors-for-prereq-and-runtime-bringup-truthfulness`
+- failure model
+  `fail-closed-on-prerequisite-or-runtime-bringup-claim-drift`
+- required documented prerequisites
+  - Windows x64
+  - `pwsh`
+  - `python`
+  - `node`/`npm`
+  - LLVM `clang`, `clang++`, `llc`, `llvm-readobj`, `llvm-lib`
+  - MSVC/Windows SDK linker tools reachable from `clang`
+- required documented environment overrides
+  - `OBJC3C_NATIVE_EXECUTABLE`
+  - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLC_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH`
+  - `OBJC3C_NATIVE_EXECUTION_RUN_ID`
+- truthful boundary
+  - package-root execution still assumes the repo-relative staged layout from `M259-D002`
+  - no system install or auto-provisioning claim lands here
+  - the next implementation issue is `M259-E001`
