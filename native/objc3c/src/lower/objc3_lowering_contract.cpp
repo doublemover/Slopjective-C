@@ -1186,6 +1186,34 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
   return out.str();
 }
 
+std::string Objc3ArcSourceModeBoundarySummary() {
+  std::ostringstream out;
+  // M262-A001 ARC source-surface/mode-boundary anchor: ownership qualifiers,
+  // weak/unowned metadata, autoreleasepool profiling, and ARC fix-it surfaces
+  // remain live in parser/sema/replay space, but the native driver still
+  // rejects `-fobjc-arc` and executable ownership-qualified functions/methods
+  // stay fail-closed until ARC automation begins in M262-A002.
+  out << "contract=" << Expr::kObjc3ArcSourceModeBoundaryContractId
+      << ";source_model=" << Expr::kObjc3ArcSourceModeBoundarySourceModel
+      << ";mode_model=" << Expr::kObjc3ArcSourceModeBoundaryModeModel
+      << ";ownership_qualifier_lane="
+      << kObjc3OwnershipQualifierLoweringLaneContract
+      << ";retain_release_lane="
+      << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";autoreleasepool_lane="
+      << kObjc3AutoreleasePoolScopeLoweringLaneContract
+      << ";weak_unowned_lane="
+      << kObjc3WeakUnownedSemanticsLoweringLaneContract
+      << ";arc_fixit_lane="
+      << kObjc3ArcDiagnosticsFixitLoweringLaneContract
+      << ";non_goal_model="
+      << Expr::kObjc3ArcSourceModeBoundaryNonGoalModel
+      << ";fail_closed_model="
+      << Expr::kObjc3ArcSourceModeBoundaryFailClosedModel
+      << ";next_issue=M262-A002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -674,6 +674,20 @@ inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
     "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
     "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
+// M262-A001 ARC source-surface/mode-boundary freeze anchor: the compiler
+// already preserves ownership-qualifier, weak/unowned, autoreleasepool, and
+// ARC fix-it source surfaces, but there is still no user-visible `-fobjc-arc`
+// mode and executable ownership-qualified functions/methods stay fail closed.
+inline constexpr const char *kObjc3ArcSourceModeBoundaryContractId =
+    "objc3c-arc-source-mode-boundary-freeze/m262-a001-v1";
+inline constexpr const char *kObjc3ArcSourceModeBoundarySourceModel =
+    "ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryModeModel =
+    "native-driver-rejects-fobjc-arc-while-executable-ownership-qualified-functions-and-methods-stay-fail-closed";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryNonGoalModel =
+    "no-fobjc-arc-cli-mode-no-fno-objc-arc-cli-mode-no-automatic-arc-cleanup-insertion-no-user-visible-arc-runtime-mode-split";
+inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
+    "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1798,6 +1812,7 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3RunnableBlockExecutionMatrixSummary();
+std::string Objc3ArcSourceModeBoundarySummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

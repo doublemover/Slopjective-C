@@ -53,6 +53,17 @@ Implementations may treat the following as aliases with identical semantics:
 - `#pragma clang assume_nonnull begin/end`
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
+### B.2.3 ARC source-surface and current mode boundary (implementation note) {#b-2-3}
+
+Current implementation status (`M262-A001`):
+
+- ownership qualifiers, weak/unowned property metadata, `@autoreleasepool`, and
+  ARC fix-it/diagnostic surfaces are preserved by the frontend and semantic
+  pipeline
+- the native driver does not yet expose a runnable `-fobjc-arc` mode
+- executable function/method ownership qualifiers are still rejected with the
+  current unsupported-feature gate until later ARC automation issues land
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

@@ -1295,6 +1295,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
+  // M262-A001 ARC source-surface/mode-boundary anchor: executable function
+  // ownership qualifiers stay fail-closed with O3S221 while ownership
+  // qualifier parsing, weak/unowned summaries, autoreleasepool profiling, and
+  // ARC fix-it metadata remain live source-side surfaces.
   // M260-A001 runtime-backed-object-ownership freeze anchor: the current
   // runnable ownership slice is still limited to object/property/accessor
   // ownership profiles plus the legacy ownership summary lanes below. ARC
@@ -1365,6 +1369,9 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
+  // M262-A001 ARC source-surface/mode-boundary anchor: executable method
+  // ownership qualifiers stay fail-closed with O3S221 while the ARC-adjacent
+  // parser/sema inventory remains preserved for later automation work.
   // M260-A001 runtime-backed-object-ownership freeze anchor: method-level ARC
   // ownership qualifiers still sit outside the truthful runnable object-model
   // claim even though property/member ownership profiles are already preserved

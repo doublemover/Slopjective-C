@@ -1471,6 +1471,37 @@ Recommended M261 lane-E closeout check:
 - `python scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
 - `M262-A001` is the next issue.
 
+## M262 ARC source surface and mode boundary (M262-A001)
+
+`M262-A001` freezes the truthful ARC-adjacent frontend boundary before ARC
+automation begins.
+
+- contract id
+  `objc3c-arc-source-mode-boundary-freeze/m262-a001-v1`
+- current source surface preserved:
+  - ownership qualifiers, weak/unowned summaries, `@autoreleasepool` profiling,
+    and ARC fix-it metadata remain parser/sema-visible
+  - runtime-backed ownership/property work from `M260` remains the current
+    executable baseline instead of generalized ARC automation
+- current mode boundary:
+  - the native driver still rejects `-fobjc-arc`
+  - executable function/method ownership qualifiers still fail closed with
+    `O3S221`
+- emitted IR now carries:
+  - `; arc_source_mode_boundary = ...`
+  - `!objc3.objc_arc_source_mode_boundary`
+- still explicitly deferred:
+  - no user-visible `-fobjc-arc` / `-fno-objc-arc` mode split
+  - no automatic ARC cleanup or retain/release insertion for general executable
+    functions/methods
+  - no claim that executable ownership-qualified functions or methods are
+    runnable yet
+
+Recommended M262 lane-A freeze check:
+
+- `python scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
+- `M262-A002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

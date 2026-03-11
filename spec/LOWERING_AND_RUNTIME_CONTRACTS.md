@@ -8047,3 +8047,37 @@ execution matrix above the retained `A003/B003/C004/D003/E001` chain.
   - `spec/planning/compiler/m261/m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks_cross_lane_integration_sync_packet.md`
   - `python scripts/check_m261_e002_runnable_block_execution_matrix_for_captures_byref_helpers_and_escaping_blocks.py`
   - `M262-A001` is the next issue.
+
+## M262 ARC source surface and mode boundary (A001)
+
+`M262-A001` freezes the ARC-adjacent frontend and mode boundary that is already
+truthfully present in the compiler.
+
+- contract id
+  `objc3c-arc-source-mode-boundary-freeze/m262-a001-v1`
+- source model
+  `ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode`
+- mode model
+  `native-driver-rejects-fobjc-arc-while-executable-ownership-qualified-functions-and-methods-stay-fail-closed`
+- current boundary:
+  - ownership qualifier, weak/unowned, `@autoreleasepool`, and ARC fix-it
+    surfaces remain replay-stable and visible to parser/sema/lowering summaries
+  - runtime-backed ownership/property behavior from `M260` remains the only
+    executable ownership baseline
+  - the native driver still rejects `-fobjc-arc`
+  - executable function/method ownership qualifiers still fail closed with
+    `O3S221`
+  - emitted IR now carries:
+    `; arc_source_mode_boundary = ...`
+    and `!objc3.objc_arc_source_mode_boundary`
+- still explicitly deferred:
+  - no user-visible `-fobjc-arc` or `-fno-objc-arc` mode split
+  - no automatic ARC cleanup/retain-release insertion for general executable
+    functions or methods
+  - no claim that executable ownership-qualified functions or methods are
+    runnable yet
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m262_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze_a001_expectations.md`
+  - `spec/planning/compiler/m262/m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py`
+  - `M262-A002` is the next issue.

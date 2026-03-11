@@ -198,6 +198,21 @@ struct Expr {
       "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
       "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
+  // M262-A001 ARC source-surface/mode-boundary constants: ownership
+  // qualifiers, weak/unowned metadata, autoreleasepool profiling, and ARC
+  // fix-it summaries are already parser/sema-visible, but the native driver
+  // still rejects `-fobjc-arc` and executable ownership-qualified
+  // functions/methods remain fail-closed until ARC automation lands.
+  static inline constexpr const char *kObjc3ArcSourceModeBoundaryContractId =
+      "objc3c-arc-source-mode-boundary-freeze/m262-a001-v1";
+  static inline constexpr const char *kObjc3ArcSourceModeBoundarySourceModel =
+      "ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode";
+  static inline constexpr const char *kObjc3ArcSourceModeBoundaryModeModel =
+      "native-driver-rejects-fobjc-arc-while-executable-ownership-qualified-functions-and-methods-stay-fail-closed";
+  static inline constexpr const char *kObjc3ArcSourceModeBoundaryNonGoalModel =
+      "no-fobjc-arc-cli-mode-no-fno-objc-arc-cli-mode-no-automatic-arc-cleanup-insertion-no-user-visible-arc-runtime-mode-split";
+  static inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
+      "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

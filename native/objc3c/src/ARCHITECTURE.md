@@ -9819,6 +9819,22 @@ baseline for supported runtime-backed object programs.
 - the closeout does not widen ownership semantics beyond that slice
 - the next issue is `M261-A001`
 
+## M262 ARC Source Surface And Mode Boundary (A001)
+
+`M262-A001` freezes the truthful ARC-adjacent frontend boundary before ARC
+automation starts.
+
+- ownership qualifiers, weak/unowned summaries, `@autoreleasepool`, and ARC
+  fix-it summaries remain live parser/sema surfaces
+- runtime-backed object/property ownership from `M260` remains the current
+  executable baseline
+- the native driver still rejects `-fobjc-arc`
+- executable function/method ownership qualifiers still terminate in the
+  existing `O3S221` unsupported-feature gate
+- emitted IR now publishes the `arc_source_mode_boundary` comment and
+  `!objc3.objc_arc_source_mode_boundary`
+- the next issue is `M262-A002`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

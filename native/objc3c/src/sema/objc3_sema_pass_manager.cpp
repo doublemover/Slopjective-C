@@ -2271,6 +2271,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.weak_unowned_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
               result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
+  // M262-A001 ARC source-surface/mode-boundary anchor: the handoff keeps
+  // ownership qualifiers, weak/unowned summaries, ARC fix-it summaries, and
+  // autoreleasepool scope accounting live and deterministic even though the
+  // native driver still rejects `-fobjc-arc` and executable ARC ownership
+  // qualifiers remain fail-closed.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

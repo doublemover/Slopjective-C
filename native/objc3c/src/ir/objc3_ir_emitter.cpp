@@ -1464,6 +1464,12 @@ class Objc3IREmitter {
     // surface.
     out << "; runnable_block_execution_matrix = "
         << Objc3RunnableBlockExecutionMatrixSummary() << "\n";
+    // M262-A001 ARC source-surface/mode-boundary anchor: emit the truthful
+    // ARC-adjacent frontend/mode boundary so later ARC automation work cannot
+    // silently claim a runnable `-fobjc-arc` mode before the driver and
+    // executable ownership-qualified function/method path are actually live.
+    out << "; arc_source_mode_boundary = "
+        << Objc3ArcSourceModeBoundarySummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2679,6 +2685,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_ownership_runtime_gate = !{!72}\n";
     out << "!objc3.objc_runnable_block_runtime_gate = !{!73}\n";
     out << "!objc3.objc_runnable_block_execution_matrix = !{!74}\n";
+    out << "!objc3.objc_arc_source_mode_boundary = !{!75}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3945,6 +3952,27 @@ class Objc3IREmitter {
                Expr::kObjc3RunnableBlockExecutionMatrixFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3RunnableBlockRuntimeGateContractId)
+        << "\"}\n";
+    out << "!75 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundarySourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryModeModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipQualifierLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RetainReleaseOperationLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3AutoreleasePoolScopeLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3WeakUnownedSemanticsLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcDiagnosticsFixitLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryNonGoalModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSourceModeBoundaryFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
