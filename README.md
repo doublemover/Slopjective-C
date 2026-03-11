@@ -153,6 +153,37 @@ Expected artifacts:
 - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - `artifacts/lib/objc3_runtime.lib`
 
+## Native Build Surface Modernization
+
+Current truthful state:
+
+- `npm run build:objc3c-native` still uses the monolithic PowerShell build path.
+- That command currently rebuilds the native binaries, the runtime archive, and
+  the current frontend packet family together.
+
+Frozen future command surface (`M276-A001`):
+
+- `npm run build:objc3c-native`
+  - eventual fast local binary-build default after parity proof lands
+- `npm run build:objc3c-native:contracts`
+  - reserved contracts and packet-generation path
+- `npm run build:objc3c-native:full`
+  - reserved full-build path for closeout and CI
+- `npm run build:objc3c-native:reconfigure`
+  - reserved fingerprint refresh / self-healing configure path
+
+Planned policy boundary:
+
+- local issue work should eventually use the fast default path
+- packet generation should be callable independently where dependency shape
+  permits it
+- milestone closeout and CI should retain a truthful full-build path
+- persistent local build trees will live under `tmp/`
+- published binaries and libraries will remain under `artifacts/`
+
+That command split is not fully implemented yet. `M276-A002` is the next issue
+that freezes parity requirements before the default path changes.
+
 ## Quickstart
 
 Build the public site overview:

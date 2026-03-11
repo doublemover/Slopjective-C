@@ -59,6 +59,17 @@ $outCapiExe = Join-Path $outDir "objc3c-frontend-c-api-runner.exe"
 $outRuntimeLib = Join-Path $outLibDir "objc3_runtime.lib"
 $tmpOutDir = Join-Path $repoRoot "tmp/build-objc3c-native"
 New-Item -ItemType Directory -Force -Path $tmpOutDir | Out-Null
+
+# M276-A001 native-build-command-surface anchor:
+# - current truthful state: this script remains the monolithic authoritative
+#   build path behind `npm run build:objc3c-native`
+# - future command taxonomy reserved by contract only at this stage:
+#   - build:objc3c-native              => eventual fast local binary-build default
+#   - build:objc3c-native:contracts   => reserved packet-generation path
+#   - build:objc3c-native:full        => reserved closeout/CI full-build path
+#   - build:objc3c-native:reconfigure => reserved fingerprint refresh/self-heal
+# - later M276 issues must prove parity before `build:objc3c-native` changes
+#   behavior
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)

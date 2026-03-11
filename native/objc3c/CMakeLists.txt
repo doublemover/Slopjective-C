@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.20)
 project(objc3c_native LANGUAGES CXX)
 
+# M276-A001 incremental-build-parity anchor:
+# This target graph is the reserved future candidate backend for the incremental
+# native build surface, but it is not yet the authoritative default path.
+# Later M276 issues must prove parity with scripts/build_objc3c_native.ps1 for:
+# - source coverage
+# - include/define/link behavior
+# - final publication to artifacts/bin and artifacts/lib
+# - truthful separation of binary builds from packet generation
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

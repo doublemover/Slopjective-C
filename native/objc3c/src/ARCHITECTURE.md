@@ -10216,3 +10216,40 @@ gate and runtime proofs.
   - no generalized foreign block ABI interop
   - no caller-frame forwarding bridge
 - the next issue is `M262-A001`
+
+## M276 Native Build Command Surface Freeze (A001)
+
+`M276-A001` freezes the native-build command taxonomy before the repo replaces
+the current monolithic PowerShell build path.
+
+- contract id
+  `objc3c-native-build-command-surface/m276-a001-v1`
+- current authoritative build path
+  - `package.json` -> `build:objc3c-native`
+  - `scripts/build_objc3c_native.ps1`
+- current truthful behavior
+  - one invocation builds `objc3c-native`
+  - one invocation builds `objc3c-frontend-c-api-runner`
+  - one invocation archives `artifacts/lib/objc3_runtime.lib`
+  - one invocation regenerates the current frontend packet family under `tmp/`
+- frozen future command taxonomy
+  - `build:objc3c-native`
+    - eventual fast local binary-build default after parity proof
+  - `build:objc3c-native:contracts`
+    - reserved contracts/packet-generation path
+  - `build:objc3c-native:full`
+    - reserved closeout and CI full-build path
+  - `build:objc3c-native:reconfigure`
+    - reserved fingerprint refresh / self-healing configure path
+- frozen artifact classes
+  - native binaries/libraries published under `artifacts/`
+  - source-derived packets under `tmp/`
+  - binary-derived packets under `tmp/`
+  - closeout/integration packets under `tmp/`
+- frozen persistence boundary
+  - local issue work may later use a persistent build tree under `tmp/`
+  - CI remains semantically ephemeral even when it consumes the same command
+    taxonomy
+- explicit handoff
+  - `M276-A002` freezes build-graph and toolchain parity before the default
+    package command changes behavior

@@ -7019,6 +7019,40 @@ Exit codes:
 - `2`: CLI usage / missing input / invalid arg / missing explicit clang path
 - `3`: clang compile step failed
 
+## Incremental native build surface freeze (M276-A001)
+
+`M276-A001` freezes the future native-build command taxonomy before the repo
+switches away from the current monolithic build path.
+
+- contract id
+  `objc3c-native-build-command-surface/m276-a001-v1`
+- current truthful state
+  - `npm run build:objc3c-native` still routes to the monolithic PowerShell build
+    path in `scripts/build_objc3c_native.ps1`
+  - that path currently builds `objc3c-native`,
+    `objc3c-frontend-c-api-runner`, and `objc3_runtime.lib`, then regenerates
+    the current frontend packet family in the same invocation
+- frozen future command taxonomy
+  - `build:objc3c-native`
+    - eventual fast local binary-build default after parity proof lands
+  - `build:objc3c-native:contracts`
+    - reserved contracts/packet-generation path
+  - `build:objc3c-native:full`
+    - reserved closeout and CI full-build path
+  - `build:objc3c-native:reconfigure`
+    - reserved fingerprint refresh / self-healing configure path
+- frozen artifact classes
+  - native binaries and libraries under `artifacts/`
+  - source-derived packets under `tmp/`
+  - binary-derived packets under `tmp/`
+  - closeout and integration packets under `tmp/`
+- persistent build-tree model
+  - later `M276` issues must place the incremental build tree under `tmp/`
+  - later `M276` issues must treat CI as an ephemeral workspace even when local
+    issue work uses a persistent build tree
+- next issue
+  - `M276-A002`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented
