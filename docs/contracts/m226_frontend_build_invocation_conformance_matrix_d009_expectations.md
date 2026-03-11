@@ -41,8 +41,9 @@ profiles to deterministic, fail-closed wrapper behavior.
 
 - `python scripts/check_m226_d009_frontend_build_invocation_conformance_matrix_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d009_frontend_build_invocation_conformance_matrix_contract.py -q`
-- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:full`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D009/frontend_build_invocation_conformance_matrix_summary.json`
+

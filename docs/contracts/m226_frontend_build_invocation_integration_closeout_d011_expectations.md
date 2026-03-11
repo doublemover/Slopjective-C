@@ -31,8 +31,9 @@ determinism requirements before compile invocation.
 
 - `python scripts/check_m226_d011_frontend_build_invocation_integration_closeout_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d011_frontend_build_invocation_integration_closeout_contract.py -q`
-- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:full`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D011/frontend_build_invocation_integration_closeout_summary.json`
+

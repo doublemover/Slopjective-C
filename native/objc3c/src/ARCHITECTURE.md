@@ -10345,3 +10345,24 @@ and moves that map into the build-wrapper orchestration layer.
   - packet-only modes preserve packet outputs under `tmp/artifacts/objc3c-native/`
 - explicit handoff
   - `M276-C002` now owns the public npm command-surface split
+
+## M276 Public Native Build Command Split (C002)
+
+`M276-C002` exposes the internal packet-family decomposition through the
+public npm command surface while preserving truthful behavior for direct
+wrapper callers.
+
+- contract id
+  `objc3c-public-native-build-command-split/m276-c002-v1`
+- public command taxonomy now maps to:
+  - `npm run build:objc3c-native`
+    - `binaries-only`
+  - `npm run build:objc3c-native:contracts`
+    - `packets-binary`
+  - `npm run build:objc3c-native:full`
+    - `full`
+- truthful boundary
+  - direct script callers still default to `full`
+  - runner/helper migration remains deferred to `M276-D001` and `M276-D002`
+- explicit handoff
+  - `M276-D001` is the next issue

@@ -29,8 +29,9 @@ executable acceptance/rejection case rows and fail-closed wrapper coverage.
 
 - `python scripts/check_m226_d010_frontend_build_invocation_conformance_corpus_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d010_frontend_build_invocation_conformance_corpus_contract.py -q`
-- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:full`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D010/frontend_build_invocation_conformance_corpus_summary.json`
+

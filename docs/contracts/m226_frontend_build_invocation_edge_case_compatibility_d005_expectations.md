@@ -31,9 +31,10 @@ equals-form flags, and repository-bound path safety.
 
 - `python scripts/check_m226_d005_frontend_build_invocation_edge_case_compatibility_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d005_frontend_build_invocation_edge_case_compatibility_contract.py -q`
-- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:full`
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/reports/m226/M226-D005/smoke_out --emit-prefix module --objc3-ir-object-backend=llvm_direct`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D005/frontend_build_invocation_edge_case_compatibility_summary.json`
+

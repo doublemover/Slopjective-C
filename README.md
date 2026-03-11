@@ -221,18 +221,21 @@ shape inside that wrapper:
   - `frontend_conformance_corpus.json`
   - `frontend_integration_closeout.json`
 
-Current truthful boundary:
+Current truthful boundary after `M276-C002`:
 
-- the wrapper now has internal execution modes for:
-  - `binaries-only`
-  - `packets-source`
-  - `packets-binary`
-  - `packets-closeout`
-  - `packets-all`
-- public npm command exposure for that split remains the responsibility of
-  `M276-C002`
+- `npm run build:objc3c-native`
+  - fast public binary-build path
+  - uses `binaries-only`
+- `npm run build:objc3c-native:contracts`
+  - public source-derived plus binary-derived packet path
+  - uses `packets-binary`
+- `npm run build:objc3c-native:full`
+  - public full binary-plus-packet path
+  - uses `full`
+- direct script callers still default to the full wrapper path until the
+  helper/runner migration issues land
 
-`M276-C002` is the next issue.
+`M276-D001` is the next issue.
 
 ## Quickstart
 

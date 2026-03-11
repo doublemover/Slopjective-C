@@ -37,9 +37,11 @@ into a single fail-closed validation surface consumed by the compile wrapper.
 ## Validation
 
 - `python scripts/check_m226_d004_frontend_build_invocation_core_feature_expansion_contract.py`
-- `python -m pytest tests/tooling/test_check_m226_d004_frontend_build_invocation_core_feature_expansion_contract.py -q`
+- `python -m pytest tests/tooling/test_check_m226_d004_frontend_build_invocation_core_feature_expansion_contract.py -q``r`n- `npm run build:objc3c-native:contracts`
 - `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/reports/m226/M226-D004/smoke_out --emit-prefix module`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D004/frontend_build_invocation_core_feature_expansion_summary.json`
+
+

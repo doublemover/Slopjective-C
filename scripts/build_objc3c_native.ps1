@@ -96,15 +96,15 @@ $compileCommandsPath = Join-Path $tmpOutDir "compile_commands.json"
 $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.json"
 
 # M276-A001 native-build-command-surface anchor:
-# - current truthful state: this script remains the monolithic authoritative
-#   build path behind `npm run build:objc3c-native`
-# - future command taxonomy reserved by contract only at this stage:
-#   - build:objc3c-native              => eventual fast local binary-build default
-#   - build:objc3c-native:contracts   => reserved packet-generation path
-#   - build:objc3c-native:full        => reserved closeout/CI full-build path
+# - current truthful state: this script remains the authoritative wrapper
+#   behind the public npm build surface
+# - the public npm command taxonomy now maps to:
+#   - build:objc3c-native              => fast binary-build default
+#   - build:objc3c-native:contracts   => source-derived + binary-derived packet path
+#   - build:objc3c-native:full        => binary + full packet-family path
 #   - build:objc3c-native:reconfigure => reserved fingerprint refresh/self-heal
-# - later M276 issues must prove parity before `build:objc3c-native` changes
-#   behavior
+# - direct script callers still default to `full` until the helper/runner
+#   migration tranche lands
 
 # M276-C001 native-binary-backend anchor:
 # - native binary compilation now routes through a persistent CMake/Ninja build

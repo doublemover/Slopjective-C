@@ -33,8 +33,9 @@ relying on implicit source-list coupling.
 
 - `python scripts/check_m226_d002_frontend_build_invocation_modular_scaffold_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d002_frontend_build_invocation_modular_scaffold_contract.py -q`
-- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:contracts`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D002/frontend_build_invocation_modular_scaffold_summary.json`
+

@@ -29,8 +29,10 @@ metadata to SHA-256 fingerprints.
 
 - `python scripts/check_m226_d003_frontend_build_invocation_manifest_guard_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d003_frontend_build_invocation_manifest_guard_contract.py -q`
-- `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1`
+- `npm run build:objc3c-native:contracts`
 
 ## Evidence Path
 
 - `tmp/reports/m226/M226-D003/frontend_build_invocation_manifest_guard_summary.json`
+
+

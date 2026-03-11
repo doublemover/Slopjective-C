@@ -170,6 +170,30 @@ and wires that map into the build wrapper.
 - next issue
   - `M276-C002`
 
+## Public native build command split (M276-C002)
+
+`M276-C002` exposes the internal `M276-C003` packet-family split through the
+public npm command surface.
+
+- contract id
+  `objc3c-public-native-build-command-split/m276-c002-v1`
+- current truthful state
+  - `npm run build:objc3c-native`
+    - fast native binary path
+    - delegates to `scripts/build_objc3c_native.ps1 -ExecutionMode binaries-only`
+  - `npm run build:objc3c-native:contracts`
+    - source-derived plus binary-derived packet path
+    - delegates to `scripts/build_objc3c_native.ps1 -ExecutionMode packets-binary`
+  - `npm run build:objc3c-native:full`
+    - native binaries plus full packet-family path
+    - delegates to `scripts/build_objc3c_native.ps1 -ExecutionMode full`
+- truthful boundary
+  - direct script callers still default to the full wrapper path
+  - broader readiness-runner/helper migration remains deferred to `M276-D001`
+    and `M276-D002`
+- next issue
+  - `M276-D001`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented

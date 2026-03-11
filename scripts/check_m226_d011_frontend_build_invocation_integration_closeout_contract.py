@@ -77,7 +77,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M226-D011-DOC-05",
             "`python -m pytest tests/tooling/test_check_m226_d011_frontend_build_invocation_integration_closeout_contract.py -q`",
         ),
-        ("M226-D011-DOC-06", "`npm run build:objc3c-native`"),
+        ("M226-D011-DOC-06", "`npm run build:objc3c-native:full`"),
         (
             "M226-D011-DOC-07",
             "`tmp/reports/m226/M226-D011/frontend_build_invocation_integration_closeout_summary.json`",
@@ -182,3 +182,4 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+

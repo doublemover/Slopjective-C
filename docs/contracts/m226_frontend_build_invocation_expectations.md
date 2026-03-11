@@ -20,7 +20,7 @@ M226-D001 freezes frontend build and invocation integration so native entrypoint
 | `M226-INV-06`  | Frontend invocation contract remains ambiguity-free: no hidden compile fallback callsites are allowed in capability-routing or objc3 invocation path surfaces. |
 | `M226-GATE-01` | `python scripts/check_m226_d001_frontend_build_invocation_contract.py` and `python -m pytest tests/tooling/test_check_m226_d001_frontend_build_invocation_contract.py -q` remain the fail-closed freeze validators for M226-D001. |
 
-## Verification Commands
+## Public command surface`r`n`r`n- `npm run build:objc3c-native` for fast native binary publication`r`n- `npm run build:objc3c-native:contracts` for scaffold/invocation-lock/core-expansion packet regeneration`r`n- `npm run build:objc3c-native:full` for closeout/conformance packet regeneration and full-path proofs`r`n`r`n## Verification Commands
 
 - `python scripts/check_m226_d001_frontend_build_invocation_contract.py`
 - `python -m pytest tests/tooling/test_check_m226_d001_frontend_build_invocation_contract.py -q`
@@ -30,3 +30,4 @@ M226-D001 freezes frontend build and invocation integration so native entrypoint
 1. Restore M226-D001 deterministic build/invocation snippets across scripts and driver sources.
 2. Re-run `python scripts/check_m226_d001_frontend_build_invocation_contract.py`.
 3. Re-run `python -m pytest tests/tooling/test_check_m226_d001_frontend_build_invocation_contract.py -q`.
+

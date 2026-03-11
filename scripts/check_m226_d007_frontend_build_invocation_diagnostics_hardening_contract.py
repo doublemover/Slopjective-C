@@ -82,7 +82,7 @@ REQUIRED_SNIPPETS: dict[str, tuple[tuple[str, str], ...]] = {
             "M226-D007-DOC-04",
             "`python -m pytest tests/tooling/test_check_m226_d007_frontend_build_invocation_diagnostics_hardening_contract.py -q`",
         ),
-        ("M226-D007-DOC-05", "`npm run build:objc3c-native`"),
+        ("M226-D007-DOC-05", "`npm run build:objc3c-native:full`"),
         (
             "M226-D007-DOC-06",
             "`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/reports/m226/M226-D007/smoke_out --emit-prefix module`",
@@ -186,3 +186,4 @@ def run(argv: Sequence[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(run(sys.argv[1:]))
+
