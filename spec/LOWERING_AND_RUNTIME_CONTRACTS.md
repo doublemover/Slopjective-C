@@ -7899,3 +7899,33 @@ values.
   - `spec/planning/compiler/m261/m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion_packet.md`
   - `python scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
   - `M261-D001` is the next issue.
+
+## M261 block runtime API and object layout (D001)
+
+`M261-D001` freezes the truthful private runtime API and object-layout boundary
+that the runnable `M261-C004` block lowering slice currently consumes.
+
+- contract id
+  `objc3c-runtime-block-api-object-layout-freeze/m261-d001-v1`
+- frozen boundary:
+  - public runtime headers still do not publish block helper entrypoints
+  - private helper surface remains
+    `objc3_runtime_promote_block_i32` and
+    `objc3_runtime_invoke_block_i32`
+  - the helper ABI is currently:
+    - promotion: `ptr, i64, i32 -> i32`
+    - invoke: `i32, i32, i32, i32, i32 -> i32`
+  - private runtime block records remain opaque runtime-owned state rather than
+    public object-layout ABI
+  - emitted IR carries
+    `; runtime_block_api_object_layout = ...`
+- explicit non-goals:
+  - no public block-object ABI
+  - no generalized runtime-managed block allocation/copy/dispose surface
+  - no byref-forwarded escaping block realization
+  - no owned-object escaping block lifetime realization
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_block_runtime_api_and_object_layout_contract_and_architecture_freeze_d001_expectations.md`
+  - `spec/planning/compiler/m261/m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
+  - `M261-D002` is the next issue.

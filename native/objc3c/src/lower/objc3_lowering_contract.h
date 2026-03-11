@@ -639,6 +639,8 @@ inline constexpr const char *kObjc3RuntimePromoteBlockI32Symbol =
     "objc3_runtime_promote_block_i32";
 inline constexpr const char *kObjc3RuntimeInvokeBlockI32Symbol =
     "objc3_runtime_invoke_block_i32";
+inline constexpr const char *kObjc3RuntimeBlockApiObjectLayoutContractId =
+    "objc3c-runtime-block-api-object-layout-freeze/m261-d001-v1";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1758,6 +1760,7 @@ std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary();
 std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary();
 std::string Objc3ExecutableBlockByrefHelperLoweringSummary();
 std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary();
+std::string Objc3RuntimeBlockApiObjectLayoutSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

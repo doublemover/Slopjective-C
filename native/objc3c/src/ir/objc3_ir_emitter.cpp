@@ -1433,6 +1433,12 @@ class Objc3IREmitter {
     // explicitly deferred to later runtime issues.
     out << "; executable_block_escape_runtime_hook_lowering = "
         << Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() << "\n";
+    // M261-D001 block-runtime API/object-layout freeze anchor: emitted IR now
+    // republishes the current private helper ABI and private runtime layout
+    // boundary so later runtime implementation issues preserve this exact
+    // contract instead of widening it ad hoc.
+    out << "; runtime_block_api_object_layout = "
+        << Objc3RuntimeBlockApiObjectLayoutSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

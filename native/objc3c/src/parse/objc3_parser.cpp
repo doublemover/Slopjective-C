@@ -10639,6 +10639,9 @@ class Objc3Parser {
     // the exact escape-shape source classification, including which block
     // literal sites are truthful heap-promotion candidates for later lane-C
     // runtime-hook lowering.
+    // M261-D001 block-runtime API/object-layout freeze anchor: parser does not
+    // widen the runtime ABI here; it only preserves the source-truth escape
+    // inventory that the frozen private runtime boundary consumes downstream.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

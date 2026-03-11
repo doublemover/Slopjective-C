@@ -269,6 +269,10 @@ struct RuntimeInstanceRecord {
 
 using RuntimeBlockInvokeFn = int (*)(void *, int, int, int, int);
 
+// M261-D001 block-runtime API/object-layout freeze anchor: the current block
+// handle/object layout remains private runtime state. The compiler/runtime
+// contract is one opaque copied storage blob plus a private invoke pointer; no
+// public block-object memory layout is promised yet.
 struct RuntimeBlockRecord {
   int block_handle = 0;
   bool has_pointer_capture_storage = false;

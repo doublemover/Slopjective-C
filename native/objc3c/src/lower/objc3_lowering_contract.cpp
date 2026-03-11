@@ -1071,6 +1071,25 @@ std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
+  std::ostringstream out;
+  // M261-D001 block-runtime API/object-layout freeze anchor: the current
+  // runtime helper surface is frozen as a private lowering/runtime contract
+  // with opaque storage copies and i32 block handles; no public block-object
+  // ABI or generalized heap-managed copy/dispose surface is implied yet.
+  out << "contract=" << kObjc3RuntimeBlockApiObjectLayoutContractId
+      << ";public_surface=stable-public-runtime-header-excludes-block-helper-entrypoints"
+      << ";private_helper_surface=objc3_runtime_promote_block_i32-and-objc3_runtime_invoke_block_i32-remain-private-to-objc3_runtime_bootstrap_internal_h"
+      << ";handle_type=i32"
+      << ";promotion_abi=ptr-storage-plus-i64-size-plus-i32-pointer-capture-flag"
+      << ";invoke_abi=i32-handle-plus-four-i32-arguments-returning-i32"
+      << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-invoke-pointer"
+      << ";object_layout_model=runtime-block-records-are-private-runtime-state-not-public-object-abi"
+      << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-m261-d002-and-m261-d003"
+      << ";non_goals=no-public-block-object-abi-no-generalized-runtime-copy-dispose-allocation-surface";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

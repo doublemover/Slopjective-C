@@ -192,6 +192,9 @@ Current implementation boundary:
     private runtime promotion/invoke hooks, while byref-forwarded and
     ownership-sensitive escaping captures remain deferred to lane-D runtime
     work.
+  - lane-D now also freezes that private runtime boundary (`M261-D001`): block
+    promotion/invoke helpers remain internal-only runtime API with opaque
+    runtime-owned block records rather than a public block-object ABI.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

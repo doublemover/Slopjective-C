@@ -1236,6 +1236,36 @@ Recommended M261 lane-C implementation check:
 - `python scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
 - `M261-D001` is the next issue.
 
+## M261 block runtime API and object layout (M261-D001)
+
+`M261-D001` freezes the truthful runtime boundary that the current runnable
+block lowering path uses.
+
+- contract id
+  `objc3c-runtime-block-api-object-layout-freeze/m261-d001-v1`
+
+Current frozen boundary:
+
+- stable/public surface:
+  - the public runtime header still does not publish block helper entrypoints
+- private/runtime-only surface:
+  - `objc3_runtime_promote_block_i32`
+  - `objc3_runtime_invoke_block_i32`
+  - private runtime block records keep copied storage bytes, the invoke
+    function pointer, and the retain count
+  - the emitted IR now carries
+    `; runtime_block_api_object_layout = ...`
+- still explicitly deferred:
+  - public block-object ABI
+  - generalized runtime-managed block allocation/copy/dispose
+  - byref-forwarded escaping blocks
+  - owned-object escaping block lifetimes
+
+Recommended M261 lane-D contract check:
+
+- `python scripts/check_m261_d001_block_runtime_api_and_object_layout_contract_and_architecture_freeze.py`
+- `M261-D002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

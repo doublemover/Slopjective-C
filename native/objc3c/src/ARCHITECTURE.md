@@ -10033,3 +10033,25 @@ block values can lower through private runtime promotion and invoke hooks.
   - runtime-managed block allocation/copy/dispose outside the readonly-scalar
     slice
 - the next issue is `M261-D001`
+
+## M261 Block Runtime API And Object Layout (D001)
+
+`M261-D001` freezes the truthful private runtime boundary that the current
+escaping-block lowering path uses.
+
+- frozen/private runtime surface:
+  - `objc3_runtime_promote_block_i32`
+  - `objc3_runtime_invoke_block_i32`
+  - private runtime block records carry copied storage bytes, the invoke
+    function pointer, and the retain count
+  - emitted IR now republishes
+    `; runtime_block_api_object_layout = ...`
+- public/runtime surface remains intentionally narrow:
+  - no public block-object ABI exists yet
+  - no public block runtime helper declarations land in the stable runtime
+    header
+- non-goals stay explicit:
+  - no generalized block allocation/copy/dispose runtime API
+  - no byref-forwarded escaping block realization
+  - no owned-object escaping block lifetime realization
+- the next issue is `M261-D002`

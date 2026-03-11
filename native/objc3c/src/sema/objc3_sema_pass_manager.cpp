@@ -929,6 +929,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // escape-to-heap source facts so lane-C can widen only the
           // readonly-scalar escaping slice through private runtime promotion
           // and invoke hooks.
+          // M261-D001 block-runtime API/object-layout freeze anchor: this
+          // pass-manager handoff remains the only semantic input to the
+          // frozen private block-runtime ABI boundary; no parallel runtime
+          // re-derivation path is permitted.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,
