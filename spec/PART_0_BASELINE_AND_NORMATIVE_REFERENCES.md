@@ -179,6 +179,10 @@ Current implementation boundary:
     storage/copy-dispose lowering surfaces, while native emit paths still fail
     closed before runnable block-object records, invoke thunks, byref cells,
     or helper bodies exist.
+  - lane-C now also upgrades that boundary (`M261-C002`): native lowering emits
+    stack block objects plus direct local invoke thunks for readonly scalar
+    captures, while byref/helper/ownership-sensitive cases remain fail-closed
+    until `M261-C003`.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

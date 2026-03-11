@@ -7798,3 +7798,33 @@ block objects while explicitly preserving the current native fail-closed rule.
   - `spec/planning/compiler/m261/m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
   - `M261-C002` is the next issue.
+
+## M261 executable block object and invoke-thunk lowering (C002)
+
+`M261-C002` upgrades the frozen `M261-C001` lane-C boundary into one runnable
+native lowering slice.
+
+- contract id
+  `objc3c-executable-block-object-and-invoke-thunk-lowering/m261-c002-v1`
+- active supported slice:
+  - native lowering emits one stack block object plus one internal invoke thunk
+    for direct local invocation
+  - captures must remain readonly scalar values
+  - native compile/link/run proof exits `15` on the canonical positive fixture
+- emitted proof details:
+  - IR carries
+    `; executable_block_object_invoke_thunk_lowering = ...`
+  - block storage is materialized as `{ ptr, [N x i32] }`
+  - the thunk pointer is stored into the block header and later invoked through
+    one loaded function pointer
+- deferred to `M261-C003`:
+  - byref cells
+  - copy/dispose helper bodies
+  - owned object capture runtime lowering
+  - heap-promotion semantics
+  - those cases still fail closed with `O3S221`
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation_c002_expectations.md`
+  - `spec/planning/compiler/m261/m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation_packet.md`
+  - `python scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
+  - `M261-C003` is the next issue.

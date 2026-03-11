@@ -986,6 +986,35 @@ std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() {
+  std::ostringstream out;
+  // M261-C002 executable-block-object/invoke-thunk implementation anchor:
+  // lane-C now widens the frozen C001 boundary into one real runnable slice.
+  // Native lowering emits stack block storage plus one internal invoke thunk
+  // for direct local invocation when captures are readonly scalar values. Byref
+  // cells, helper bodies, owned-object captures, and heap-promotion semantics
+  // remain deferred to C003.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId
+      << ";boundary_contract="
+      << Expr::kObjc3ExecutableBlockLoweringAbiArtifactBoundaryContractId
+      << ";active_model="
+      << Expr::kObjc3ExecutableBlockObjectInvokeThunkActiveModel
+      << ";deferred_model="
+      << Expr::kObjc3ExecutableBlockObjectInvokeThunkDeferredModel
+      << ";execution_evidence_model="
+      << Expr::kObjc3ExecutableBlockObjectInvokeThunkExecutionEvidenceModel
+      << ";invoke_lane_contract="
+      << kObjc3BlockAbiInvokeTrampolineLoweringLaneContract
+      << ";storage_lane_contract="
+      << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";copy_dispose_lane_contract="
+      << kObjc3BlockCopyDisposeLoweringLaneContract
+      << ";lane_contract="
+      << kObjc3ExecutableBlockObjectInvokeThunkLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C
@@ -2246,10 +2275,8 @@ bool IsValidObjc3BlockStorageEscapeLoweringContract(
            contract.body_statement_entries_total == 0;
   }
   if (contract.mutable_capture_count_total > contract.capture_entries_total ||
-      contract.byref_slot_count_total > contract.capture_entries_total ||
       contract.byref_slot_count_total > contract.mutable_capture_count_total ||
-      contract.escape_analysis_enabled_sites != contract.block_literal_sites ||
-      contract.requires_byref_cells_sites != contract.escape_to_heap_sites) {
+      contract.escape_analysis_enabled_sites != contract.block_literal_sites) {
     return false;
   }
   if ((contract.contract_violation_sites > 0 || contract.escape_profile_normalized_sites !=
@@ -2304,7 +2331,6 @@ bool IsValidObjc3BlockCopyDisposeLoweringContract(
            contract.body_statement_entries_total == 0;
   }
   if (contract.mutable_capture_count_total > contract.capture_entries_total ||
-      contract.byref_slot_count_total > contract.capture_entries_total ||
       contract.byref_slot_count_total > contract.mutable_capture_count_total ||
       contract.copy_helper_required_sites != contract.dispose_helper_required_sites) {
     return false;

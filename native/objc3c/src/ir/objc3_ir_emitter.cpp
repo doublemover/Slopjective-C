@@ -242,6 +242,8 @@ class Objc3IREmitter {
     runtime_dispatch_call_emitted_ = false;
     fail_open_fallback_triggered_ = false;
     fail_open_fallback_reason_.clear();
+    block_function_definitions_.clear();
+    emitted_block_invoke_symbols_.clear();
 
     if (!boundary_error_.empty()) {
       error = boundary_error_;
@@ -299,6 +301,9 @@ class Objc3IREmitter {
     for (const MethodDefinition &method_def : method_definitions_) {
       EmitMethod(method_def, body);
       body << "\n";
+    }
+    for (const std::string &definition : block_function_definitions_) {
+      body << definition << "\n";
     }
 
     EmitEntryPoint(body);
@@ -1404,6 +1409,12 @@ class Objc3IREmitter {
     // object records, invoke thunks, byref cells, or helper bodies land.
     out << "; executable_block_lowering_abi_artifact_boundary = "
         << Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() << "\n";
+    // M261-C002 executable-block-object/invoke-thunk anchor: native lowering
+    // now emits stack block objects plus internal invoke thunks for the narrow
+    // readonly-scalar capture slice, while byref/helper/ownership-sensitive
+    // cases remain explicitly deferred to C003.
+    out << "; executable_block_object_invoke_thunk_lowering = "
+        << Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2205,10 +2216,16 @@ class Objc3IREmitter {
     std::size_t autoreleasepool_depth = 0;
   };
 
+  struct BlockBinding {
+    std::string storage_ptr;
+    const Expr *literal = nullptr;
+  };
+
   struct FunctionContext {
     std::vector<std::string> entry_lines;
     std::vector<std::string> code_lines;
     std::vector<std::unordered_map<std::string, std::string>> scopes;
+    std::unordered_map<std::string, BlockBinding> block_bindings;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
     std::unordered_set<std::string> nil_bound_ptrs;
@@ -7975,6 +7992,188 @@ class Objc3IREmitter {
     return value_it->second;
   }
 
+  static std::string BuildBlockStorageType(const Expr &expr) {
+    std::ostringstream out;
+    out << "{ ptr, [" << static_cast<unsigned long long>(expr.block_capture_names_lexicographic.size())
+        << " x i32] }";
+    return out.str();
+  }
+
+  static std::string BuildBlockInvokeSymbol(const Expr &expr) {
+    return expr.block_invoke_trampoline_symbol.empty()
+               ? std::string("objc3_block_invoke_missing_symbol")
+               : expr.block_invoke_trampoline_symbol;
+  }
+
+  static bool BlockLiteralRequiresLaterRuntimeLanes(const Expr &expr) {
+    return expr.block_storage_byref_slot_count > 0u ||
+           expr.block_storage_requires_byref_cells ||
+           expr.block_copy_helper_required ||
+           expr.block_dispose_helper_required ||
+           expr.block_runtime_copy_helper_required ||
+           expr.block_runtime_dispose_helper_required ||
+           expr.block_runtime_owned_object_capture_count > 0u ||
+           expr.block_runtime_weak_object_capture_count > 0u ||
+           expr.block_runtime_unowned_object_capture_count > 0u ||
+           !expr.block_source_model_is_normalized;
+  }
+
+  std::string EmitIdentifierValue(const std::string &name,
+                                  FunctionContext &ctx) const {
+    if (ctx.block_bindings.find(name) != ctx.block_bindings.end()) {
+      return EmitUnsupportedI32Value(
+          "block value '" + name +
+          "' cannot yet be used as a scalar expression outside direct invocation");
+    }
+    const std::string ptr = LookupVarPtr(ctx, name);
+    if (!ptr.empty()) {
+      const std::string tmp = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + tmp + " = load i32, ptr " + ptr + ", align 4");
+      return tmp;
+    }
+    if (globals_.find(name) != globals_.end()) {
+      const std::string tmp = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + tmp + " = load i32, ptr @" + name + ", align 4");
+      return tmp;
+    }
+    const auto immediate_it = ctx.immediate_identifiers.find(name);
+    if (immediate_it != ctx.immediate_identifiers.end()) {
+      return std::to_string(immediate_it->second);
+    }
+    return EmitUnsupportedI32Value("unresolved identifier '" + name + "' during IR lowering");
+  }
+
+  void EmitBlockInvokeThunk(const Expr &expr) const {
+    // M261-C002 executable-block-object/invoke-thunk anchor: each runnable
+    // local block literal now receives one internal invoke thunk definition
+    // that rehydrates readonly captures from stack block storage.
+    const std::string symbol = BuildBlockInvokeSymbol(expr);
+    if (symbol.empty() || !emitted_block_invoke_symbols_.insert(symbol).second) {
+      return;
+    }
+
+    std::ostringstream out;
+    out << "define internal i32 @" << symbol
+        << "(ptr %block, i32 %arg0, i32 %arg1, i32 %arg2, i32 %arg3) {\n";
+    out << "entry:\n";
+
+    FunctionContext ctx;
+    ctx.return_type = ValueType::I32;
+    ctx.scopes.push_back({});
+
+    const std::string block_storage_type = BuildBlockStorageType(expr);
+    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
+      const std::string &capture_name = expr.block_capture_names_lexicographic[i];
+      const std::string ptr = "%" + capture_name + ".addr." + std::to_string(ctx.temp_counter++);
+      const std::string slot_ptr = NewTemp(ctx);
+      const std::string value = NewTemp(ctx);
+      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+      ctx.scopes.back()[capture_name] = ptr;
+      ctx.entry_lines.push_back("  " + slot_ptr + " = getelementptr inbounds " + block_storage_type +
+                                ", ptr %block, i32 0, i32 1, i32 " + std::to_string(i));
+      ctx.entry_lines.push_back("  " + value + " = load i32, ptr " + slot_ptr + ", align 4");
+      ctx.entry_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
+    }
+
+    for (std::size_t i = 0; i < expr.block_parameters_source_order.size() && i < 4u; ++i) {
+      const auto &parameter = expr.block_parameters_source_order[i];
+      const std::string ptr =
+          "%" + parameter.name + ".addr." + std::to_string(ctx.temp_counter++);
+      ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+      ctx.entry_lines.push_back("  store i32 %arg" + std::to_string(i) + ", ptr " + ptr + ", align 4");
+      ctx.scopes.back()[parameter.name] = ptr;
+    }
+
+    for (const auto &stmt : expr.block_body) {
+      EmitStatement(stmt.get(), ctx);
+      if (ctx.terminated) {
+        break;
+      }
+    }
+
+    if (!ctx.terminated) {
+      ctx.code_lines.push_back("  ret i32 0");
+    }
+
+    for (const auto &line : ctx.entry_lines) {
+      out << line << "\n";
+    }
+    for (const auto &line : ctx.code_lines) {
+      out << line << "\n";
+    }
+    out << "}\n";
+    block_function_definitions_.push_back(out.str());
+  }
+
+  std::string EmitBlockLiteralStorage(const Expr &expr,
+                                      FunctionContext &ctx) const {
+    // M261-C002 executable-block-object/invoke-thunk anchor: the current live
+    // lowering slice materializes one stack-resident block object with an
+    // invoke pointer followed by readonly scalar capture slots.
+    if (BlockLiteralRequiresLaterRuntimeLanes(expr)) {
+      return EmitUnsupportedI32Value(
+          "block literal requires byref/copy-dispose/ownership/escape lowering that lands in later M261 issues");
+    }
+    if (expr.block_parameter_count > 4u) {
+      return EmitUnsupportedI32Value(
+          "block literal exceeds current runnable invoke-thunk arity limit of 4");
+    }
+
+    EmitBlockInvokeThunk(expr);
+
+    const std::string storage_type = BuildBlockStorageType(expr);
+    const std::string storage_ptr =
+        "%block.literal.addr." + std::to_string(ctx.temp_counter++);
+    ctx.entry_lines.push_back("  " + storage_ptr + " = alloca " + storage_type + ", align 8");
+
+    const std::string invoke_ptr_slot = NewTemp(ctx);
+    ctx.code_lines.push_back("  " + invoke_ptr_slot + " = getelementptr inbounds " +
+                             storage_type + ", ptr " + storage_ptr + ", i32 0, i32 0");
+    ctx.code_lines.push_back("  store ptr @" + BuildBlockInvokeSymbol(expr) + ", ptr " +
+                             invoke_ptr_slot + ", align 8");
+
+    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
+      const std::string &capture_name = expr.block_capture_names_lexicographic[i];
+      const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
+      const std::string capture_slot = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + capture_slot + " = getelementptr inbounds " +
+                               storage_type + ", ptr " + storage_ptr + ", i32 0, i32 1, i32 " +
+                               std::to_string(i));
+      ctx.code_lines.push_back("  store i32 " + capture_value + ", ptr " + capture_slot +
+                               ", align 4");
+    }
+
+    return storage_ptr;
+  }
+
+  std::string EmitBlockInvokeCall(const BlockBinding &binding,
+                                  const Expr *call_expr,
+                                  FunctionContext &ctx) const {
+    if (binding.literal == nullptr) {
+      return EmitUnsupportedI32Value(
+          "missing block literal metadata for local callable invocation");
+    }
+
+    const std::string storage_type = BuildBlockStorageType(*binding.literal);
+    const std::string invoke_ptr_slot = NewTemp(ctx);
+    const std::string invoke_ptr = NewTemp(ctx);
+    ctx.code_lines.push_back("  " + invoke_ptr_slot + " = getelementptr inbounds " +
+                             storage_type + ", ptr " + binding.storage_ptr + ", i32 0, i32 0");
+    ctx.code_lines.push_back("  " + invoke_ptr + " = load ptr, ptr " + invoke_ptr_slot +
+                             ", align 8");
+
+    std::array<std::string, 4> args{"0", "0", "0", "0"};
+    for (std::size_t i = 0; i < call_expr->args.size() && i < args.size(); ++i) {
+      args[i] = EmitExpr(call_expr->args[i].get(), ctx);
+    }
+
+    const std::string out = NewTemp(ctx);
+    ctx.code_lines.push_back("  " + out + " = call i32 " + invoke_ptr + "(ptr " +
+                             binding.storage_ptr + ", i32 " + args[0] + ", i32 " + args[1] +
+                             ", i32 " + args[2] + ", i32 " + args[3] + ")");
+    return out;
+  }
+
   static int NextNonZeroReceiverIdentityValue(std::size_t ordinal, int salt) {
     constexpr int kBase = 1024;
     constexpr int kStride = 17;
@@ -8149,6 +8348,11 @@ class Objc3IREmitter {
         return;
       case ForClause::Kind::Assign: {
         const std::string ptr = LookupVarPtr(ctx, clause.name);
+        if (ptr.empty() && ctx.block_bindings.find(clause.name) != ctx.block_bindings.end()) {
+          (void)EmitUnsupportedI32Value(
+              "reassigning block values is not yet runnable in Objective-C 3 native mode");
+          return;
+        }
         EmitAssignmentStore(ptr, clause.op, clause.value.get(), ctx);
         return;
       }
@@ -8748,25 +8952,10 @@ class Objc3IREmitter {
       case Expr::Kind::NilLiteral:
         return "0";
       case Expr::Kind::BlockLiteral:
-        return EmitUnsupportedI32Value("block literal lowering not implemented");
+        return EmitUnsupportedI32Value(
+            "block literal values must be bound to a local name before use");
       case Expr::Kind::Identifier: {
-        const std::string ptr = LookupVarPtr(ctx, expr->ident);
-        if (!ptr.empty()) {
-          const std::string tmp = NewTemp(ctx);
-          ctx.code_lines.push_back("  " + tmp + " = load i32, ptr " + ptr + ", align 4");
-          return tmp;
-        }
-        if (globals_.find(expr->ident) != globals_.end()) {
-          const std::string tmp = NewTemp(ctx);
-          ctx.code_lines.push_back("  " + tmp + " = load i32, ptr @" + expr->ident + ", align 4");
-          return tmp;
-        }
-        const int immediate_value =
-            LookupImmediateIdentifierValue(ctx, expr->ident);
-        if (immediate_value != 0) {
-          return std::to_string(immediate_value);
-        }
-        return EmitUnsupportedI32Value("unresolved identifier '" + expr->ident + "' during IR lowering");
+        return EmitIdentifierValue(expr->ident, ctx);
       }
       case Expr::Kind::Binary: {
         if (expr->op == "&&" || expr->op == "||") {
@@ -8894,6 +9083,10 @@ class Objc3IREmitter {
         return out_value;
       }
       case Expr::Kind::Call: {
+        const auto local_block_it = ctx.block_bindings.find(expr->ident);
+        if (local_block_it != ctx.block_bindings.end()) {
+          return EmitBlockInvokeCall(local_block_it->second, expr, ctx);
+        }
         const LoweredFunctionSignature *signature = LookupFunctionSignature(expr->ident);
         std::vector<std::string> args;
         args.reserve(expr->args.size());
@@ -8955,6 +9148,14 @@ class Objc3IREmitter {
         if (let == nullptr || ctx.scopes.empty()) {
           return;
         }
+        if (let->value != nullptr && let->value->kind == Expr::Kind::BlockLiteral) {
+          const std::string storage_ptr = EmitBlockLiteralStorage(*let->value, ctx);
+          if (storage_ptr == "poison") {
+            return;
+          }
+          ctx.block_bindings[let->name] = BlockBinding{storage_ptr, let->value.get()};
+          return;
+        }
         // Evaluate the initializer against the currently visible scope first so
         // shadowing declarations can read the previous binding deterministically.
         const std::string value = EmitExpr(let->value.get(), ctx);
@@ -8998,6 +9199,11 @@ class Objc3IREmitter {
           return;
         }
         const std::string ptr = LookupVarPtr(ctx, assign->name);
+        if (ptr.empty() && ctx.block_bindings.find(assign->name) != ctx.block_bindings.end()) {
+          (void)EmitUnsupportedI32Value(
+              "reassigning block values is not yet runnable in Objective-C 3 native mode");
+          return;
+        }
         EmitAssignmentStore(ptr, assign->op, assign->value.get(), ctx);
         return;
       }
@@ -9807,6 +10013,8 @@ class Objc3IREmitter {
   std::map<std::string, std::string> runtime_string_pool_globals_;
   std::unordered_map<std::string, int> class_receiver_constants_;
   std::size_t vector_signature_function_count_ = 0;
+  mutable std::vector<std::string> block_function_definitions_;
+  mutable std::unordered_set<std::string> emitted_block_invoke_symbols_;
   mutable bool runtime_dispatch_call_emitted_ = false;
   mutable bool fail_open_fallback_triggered_ = false;
   mutable std::string fail_open_fallback_reason_;

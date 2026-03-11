@@ -9958,3 +9958,27 @@ without claiming that runnable block emission already exists.
   - emitted copy/dispose helper bodies
   - runnable block execution
 - the next issue is `M261-C002`
+
+## M261 Executable Block Object And Invoke-Thunk Lowering (C002)
+
+`M261-C002` upgrades the frozen `M261-C001` lane-C boundary into one runnable
+native slice for local block invocation.
+
+- supported slice:
+  - one local block literal bound to a local name
+  - readonly scalar captures only
+  - up to four parameters
+  - one emitted stack block object plus one internal invoke thunk
+  - one linked executable path through the existing runtime registration
+    manifest and driver linker flags
+- proof surface:
+  - native IR now carries
+    `; executable_block_object_invoke_thunk_lowering = ...`
+  - the canonical positive fixture exits `15`
+  - object emission remains `llvm-direct`
+- deferred work remains in `M261-C003`:
+  - byref cells
+  - copy/dispose helper bodies
+  - ownership-sensitive object captures
+  - heap-promotion semantics
+- the next issue is `M261-C003`

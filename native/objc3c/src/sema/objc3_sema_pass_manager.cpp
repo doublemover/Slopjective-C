@@ -2028,14 +2028,16 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_storage_escape_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
-      result.type_metadata_handoff.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+      // M261-C002 executable-block-object/invoke-thunk anchor: the current
+      // runnable slice allows readonly scalar captures without forcing the old
+      // mutable==capture or byref==capture equalities. Later C003 work widens
+      // this to real byref/helper cases.
+      result.type_metadata_handoff.block_storage_escape_semantics_summary.mutable_capture_count_total <=
           result.type_metadata_handoff.block_storage_escape_semantics_summary.capture_entries_total &&
-      result.type_metadata_handoff.block_storage_escape_semantics_summary.byref_slot_count_total ==
-          result.type_metadata_handoff.block_storage_escape_semantics_summary.capture_entries_total &&
+      result.type_metadata_handoff.block_storage_escape_semantics_summary.byref_slot_count_total <=
+          result.type_metadata_handoff.block_storage_escape_semantics_summary.mutable_capture_count_total &&
       result.type_metadata_handoff.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
-          result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
-      result.type_metadata_handoff.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
-          result.type_metadata_handoff.block_storage_escape_semantics_summary.escape_to_heap_sites;
+          result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites;
   result.block_copy_dispose_semantics_summary =
       result.integration_surface.block_copy_dispose_semantics_summary;
   result.deterministic_block_copy_dispose_handoff =
@@ -2056,10 +2058,13 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
-      result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+      // M261-C002 executable-block-object/invoke-thunk anchor: copy/dispose
+      // determinism must also admit the readonly-capture slice even though no
+      // helper bodies are emitted yet.
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
-      result.type_metadata_handoff.block_copy_dispose_semantics_summary.byref_slot_count_total ==
-          result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
+          result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites;
   result.block_determinism_perf_baseline_summary =
@@ -4920,14 +4925,12 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.block_storage_escape_semantics_summary.block_literal_sites &&
       result.parity_surface.block_storage_escape_semantics_summary.contract_violation_sites <=
           result.parity_surface.block_storage_escape_semantics_summary.block_literal_sites &&
-      result.parity_surface.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+      result.parity_surface.block_storage_escape_semantics_summary.mutable_capture_count_total <=
           result.parity_surface.block_storage_escape_semantics_summary.capture_entries_total &&
-      result.parity_surface.block_storage_escape_semantics_summary.byref_slot_count_total ==
-          result.parity_surface.block_storage_escape_semantics_summary.capture_entries_total &&
+      result.parity_surface.block_storage_escape_semantics_summary.byref_slot_count_total <=
+          result.parity_surface.block_storage_escape_semantics_summary.mutable_capture_count_total &&
       result.parity_surface.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
           result.parity_surface.block_storage_escape_semantics_summary.block_literal_sites &&
-      result.parity_surface.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
-          result.parity_surface.block_storage_escape_semantics_summary.escape_to_heap_sites &&
       result.parity_surface.block_storage_escape_semantics_summary.deterministic;
   result.parity_surface.deterministic_block_copy_dispose_handoff =
       result.deterministic_block_copy_dispose_handoff &&
@@ -4967,10 +4970,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
       result.parity_surface.block_copy_dispose_semantics_summary.contract_violation_sites <=
           result.parity_surface.block_copy_dispose_semantics_summary.block_literal_sites &&
-      result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+      result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
           result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total &&
-      result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
-          result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+      result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total <=
+          result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
       result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
           result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
       result.parity_surface.block_copy_dispose_semantics_summary.deterministic;

@@ -1196,6 +1196,43 @@ Recommended M261 lane-C freeze check:
 - `python scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
 - `M261-C002` is the next issue.
 
+## M261 executable block object and invoke-thunk lowering (M261-C002)
+
+`M261-C002` turns the frozen `M261-C001` boundary into one runnable native
+slice: stack block objects, readonly scalar captures, and direct local block
+invocation now lower, link, and execute.
+
+- contract id
+  `objc3c-executable-block-object-and-invoke-thunk-lowering/m261-c002-v1`
+
+Current runnable slice:
+
+- supported positive path:
+  - one local block literal bound to a local name
+  - up to four parameters
+  - readonly scalar captures
+  - one emitted stack block object
+  - one emitted internal invoke thunk
+  - one direct local invocation path through the stored thunk pointer
+- emitted/native proof details:
+  - the native IR boundary now also carries
+    `; executable_block_object_invoke_thunk_lowering = ...`.
+  - native compile/link/run over
+    `m261_executable_block_object_invoke_thunk_positive.objc3` now succeeds
+    with exit `15`.
+  - the object backend remains `llvm-direct`.
+- explicitly deferred to `M261-C003`:
+  - byref-cell lowering
+  - copy/dispose helper bodies
+  - owned object capture runtime lowering
+  - escaping heap-promoted block values
+  - those cases still fail closed with `O3S221`.
+
+Recommended M261 lane-C implementation check:
+
+- `python scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
+- `M261-C003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

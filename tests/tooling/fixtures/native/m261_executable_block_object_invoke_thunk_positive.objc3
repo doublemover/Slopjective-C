@@ -1,0 +1,10 @@
+module m261_executable_block_object_invoke_thunk_positive;
+
+fn main() -> i32 {
+  let seed = 7;
+  let extra = 3;
+  let closure = ^(i32 value) {
+    return seed + extra + value;
+  };
+  return closure(5);
+}

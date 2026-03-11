@@ -10524,7 +10524,7 @@ class Objc3Parser {
       return nullptr;
     }
 
-    const auto body = ParseBlock();
+    auto body = ParseBlock();
     bool deterministic_capture_set = true;
     std::vector<std::string> parameter_names;
     parameter_names.reserve(parameters.size());
@@ -10537,10 +10537,29 @@ class Objc3Parser {
     // canonical parameter-signature, capture-inventory, and invoke-surface
     // source model directly on the AST so source-only frontend runs can carry
     // that closure forward before runnable block lowering still fails closed.
+    // M261-C002 executable-block-object/invoke-thunk anchor: lane-C consumes
+    // this retained parameter/body ordering directly when it emits one stack-resident block object plus one internal invoke thunk for the current readonly-scalar capture slice.
     block->block_parameter_signature_entries_lexicographic =
         BuildBlockParameterSignatureEntriesLexicographic(parameters);
     block->block_parameter_types_source_order =
         BuildBlockParameterTypesSourceOrder(parameters);
+    block->block_parameters_source_order.reserve(parameters.size());
+    for (const auto &parameter : parameters) {
+      Expr::BlockParameter lowered_parameter;
+      lowered_parameter.name = parameter.name;
+      if (!parameter.explicit_type) {
+        lowered_parameter.type = ValueType::Unknown;
+      } else if (parameter.type_spelling == "i32") {
+        lowered_parameter.type = ValueType::I32;
+      } else if (parameter.type_spelling == "bool") {
+        lowered_parameter.type = ValueType::Bool;
+      } else if (parameter.type_spelling == "void") {
+        lowered_parameter.type = ValueType::Void;
+      } else {
+        lowered_parameter.type = ValueType::Unknown;
+      }
+      block->block_parameters_source_order.push_back(std::move(lowered_parameter));
+    }
     block->block_explicit_typed_parameter_count = static_cast<std::size_t>(
         std::count_if(parameters.begin(), parameters.end(),
                       [](const ParsedBlockParameterSourceModel &parameter) {
@@ -10721,6 +10740,7 @@ class Objc3Parser {
         block->block_determinism_perf_baseline_profile_is_normalized;
     block->block_source_model_replay_key =
         BuildBlockSourceModelReplayKey(*block);
+    block->block_body = std::move(body);
     return block;
   }
 

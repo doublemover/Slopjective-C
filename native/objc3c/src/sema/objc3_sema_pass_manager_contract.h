@@ -2437,14 +2437,12 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_storage_escape_semantics_summary.block_literal_sites &&
          surface.block_storage_escape_semantics_summary.contract_violation_sites <=
              surface.block_storage_escape_semantics_summary.block_literal_sites &&
-         surface.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+         surface.block_storage_escape_semantics_summary.mutable_capture_count_total <=
              surface.block_storage_escape_semantics_summary.capture_entries_total &&
-         surface.block_storage_escape_semantics_summary.byref_slot_count_total ==
-             surface.block_storage_escape_semantics_summary.capture_entries_total &&
+         surface.block_storage_escape_semantics_summary.byref_slot_count_total <=
+             surface.block_storage_escape_semantics_summary.mutable_capture_count_total &&
          surface.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
              surface.block_storage_escape_semantics_summary.block_literal_sites &&
-         surface.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
-             surface.block_storage_escape_semantics_summary.escape_to_heap_sites &&
          surface.block_storage_escape_semantics_summary.deterministic &&
          surface.deterministic_block_storage_escape_handoff &&
          surface.block_copy_dispose_semantics_summary.block_literal_sites ==
@@ -2483,10 +2481,10 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_copy_dispose_semantics_summary.block_literal_sites &&
          surface.block_copy_dispose_semantics_summary.contract_violation_sites <=
              surface.block_copy_dispose_semantics_summary.block_literal_sites &&
-         surface.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+         surface.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
              surface.block_copy_dispose_semantics_summary.capture_entries_total &&
-         surface.block_copy_dispose_semantics_summary.byref_slot_count_total ==
-             surface.block_copy_dispose_semantics_summary.capture_entries_total &&
+         surface.block_copy_dispose_semantics_summary.byref_slot_count_total <=
+             surface.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
          surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
              surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
          surface.block_copy_dispose_semantics_summary.deterministic &&

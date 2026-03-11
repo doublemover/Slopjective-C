@@ -762,6 +762,28 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context);
 
+static bool BlockLiteralUsesRunnableC002Subset(const Expr &expr) {
+  // M261-C002 executable-block-object/invoke-thunk anchor: the first runnable
+  // native block slice is intentionally narrow. Local block bindings may emit
+  // stack storage and one invoke thunk only when captures are readonly scalar
+  // values and no byref/helper/ownership-sensitive runtime machinery is
+  // needed.
+  return expr.block_literal_is_normalized &&
+         expr.block_source_model_is_normalized &&
+         expr.block_parameter_count <= 4u &&
+         expr.block_byref_capture_count == 0u &&
+         expr.block_mutated_capture_count == 0u &&
+         expr.block_storage_byref_slot_count == 0u &&
+         !expr.block_storage_requires_byref_cells &&
+         !expr.block_copy_helper_required &&
+         !expr.block_dispose_helper_required &&
+         !expr.block_runtime_copy_helper_required &&
+         !expr.block_runtime_dispose_helper_required &&
+         expr.block_runtime_owned_object_capture_count == 0u &&
+         expr.block_runtime_weak_object_capture_count == 0u &&
+         expr.block_runtime_unowned_object_capture_count == 0u;
+}
+
 static bool ExprContainsBlockLiteral(const Expr *expr);
 
 static bool StmtContainsBlockLiteral(const Stmt *stmt) {
@@ -1063,7 +1085,8 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     // M261-B001 block-runtime-semantic-rules freeze anchor: current semantic
     // behavior is intentionally split between source-only admission and native
     // fail-closed rejection, with no runnable block object semantics implied.
-    if (context.allow_source_only_block_literals) {
+    if (context.allow_source_only_block_literals ||
+        BlockLiteralUsesRunnableC002Subset(*expr)) {
       return;
     }
     RecordUnsupportedFeatureClaimDiagnostic(
@@ -16508,13 +16531,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.block_storage_escape_semantics_summary.mutable_capture_count_total <=
              handoff.block_storage_escape_semantics_summary.capture_entries_total &&
          handoff.block_storage_escape_semantics_summary.byref_slot_count_total <=
-             handoff.block_storage_escape_semantics_summary.capture_entries_total &&
-         handoff.block_storage_escape_semantics_summary.byref_slot_count_total <=
              handoff.block_storage_escape_semantics_summary.mutable_capture_count_total &&
          handoff.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
              handoff.block_storage_escape_semantics_summary.block_literal_sites &&
-         handoff.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
-             handoff.block_storage_escape_semantics_summary.escape_to_heap_sites &&
          handoff.block_copy_dispose_semantics_summary.deterministic &&
          handoff.block_copy_dispose_semantics_summary.block_literal_sites ==
              block_copy_dispose_semantics_summary.block_literal_sites &&
@@ -16553,8 +16572,6 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
          handoff.block_copy_dispose_semantics_summary.contract_violation_sites <=
              handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
          handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
-             handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
-         handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
              handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
          handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
              handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total &&

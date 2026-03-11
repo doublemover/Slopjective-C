@@ -31,6 +31,8 @@ enum class ValueType {
   ObjCObjectPtr
 };
 
+struct Stmt;
+
 struct Expr {
   // M261-A001 executable-block-source-closure freeze constants: lane-A now
   // freezes the truthful parser/AST boundary for block literals, captures,
@@ -131,6 +133,19 @@ struct Expr {
       "native-emit-fails-closed-on-block-literals-before-runnable-block-object-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockLoweringNonGoalModel =
       "no-emitted-block-object-records-no-invoke-thunks-no-byref-cell-storage-no-copy-dispose-helper-bodies";
+  // M261-C002 executable-block-object/invoke-thunk constants: lane-C now
+  // upgrades the frozen C001 boundary into one runnable lowering slice for
+  // stack-allocated block objects, readonly scalar captures, and direct local
+  // invocation, while byref/helper/ownership-sensitive cases stay deferred to
+  // C003.
+  static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId =
+      "objc3c-executable-block-object-and-invoke-thunk-lowering/m261-c002-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkActiveModel =
+      "native-lowering-emits-stack-block-objects-and-direct-local-invoke-thunks-for-readonly-scalar-captures";
+  static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkDeferredModel =
+      "byref-cells-copy-dispose-helpers-owned-object-captures-and-heap-promotion-stay-fail-closed-until-m261-c003";
+  static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkExecutionEvidenceModel =
+      "native-compile-link-run-proves-local-block-invocation-through-emitted-block-storage-and-invoke-thunk";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -158,6 +173,10 @@ struct Expr {
     bool has_argument = false;
     unsigned line = 1;
     unsigned column = 1;
+  };
+  struct BlockParameter {
+    std::string name;
+    ValueType type = ValueType::Unknown;
   };
   Kind kind = Kind::Number;
   int number = 0;
@@ -206,6 +225,7 @@ struct Expr {
   std::size_t block_parameter_count = 0;
   std::vector<std::string> block_parameter_signature_entries_lexicographic;
   std::vector<ValueType> block_parameter_types_source_order;
+  std::vector<BlockParameter> block_parameters_source_order;
   std::size_t block_explicit_typed_parameter_count = 0;
   std::size_t block_implicit_parameter_count = 0;
   std::string block_signature_profile;
@@ -264,6 +284,7 @@ struct Expr {
   std::size_t block_determinism_perf_baseline_weight = 0;
   bool block_determinism_perf_baseline_profile_is_normalized = false;
   std::string block_determinism_perf_baseline_profile;
+  std::vector<std::unique_ptr<Stmt>> block_body;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
   std::unique_ptr<Expr> left;
