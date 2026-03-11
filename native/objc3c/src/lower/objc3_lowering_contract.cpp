@@ -954,6 +954,38 @@ std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() {
+  std::ostringstream out;
+  // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor: lane-C now
+  // freezes the truthful lowering boundary that later runnable block-object
+  // emission must preserve. The current compiler publishes deterministic
+  // capture/invoke/storage/copy-dispose lowering surfaces, but native emit
+  // still fails closed before emitted block records, invoke thunks, byref
+  // cells, or helper bodies exist.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockLoweringAbiArtifactBoundaryContractId
+      << ";abi_model=" << Expr::kObjc3ExecutableBlockLoweringAbiModel
+      << ";helper_symbol_policy="
+      << Expr::kObjc3ExecutableBlockHelperSymbolPolicyModel
+      << ";artifact_inventory_model="
+      << Expr::kObjc3ExecutableBlockArtifactInventoryModel
+      << ";fail_closed_model="
+      << Expr::kObjc3ExecutableBlockLoweringFailClosedModel
+      << ";non_goal_model="
+      << Expr::kObjc3ExecutableBlockLoweringNonGoalModel
+      << ";capture_lane_contract="
+      << kObjc3BlockLiteralCaptureLoweringLaneContract
+      << ";invoke_lane_contract="
+      << kObjc3BlockAbiInvokeTrampolineLoweringLaneContract
+      << ";storage_lane_contract="
+      << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";copy_dispose_lane_contract="
+      << kObjc3BlockCopyDisposeLoweringLaneContract
+      << ";lane_contract="
+      << kObjc3ExecutableBlockLoweringAbiArtifactBoundaryLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -174,6 +174,11 @@ Current implementation boundary:
   - lane-B now also rejects weak/unowned byref mutation and promotes
     copy/dispose helpers only for owned object captures (`M261-B003`) while
     keeping weak/unowned object captures non-owning in the source-only path.
+  - lane-C now also freezes the truthful block lowering ABI/artifact boundary
+    (`M261-C001`): source-only manifests already publish capture/invoke/
+    storage/copy-dispose lowering surfaces, while native emit paths still fail
+    closed before runnable block-object records, invoke thunks, byref cells,
+    or helper bodies exist.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

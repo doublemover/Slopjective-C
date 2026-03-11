@@ -1398,6 +1398,12 @@ class Objc3IREmitter {
     // while native block execution still remains fail-closed.
     out << "; executable_block_runtime_semantic_rules = "
         << Objc3ExecutableBlockRuntimeSemanticRulesSummary() << "\n";
+    // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor: lane-C
+    // now publishes the truthful lowering boundary required for runnable block
+    // execution, while native emit still fails closed before any emitted block
+    // object records, invoke thunks, byref cells, or helper bodies land.
+    out << "; executable_block_lowering_abi_artifact_boundary = "
+        << Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

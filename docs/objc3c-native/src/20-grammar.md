@@ -1082,6 +1082,47 @@ Recommended M261 lane-B implementation check:
 - `python scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
 - `M261-C001` is the next issue.
 
+## M261 block lowering ABI and artifact boundary (M261-C001)
+
+`M261-C001` freezes the truthful lane-C lowering boundary required for
+runnable block objects without claiming that runnable block emission already
+exists.
+
+- contract id
+  `objc3c-executable-block-lowering-abi-artifact-boundary/m261-c001-v1`
+
+Current boundary details:
+
+- source-only manifests already publish the lowering surfaces later runnable
+  block emission must preserve:
+  - `objc_block_literal_capture_lowering_surface`
+  - `objc_block_abi_invoke_trampoline_lowering_surface`
+  - `objc_block_storage_escape_lowering_surface`
+  - `objc_block_copy_dispose_lowering_surface`
+- truthful surface split on the current owned-capture corpus:
+  - capture and invoke surfaces are deterministic.
+  - storage-escape and copy/dispose surfaces are still source-only helper and
+    escape profiles and are not required to be deterministic yet.
+- emitted/native boundary details:
+  - the native IR boundary now carries
+    `; executable_block_lowering_abi_artifact_boundary = ...`.
+  - native emit paths still reject block literals with `O3S221`.
+- helper symbol policy is still truthful and narrow:
+  - invoke thunks, byref cells, and copy/dispose helpers are source-modeled
+    lowering surfaces only.
+  - lane-C has not yet emitted runnable block object records or helper bodies.
+- explicit non-goals in this freeze:
+  - no emitted block object records yet.
+  - no emitted invoke-thunk bodies yet.
+  - no emitted byref cell storage yet.
+  - no emitted copy/dispose helper bodies yet.
+  - no runnable block execution yet.
+
+Recommended M261 lane-C freeze check:
+
+- `python scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
+- `M261-C002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

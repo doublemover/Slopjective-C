@@ -7768,3 +7768,33 @@ every object capture the same.
   - `spec/planning/compiler/m261/m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion_packet.md`
   - `python scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
   - `M261-C001` is the next issue.
+
+## M261 block lowering ABI and artifact boundary (C001)
+
+`M261-C001` freezes the truthful lane-C lowering boundary required for runnable
+block objects while explicitly preserving the current native fail-closed rule.
+
+- contract id
+  `objc3c-executable-block-lowering-abi-artifact-boundary/m261-c001-v1`
+- current boundary content:
+  - source-only manifests already publish the capture, invoke, storage-escape,
+    and copy/dispose lowering surfaces.
+  - capture/invoke remain deterministic on the current owned-capture corpus.
+  - storage-escape/copy-dispose remain truthful source-only helper and escape
+    profiles and are not yet required to be deterministic.
+  - native IR now republishes one dedicated
+    `; executable_block_lowering_abi_artifact_boundary = ...` summary line.
+  - helper symbol policy is still source-modeled only; invoke thunks, byref
+    cells, and copy/dispose helpers are not emitted yet.
+  - native emit paths still fail closed on block literals with `O3S221`.
+- non-goals:
+  - emitted block object records
+  - emitted invoke-thunk bodies
+  - emitted byref cell storage
+  - emitted copy/dispose helper bodies
+  - runnable block execution
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze_c001_expectations.md`
+  - `spec/planning/compiler/m261/m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m261_c001_block_lowering_abi_and_artifact_boundary_contract_and_architecture_freeze.py`
+  - `M261-C002` is the next issue.

@@ -995,6 +995,9 @@ inline constexpr const char *kObjc3BlockSourceStorageAnnotationLaneContract =
 // invocation typing before runnable block lowering lands.
 inline constexpr const char *kObjc3BlockRuntimeSemanticRulesLaneContract =
     "m261-block-runtime-semantic-rules-v1";
+inline constexpr const char
+    *kObjc3ExecutableBlockLoweringAbiArtifactBoundaryLaneContract =
+        "m261-block-lowering-abi-artifact-boundary-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1741,6 +1744,7 @@ std::string Objc3ExecutableBlockSourceClosureSummary();
 std::string Objc3ExecutableBlockSourceModelCompletionSummary();
 std::string Objc3ExecutableBlockSourceStorageAnnotationSummary();
 std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary();
+std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

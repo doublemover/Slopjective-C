@@ -9930,3 +9930,31 @@ same source-only block admission boundary.
   generation by themselves
 - native emit still fail-closes on block literals with `O3S221`
 - the next issue is `M261-C001`
+
+## M261 Block Lowering ABI And Artifact Boundary (C001)
+
+`M261-C001` freezes the truthful lane-C boundary for runnable block lowering
+without claiming that runnable block emission already exists.
+
+- source-only manifests already publish the lowering surfaces future runnable
+  block emission must preserve:
+  - capture lowering
+  - invoke-trampoline lowering
+  - storage-escape lowering
+  - copy/dispose lowering
+- current truthful split:
+  - capture/invoke remain deterministic on the owned-capture corpus
+  - storage/copy-dispose remain source-only helper and escape profiles
+- the emitted IR boundary now carries:
+  - `; executable_block_lowering_abi_artifact_boundary = ...`
+- native emit still fails closed with `O3S221`
+- helper symbol policy remains narrow:
+  - invoke thunks, byref cells, and copy/dispose helpers are still
+    source-modeled only
+  - no emitted block object records exist yet
+- non-goals remain:
+  - emitted invoke-thunk bodies
+  - emitted byref cell storage
+  - emitted copy/dispose helper bodies
+  - runnable block execution
+- the next issue is `M261-C002`

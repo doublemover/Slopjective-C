@@ -915,6 +915,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // path, but ValidateBodies now also owns
           // ownership-sensitive helper eligibility and non-owning mutation
           // rejection.
+          // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor:
+          // this pass manager hands lane-C one deterministic set of capture,
+          // invoke, storage-escape, and copy-dispose lowering surfaces, but
+          // it still does not materialize emitted block-object records,
+          // invoke-thunk bodies, byref cells, or helper function bodies.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

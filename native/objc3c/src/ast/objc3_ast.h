@@ -115,6 +115,22 @@ struct Expr {
       "owned-object-captures-promote-copy-dispose-helper-eligibility-even-without-byref-cells";
   static inline constexpr const char *kObjc3ExecutableBlockObjectCaptureOwnershipModel =
       "weak-and-unowned-object-captures-remain-non-owning-and-do-not-force-copy-dispose-helpers";
+  // M261-C001 block-lowering-ABI/artifact-boundary constants: lane-C now
+  // freezes the truthful lowering boundary required for runnable block objects
+  // without claiming that emitted block records, invoke thunks, byref cells,
+  // or helper bodies already exist on native paths.
+  static inline constexpr const char *kObjc3ExecutableBlockLoweringAbiArtifactBoundaryContractId =
+      "objc3c-executable-block-lowering-abi-artifact-boundary/m261-c001-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockLoweringAbiModel =
+      "block-object-descriptor-invoke-byref-and-helper-abi-boundary-freezes-on-source-modeled-lowering-surfaces-before-runnable-emission";
+  static inline constexpr const char *kObjc3ExecutableBlockHelperSymbolPolicyModel =
+      "copy-dispose-and-byref-helper-symbols-remain-source-modeled-and-non-emitted-until-m261-c002";
+  static inline constexpr const char *kObjc3ExecutableBlockArtifactInventoryModel =
+      "source-only-manifest-lowering-surfaces-plus-fail-closed-native-ir-boundary-before-runnable-block-object-artifacts";
+  static inline constexpr const char *kObjc3ExecutableBlockLoweringFailClosedModel =
+      "native-emit-fails-closed-on-block-literals-before-runnable-block-object-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockLoweringNonGoalModel =
+      "no-emitted-block-object-records-no-invoke-thunks-no-byref-cell-storage-no-copy-dispose-helper-bodies";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
