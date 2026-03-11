@@ -1,0 +1,11 @@
+module m261_nonowning_object_capture_helper_elided_positive;
+
+fn source_semantic_probe(weakValue: __weak id, borrowedValue: __unsafe_unretained id) -> i32 {
+  let closure = ^() {
+    if (weakValue == borrowedValue) {
+      return 1;
+    }
+    return 0;
+  };
+  return closure();
+}

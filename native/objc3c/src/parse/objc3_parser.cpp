@@ -10607,6 +10607,10 @@ class Objc3Parser {
     // lane-B now consumes these exact parser-owned source facts as the live
     // sema input for capture resolution, truthful escape classification, and
     // local block invocation typing.
+    // M261-B003 byref/copy-dispose/object-ownership anchor: parser still owns
+    // only the deterministic source inventory here; sema layers
+    // ownership-sensitive helper eligibility on top without widening this
+    // source-only parser contract.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

@@ -7737,3 +7737,34 @@ sema capability without claiming runnable native block execution yet.
   - `spec/planning/compiler/m261/m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation_packet.md`
   - `python scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
   - `M261-B003` is the next issue.
+
+## M261 byref mutation, copy-dispose eligibility, and object-capture ownership semantics (B003)
+
+`M261-B003` extends the live source-only block semantic path so helper
+eligibility and mutation legality track capture ownership instead of treating
+every object capture the same.
+
+- contract id
+  `objc3c-executable-block-byref-copy-dispose-and-object-capture-ownership/m261-b003-v1`
+- current semantic implementation:
+  - mutating a captured `__weak` or `__unsafe_unretained` object now fails
+    closed with `O3S206`.
+  - owned object captures now promote copy/dispose helper eligibility even
+    when no byref slots are present.
+  - weak and unowned object captures remain non-owning and do not force helper
+    generation by themselves.
+  - native emit paths still fail closed on block literals with `O3S221`.
+- current emitted/runtime boundary:
+  - `lowering_block_copy_dispose` now reflects owned-object helper promotion
+    without changing the source-owned A-lane annotation surface.
+  - `lowering_block_storage_escape` remains truthful to byref-slot and
+    escape-shape facts only.
+- non-goals:
+  - runnable block-object execution
+  - live block helper emission
+  - live weak/unowned byref runtime semantics
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion_b003_expectations.md`
+  - `spec/planning/compiler/m261/m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion_packet.md`
+  - `python scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
+  - `M261-C001` is the next issue.

@@ -103,6 +103,18 @@ struct Expr {
       "source-only-sema-classifies-byref-escape-and-copy-dispose-requirements-from-parser-owned-annotations-before-runnable-helper-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockInvocationTypingImplementationModel =
       "source-only-sema-types-local-block-invocations-as-callable-values-while-native-block-execution-remains-fail-closed";
+  // M261-B003 byref/copy-dispose/object-ownership constants: lane-B now
+  // extends the live source-only block semantics with ownership-sensitive
+  // helper eligibility and fail-closed mutation rules for non-owning object
+  // captures.
+  static inline constexpr const char *kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId =
+      "objc3c-executable-block-byref-copy-dispose-and-object-capture-ownership/m261-b003-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockByrefMutationOwnershipModel =
+      "source-only-sema-rejects-weak-or-unowned-byref-mutation-before-runnable-block-ownership-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockCopyDisposeEligibilityModel =
+      "owned-object-captures-promote-copy-dispose-helper-eligibility-even-without-byref-cells";
+  static inline constexpr const char *kObjc3ExecutableBlockObjectCaptureOwnershipModel =
+      "weak-and-unowned-object-captures-remain-non-owning-and-do-not-force-copy-dispose-helpers";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -226,6 +238,13 @@ struct Expr {
   std::string block_helper_intent_profile;
   std::string block_escape_shape_symbol;
   std::string block_escape_shape_profile;
+  std::size_t block_runtime_owned_object_capture_count = 0;
+  std::size_t block_runtime_weak_object_capture_count = 0;
+  std::size_t block_runtime_unowned_object_capture_count = 0;
+  bool block_runtime_copy_helper_required = false;
+  bool block_runtime_dispose_helper_required = false;
+  bool block_runtime_capture_ownership_is_normalized = false;
+  std::string block_runtime_capture_ownership_profile;
   std::size_t block_determinism_perf_baseline_weight = 0;
   bool block_determinism_perf_baseline_profile_is_normalized = false;
   std::string block_determinism_perf_baseline_profile;

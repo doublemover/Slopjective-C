@@ -19,3 +19,5 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
 void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3SemanticIntegrationSurface &surface,
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics);
+void RefreshSemanticIntegrationSurfaceAfterBodyValidation(const Objc3ParsedProgram &program,
+                                                          Objc3SemanticIntegrationSurface &surface);

@@ -9916,3 +9916,17 @@ capability without widening runnable native block support.
   treatment.
 - native emit still fail-closes on block literals with `O3S221`.
 - the next issue is `M261-B003`
+
+## M261 Byref Mutation, Copy-Dispose Eligibility, And Object-Capture Ownership Semantics (B003)
+
+Lane B now makes block helper eligibility ownership-sensitive while keeping the
+same source-only block admission boundary.
+
+- source-only frontend rejects mutation of captured `__weak` and
+  `__unsafe_unretained` objects with `O3S206`
+- owned object captures promote copy/dispose helper eligibility even when
+  byref slot totals remain zero
+- weak and unowned object captures stay non-owning and do not force helper
+  generation by themselves
+- native emit still fail-closes on block literals with `O3S221`
+- the next issue is `M261-C001`

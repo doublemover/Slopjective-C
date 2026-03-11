@@ -840,9 +840,13 @@ struct Objc3BlockCopyDisposeSiteMetadata {
   std::size_t parameter_count = 0;
   std::size_t capture_count = 0;
   std::size_t body_statement_count = 0;
+  std::size_t owned_object_capture_count = 0;
+  std::size_t weak_object_capture_count = 0;
+  std::size_t unowned_object_capture_count = 0;
   bool copy_helper_required = false;
   bool dispose_helper_required = false;
   bool copy_dispose_profile_is_normalized = false;
+  bool ownership_helper_eligibility_is_normalized = false;
   bool has_count_mismatch = false;
   std::string copy_dispose_profile;
   std::string copy_helper_symbol;

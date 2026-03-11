@@ -1,0 +1,11 @@
+module m261_owned_object_capture_helper_positive;
+
+fn source_semantic_probe(ownedValue: id, weakValue: __weak id) -> i32 {
+  let closure = ^() {
+    if (ownedValue == weakValue) {
+      return 1;
+    }
+    return 2;
+  };
+  return closure();
+}

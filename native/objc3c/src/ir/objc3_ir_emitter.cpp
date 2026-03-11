@@ -1393,6 +1393,9 @@ class Objc3IREmitter {
     // the emitted summary line stays on the frozen runtime boundary while the
     // source-only sema path now enforces live capture legality and local
     // block-call typing ahead of runnable block-object lowering.
+    // M261-B003 byref/copy-dispose/object-ownership anchor: helper-eligibility
+    // totals in this emitted surface now reflect owned object captures as well as byref cells,
+    // while native block execution still remains fail-closed.
     out << "; executable_block_runtime_semantic_rules = "
         << Objc3ExecutableBlockRuntimeSemanticRulesSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="

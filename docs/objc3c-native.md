@@ -1132,6 +1132,29 @@ Recommended M261 lane-B implementation check:
 - `python scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
 - `M261-B003` is the next issue.
 
+## M261 byref mutation, copy-dispose eligibility, and object-capture ownership semantics (M261-B003)
+
+`M261-B003` keeps blocks on the same source-only execution boundary while
+making helper eligibility and mutation legality ownership-sensitive.
+
+- contract id
+  `objc3c-executable-block-byref-copy-dispose-and-object-capture-ownership/m261-b003-v1`
+
+Current source-only semantic details:
+
+- mutating a captured `__weak` or `__unsafe_unretained` object now fails closed
+  with `O3S206`.
+- owned object captures now promote copy/dispose helper eligibility even when a
+  block has no byref slots.
+- weak and unowned object captures remain non-owning and do not force helper
+  generation by themselves.
+- native emit paths still reject block literals with `O3S221`.
+
+Recommended M261 lane-B implementation check:
+
+- `python scripts/check_m261_b003_byref_mutation_copy_dispose_eligibility_and_object_capture_ownership_core_feature_expansion.py`
+- `M261-C001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

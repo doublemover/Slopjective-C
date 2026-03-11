@@ -910,6 +910,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // anchor: lane-B keeps this same admission boundary but now expects
           // ValidateBodies to enforce live capture legality and local callable
           // block invocation typing inside the source-only path.
+          // M261-B003 byref/copy-dispose/object-ownership anchor: the pass
+          // manager still routes blocks through this source-only admission
+          // path, but ValidateBodies now also owns
+          // ownership-sensitive helper eligibility and non-owning mutation
+          // rejection.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,
@@ -918,6 +923,8 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               pass_diagnostics);
     } else if (pass == Objc3SemaPassId::ValidateBodies) {
       ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);
+      RefreshSemanticIntegrationSurfaceAfterBodyValidation(*input.program,
+                                                           result.integration_surface);
     } else {
       ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);
       AppendMigrationAssistDiagnostics(input, pass_diagnostics);

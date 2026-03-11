@@ -1,0 +1,9 @@
+module m261_weak_object_capture_mutation_negative;
+
+fn source_semantic_probe(weakValue: __weak id) -> i32 {
+  let closure = ^() {
+    weakValue = nil;
+    return 0;
+  };
+  return 0;
+}

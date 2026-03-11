@@ -164,15 +164,18 @@ Current implementation boundary:
 - source-only frontend runs now also publish truthful byref/helper/escape-shape
   source annotations (`M261-A003`) before runnable byref lowering, helper
   emission, or heap-promotion runtime support exists.
-- the current semantic rule boundary is now frozen (`M261-B001`): source-only
-  block admission is allowed for manifest projection only, while native emit
-  paths still fail closed before runnable capture, helper, escape, or
-  invocation semantics exist.
-- lane-B now also enforces live source-only capture legality, truthful escape
-  classification, and local block invocation typing (`M261-B002`) without
-  widening native runnable block support.
-- explicit block pointer declarator spellings and explicit byref storage
-  spellings are not yet part of the supported source surface.
+  - the current semantic rule boundary is now frozen (`M261-B001`): source-only
+    block admission is allowed for manifest projection only, while native emit
+    paths still fail closed before runnable capture, helper, escape, or
+    invocation semantics exist.
+  - lane-B now also enforces live source-only capture legality, truthful escape
+    classification, and local block invocation typing (`M261-B002`) without
+    widening native runnable block support.
+  - lane-B now also rejects weak/unowned byref mutation and promotes
+    copy/dispose helpers only for owned object captures (`M261-B003`) while
+    keeping weak/unowned object captures non-owning in the source-only path.
+  - explicit block pointer declarator spellings and explicit byref storage
+    spellings are not yet part of the supported source surface.
 
 ### 0.4.13 Nullability {#part-0-4-13}
 

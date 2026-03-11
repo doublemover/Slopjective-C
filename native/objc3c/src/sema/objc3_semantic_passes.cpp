@@ -44,6 +44,15 @@ static const char *TypeName(ValueType type) {
   }
 }
 
+static bool IsObjCReferenceAliasValueType(ValueType type);
+
+enum class SemanticOwnershipKind {
+  None,
+  Retained,
+  Weak,
+  Unowned,
+};
+
 struct SemanticTypeInfo {
   ValueType type = ValueType::Unknown;
   bool is_vector = false;
@@ -52,6 +61,7 @@ struct SemanticTypeInfo {
   bool is_callable = false;
   std::vector<ValueType> callable_param_types;
   ValueType callable_return_type = ValueType::Unknown;
+  SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
@@ -59,6 +69,9 @@ using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
 static SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
   SemanticTypeInfo info;
   info.type = type;
+  if (IsObjCReferenceAliasValueType(type)) {
+    info.ownership_kind = SemanticOwnershipKind::Retained;
+  }
   return info;
 }
 
@@ -76,21 +89,51 @@ static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
   if (param.vector_spelling) {
     return MakeVectorSemanticType(param.type, param.vector_base_spelling, param.vector_lane_count);
   }
-  return MakeScalarSemanticType(param.type);
+  SemanticTypeInfo info = MakeScalarSemanticType(param.type);
+  if (IsObjCReferenceAliasValueType(param.type)) {
+    if (param.ownership_is_weak_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (param.ownership_is_unowned_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &fn) {
   if (fn.return_vector_spelling) {
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
-  return MakeScalarSemanticType(fn.return_type);
+  SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
+  if (IsObjCReferenceAliasValueType(fn.return_type)) {
+    if (fn.return_ownership_is_weak_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (fn.return_ownership_is_unowned_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &method) {
   if (method.return_vector_spelling) {
     return MakeVectorSemanticType(method.return_type, method.return_vector_base_spelling, method.return_vector_lane_count);
   }
-  return MakeScalarSemanticType(method.return_type);
+  SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
+  if (IsObjCReferenceAliasValueType(method.return_type)) {
+    if (method.return_ownership_is_weak_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (method.return_ownership_is_unowned_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo &fn, std::size_t index) {
@@ -104,14 +147,36 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo
     const unsigned lane_count = index < fn.param_vector_lane_count.size() ? fn.param_vector_lane_count[index] : 1u;
     return MakeVectorSemanticType(fn.param_types[index], base_spelling, lane_count);
   }
-  return MakeScalarSemanticType(fn.param_types[index]);
+  SemanticTypeInfo info = MakeScalarSemanticType(fn.param_types[index]);
+  if (IsObjCReferenceAliasValueType(fn.param_types[index])) {
+    if (index < fn.param_ownership_is_weak_reference.size() &&
+        fn.param_ownership_is_weak_reference[index]) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (index < fn.param_ownership_is_unowned_reference.size() &&
+               fn.param_ownership_is_unowned_reference[index]) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInfo &fn) {
   if (fn.return_is_vector) {
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
-  return MakeScalarSemanticType(fn.return_type);
+  SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
+  if (IsObjCReferenceAliasValueType(fn.return_type)) {
+    if (fn.return_ownership_is_weak_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (fn.return_ownership_is_unowned_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInfo &method,
@@ -131,7 +196,19 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInf
     return MakeVectorSemanticType(method.param_types[index], base_spelling,
                                   lane_count);
   }
-  return MakeScalarSemanticType(method.param_types[index]);
+  SemanticTypeInfo info = MakeScalarSemanticType(method.param_types[index]);
+  if (IsObjCReferenceAliasValueType(method.param_types[index])) {
+    if (index < method.param_ownership_is_weak_reference.size() &&
+        method.param_ownership_is_weak_reference[index]) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (index < method.param_ownership_is_unowned_reference.size() &&
+               method.param_ownership_is_unowned_reference[index]) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
@@ -141,7 +218,17 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
                                   method.return_vector_base_spelling,
                                   method.return_vector_lane_count);
   }
-  return MakeScalarSemanticType(method.return_type);
+  SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
+  if (IsObjCReferenceAliasValueType(method.return_type)) {
+    if (method.return_ownership_is_weak_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Weak;
+    } else if (method.return_ownership_is_unowned_reference) {
+      info.ownership_kind = SemanticOwnershipKind::Unowned;
+    } else {
+      info.ownership_kind = SemanticOwnershipKind::Retained;
+    }
+  }
+  return info;
 }
 
 static SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
@@ -218,6 +305,21 @@ static bool IsObjCReferenceValueType(ValueType type) {
 
 static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
   return !info.is_vector && IsObjCReferenceValueType(info.type);
+}
+
+static bool IsOwnedObjCReferenceSemanticType(const SemanticTypeInfo &info) {
+  return IsObjCReferenceSemanticType(info) &&
+         info.ownership_kind == SemanticOwnershipKind::Retained;
+}
+
+static bool IsWeakObjCReferenceSemanticType(const SemanticTypeInfo &info) {
+  return IsObjCReferenceSemanticType(info) &&
+         info.ownership_kind == SemanticOwnershipKind::Weak;
+}
+
+static bool IsUnownedObjCReferenceSemanticType(const SemanticTypeInfo &info) {
+  return IsObjCReferenceSemanticType(info) &&
+         info.ownership_kind == SemanticOwnershipKind::Unowned;
 }
 
 static bool IsMessageCompatibleType(const SemanticTypeInfo &info) {
@@ -660,6 +762,155 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context);
 
+static bool ExprContainsBlockLiteral(const Expr *expr);
+
+static bool StmtContainsBlockLiteral(const Stmt *stmt) {
+  if (stmt == nullptr) {
+    return false;
+  }
+
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      return stmt->let_stmt != nullptr &&
+             ExprContainsBlockLiteral(stmt->let_stmt->value.get());
+    case Stmt::Kind::Assign:
+      return stmt->assign_stmt != nullptr &&
+             ExprContainsBlockLiteral(stmt->assign_stmt->value.get());
+    case Stmt::Kind::Return:
+      return stmt->return_stmt != nullptr &&
+             ExprContainsBlockLiteral(stmt->return_stmt->value.get());
+    case Stmt::Kind::If:
+      if (stmt->if_stmt == nullptr) {
+        return false;
+      }
+      if (ExprContainsBlockLiteral(stmt->if_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        if (StmtContainsBlockLiteral(then_stmt.get())) {
+          return true;
+        }
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        if (StmtContainsBlockLiteral(else_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        if (StmtContainsBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+      return ExprContainsBlockLiteral(stmt->do_while_stmt->condition.get());
+    case Stmt::Kind::For:
+      if (stmt->for_stmt == nullptr) {
+        return false;
+      }
+      if (ExprContainsBlockLiteral(stmt->for_stmt->init.value.get()) ||
+          ExprContainsBlockLiteral(stmt->for_stmt->condition.get()) ||
+          ExprContainsBlockLiteral(stmt->for_stmt->step.value.get())) {
+        return true;
+      }
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        if (StmtContainsBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt == nullptr) {
+        return false;
+      }
+      if (ExprContainsBlockLiteral(stmt->switch_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          if (StmtContainsBlockLiteral(case_stmt.get())) {
+            return true;
+          }
+        }
+      }
+      return false;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt == nullptr) {
+        return false;
+      }
+      if (ExprContainsBlockLiteral(stmt->while_stmt->condition.get())) {
+        return true;
+      }
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        if (StmtContainsBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt == nullptr) {
+        return false;
+      }
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        if (StmtContainsBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+      return false;
+    case Stmt::Kind::Expr:
+      return stmt->expr_stmt != nullptr &&
+             ExprContainsBlockLiteral(stmt->expr_stmt->value.get());
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return false;
+  }
+  return false;
+}
+
+static bool ExprContainsBlockLiteral(const Expr *expr) {
+  if (expr == nullptr) {
+    return false;
+  }
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    return true;
+  }
+
+  if (ExprContainsBlockLiteral(expr->left.get()) ||
+      ExprContainsBlockLiteral(expr->right.get()) ||
+      ExprContainsBlockLiteral(expr->third.get()) ||
+      ExprContainsBlockLiteral(expr->receiver.get())) {
+    return true;
+  }
+  for (const auto &arg : expr->args) {
+    if (ExprContainsBlockLiteral(arg.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool FunctionBodyContainsBlockLiteral(const FunctionDecl &fn) {
+  for (const auto &stmt : fn.body) {
+    if (StmtContainsBlockLiteral(stmt.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool MethodBodyContainsBlockLiteral(const Objc3MethodDecl &method) {
+  for (const auto &stmt : method.body) {
+    if (StmtContainsBlockLiteral(stmt.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void DiagnoseUnsupportedFeatureClaimsInStmt(
     const Stmt *stmt,
     std::vector<std::string> &diagnostics,
@@ -885,8 +1136,18 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
         diagnostics,
         stats);
   }
+  const bool allow_source_only_block_owned_bindings =
+      context.allow_source_only_block_literals &&
+      FunctionBodyContainsBlockLiteral(fn);
   for (const auto &param : fn.params) {
     if (!param.has_ownership_qualifier) {
+      continue;
+    }
+    if (allow_source_only_block_owned_bindings) {
+      // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
+      // semantic modeling may admit ownership-qualified executable bindings so
+      // lane-B can classify owned vs weak/unowned captures without widening the
+      // native runnable ARC surface.
       continue;
     }
     RecordUnsupportedFeatureClaimDiagnostic(
@@ -897,7 +1158,8 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
         diagnostics,
         stats);
   }
-  if (fn.has_return_ownership_qualifier) {
+  if (fn.has_return_ownership_qualifier &&
+      !allow_source_only_block_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -938,8 +1200,18 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
         diagnostics,
         stats);
   }
+  const bool allow_source_only_block_owned_bindings =
+      context.allow_source_only_block_literals &&
+      MethodBodyContainsBlockLiteral(method);
   for (const auto &param : method.params) {
     if (!param.has_ownership_qualifier) {
+      continue;
+    }
+    if (allow_source_only_block_owned_bindings) {
+      // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
+      // semantic modeling may admit ownership-qualified executable bindings so
+      // lane-B can classify owned vs weak/unowned captures without widening the
+      // native runnable ARC surface.
       continue;
     }
     RecordUnsupportedFeatureClaimDiagnostic(
@@ -950,7 +1222,8 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
         diagnostics,
         stats);
   }
-  if (method.has_return_ownership_qualifier) {
+  if (method.has_return_ownership_qualifier &&
+      !allow_source_only_block_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -3043,6 +3316,15 @@ static void ValidateBlockLiteralCaptureLegality(
     return;
   }
 
+  Expr *mutable_expr = const_cast<Expr *>(expr);
+  mutable_expr->block_runtime_owned_object_capture_count = 0;
+  mutable_expr->block_runtime_weak_object_capture_count = 0;
+  mutable_expr->block_runtime_unowned_object_capture_count = 0;
+  mutable_expr->block_runtime_copy_helper_required = false;
+  mutable_expr->block_runtime_dispose_helper_required = false;
+  mutable_expr->block_runtime_capture_ownership_is_normalized = false;
+  mutable_expr->block_runtime_capture_ownership_profile.clear();
+
   if (expr->block_parameter_types_source_order.size() != expr->block_parameter_count) {
     diagnostics.push_back(
         MakeDiag(expr->line,
@@ -3088,6 +3370,9 @@ static void ValidateBlockLiteralCaptureLegality(
   std::unordered_set<std::string> mutated_names(
       expr->block_mutated_capture_names_lexicographic.begin(),
       expr->block_mutated_capture_names_lexicographic.end());
+  std::size_t owned_object_capture_count = 0;
+  std::size_t weak_object_capture_count = 0;
+  std::size_t unowned_object_capture_count = 0;
   for (const auto &mutated_name : expr->block_mutated_capture_names_lexicographic) {
     if (capture_names.count(mutated_name) == 0u) {
       diagnostics.push_back(
@@ -3116,8 +3401,66 @@ static void ValidateBlockLiteralCaptureLegality(
                    expr->column,
                    "O3S202",
                    "undefined capture '" + capture_name + "' in block literal"));
+      continue;
+    }
+
+    if (IsOwnedObjCReferenceSemanticType(resolved_type)) {
+      ++owned_object_capture_count;
+    } else if (IsWeakObjCReferenceSemanticType(resolved_type)) {
+      ++weak_object_capture_count;
+    } else if (IsUnownedObjCReferenceSemanticType(resolved_type)) {
+      ++unowned_object_capture_count;
+    }
+
+    if (mutated_names.count(capture_name) != 0u &&
+        (IsWeakObjCReferenceSemanticType(resolved_type) ||
+         IsUnownedObjCReferenceSemanticType(resolved_type))) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S206",
+                   "type mismatch: block mutated capture '" + capture_name +
+                       "' requires owned runtime-backed storage"));
     }
   }
+
+  mutable_expr->block_runtime_owned_object_capture_count =
+      owned_object_capture_count;
+  mutable_expr->block_runtime_weak_object_capture_count =
+      weak_object_capture_count;
+  mutable_expr->block_runtime_unowned_object_capture_count =
+      unowned_object_capture_count;
+  const bool runtime_copy_dispose_required =
+      expr->block_byref_capture_count > 0u || owned_object_capture_count > 0u;
+  mutable_expr->block_runtime_copy_helper_required =
+      runtime_copy_dispose_required;
+  mutable_expr->block_runtime_dispose_helper_required =
+      runtime_copy_dispose_required;
+  mutable_expr->block_runtime_capture_ownership_is_normalized =
+      expr->block_capture_names_lexicographic.size() == expr->block_capture_count &&
+      expr->block_mutated_capture_names_lexicographic.size() ==
+          expr->block_mutated_capture_count &&
+      expr->block_byref_capture_names_lexicographic.size() ==
+          expr->block_byref_capture_count &&
+      IsSortedUniqueStrings(expr->block_capture_names_lexicographic) &&
+      IsSortedUniqueStrings(expr->block_mutated_capture_names_lexicographic) &&
+      IsSortedUniqueStrings(expr->block_byref_capture_names_lexicographic) &&
+      expr->block_source_storage_annotations_are_normalized;
+  std::ostringstream ownership_profile;
+  // M261-B003 byref/copy-dispose/object-ownership anchor: sema upgrades the
+  // frozen source-only block path with ownership-sensitive helper eligibility
+  // and fail-closed non-owning mutation rejection before runnable block object
+  // lowering lands.
+  ownership_profile << "block-runtime-capture-ownership:owned="
+                    << owned_object_capture_count
+                    << ";weak=" << weak_object_capture_count
+                    << ";unowned=" << unowned_object_capture_count
+                    << ";copy-helper="
+                    << (runtime_copy_dispose_required ? "enabled" : "elided")
+                    << ";dispose-helper="
+                    << (runtime_copy_dispose_required ? "enabled" : "elided");
+  mutable_expr->block_runtime_capture_ownership_profile =
+      ownership_profile.str();
 }
 
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
@@ -8796,15 +9139,40 @@ static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const
   metadata.parameter_count = expr.block_parameter_count;
   metadata.capture_count = expr.block_capture_count;
   metadata.body_statement_count = expr.block_body_statement_count;
-  metadata.copy_helper_required = metadata.byref_slot_count > 0u;
-  metadata.dispose_helper_required = metadata.byref_slot_count > 0u;
+  metadata.owned_object_capture_count =
+      expr.block_runtime_owned_object_capture_count;
+  metadata.weak_object_capture_count =
+      expr.block_runtime_weak_object_capture_count;
+  metadata.unowned_object_capture_count =
+      expr.block_runtime_unowned_object_capture_count;
+  metadata.copy_helper_required =
+      expr.block_runtime_capture_ownership_is_normalized
+          ? expr.block_runtime_copy_helper_required
+          : metadata.byref_slot_count > 0u;
+  metadata.dispose_helper_required =
+      expr.block_runtime_capture_ownership_is_normalized
+          ? expr.block_runtime_dispose_helper_required
+          : metadata.byref_slot_count > 0u;
   metadata.copy_dispose_profile_is_normalized =
-      expr.block_source_storage_annotations_are_normalized;
+      expr.block_source_storage_annotations_are_normalized &&
+      (!expr.block_runtime_capture_ownership_is_normalized ||
+       !expr.block_runtime_capture_ownership_profile.empty());
+  metadata.ownership_helper_eligibility_is_normalized =
+      expr.block_runtime_capture_ownership_is_normalized;
   metadata.copy_dispose_profile =
-      build_block_copy_dispose_profile(metadata.copy_helper_required,
-                                       metadata.dispose_helper_required,
-                                       expr.block_escape_shape_promotes_to_heap_candidate,
-                                       metadata.body_statement_count);
+      expr.block_runtime_capture_ownership_is_normalized &&
+              !expr.block_runtime_capture_ownership_profile.empty()
+          ? expr.block_runtime_capture_ownership_profile + ";" +
+                build_block_copy_dispose_profile(
+                    metadata.copy_helper_required,
+                    metadata.dispose_helper_required,
+                    expr.block_escape_shape_promotes_to_heap_candidate,
+                    metadata.body_statement_count)
+          : build_block_copy_dispose_profile(
+                metadata.copy_helper_required,
+                metadata.dispose_helper_required,
+                expr.block_escape_shape_promotes_to_heap_candidate,
+                metadata.body_statement_count);
   metadata.copy_helper_symbol =
       metadata.copy_helper_required
           ? build_block_copy_helper_symbol(expr.line,
@@ -9011,12 +9379,17 @@ static Objc3BlockCopyDisposeSemanticsSummary BuildBlockCopyDisposeSemanticsSumma
         (site.copy_helper_required || site.dispose_helper_required) && site.copy_dispose_profile.empty();
     const bool copy_helper_symbol_missing = site.copy_helper_required && site.copy_helper_symbol.empty();
     const bool dispose_helper_symbol_missing = site.dispose_helper_required && site.dispose_helper_symbol.empty();
-    const bool copy_helper_requirement_mismatch = site.copy_helper_required != (site.byref_slot_count > 0u);
-    const bool dispose_helper_requirement_mismatch = site.dispose_helper_required != (site.byref_slot_count > 0u);
+    const bool copy_helper_requirement_mismatch =
+        site.copy_helper_required !=
+        (site.byref_slot_count > 0u || site.owned_object_capture_count > 0u);
+    const bool dispose_helper_requirement_mismatch =
+        site.dispose_helper_required !=
+        (site.byref_slot_count > 0u || site.owned_object_capture_count > 0u);
     const bool count_mismatch = site.mutable_capture_count > site.capture_count ||
                                 site.byref_slot_count > site.mutable_capture_count;
     const bool site_contract_violation =
         site.has_count_mismatch || count_mismatch || !site.copy_dispose_profile_is_normalized ||
+        !site.ownership_helper_eligibility_is_normalized ||
         copy_dispose_profile_missing || copy_helper_symbol_missing ||
         dispose_helper_symbol_missing || copy_helper_requirement_mismatch ||
         dispose_helper_requirement_mismatch;
@@ -16582,4 +16955,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       }
     }
   }
+}
+
+void RefreshSemanticIntegrationSurfaceAfterBodyValidation(
+    const Objc3ParsedProgram &program,
+    Objc3SemanticIntegrationSurface &surface) {
+  const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  surface.block_copy_dispose_sites_lexicographic =
+      BuildBlockCopyDisposeSiteMetadataLexicographic(ast);
+  surface.block_copy_dispose_semantics_summary =
+      BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface(surface);
 }

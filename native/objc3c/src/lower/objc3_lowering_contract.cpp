@@ -2252,6 +2252,10 @@ bool IsValidObjc3BlockCopyDisposeLoweringContract(
   // copy/dispose helper intent is now driven by truthful mutable/byref
   // capture counts rather than by the older synthetic all-captures-need-
   // helpers model.
+  // M261-B003 byref/copy-dispose/object-ownership anchor: helper eligibility
+  // may now be promoted by owned object captures even when byref slot totals remain zero,
+  // so this contract intentionally avoids pinning helper counts directly to
+  // byref totals.
   if (contract.copy_helper_required_sites > contract.block_literal_sites ||
       contract.dispose_helper_required_sites > contract.block_literal_sites ||
       contract.profile_normalized_sites > contract.block_literal_sites ||
