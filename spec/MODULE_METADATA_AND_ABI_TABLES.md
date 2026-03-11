@@ -8268,3 +8268,23 @@ object ownership claim.
 - truthful boundary
   - no new runtime metadata ABI family lands here
   - `M260-A002` is the next implementation issue
+
+`M260-A002` widens the emitted property descriptor payload so runtime-backed
+property/member ownership facts are present in the object artifact itself.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1`
+- widened emitted property-descriptor fields
+  - `property_attribute_profile`
+  - `ownership_lifetime_profile`
+  - `ownership_runtime_hook_profile`
+  - `accessor_ownership_profile`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.obj`
+- truthful boundary
+  - ownership surface is now emitted in runtime-facing property descriptors
+  - live ARC retain/release/autorelease runtime semantics still do not land
+    here
+  - `M260-B001` is the next issue

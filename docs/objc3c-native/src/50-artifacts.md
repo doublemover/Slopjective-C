@@ -5102,6 +5102,30 @@ current runtime-backed object slice.
   - live ARC retain/release/autorelease runtime semantics do not land here
   - executable function/method ownership qualifiers remain fail-closed outside
     the runnable slice
+
+## M260 runtime-backed object ownership attribute surface (A002)
+
+`M260-A002` turns the frozen ownership source surface into emitted
+runtime-backed property/member metadata that later runtime lanes can consume
+without rediscovering ownership out of source text or manifests.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1`
+- canonical proof fixture
+  - `tests/tooling/fixtures/native/m260_runtime_backed_object_ownership_attribute_surface_positive.objc3`
+- emitted ownership-bearing property fields
+  - `property_attribute_profile`
+  - `ownership_lifetime_profile`
+  - `ownership_runtime_hook_profile`
+  - `accessor_ownership_profile`
+- truthful boundary
+  - emitted property descriptors now carry the ownership surface the runtime
+    will consume for runtime-backed properties and members
+  - live ARC retain/release/autorelease runtime semantics still do not land
+    here
+  - executable function/method ownership qualifiers remain fail-closed outside
+    the runnable slice
+  - `M260-B001` is the next issue
   - `@autoreleasepool` remains outside the runnable slice
   - `M260-A002` is the next implementation issue
 

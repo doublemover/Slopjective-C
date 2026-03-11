@@ -519,6 +519,27 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimePropertyMetadataReflectionFailClosedModel =
         "no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout";
+// M260-A002 runtime-backed object ownership attribute surface anchor: lane-A
+// upgrades the frozen ownership boundary into an emitted property/member
+// metadata capability by carrying sema-approved property attribute,
+// lifetime/runtime-hook, and accessor ownership profiles directly in the
+// runtime-facing property descriptor payload rather than leaving them manifest-
+// only evidence.
+inline constexpr const char
+    *kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId =
+        "objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1";
+inline constexpr const char
+    *kObjc3RuntimeBackedObjectOwnershipAttributeSourceModel =
+        "runtime-backed-property-source-surface-publishes-attribute-lifetime-hook-and-accessor-ownership-profiles";
+inline constexpr const char
+    *kObjc3RuntimeBackedObjectOwnershipAttributeDescriptorModel =
+        "emitted-property-descriptor-records-carry-attribute-lifetime-hook-and-accessor-ownership-strings";
+inline constexpr const char
+    *kObjc3RuntimeBackedObjectOwnershipAttributeRuntimeModel =
+        "runtime-backed-property-metadata-consumes-emitted-ownership-strings-without-source-rediscovery";
+inline constexpr const char
+    *kObjc3RuntimeBackedObjectOwnershipAttributeFailClosedModel =
+        "no-manifest-only-ownership-proof-no-source-recovery-no-live-arc-hook-emission-yet";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1524,6 +1545,7 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary();
 std::string Objc3RuntimePropertyLayoutConsumptionSummary();
 std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary();
 std::string Objc3RuntimePropertyMetadataReflectionSummary();
+std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

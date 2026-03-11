@@ -1,0 +1,21 @@
+module ownership_surface_probe;
+
+@interface Box
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (nonatomic, copy, getter=tokenValue, setter=setTokenValue:) id token;
+@property (nonatomic, getter=weakValue, setter=setWeakValue:, weak) id weakValue;
+@property (assign, getter=borrowedValue, setter=setBorrowedValue:) id borrowedValue;
+@property (assign, getter=countValue, setter=setCountValue:) i32 count;
+@end
+
+@implementation Box
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (nonatomic, copy, getter=tokenValue, setter=setTokenValue:) id token;
+@property (nonatomic, getter=weakValue, setter=setWeakValue:, weak) id weakValue;
+@property (assign, getter=borrowedValue, setter=setBorrowedValue:) id borrowedValue;
+@property (assign, getter=countValue, setter=setCountValue:) i32 count;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

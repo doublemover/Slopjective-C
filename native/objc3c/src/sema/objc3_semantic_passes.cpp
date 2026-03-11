@@ -12317,6 +12317,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
           source.executable_synthesized_binding_symbol;
+      // M260-A002 runtime-backed ownership attribute surface anchor: sema
+      // remains the sole authority for property/member ownership profiles.
+      // Lowering and runtime-facing metadata must consume these already
+      // normalized attribute/lifetime/hook/accessor strings directly rather
+      // than reconstructing ownership out of source text or manifests.
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
       // M257-C003 synthesized accessor/property lowering anchor: sema remains
@@ -12640,6 +12645,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
           source.executable_synthesized_binding_symbol;
+      // M260-A002 runtime-backed ownership attribute surface anchor: the
+      // implementation-side property handoff preserves the same ownership
+      // profiles so emitted runtime-backed descriptors can stay synchronized
+      // across interface/implementation pairs without reinterpreting source.
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
       property_metadata.effective_getter_selector =

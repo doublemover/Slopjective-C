@@ -675,6 +675,26 @@ std::string Objc3RuntimePropertyMetadataReflectionSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary() {
+  std::ostringstream out;
+  // M260-A002 runtime-backed object ownership attribute surface anchor:
+  // ownership-bearing property/member facts stop being manifest-only evidence
+  // by flowing into the emitted property descriptor payload that the runtime
+  // already consumes for property realization and reflection.
+  out << "contract="
+      << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+      << ";source_model="
+      << kObjc3RuntimeBackedObjectOwnershipAttributeSourceModel
+      << ";descriptor_model="
+      << kObjc3RuntimeBackedObjectOwnershipAttributeDescriptorModel
+      << ";runtime_model="
+      << kObjc3RuntimeBackedObjectOwnershipAttributeRuntimeModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeBackedObjectOwnershipAttributeFailClosedModel
+      << ";non_goals=no-live-arc-hook-emission-no-source-recovery";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

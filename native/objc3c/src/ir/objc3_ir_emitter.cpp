@@ -348,6 +348,46 @@ class Objc3IREmitter {
           << frontend_metadata_.executable_synthesized_binding_entries
           << ";ivar_layout_entries="
           << frontend_metadata_.executable_ivar_layout_entries << "\n";
+      std::size_t ownership_lifetime_profile_entries = 0u;
+      std::size_t ownership_runtime_hook_profile_entries = 0u;
+      std::size_t runtime_backed_ownership_surface_entries = 0u;
+      for (const auto &bundle :
+           frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
+        const bool carries_runtime_backed_ownership_surface =
+            !bundle.property_attribute_profile.empty() ||
+            !bundle.ownership_lifetime_profile.empty() ||
+            !bundle.ownership_runtime_hook_profile.empty() ||
+            !bundle.accessor_ownership_profile.empty();
+        if (carries_runtime_backed_ownership_surface) {
+          ++runtime_backed_ownership_surface_entries;
+        }
+        if (!bundle.ownership_lifetime_profile.empty()) {
+          ++ownership_lifetime_profile_entries;
+        }
+        if (!bundle.ownership_runtime_hook_profile.empty()) {
+          ++ownership_runtime_hook_profile_entries;
+        }
+      }
+      // M260-A002 runtime-backed object ownership attribute surface anchor:
+      // ownership-bearing property/member profiles now survive the IR/object
+      // lowering boundary in emitted descriptor payloads instead of being
+      // observable only through manifests and replay summaries.
+      out << "; runtime_backed_object_ownership_attribute_surface = "
+          << Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary()
+          << ";property_descriptor_entries="
+          << frontend_metadata_.runtime_metadata_property_bundles_lexicographic
+                 .size()
+          << ";runtime_backed_surface_entries="
+          << runtime_backed_ownership_surface_entries
+          << ";property_attribute_profiles="
+          << frontend_metadata_.executable_property_attribute_profile_entries
+          << ";ownership_lifetime_profiles="
+          << ownership_lifetime_profile_entries
+          << ";ownership_runtime_hook_profiles="
+          << ownership_runtime_hook_profile_entries
+          << ";accessor_ownership_profiles="
+          << frontend_metadata_.executable_accessor_ownership_profile_entries
+          << "\n";
       if (frontend_metadata_.executable_ivar_layout_emission_ready) {
         // M257-C002 ivar offset/layout emission anchor: lane-C now materializes
         // real retained offset globals and per-owner layout tables inside the
@@ -6220,6 +6260,30 @@ class Objc3IREmitter {
                     : BuildRuntimeMetadataAuxiliarySymbol(
                           layout_policy.descriptor_symbol_prefix, family.kind,
                           "ivar_layout", i);
+            const std::string property_attribute_profile_symbol =
+                bundle.property_attribute_profile.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "property_attribute_profile", i);
+            const std::string ownership_lifetime_profile_symbol =
+                bundle.ownership_lifetime_profile.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "ownership_lifetime_profile", i);
+            const std::string ownership_runtime_hook_profile_symbol =
+                bundle.ownership_runtime_hook_profile.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "ownership_runtime_hook_profile", i);
+            const std::string accessor_ownership_profile_symbol =
+                bundle.accessor_ownership_profile.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "accessor_ownership_profile", i);
             std::string getter_implementation_symbol = "null";
             std::string setter_implementation_symbol = "null";
             descriptor_symbols.push_back(descriptor_symbol);
@@ -6304,6 +6368,43 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
+            if (!bundle.property_attribute_profile.empty()) {
+              out << property_attribute_profile_symbol
+                  << " = private constant ["
+                  << (bundle.property_attribute_profile.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.property_attribute_profile)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (!bundle.ownership_lifetime_profile.empty()) {
+              out << ownership_lifetime_profile_symbol
+                  << " = private constant ["
+                  << (bundle.ownership_lifetime_profile.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.ownership_lifetime_profile)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (!bundle.ownership_runtime_hook_profile.empty()) {
+              out << ownership_runtime_hook_profile_symbol
+                  << " = private constant ["
+                  << (bundle.ownership_runtime_hook_profile.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(
+                         bundle.ownership_runtime_hook_profile)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
+            if (!bundle.accessor_ownership_profile.empty()) {
+              out << accessor_ownership_profile_symbol
+                  << " = private constant ["
+                  << (bundle.accessor_ownership_profile.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(bundle.accessor_ownership_profile)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
             if (IsImplementationOwnedPropertyBundle(bundle)) {
               const auto getter_implementation_it =
                   implementation_method_symbols_by_owner_identity.find(
@@ -6339,7 +6440,7 @@ class Objc3IREmitter {
             }
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i1, i1, i1 } "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i1, i1, i1 } "
                    "{ ptr "
                 << property_name_symbol << ", ptr " << type_name_symbol
                 << ", ptr " << owner_identity_symbol << ", ptr "
@@ -6350,6 +6451,10 @@ class Objc3IREmitter {
                 << effective_setter_symbol << ", ptr " << ivar_binding_symbol
                 << ", ptr " << synthesized_binding_symbol << ", ptr "
                 << ivar_layout_symbol << ", ptr "
+                << property_attribute_profile_symbol << ", ptr "
+                << ownership_lifetime_profile_symbol << ", ptr "
+                << ownership_runtime_hook_profile_symbol << ", ptr "
+                << accessor_ownership_profile_symbol << ", ptr "
                 << getter_implementation_symbol << ", ptr "
                 << setter_implementation_symbol << ", i64 "
                 << bundle.executable_ivar_layout_slot_index << ", i64 "

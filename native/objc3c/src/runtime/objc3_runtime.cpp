@@ -207,6 +207,10 @@ struct EmittedPropertyDescriptor {
   const char *ivar_binding_symbol;
   const char *synthesized_binding_symbol;
   const char *ivar_layout_symbol;
+  const char *property_attribute_profile;
+  const char *ownership_lifetime_profile;
+  const char *ownership_runtime_hook_profile;
+  const char *accessor_ownership_profile;
   const void *getter_implementation;
   const void *setter_implementation;
   std::uint64_t ivar_layout_slot_index;
@@ -2946,6 +2950,10 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->ivar_binding_symbol = nullptr;
   snapshot->synthesized_binding_symbol = nullptr;
   snapshot->ivar_layout_symbol = nullptr;
+  snapshot->property_attribute_profile = nullptr;
+  snapshot->ownership_lifetime_profile = nullptr;
+  snapshot->ownership_runtime_hook_profile = nullptr;
+  snapshot->accessor_ownership_profile = nullptr;
   snapshot->getter_owner_identity = nullptr;
   snapshot->setter_owner_identity = nullptr;
 
@@ -3049,6 +3057,22 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->ivar_layout_symbol =
       descriptor.ivar_layout_symbol != nullptr ? descriptor.ivar_layout_symbol
                                                : nullptr;
+  snapshot->property_attribute_profile =
+      descriptor.property_attribute_profile != nullptr
+          ? descriptor.property_attribute_profile
+          : nullptr;
+  snapshot->ownership_lifetime_profile =
+      descriptor.ownership_lifetime_profile != nullptr
+          ? descriptor.ownership_lifetime_profile
+          : nullptr;
+  snapshot->ownership_runtime_hook_profile =
+      descriptor.ownership_runtime_hook_profile != nullptr
+          ? descriptor.ownership_runtime_hook_profile
+          : nullptr;
+  snapshot->accessor_ownership_profile =
+      descriptor.accessor_ownership_profile != nullptr
+          ? descriptor.accessor_ownership_profile
+          : nullptr;
   snapshot->getter_owner_identity =
       StableCString(accessor->getter_owner_identity);
   snapshot->setter_owner_identity =

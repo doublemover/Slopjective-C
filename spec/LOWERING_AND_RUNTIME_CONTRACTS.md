@@ -7331,3 +7331,23 @@ object-model slice.
   - no `@autoreleasepool` runnable support
 - truthful boundary
   - `M260-A002` is the next implementation issue
+
+## M260 runtime-backed object ownership attribute surface (A002)
+
+`M260-A002` upgrades the frozen runtime-backed ownership boundary into an
+emitted metadata capability for properties and members.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1`
+- source model
+  `runtime-backed-property-source-surface-publishes-attribute-lifetime-hook-and-accessor-ownership-profiles`
+- descriptor model
+  `emitted-property-descriptor-records-carry-attribute-lifetime-hook-and-accessor-ownership-strings`
+- runtime model
+  `runtime-backed-property-metadata-consumes-emitted-ownership-strings-without-source-rediscovery`
+- failure model
+  `no-manifest-only-ownership-proof-no-source-recovery-no-live-arc-hook-emission-yet`
+- truthful boundary
+  - this issue is about emitted property/member ownership surface only
+  - live ARC retain/release/autorelease runtime hook emission remains deferred
+  - `M260-B001` is the next issue

@@ -8166,6 +8166,26 @@ object-model slice.
   - no `@autoreleasepool` runnable support
 - truthful boundary
   - `M260-A002` is the next implementation issue
+
+## M260 runtime-backed object ownership attribute surface (A002)
+
+`M260-A002` upgrades the frozen runtime-backed ownership boundary into an
+emitted metadata capability for properties and members.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1`
+- source model
+  `runtime-backed-property-source-surface-publishes-attribute-lifetime-hook-and-accessor-ownership-profiles`
+- descriptor model
+  `emitted-property-descriptor-records-carry-attribute-lifetime-hook-and-accessor-ownership-strings`
+- runtime model
+  `runtime-backed-property-metadata-consumes-emitted-ownership-strings-without-source-rediscovery`
+- failure model
+  `no-manifest-only-ownership-proof-no-source-recovery-no-live-arc-hook-emission-yet`
+- truthful boundary
+  - this issue is about emitted property/member ownership surface only
+  - live ARC retain/release/autorelease runtime hook emission remains deferred
+  - `M260-B001` is the next issue
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -16441,6 +16461,26 @@ object ownership claim.
 - truthful boundary
   - no new runtime metadata ABI family lands here
   - `M260-A002` is the next implementation issue
+
+`M260-A002` widens the emitted property descriptor payload so runtime-backed
+property/member ownership facts are present in the object artifact itself.
+
+- contract id
+  `objc3c-runtime-backed-object-ownership-attribute-surface/m260-a002-v1`
+- widened emitted property-descriptor fields
+  - `property_attribute_profile`
+  - `ownership_lifetime_profile`
+  - `ownership_runtime_hook_profile`
+  - `accessor_ownership_profile`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m260/a002/positive/module.obj`
+- truthful boundary
+  - ownership surface is now emitted in runtime-facing property descriptors
+  - live ARC retain/release/autorelease runtime semantics still do not land
+    here
+  - `M260-B001` is the next issue
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---

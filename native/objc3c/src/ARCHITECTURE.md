@@ -9670,3 +9670,19 @@ the runnable object-model slice:
 - live ARC retain/release/autorelease runtime semantics do not land until the
   later `M260` implementation issues
 - the next implementation issue is `M260-A002`
+
+## M260 Runtime-Backed Object Ownership Attribute Surface (A002)
+
+`M260-A002` widens the emitted runtime-backed property descriptor surface so
+the runtime-facing artifact carries the ownership facts sema already computes.
+
+- sema remains the single authority for property/member ownership attribute,
+  lifetime, runtime-hook, and accessor ownership profiles
+- IR/object emission now serializes those ownership-bearing strings directly
+  into emitted property descriptors instead of leaving them manifest-only
+  evidence
+- runtime property metadata queries can consume the widened descriptor payload
+  without rediscovering ownership from source text
+- live ARC retain/release/autorelease hook emission still waits for later
+  `M260` lowering/runtime issues
+- the next issue is `M260-B001`

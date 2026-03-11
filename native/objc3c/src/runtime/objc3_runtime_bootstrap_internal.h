@@ -191,6 +191,10 @@ typedef struct objc3_runtime_property_entry_snapshot {
   const char *ivar_binding_symbol;
   const char *synthesized_binding_symbol;
   const char *ivar_layout_symbol;
+  const char *property_attribute_profile;
+  const char *ownership_lifetime_profile;
+  const char *ownership_runtime_hook_profile;
+  const char *accessor_ownership_profile;
   const char *getter_owner_identity;
   const char *setter_owner_identity;
 } objc3_runtime_property_entry_snapshot;
