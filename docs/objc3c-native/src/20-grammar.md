@@ -1160,6 +1160,46 @@ Recommended M261 lane-C implementation check:
 - `python scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
 - `M261-C003` is the next issue.
 
+## M261 byref-cell, copy-helper, and dispose-helper lowering (M261-C003)
+
+`M261-C003` expands the runnable `M261-C002` block-lowering slice to admit
+local byref mutation plus ownership-sensitive captures through emitted stack
+byref cells and emitted helper bodies.
+
+- contract id
+  `objc3c-executable-block-byref-helper-lowering/m261-c003-v1`
+
+Current runnable slice:
+
+- supported positive path:
+  - one local block literal bound to a local name
+  - up to four parameters
+  - readonly scalar captures
+  - local byref mutation through emitted byref-cell storage
+  - owned object captures through emitted copy/dispose helpers
+  - weak and unowned object captures through emitted pointer-capture storage
+- emitted/native proof details:
+  - the native IR boundary now also carries
+    `; executable_block_byref_helper_lowering = ...`.
+  - manifest lowering surfaces now publish deterministic byref layout symbols
+    for the runnable local byref slice.
+  - native compile/link/run now succeeds for:
+    - `m261_executable_block_object_invoke_thunk_positive.objc3` with exit `15`
+    - `m261_byref_cell_copy_dispose_runtime_positive.objc3` with exit `14`
+    - `m261_owned_object_capture_runtime_positive.objc3` with exit `11`
+    - `m261_nonowning_object_capture_runtime_positive.objc3` with exit `9`
+  - byref/object helper lowering keeps the object backend on `llvm-direct`.
+- explicitly deferred to `M261-C004`:
+  - escaping block heap-promotion/runtime hook lowering
+  - first-class escaping block values
+  - runtime-managed block copy/allocation semantics outside the local
+    nonescaping slice
+
+Recommended M261 lane-C implementation check:
+
+- `python scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
+- `M261-C004` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

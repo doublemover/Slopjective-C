@@ -762,26 +762,25 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context);
 
-static bool BlockLiteralUsesRunnableC002Subset(const Expr &expr) {
-  // M261-C002 executable-block-object/invoke-thunk anchor: the first runnable
-  // native block slice is intentionally narrow. Local block bindings may emit
-  // stack storage and one invoke thunk only when captures are readonly scalar
-  // values and no byref/helper/ownership-sensitive runtime machinery is
-  // needed.
+static bool BlockLiteralUsesRunnableC003Subset(const Expr &expr) {
+  // M261-C003 byref-cell/copy-helper/dispose-helper anchor: the runnable block
+  // slice now admits non-escaping byref and ownership-sensitive captures at the
+  // unsupported-feature gate as soon as the source model is normalized. The
+  // gate intentionally remains parser/source-truth driven so later sema and
+  // lowering passes can consume the real byref/helper lowering path without
+  // depending on post-sema runtime counters. Heap-promotion remains deferred
+  // to later lowering/runtime checks instead of this source admission step.
   return expr.block_literal_is_normalized &&
          expr.block_source_model_is_normalized &&
          expr.block_parameter_count <= 4u &&
-         expr.block_byref_capture_count == 0u &&
-         expr.block_mutated_capture_count == 0u &&
-         expr.block_storage_byref_slot_count == 0u &&
-         !expr.block_storage_requires_byref_cells &&
-         !expr.block_copy_helper_required &&
-         !expr.block_dispose_helper_required &&
-         !expr.block_runtime_copy_helper_required &&
-         !expr.block_runtime_dispose_helper_required &&
-         expr.block_runtime_owned_object_capture_count == 0u &&
-         expr.block_runtime_weak_object_capture_count == 0u &&
-         expr.block_runtime_unowned_object_capture_count == 0u;
+         expr.block_source_storage_annotations_are_normalized;
+}
+
+static bool BlockLiteralUsesRunnableC002Subset(const Expr &expr) {
+  // M261-C002 executable-block-object/invoke-thunk anchor: preserve the
+  // original runnable-block gate name as a compatibility surface for the C002
+  // readiness contract while C003 widens the admitted non-escaping subset.
+  return BlockLiteralUsesRunnableC003Subset(expr);
 }
 
 static bool ExprContainsBlockLiteral(const Expr *expr);
@@ -1132,6 +1131,155 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
   }
 }
 
+static bool ExprContainsRunnableBlockLiteral(const Expr *expr) {
+  if (expr == nullptr) {
+    return false;
+  }
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    return BlockLiteralUsesRunnableC002Subset(*expr);
+  }
+  if (ExprContainsRunnableBlockLiteral(expr->left.get()) ||
+      ExprContainsRunnableBlockLiteral(expr->right.get()) ||
+      ExprContainsRunnableBlockLiteral(expr->third.get()) ||
+      ExprContainsRunnableBlockLiteral(expr->receiver.get())) {
+    return true;
+  }
+  for (const auto &arg : expr->args) {
+    if (ExprContainsRunnableBlockLiteral(arg.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool StmtContainsRunnableBlockLiteral(const Stmt *stmt) {
+  if (stmt == nullptr) {
+    return false;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    return stmt->let_stmt != nullptr &&
+           ExprContainsRunnableBlockLiteral(stmt->let_stmt->value.get());
+  case Stmt::Kind::Assign:
+    return stmt->assign_stmt != nullptr &&
+           ExprContainsRunnableBlockLiteral(stmt->assign_stmt->value.get());
+  case Stmt::Kind::Return:
+    return stmt->return_stmt != nullptr &&
+           ExprContainsRunnableBlockLiteral(stmt->return_stmt->value.get());
+  case Stmt::Kind::Expr:
+    return stmt->expr_stmt != nullptr &&
+           ExprContainsRunnableBlockLiteral(stmt->expr_stmt->value.get());
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(stmt->if_stmt->condition.get())) {
+      return true;
+    }
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      if (StmtContainsRunnableBlockLiteral(then_stmt.get())) {
+        return true;
+      }
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      if (StmtContainsRunnableBlockLiteral(else_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(
+            stmt->do_while_stmt->condition.get())) {
+      return true;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(stmt->for_stmt->condition.get()) ||
+        ExprContainsRunnableBlockLiteral(stmt->for_stmt->init.value.get()) ||
+        ExprContainsRunnableBlockLiteral(stmt->for_stmt->step.value.get())) {
+      return true;
+    }
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(stmt->switch_stmt->condition.get())) {
+      return true;
+    }
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &body_stmt : switch_case.body) {
+        if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return false;
+    }
+    if (ExprContainsRunnableBlockLiteral(stmt->while_stmt->condition.get())) {
+      return true;
+    }
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt == nullptr) {
+      return false;
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      if (StmtContainsRunnableBlockLiteral(body_stmt.get())) {
+        return true;
+      }
+    }
+    return false;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return false;
+  }
+  return false;
+}
+
+static bool FunctionBodyContainsRunnableBlockLiteral(const FunctionDecl &fn) {
+  for (const auto &stmt : fn.body) {
+    if (StmtContainsRunnableBlockLiteral(stmt.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool MethodBodyContainsRunnableBlockLiteral(const Objc3MethodDecl &method) {
+  for (const auto &stmt : method.body) {
+    if (StmtContainsRunnableBlockLiteral(stmt.get())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static void DiagnoseUnsupportedFunctionFeatureClaims(
     const FunctionDecl &fn,
     std::vector<std::string> &diagnostics,
@@ -1162,11 +1310,14 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   const bool allow_source_only_block_owned_bindings =
       context.allow_source_only_block_literals &&
       FunctionBodyContainsBlockLiteral(fn);
+  const bool allow_runnable_block_owned_bindings =
+      FunctionBodyContainsRunnableBlockLiteral(fn);
   for (const auto &param : fn.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
-    if (allow_source_only_block_owned_bindings) {
+    if (allow_source_only_block_owned_bindings ||
+        allow_runnable_block_owned_bindings) {
       // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -1182,7 +1333,8 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
         stats);
   }
   if (fn.has_return_ownership_qualifier &&
-      !allow_source_only_block_owned_bindings) {
+      !allow_source_only_block_owned_bindings &&
+      !allow_runnable_block_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -1226,11 +1378,14 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   const bool allow_source_only_block_owned_bindings =
       context.allow_source_only_block_literals &&
       MethodBodyContainsBlockLiteral(method);
+  const bool allow_runnable_block_owned_bindings =
+      MethodBodyContainsRunnableBlockLiteral(method);
   for (const auto &param : method.params) {
     if (!param.has_ownership_qualifier) {
       continue;
     }
-    if (allow_source_only_block_owned_bindings) {
+    if (allow_source_only_block_owned_bindings ||
+        allow_runnable_block_owned_bindings) {
       // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
@@ -1246,7 +1401,8 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
         stats);
   }
   if (method.has_return_ownership_qualifier &&
-      !allow_source_only_block_owned_bindings) {
+      !allow_source_only_block_owned_bindings &&
+      !allow_runnable_block_owned_bindings) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.arc_source_rejection_site_count,
         OwnershipQualifierLine(
@@ -3343,10 +3499,28 @@ static void ValidateBlockLiteralCaptureLegality(
   mutable_expr->block_runtime_owned_object_capture_count = 0;
   mutable_expr->block_runtime_weak_object_capture_count = 0;
   mutable_expr->block_runtime_unowned_object_capture_count = 0;
+  mutable_expr->block_runtime_owned_object_capture_names_lexicographic.clear();
+  mutable_expr->block_runtime_weak_object_capture_names_lexicographic.clear();
+  mutable_expr->block_runtime_unowned_object_capture_names_lexicographic.clear();
+  mutable_expr->block_storage_mutable_capture_count = expr->block_mutated_capture_count;
+  mutable_expr->block_storage_byref_slot_count = expr->block_byref_capture_count;
+  mutable_expr->block_storage_requires_byref_cells =
+      expr->block_byref_capture_count > 0u;
+  mutable_expr->block_storage_escape_analysis_enabled = true;
+  mutable_expr->block_storage_escape_to_heap = false;
   mutable_expr->block_runtime_copy_helper_required = false;
   mutable_expr->block_runtime_dispose_helper_required = false;
   mutable_expr->block_runtime_capture_ownership_is_normalized = false;
   mutable_expr->block_runtime_capture_ownership_profile.clear();
+  mutable_expr->block_storage_escape_profile_is_normalized =
+      expr->block_source_storage_annotations_are_normalized;
+  mutable_expr->block_copy_dispose_profile_is_normalized =
+      expr->block_source_storage_annotations_are_normalized;
+  mutable_expr->block_storage_escape_profile.clear();
+  mutable_expr->block_storage_byref_layout_symbol.clear();
+  mutable_expr->block_copy_dispose_profile.clear();
+  mutable_expr->block_copy_helper_symbol.clear();
+  mutable_expr->block_dispose_helper_symbol.clear();
 
   if (expr->block_parameter_types_source_order.size() != expr->block_parameter_count) {
     diagnostics.push_back(
@@ -3429,10 +3603,16 @@ static void ValidateBlockLiteralCaptureLegality(
 
     if (IsOwnedObjCReferenceSemanticType(resolved_type)) {
       ++owned_object_capture_count;
+      mutable_expr->block_runtime_owned_object_capture_names_lexicographic
+          .push_back(capture_name);
     } else if (IsWeakObjCReferenceSemanticType(resolved_type)) {
       ++weak_object_capture_count;
+      mutable_expr->block_runtime_weak_object_capture_names_lexicographic
+          .push_back(capture_name);
     } else if (IsUnownedObjCReferenceSemanticType(resolved_type)) {
       ++unowned_object_capture_count;
+      mutable_expr->block_runtime_unowned_object_capture_names_lexicographic
+          .push_back(capture_name);
     }
 
     if (mutated_names.count(capture_name) != 0u &&
@@ -3464,10 +3644,22 @@ static void ValidateBlockLiteralCaptureLegality(
       expr->block_mutated_capture_names_lexicographic.size() ==
           expr->block_mutated_capture_count &&
       expr->block_byref_capture_names_lexicographic.size() ==
-          expr->block_byref_capture_count &&
+      expr->block_byref_capture_count &&
       IsSortedUniqueStrings(expr->block_capture_names_lexicographic) &&
       IsSortedUniqueStrings(expr->block_mutated_capture_names_lexicographic) &&
       IsSortedUniqueStrings(expr->block_byref_capture_names_lexicographic) &&
+      expr->block_runtime_owned_object_capture_names_lexicographic.size() ==
+          owned_object_capture_count &&
+      expr->block_runtime_weak_object_capture_names_lexicographic.size() ==
+          weak_object_capture_count &&
+      expr->block_runtime_unowned_object_capture_names_lexicographic.size() ==
+          unowned_object_capture_count &&
+      IsSortedUniqueStrings(
+          expr->block_runtime_owned_object_capture_names_lexicographic) &&
+      IsSortedUniqueStrings(
+          expr->block_runtime_weak_object_capture_names_lexicographic) &&
+      IsSortedUniqueStrings(
+          expr->block_runtime_unowned_object_capture_names_lexicographic) &&
       expr->block_source_storage_annotations_are_normalized;
   std::ostringstream ownership_profile;
   // M261-B003 byref/copy-dispose/object-ownership anchor: sema upgrades the
@@ -3484,6 +3676,68 @@ static void ValidateBlockLiteralCaptureLegality(
                     << (runtime_copy_dispose_required ? "enabled" : "elided");
   mutable_expr->block_runtime_capture_ownership_profile =
       ownership_profile.str();
+
+  std::ostringstream storage_escape_profile;
+  storage_escape_profile << "block-storage:mutable-captures="
+                         << mutable_expr->block_storage_mutable_capture_count
+                         << ";byref-slots="
+                         << mutable_expr->block_storage_byref_slot_count
+                         << ";escape="
+                         << (mutable_expr->block_storage_escape_to_heap ? "heap"
+                                                                        : "stack")
+                         << ";body-statements="
+                         << expr->block_body_statement_count;
+  mutable_expr->block_storage_escape_profile = storage_escape_profile.str();
+  if (mutable_expr->block_storage_requires_byref_cells) {
+    std::ostringstream byref_layout_symbol;
+    byref_layout_symbol << "__objc3_block_byref_layout_" << expr->line << "_"
+                        << expr->column << "_m"
+                        << mutable_expr->block_storage_mutable_capture_count
+                        << "_b" << mutable_expr->block_storage_byref_slot_count
+                        << "_"
+                        << (mutable_expr->block_storage_escape_to_heap ? "heap"
+                                                                      : "stack");
+    mutable_expr->block_storage_byref_layout_symbol =
+        byref_layout_symbol.str();
+  }
+
+  std::ostringstream copy_dispose_profile;
+  copy_dispose_profile << mutable_expr->block_runtime_capture_ownership_profile
+                       << ";block-copy-dispose:copy-helper="
+                       << (mutable_expr->block_runtime_copy_helper_required
+                               ? "enabled"
+                               : "elided")
+                       << ";dispose-helper="
+                       << (mutable_expr->block_runtime_dispose_helper_required
+                               ? "enabled"
+                               : "elided")
+                       << ";escape="
+                       << (mutable_expr->block_storage_escape_to_heap ? "heap"
+                                                                      : "stack")
+                       << ";body-statements=" << expr->block_body_statement_count;
+  mutable_expr->block_copy_dispose_profile = copy_dispose_profile.str();
+  if (mutable_expr->block_runtime_copy_helper_required) {
+    std::ostringstream copy_helper_symbol;
+    copy_helper_symbol << "__objc3_block_copy_helper_" << expr->line << "_"
+                       << expr->column << "_m"
+                       << mutable_expr->block_storage_mutable_capture_count
+                       << "_b" << mutable_expr->block_storage_byref_slot_count
+                       << "_"
+                       << (mutable_expr->block_storage_escape_to_heap ? "heap"
+                                                                     : "stack");
+    mutable_expr->block_copy_helper_symbol = copy_helper_symbol.str();
+  }
+  if (mutable_expr->block_runtime_dispose_helper_required) {
+    std::ostringstream dispose_helper_symbol;
+    dispose_helper_symbol << "__objc3_block_dispose_helper_" << expr->line
+                          << "_" << expr->column << "_m"
+                          << mutable_expr->block_storage_mutable_capture_count
+                          << "_b" << mutable_expr->block_storage_byref_slot_count
+                          << "_"
+                          << (mutable_expr->block_storage_escape_to_heap ? "heap"
+                                                                        : "stack");
+    mutable_expr->block_dispose_helper_symbol = dispose_helper_symbol.str();
+  }
 }
 
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,

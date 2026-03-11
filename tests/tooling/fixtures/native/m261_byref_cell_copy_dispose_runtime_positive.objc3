@@ -1,0 +1,11 @@
+module m261_byref_cell_copy_dispose_runtime_positive;
+
+fn main() -> i32 {
+  let seed = 7;
+  let delta = 2;
+  let closure = ^(i32 value) {
+    seed = seed + delta;
+    return seed + value;
+  };
+  return closure(5);
+}

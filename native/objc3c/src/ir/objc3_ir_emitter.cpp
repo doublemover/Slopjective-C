@@ -244,6 +244,8 @@ class Objc3IREmitter {
     fail_open_fallback_reason_.clear();
     block_function_definitions_.clear();
     emitted_block_invoke_symbols_.clear();
+    emitted_block_copy_helper_symbols_.clear();
+    emitted_block_dispose_helper_symbols_.clear();
 
     if (!boundary_error_.empty()) {
       error = boundary_error_;
@@ -1342,7 +1344,9 @@ class Objc3IREmitter {
           << synthesized_property_storages_.size() << "\n";
     }
     if (synthesized_property_accessor_count_ > 0u ||
-        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u) {
+        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
+        frontend_metadata_.block_copy_dispose_lowering_copy_helper_required_sites > 0u ||
+        frontend_metadata_.block_copy_dispose_lowering_dispose_helper_required_sites > 0u) {
       // M260-D002 runtime memory-management implementation anchor: emitted IR
       // now carries the private autoreleasepool push/pop runtime surface and
       // the live refcount/weak/autoreleasepool execution model that native mode
@@ -1415,6 +1419,12 @@ class Objc3IREmitter {
     // cases remain explicitly deferred to C003.
     out << "; executable_block_object_invoke_thunk_lowering = "
         << Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() << "\n";
+    // M261-C003 byref-cell/copy-helper/dispose-helper anchor: native lowering
+    // now widens the runnable block slice to non-escaping byref and owned
+    // capture cases through stack helper emission and helper call sites, while
+    // escaping heap promotion remains deferred to later M261 issues.
+    out << "; executable_block_byref_helper_lowering = "
+        << Objc3ExecutableBlockByrefHelperLoweringSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2221,11 +2231,17 @@ class Objc3IREmitter {
     const Expr *literal = nullptr;
   };
 
+  struct PendingBlockDisposeCall {
+    std::string helper_symbol;
+    std::string storage_ptr;
+  };
+
   struct FunctionContext {
     std::vector<std::string> entry_lines;
     std::vector<std::string> code_lines;
     std::vector<std::unordered_map<std::string, std::string>> scopes;
     std::unordered_map<std::string, BlockBinding> block_bindings;
+    std::vector<PendingBlockDisposeCall> pending_block_dispose_calls;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
     std::unordered_set<std::string> nil_bound_ptrs;
@@ -7992,10 +8008,33 @@ class Objc3IREmitter {
     return value_it->second;
   }
 
+  static bool SortedStringListContains(const std::vector<std::string> &entries,
+                                       const std::string &needle) {
+    return std::binary_search(entries.begin(), entries.end(), needle);
+  }
+
+  static bool BlockLiteralUsesPointerCaptureStorage(const Expr &expr) {
+    return expr.block_storage_byref_slot_count > 0u ||
+           expr.block_runtime_owned_object_capture_count > 0u ||
+           expr.block_runtime_weak_object_capture_count > 0u ||
+           expr.block_runtime_unowned_object_capture_count > 0u ||
+           expr.block_runtime_copy_helper_required ||
+           expr.block_runtime_dispose_helper_required;
+  }
+
   static std::string BuildBlockStorageType(const Expr &expr) {
     std::ostringstream out;
-    out << "{ ptr, [" << static_cast<unsigned long long>(expr.block_capture_names_lexicographic.size())
-        << " x i32] }";
+    if (!BlockLiteralUsesPointerCaptureStorage(expr)) {
+      out << "{ ptr, ["
+          << static_cast<unsigned long long>(
+                 expr.block_capture_names_lexicographic.size())
+          << " x i32] }";
+      return out.str();
+    }
+    out << "{ ptr, ptr, ptr, ["
+        << static_cast<unsigned long long>(
+               expr.block_capture_names_lexicographic.size())
+        << " x ptr] }";
     return out.str();
   }
 
@@ -8005,17 +8044,147 @@ class Objc3IREmitter {
                : expr.block_invoke_trampoline_symbol;
   }
 
-  static bool BlockLiteralRequiresLaterRuntimeLanes(const Expr &expr) {
-    return expr.block_storage_byref_slot_count > 0u ||
-           expr.block_storage_requires_byref_cells ||
-           expr.block_copy_helper_required ||
-           expr.block_dispose_helper_required ||
-           expr.block_runtime_copy_helper_required ||
-           expr.block_runtime_dispose_helper_required ||
-           expr.block_runtime_owned_object_capture_count > 0u ||
-           expr.block_runtime_weak_object_capture_count > 0u ||
-           expr.block_runtime_unowned_object_capture_count > 0u ||
-           !expr.block_source_model_is_normalized;
+  static bool BlockLiteralRequiresEscapingRuntimeHooks(const Expr &expr) {
+    return expr.block_escape_shape_symbol == "global-initializer" ||
+           expr.block_escape_shape_symbol == "assignment-value" ||
+           expr.block_escape_shape_symbol == "return-value" ||
+           expr.block_escape_shape_symbol == "call-argument" ||
+           expr.block_escape_shape_symbol == "message-argument";
+  }
+
+  static bool BlockLiteralRequiresFutureRuntimeLanes(const Expr &expr) {
+    return !expr.block_source_model_is_normalized ||
+           !expr.block_runtime_capture_ownership_is_normalized ||
+           expr.block_storage_escape_to_heap ||
+           BlockLiteralRequiresEscapingRuntimeHooks(expr) ||
+           (expr.block_storage_requires_byref_cells &&
+            expr.block_storage_byref_layout_symbol.empty()) ||
+           ((expr.block_runtime_copy_helper_required ||
+             expr.block_copy_helper_required) &&
+            expr.block_copy_helper_symbol.empty()) ||
+           ((expr.block_runtime_dispose_helper_required ||
+             expr.block_dispose_helper_required) &&
+            expr.block_dispose_helper_symbol.empty());
+  }
+
+  static std::string BuildBlockCopyHelperSymbol(const Expr &expr) {
+    return expr.block_copy_helper_symbol.empty()
+               ? std::string("objc3_block_copy_helper_missing_symbol")
+               : expr.block_copy_helper_symbol;
+  }
+
+  static std::string BuildBlockDisposeHelperSymbol(const Expr &expr) {
+    return expr.block_dispose_helper_symbol.empty()
+               ? std::string("objc3_block_dispose_helper_missing_symbol")
+               : expr.block_dispose_helper_symbol;
+  }
+
+  void EmitPendingBlockDisposeHelpers(FunctionContext &ctx) const {
+    for (auto it = ctx.pending_block_dispose_calls.rbegin();
+         it != ctx.pending_block_dispose_calls.rend(); ++it) {
+      if (it->helper_symbol.empty() || it->storage_ptr.empty()) {
+        continue;
+      }
+      ctx.code_lines.push_back("  call void @" + it->helper_symbol + "(ptr " +
+                               it->storage_ptr + ")");
+    }
+  }
+
+  void EmitBlockCopyHelper(const Expr &expr) const {
+    if (!BlockLiteralUsesPointerCaptureStorage(expr) ||
+        !expr.block_runtime_copy_helper_required) {
+      return;
+    }
+    const std::string symbol = BuildBlockCopyHelperSymbol(expr);
+    if (symbol.empty() ||
+        !emitted_block_copy_helper_symbols_.insert(symbol).second) {
+      return;
+    }
+
+    const std::string storage_type = BuildBlockStorageType(expr);
+    std::ostringstream out;
+    out << "define internal void @" << symbol << "(ptr %block) {\n";
+    out << "entry:\n";
+    int temp_counter = 0;
+    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size();
+         ++i) {
+      const std::string &capture_name =
+          expr.block_capture_names_lexicographic[i];
+      if (!SortedStringListContains(
+              expr.block_runtime_owned_object_capture_names_lexicographic,
+              capture_name)) {
+        continue;
+      }
+      const std::string slot_ptr =
+          "%block.copy.slot." + std::to_string(temp_counter++);
+      const std::string capture_ptr =
+          "%block.copy.capture." + std::to_string(temp_counter++);
+      const std::string loaded_value =
+          "%block.copy.value." + std::to_string(temp_counter++);
+      const std::string retained_value =
+          "%block.copy.retained." + std::to_string(temp_counter++);
+      out << "  " << slot_ptr << " = getelementptr inbounds " << storage_type
+          << ", ptr %block, i32 0, i32 3, i32 " << i << "\n";
+      out << "  " << capture_ptr << " = load ptr, ptr " << slot_ptr
+          << ", align 8\n";
+      out << "  " << loaded_value << " = load i32, ptr " << capture_ptr
+          << ", align 4\n";
+      out << "  " << retained_value << " = call i32 @"
+          << kObjc3RuntimeRetainI32Symbol << "(i32 " << loaded_value << ")\n";
+      out << "  store i32 " << retained_value << ", ptr " << capture_ptr
+          << ", align 4\n";
+    }
+    out << "  ret void\n";
+    out << "}\n";
+    block_function_definitions_.push_back(out.str());
+  }
+
+  void EmitBlockDisposeHelper(const Expr &expr) const {
+    if (!BlockLiteralUsesPointerCaptureStorage(expr) ||
+        !expr.block_runtime_dispose_helper_required) {
+      return;
+    }
+    const std::string symbol = BuildBlockDisposeHelperSymbol(expr);
+    if (symbol.empty() ||
+        !emitted_block_dispose_helper_symbols_.insert(symbol).second) {
+      return;
+    }
+
+    const std::string storage_type = BuildBlockStorageType(expr);
+    std::ostringstream out;
+    out << "define internal void @" << symbol << "(ptr %block) {\n";
+    out << "entry:\n";
+    int temp_counter = 0;
+    for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size();
+         ++i) {
+      const std::string &capture_name =
+          expr.block_capture_names_lexicographic[i];
+      if (!SortedStringListContains(
+              expr.block_runtime_owned_object_capture_names_lexicographic,
+              capture_name)) {
+        continue;
+      }
+      const std::string slot_ptr =
+          "%block.dispose.slot." + std::to_string(temp_counter++);
+      const std::string capture_ptr =
+          "%block.dispose.capture." + std::to_string(temp_counter++);
+      const std::string loaded_value =
+          "%block.dispose.value." + std::to_string(temp_counter++);
+      const std::string released_value =
+          "%block.dispose.released." + std::to_string(temp_counter++);
+      out << "  " << slot_ptr << " = getelementptr inbounds " << storage_type
+          << ", ptr %block, i32 0, i32 3, i32 " << i << "\n";
+      out << "  " << capture_ptr << " = load ptr, ptr " << slot_ptr
+          << ", align 8\n";
+      out << "  " << loaded_value << " = load i32, ptr " << capture_ptr
+          << ", align 4\n";
+      out << "  " << released_value << " = call i32 @"
+          << kObjc3RuntimeReleaseI32Symbol << "(i32 " << loaded_value << ")\n";
+      (void)released_value;
+    }
+    out << "  ret void\n";
+    out << "}\n";
+    block_function_definitions_.push_back(out.str());
   }
 
   std::string EmitIdentifierValue(const std::string &name,
@@ -8044,9 +8213,10 @@ class Objc3IREmitter {
   }
 
   void EmitBlockInvokeThunk(const Expr &expr) const {
-    // M261-C002 executable-block-object/invoke-thunk anchor: each runnable
+    // M261-C003 byref-cell/copy-helper/dispose-helper anchor: each runnable
     // local block literal now receives one internal invoke thunk definition
-    // that rehydrates readonly captures from stack block storage.
+    // that rehydrates readonly captures from snapshot cells and mutated captures
+    // from stack byref-cell references.
     const std::string symbol = BuildBlockInvokeSymbol(expr);
     if (symbol.empty() || !emitted_block_invoke_symbols_.insert(symbol).second) {
       return;
@@ -8062,17 +8232,34 @@ class Objc3IREmitter {
     ctx.scopes.push_back({});
 
     const std::string block_storage_type = BuildBlockStorageType(expr);
+    const bool pointer_capture_storage =
+        BlockLiteralUsesPointerCaptureStorage(expr);
     for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
       const std::string &capture_name = expr.block_capture_names_lexicographic[i];
-      const std::string ptr = "%" + capture_name + ".addr." + std::to_string(ctx.temp_counter++);
       const std::string slot_ptr = NewTemp(ctx);
+      const std::size_t capture_field_index =
+          pointer_capture_storage ? 3u : 1u;
+      ctx.entry_lines.push_back("  " + slot_ptr + " = getelementptr inbounds " +
+                                block_storage_type +
+                                ", ptr %block, i32 0, i32 " +
+                                std::to_string(capture_field_index) +
+                                ", i32 " + std::to_string(i));
+      if (pointer_capture_storage) {
+        const std::string capture_ptr = NewTemp(ctx);
+        ctx.entry_lines.push_back("  " + capture_ptr + " = load ptr, ptr " +
+                                  slot_ptr + ", align 8");
+        ctx.scopes.back()[capture_name] = capture_ptr;
+        continue;
+      }
+      const std::string ptr =
+          "%" + capture_name + ".addr." + std::to_string(ctx.temp_counter++);
       const std::string value = NewTemp(ctx);
       ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
       ctx.scopes.back()[capture_name] = ptr;
-      ctx.entry_lines.push_back("  " + slot_ptr + " = getelementptr inbounds " + block_storage_type +
-                                ", ptr %block, i32 0, i32 1, i32 " + std::to_string(i));
-      ctx.entry_lines.push_back("  " + value + " = load i32, ptr " + slot_ptr + ", align 4");
-      ctx.entry_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
+      ctx.entry_lines.push_back("  " + value + " = load i32, ptr " + slot_ptr +
+                                ", align 4");
+      ctx.entry_lines.push_back("  store i32 " + value + ", ptr " + ptr +
+                                ", align 4");
     }
 
     for (std::size_t i = 0; i < expr.block_parameters_source_order.size() && i < 4u; ++i) {
@@ -8092,6 +8279,7 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitPendingBlockDisposeHelpers(ctx);
       ctx.code_lines.push_back("  ret i32 0");
     }
 
@@ -8107,12 +8295,12 @@ class Objc3IREmitter {
 
   std::string EmitBlockLiteralStorage(const Expr &expr,
                                       FunctionContext &ctx) const {
-    // M261-C002 executable-block-object/invoke-thunk anchor: the current live
-    // lowering slice materializes one stack-resident block object with an
-    // invoke pointer followed by readonly scalar capture slots.
-    if (BlockLiteralRequiresLaterRuntimeLanes(expr)) {
+    // M261-C003 byref-cell/copy-helper/dispose-helper anchor: the current live
+    // lowering slice now supports non-escaping byref and owned-capture block
+    // objects through stack snapshot/byref cells plus emitted helper bodies.
+    if (BlockLiteralRequiresFutureRuntimeLanes(expr)) {
       return EmitUnsupportedI32Value(
-          "block literal requires byref/copy-dispose/ownership/escape lowering that lands in later M261 issues");
+          "block literal requires escaping heap-promotion or runtime-managed copy/dispose lowering that lands in later M261 issues");
     }
     if (expr.block_parameter_count > 4u) {
       return EmitUnsupportedI32Value(
@@ -8120,8 +8308,12 @@ class Objc3IREmitter {
     }
 
     EmitBlockInvokeThunk(expr);
+    EmitBlockCopyHelper(expr);
+    EmitBlockDisposeHelper(expr);
 
     const std::string storage_type = BuildBlockStorageType(expr);
+    const bool pointer_capture_storage =
+        BlockLiteralUsesPointerCaptureStorage(expr);
     const std::string storage_ptr =
         "%block.literal.addr." + std::to_string(ctx.temp_counter++);
     ctx.entry_lines.push_back("  " + storage_ptr + " = alloca " + storage_type + ", align 8");
@@ -8132,15 +8324,73 @@ class Objc3IREmitter {
     ctx.code_lines.push_back("  store ptr @" + BuildBlockInvokeSymbol(expr) + ", ptr " +
                              invoke_ptr_slot + ", align 8");
 
+    if (pointer_capture_storage) {
+      const std::string copy_helper_slot = NewTemp(ctx);
+      const std::string dispose_helper_slot = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + copy_helper_slot +
+                               " = getelementptr inbounds " + storage_type +
+                               ", ptr " + storage_ptr + ", i32 0, i32 1");
+      ctx.code_lines.push_back("  store ptr " +
+                               std::string(expr.block_runtime_copy_helper_required
+                                               ? "@" + BuildBlockCopyHelperSymbol(expr)
+                                               : "null") +
+                               ", ptr " + copy_helper_slot + ", align 8");
+      ctx.code_lines.push_back("  " + dispose_helper_slot +
+                               " = getelementptr inbounds " + storage_type +
+                               ", ptr " + storage_ptr + ", i32 0, i32 2");
+      ctx.code_lines.push_back("  store ptr " +
+                               std::string(expr.block_runtime_dispose_helper_required
+                                               ? "@" + BuildBlockDisposeHelperSymbol(expr)
+                                               : "null") +
+                               ", ptr " + dispose_helper_slot + ", align 8");
+    }
+
     for (std::size_t i = 0; i < expr.block_capture_names_lexicographic.size(); ++i) {
       const std::string &capture_name = expr.block_capture_names_lexicographic[i];
-      const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
       const std::string capture_slot = NewTemp(ctx);
+      if (pointer_capture_storage) {
+        std::string capture_cell_ptr;
+        if (SortedStringListContains(
+                expr.block_byref_capture_names_lexicographic, capture_name)) {
+          capture_cell_ptr = LookupVarPtr(ctx, capture_name);
+          if (capture_cell_ptr.empty()) {
+            return EmitUnsupportedI32Value(
+                "block literal byref capture '" + capture_name +
+                "' could not be resolved during IR lowering");
+          }
+        } else {
+          capture_cell_ptr = "%" + capture_name + ".capture.addr." +
+                             std::to_string(ctx.temp_counter++);
+          ctx.entry_lines.push_back("  " + capture_cell_ptr +
+                                    " = alloca i32, align 4");
+          const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
+          ctx.code_lines.push_back("  store i32 " + capture_value + ", ptr " +
+                                   capture_cell_ptr + ", align 4");
+        }
+        ctx.code_lines.push_back("  " + capture_slot +
+                                 " = getelementptr inbounds " + storage_type +
+                                 ", ptr " + storage_ptr +
+                                 ", i32 0, i32 3, i32 " + std::to_string(i));
+        ctx.code_lines.push_back("  store ptr " + capture_cell_ptr + ", ptr " +
+                                 capture_slot + ", align 8");
+        continue;
+      }
+      const std::string capture_value = EmitIdentifierValue(capture_name, ctx);
       ctx.code_lines.push_back("  " + capture_slot + " = getelementptr inbounds " +
                                storage_type + ", ptr " + storage_ptr + ", i32 0, i32 1, i32 " +
                                std::to_string(i));
       ctx.code_lines.push_back("  store i32 " + capture_value + ", ptr " + capture_slot +
                                ", align 4");
+    }
+
+    if (pointer_capture_storage && expr.block_runtime_copy_helper_required) {
+      ctx.code_lines.push_back("  call void @" + BuildBlockCopyHelperSymbol(expr) +
+                               "(ptr " + storage_ptr + ")");
+    }
+    if (pointer_capture_storage && expr.block_runtime_dispose_helper_required) {
+      ctx.pending_block_dispose_calls.push_back(
+          PendingBlockDisposeCall{BuildBlockDisposeHelperSymbol(expr),
+                                  storage_ptr});
     }
 
     return storage_ptr;
@@ -8255,6 +8505,7 @@ class Objc3IREmitter {
   }
 
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
+    EmitPendingBlockDisposeHelpers(ctx);
     if (ctx.return_type == ValueType::Void) {
       ctx.code_lines.push_back("  ret void");
       return;
@@ -9600,7 +9851,9 @@ class Objc3IREmitter {
           kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
     }
     if (synthesized_property_accessor_count_ > 0u ||
-        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u) {
+        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
+        frontend_metadata_.block_copy_dispose_lowering_copy_helper_required_sites > 0u ||
+        frontend_metadata_.block_copy_dispose_lowering_dispose_helper_required_sites > 0u) {
       emit_declaration_once(kObjc3RuntimeReadCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(
@@ -9757,6 +10010,7 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitPendingBlockDisposeHelpers(ctx);
       if (fn.return_type == ValueType::Void) {
         ctx.code_lines.push_back("  ret void");
       } else {
@@ -9832,6 +10086,7 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitPendingBlockDisposeHelpers(ctx);
       if (method.return_type == ValueType::Void) {
         ctx.code_lines.push_back("  ret void");
       } else {
@@ -10015,6 +10270,8 @@ class Objc3IREmitter {
   std::size_t vector_signature_function_count_ = 0;
   mutable std::vector<std::string> block_function_definitions_;
   mutable std::unordered_set<std::string> emitted_block_invoke_symbols_;
+  mutable std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
+  mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
   mutable bool runtime_dispatch_call_emitted_ = false;
   mutable bool fail_open_fallback_triggered_ = false;
   mutable std::string fail_open_fallback_reason_;

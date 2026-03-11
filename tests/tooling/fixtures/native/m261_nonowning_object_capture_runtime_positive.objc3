@@ -1,0 +1,15 @@
+module m261_nonowning_object_capture_runtime_positive;
+
+fn helper(weakValue: __weak id, borrowedValue: __unsafe_unretained id) -> i32 {
+  let closure = ^() {
+    if (weakValue == borrowedValue) {
+      return 9;
+    }
+    return 4;
+  };
+  return closure();
+}
+
+fn main() -> i32 {
+  return helper(9, 9);
+}

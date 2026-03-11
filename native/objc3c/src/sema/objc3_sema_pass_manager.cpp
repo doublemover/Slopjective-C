@@ -920,6 +920,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // invoke, storage-escape, and copy-dispose lowering surfaces, but
           // it still does not materialize emitted block-object records,
           // invoke-thunk bodies, byref cells, or helper function bodies.
+          // M261-C003 byref-cell/copy-helper/dispose-helper anchor: lane-C now
+          // consumes the same pass-manager handoff while ValidateBodies
+          // populates the live byref layout and runtime helper fields needed
+          // for emitted local nonescaping block lowering.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

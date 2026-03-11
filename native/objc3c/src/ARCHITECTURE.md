@@ -9982,3 +9982,27 @@ native slice for local block invocation.
   - ownership-sensitive object captures
   - heap-promotion semantics
 - the next issue is `M261-C003`
+
+## M261 Byref-Cell, Copy-Helper, And Dispose-Helper Lowering (C003)
+
+`M261-C003` expands the runnable local block slice so the native IR path can
+materialize stack byref cells plus helper bodies for local nonescaping
+byref/object captures.
+
+- supported slice:
+  - local byref mutation now lowers through emitted stack byref-cell storage
+  - owned captures emit copy/dispose helper bodies
+  - weak/unowned captures use pointer-capture storage without forcing
+    ownership helpers
+  - direct local invocation continues to execute through the emitted block
+    header and invoke thunk
+- proof surface:
+  - native IR now carries
+    `; executable_block_byref_helper_lowering = ...`
+  - canonical local-runtime fixtures exit `15`, `14`, `11`, and `9`
+  - object emission remains `llvm-direct`
+- deferred work remains in `M261-C004`:
+  - escaping block heap-promotion/runtime hook lowering
+  - first-class escaping block values
+  - runtime-managed block allocation/copy semantics beyond the local slice
+- the next issue is `M261-C004`

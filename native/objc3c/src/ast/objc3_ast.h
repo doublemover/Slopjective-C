@@ -146,6 +146,19 @@ struct Expr {
       "byref-cells-copy-dispose-helpers-owned-object-captures-and-heap-promotion-stay-fail-closed-until-m261-c003";
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkExecutionEvidenceModel =
       "native-compile-link-run-proves-local-block-invocation-through-emitted-block-storage-and-invoke-thunk";
+  // M261-C003 byref-cell/copy-helper/dispose-helper constants: lane-C now
+  // widens runnable native block lowering to non-escaping byref and owned
+  // capture cases by emitting stack byref cells plus copy/dispose helper
+  // bodies, while heap-promotion and runtime-managed block copying remain
+  // deferred to later M261 issues.
+  static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringContractId =
+      "objc3c-executable-block-byref-helper-lowering/m261-c003-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringActiveModel =
+      "native-lowering-emits-stack-byref-cells-and-copy-dispose-helper-bodies-for-nonescaping-block-captures";
+  static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringDeferredModel =
+      "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-until-m261-c004-and-m261-d002";
+  static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel =
+      "native-compile-link-run-proves-byref-mutation-and-owned-capture-helper-lowering-through-emitted-block-helper-bodies";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -277,6 +290,9 @@ struct Expr {
   std::size_t block_runtime_owned_object_capture_count = 0;
   std::size_t block_runtime_weak_object_capture_count = 0;
   std::size_t block_runtime_unowned_object_capture_count = 0;
+  std::vector<std::string> block_runtime_owned_object_capture_names_lexicographic;
+  std::vector<std::string> block_runtime_weak_object_capture_names_lexicographic;
+  std::vector<std::string> block_runtime_unowned_object_capture_names_lexicographic;
   bool block_runtime_copy_helper_required = false;
   bool block_runtime_dispose_helper_required = false;
   bool block_runtime_capture_ownership_is_normalized = false;

@@ -1015,6 +1015,34 @@ std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockByrefHelperLoweringSummary() {
+  std::ostringstream out;
+  // M261-C003 byref-cell/copy-helper/dispose-helper implementation anchor:
+  // lane-C now makes the non-escaping byref and owned-capture block slice
+  // runnable by emitting stack byref-cell references plus helper bodies and
+  // helper call sites. Heap-promotion and runtime-managed copy/dispose remain
+  // intentionally deferred.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockByrefHelperLoweringContractId
+      << ";previous_contract="
+      << Expr::kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId
+      << ";active_model="
+      << Expr::kObjc3ExecutableBlockByrefHelperLoweringActiveModel
+      << ";deferred_model="
+      << Expr::kObjc3ExecutableBlockByrefHelperLoweringDeferredModel
+      << ";execution_evidence_model="
+      << Expr::kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel
+      << ";storage_lane_contract="
+      << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";copy_dispose_lane_contract="
+      << kObjc3BlockCopyDisposeLoweringLaneContract
+      << ";runtime_semantic_lane_contract="
+      << kObjc3BlockRuntimeSemanticRulesLaneContract
+      << ";lane_contract="
+      << kObjc3ExecutableBlockByrefHelperLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

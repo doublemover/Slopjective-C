@@ -7828,3 +7828,39 @@ native lowering slice.
   - `spec/planning/compiler/m261/m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation_packet.md`
   - `python scripts/check_m261_c002_executable_block_object_and_invoke_thunk_lowering_core_feature_implementation.py`
   - `M261-C003` is the next issue.
+
+## M261 byref-cell, copy-helper, and dispose-helper lowering (C003)
+
+`M261-C003` upgrades the runnable `M261-C002` block lowering slice into the
+first native path that emits stack byref cells plus copy/dispose helper bodies
+for local nonescaping block captures.
+
+- contract id
+  `objc3c-executable-block-byref-helper-lowering/m261-c003-v1`
+- active supported slice:
+  - native lowering emits pointer-capture block storage when byref or object
+    captures are present
+  - native lowering emits stack byref layout records plus helper bodies for the
+    nonescaping byref/object-capture slice
+  - direct local block invocation remains runnable through the emitted block
+    header and invoke thunk
+  - compile/link/run proof exits `15`, `14`, `11`, and `9` on the canonical
+    local-runtime fixtures
+- emitted proof details:
+  - IR carries
+    `; executable_block_byref_helper_lowering = ...`
+  - byref/runtime object captures now emit helper symbols such as
+    `@__objc3_block_copy_helper_*` and `@__objc3_block_dispose_helper_*`
+  - manifest lowering surfaces publish deterministic byref layout symbols for
+    the runnable local byref slice
+  - owned captures emit retain/release helper bodies while weak/unowned
+    captures stay non-owning and helper-elided
+- deferred to `M261-C004`:
+  - escaping block heap-promotion/runtime hook lowering
+  - first-class escaping block values
+  - runtime-managed block allocation/copy semantics outside the local slice
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation_c003_expectations.md`
+  - `spec/planning/compiler/m261/m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation_packet.md`
+  - `python scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
+  - `M261-C004` is the next issue.

@@ -183,6 +183,10 @@ Current implementation boundary:
     stack block objects plus direct local invoke thunks for readonly scalar
     captures, while byref/helper/ownership-sensitive cases remain fail-closed
     until `M261-C003`.
+  - lane-C now also expands that slice (`M261-C003`): native lowering emits
+    stack byref cells plus copy/dispose helper bodies for the local nonescaping
+    byref/object-capture path, while true escaping heap-promotion hooks remain
+    deferred until `M261-C004`.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

@@ -1,0 +1,15 @@
+module m261_owned_object_capture_runtime_positive;
+
+fn helper(ownedValue: id, weakValue: __weak id) -> i32 {
+  let closure = ^() {
+    if (ownedValue == weakValue) {
+      return 11;
+    }
+    return 3;
+  };
+  return closure();
+}
+
+fn main() -> i32 {
+  return helper(11, 11);
+}

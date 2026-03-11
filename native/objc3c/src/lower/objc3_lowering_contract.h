@@ -1000,6 +1000,8 @@ inline constexpr const char
         "m261-block-lowering-abi-artifact-boundary-v1";
 inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkLoweringLaneContract =
     "m261-block-object-invoke-thunk-lowering-v1";
+inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringLaneContract =
+    "m261-block-byref-helper-lowering-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1748,6 +1750,7 @@ std::string Objc3ExecutableBlockSourceStorageAnnotationSummary();
 std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary();
 std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary();
 std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary();
+std::string Objc3ExecutableBlockByrefHelperLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
