@@ -284,6 +284,18 @@ int objc3_runtime_copy_property_entry_for_testing(
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);
+// M260-C002 ownership runtime hook emission anchor: lowering-generated
+// synthesized accessors target these private runtime helpers so retain/release,
+// autorelease, and weak property paths execute against realized runtime-backed
+// storage without widening the stable public runtime header yet.
+int objc3_runtime_read_current_property_i32(void);
+void objc3_runtime_write_current_property_i32(int value);
+int objc3_runtime_exchange_current_property_i32(int value);
+int objc3_runtime_load_weak_current_property_i32(void);
+void objc3_runtime_store_weak_current_property_i32(int value);
+int objc3_runtime_retain_i32(int value);
+int objc3_runtime_release_i32(int value);
+int objc3_runtime_autorelease_i32(int value);
 
 #ifdef __cplusplus
 }

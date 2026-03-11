@@ -1,0 +1,11 @@
+module ownership_runtime_hook_probe;
+
+@interface Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, weak) __weak id weakValue;
+@end
+
+@implementation Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, weak) __weak id weakValue;
+@end

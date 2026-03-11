@@ -5229,6 +5229,37 @@ runtime-backed object slice.
   - no live weak side-table runtime entrypoints are emitted yet
   - `M260-C002` is the next issue
 
+## M260 ownership runtime hook emission (C002)
+
+`M260-C002` upgrades synthesized runtime-backed property accessors from the old
+summary-only ownership lane into live runtime helper calls.
+
+- contract id
+  `objc3c-ownership-runtime-hook-emission/m260-c002-v1`
+- canonical proof artifacts
+  - `tests/tooling/fixtures/native/m260_ownership_runtime_hook_emission_positive.objc3`
+  - `tests/tooling/runtime/m260_c002_ownership_runtime_hook_probe.cpp`
+- emitted IR and runtime truths
+  - strong synthesized getters call `objc3_runtime_read_current_property_i32`,
+    `objc3_runtime_retain_i32`, and `objc3_runtime_autorelease_i32`
+  - strong synthesized setters call `objc3_runtime_retain_i32`,
+    `objc3_runtime_exchange_current_property_i32`, and
+    `objc3_runtime_release_i32`
+  - weak synthesized getters and setters call
+    `objc3_runtime_load_weak_current_property_i32` and
+    `objc3_runtime_store_weak_current_property_i32`
+  - runtime dispatch frames now carry the current receiver/property accessor
+    context and an autorelease queue for synthesized property execution
+  - legacy synthesized property storage globals remain emitted for historical
+    `M257-C003` artifact compatibility
+- validation
+  - `check:objc3c:m260-c002-lane-c-readiness`
+- truthful boundary
+  - live ownership runtime hook emission is now available for synthesized
+    runtime-backed property accessor lowering
+  - live autoreleasepool push/pop lowering still remains outside this issue
+  - `M260-D001` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

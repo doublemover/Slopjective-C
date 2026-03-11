@@ -252,12 +252,19 @@ struct RealizedPropertyAccessor {
   std::string setter_owner_identity;
 };
 
+struct RuntimeWeakSlotRef {
+  int owner_receiver = 0;
+  std::size_t offset = 0;
+  std::size_t size = 0;
+};
+
 struct RuntimeInstanceRecord {
   std::uint64_t receiver_identity = 0;
   std::uint64_t base_identity = 0;
   std::string class_name;
   std::size_t instance_size_bytes = 0;
   std::vector<unsigned char> storage_bytes;
+  std::uint64_t retain_count = 1;
 };
 
 struct RealizedClassNode {
@@ -373,6 +380,8 @@ struct RuntimeState {
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
+  std::unordered_map<int, std::vector<RuntimeWeakSlotRef>>
+      weak_slot_refs_by_target_receiver;
   int next_runtime_instance_receiver = 0x100000;
   std::uint64_t live_runtime_instance_count = 0;
   std::uint64_t last_allocated_runtime_instance_receiver = 0;
@@ -391,6 +400,15 @@ RuntimeState &State() {
   static RuntimeState state;
   return state;
 }
+
+struct RuntimeDispatchFrame {
+  int receiver = 0;
+  std::uint64_t base_identity = 0;
+  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
+  std::vector<int> autorelease_values;
+};
+
+thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -452,6 +470,7 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
 
 void ClearRuntimeInstanceStateUnlocked(RuntimeState &state) {
   state.runtime_instances_by_receiver.clear();
+  state.weak_slot_refs_by_target_receiver.clear();
   state.next_runtime_instance_receiver = 0x100000;
   state.live_runtime_instance_count = 0;
   state.last_allocated_runtime_instance_receiver = 0;
@@ -464,6 +483,117 @@ std::size_t AlignTo(std::size_t value, std::size_t alignment) {
   const std::size_t effective_alignment = std::max<std::size_t>(alignment, 1u);
   const std::size_t remainder = value % effective_alignment;
   return remainder == 0u ? value : value + (effective_alignment - remainder);
+}
+
+RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
+  return g_runtime_dispatch_frames.empty() ? nullptr
+                                           : &g_runtime_dispatch_frames.back();
+}
+
+void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
+                              const RealizedPropertyAccessor *accessor) {
+  RuntimeDispatchFrame frame;
+  frame.receiver = receiver;
+  frame.base_identity = base_identity;
+  frame.runtime_property_accessor = accessor;
+  g_runtime_dispatch_frames.push_back(std::move(frame));
+}
+
+std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
+  if (g_runtime_dispatch_frames.empty()) {
+    return {};
+  }
+  RuntimeDispatchFrame frame = std::move(g_runtime_dispatch_frames.back());
+  g_runtime_dispatch_frames.pop_back();
+  return std::move(frame.autorelease_values);
+}
+
+bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value) {
+  return value != 0 &&
+         state.runtime_instances_by_receiver.find(value) !=
+             state.runtime_instances_by_receiver.end();
+}
+
+void RemoveWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
+                               int owner_receiver, std::size_t offset,
+                               std::size_t size) {
+  if (target_receiver == 0) {
+    return;
+  }
+  const auto found = state.weak_slot_refs_by_target_receiver.find(target_receiver);
+  if (found == state.weak_slot_refs_by_target_receiver.end()) {
+    return;
+  }
+  auto &refs = found->second;
+  refs.erase(
+      std::remove_if(
+          refs.begin(), refs.end(),
+          [&](const RuntimeWeakSlotRef &ref) {
+            return ref.owner_receiver == owner_receiver && ref.offset == offset &&
+                   ref.size == size;
+          }),
+      refs.end());
+  if (refs.empty()) {
+    state.weak_slot_refs_by_target_receiver.erase(found);
+  }
+}
+
+void RegisterWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
+                                 int owner_receiver, std::size_t offset,
+                                 std::size_t size) {
+  if (target_receiver == 0) {
+    return;
+  }
+  std::vector<RuntimeWeakSlotRef> &refs =
+      state.weak_slot_refs_by_target_receiver[target_receiver];
+  const auto duplicate =
+      std::find_if(refs.begin(), refs.end(), [&](const RuntimeWeakSlotRef &ref) {
+        return ref.owner_receiver == owner_receiver && ref.offset == offset &&
+               ref.size == size;
+      });
+  if (duplicate == refs.end()) {
+    refs.push_back(RuntimeWeakSlotRef{owner_receiver, offset, size});
+  }
+}
+
+void RemoveWeakSlotRefsOwnedByReceiverUnlocked(RuntimeState &state,
+                                               int owner_receiver) {
+  for (auto it = state.weak_slot_refs_by_target_receiver.begin();
+       it != state.weak_slot_refs_by_target_receiver.end();) {
+    auto &refs = it->second;
+    refs.erase(std::remove_if(refs.begin(), refs.end(),
+                              [&](const RuntimeWeakSlotRef &ref) {
+                                return ref.owner_receiver == owner_receiver;
+                              }),
+               refs.end());
+    if (refs.empty()) {
+      it = state.weak_slot_refs_by_target_receiver.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void ZeroWeakSlotRefsForTargetUnlocked(RuntimeState &state, int target_receiver) {
+  const auto found = state.weak_slot_refs_by_target_receiver.find(target_receiver);
+  if (found == state.weak_slot_refs_by_target_receiver.end()) {
+    return;
+  }
+  for (const RuntimeWeakSlotRef &ref : found->second) {
+    const auto owner_it = state.runtime_instances_by_receiver.find(ref.owner_receiver);
+    if (owner_it == state.runtime_instances_by_receiver.end()) {
+      continue;
+    }
+    RuntimeInstanceRecord &owner = owner_it->second;
+    if (ref.size == 0u || ref.offset + ref.size > owner.storage_bytes.size()) {
+      continue;
+    }
+    std::fill(owner.storage_bytes.begin() + static_cast<std::ptrdiff_t>(ref.offset),
+              owner.storage_bytes.begin() +
+                  static_cast<std::ptrdiff_t>(ref.offset + ref.size),
+              0);
+  }
+  state.weak_slot_refs_by_target_receiver.erase(found);
 }
 
 std::string BuildSynthesizedInstanceMethodOwnerIdentity(
@@ -1016,8 +1146,12 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
           resolution.selector_stable_id = selector_stable_id;
           resolution.parameter_count = 0;
           resolution.return_kind = accessor.getter_return_kind;
-          resolution.implementation = nullptr;
-          resolution.builtin_kind = RuntimeBuiltinKind::PropertyGetter;
+          resolution.implementation =
+              accessor.property_descriptor->getter_implementation;
+          resolution.builtin_kind =
+              resolution.implementation != nullptr
+                  ? RuntimeBuiltinKind::None
+                  : RuntimeBuiltinKind::PropertyGetter;
           resolution.runtime_property_accessor = &accessor;
           return true;
         }
@@ -1034,8 +1168,12 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
           resolution.selector_stable_id = selector_stable_id;
           resolution.parameter_count = 1;
           resolution.return_kind = RuntimeMethodReturnKind::Void;
-          resolution.implementation = nullptr;
-          resolution.builtin_kind = RuntimeBuiltinKind::PropertySetter;
+          resolution.implementation =
+              accessor.property_descriptor->setter_implementation;
+          resolution.builtin_kind =
+              resolution.implementation != nullptr
+                  ? RuntimeBuiltinKind::None
+                  : RuntimeBuiltinKind::PropertySetter;
           resolution.runtime_property_accessor = &accessor;
           return true;
         }
@@ -1761,9 +1899,57 @@ std::size_t EffectiveIvarSize(const RealizedPropertyAccessor &accessor) {
              : 0u;
 }
 
-bool ReadRuntimeManagedPropertyValue(const RuntimeInstanceRecord &instance,
-                                     const RealizedPropertyAccessor &accessor,
-                                     int &value) {
+const char *PropertyOwnershipLifetimeProfile(
+    const RealizedPropertyAccessor &accessor) {
+  return accessor.property_descriptor != nullptr
+             ? accessor.property_descriptor->ownership_lifetime_profile
+             : nullptr;
+}
+
+const char *PropertyOwnershipRuntimeHookProfile(
+    const RealizedPropertyAccessor &accessor) {
+  return accessor.property_descriptor != nullptr
+             ? accessor.property_descriptor->ownership_runtime_hook_profile
+             : nullptr;
+}
+
+const char *PropertyAccessorOwnershipProfile(
+    const RealizedPropertyAccessor &accessor) {
+  return accessor.property_descriptor != nullptr
+             ? accessor.property_descriptor->accessor_ownership_profile
+             : nullptr;
+}
+
+bool AccessorProfileContains(const char *profile, const char *needle) {
+  return profile != nullptr && needle != nullptr &&
+         std::strstr(profile, needle) != nullptr;
+}
+
+bool UsesStrongOwnedRuntimeHooks(const RealizedPropertyAccessor &accessor) {
+  const char *lifetime_profile = PropertyOwnershipLifetimeProfile(accessor);
+  if (lifetime_profile != nullptr &&
+      std::strcmp(lifetime_profile, "strong-owned") == 0) {
+    return true;
+  }
+  return AccessorProfileContains(PropertyAccessorOwnershipProfile(accessor),
+                                 "ownership_lifetime=strong-owned");
+}
+
+bool UsesWeakRuntimeHooks(const RealizedPropertyAccessor &accessor) {
+  const char *hook_profile = PropertyOwnershipRuntimeHookProfile(accessor);
+  return hook_profile != nullptr &&
+         std::strcmp(hook_profile, "objc-weak-side-table") == 0;
+}
+
+bool UsesSafeUnownedRuntimeHooks(const RealizedPropertyAccessor &accessor) {
+  const char *hook_profile = PropertyOwnershipRuntimeHookProfile(accessor);
+  return hook_profile != nullptr &&
+         std::strcmp(hook_profile, "objc-unowned-safe-guard") == 0;
+}
+
+bool ReadRuntimeManagedPropertyValueRaw(const RuntimeInstanceRecord &instance,
+                                        const RealizedPropertyAccessor &accessor,
+                                        int &value) {
   const std::size_t offset = EffectiveIvarOffset(accessor);
   const std::size_t size = EffectiveIvarSize(accessor);
   if (size == 0u || offset + size > instance.storage_bytes.size()) {
@@ -1780,9 +1966,9 @@ bool ReadRuntimeManagedPropertyValue(const RuntimeInstanceRecord &instance,
   return true;
 }
 
-bool WriteRuntimeManagedPropertyValue(RuntimeInstanceRecord &instance,
-                                      const RealizedPropertyAccessor &accessor,
-                                      int value) {
+bool WriteRuntimeManagedPropertyValueRaw(RuntimeInstanceRecord &instance,
+                                         const RealizedPropertyAccessor &accessor,
+                                         int value) {
   const std::size_t offset = EffectiveIvarOffset(accessor);
   const std::size_t size = EffectiveIvarSize(accessor);
   if (size == 0u || offset + size > instance.storage_bytes.size()) {
@@ -1800,6 +1986,127 @@ bool WriteRuntimeManagedPropertyValue(RuntimeInstanceRecord &instance,
               0);
   }
   return true;
+}
+
+bool ReadRuntimeManagedPropertyValueUnlocked(const RuntimeState &state,
+                                             const RuntimeInstanceRecord &instance,
+                                             const RealizedPropertyAccessor &accessor,
+                                             int &value) {
+  if (!ReadRuntimeManagedPropertyValueRaw(instance, accessor, value)) {
+    return false;
+  }
+  if (!UsesSafeUnownedRuntimeHooks(accessor) || value == 0) {
+    return true;
+  }
+  if (!IsRuntimeManagedReceiverValueUnlocked(state, value)) {
+    value = 0;
+  }
+  return true;
+}
+
+bool WriteWeakRuntimeManagedPropertyValueUnlocked(
+    RuntimeState &state, RuntimeInstanceRecord &instance,
+    const RealizedPropertyAccessor &accessor, int value) {
+  const std::size_t offset = EffectiveIvarOffset(accessor);
+  const std::size_t size = EffectiveIvarSize(accessor);
+  if (size == 0u || offset + size > instance.storage_bytes.size()) {
+    return false;
+  }
+  int previous = 0;
+  (void)ReadRuntimeManagedPropertyValueRaw(instance, accessor, previous);
+  RemoveWeakSlotRefUnlocked(state, previous,
+                            static_cast<int>(instance.receiver_identity), offset,
+                            size);
+  if (!WriteRuntimeManagedPropertyValueRaw(instance, accessor, value)) {
+    return false;
+  }
+  if (IsRuntimeManagedReceiverValueUnlocked(state, value)) {
+    RegisterWeakSlotRefUnlocked(state, value,
+                                static_cast<int>(instance.receiver_identity),
+                                offset, size);
+  }
+  return true;
+}
+
+bool WriteRuntimeManagedPropertyValueUnlocked(RuntimeState &state,
+                                              RuntimeInstanceRecord &instance,
+                                              const RealizedPropertyAccessor &accessor,
+                                              int value) {
+  if (UsesWeakRuntimeHooks(accessor)) {
+    return WriteWeakRuntimeManagedPropertyValueUnlocked(state, instance, accessor,
+                                                        value);
+  }
+  return WriteRuntimeManagedPropertyValueRaw(instance, accessor, value);
+}
+
+bool ExchangeRuntimeManagedPropertyValueUnlocked(
+    RuntimeState &state, RuntimeInstanceRecord &instance,
+    const RealizedPropertyAccessor &accessor, int value, int &previous_value) {
+  if (!ReadRuntimeManagedPropertyValueUnlocked(state, instance, accessor,
+                                               previous_value)) {
+    previous_value = 0;
+    return false;
+  }
+  return WriteRuntimeManagedPropertyValueUnlocked(state, instance, accessor,
+                                                  value);
+}
+
+void RetainRuntimeValueUnlocked(RuntimeState &state, int value);
+void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value);
+
+void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
+  const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return;
+  }
+  RuntimeInstanceRecord instance = std::move(instance_it->second);
+  state.runtime_instances_by_receiver.erase(instance_it);
+  state.live_runtime_instance_count =
+      static_cast<std::uint64_t>(state.runtime_instances_by_receiver.size());
+
+  ZeroWeakSlotRefsForTargetUnlocked(state, receiver);
+  RemoveWeakSlotRefsOwnedByReceiverUnlocked(state, receiver);
+
+  const RealizedClassNode *node =
+      FindRealizedClassNodeByBaseIdentityUnlocked(state, instance.base_identity);
+  std::vector<int> owned_values_to_release;
+  if (node != nullptr && node->runtime_layout_ready) {
+    owned_values_to_release.reserve(node->runtime_property_accessors.size());
+    for (const RealizedPropertyAccessor &accessor :
+         node->runtime_property_accessors) {
+      if (!UsesStrongOwnedRuntimeHooks(accessor)) {
+        continue;
+      }
+      int stored_value = 0;
+      if (ReadRuntimeManagedPropertyValueRaw(instance, accessor, stored_value) &&
+          stored_value != 0) {
+        owned_values_to_release.push_back(stored_value);
+      }
+    }
+  }
+  for (int stored_value : owned_values_to_release) {
+    ReleaseRuntimeValueUnlocked(state, stored_value);
+  }
+}
+
+void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
+  const auto instance_it = state.runtime_instances_by_receiver.find(value);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return;
+  }
+  ++instance_it->second.retain_count;
+}
+
+void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
+  const auto instance_it = state.runtime_instances_by_receiver.find(value);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return;
+  }
+  if (instance_it->second.retain_count > 1u) {
+    --instance_it->second.retain_count;
+    return;
+  }
+  DestroyRuntimeInstanceUnlocked(state, value);
 }
 
 int InvokeRuntimeBuiltinMethod(RuntimeState &state,
@@ -1833,6 +2140,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
       instance.instance_size_bytes =
           std::max<std::size_t>(node->runtime_instance_size_bytes, 1u);
       instance.storage_bytes.assign(instance.instance_size_bytes, 0u);
+      instance.retain_count = 1u;
       state.runtime_instances_by_receiver.emplace(receiver_identity,
                                                  std::move(instance));
       state.live_runtime_instance_count =
@@ -1857,10 +2165,19 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
         return 0;
       }
       int value = 0;
-      return ReadRuntimeManagedPropertyValue(instance_it->second,
-                                            *runtime_property_accessor, value)
-                 ? value
-                 : 0;
+      if (!ReadRuntimeManagedPropertyValueUnlocked(state, instance_it->second,
+                                                   *runtime_property_accessor,
+                                                   value)) {
+        return 0;
+      }
+      if (UsesStrongOwnedRuntimeHooks(*runtime_property_accessor) &&
+          value != 0) {
+        RetainRuntimeValueUnlocked(state, value);
+        if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
+          frame->autorelease_values.push_back(value);
+        }
+      }
+      return value;
     }
     case RuntimeBuiltinKind::PropertySetter: {
       if (runtime_property_accessor == nullptr) {
@@ -1871,8 +2188,22 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
       if (instance_it == state.runtime_instances_by_receiver.end()) {
         return 0;
       }
-      (void)WriteRuntimeManagedPropertyValue(instance_it->second,
-                                             *runtime_property_accessor, a0);
+      if (UsesStrongOwnedRuntimeHooks(*runtime_property_accessor)) {
+        if (a0 != 0) {
+          RetainRuntimeValueUnlocked(state, a0);
+        }
+        int previous_value = 0;
+        if (ExchangeRuntimeManagedPropertyValueUnlocked(
+                state, instance_it->second, *runtime_property_accessor, a0,
+                previous_value) &&
+            previous_value != 0) {
+          ReleaseRuntimeValueUnlocked(state, previous_value);
+        }
+      } else {
+        (void)WriteRuntimeManagedPropertyValueUnlocked(state, instance_it->second,
+                                                       *runtime_property_accessor,
+                                                       a0);
+      }
       return 0;
     }
     case RuntimeBuiltinKind::None:
@@ -3215,6 +3546,90 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
   return LookupSelectorUnlocked(selector);
 }
 
+extern "C" int objc3_runtime_read_current_property_i32(void) {
+  RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
+      frame->receiver == 0) {
+    return 0;
+  }
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return 0;
+  }
+  int value = 0;
+  return ReadRuntimeManagedPropertyValueUnlocked(
+             state, instance_it->second, *frame->runtime_property_accessor, value)
+             ? value
+             : 0;
+}
+
+extern "C" void objc3_runtime_write_current_property_i32(int value) {
+  RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
+      frame->receiver == 0) {
+    return;
+  }
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return;
+  }
+  (void)WriteRuntimeManagedPropertyValueUnlocked(
+      state, instance_it->second, *frame->runtime_property_accessor, value);
+}
+
+extern "C" int objc3_runtime_exchange_current_property_i32(int value) {
+  RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
+      frame->receiver == 0) {
+    return 0;
+  }
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
+  if (instance_it == state.runtime_instances_by_receiver.end()) {
+    return 0;
+  }
+  int previous_value = 0;
+  return ExchangeRuntimeManagedPropertyValueUnlocked(
+             state, instance_it->second, *frame->runtime_property_accessor, value,
+             previous_value)
+             ? previous_value
+             : 0;
+}
+
+extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
+  return objc3_runtime_read_current_property_i32();
+}
+
+extern "C" void objc3_runtime_store_weak_current_property_i32(int value) {
+  objc3_runtime_write_current_property_i32(value);
+}
+
+extern "C" int objc3_runtime_retain_i32(int value) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  RetainRuntimeValueUnlocked(state, value);
+  return value;
+}
+
+extern "C" int objc3_runtime_release_i32(int value) {
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  ReleaseRuntimeValueUnlocked(state, value);
+  return value;
+}
+
+extern "C" int objc3_runtime_autorelease_i32(int value) {
+  if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
+    frame->autorelease_values.push_back(value);
+  }
+  return value;
+}
+
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   RuntimeState &state = State();
@@ -3332,13 +3747,36 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     return 0;
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
-    return InvokeResolvedMethod(resolved_implementation, resolved_return_kind,
-                                resolved_parameter_count, a0, a1, a2, a3);
+    PushRuntimeDispatchFrame(receiver, receiver_base_identity,
+                             resolved_runtime_property_accessor);
+    const int result =
+        InvokeResolvedMethod(resolved_implementation, resolved_return_kind,
+                            resolved_parameter_count, a0, a1, a2, a3);
+    const std::vector<int> autorelease_values =
+        PopRuntimeDispatchFrameAutoreleaseValues();
+    if (!autorelease_values.empty()) {
+      std::lock_guard<std::mutex> lock(state.mutex);
+      for (int value : autorelease_values) {
+        ReleaseRuntimeValueUnlocked(state, value);
+      }
+    }
+    return result;
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
-    return InvokeRuntimeBuiltinMethod(
+    PushRuntimeDispatchFrame(receiver, receiver_base_identity,
+                             resolved_runtime_property_accessor);
+    const int result = InvokeRuntimeBuiltinMethod(
         state, resolved_builtin_kind, receiver, receiver_base_identity,
         resolved_runtime_property_accessor, a0, a1, a2, a3);
+    const std::vector<int> autorelease_values =
+        PopRuntimeDispatchFrameAutoreleaseValues();
+    if (!autorelease_values.empty()) {
+      std::lock_guard<std::mutex> lock(state.mutex);
+      for (int value : autorelease_values) {
+        ReleaseRuntimeValueUnlocked(state, value);
+      }
+    }
+    return result;
   }
   return ComputeDispatchResult(receiver, selector, a0, a1, a2, a3);
 }

@@ -9747,3 +9747,22 @@ ownership.
 - no live autoreleasepool push/pop hooks are emitted yet
 - no live weak side-table runtime entrypoints are emitted yet
 - the next issue is `M260-C002`
+
+## M260 Ownership Runtime Hook Emission (C002)
+
+`M260-C002` upgrades synthesized runtime-backed property accessors from the old
+summary-only lane into live runtime-owned helper calls.
+
+- LLVM IR now emits the `ownership_runtime_hook_emission` boundary comment and
+  `!objc3.objc_runtime_ownership_hook_emission`
+- the runtime now exposes helper entrypoints for retain, release,
+  autorelease, current-property reads/writes/exchanges, and weak load/store
+- runtime dispatch frames now carry the current receiver/property accessor
+  context plus an autorelease queue for synthesized property execution
+- strong synthesized accessors execute through runtime-owned retain/release and
+  property exchange helpers
+- weak synthesized accessors execute through runtime-owned weak-side-table
+  helpers
+- legacy synthesized property storage globals remain emitted for historical
+  `M257-C003` artifact compatibility
+- the next issue is `M260-D001`

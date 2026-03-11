@@ -8367,3 +8367,25 @@ emission.
     and named metadata nodes, but it does not yet emit live ownership runtime
     hook calls
   - `M260-C002` is the next issue
+
+## M260 ownership runtime hook emission metadata anchors (C002)
+
+`M260-C002` does not add a brand new property metadata descriptor family, but it
+does upgrade the emitted IR and object artifacts so synthesized property
+accessors now carry live ownership hook execution behavior.
+
+- contract id
+  `objc3c-ownership-runtime-hook-emission/m260-c002-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/c002/positive/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m260/c002/positive/module.obj`
+  - `tmp/reports/m260/M260-C002/ownership_runtime_hook_emission_summary.json`
+- emitted metadata truths
+  - emitted IR now carries `!objc3.objc_runtime_ownership_hook_emission`
+  - emitted IR retains the runtime hook helper declarations and call sites for
+    strong and weak synthesized property accessors
+  - emitted IR still keeps the legacy synthesized storage globals required by
+    `M257-C003`
+- truthful boundary
+  - live autoreleasepool push/pop lowering still remains outside this issue
+  - `M260-D001` is the next issue

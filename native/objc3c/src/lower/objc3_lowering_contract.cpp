@@ -769,6 +769,36 @@ std::string Objc3OwnershipLoweringBaselineSummary() {
   return out.str();
 }
 
+std::string Objc3OwnershipRuntimeHookEmissionSummary() {
+  std::ostringstream out;
+  // M260-C002 runtime hook emission anchor: synthesized accessors now execute
+  // through runtime-owned helper entrypoints that operate on the current
+  // runtime dispatch frame and realized property layout, while preserving the
+  // existing synthesized accessor descriptor/storage artifact surface from
+  // M257-C003.
+  out << "contract=" << kObjc3OwnershipRuntimeHookEmissionContractId
+      << ";accessor_model="
+      << kObjc3OwnershipRuntimeHookEmissionAccessorModel
+      << ";property_context_model="
+      << kObjc3OwnershipRuntimeHookEmissionPropertyContextModel
+      << ";autorelease_model="
+      << kObjc3OwnershipRuntimeHookEmissionAutoreleaseModel
+      << ";fail_closed_model="
+      << kObjc3OwnershipRuntimeHookEmissionFailClosedModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";read_property_symbol=" << kObjc3RuntimeReadCurrentPropertyI32Symbol
+      << ";write_property_symbol=" << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+      << ";exchange_property_symbol="
+      << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+      << ";weak_load_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";weak_store_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

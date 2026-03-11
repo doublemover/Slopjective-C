@@ -605,6 +605,36 @@ inline constexpr const char *kObjc3OwnershipLoweringBaselineAutoreleasepoolModel
     "autoreleasepool-lowering-remains-summary-only-without-emitted-push-pop-hooks";
 inline constexpr const char *kObjc3OwnershipLoweringBaselineFailClosedModel =
     "no-live-ownership-runtime-hooks-no-arc-weak-side-table-entrypoints-no-destruction-lowering-yet";
+// M260-C002 runtime hook emission anchor: lane-C replaces the C001 summary-only
+// baseline with emitted runtime helper calls for retain/release/autorelease and
+// weak property paths while preserving the existing synthesized accessor
+// descriptor/storage artifact surface from M257-C003.
+inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionContractId =
+    "objc3c-ownership-runtime-hook-emission/m260-c002-v1";
+inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionAccessorModel =
+    "synthesized-accessors-call-runtime-owned-current-property-and-ownership-hook-entrypoints";
+inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionPropertyContextModel =
+    "runtime-dispatch-frame-selects-current-receiver-property-accessor-and-autorelease-queue";
+inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionAutoreleaseModel =
+    "autorelease-values-drain-at-runtime-dispatch-return";
+inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionFailClosedModel =
+    "owned-and-weak-runtime-backed-accessors-may-not-fall-back-to-summary-only-lowering";
+inline constexpr const char *kObjc3RuntimeReadCurrentPropertyI32Symbol =
+    "objc3_runtime_read_current_property_i32";
+inline constexpr const char *kObjc3RuntimeWriteCurrentPropertyI32Symbol =
+    "objc3_runtime_write_current_property_i32";
+inline constexpr const char *kObjc3RuntimeExchangeCurrentPropertyI32Symbol =
+    "objc3_runtime_exchange_current_property_i32";
+inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
+    "objc3_runtime_load_weak_current_property_i32";
+inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =
+    "objc3_runtime_store_weak_current_property_i32";
+inline constexpr const char *kObjc3RuntimeRetainI32Symbol =
+    "objc3_runtime_retain_i32";
+inline constexpr const char *kObjc3RuntimeReleaseI32Symbol =
+    "objc3_runtime_release_i32";
+inline constexpr const char *kObjc3RuntimeAutoreleaseI32Symbol =
+    "objc3_runtime_autorelease_i32";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1615,6 +1645,7 @@ std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
 std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
 std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
 std::string Objc3OwnershipLoweringBaselineSummary();
+std::string Objc3OwnershipRuntimeHookEmissionSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

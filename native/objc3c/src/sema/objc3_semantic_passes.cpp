@@ -12490,6 +12490,9 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.effective_setter_available;
       property_metadata.effective_setter_selector =
           source.effective_setter_selector;
+      // M260-C002 ownership runtime hook emission anchor: lowering now treats
+      // the sema-approved lifetime/runtime-hook/accessor-ownership trio as the
+      // authoritative executable hook surface for synthesized property access.
       property_metadata.accessor_ownership_profile =
           source.accessor_ownership_profile;
       property_metadata.executable_ivar_layout_symbol =

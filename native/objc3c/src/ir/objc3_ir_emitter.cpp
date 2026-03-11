@@ -35,6 +35,9 @@ class Objc3IREmitter {
         SynthesizedAccessorKind::None;
     std::string synthesized_storage_symbol;
     ValueType synthesized_value_type = ValueType::Unknown;
+    std::string synthesized_ownership_lifetime_profile;
+    std::string synthesized_ownership_runtime_hook_profile;
+    std::string synthesized_accessor_ownership_profile;
   };
 
   struct SynthesizedPropertyStorage {
@@ -137,7 +140,10 @@ class Objc3IREmitter {
                              &method,
                              SynthesizedAccessorKind::None,
                              std::string{},
-                             ValueType::Unknown});
+                             ValueType::Unknown,
+                             std::string{},
+                             std::string{},
+                             std::string{}});
         if (!method.scope_path_symbol.empty()) {
           method_owner_identities.insert(method.scope_path_symbol);
         }
@@ -206,6 +212,9 @@ class Objc3IREmitter {
                 kind,
                 storage_it->second,
                 property_type,
+                bundle.ownership_lifetime_profile,
+                bundle.ownership_runtime_hook_profile,
+                bundle.accessor_ownership_profile,
             });
             ++synthesized_property_accessor_count_;
           };
@@ -1304,6 +1313,20 @@ class Objc3IREmitter {
     // No live runtime ownership hooks are emitted here before M260-C002.
     out << "; ownership_lowering_baseline = "
         << Objc3OwnershipLoweringBaselineSummary() << "\n";
+    if (synthesized_property_accessor_count_ > 0u) {
+      // M260-C002 runtime hook emission anchor: synthesized accessors now
+      // execute through runtime-owned helper entrypoints that consume the
+      // current dispatch-frame property context rather than the old summary-only
+      // ownership lane. The legacy storage globals stay emitted for historical
+      // artifact compatibility, but owned and weak execution paths use the live
+      // runtime hooks below.
+      out << "; ownership_runtime_hook_emission = "
+          << Objc3OwnershipRuntimeHookEmissionSummary()
+          << ";synthesized_accessor_entries="
+          << synthesized_property_accessor_count_
+          << ";synthesized_storage_globals="
+          << synthesized_property_storages_.size() << "\n";
+    }
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2498,6 +2521,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_dispatch_surface_classification = !{!66}\n";
     out << "!objc3.objc_executable_ivar_layout_emission = !{!67}\n";
     out << "!objc3.objc_executable_synthesized_accessor_property_lowering = !{!68}\n";
+    out << "!objc3.objc_runtime_ownership_hook_emission = !{!69}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3610,6 +3634,38 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel)
+        << "\", i64 "
+        << static_cast<unsigned long long>(synthesized_property_accessor_count_)
+        << ", i64 "
+        << static_cast<unsigned long long>(synthesized_property_storages_.size())
+        << "}\n";
+    out << "!69 = !{!\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeHookEmissionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeHookEmissionAccessorModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3OwnershipRuntimeHookEmissionPropertyContextModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3OwnershipRuntimeHookEmissionAutoreleaseModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3OwnershipRuntimeHookEmissionFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReadCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeWriteCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeExchangeCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
         << "\", i64 "
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
         << ", i64 "
@@ -9134,6 +9190,45 @@ class Objc3IREmitter {
       emit_runtime_dispatch_declaration(
           kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
     }
+    if (synthesized_property_accessor_count_ > 0u) {
+      emit_declaration_once(kObjc3RuntimeReadCurrentPropertyI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeReadCurrentPropertyI32Symbol) +
+                                "()\n");
+      emit_declaration_once(kObjc3RuntimeWriteCurrentPropertyI32Symbol,
+                            "declare void @" +
+                                std::string(
+                                    kObjc3RuntimeWriteCurrentPropertyI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeExchangeCurrentPropertyI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeExchangeCurrentPropertyI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol) +
+                                "()\n");
+      emit_declaration_once(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol,
+                            "declare void @" +
+                                std::string(
+                                    kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeRetainI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeRetainI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeReleaseI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeReleaseI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeAutoreleaseI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
+                                "(i32)\n");
+    }
     for (const auto &entry : function_signatures_) {
       if (defined_functions_.find(entry.first) != defined_functions_.end()) {
         continue;
@@ -9340,17 +9435,43 @@ class Objc3IREmitter {
         method_def.synthesized_storage_symbol.empty()) {
       return;
     }
+    const auto profile_contains = [](const std::string &profile,
+                                     const char *needle) {
+      return !profile.empty() && needle != nullptr &&
+             profile.find(needle) != std::string::npos;
+    };
+    const bool uses_weak_runtime_hooks =
+        method_def.synthesized_ownership_runtime_hook_profile ==
+        "objc-weak-side-table";
+    const bool uses_strong_runtime_hooks =
+        method_def.synthesized_ownership_lifetime_profile == "strong-owned" ||
+        profile_contains(method_def.synthesized_accessor_ownership_profile,
+                         "ownership_lifetime=strong-owned");
     const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
     if (method_def.synthesized_accessor_kind == SynthesizedAccessorKind::Getter) {
       out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
       out << "entry:\n";
-      out << "  %objc3_property_slot = load i32, ptr @"
-          << method_def.synthesized_storage_symbol << ", align 4\n";
+      const std::string loaded_value = "%objc3_property_slot";
+      out << "  " << loaded_value << " = call i32 @"
+          << (uses_weak_runtime_hooks ? kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+                                      : kObjc3RuntimeReadCurrentPropertyI32Symbol)
+          << "()\n";
+      std::string returned_value = loaded_value;
+      if (uses_strong_runtime_hooks) {
+        const std::string retained_value = "%objc3_property_retained";
+        const std::string autoreleased_value = "%objc3_property_autoreleased";
+        out << "  " << retained_value << " = call i32 @"
+            << kObjc3RuntimeRetainI32Symbol << "(i32 " << loaded_value << ")\n";
+        out << "  " << autoreleased_value << " = call i32 @"
+            << kObjc3RuntimeAutoreleaseI32Symbol << "(i32 " << retained_value
+            << ")\n";
+        returned_value = autoreleased_value;
+      }
       if (method_def.synthesized_value_type == ValueType::Bool) {
         out << "  %objc3_property_value = icmp ne i32 %objc3_property_slot, 0\n";
         out << "  ret i1 %objc3_property_value\n";
       } else {
-        out << "  ret i32 %objc3_property_slot\n";
+        out << "  ret i32 " << returned_value << "\n";
       }
       out << "}\n";
       return;
@@ -9359,13 +9480,25 @@ class Objc3IREmitter {
     out << "define void @" << method_def.symbol << "(" << llvm_value_type
         << " %arg0) {\n";
     out << "entry:\n";
+    std::string stored_value = "%arg0";
     if (method_def.synthesized_value_type == ValueType::Bool) {
       out << "  %objc3_property_value = zext i1 %arg0 to i32\n";
-      out << "  store i32 %objc3_property_value, ptr @"
-          << method_def.synthesized_storage_symbol << ", align 4\n";
+      stored_value = "%objc3_property_value";
+    }
+    if (uses_weak_runtime_hooks) {
+      out << "  call void @" << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+          << "(i32 " << stored_value << ")\n";
+    } else if (uses_strong_runtime_hooks) {
+      out << "  %objc3_property_retained = call i32 @"
+          << kObjc3RuntimeRetainI32Symbol << "(i32 " << stored_value << ")\n";
+      out << "  %objc3_property_previous = call i32 @"
+          << kObjc3RuntimeExchangeCurrentPropertyI32Symbol << "(i32 %objc3_property_retained)\n";
+      out << "  %objc3_property_release = call i32 @"
+          << kObjc3RuntimeReleaseI32Symbol
+          << "(i32 %objc3_property_previous)\n";
     } else {
-      out << "  store i32 %arg0, ptr @" << method_def.synthesized_storage_symbol
-          << ", align 4\n";
+      out << "  call void @" << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+          << "(i32 " << stored_value << ")\n";
     }
     out << "  ret void\n";
     out << "}\n";
