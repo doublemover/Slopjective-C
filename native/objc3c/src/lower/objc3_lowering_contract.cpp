@@ -728,6 +728,24 @@ std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() {
+  std::ostringstream out;
+  // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+  // autoreleasepool scopes still fail closed, but owned runtime-backed object storage now upgrades
+  // that rejection into a deterministic destruction-order
+  // edge diagnostic rather than leaving the ownership-sensitive case
+  // indistinguishable from a plain autoreleasepool parse-only probe.
+  out << "contract="
+      << kObjc3RuntimeBackedAutoreleasepoolDestructionOrderContractId
+      << ";autoreleasepool_model="
+      << kObjc3RuntimeBackedAutoreleasepoolModel
+      << ";destruction_model="
+      << kObjc3RuntimeBackedDestructionOrderModel
+      << ";failure_model="
+      << kObjc3RuntimeBackedAutoreleasepoolDestructionOrderFailClosedModel;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

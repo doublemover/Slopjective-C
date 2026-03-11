@@ -11544,6 +11544,27 @@ legality for runtime-backed Objective-C object property storage.
     spelled by `__unsafe_unretained`
   - `M260-B003` is the next issue
 
+## M260 autoreleasepool and destruction-order semantics (B003)
+
+`M260-B003` keeps `@autoreleasepool` fail-closed in native mode, but it now
+distinguishes the ownership-sensitive case where owned runtime-backed object or
+synthesized property storage would require deferred destruction-order support.
+
+- contract id
+  `objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1`
+- canonical proof fixtures
+  - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_legality_positive.objc3`
+  - `tests/tooling/fixtures/native/m260_autoreleasepool_owned_storage_destruction_order_negative.objc3`
+- implemented semantic expansion
+  - plain `@autoreleasepool` still fails closed with the existing native-mode
+    unsupported-feature diagnostic
+  - `@autoreleasepool` combined with owned runtime-backed object or synthesized
+    property storage now emits an additional destruction-order diagnostic
+- truthful boundary
+  - no live autoreleasepool lowering or runtime support lands here
+  - no destruction-order runtime remains lands here
+  - `M260-C001` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

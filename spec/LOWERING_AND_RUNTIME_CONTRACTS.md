@@ -7407,3 +7407,29 @@ semantic legality pass for runtime-backed Objective-C object properties.
   - `unowned` remains the safe runtime-backed storage profile and therefore is
     not treated as a synonym for explicit `__unsafe_unretained`
   - `M260-B003` is the next implementation issue
+
+## M260 autoreleasepool and destruction-order semantics (B003)
+
+`M260-B003` expands the fail-closed semantic model for runtime-backed object
+ownership by distinguishing plain autoreleasepool rejection from the
+ownership-sensitive case where owned runtime-backed object or synthesized
+property storage would require deferred destruction-order support.
+
+- contract id
+  `objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1`
+- autoreleasepool model
+  `autoreleasepool-scopes-remain-fail-closed-while-owned-runtime-backed-object-storage-publishes-destruction-order-edge-diagnostics`
+- destruction model
+  `owned-runtime-backed-object-or-synthesized-property-storage-inside-autoreleasepool-requires-deferred-destruction-order-runtime-support`
+- failure model
+  `fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage`
+- implemented semantic expansion
+  - plain `@autoreleasepool` still fails with the existing native-mode
+    unsupported-feature diagnostic
+  - `@autoreleasepool` combined with owned runtime-backed object or synthesized
+    property storage now emits a second deterministic destruction-order
+    diagnostic
+- truthful boundary
+  - no live autoreleasepool lowering or runtime support lands here
+  - no destruction-order runtime remains lands here
+  - `M260-C001` is the next implementation issue

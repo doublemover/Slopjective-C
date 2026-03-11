@@ -574,6 +574,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBackedStorageOwnershipFailClosedModel =
         "fail-closed-on-runtime-backed-object-property-ownership-qualifier-modifier-drift";
+// M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+// lane-B keeps autoreleasepool scopes fail-closed but now distinguishes the
+// ownership-sensitive case where owned runtime-backed object or synthesized
+// property storage would require deferred destruction-order semantics.
+inline constexpr const char
+    *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderContractId =
+        "objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1";
+inline constexpr const char
+    *kObjc3RuntimeBackedAutoreleasepoolModel =
+        "autoreleasepool-scopes-remain-fail-closed-while-owned-runtime-backed-object-storage-publishes-destruction-order-edge-diagnostics";
+inline constexpr const char
+    *kObjc3RuntimeBackedDestructionOrderModel =
+        "owned-runtime-backed-object-or-synthesized-property-storage-inside-autoreleasepool-requires-deferred-destruction-order-runtime-support";
+inline constexpr const char
+    *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderFailClosedModel =
+        "fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1582,6 +1598,7 @@ std::string Objc3RuntimePropertyMetadataReflectionSummary();
 std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
 std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
+std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

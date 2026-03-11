@@ -1291,6 +1291,13 @@ class Objc3IREmitter {
     // unowned contract now enforced before metadata emission.
     out << "; runtime_backed_storage_ownership_legality = "
         << Objc3RuntimeBackedStorageOwnershipLegalitySummary() << "\n";
+    // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+    // lane-B still fail-closes autoreleasepool, but the IR closeout surface
+    // now publishes the ownership-sensitive destruction-order contract that
+    // distinguishes plain pool rejection from owned runtime-backed object
+    // storage edges.
+    out << "; runtime_backed_autoreleasepool_destruction_order = "
+        << Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

@@ -446,6 +446,53 @@ struct Objc3UnsupportedFeatureClaimEnforcementStats {
   std::size_t arc_source_rejection_site_count = 0;
 };
 
+struct Objc3UnsupportedFeatureClaimContext {
+  std::size_t owned_runtime_backed_object_property_sites = 0;
+  bool has_owned_runtime_backed_object_storage = false;
+};
+
+static bool IsRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
+  return !property.vector_spelling &&
+         (property.id_spelling || property.class_spelling ||
+          property.instancetype_spelling ||
+          property.object_pointer_type_spelling);
+}
+
+static bool IsOwnedRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
+  return IsRuntimeBackedObjectProperty(property) &&
+         (property.is_copy || property.is_strong ||
+          property.ownership_qualifier_spelling == "__strong");
+}
+
+static Objc3UnsupportedFeatureClaimContext
+BuildUnsupportedFeatureClaimContext(const Objc3Program &ast) {
+  Objc3UnsupportedFeatureClaimContext context;
+  std::unordered_set<std::string> seen_owned_storage_sites;
+  const auto record_properties = [&](const auto &owner_name,
+                                     const auto &properties) {
+    for (const auto &property : properties) {
+      if (!IsOwnedRuntimeBackedObjectProperty(property)) {
+        continue;
+      }
+      const std::string key = owner_name + "::" + property.name;
+      if (!seen_owned_storage_sites.emplace(key).second) {
+        continue;
+      }
+      ++context.owned_runtime_backed_object_property_sites;
+    }
+  };
+
+  for (const auto &interface_decl : ast.interfaces) {
+    record_properties(interface_decl.name, interface_decl.properties);
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    record_properties(implementation_decl.name, implementation_decl.properties);
+  }
+  context.has_owned_runtime_backed_object_storage =
+      context.owned_runtime_backed_object_property_sites > 0u;
+  return context;
+}
+
 static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
@@ -563,12 +610,14 @@ static void RecordUnsupportedFeatureClaimDiagnostic(
 static void DiagnoseUnsupportedFeatureClaimsInExpr(
     const Expr *expr,
     std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats);
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats,
+    const Objc3UnsupportedFeatureClaimContext &context);
 
 static void DiagnoseUnsupportedFeatureClaimsInStmt(
     const Stmt *stmt,
     std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats,
+    const Objc3UnsupportedFeatureClaimContext &context) {
   if (stmt == nullptr) {
     return;
   }
@@ -577,19 +626,19 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
       DiagnoseUnsupportedFeatureClaimsInExpr(
-          stmt->let_stmt->value.get(), diagnostics, stats);
+          stmt->let_stmt->value.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
       DiagnoseUnsupportedFeatureClaimsInExpr(
-          stmt->assign_stmt->value.get(), diagnostics, stats);
+          stmt->assign_stmt->value.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
       DiagnoseUnsupportedFeatureClaimsInExpr(
-          stmt->return_stmt->value.get(), diagnostics, stats);
+          stmt->return_stmt->value.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::If:
@@ -597,14 +646,14 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       return;
     }
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->if_stmt->condition.get(), diagnostics, stats);
+        stmt->if_stmt->condition.get(), diagnostics, stats, context);
     for (const auto &then_stmt : stmt->if_stmt->then_body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          then_stmt.get(), diagnostics, stats);
+          then_stmt.get(), diagnostics, stats, context);
     }
     for (const auto &else_stmt : stmt->if_stmt->else_body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          else_stmt.get(), diagnostics, stats);
+          else_stmt.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::DoWhile:
@@ -613,24 +662,24 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
     }
     for (const auto &body_stmt : stmt->do_while_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          body_stmt.get(), diagnostics, stats);
+          body_stmt.get(), diagnostics, stats, context);
     }
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->do_while_stmt->condition.get(), diagnostics, stats);
+        stmt->do_while_stmt->condition.get(), diagnostics, stats, context);
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt == nullptr) {
       return;
     }
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->for_stmt->init.value.get(), diagnostics, stats);
+        stmt->for_stmt->init.value.get(), diagnostics, stats, context);
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->for_stmt->condition.get(), diagnostics, stats);
+        stmt->for_stmt->condition.get(), diagnostics, stats, context);
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->for_stmt->step.value.get(), diagnostics, stats);
+        stmt->for_stmt->step.value.get(), diagnostics, stats, context);
     for (const auto &body_stmt : stmt->for_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          body_stmt.get(), diagnostics, stats);
+          body_stmt.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Switch:
@@ -638,11 +687,11 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       return;
     }
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->switch_stmt->condition.get(), diagnostics, stats);
+        stmt->switch_stmt->condition.get(), diagnostics, stats, context);
     for (const auto &switch_case : stmt->switch_stmt->cases) {
       for (const auto &case_stmt : switch_case.body) {
         DiagnoseUnsupportedFeatureClaimsInStmt(
-            case_stmt.get(), diagnostics, stats);
+            case_stmt.get(), diagnostics, stats, context);
       }
     }
     return;
@@ -651,10 +700,10 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       return;
     }
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        stmt->while_stmt->condition.get(), diagnostics, stats);
+        stmt->while_stmt->condition.get(), diagnostics, stats, context);
     for (const auto &body_stmt : stmt->while_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          body_stmt.get(), diagnostics, stats);
+          body_stmt.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Block:
@@ -669,16 +718,30 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
           "unsupported feature claim: '@autoreleasepool' is not yet runnable in Objective-C 3 native mode",
           diagnostics,
           stats);
+      // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+      // owned runtime-backed object or synthesized property storage now
+      // upgrades the generic autoreleasepool rejection into a more specific
+      // destruction-order failure so later lowering/runtime lanes do not have
+      // to rediscover the ownership-sensitive edge inventory from source.
+      if (context.has_owned_runtime_backed_object_storage) {
+        RecordUnsupportedFeatureClaimDiagnostic(
+            stats.arc_source_rejection_site_count,
+            stmt->block_stmt->line,
+            stmt->block_stmt->column,
+            "unsupported feature claim: '@autoreleasepool' with owned runtime-backed object or synthesized property storage requires destruction-order semantics that are not yet runnable in Objective-C 3 native mode",
+            diagnostics,
+            stats);
+      }
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
-          body_stmt.get(), diagnostics, stats);
+          body_stmt.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
       DiagnoseUnsupportedFeatureClaimsInExpr(
-          stmt->expr_stmt->value.get(), diagnostics, stats);
+          stmt->expr_stmt->value.get(), diagnostics, stats, context);
     }
     return;
   case Stmt::Kind::Break:
@@ -691,7 +754,8 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
 static void DiagnoseUnsupportedFeatureClaimsInExpr(
     const Expr *expr,
     std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats,
+    const Objc3UnsupportedFeatureClaimContext &context) {
   if (expr == nullptr) {
     return;
   }
@@ -708,29 +772,29 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     return;
   case Expr::Kind::Call:
     for (const auto &arg : expr->args) {
-      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats);
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
     }
     return;
   case Expr::Kind::MessageSend:
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->receiver.get(), diagnostics, stats);
+        expr->receiver.get(), diagnostics, stats, context);
     for (const auto &arg : expr->args) {
-      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats);
+      DiagnoseUnsupportedFeatureClaimsInExpr(arg.get(), diagnostics, stats, context);
     }
     return;
   case Expr::Kind::Binary:
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->left.get(), diagnostics, stats);
+        expr->left.get(), diagnostics, stats, context);
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->right.get(), diagnostics, stats);
+        expr->right.get(), diagnostics, stats, context);
     return;
   case Expr::Kind::Conditional:
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->left.get(), diagnostics, stats);
+        expr->left.get(), diagnostics, stats, context);
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->right.get(), diagnostics, stats);
+        expr->right.get(), diagnostics, stats, context);
     DiagnoseUnsupportedFeatureClaimsInExpr(
-        expr->third.get(), diagnostics, stats);
+        expr->third.get(), diagnostics, stats, context);
     return;
   case Expr::Kind::BoolLiteral:
   case Expr::Kind::Identifier:
@@ -744,7 +808,8 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
 static void DiagnoseUnsupportedFunctionFeatureClaims(
     const FunctionDecl &fn,
     std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats,
+    const Objc3UnsupportedFeatureClaimContext &context) {
   // M260-A001 runtime-backed-object-ownership freeze anchor: the current
   // runnable ownership slice is still limited to object/property/accessor
   // ownership profiles plus the legacy ownership summary lanes below. ARC
@@ -787,14 +852,15 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
         stats);
   }
   for (const auto &stmt : fn.body) {
-    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats, context);
   }
 }
 
 static void DiagnoseUnsupportedMethodFeatureClaims(
     const Objc3MethodDecl &method,
     std::vector<std::string> &diagnostics,
-    Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
+    Objc3UnsupportedFeatureClaimEnforcementStats &stats,
+    const Objc3UnsupportedFeatureClaimContext &context) {
   // M260-A001 runtime-backed-object-ownership freeze anchor: method-level ARC
   // ownership qualifiers still sit outside the truthful runnable object-model
   // claim even though property/member ownership profiles are already preserved
@@ -835,7 +901,7 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
         stats);
   }
   for (const auto &stmt : method.body) {
-    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats);
+    DiagnoseUnsupportedFeatureClaimsInStmt(stmt.get(), diagnostics, stats, context);
   }
 }
 
@@ -847,22 +913,24 @@ DiagnoseUnsupportedFeatureClaimSources(
   // runnable-core positive path at zero-site readiness and reject accepted
   // unsupported advanced sources deterministically with O3S221.
   Objc3UnsupportedFeatureClaimEnforcementStats stats;
+  const Objc3UnsupportedFeatureClaimContext context =
+      BuildUnsupportedFeatureClaimContext(ast);
   for (const auto &fn : ast.functions) {
-    DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats);
+    DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats, context);
   }
   for (const auto &protocol_decl : ast.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats, context);
     }
   }
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats, context);
     }
   }
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
-      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats);
+      DiagnoseUnsupportedMethodFeatureClaims(method, diagnostics, stats, context);
     }
   }
   if (stats.throws_source_rejection_site_count > 0u) {

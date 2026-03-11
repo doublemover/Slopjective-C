@@ -9718,3 +9718,17 @@ for runtime-backed Objective-C object property storage.
 - `unowned` remains the safe runtime-backed storage profile and is therefore
   not interchangeable with explicit `__unsafe_unretained`
 - the next issue is `M260-B003`
+
+## M260 Autoreleasepool And Destruction-Order Semantics (B003)
+
+`M260-B003` keeps autoreleasepool scopes fail-closed, but it now separates the
+ownership-sensitive case where owned runtime-backed object or synthesized
+property storage would require deferred destruction-order support.
+
+- plain `@autoreleasepool` still produces the existing unsupported-feature
+  diagnostic
+- `@autoreleasepool` plus owned runtime-backed object or synthesized property
+  storage now produces an additional destruction-order diagnostic
+- emitted ownership metadata remains unchanged in this lane; the expansion is a
+  semantic admission rule only
+- the next issue is `M260-C001`

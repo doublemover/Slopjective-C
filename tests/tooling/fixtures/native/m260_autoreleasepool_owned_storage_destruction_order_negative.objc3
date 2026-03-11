@@ -1,0 +1,15 @@
+module autoreleasepoolOwnedStorageDestructionOrderProbe;
+
+@interface Box
+@property (strong) id currentValue;
+@end
+
+@implementation Box
+@property (strong) id currentValue;
+@end
+
+fn main() -> i32 {
+  @autoreleasepool {
+    return 0;
+  }
+}

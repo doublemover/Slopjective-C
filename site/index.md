@@ -8242,6 +8242,32 @@ semantic legality pass for runtime-backed Objective-C object properties.
   - `unowned` remains the safe runtime-backed storage profile and therefore is
     not treated as a synonym for explicit `__unsafe_unretained`
   - `M260-B003` is the next implementation issue
+
+## M260 autoreleasepool and destruction-order semantics (B003)
+
+`M260-B003` expands the fail-closed semantic model for runtime-backed object
+ownership by distinguishing plain autoreleasepool rejection from the
+ownership-sensitive case where owned runtime-backed object or synthesized
+property storage would require deferred destruction-order support.
+
+- contract id
+  `objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1`
+- autoreleasepool model
+  `autoreleasepool-scopes-remain-fail-closed-while-owned-runtime-backed-object-storage-publishes-destruction-order-edge-diagnostics`
+- destruction model
+  `owned-runtime-backed-object-or-synthesized-property-storage-inside-autoreleasepool-requires-deferred-destruction-order-runtime-support`
+- failure model
+  `fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage`
+- implemented semantic expansion
+  - plain `@autoreleasepool` still fails with the existing native-mode
+    unsupported-feature diagnostic
+  - `@autoreleasepool` combined with owned runtime-backed object or synthesized
+    property storage now emits a second deterministic destruction-order
+    diagnostic
+- truthful boundary
+  - no live autoreleasepool lowering or runtime support lands here
+  - no destruction-order runtime remains lands here
+  - `M260-C001` is the next implementation issue
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -16576,6 +16602,24 @@ owned, weak, or unowned storage family.
   - `unowned` remains the safe runtime-backed storage profile while explicit
     `__unsafe_unretained` remains the unsafe storage qualifier surface
   - `M260-B003` is the next issue
+
+## M260 autoreleasepool and destruction-order semantic metadata anchors (B003)
+
+`M260-B003` does not widen the emitted metadata ABI. It tightens the semantic
+admission boundary so ownership-sensitive autoreleasepool cases fail closed
+before later lowering/runtime lanes would have to guess destruction-order
+requirements from emitted metadata.
+
+- contract id
+  `objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b003/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b003/positive/module.ll`
+- truthful boundary
+  - emitted ownership metadata remains unchanged from `M260-A002/B002`
+  - owned runtime-backed storage plus `@autoreleasepool` now fails with a
+    destruction-order diagnostic before metadata emission proceeds
+  - `M260-C001` is the next issue
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---

@@ -8327,3 +8327,21 @@ owned, weak, or unowned storage family.
   - `unowned` remains the safe runtime-backed storage profile while explicit
     `__unsafe_unretained` remains the unsafe storage qualifier surface
   - `M260-B003` is the next issue
+
+## M260 autoreleasepool and destruction-order semantic metadata anchors (B003)
+
+`M260-B003` does not widen the emitted metadata ABI. It tightens the semantic
+admission boundary so ownership-sensitive autoreleasepool cases fail closed
+before later lowering/runtime lanes would have to guess destruction-order
+requirements from emitted metadata.
+
+- contract id
+  `objc3c-runtime-backed-autoreleasepool-destruction-order-semantics/m260-b003-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b003/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b003/positive/module.ll`
+- truthful boundary
+  - emitted ownership metadata remains unchanged from `M260-A002/B002`
+  - owned runtime-backed storage plus `@autoreleasepool` now fails with a
+    destruction-order diagnostic before metadata emission proceeds
+  - `M260-C001` is the next issue
