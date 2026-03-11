@@ -1,0 +1,9 @@
+module m261_capture_legality_escape_invocation_bad_call;
+
+fn source_semantic_probe() -> i32 {
+  let seed = 7;
+  let closure = ^(i32 value) {
+    return seed + value;
+  };
+  return closure(true);
+}

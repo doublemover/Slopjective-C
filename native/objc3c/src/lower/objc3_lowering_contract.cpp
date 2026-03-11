@@ -2193,6 +2193,11 @@ std::string Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
 
 bool IsValidObjc3BlockStorageEscapeLoweringContract(
     const Objc3BlockStorageEscapeLoweringContract &contract) {
+  // M261-B002 capture-legality/escape/invocation implementation anchor:
+  // truthful escape classification no longer pretends that every capture is
+  // mutated or lowered through byref storage. Mutable/byref counts are now a
+  // bounded subset of the total capture inventory while source-only native
+  // fail-closed behavior remains unchanged.
   if (contract.requires_byref_cells_sites > contract.block_literal_sites ||
       contract.escape_analysis_enabled_sites > contract.block_literal_sites ||
       contract.escape_to_heap_sites > contract.block_literal_sites ||
@@ -2208,8 +2213,9 @@ bool IsValidObjc3BlockStorageEscapeLoweringContract(
            contract.capture_entries_total == 0 &&
            contract.body_statement_entries_total == 0;
   }
-  if (contract.mutable_capture_count_total != contract.capture_entries_total ||
-      contract.byref_slot_count_total != contract.capture_entries_total ||
+  if (contract.mutable_capture_count_total > contract.capture_entries_total ||
+      contract.byref_slot_count_total > contract.capture_entries_total ||
+      contract.byref_slot_count_total > contract.mutable_capture_count_total ||
       contract.escape_analysis_enabled_sites != contract.block_literal_sites ||
       contract.requires_byref_cells_sites != contract.escape_to_heap_sites) {
     return false;
@@ -2242,6 +2248,10 @@ std::string Objc3BlockStorageEscapeLoweringReplayKey(
 
 bool IsValidObjc3BlockCopyDisposeLoweringContract(
     const Objc3BlockCopyDisposeLoweringContract &contract) {
+  // M261-B002 capture-legality/escape/invocation implementation anchor:
+  // copy/dispose helper intent is now driven by truthful mutable/byref
+  // capture counts rather than by the older synthetic all-captures-need-
+  // helpers model.
   if (contract.copy_helper_required_sites > contract.block_literal_sites ||
       contract.dispose_helper_required_sites > contract.block_literal_sites ||
       contract.profile_normalized_sites > contract.block_literal_sites ||
@@ -2257,8 +2267,9 @@ bool IsValidObjc3BlockCopyDisposeLoweringContract(
            contract.capture_entries_total == 0 &&
            contract.body_statement_entries_total == 0;
   }
-  if (contract.mutable_capture_count_total != contract.capture_entries_total ||
-      contract.byref_slot_count_total != contract.capture_entries_total ||
+  if (contract.mutable_capture_count_total > contract.capture_entries_total ||
+      contract.byref_slot_count_total > contract.capture_entries_total ||
+      contract.byref_slot_count_total > contract.mutable_capture_count_total ||
       contract.copy_helper_required_sites != contract.dispose_helper_required_sites) {
     return false;
   }

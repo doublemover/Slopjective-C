@@ -91,6 +91,18 @@ struct Expr {
       "block-runtime-semantics-freeze-block-literals-as-source-only-function-shaped-values-while-runnable-invocation-fails-closed";
   static inline constexpr const char *kObjc3ExecutableBlockRuntimeFailClosedModel =
       "block-runtime-semantics-fail-closed-on-native-emit-before-runnable-block-semantics-land";
+  // M261-B002 capture-legality/escape/invocation implementation constants:
+  // lane-B now upgrades the source-only semantic path so live capture
+  // resolution, truthful escape classification, and local block invocation
+  // typing are enforced before runnable block-object lowering lands.
+  static inline constexpr const char *kObjc3ExecutableBlockCaptureLegalityImplementationContractId =
+      "objc3c-executable-block-capture-legality-escape-and-invocation/m261-b002-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockCaptureLegalityImplementationModel =
+      "source-only-sema-enforces-live-capture-resolution-and-mutability-classification-before-runnable-block-object-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeClassificationImplementationModel =
+      "source-only-sema-classifies-byref-escape-and-copy-dispose-requirements-from-parser-owned-annotations-before-runnable-helper-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockInvocationTypingImplementationModel =
+      "source-only-sema-types-local-block-invocations-as-callable-values-while-native-block-execution-remains-fail-closed";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -165,6 +177,7 @@ struct Expr {
   std::vector<std::string> block_parameter_names_lexicographic;
   std::size_t block_parameter_count = 0;
   std::vector<std::string> block_parameter_signature_entries_lexicographic;
+  std::vector<ValueType> block_parameter_types_source_order;
   std::size_t block_explicit_typed_parameter_count = 0;
   std::size_t block_implicit_parameter_count = 0;
   std::string block_signature_profile;

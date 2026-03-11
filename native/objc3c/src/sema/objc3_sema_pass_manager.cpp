@@ -906,6 +906,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // manager freezes this exact source-only admission boundary as the
           // current semantic contract while native emit paths still fail
           // closed on runnable block semantics.
+          // M261-B002 capture-legality/escape/invocation implementation
+          // anchor: lane-B keeps this same admission boundary but now expects
+          // ValidateBodies to enforce live capture legality and local callable
+          // block invocation typing inside the source-only path.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

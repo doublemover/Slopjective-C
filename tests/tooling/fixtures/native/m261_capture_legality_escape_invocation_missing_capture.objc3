@@ -1,0 +1,8 @@
+module m261_capture_legality_escape_invocation_missing_capture;
+
+fn source_semantic_probe() -> i32 {
+  let closure = ^(i32 value) {
+    return seed + value;
+  };
+  return 0;
+}

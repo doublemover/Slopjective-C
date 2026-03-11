@@ -49,6 +49,9 @@ struct SemanticTypeInfo {
   bool is_vector = false;
   std::string vector_base_spelling;
   unsigned vector_lane_count = 1;
+  bool is_callable = false;
+  std::vector<ValueType> callable_param_types;
+  ValueType callable_return_type = ValueType::Unknown;
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
@@ -145,8 +148,30 @@ static SemanticTypeInfo MakeSemanticTypeFromGlobal(ValueType type) {
   return MakeScalarSemanticType(type);
 }
 
+static SemanticTypeInfo MakeCallableSemanticType(std::vector<ValueType> param_types,
+                                                 ValueType return_type) {
+  SemanticTypeInfo info;
+  info.type = ValueType::Function;
+  info.is_callable = true;
+  info.callable_param_types = std::move(param_types);
+  info.callable_return_type = return_type;
+  return info;
+}
+
+static SemanticTypeInfo MakeCallableSemanticTypeFromBlockLiteral(const Expr &expr) {
+  std::vector<ValueType> param_types = expr.block_parameter_types_source_order;
+  if (param_types.size() < expr.block_parameter_count) {
+    param_types.resize(expr.block_parameter_count, ValueType::Unknown);
+  }
+  return MakeCallableSemanticType(std::move(param_types), ValueType::Unknown);
+}
+
 static bool IsUnknownSemanticType(const SemanticTypeInfo &info) {
   return !info.is_vector && info.type == ValueType::Unknown;
+}
+
+static bool IsCallableSemanticType(const SemanticTypeInfo &info) {
+  return !info.is_vector && info.type == ValueType::Function && info.is_callable;
 }
 
 static bool IsScalarSemanticType(const SemanticTypeInfo &info) {
@@ -569,7 +594,14 @@ static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeIn
   if (lhs.type != rhs.type) {
     return false;
   }
+  if (lhs.is_callable != rhs.is_callable) {
+    return false;
+  }
   if (!lhs.is_vector) {
+    if (lhs.is_callable) {
+      return lhs.callable_param_types == rhs.callable_param_types &&
+             lhs.callable_return_type == rhs.callable_return_type;
+    }
     return true;
   }
   return lhs.vector_lane_count == rhs.vector_lane_count && lhs.vector_base_spelling == rhs.vector_base_spelling;
@@ -577,6 +609,18 @@ static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeIn
 
 static std::string SemanticTypeName(const SemanticTypeInfo &info) {
   if (!info.is_vector) {
+    if (info.is_callable) {
+      std::ostringstream out;
+      out << "block(";
+      for (std::size_t index = 0; index < info.callable_param_types.size(); ++index) {
+        if (index > 0u) {
+          out << ", ";
+        }
+        out << TypeName(info.callable_param_types[index]);
+      }
+      out << ") -> " << TypeName(info.callable_return_type);
+      return out.str();
+    }
     return TypeName(info.type);
   }
   const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
@@ -2973,6 +3017,109 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 std::size_t max_message_send_args,
                                                 const Objc3MessageSendResolutionContext &message_send_context);
 
+static bool ResolveBlockCaptureSemanticType(
+    const std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::string &name,
+    SemanticTypeInfo &resolved_type) {
+  resolved_type = ScopeLookupType(scopes, name);
+  if (!IsUnknownSemanticType(resolved_type)) {
+    return true;
+  }
+  const auto global_it = globals.find(name);
+  if (global_it != globals.end()) {
+    resolved_type = MakeSemanticTypeFromGlobal(global_it->second);
+    return true;
+  }
+  return false;
+}
+
+static void ValidateBlockLiteralCaptureLegality(
+    const Expr *expr,
+    const std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    std::vector<std::string> &diagnostics) {
+  if (expr == nullptr || expr->kind != Expr::Kind::BlockLiteral) {
+    return;
+  }
+
+  if (expr->block_parameter_types_source_order.size() != expr->block_parameter_count) {
+    diagnostics.push_back(
+        MakeDiag(expr->line,
+                 expr->column,
+                 "O3S206",
+                 "type mismatch: block invocation parameter typing is incomplete"));
+  }
+  if (expr->block_capture_names_lexicographic.size() != expr->block_capture_count ||
+      !IsSortedUniqueStrings(expr->block_capture_names_lexicographic)) {
+    diagnostics.push_back(
+        MakeDiag(expr->line,
+                 expr->column,
+                 "O3S206",
+                 "type mismatch: block capture inventory is not normalized"));
+  }
+  if (expr->block_mutated_capture_names_lexicographic.size() != expr->block_mutated_capture_count ||
+      !IsSortedUniqueStrings(expr->block_mutated_capture_names_lexicographic)) {
+    diagnostics.push_back(
+        MakeDiag(expr->line,
+                 expr->column,
+                 "O3S206",
+                 "type mismatch: block mutated-capture inventory is not normalized"));
+  }
+  if (expr->block_byref_capture_names_lexicographic.size() != expr->block_byref_capture_count ||
+      !IsSortedUniqueStrings(expr->block_byref_capture_names_lexicographic)) {
+    diagnostics.push_back(
+        MakeDiag(expr->line,
+                 expr->column,
+                 "O3S206",
+                 "type mismatch: block byref-capture inventory is not normalized"));
+  }
+  if (!expr->block_source_storage_annotations_are_normalized) {
+    diagnostics.push_back(
+        MakeDiag(expr->line,
+                 expr->column,
+                 "O3S206",
+                 "type mismatch: block source storage annotations are not normalized"));
+  }
+
+  std::unordered_set<std::string> capture_names(
+      expr->block_capture_names_lexicographic.begin(),
+      expr->block_capture_names_lexicographic.end());
+  std::unordered_set<std::string> mutated_names(
+      expr->block_mutated_capture_names_lexicographic.begin(),
+      expr->block_mutated_capture_names_lexicographic.end());
+  for (const auto &mutated_name : expr->block_mutated_capture_names_lexicographic) {
+    if (capture_names.count(mutated_name) == 0u) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S206",
+                   "type mismatch: block mutated capture '" + mutated_name +
+                       "' is not present in the capture inventory"));
+    }
+  }
+  for (const auto &byref_name : expr->block_byref_capture_names_lexicographic) {
+    if (mutated_names.count(byref_name) == 0u) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S206",
+                   "type mismatch: block byref capture '" + byref_name +
+                       "' is not present in the mutated-capture inventory"));
+    }
+  }
+  for (const auto &capture_name : expr->block_capture_names_lexicographic) {
+    SemanticTypeInfo resolved_type = MakeScalarSemanticType(ValueType::Unknown);
+    if (!ResolveBlockCaptureSemanticType(scopes, globals, capture_name, resolved_type)) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S202",
+                   "undefined capture '" + capture_name + "' in block literal"));
+    }
+  }
+}
+
 static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<SemanticScope> &scopes,
                                      const std::unordered_map<std::string, ValueType> &globals,
                                      const std::unordered_map<std::string, FunctionInfo> &functions,
@@ -3163,6 +3310,11 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       // parameter/capture metadata on the source surface and classifies the
       // value as function-shaped; runnable invocation and runtime object
       // semantics remain outside this boundary.
+      // M261-B002 capture-legality, escape-classification, and invocation
+      // typing anchor: lane-B now turns the parser-owned capture/source
+      // annotations into live sema checks and a callable block signature for
+      // source-only invocation typing while native block execution still fails
+      // closed in later gates.
       const bool parameter_count_match = expr->block_parameter_names_lexicographic.size() == expr->block_parameter_count;
       const bool capture_count_match = expr->block_capture_names_lexicographic.size() == expr->block_capture_count;
       const bool parameters_deterministic =
@@ -3190,11 +3342,74 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
         diagnostics.push_back(
             MakeDiag(expr->line, expr->column, "O3S206", "type mismatch: block literal capture profile is missing"));
       }
-      return MakeScalarSemanticType(ValueType::Function);
+      ValidateBlockLiteralCaptureLegality(expr, scopes, globals, diagnostics);
+      return MakeCallableSemanticTypeFromBlockLiteral(*expr);
     }
     case Expr::Kind::Call: {
+      const SemanticTypeInfo local_type = ScopeLookupType(scopes, expr->ident);
+      if (!IsUnknownSemanticType(local_type)) {
+        if (!IsCallableSemanticType(local_type)) {
+          diagnostics.push_back(
+              MakeDiag(expr->line,
+                       expr->column,
+                       "O3S206",
+                       "type mismatch: symbol '" + expr->ident + "' is not callable"));
+          for (const auto &arg : expr->args) {
+            (void)ValidateExpr(arg.get(), scopes, globals, functions, diagnostics,
+                               max_message_send_args, message_send_context);
+          }
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        if (local_type.callable_param_types.size() != expr->args.size()) {
+          diagnostics.push_back(
+              MakeDiag(expr->line,
+                       expr->column,
+                       "O3S204",
+                       "arity mismatch for callable '" + expr->ident + "'"));
+        }
+        for (std::size_t i = 0; i < expr->args.size(); ++i) {
+          const SemanticTypeInfo arg_type = ValidateExpr(
+              expr->args[i].get(), scopes, globals, functions, diagnostics,
+              max_message_send_args, message_send_context);
+          if (i < local_type.callable_param_types.size()) {
+            const SemanticTypeInfo expected =
+                MakeScalarSemanticType(local_type.callable_param_types[i]);
+            const bool bool_coercion =
+                !expected.is_vector && expected.type == ValueType::Bool &&
+                !arg_type.is_vector && arg_type.type == ValueType::I32;
+            const bool i32_alias_coercion =
+                AreScalarI32AliasCompatible(expected, arg_type);
+            const bool objc_reference_coercion =
+                AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+            if (!IsUnknownSemanticType(expected) &&
+                !IsUnknownSemanticType(arg_type) &&
+                !IsSameSemanticType(arg_type, expected) &&
+                !bool_coercion &&
+                !i32_alias_coercion &&
+                !objc_reference_coercion) {
+              diagnostics.push_back(
+                  MakeDiag(expr->args[i]->line,
+                           expr->args[i]->column,
+                           "O3S206",
+                           "type mismatch: expected '" + SemanticTypeName(expected) +
+                               "' argument for parameter " + std::to_string(i) +
+                               " of callable '" + expr->ident + "', got '" +
+                               SemanticTypeName(arg_type) + "'"));
+            }
+          }
+        }
+        return MakeScalarSemanticType(local_type.callable_return_type);
+      }
+
       auto fn_it = functions.find(expr->ident);
-      if (fn_it == functions.end()) {
+      const auto global_it = globals.find(expr->ident);
+      if (fn_it == functions.end() && global_it != globals.end()) {
+        diagnostics.push_back(
+            MakeDiag(expr->line,
+                     expr->column,
+                     "O3S206",
+                     "type mismatch: global symbol '" + expr->ident + "' is not callable"));
+      } else if (fn_it == functions.end()) {
         diagnostics.push_back(
             MakeDiag(expr->line, expr->column, "O3S203", "unknown function '" + expr->ident + "'"));
       } else if (fn_it->second.arity != expr->args.size()) {
@@ -8264,23 +8479,58 @@ static Objc3BlockAbiInvokeTrampolineSemanticsSummary BuildBlockAbiInvokeTrampoli
 }
 
 static Objc3BlockStorageEscapeSiteMetadata BuildBlockStorageEscapeSiteMetadata(const Expr &expr) {
+  auto build_block_storage_escape_profile = [](std::size_t mutable_capture_count,
+                                               std::size_t byref_slot_count,
+                                               bool escape_to_heap,
+                                               std::size_t body_statement_count) {
+    std::ostringstream out;
+    out << "block-storage:mutable-captures=" << mutable_capture_count
+        << ";byref-slots=" << byref_slot_count
+        << ";escape=" << (escape_to_heap ? "heap" : "stack")
+        << ";body-statements=" << body_statement_count;
+    return out.str();
+  };
+  auto build_block_storage_byref_layout_symbol = [](unsigned line,
+                                                    unsigned column,
+                                                    std::size_t mutable_capture_count,
+                                                    std::size_t byref_slot_count,
+                                                    bool escape_to_heap) {
+    std::ostringstream out;
+    out << "__objc3_block_byref_layout_" << line << "_" << column
+        << "_m" << mutable_capture_count
+        << "_b" << byref_slot_count
+        << "_" << (escape_to_heap ? "heap" : "stack");
+    return out.str();
+  };
   Objc3BlockStorageEscapeSiteMetadata metadata;
-  metadata.mutable_capture_count = expr.block_storage_mutable_capture_count;
-  metadata.byref_slot_count = expr.block_storage_byref_slot_count;
+  metadata.mutable_capture_count = expr.block_mutated_capture_count;
+  metadata.byref_slot_count = expr.block_byref_capture_count;
   metadata.parameter_count = expr.block_parameter_count;
   metadata.capture_count = expr.block_capture_count;
   metadata.body_statement_count = expr.block_body_statement_count;
-  metadata.requires_byref_cells = expr.block_storage_requires_byref_cells;
-  metadata.escape_analysis_enabled = expr.block_storage_escape_analysis_enabled;
-  metadata.escape_to_heap = expr.block_storage_escape_to_heap;
-  metadata.escape_profile_is_normalized = expr.block_storage_escape_profile_is_normalized;
-  metadata.escape_profile = expr.block_storage_escape_profile;
-  metadata.byref_layout_symbol = expr.block_storage_byref_layout_symbol;
+  metadata.requires_byref_cells = metadata.byref_slot_count > 0u;
+  metadata.escape_analysis_enabled = true;
+  metadata.escape_to_heap = expr.block_escape_shape_promotes_to_heap_candidate;
+  metadata.escape_profile_is_normalized =
+      expr.block_source_storage_annotations_are_normalized;
+  metadata.escape_profile =
+      build_block_storage_escape_profile(metadata.mutable_capture_count,
+                                         metadata.byref_slot_count,
+                                         metadata.escape_to_heap,
+                                         metadata.body_statement_count);
+  metadata.byref_layout_symbol =
+      metadata.requires_byref_cells
+          ? build_block_storage_byref_layout_symbol(expr.line,
+                                                    expr.column,
+                                                    metadata.mutable_capture_count,
+                                                    metadata.byref_slot_count,
+                                                    metadata.escape_to_heap)
+          : "";
   metadata.line = expr.line;
   metadata.column = expr.column;
   metadata.has_count_mismatch =
-      metadata.mutable_capture_count != metadata.capture_count ||
-      metadata.byref_slot_count != metadata.capture_count ||
+      metadata.mutable_capture_count > metadata.capture_count ||
+      metadata.byref_slot_count > metadata.mutable_capture_count ||
       !IsSortedUniqueStrings(expr.block_parameter_names_lexicographic) ||
       !IsSortedUniqueStrings(expr.block_capture_names_lexicographic);
   return metadata;
@@ -8465,13 +8715,12 @@ static Objc3BlockStorageEscapeSemanticsSummary BuildBlockStorageEscapeSemanticsS
     const bool escape_profile_missing = site.escape_analysis_enabled && site.escape_profile.empty();
     const bool byref_layout_symbol_missing = site.requires_byref_cells && site.byref_layout_symbol.empty();
     const bool byref_requirement_mismatch = site.requires_byref_cells != (site.byref_slot_count > 0u);
-    const bool escape_heap_mismatch = site.escape_to_heap && !site.requires_byref_cells;
-    const bool count_mismatch = site.mutable_capture_count != site.capture_count ||
-                                site.byref_slot_count != site.capture_count;
+    const bool count_mismatch = site.mutable_capture_count > site.capture_count ||
+                                site.byref_slot_count > site.mutable_capture_count;
     const bool site_contract_violation =
         site.has_count_mismatch || count_mismatch || !site.escape_analysis_enabled ||
         !site.escape_profile_is_normalized || escape_profile_missing ||
-        byref_layout_symbol_missing || byref_requirement_mismatch || escape_heap_mismatch;
+        byref_layout_symbol_missing || byref_requirement_mismatch;
     if (site_contract_violation) {
       ++summary.contract_violation_sites;
     }
@@ -8484,10 +8733,10 @@ static Objc3BlockStorageEscapeSemanticsSummary BuildBlockStorageEscapeSemanticsS
       summary.escape_profile_normalized_sites <= summary.block_literal_sites &&
       summary.byref_layout_symbolized_sites <= summary.block_literal_sites &&
       summary.contract_violation_sites <= summary.block_literal_sites &&
-      summary.mutable_capture_count_total == summary.capture_entries_total &&
-      summary.byref_slot_count_total == summary.capture_entries_total &&
+      summary.mutable_capture_count_total <= summary.capture_entries_total &&
+      summary.byref_slot_count_total <= summary.mutable_capture_count_total &&
       summary.escape_analysis_enabled_sites == summary.block_literal_sites &&
-      summary.requires_byref_cells_sites == summary.escape_to_heap_sites;
+      summary.byref_layout_symbolized_sites == summary.requires_byref_cells_sites;
   return summary;
 }
 
@@ -8504,23 +8753,79 @@ static Objc3BlockStorageEscapeSemanticsSummary BuildBlockStorageEscapeSemanticsS
 }
 
 static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const Expr &expr) {
+  auto build_block_copy_dispose_profile = [](bool copy_helper_required,
+                                             bool dispose_helper_required,
+                                             bool escape_to_heap,
+                                             std::size_t body_statement_count) {
+    std::ostringstream out;
+    out << "block-copy-dispose:copy-helper="
+        << (copy_helper_required ? "enabled" : "elided")
+        << ";dispose-helper="
+        << (dispose_helper_required ? "enabled" : "elided")
+        << ";escape=" << (escape_to_heap ? "heap" : "stack")
+        << ";body-statements=" << body_statement_count;
+    return out.str();
+  };
+  auto build_block_copy_helper_symbol = [](unsigned line,
+                                           unsigned column,
+                                           std::size_t mutable_capture_count,
+                                           std::size_t byref_slot_count,
+                                           bool escape_to_heap) {
+    std::ostringstream out;
+    out << "__objc3_block_copy_helper_" << line << "_" << column
+        << "_m" << mutable_capture_count
+        << "_b" << byref_slot_count
+        << "_" << (escape_to_heap ? "heap" : "stack");
+    return out.str();
+  };
+  auto build_block_dispose_helper_symbol = [](unsigned line,
+                                              unsigned column,
+                                              std::size_t mutable_capture_count,
+                                              std::size_t byref_slot_count,
+                                              bool escape_to_heap) {
+    std::ostringstream out;
+    out << "__objc3_block_dispose_helper_" << line << "_" << column
+        << "_m" << mutable_capture_count
+        << "_b" << byref_slot_count
+        << "_" << (escape_to_heap ? "heap" : "stack");
+    return out.str();
+  };
   Objc3BlockCopyDisposeSiteMetadata metadata;
-  metadata.mutable_capture_count = expr.block_storage_mutable_capture_count;
-  metadata.byref_slot_count = expr.block_storage_byref_slot_count;
+  metadata.mutable_capture_count = expr.block_mutated_capture_count;
+  metadata.byref_slot_count = expr.block_byref_capture_count;
   metadata.parameter_count = expr.block_parameter_count;
   metadata.capture_count = expr.block_capture_count;
   metadata.body_statement_count = expr.block_body_statement_count;
-  metadata.copy_helper_required = expr.block_copy_helper_required;
-  metadata.dispose_helper_required = expr.block_dispose_helper_required;
-  metadata.copy_dispose_profile_is_normalized = expr.block_copy_dispose_profile_is_normalized;
-  metadata.copy_dispose_profile = expr.block_copy_dispose_profile;
-  metadata.copy_helper_symbol = expr.block_copy_helper_symbol;
-  metadata.dispose_helper_symbol = expr.block_dispose_helper_symbol;
+  metadata.copy_helper_required = metadata.byref_slot_count > 0u;
+  metadata.dispose_helper_required = metadata.byref_slot_count > 0u;
+  metadata.copy_dispose_profile_is_normalized =
+      expr.block_source_storage_annotations_are_normalized;
+  metadata.copy_dispose_profile =
+      build_block_copy_dispose_profile(metadata.copy_helper_required,
+                                       metadata.dispose_helper_required,
+                                       expr.block_escape_shape_promotes_to_heap_candidate,
+                                       metadata.body_statement_count);
+  metadata.copy_helper_symbol =
+      metadata.copy_helper_required
+          ? build_block_copy_helper_symbol(expr.line,
+                                           expr.column,
+                                           metadata.mutable_capture_count,
+                                           metadata.byref_slot_count,
+                                           expr.block_escape_shape_promotes_to_heap_candidate)
+          : "";
+  metadata.dispose_helper_symbol =
+      metadata.dispose_helper_required
+          ? build_block_dispose_helper_symbol(expr.line,
+                                              expr.column,
+                                              metadata.mutable_capture_count,
+                                              metadata.byref_slot_count,
+                                              expr.block_escape_shape_promotes_to_heap_candidate)
+          : "";
   metadata.line = expr.line;
   metadata.column = expr.column;
   metadata.has_count_mismatch =
-      metadata.mutable_capture_count != metadata.capture_count ||
-      metadata.byref_slot_count != metadata.capture_count ||
+      metadata.mutable_capture_count > metadata.capture_count ||
+      metadata.byref_slot_count > metadata.mutable_capture_count ||
       !IsSortedUniqueStrings(expr.block_parameter_names_lexicographic) ||
       !IsSortedUniqueStrings(expr.block_capture_names_lexicographic);
   return metadata;
@@ -8706,10 +9011,10 @@ static Objc3BlockCopyDisposeSemanticsSummary BuildBlockCopyDisposeSemanticsSumma
         (site.copy_helper_required || site.dispose_helper_required) && site.copy_dispose_profile.empty();
     const bool copy_helper_symbol_missing = site.copy_helper_required && site.copy_helper_symbol.empty();
     const bool dispose_helper_symbol_missing = site.dispose_helper_required && site.dispose_helper_symbol.empty();
-    const bool copy_helper_requirement_mismatch = site.copy_helper_required != (site.mutable_capture_count > 0u);
+    const bool copy_helper_requirement_mismatch = site.copy_helper_required != (site.byref_slot_count > 0u);
     const bool dispose_helper_requirement_mismatch = site.dispose_helper_required != (site.byref_slot_count > 0u);
-    const bool count_mismatch = site.mutable_capture_count != site.capture_count ||
-                                site.byref_slot_count != site.capture_count;
+    const bool count_mismatch = site.mutable_capture_count > site.capture_count ||
+                                site.byref_slot_count > site.mutable_capture_count;
     const bool site_contract_violation =
         site.has_count_mismatch || count_mismatch || !site.copy_dispose_profile_is_normalized ||
         copy_dispose_profile_missing || copy_helper_symbol_missing ||
@@ -8727,8 +9032,8 @@ static Objc3BlockCopyDisposeSemanticsSummary BuildBlockCopyDisposeSemanticsSumma
       summary.copy_helper_symbolized_sites <= summary.block_literal_sites &&
       summary.dispose_helper_symbolized_sites <= summary.block_literal_sites &&
       summary.contract_violation_sites <= summary.block_literal_sites &&
-      summary.mutable_capture_count_total == summary.capture_entries_total &&
-      summary.byref_slot_count_total == summary.capture_entries_total &&
+      summary.mutable_capture_count_total <= summary.capture_entries_total &&
+      summary.byref_slot_count_total <= summary.mutable_capture_count_total &&
       summary.copy_helper_required_sites == summary.dispose_helper_required_sites;
   return summary;
 }
@@ -15827,10 +16132,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.block_storage_escape_semantics_summary.block_literal_sites &&
          handoff.block_storage_escape_semantics_summary.contract_violation_sites <=
              handoff.block_storage_escape_semantics_summary.block_literal_sites &&
-         handoff.block_storage_escape_semantics_summary.mutable_capture_count_total ==
+         handoff.block_storage_escape_semantics_summary.mutable_capture_count_total <=
              handoff.block_storage_escape_semantics_summary.capture_entries_total &&
-         handoff.block_storage_escape_semantics_summary.byref_slot_count_total ==
+         handoff.block_storage_escape_semantics_summary.byref_slot_count_total <=
              handoff.block_storage_escape_semantics_summary.capture_entries_total &&
+         handoff.block_storage_escape_semantics_summary.byref_slot_count_total <=
+             handoff.block_storage_escape_semantics_summary.mutable_capture_count_total &&
          handoff.block_storage_escape_semantics_summary.escape_analysis_enabled_sites ==
              handoff.block_storage_escape_semantics_summary.block_literal_sites &&
          handoff.block_storage_escape_semantics_summary.requires_byref_cells_sites ==
@@ -15872,10 +16179,12 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
          handoff.block_copy_dispose_semantics_summary.contract_violation_sites <=
              handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
-         handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total ==
+         handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
              handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
-         handoff.block_copy_dispose_semantics_summary.byref_slot_count_total ==
+         handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
              handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
+         handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
+             handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
          handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
              handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
          handoff.block_determinism_perf_baseline_summary.deterministic &&

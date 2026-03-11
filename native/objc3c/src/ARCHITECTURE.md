@@ -9901,3 +9901,18 @@ runnable lane-B work begins.
   - heap promotion or block-object execution
   - runnable block invocation semantics
 - the next issue is `M261-B002`
+
+## M261 Capture Legality, Escape Classification, And Invocation Typing (B002)
+
+Lane B now upgrades the source-only block semantic path into a real compiler
+capability without widening runnable native block support.
+
+- source-only frontend runs now reject undefined captures during block-body
+  validation.
+- local block values now carry callable signatures for source-only invocation
+  typing and mismatch diagnostics.
+- block escape/copy-dispose lowering handoff now preserves truthful mutable
+  and byref subset counts instead of assuming every capture needs byref/helper
+  treatment.
+- native emit still fail-closes on block literals with `O3S221`.
+- the next issue is `M261-B003`

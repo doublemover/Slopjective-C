@@ -1,0 +1,11 @@
+module m261_capture_legality_escape_invocation_positive;
+
+fn source_semantic_probe() -> i32 {
+  let seed = 7;
+  let delta = 2;
+  let closure = ^(i32 value) {
+    seed = seed + delta;
+    return seed + value;
+  };
+  return closure(5);
+}

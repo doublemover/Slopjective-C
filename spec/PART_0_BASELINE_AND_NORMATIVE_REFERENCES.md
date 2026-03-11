@@ -168,6 +168,9 @@ Current implementation boundary:
   block admission is allowed for manifest projection only, while native emit
   paths still fail closed before runnable capture, helper, escape, or
   invocation semantics exist.
+- lane-B now also enforces live source-only capture legality, truthful escape
+  classification, and local block invocation typing (`M261-B002`) without
+  widening native runnable block support.
 - explicit block pointer declarator spellings and explicit byref storage
   spellings are not yet part of the supported source surface.
 

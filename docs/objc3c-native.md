@@ -1107,6 +1107,31 @@ Recommended M261 lane-B freeze check:
 - `python scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
 - `M261-B002` is the next issue.
 
+## M261 capture legality, escape classification, and invocation typing (M261-B002)
+
+`M261-B002` upgrades the source-only block semantic surface into a real
+compiler capability while preserving the same native fail-closed runtime
+boundary from `M261-B001`.
+
+- contract id
+  `objc3c-executable-block-capture-legality-escape-and-invocation/m261-b002-v1`
+
+Current source-only semantic details:
+
+- undefined captures in block literals are now rejected during block-body
+  validation with `O3S202`.
+- local block bindings now carry callable signatures so block invocations are
+  type-checked and mismatches fail with `O3S206`.
+- truthful mutable-capture, byref, escape, and copy/dispose helper counts are
+  preserved in the lowering handoff instead of expanding every capture into a
+  mutable/byref requirement.
+- native emit paths still reject block literals with `O3S221`.
+
+Recommended M261 lane-B implementation check:
+
+- `python scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
+- `M261-B003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

@@ -7706,3 +7706,34 @@ byref, helper, escape, or invocation behavior.
   - `spec/planning/compiler/m261/m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze_packet.md`
   - `python scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
   - `M261-B002` is the next issue.
+
+## M261 capture legality, escape classification, and invocation typing (B002)
+
+`M261-B002` turns the frozen block semantic boundary into a live source-only
+sema capability without claiming runnable native block execution yet.
+
+- contract id
+  `objc3c-executable-block-capture-legality-escape-and-invocation/m261-b002-v1`
+- current semantic implementation:
+  - source-only frontend runs now reject undefined block captures with
+    `O3S202`.
+  - source-only frontend runs now type-check local block invocations against
+    the block parameter signature and reject mismatches with `O3S206`.
+  - truthful mutable-capture, byref, escape, and copy/dispose helper counts
+    are preserved in the lowering handoff instead of being inflated to the
+    full capture inventory.
+  - native emit paths still fail closed on block literals with `O3S221`.
+- current emitted/runtime boundary:
+  - the native IR summary remains
+    `; executable_block_runtime_semantic_rules = ...`
+  - `lowering_block_storage_escape` and `lowering_block_copy_dispose` must now
+    remain deterministic under truthful mutable/byref subset counts.
+- non-goals:
+  - runnable block-object execution
+  - runnable heap promotion or helper emission
+  - byref cell lowering beyond source-only legality/classification
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation_b002_expectations.md`
+  - `spec/planning/compiler/m261/m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation_packet.md`
+  - `python scripts/check_m261_b002_capture_legality_escape_classification_and_invocation_typing_core_feature_implementation.py`
+  - `M261-B003` is the next issue.

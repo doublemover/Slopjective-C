@@ -1389,6 +1389,10 @@ class Objc3IREmitter {
     // semantic-rule boundary so block runtime follow-on work can preserve the
     // source-only admission/native fail-closed split without rediscovering it
     // from prose or historical issue packets.
+    // M261-B002 capture-legality/escape/invocation implementation anchor:
+    // the emitted summary line stays on the frozen runtime boundary while the
+    // source-only sema path now enforces live capture legality and local
+    // block-call typing ahead of runnable block-object lowering.
     out << "; executable_block_runtime_semantic_rules = "
         << Objc3ExecutableBlockRuntimeSemanticRulesSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="

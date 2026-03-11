@@ -989,6 +989,10 @@ inline constexpr const char *kObjc3BlockSourceModelCompletionLaneContract =
     "m261-block-source-model-v1";
 inline constexpr const char *kObjc3BlockSourceStorageAnnotationLaneContract =
     "m261-block-source-storage-annotations-v1";
+// M261-B002 capture-legality/escape/invocation implementation anchor: lane-B
+// keeps the same runtime-summary lane contract while source-only sema grows
+// live capture-resolution, truthful escape classification, and local callable
+// invocation typing before runnable block lowering lands.
 inline constexpr const char *kObjc3BlockRuntimeSemanticRulesLaneContract =
     "m261-block-runtime-semantic-rules-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =

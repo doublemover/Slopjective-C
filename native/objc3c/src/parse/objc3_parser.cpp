@@ -4686,6 +4686,32 @@ static std::vector<std::string> BuildBlockParameterSignatureEntriesLexicographic
   return BuildSortedUniqueStrings(std::move(entries));
 }
 
+static std::vector<ValueType> BuildBlockParameterTypesSourceOrder(
+    const std::vector<ParsedBlockParameterSourceModel> &parameters) {
+  std::vector<ValueType> types;
+  types.reserve(parameters.size());
+  for (const auto &parameter : parameters) {
+    if (!parameter.explicit_type) {
+      types.push_back(ValueType::Unknown);
+      continue;
+    }
+    if (parameter.type_spelling == "i32") {
+      types.push_back(ValueType::I32);
+      continue;
+    }
+    if (parameter.type_spelling == "bool") {
+      types.push_back(ValueType::Bool);
+      continue;
+    }
+    if (parameter.type_spelling == "void") {
+      types.push_back(ValueType::Void);
+      continue;
+    }
+    types.push_back(ValueType::Unknown);
+  }
+  return types;
+}
+
 static std::string BuildBlockSignatureProfile(
     const std::vector<ParsedBlockParameterSourceModel> &parameters) {
   const std::size_t explicit_typed_parameter_count =
@@ -10508,6 +10534,8 @@ class Objc3Parser {
     // that closure forward before runnable block lowering still fails closed.
     block->block_parameter_signature_entries_lexicographic =
         BuildBlockParameterSignatureEntriesLexicographic(parameters);
+    block->block_parameter_types_source_order =
+        BuildBlockParameterTypesSourceOrder(parameters);
     block->block_explicit_typed_parameter_count = static_cast<std::size_t>(
         std::count_if(parameters.begin(), parameters.end(),
                       [](const ParsedBlockParameterSourceModel &parameter) {
@@ -10575,6 +10603,10 @@ class Objc3Parser {
     // annotations are the complete current legality input for block runtime
     // semantics; no runnable byref/helper/heap-promotion behavior is implied
     // by their presence yet.
+    // M261-B002 capture-legality/escape/invocation implementation anchor:
+    // lane-B now consumes these exact parser-owned source facts as the live
+    // sema input for capture resolution, truthful escape classification, and
+    // local block invocation typing.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =
