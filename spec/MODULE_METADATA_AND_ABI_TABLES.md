@@ -8132,3 +8132,30 @@ must preserve before `M259-D002` expands workflow and packaging behavior.
 - truthful boundary
   - installer, system deployment, and cross-platform packaging claims remain outside D001
   - the next implementation issue is `M259-D002`
+
+## M259 staged toolchain package output anchors (D002)
+
+`M259-D002` still does not change the metadata ABI. It adds the staged package
+output anchors that keep the runnable toolchain bundle truthful and repeatable
+under a local package root.
+
+- contract id
+  `objc3c-runnable-build-install-run-package/m259-d002-v1`
+- staged package manifest
+  - `artifacts/package/objc3c-runnable-toolchain-package.json`
+- staged package payload anchors
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+  - `scripts/objc3c_native_compile.ps1`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+  - `scripts/check_objc3c_execution_replay_proof.ps1`
+  - `tests/tooling/fixtures/native/execution`
+  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
+  - `tmp/artifacts/objc3c-native/frontend_modular_scaffold.json`
+  - `tmp/artifacts/objc3c-native/frontend_integration_closeout.json`
+- truthful boundary
+  - staged local package root only
+  - no system install claim
+  - no cross-platform packaging claim
+  - no toolchain auto-provisioning claim

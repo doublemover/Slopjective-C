@@ -29,6 +29,9 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # sample.
 # M259-D001 toolchain-runtime-operations anchor: execution smoke remains one of
 # the frozen runnable-core operations, and installer or cross-platform packaging claims remain outside this freeze until M259-D002.
+# M259-D002 workflow-package anchor: this script must run unchanged from a
+# staged runnable toolchain bundle root that preserves the current repo-relative
+# scripts/artifacts/tests layout under a local package root.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

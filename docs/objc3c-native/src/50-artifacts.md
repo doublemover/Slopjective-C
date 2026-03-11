@@ -4942,6 +4942,43 @@ Objective-C 3 core before workflow and packaging expansion lands in `M259-D002`.
   - no toolchain auto-provisioning claim lands here
   - `M259-D001` freezes the operations boundary only; `M259-D002` implements the workflow and packaging surface
 
+## M259 staged runnable toolchain package workflow (D002)
+
+`M259-D002` implements the supported staged package workflow for the current
+runnable Objective-C 3 core without over-claiming a system installer.
+
+- contract id
+  `objc3c-runnable-build-install-run-package/m259-d002-v1`
+- package model
+  `staged-runnable-toolchain-bundle-with-repo-relative-layout`
+- install model
+  `local-package-root-not-system-install`
+- supported command surfaces
+  - `npm run build:objc3c-native`
+  - `npm run package:objc3c-native:runnable-toolchain`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3 --out-dir tmp/package-run --emit-prefix module`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1`
+- staged package manifest
+  - `artifacts/package/objc3c-runnable-toolchain-package.json`
+- staged package payload
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+  - `scripts/objc3c_native_compile.ps1`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+  - `scripts/check_objc3c_execution_replay_proof.ps1`
+  - `tests/tooling/fixtures/native/execution`
+  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
+  - `tmp/artifacts/objc3c-native/frontend_modular_scaffold.json`
+  - `tmp/artifacts/objc3c-native/frontend_integration_closeout.json`
+- truthful boundary
+  - staged local package root only
+  - no system install claim
+  - no cross-platform packaging claim
+  - no toolchain auto-provisioning claim
+  - `M259-D003` remains the next issue for platform bring-up documentation
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

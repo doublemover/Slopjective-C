@@ -11078,6 +11078,57 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_
 - Optional toolchain override:
   - `OBJC3C_NATIVE_EXECUTION_CLANG_PATH=<clang executable>`
 
+## Runnable sample surface (M259-A001)
+
+`M259-A001` freezes the current release-facing runnable sample surface without
+widening it.
+
+- contract id
+  `objc3c-runnable-sample-surface/m259-a001-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
+  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+- truthful boundary
+  - execution smoke and replay remain the scalar/core corpus
+  - object/property/import-module samples remain separate proof families
+  - blocks, ARC, async, throws, actors, and import/module expansion are not
+    promoted into the scalar corpus here
+  - the next implementation issue is `M259-A002`
+
+## Canonical runnable sample set (M259-A002)
+
+`M259-A002` composes the frozen sample surface into one integrated runnable
+object/property/category/protocol proof.
+
+- contract id
+  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
+- canonical proof assets
+  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+- truthful boundary
+  - the positive proof stays single-module and runtime-backed
+  - alloc/init, superclass dispatch, category dispatch, protocol conformance,
+    and property access land together here
+  - scalar execution smoke and replay remain separate corpus gates
+  - the next implementation issue is `M259-B001`
+
+## Runnable core compatibility and migration guard (M259-B001)
+
+`M259-B001` freezes the compatibility/migration boundary around the current
+runnable core.
+
+- contract id
+  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
+- truthful boundary
+  - `M259-A002` remains the live positive proof floor
+  - compatibility mode and migration assist remain live semantic selections
+  - migration-assist legacy literal diagnostics remain fail-closed `O3S216`
+  - `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
+    remain the currently landed unsupported-feature diagnostics
+  - the next implementation issue is `M259-B002`
+
 ## Runnable feature-claim inventory (M264-A001)
 
 `M264-A001` freezes one truthful frontend packet for versioning/conformance work:
@@ -11252,6 +11303,43 @@ Objective-C 3 core before workflow and packaging expansion lands in `M259-D002`.
   - no cross-platform packaging claim lands here
   - no toolchain auto-provisioning claim lands here
   - `M259-D001` freezes the operations boundary only; `M259-D002` implements the workflow and packaging surface
+
+## M259 staged runnable toolchain package workflow (D002)
+
+`M259-D002` implements the supported staged package workflow for the current
+runnable Objective-C 3 core without over-claiming a system installer.
+
+- contract id
+  `objc3c-runnable-build-install-run-package/m259-d002-v1`
+- package model
+  `staged-runnable-toolchain-bundle-with-repo-relative-layout`
+- install model
+  `local-package-root-not-system-install`
+- supported command surfaces
+  - `npm run build:objc3c-native`
+  - `npm run package:objc3c-native:runnable-toolchain`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3 --out-dir tmp/package-run --emit-prefix module`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1`
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1`
+- staged package manifest
+  - `artifacts/package/objc3c-runnable-toolchain-package.json`
+- staged package payload
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+  - `scripts/objc3c_native_compile.ps1`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+  - `scripts/check_objc3c_execution_replay_proof.ps1`
+  - `tests/tooling/fixtures/native/execution`
+  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
+  - `tmp/artifacts/objc3c-native/frontend_modular_scaffold.json`
+  - `tmp/artifacts/objc3c-native/frontend_integration_closeout.json`
+- truthful boundary
+  - staged local package root only
+  - no system install claim
+  - no cross-platform packaging claim
+  - no toolchain auto-provisioning claim
+  - `M259-D003` remains the next issue for platform bring-up documentation
 
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
@@ -16092,520 +16180,3 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
-
-## Synthesized accessor and property metadata lowering (M257-C003)
-
-`M257-C003` upgrades the current property lowering path from descriptor-only publication to executable accessor support.
-
-- contract id
-  `objc3c-executable-synthesized-accessor-property-lowering/m257-c003-v1`
-- lowering now emits one private storage cell family anchored by
-  `@objc3_property_storage_...`
-- implementation-owned properties now synthesize missing effective instance getters/setters into emitted method tables
-- property descriptor payloads now retain:
-  - effective getter selector
-  - effective setter selector
-  - synthesized binding symbol
-  - ivar layout symbol
-  - getter/setter implementation pointers
-- canonical proof assets:
-  - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
-  - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
-  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
-
-## Runtime property and layout consumption freeze (M257-D001)
-
-`M257-D001` freezes the truthful runtime boundary above `M257-C003`.
-
-- contract id
-  `objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
-- runtime consumption model
-  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
-- allocator model
-  `alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation`
-- storage model
-  `synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots`
-- current live probe proves repeated `alloc` over `Widget` returns the same canonical instance identity while synthesized getters/setters observe the same storage through that identity
-- canonical proof assets:
-  - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
-  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
-  - `tmp/reports/m257/M257-D001/property_layout_runtime_contract_summary.json`
-- non-goals:
-  - true instance allocation
-  - per-instance slot storage
-  - reflective property registration
-
-## Instance allocation, layout, and ivar-offset runtime support (M257-D002)
-
-`M257-D002` upgrades the live runtime above `M257-D001` from the historical
-single-instance freeze into true per-instance allocation.
-
-- contract id
-  `objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
-- descriptor model
-  `runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery`
-- allocator model
-  `alloc-new-materialize-distinct-runtime-instance-identities-backed-by-realized-class-layout`
-- storage model
-  `synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records`
-- live runtime now:
-  - materializes distinct instance identities per `alloc` / `new`
-  - sizes instance storage from realized ivar layout
-  - resolves synthesized accessors through runtime-owned per-instance slots
-- canonical proof assets:
-  - `tests/tooling/fixtures/native/m257_d002_instance_allocation_runtime_positive.objc3`
-  - `tests/tooling/runtime/m257_d002_instance_allocation_runtime_probe.cpp`
-  - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`
-
-## Property metadata registration and reflective access helpers (M257-D003)
-
-`M257-D003` adds a private runtime reflection surface above `M257-D002` so
- tests and diagnostics can query realized property/accessor/layout facts
- directly.
-
-- contract id
-  `objc3c-runtime-property-metadata-reflection/m257-d003-v1`
-- registration model
-  `runtime-registers-reflectable-property-accessor-and-layout-facts-from-emitted-metadata-without-source-rediscovery`
-- query model
-  `private-testing-helpers-query-realized-property-metadata-by-class-and-property-name-including-effective-accessors-and-layout-facts`
-- fail-closed model
-  `no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout`
-- live runtime now exposes:
-  - aggregate property reflection state snapshots
-  - per-property reflective entry snapshots
-  - last-query evidence for diagnostics and probe continuity
-- canonical proof assets:
-  - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
-  - `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`
-  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
-
-## Property and ivar execution gate (M257-E001)
-
-`M257-E001` freezes the first lane-E proof gate above the current executable
-property/ivar surface.
-
-- contract id
-  `objc3c-executable-property-ivar-execution-gate/m257-e001-v1`
-- evidence model
-  `a002-b003-c003-d003-summary-chain`
-- execution gate model
-  `runnable-property-ivar-evidence-consumes-source-sema-lowering-and-runtime-proofs`
-- fail-closed model
-  `fail-closed-on-property-ivar-execution-evidence-drift`
-- upstream evidence chain
-  - `tmp/reports/m257/M257-A002/property_ivar_source_model_completion_summary.json`
-  - `tmp/reports/m257/M257-B003/accessor_legality_attribute_interactions_summary.json`
-  - `tmp/reports/m257/M257-C003/synthesized_accessor_property_lowering_summary.json`
-  - `tmp/reports/m257/M257-D003/property_metadata_reflection_summary.json`
-- evidence path
-  - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`
-
-## Runnable property, ivar, and accessor execution matrix (M257-E002)
-
-`M257-E002` broadens the frozen `M257-E001` gate into one live runnable matrix
-for the current executable property/ivar surface.
-
-- contract id
-  `objc3c-runnable-property-ivar-accessor-execution-matrix/m257-e002-v1`
-- evidence model
-  `a002-b003-c003-d003-e001-summary-chain-plus-live-property-runtime-execution`
-- execution matrix model
-  `runnable-property-ivar-matrix-composes-upstream-summaries-with-live-storage-accessor-and-reflection-proof`
-- fail-closed model
-  `fail-closed-on-runnable-property-ivar-matrix-drift-or-missing-live-runtime-proof`
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
-  - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`
-
-## Runtime-aware import and module surface (M258-A001)
-
-`M258-A001` freezes the frontend-owned import/module surface that later
-cross-translation-unit runtime work must preserve.
-
-- contract id
-  `objc3c-runtime-aware-import-module-surface/m258-a001-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract`
-- source model
-  `runtime-aware-import-module-surface-freezes-frontend-owned-runtime-declaration-and-metadata-reference-boundaries-before-cross-translation-unit-realization`
-- non-goal model
-  `no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering`
-- fail-closed model
-  `fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims`
-- frozen truths
-  - the compiler now publishes one manifest-visible summary over module name,
-    runtime-owned declaration counts, and current module-import-graph facts
-  - imported module artifacts, imported runtime-owned declarations, and foreign
-    runtime metadata references are all still explicitly `false`/unsupported
-  - the public frontend embedding ABI still exposes no imported-module handle or
-    runtime-import payload surface
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tmp/reports/m258/M258-A001/runtime_aware_import_module_surface_contract_summary.json`
-- next issue
-  - `M258-A002`
-
-## Runtime-aware import/module frontend closure (M258-A002)
-
-`M258-A002` preserves the frozen `M258-A001` surface and turns it into a real
-emitted frontend artifact for later cross-translation-unit consumers.
-
-- contract id
-  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_frontend_closure`
-- emitted artifact
-  `module.runtime-import-surface.json`
-- payload model
-  `runtime-aware-import-module-surface-json-v1`
-- landed truths
-  - runtime-owned declaration import surface is emitted as a deterministic
-    artifact derived from the frozen `M258-A001` contract plus live runtime
-    metadata source records
-  - metadata references are exported as canonical superclass/protocol/property
-    accessor/property ivar-binding/method selector edges
-  - embedding consumes the same artifact through `out_dir` + `emit_prefix`
-    without introducing an in-memory imported-module handle ABI yet
-- current boundary
-  - emitted IR still remains translation-unit local
-  - foreign runtime metadata lowering remains a later lowering/runtime tranche
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
-
-## Cross-module semantic preservation (M258-B001)
-
-`M258-B001` freezes the semantic facts that imported runtime metadata must
-preserve across module boundaries before lane-B lands real imported metadata
-semantic equivalence.
-
-- contract id
-  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_cross_module_runtime_metadata_semantic_preservation_contract`
-- source frontend closure
-  `objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1`
-- source artifact
-  `module.runtime-import-surface.json`
-- semantic models
-  - conformance shape
-    `superclass-protocol-and-category-attachment-shape`
-  - dispatch traits
-    `selector-classness-accessor-ivar-binding-and-body-availability`
-  - effect traits
-    `property-attribute-and-ownership-effect-profiles`
-- frozen boundary
-  - imported runtime metadata semantics remain fail closed
-  - conformance-shape, dispatch-trait, and effect-trait counts are published
-    deterministically from the runtime metadata source records
-  - lane-B does not yet claim imported conformance, imported dispatch
-    equivalence, or imported effect semantics are landed
-  - IR remains translation-unit local and does not lower imported runtime
-    metadata semantics
-  - embedding still consumes only the filesystem artifact handoff and not an
-    in-memory imported-module semantic ABI
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-  - `tmp/reports/m258/M258-B001/cross_module_runtime_metadata_semantic_preservation_contract_summary.json`
-
-## Imported metadata semantic rules (M258-B002)
-
-`M258-B002` lands imported runtime metadata conformance, effect, and dispatch
-preservation as a real frontend capability by consuming emitted
-`module.runtime-import-surface.json` artifacts.
-
-- contract id
-  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules`
-- source semantic-preservation contract
-  `objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1`
-- input model
-  `filesystem-runtime-import-surface-artifact-path-list`
-- landed truths
-  - repeated `--objc3-import-runtime-surface <path>` inputs are loaded and
-    validated as a deterministic compiler capability
-  - imported conformance shape, dispatch traits, and effect traits are counted
-    from the consumed artifacts rather than only the current translation unit
-  - duplicate input paths, duplicate imported module names, and malformed
-    import-surface payloads fail closed
-- current boundary
-  - imported runtime metadata payloads still are not lowered into IR in lane-B
-  - the public embedding ABI still remains filesystem-artifact based
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
-  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
-
-## Serialized metadata import and lowering freeze (M258-C001)
-
-`M258-C001` freezes the next lane-C boundary over imported runtime metadata:
-the frontend now publishes a semantic surface describing the serialized
-import/lowering contract, but it still does not claim that serialized imported
-payloads are rehydrated, reused incrementally, or lowered into IR.
-
-- contract id
-  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_import_lowering_contract`
-- source semantic-rule contract
-  `objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1`
-- input model
-  `filesystem-runtime-import-surface-artifact-path-list`
-- landed truths
-  - emitted runtime-import-surface artifacts may now drive imported semantic
-    surfaces before IR emission
-  - the compiler publishes a deterministic fail-closed summary for the current
-    serialized import/lowering boundary
-- current non-goals
-  - serialized imported metadata payloads are not rehydrated into live
-    frontend/runtime objects in this lane
-  - incremental reuse of imported metadata payloads is not landed in this lane
-  - imported metadata payloads are not lowered into LLVM IR in this lane
-  - the public embedding ABI still does not expose serialized imported payload
-    handles or direct imported-payload lowering hooks
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
-  - `tmp/reports/m258/M258-C001/serialized_metadata_import_and_lowering_contract_summary.json`
-
-## Serialized metadata artifact reuse (M258-C002)
-
-`M258-C002` turns the frozen lane-C boundary into a real reuse capability by
-embedding a transitive serialized runtime-metadata payload inside the emitted
-`module.runtime-import-surface.json` artifact and teaching downstream imports to
-prefer that payload when present.
-
-- contract id
-  `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_serialized_runtime_metadata_artifact_reuse`
-- source contract
-  `objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1`
-- artifact member
-  `serialized_runtime_metadata_reuse_payload`
-- landed truths
-  - emitted runtime-import-surface artifacts now carry a transitive serialized
-    runtime-metadata reuse payload
-  - downstream imports can deserialize that payload and recover upstream
-    object-model metadata without reparsing source
-  - the emitted payload publishes the reused module set deterministically
-- current boundary
-  - the payload is reused by the frontend, not lowered directly into LLVM IR in
-    this lane
-  - runtime registration across module boundaries still belongs to lane-D
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
-  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
-
-## Cross-module build and runtime orchestration freeze (M258-D001)
-
-`M258-D001` freezes the truthful lane-D boundary above transitive
-runtime-import-surface reuse and the emitted local runtime registration
-manifest, but below any real cross-module link packaging or aggregated runtime
-registration.
-
-- contract id
-  `objc3c-cross-module-build-runtime-orchestration/m258-d001-v1`
-- canonical semantic-surface path
-  `frontend.pipeline.semantic_surface.objc_cross_module_build_runtime_orchestration_contract`
-- source contracts
-  - `objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1`
-  - `objc3c-translation-unit-registration-manifest/m254-a002-v1`
-- authoritative artifacts
-  - `module.runtime-import-surface.json`
-  - `module.runtime-registration-manifest.json`
-- current boundary
-  - the compiler now publishes one deterministic orchestration freeze packet
-    tying the transitive import payload to the local registration manifest
-  - cross-module link-plan artifacts are not landed
-  - imported registration-manifest loading is not landed
-  - runtime-archive aggregation and aggregated runtime registration are not
-    landed
-  - no public cross-module orchestration ABI is exposed in this lane
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/m258_imported_runtime_semantic_rules_consumer.objc3`
-  - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-  - `tmp/reports/m258/M258-D001/cross_module_build_runtime_orchestration_contract_summary.json`
-
-## Cross-module runtime packaging, link planning, and registration (M258-D002)
-
-`M258-D002` lands the first real lane-D cross-module packaging path above the
-frozen D001 orchestration boundary.
-
-- contract id
-  `objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1`
-- authoritative artifacts
-  - `module.cross-module-runtime-link-plan.json`
-  - `module.cross-module-runtime-linker-options.rsp`
-- landed truths
-  - downstream compilation now ingests imported peer registration artifacts and
-    emits a deterministic cross-module link plan plus merged linker response
-    file
-  - link objects are ordered by ascending registration ordinal, then
-    translation-unit identity key
-  - startup runtime registration, imported metadata realization, and replay are
-    now proven on the two-image happy path
-- truthful boundary
-  - this issue proves cross-module packaging, link planning, registration, and
-    replay
-  - fully bound source method-body semantics across module boundaries still
-    belong to later work
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
-  - `tests/tooling/runtime/m258_d002_cross_module_runtime_packaging_probe.cpp`
-  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
-
-## Cross-module object-model gate (M258-E001)
-
-`M258-E001` freezes the first lane-E proof gate for runnable cross-module
-object programs.
-
-- contract id
-  `objc3c-cross-module-object-model-gate/m258-e001-v1`
-- evidence model
-  `a002-b002-c002-d002-summary-chain`
-- execution gate model
-  `cross-module-runnable-object-model-evidence-consumes-import-sema-reuse-and-runtime-packaging-proofs`
-- truthful boundary
-  - the gate consumes the `M258-A002`, `M258-B002`, `M258-C002`, and
-    `M258-D002` summaries exactly as they exist today
-  - no broader execution matrix lands here; that belongs to `M258-E002`
-  - no new cross-module method-body binding claims land here
-- canonical proof assets
-  - `tmp/reports/m258/M258-A002/runtime_aware_import_module_frontend_closure_summary.json`
-  - `tmp/reports/m258/M258-B002/imported_runtime_metadata_semantic_rules_summary.json`
-  - `tmp/reports/m258/M258-C002/module_metadata_artifact_reuse_summary.json`
-  - `tmp/reports/m258/M258-D002/cross_module_runtime_packaging_summary.json`
-  - `tmp/reports/m258/M258-E001/cross_module_object_model_gate_summary.json`
-
-## Runnable import and module execution matrix (M258-E002)
-
-`M258-E002` broadens the frozen `M258-E001` gate into one live runnable
-cross-module execution matrix.
-
-- contract id
-  `objc3c-runnable-import-module-execution-matrix/m258-e002-v1`
-- evidence model
-  `a002-b002-c002-d002-e001-summary-chain-plus-live-cross-module-runtime-execution`
-- execution matrix model
-  `runnable-import-module-matrix-composes-upstream-summaries-with-live-two-image-startup-dispatch-selector-cache-and-replay-proof`
-- truthful boundary
-  - provider and consumer modules are still compiled separately and linked only
-    through the emitted D002 cross-module link plan and response file
-  - the live matrix proves startup registration, selector lookup, method-cache
-    resolution, protocol conformance, reset, and replay on the real integrated
-    runtime path
-  - the canonical dispatch proof is still the current fallback-backed,
-    non-zero, replay-stable runtime path for:
-    - `ImportedProvider::providerClassValue`
-    - `ImportedProvider::importedProtocolValue`
-    - `LocalConsumer::localClassValue`
-  - fully bound source method-body execution across module boundaries still
-    belongs to later milestones
-  - the next implementation issue is `M259-A001`
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
-  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
-  - `tmp/reports/m258/M258-E002/runnable_import_module_execution_matrix_summary.json`
-
-## Runnable sample surface (M259-A001)
-
-`M259-A001` freezes the truthful canonical runnable sample surface that the
-project treats as release-facing proof of the current executable Objective-C 3
-core.
-
-- contract id
-  `objc3c-runnable-sample-surface/m259-a001-v1`
-- evidence model
-  `execution-smoke-replay-script-surface-plus-m256-d004-m257-e002-m258-e002-summary-chain`
-- sample surface model
-  `canonical-runnable-sample-surface-composes-scalar-smoke-object-property-and-import-module-proofs`
-- truthful boundary
-  - scalar/core execution remains rooted in
-    `tests/tooling/fixtures/native/execution/positive`,
-    `tests/tooling/fixtures/native/execution/negative`, and
-    `tests/tooling/fixtures/native/hello.objc3` through
-    `test:objc3c:execution-smoke` and `test:objc3c:execution-replay-proof`
-  - the canonical object sample remains
-    `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
-    with metadata-rich category/protocol behavior still proven by the
-    library-plus-probe split from `M256-D004`
-  - the property/ivar/accessor sample remains
-    `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
-    plus the `M257-E002` probe path
-  - the import/module sample remains the provider/consumer pair from
-    `M258-E002` plus its cross-module runtime probe
-  - blocks, ARC, async, throws, actors, and fully source-bound cross-module
-    method bodies are not part of the canonical runnable sample surface yet
-  - the next implementation issue is `M259-A002`
-- canonical proof assets
-  - `tests/tooling/fixtures/native/execution/positive`
-  - `tests/tooling/fixtures/native/execution/negative`
-  - `tests/tooling/fixtures/native/hello.objc3`
-  - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
-  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
-  - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
-  - `tmp/reports/m259/M259-A001/runnable_sample_surface_contract_summary.json`
-
-## Canonical runnable sample set (M259-A002)
-
-`M259-A002` widens the frozen runnable sample surface into one dedicated,
-single-module, live runtime proof for the current truthful object-model core.
-
-- contract id
-  `objc3c-canonical-runnable-sample-set/m259-a002-v1`
-- evidence model
-  `a001-freeze-plus-live-integrated-runnable-object-property-category-protocol-sample`
-- sample set model
-  `integrated-runnable-sample-set-unifies-alloc-init-protocol-category-and-property-behavior`
-- truthful boundary
-  - the proof asset is
-    `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
-    and the live probe is
-    `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
-  - the integrated sample proves alloc/init, superclass dispatch, category
-    dispatch, protocol conformance, and property access on one live runtime path
-  - the dedicated sample set does not widen scalar execution smoke or replay;
-    those remain the core corpus gates in this issue
-  - blocks, ARC, async, throws, actors, and import/module expansion are still
-    out of scope here
-  - the next implementation issue is `M259-B001`
-- canonical proof assets
-  - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
-
-## Runnable core compatibility and migration guard (M259-B001)
-
-`M259-B001` freezes the semantic/documentation boundary that keeps the current
-runnable native Objective-C 3 core truthful while later advanced areas remain
-outside the release-facing subset.
-
-- contract id
-  `objc3c-runnable-core-compatibility-guard/m259-b001-v1`
-- guard model
-  `runnable-core-distinguishes-live-runtime-backed-core-from-source-only-or-fail-closed-advanced-surfaces`
-- evidence model
-  `a002-live-runnable-core-proof-plus-sema-compatibility-selection-and-unsupported-claim-boundary`
-- truthful boundary
-  - `M259-A002` remains the current integrated runnable proof floor
-  - compatibility mode and migration assist remain the live semantic selection
-    knobs around the runnable core
-  - migration-assist legacy-literal diagnostics remain fail-closed as `O3S216`
-  - currently landed unsupported-feature diagnostics remain fail-closed for
-    `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
-  - later advanced surfaces such as strictness selections, strict concurrency,
-    async/await, actors, blocks, ARC, and feature-macro publication are not
-    promoted to runnable support by this issue
-  - the next implementation issue is `M259-B002`
-- canonical proof assets
-  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
-  - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`

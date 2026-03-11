@@ -7165,3 +7165,37 @@ implementation.
   - only the current Windows x64 + `pwsh` + `python` + `node`/`npm` + MSVC/CMake/Ninja + LLVM `llc`/`llvm-readobj` host baseline is claimed here
   - installer, system deployment, and cross-platform packaging claims remain deferred
   - the next implementation issue is `M259-D002`
+
+## M259 staged runnable toolchain package workflow (D002)
+
+`M259-D002` expands the frozen runnable-core operations boundary into a staged
+package workflow that preserves the current script/artifact/test layout inside a
+local package root.
+
+- contract id
+  `objc3c-runnable-build-install-run-package/m259-d002-v1`
+- package model
+  `staged-runnable-toolchain-bundle-with-repo-relative-layout`
+- install model
+  `local-package-root-not-system-install`
+- staged package manifest
+  `artifacts/package/objc3c-runnable-toolchain-package.json`
+- required workflow continuity
+  - build remains `npm run build:objc3c-native`
+  - packaging is `npm run package:objc3c-native:runnable-toolchain`
+  - packaged compile remains `scripts/objc3c_native_compile.ps1`
+  - packaged smoke remains `scripts/check_objc3c_native_execution_smoke.ps1`
+  - packaged replay remains `scripts/check_objc3c_execution_replay_proof.ps1`
+- required package payload continuity
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+  - `tests/tooling/fixtures/native/execution`
+  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
+  - the frontend readiness JSON payloads under `tmp/artifacts/objc3c-native/`
+- truthful boundary
+  - staged local package root only
+  - no system install claim
+  - no cross-platform packaging claim
+  - no toolchain auto-provisioning claim
+  - `M259-D003` documents platform bring-up on top of this workflow
