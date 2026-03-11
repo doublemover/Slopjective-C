@@ -7126,6 +7126,41 @@ surface while keeping packet generation on the existing wrapper path.
 - next issue
   - `M276-C002`
 
+## Frontend packet dependency-shape decomposition (M276-C003)
+
+`M276-C003` classifies the current frontend packet family by dependency shape
+and wires that map into the build wrapper.
+
+- contract id
+  `objc3c-frontend-packet-dependency-shape-decomposition/m276-c003-v1`
+- authoritative packet family map
+  - `source-derived`
+    - `frontend_modular_scaffold.json`
+  - `binary-derived`
+    - `frontend_invocation_lock.json`
+    - `frontend_core_feature_expansion.json`
+  - `closeout-derived`
+    - `frontend_edge_compat.json`
+    - `frontend_edge_robustness.json`
+    - `frontend_diagnostics_hardening.json`
+    - `frontend_recovery_determinism_hardening.json`
+    - `frontend_conformance_matrix.json`
+    - `frontend_conformance_corpus.json`
+    - `frontend_integration_closeout.json`
+- current truthful state
+  - `scripts/build_objc3c_native.ps1` now exposes internal execution modes for:
+    - `binaries-only`
+    - `packets-source`
+    - `packets-binary`
+    - `packets-closeout`
+    - `packets-all`
+  - packet-only modes skip the native CMake/Ninja build path and regenerate
+    only their declared packet-family scope
+- truthful remaining boundary
+  - public npm command exposure for the split still lands in `M276-C002`
+- next issue
+  - `M276-C002`
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented

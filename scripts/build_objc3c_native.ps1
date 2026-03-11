@@ -1,3 +1,8 @@
+param(
+  [ValidateSet("full", "binaries-only", "packets-source", "packets-binary", "packets-closeout", "packets-all")]
+  [string]$ExecutionMode = "full"
+)
+
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -108,6 +113,13 @@ $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.j
 #   `artifacts/lib`
 # - the wrapper still owns frontend packet generation after the native binaries
 #   are built
+#
+# M276-C003 packet-dependency-shape anchor:
+# - packet generation is internally classified into source-derived,
+#   binary-derived, and closeout-derived families
+# - the wrapper can execute those packet families independently without
+#   silently re-triggering native binary compilation
+# - public command-surface exposure remains the responsibility of M276-C002
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
@@ -118,6 +130,263 @@ function Write-BuildStep {
   param([Parameter(Mandatory = $true)][string]$Message)
 
   Write-Host ("[build:objc3c-native] " + $Message)
+}
+
+function Test-ExecutionModeRunsNativeBuild {
+  param([Parameter(Mandatory = $true)][string]$Mode)
+
+  return $Mode -in @("full", "binaries-only")
+}
+
+function Get-FrontendPacketDefinitions {
+  return @(
+    [pscustomobject]@{
+      Name = "frontend_scaffold"
+      Family = "source-derived"
+      OutputPath = $frontendScaffoldPath
+      Dependencies = @()
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_invocation_lock"
+      Family = "binary-derived"
+      OutputPath = $frontendInvocationLockPath
+      Dependencies = @("frontend_scaffold")
+      RequiresNativeBinaries = $true
+    }
+    [pscustomobject]@{
+      Name = "frontend_core_feature_expansion"
+      Family = "binary-derived"
+      OutputPath = $frontendCoreFeatureExpansionPath
+      Dependencies = @("frontend_scaffold", "frontend_invocation_lock")
+      RequiresNativeBinaries = $true
+    }
+    [pscustomobject]@{
+      Name = "frontend_edge_compat"
+      Family = "closeout-derived"
+      OutputPath = $frontendEdgeCompatPath
+      Dependencies = @("frontend_core_feature_expansion")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_edge_robustness"
+      Family = "closeout-derived"
+      OutputPath = $frontendEdgeRobustnessPath
+      Dependencies = @("frontend_edge_compat")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_diagnostics_hardening"
+      Family = "closeout-derived"
+      OutputPath = $frontendDiagnosticsHardeningPath
+      Dependencies = @("frontend_edge_robustness")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_recovery_determinism_hardening"
+      Family = "closeout-derived"
+      OutputPath = $frontendRecoveryDeterminismHardeningPath
+      Dependencies = @("frontend_diagnostics_hardening")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_conformance_matrix"
+      Family = "closeout-derived"
+      OutputPath = $frontendConformanceMatrixPath
+      Dependencies = @("frontend_recovery_determinism_hardening")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_conformance_corpus"
+      Family = "closeout-derived"
+      OutputPath = $frontendConformanceCorpusPath
+      Dependencies = @("frontend_conformance_matrix")
+      RequiresNativeBinaries = $false
+    }
+    [pscustomobject]@{
+      Name = "frontend_integration_closeout"
+      Family = "closeout-derived"
+      OutputPath = $frontendIntegrationCloseoutPath
+      Dependencies = @("frontend_conformance_corpus")
+      RequiresNativeBinaries = $false
+    }
+  )
+}
+
+function Get-SelectedPacketDefinitions {
+  param(
+    [Parameter(Mandatory = $true)][string]$Mode,
+    [Parameter(Mandatory = $true)][object[]]$PacketDefinitions
+  )
+
+  switch ($Mode) {
+    "packets-source" {
+      return @($PacketDefinitions | Where-Object { $_.Family -eq "source-derived" })
+    }
+    "packets-binary" {
+      return @($PacketDefinitions | Where-Object { $_.Family -in @("source-derived", "binary-derived") })
+    }
+    "packets-closeout" {
+      return @($PacketDefinitions | Where-Object { $_.Family -in @("source-derived", "binary-derived", "closeout-derived") })
+    }
+    "packets-all" {
+      return @($PacketDefinitions)
+    }
+    "full" {
+      return @($PacketDefinitions)
+    }
+    default {
+      return @()
+    }
+  }
+}
+
+function Assert-FrontendPacketPrerequisites {
+  param(
+    [Parameter(Mandatory = $true)][object[]]$PacketDefinitions,
+    [Parameter(Mandatory = $true)][object[]]$SelectedPacketDefinitions,
+    [Parameter(Mandatory = $true)][string]$NativeBinaryPath,
+    [Parameter(Mandatory = $true)][string]$CapiBinaryPath
+  )
+
+  $selectedNames = @{}
+  foreach ($definition in $SelectedPacketDefinitions) {
+    $selectedNames[$definition.Name] = $true
+  }
+
+  foreach ($definition in $SelectedPacketDefinitions) {
+    if ($definition.RequiresNativeBinaries) {
+      foreach ($binaryPath in @($NativeBinaryPath, $CapiBinaryPath)) {
+        if (!(Test-Path -LiteralPath $binaryPath -PathType Leaf)) {
+          throw ("packet family '{0}' requires existing native binaries: {1}" -f $definition.Family, $binaryPath)
+        }
+      }
+    }
+    foreach ($dependencyName in $definition.Dependencies) {
+      if ($selectedNames.ContainsKey($dependencyName)) {
+        continue
+      }
+      $dependency = $PacketDefinitions | Where-Object { $_.Name -eq $dependencyName } | Select-Object -First 1
+      if ($null -eq $dependency) {
+        throw ("frontend packet dependency not declared: " + $dependencyName)
+      }
+      if (!(Test-Path -LiteralPath $dependency.OutputPath -PathType Leaf)) {
+        throw ("packet '{0}' requires existing dependency output '{1}' at {2}" -f $definition.Name, $dependencyName, $dependency.OutputPath)
+      }
+    }
+  }
+}
+
+function Invoke-FrontendPacketGeneration {
+  param(
+    [Parameter(Mandatory = $true)][string]$Mode,
+    [Parameter(Mandatory = $true)][object[]]$PacketDefinitions,
+    [Parameter(Mandatory = $true)][string]$RepoRoot,
+    [Parameter(Mandatory = $true)][string]$NativeBinaryPath,
+    [Parameter(Mandatory = $true)][string]$CapiBinaryPath,
+    [Parameter(Mandatory = $true)][object[]]$Modules,
+    [Parameter(Mandatory = $true)][string[]]$SharedSources
+  )
+
+  $selectedPacketDefinitions = @(Get-SelectedPacketDefinitions -Mode $Mode -PacketDefinitions $PacketDefinitions)
+  if ($selectedPacketDefinitions.Count -eq 0) {
+    Write-BuildStep "artifact_generation_mode=none"
+    return
+  }
+
+  Assert-FrontendPacketPrerequisites `
+    -PacketDefinitions $PacketDefinitions `
+    -SelectedPacketDefinitions $selectedPacketDefinitions `
+    -NativeBinaryPath $NativeBinaryPath `
+    -CapiBinaryPath $CapiBinaryPath
+
+  $selectedFamilies = @($selectedPacketDefinitions | ForEach-Object { $_.Family } | Select-Object -Unique)
+  Write-BuildStep ("artifact_generation_mode=" + $Mode)
+  Write-BuildStep ("artifact_generation_families=" + ($selectedFamilies -join ","))
+  Write-BuildStep "artifact_generation_start=frontend_contract_packets"
+
+  foreach ($definition in $selectedPacketDefinitions) {
+    Write-BuildStep ("artifact_generation_packet=" + $definition.Name + ";family=" + $definition.Family)
+    switch ($definition.Name) {
+      "frontend_scaffold" {
+        Write-FrontendModuleScaffoldArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendScaffoldPath `
+          -Modules $Modules `
+          -SharedSources $SharedSources `
+          -BinaryTargets @(
+            (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeBinaryPath),
+            (Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CapiBinaryPath)
+          )
+      }
+      "frontend_invocation_lock" {
+        Write-FrontendInvocationLockArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendInvocationLockPath `
+          -NativeBinaryPath $NativeBinaryPath `
+          -CapiBinaryPath $CapiBinaryPath `
+          -FrontendScaffoldPath $frontendScaffoldPath
+      }
+      "frontend_core_feature_expansion" {
+        Write-FrontendCoreFeatureExpansionArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendCoreFeatureExpansionPath `
+          -Modules $Modules `
+          -SharedSources $SharedSources `
+          -NativeBinaryPath $NativeBinaryPath `
+          -CapiBinaryPath $CapiBinaryPath `
+          -FrontendScaffoldPath $frontendScaffoldPath `
+          -FrontendInvocationLockPath $frontendInvocationLockPath
+      }
+      "frontend_edge_compat" {
+        Write-FrontendEdgeCompatibilityArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendEdgeCompatPath `
+          -FrontendCoreFeatureExpansionPath $frontendCoreFeatureExpansionPath
+      }
+      "frontend_edge_robustness" {
+        Write-FrontendEdgeRobustnessArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendEdgeRobustnessPath `
+          -FrontendEdgeCompatibilityPath $frontendEdgeCompatPath
+      }
+      "frontend_diagnostics_hardening" {
+        Write-FrontendDiagnosticsHardeningArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendDiagnosticsHardeningPath `
+          -FrontendEdgeRobustnessPath $frontendEdgeRobustnessPath
+      }
+      "frontend_recovery_determinism_hardening" {
+        Write-FrontendRecoveryDeterminismHardeningArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendRecoveryDeterminismHardeningPath `
+          -FrontendDiagnosticsHardeningPath $frontendDiagnosticsHardeningPath
+      }
+      "frontend_conformance_matrix" {
+        Write-FrontendConformanceMatrixArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendConformanceMatrixPath `
+          -FrontendRecoveryDeterminismHardeningPath $frontendRecoveryDeterminismHardeningPath
+      }
+      "frontend_conformance_corpus" {
+        Write-FrontendConformanceCorpusArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendConformanceCorpusPath `
+          -FrontendConformanceMatrixPath $frontendConformanceMatrixPath
+      }
+      "frontend_integration_closeout" {
+        Write-FrontendIntegrationCloseoutArtifact `
+          -RepoRoot $RepoRoot `
+          -OutputPath $frontendIntegrationCloseoutPath `
+          -FrontendConformanceCorpusPath $frontendConformanceCorpusPath
+      }
+      default {
+        throw ("unhandled frontend packet definition: " + $definition.Name)
+      }
+    }
+  }
+
+  Write-BuildStep "artifact_generation_done=frontend_contract_packets"
 }
 
 function Get-BuildFingerprint {
@@ -1346,6 +1615,9 @@ Write-BuildStep ("cmake=" + $cmakeTool)
 Write-BuildStep ("ninja=" + $ninjaTool)
 Write-BuildStep ("llvm_lib=" + $llvmLibTool)
 Write-BuildStep ("native_sources=" + $nativeSourcePaths.Count + "; capi_sources=" + $capiRunnerSourcePaths.Count)
+Write-BuildStep ("execution_mode=" + $ExecutionMode)
+
+$frontendPacketDefinitions = @(Get-FrontendPacketDefinitions)
 
 $buildFingerprint = Get-BuildFingerprint `
   -Clangxx $clangxx `
@@ -1359,97 +1631,58 @@ $buildFingerprint = Get-BuildFingerprint `
   -LibraryOutputDir $outLibDir `
   -SourceDir $cmakeSourceDir
 
-Invoke-CMakeConfigure `
-  -CmakeTool $cmakeTool `
-  -NinjaTool $ninjaTool `
-  -SourceDir $cmakeSourceDir `
-  -BuildDir $tmpOutDir `
-  -Clangxx $clangxx `
-  -LlvmRoot $llvmRoot `
-  -IncludeDir $includeDir `
-  -Libclang $libclang `
-  -RuntimeOutputDir $outDir `
-  -LibraryOutputDir $outLibDir `
-  -FingerprintPath $buildFingerprintPath `
-  -Fingerprint $buildFingerprint
+if (Test-ExecutionModeRunsNativeBuild -Mode $ExecutionMode) {
+  Invoke-CMakeConfigure `
+    -CmakeTool $cmakeTool `
+    -NinjaTool $ninjaTool `
+    -SourceDir $cmakeSourceDir `
+    -BuildDir $tmpOutDir `
+    -Clangxx $clangxx `
+    -LlvmRoot $llvmRoot `
+    -IncludeDir $includeDir `
+    -Libclang $libclang `
+    -RuntimeOutputDir $outDir `
+    -LibraryOutputDir $outLibDir `
+    -FingerprintPath $buildFingerprintPath `
+    -Fingerprint $buildFingerprint
 
-Invoke-CMakeNativeBuild `
-  -CmakeTool $cmakeTool `
-  -BuildDir $tmpOutDir
+  Invoke-CMakeNativeBuild `
+    -CmakeTool $cmakeTool `
+    -BuildDir $tmpOutDir
 
-if (!(Test-Path -LiteralPath $outExe -PathType Leaf)) { throw "native binary missing after CMake/Ninja build: $outExe" }
-if (!(Test-Path -LiteralPath $outCapiExe -PathType Leaf)) { throw "c-api runner missing after CMake/Ninja build: $outCapiExe" }
-if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
-if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
+  if (!(Test-Path -LiteralPath $outExe -PathType Leaf)) { throw "native binary missing after CMake/Ninja build: $outExe" }
+  if (!(Test-Path -LiteralPath $outCapiExe -PathType Leaf)) { throw "c-api runner missing after CMake/Ninja build: $outCapiExe" }
+  if (!(Test-Path -LiteralPath $outRuntimeLib -PathType Leaf)) { throw "runtime library missing after CMake/Ninja build: $outRuntimeLib" }
+  if (!(Test-Path -LiteralPath $compileCommandsPath -PathType Leaf)) { throw "compile_commands.json missing after CMake/Ninja configure: $compileCommandsPath" }
 
-Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
-Write-BuildStep ("compile_commands=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
-Write-BuildStep "artifact_generation_start=frontend_contract_packets"
-Write-FrontendModuleScaffoldArtifact `
+  Write-BuildStep ("artifact_ready=objc3c-native -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+  Write-BuildStep ("artifact_ready=objc3c-frontend-c-api-runner -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+  Write-BuildStep ("artifact_ready=objc3_runtime -> " + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+  Write-BuildStep ("compile_commands=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $compileCommandsPath))
+} else {
+  Write-BuildStep "cmake_build_skip=native-binaries"
+}
+
+Invoke-FrontendPacketGeneration `
+  -Mode $ExecutionMode `
+  -PacketDefinitions $frontendPacketDefinitions `
   -RepoRoot $repoRoot `
-  -OutputPath $frontendScaffoldPath `
-  -Modules $frontendModules `
-  -SharedSources $sharedSources `
-  -BinaryTargets @(
-    (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe),
-    (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe)
-  )
-Write-FrontendInvocationLockArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendInvocationLockPath `
   -NativeBinaryPath $outExe `
   -CapiBinaryPath $outCapiExe `
-  -FrontendScaffoldPath $frontendScaffoldPath
-Write-FrontendCoreFeatureExpansionArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendCoreFeatureExpansionPath `
   -Modules $frontendModules `
-  -SharedSources $sharedSources `
-  -NativeBinaryPath $outExe `
-  -CapiBinaryPath $outCapiExe `
-  -FrontendScaffoldPath $frontendScaffoldPath `
-  -FrontendInvocationLockPath $frontendInvocationLockPath
-Write-FrontendEdgeCompatibilityArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendEdgeCompatPath `
-  -FrontendCoreFeatureExpansionPath $frontendCoreFeatureExpansionPath
-Write-FrontendEdgeRobustnessArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendEdgeRobustnessPath `
-  -FrontendEdgeCompatibilityPath $frontendEdgeCompatPath
-Write-FrontendDiagnosticsHardeningArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendDiagnosticsHardeningPath `
-  -FrontendEdgeRobustnessPath $frontendEdgeRobustnessPath
-Write-FrontendRecoveryDeterminismHardeningArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendRecoveryDeterminismHardeningPath `
-  -FrontendDiagnosticsHardeningPath $frontendDiagnosticsHardeningPath
-Write-FrontendConformanceMatrixArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendConformanceMatrixPath `
-  -FrontendRecoveryDeterminismHardeningPath $frontendRecoveryDeterminismHardeningPath
-Write-FrontendConformanceCorpusArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendConformanceCorpusPath `
-  -FrontendConformanceMatrixPath $frontendConformanceMatrixPath
-Write-FrontendIntegrationCloseoutArtifact `
-  -RepoRoot $repoRoot `
-  -OutputPath $frontendIntegrationCloseoutPath `
-  -FrontendConformanceCorpusPath $frontendConformanceCorpusPath
-Write-BuildStep "artifact_generation_done=frontend_contract_packets"
-Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
-Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
-Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
-Write-Output ("frontend_scaffold=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendScaffoldPath))
-Write-Output ("frontend_invocation_lock=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendInvocationLockPath))
-Write-Output ("frontend_core_feature_expansion=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendCoreFeatureExpansionPath))
-Write-Output ("frontend_edge_compat=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeCompatPath))
-Write-Output ("frontend_edge_robustness=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendEdgeRobustnessPath))
-Write-Output ("frontend_diagnostics_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendDiagnosticsHardeningPath))
-Write-Output ("frontend_recovery_determinism_hardening=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendRecoveryDeterminismHardeningPath))
-Write-Output ("frontend_conformance_matrix=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceMatrixPath))
-Write-Output ("frontend_conformance_corpus=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendConformanceCorpusPath))
-Write-Output ("frontend_integration_closeout=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $frontendIntegrationCloseoutPath))
+  -SharedSources $sharedSources
+
+if (Test-Path -LiteralPath $outExe -PathType Leaf) {
+  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
+}
+if (Test-Path -LiteralPath $outCapiExe -PathType Leaf) {
+  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outCapiExe))
+}
+if (Test-Path -LiteralPath $outRuntimeLib -PathType Leaf) {
+  Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outRuntimeLib))
+}
+foreach ($packetDefinition in $frontendPacketDefinitions) {
+  if (Test-Path -LiteralPath $packetDefinition.OutputPath -PathType Leaf) {
+    Write-Output ($packetDefinition.Name + "=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
+  }
+}

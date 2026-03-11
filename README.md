@@ -204,6 +204,34 @@ Parity freeze (`M276-A002`):
 - warm invocations reuse the persistent build tree
 - canonical binaries still publish to `artifacts/bin` and `artifacts/lib`
 
+`M276-C003` now decomposes the generated frontend packet family by dependency
+shape inside that wrapper:
+
+- `source-derived`
+  - `frontend_modular_scaffold.json`
+- `binary-derived`
+  - `frontend_invocation_lock.json`
+  - `frontend_core_feature_expansion.json`
+- `closeout-derived`
+  - `frontend_edge_compat.json`
+  - `frontend_edge_robustness.json`
+  - `frontend_diagnostics_hardening.json`
+  - `frontend_recovery_determinism_hardening.json`
+  - `frontend_conformance_matrix.json`
+  - `frontend_conformance_corpus.json`
+  - `frontend_integration_closeout.json`
+
+Current truthful boundary:
+
+- the wrapper now has internal execution modes for:
+  - `binaries-only`
+  - `packets-source`
+  - `packets-binary`
+  - `packets-closeout`
+  - `packets-all`
+- public npm command exposure for that split remains the responsibility of
+  `M276-C002`
+
 `M276-C002` is the next issue.
 
 ## Quickstart

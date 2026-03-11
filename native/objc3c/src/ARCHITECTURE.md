@@ -10312,3 +10312,36 @@ surface modernization.
   - readiness-runner/helper migration does not land here
 - explicit handoff
   - `M276-C002` is the next issue
+
+## M276 Frontend Packet Dependency-Shape Decomposition (C003)
+
+`M276-C003` classifies the current frontend packet family by dependency shape
+and moves that map into the build-wrapper orchestration layer.
+
+- contract id
+  `objc3c-frontend-packet-dependency-shape-decomposition/m276-c003-v1`
+- authoritative packet family map
+  - source-derived
+    - `frontend_modular_scaffold.json`
+  - binary-derived
+    - `frontend_invocation_lock.json`
+    - `frontend_core_feature_expansion.json`
+  - closeout-derived
+    - `frontend_edge_compat.json`
+    - `frontend_edge_robustness.json`
+    - `frontend_diagnostics_hardening.json`
+    - `frontend_recovery_determinism_hardening.json`
+    - `frontend_conformance_matrix.json`
+    - `frontend_conformance_corpus.json`
+    - `frontend_integration_closeout.json`
+- orchestration truths
+  - `scripts/build_objc3c_native.ps1` exposes internal execution modes for:
+    - `binaries-only`
+    - `packets-source`
+    - `packets-binary`
+    - `packets-closeout`
+    - `packets-all`
+  - packet-only modes do not silently invoke the persistent native binary build
+  - packet-only modes preserve packet outputs under `tmp/artifacts/objc3c-native/`
+- explicit handoff
+  - `M276-C002` now owns the public npm command-surface split
