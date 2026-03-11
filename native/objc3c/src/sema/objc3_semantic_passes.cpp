@@ -750,6 +750,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // ownership profiles plus the legacy ownership summary lanes below. ARC
   // ownership qualifiers on executable functions/methods remain fail-closed
   // until the later M260 runtime-backed ownership implementation issues land.
+  // M260-B001 retainable-object semantic-rule freeze anchor: runtime-backed
+  // property/member ownership metadata is truthful, but executable
+  // retain/release legality, `@autoreleasepool`, and destruction ordering
+  // remain fail-closed until the later M260 storage legality/runtime issues.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
@@ -795,6 +799,9 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   // ownership qualifiers still sit outside the truthful runnable object-model
   // claim even though property/member ownership profiles are already preserved
   // through the object runtime metadata path.
+  // M260-B001 retainable-object semantic-rule freeze anchor: method-level
+  // retain/release legality and destruction-order behavior remain deferred even
+  // though runtime-backed property/member ownership metadata is already live.
   if (method.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,

@@ -11489,7 +11489,32 @@ without rediscovering ownership out of source text or manifests.
     the runnable slice
   - `M260-B001` is the next issue
   - `@autoreleasepool` remains outside the runnable slice
-  - `M260-A002` is the next implementation issue
+
+## M260 retainable object semantic rules freeze (B001)
+
+`M260-B001` freezes the truthful semantic boundary for retain, release, weak,
+unowned, autoreleasepool, and destruction ordering as they currently apply to
+runtime-backed objects.
+
+- contract id
+  `objc3c-retainable-object-semantic-rules-freeze/m260-b001-v1`
+- canonical proof fixture
+  - `tests/tooling/fixtures/native/m260_runtime_backed_object_ownership_attribute_surface_positive.objc3`
+- frozen semantic truths
+  - runtime-backed property/member ownership metadata is now the truthful live
+    ownership surface for the current slice
+  - retain/release legality remains expressed through the legacy
+    `retain_release_operation_lowering` summary lane
+  - weak/unowned legality remains expressed through the legacy
+    `weak_unowned_semantics_lowering` summary lane
+  - `@autoreleasepool` remains expressed through the legacy
+    `autoreleasepool_scope_lowering` summary lane
+- truthful boundary
+  - live ARC retain/release/autorelease execution still does not land here
+  - executable function/method ownership qualifiers remain fail-closed outside
+    the runnable slice
+  - destruction ordering remains deferred and non-runnable in this freeze
+  - `M260-B002` is the next issue
 
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 

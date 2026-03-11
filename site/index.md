@@ -8186,6 +8186,35 @@ emitted metadata capability for properties and members.
   - this issue is about emitted property/member ownership surface only
   - live ARC retain/release/autorelease runtime hook emission remains deferred
   - `M260-B001` is the next issue
+
+## M260 retainable object semantic rules freeze (B001)
+
+`M260-B001` freezes the truthful semantic boundary for retainable-object
+behavior above the newly live runtime-backed property/member ownership surface.
+
+- contract id
+  `objc3c-retainable-object-semantic-rules-freeze/m260-b001-v1`
+- semantic model
+  `runtime-backed-object-semantic-rules-freeze-property-member-ownership-metadata-while-retain-release-and-storage-legality-remain-summary-driven`
+- destruction model
+  `destruction-order-autoreleasepool-and-live-arc-execution-stay-fail-closed-outside-runtime-backed-storage-legality`
+- failure model
+  `fail-closed-on-retainable-object-semantic-drift-or-premature-live-storage-legality-claim`
+- preserved truths
+  - runtime-backed property/member ownership metadata remains the truthful live
+    ownership surface for the current slice
+  - `retain_release_operation_lowering` remains the canonical replay surface
+    for retain/release legality until `M260-B002`
+  - `weak_unowned_semantics_lowering` remains the canonical replay surface for
+    weak/unowned legality until later M260 semantic/runtime issues land
+  - `autoreleasepool_scope_lowering` remains the canonical replay surface for
+    non-runnable autoreleasepool behavior
+- non-goals
+  - no live ARC retain/release/autorelease execution semantics
+  - no executable function/method ownership-qualifier support
+  - no runnable destruction-order semantics
+- truthful boundary
+  - `M260-B002` is the next implementation issue
 <!-- END LOWERING_AND_RUNTIME_CONTRACTS.md -->
 
 ---
@@ -16481,6 +16510,24 @@ property/member ownership facts are present in the object artifact itself.
   - live ARC retain/release/autorelease runtime semantics still do not land
     here
   - `M260-B001` is the next issue
+
+## M260 retainable object semantic metadata anchors (B001)
+
+`M260-B001` freezes the metadata/runtime truth around retainable-object
+semantics without over-claiming live ARC or destruction behavior.
+
+- contract id
+  `objc3c-retainable-object-semantic-rules-freeze/m260-b001-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b001/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b001/positive/module.ll`
+- truthful boundary
+  - runtime-backed property/member ownership metadata is already emitted and
+    remains authoritative
+  - retain/release, weak/unowned, and autoreleasepool behavior remain frozen as
+    legacy summary-lane truths rather than live executable runtime semantics
+  - destruction ordering remains deferred in this freeze
+  - `M260-B002` is the next issue
 <!-- END MODULE_METADATA_AND_ABI_TABLES.md -->
 
 ---

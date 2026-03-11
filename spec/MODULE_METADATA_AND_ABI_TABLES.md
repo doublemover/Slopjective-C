@@ -8288,3 +8288,21 @@ property/member ownership facts are present in the object artifact itself.
   - live ARC retain/release/autorelease runtime semantics still do not land
     here
   - `M260-B001` is the next issue
+
+## M260 retainable object semantic metadata anchors (B001)
+
+`M260-B001` freezes the metadata/runtime truth around retainable-object
+semantics without over-claiming live ARC or destruction behavior.
+
+- contract id
+  `objc3c-retainable-object-semantic-rules-freeze/m260-b001-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/b001/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/b001/positive/module.ll`
+- truthful boundary
+  - runtime-backed property/member ownership metadata is already emitted and
+    remains authoritative
+  - retain/release, weak/unowned, and autoreleasepool behavior remain frozen as
+    legacy summary-lane truths rather than live executable runtime semantics
+  - destruction ordering remains deferred in this freeze
+  - `M260-B002` is the next issue

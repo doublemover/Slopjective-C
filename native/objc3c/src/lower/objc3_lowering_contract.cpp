@@ -695,6 +695,22 @@ std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary() {
   return out.str();
 }
 
+std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
+  std::ostringstream out;
+  // M260-B001 retainable-object semantic-rule freeze anchor: runtime-backed
+  // property/member ownership metadata is now the truthful live surface, but
+  // retain/release legality, autoreleasepool execution, and destruction-order
+  // behavior remain summary-driven and fail-closed until M260-B002+ land.
+  out << "contract=" << kObjc3RetainableObjectSemanticRulesFreezeContractId
+      << ";semantic_model="
+      << kObjc3RetainableObjectSemanticRulesSemanticModel
+      << ";destruction_model="
+      << kObjc3RetainableObjectSemanticRulesDestructionModel
+      << ";failure_model="
+      << kObjc3RetainableObjectSemanticRulesFailClosedModel;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C
@@ -1624,6 +1640,9 @@ bool IsValidObjc3OwnershipQualifierLoweringContract(
   // object ownership boundary until live ARC runtime behavior lands later in
   // M260. They are preserved summary lanes, not proof that executable
   // function/method ownership qualifiers are already runnable.
+  // M260-B001 retainable-object semantic-rule freeze anchor: ownership
+  // qualifier replay stays authoritative for fail-closed executable storage
+  // legality until live runtime-backed retain/release rules land.
   return contract.invalid_ownership_qualifier_sites <= contract.ownership_qualifier_sites &&
          contract.ownership_qualifier_sites <= contract.object_pointer_type_annotation_sites;
 }

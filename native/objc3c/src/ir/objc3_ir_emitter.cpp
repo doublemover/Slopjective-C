@@ -1279,6 +1279,12 @@ class Objc3IREmitter {
     // metadata profiles plus these legacy ownership lowering summaries. No
     // live ARC runtime retain/release/autorelease execution hooks are emitted
     // here yet.
+    // M260-B001 retainable-object semantic-rule freeze anchor: retain/release,
+    // autoreleasepool, and destruction-order behavior are still represented by
+    // deterministic summary lanes only; runtime-backed property/member
+    // ownership metadata is live, but storage legality is not yet executable.
+    out << "; retainable_object_semantic_rules_freeze = "
+        << Objc3RetainableObjectSemanticRulesFreezeSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

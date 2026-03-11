@@ -9686,3 +9686,17 @@ the runtime-facing artifact carries the ownership facts sema already computes.
 - live ARC retain/release/autorelease hook emission still waits for later
   `M260` lowering/runtime issues
 - the next issue is `M260-B001`
+
+## M260 Retainable Object Semantic Rules Freeze (B001)
+
+`M260-B001` freezes the truthful semantic boundary now that runtime-backed
+property/member ownership metadata is live.
+
+- runtime-backed property/member ownership metadata is the truthful live
+  ownership surface for the current slice
+- retain/release legality continues to flow through the preserved lowering
+  summary lanes rather than live runtime execution
+- `@autoreleasepool` remains non-runnable and is tracked only through the
+  preserved autoreleasepool lowering lane
+- destruction ordering remains deferred until later `M260` runtime work
+- the next issue is `M260-B002`
