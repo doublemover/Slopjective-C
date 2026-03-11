@@ -2,6 +2,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+import json
 
 BUILD_PAGES_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_pages.py"
 SPEC = importlib.util.spec_from_file_location("build_pages", BUILD_PAGES_PATH)
@@ -17,59 +18,74 @@ class BuildPagesTests(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
         return path
 
-    def make_spec_dir(self, root: Path) -> Path:
-        spec_dir = root / "spec"
-        spec_dir.mkdir()
-        return spec_dir
+    def make_site_src_dir(self, root: Path) -> Path:
+        src_dir = root / "site" / "src"
+        src_dir.mkdir(parents=True)
+        return src_dir
 
-    def test_parse_toc_accepts_linked_entries(self) -> None:
+    def write_contract(self, root: Path, body_path: str = "site/src/index.body.md") -> None:
+        payload = {
+            "contract_id": "site-index-generator/v2",
+            "output_path": "site/index.md",
+            "body_path": body_path,
+            "front_matter": ["---", "title: Test", "layout: default", "---", ""],
+        }
+        contract_path = root / "site" / "src" / "index.contract.json"
+        contract_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    def test_render_markdown_source_strips_excluded_blocks_and_rewrites_anchors(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            spec_dir = self.make_spec_dir(root)
-            toc_text = (
-                "# TOC\n"
-                "- **[TABLE_OF_CONTENTS.md](#toc)**\n"
-                "- **[INTRODUCTION.md](#intro)**\n"
+            body_path = self.write(
+                root,
+                "body.md",
+                "# Title {#title}\n"
+                "Visible text.\n"
+                "<!-- SITE:EXCLUDE-START -->\n"
+                "Hidden text.\n"
+                "<!-- SITE:EXCLUDE-END -->\n",
             )
-            toc_path = self.write(spec_dir, "TABLE_OF_CONTENTS.md", toc_text)
 
-            names = build_pages.parse_toc(toc_path)
+            rendered = build_pages.render_markdown_source(body_path)
 
-            self.assertEqual(names, ["TABLE_OF_CONTENTS.md", "INTRODUCTION.md"])
+            self.assertIn("# Title <a id=\"title\"></a>", rendered)
+            self.assertIn("Visible text.", rendered)
+            self.assertNotIn("Hidden text.", rendered)
 
-    def test_build_pages_stitches_sections(self) -> None:
+    def test_build_pages_renders_curated_body(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            spec_dir = self.make_spec_dir(root)
-            toc_text = (
-                "# TOC\n"
-                "- **[TABLE_OF_CONTENTS.md](#toc)**\n"
-                "- **[INTRODUCTION.md](#intro)**\n"
-            )
-            self.write(spec_dir, "TABLE_OF_CONTENTS.md", toc_text)
-            self.write(spec_dir, "INTRODUCTION.md", "# Intro\nHello\n")
-            self.write(root, "README.md", "Ignore me\n")
+            src_dir = self.make_site_src_dir(root)
+            self.write_contract(root)
+            self.write(src_dir, "index.body.md", "# Overview {#overview}\nHello\n")
 
             output_path, count = build_pages.build_pages(root)
 
-            self.assertEqual(count, 2)
+            self.assertEqual(count, 1)
             output = output_path.read_text(encoding="utf-8")
             self.assertTrue(output.startswith("---\n"))
-            self.assertIn("<!-- BEGIN TABLE_OF_CONTENTS.md -->", output)
-            self.assertIn("<!-- BEGIN INTRODUCTION.md -->", output)
-            self.assertNotIn("Ignore me", output)
+            self.assertIn("# Overview <a id=\"overview\"></a>", output)
+            self.assertIn("Hello", output)
 
-    def test_validate_files_rejects_readme(self) -> None:
+    def test_load_contract_rejects_wrong_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            spec_dir = self.make_spec_dir(root)
-            self.write(spec_dir, "TABLE_OF_CONTENTS.md", "# TOC\n")
-            self.write(root, "README.md", "Nope\n")
+            src_dir = self.make_site_src_dir(root)
+            self.write(src_dir, "index.body.md", "# Overview\n")
+            payload = {
+                "contract_id": "site-index-generator/v1",
+                "output_path": "site/index.md",
+                "body_path": "site/src/index.body.md",
+                "front_matter": ["---", "title: Test", "---", ""],
+            }
+            self.write(
+                src_dir,
+                "index.contract.json",
+                json.dumps(payload, indent=2),
+            )
 
             with self.assertRaises(RuntimeError):
-                build_pages.validate_files(
-                    ["TABLE_OF_CONTENTS.md", "README.md"], spec_dir
-                )
+                build_pages.load_contract(root)
 
 
 if __name__ == "__main__":

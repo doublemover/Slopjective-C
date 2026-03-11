@@ -22,10 +22,9 @@ This playbook defines ownership, update workflow, and review rules for generated
 | Source                         | Generated output                | Owner group      | Required check                               |
 | ------------------------------ | ------------------------------- | ---------------- | -------------------------------------------- |
 | `site/src/index.contract.json` | `site/index.md`                 | compiler/docs    | `python scripts/build_site_index.py --check` |
+| `site/src/index.body.md`       | `site/index.md` content surface | compiler/docs    | `python scripts/build_site_index.py --check` |
 | `site/src/README.md`           | policy metadata                 | compiler/docs    | `python scripts/build_site_index.py --check` |
 | `site/src/OWNERSHIP.md`        | process metadata                | compiler/docs    | `python scripts/build_site_index.py --check` |
-| `spec/TABLE_OF_CONTENTS.md`    | `site/index.md` order surface   | spec/maintainers | `python scripts/build_site_index.py --check` |
-| `spec/*.md` listed in TOC      | `site/index.md` content surface | spec/maintainers | `python scripts/build_site_index.py --check` |
 
 ## update workflow
 

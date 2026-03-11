@@ -1,8 +1,3 @@
----
-title: Objective-C 3.0 Draft Specification
-layout: default
----
-
 # Objective-C 3.0 Draft Specification <a id="toc"></a>
 
 _Working draft v0.11_  
@@ -12,7 +7,7 @@ Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more e
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3 object model is still in progress.
 
-## At a Glance <a id="toc-status-scope-note"></a>
+## At a Glance {#toc-status-scope-note}
 
 | Area                       | Status           | Notes                                                                                                                            |
 | -------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -23,7 +18,7 @@ Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more e
 | Runtime realization        | In progress      | Bootstrap, registration, method binding, property/ivar realization, and reflective/runtime consumption are not fully closed out. |
 | Advanced language features | Not yet runnable | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop remain future work.                    |
 
-## How to Read This Draft <a id="toc-how-to-read-this-draft"></a>
+## How to Read This Draft {#toc-how-to-read-this-draft}
 
 Use this page in three passes:
 
@@ -31,7 +26,7 @@ Use this page in three passes:
 2. Use the spec map to find the normative area you care about.
 3. Drop into the raw `spec/` files only when you need detailed language rules, ABI notes, or compatibility constraints.
 
-## What Is Implemented and Runnable <a id="intro"></a>
+## What Is Implemented and Runnable {#intro}
 
 The current native toolchain can compile and run a real subset of Objective-C 3.0:
 
@@ -46,7 +41,7 @@ The current native toolchain can compile and run a real subset of Objective-C 3.
 
 This is a real compiler/runtime path, not just parser scaffolding.
 
-## What Is Implemented but Not Yet Fully Live <a id="decisions"></a>
+## What Is Implemented but Not Yet Fully Live {#decisions}
 
 The compiler already understands much more of the object-model surface than the runtime can fully execute today.
 
@@ -63,7 +58,7 @@ Implemented in parser, semantic passes, and emitted metadata:
 
 What is still incomplete is the last step: consuming all of that emitted metadata as a fully live runtime object system.
 
-## What Remains <a id="status-remaining"></a>
+## What Remains {#status-remaining}
 
 The biggest remaining gaps are runtime-completion gaps, not parser-only gaps:
 
@@ -75,27 +70,27 @@ The biggest remaining gaps are runtime-completion gaps, not parser-only gaps:
 6. Finish blocks, captures, byref state, and ARC automation.
 7. Then extend outward into `throws`, richer error propagation, async/await, tasks, actors, metaprogramming, and interop closure.
 
-## Specification Map <a id="toc-front-matter"></a>
+## Specification Map {#toc-front-matter}
 
 The draft is organized into a small set of cross-cutting reference documents plus the numbered language parts.
 
-### Attribute and Syntax Catalog <a id="b"></a>
+### Attribute and Syntax Catalog {#b}
 
 Canonical spellings for attributes, pragmas, and source-surface forms that must remain stable across modules and tooling.
 
-### Lowering and Runtime Contracts <a id="c"></a>
+### Lowering and Runtime Contracts {#c}
 
 Implementation-facing rules for lowering, ABI boundaries, runtime hooks, and deterministic artifact behavior.
 
-### Module Metadata and ABI Surface Tables <a id="d"></a>
+### Module Metadata and ABI Surface Tables {#d}
 
 The cross-module contract surface: what importers must preserve, what is ABI-affecting, what fails closed, and what the implementation truthfully supports today.
 
-#### D.0 Purpose <a id="d-0"></a>
+#### D.0 Purpose {#d-0}
 
 Section D exists to keep the project honest at module boundaries. It defines what metadata must survive import/export and which surfaces are ABI-significant.
 
-#### D.1 Required Cross-Module Surface <a id="d-1"></a>
+#### D.1 Required Cross-Module Surface {#d-1}
 
 At minimum, a conforming implementation needs stable preservation for:
 
@@ -105,7 +100,7 @@ At minimum, a conforming implementation needs stable preservation for:
 - layout- and registration-relevant runtime records,
 - importer validation and fail-closed compatibility gates.
 
-#### D.2 Current Implementation Status <a id="d-2"></a>
+#### D.2 Current Implementation Status {#d-2}
 
 Today the project has:
 
@@ -116,7 +111,7 @@ Today the project has:
 
 It does **not** yet have the full live Objective-C 3 object model end to end.
 
-#### D.3 Current Priorities <a id="d-3"></a>
+#### D.3 Current Priorities {#d-3}
 
 Current work is concentrated on runtime completion:
 
@@ -126,77 +121,77 @@ Current work is concentrated on runtime completion:
 - module/runtime import closure,
 - blocks and ARC.
 
-### Conformance Profile Checklist <a id="e"></a>
+### Conformance Profile Checklist {#e}
 
 Profiles and minimum obligations for claiming support. This is where feature claims are supposed to become testable rather than aspirational.
 
-### Standard Library Contract <a id="s"></a>
+### Standard Library Contract {#s}
 
 Minimum required standard-library surface, distribution expectations, and versioning assumptions for any implementation that wants to claim conformance.
 
-### Abstract Machine and Semantic Core <a id="am"></a>
+### Abstract Machine and Semantic Core {#am}
 
 The common semantic model for evaluation, lifetime, cleanup, and suspension behavior.
 
-### Formal Grammar and Precedence <a id="f"></a>
+### Formal Grammar and Precedence {#f}
 
 The integrated grammar and operator-precedence appendix. Use this when surface syntax questions need precise answers.
 
-## Language Parts <a id="toc-parts"></a>
+## Language Parts {#toc-parts}
 
-### Part 0 — Baseline and Normative References <a id="part-0"></a>
+### Part 0 — Baseline and Normative References {#part-0}
 
 Defines the baseline language, pinned references, and conflict-resolution model.
 
-### Part 1 — Versioning, Compatibility, and Conformance <a id="part-1"></a>
+### Part 1 — Versioning, Compatibility, and Conformance {#part-1}
 
 Defines language modes, version claims, feature gating, and what it means to support Objective-C 3.0 truthfully.
 
-### Part 2 — Modules, Namespacing, and API Surfaces <a id="part-2"></a>
+### Part 2 — Modules, Namespacing, and API Surfaces {#part-2}
 
 Defines import boundaries, visibility, module-owned declarations, and public surface rules.
 
-### Part 3 — Types, Nullability, Optionals, Generics, and Key Paths <a id="part-3"></a>
+### Part 3 — Types, Nullability, Optionals, Generics, and Key Paths {#part-3}
 
 Defines type-surface modernization: nullability, optionals, pragmatic generics, and typed key-path concepts.
 
-### Part 4 — Memory Management and Ownership <a id="part-4"></a>
+### Part 4 — Memory Management and Ownership {#part-4}
 
 Defines ownership qualifiers, retainability, ARC-facing concepts, and lifetime contracts.
 
-### Part 5 — Control Flow and Safety Constructs <a id="part-5"></a>
+### Part 5 — Control Flow and Safety Constructs {#part-5}
 
 Defines `defer`, `guard`, pattern/match-style control-flow constructs, and related safety semantics.
 
-### Part 6 — Errors, Result, and Throws <a id="part-6"></a>
+### Part 6 — Errors, Result, and Throws {#part-6}
 
 Defines structured error propagation, result surfaces, NSError/status bridging, and effect rules.
 
-### Part 7 — Concurrency, Async/Await, Tasks, and Actors <a id="part-7"></a>
+### Part 7 — Concurrency, Async/Await, Tasks, and Actors {#part-7}
 
 Defines the future concurrency model: async/await, executor hopping, tasks, cancellation, and actor isolation.
 
-### Part 8 — System Programming Extensions <a id="part-8"></a>
+### Part 8 — System Programming Extensions {#part-8}
 
 Defines low-level safety and ergonomics for resource handles, borrowed pointers, lifetime-sensitive APIs, and other systems-facing surfaces.
 
-### Part 9 — Performance and Dynamism Controls <a id="part-9"></a>
+### Part 9 — Performance and Dynamism Controls {#part-9}
 
 Defines direct/final/sealed-style controls and explicit dispatch/performance boundaries.
 
-### Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors <a id="part-10"></a>
+### Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors {#part-10}
 
 Defines the future boilerplate-reduction surface without turning the language into an opaque macro system.
 
-### Part 11 — Interoperability with C, C++, and Swift <a id="part-11"></a>
+### Part 11 — Interoperability with C, C++, and Swift {#part-11}
 
 Defines foreign-language boundaries, bridging, ABI-facing interop, and distribution expectations.
 
-### Part 12 — Diagnostics, Tooling, and Tests <a id="part-12"></a>
+### Part 12 — Diagnostics, Tooling, and Tests {#part-12}
 
 Defines the required diagnostics, fix-its, migrators, analyzers, and conformance evidence expected from a serious implementation.
 
-## Implementation Reality Check <a id="e-1"></a>
+## Implementation Reality Check {#e-1}
 
 The project is no longer in the “just grammar” phase. The compiler and runtime work are materially real. The missing work is concentrated in the hardest part of the system: closing the loop between emitted object-model metadata and fully realized native runtime behavior.
 

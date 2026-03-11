@@ -10,13 +10,18 @@ import json
 import sys
 from pathlib import Path
 
-from build_pages import parse_toc, stitch, validate_files
+from build_pages import render_markdown_source
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT / "site" / "src"
 CONFIG_PATH = SRC_DIR / "index.contract.json"
 POLICY_README_PATH = ROOT / "site" / "src" / "README.md"
-ALLOWED_SRC_FILES: set[str] = {"README.md", "index.contract.json", "OWNERSHIP.md"}
+ALLOWED_SRC_FILES: set[str] = {
+    "README.md",
+    "index.body.md",
+    "index.contract.json",
+    "OWNERSHIP.md",
+}
 
 REQUIRED_POLICY_TOKENS: tuple[str, ...] = (
     "`site/index.md` is generated output",
@@ -24,7 +29,7 @@ REQUIRED_POLICY_TOKENS: tuple[str, ...] = (
     "`python scripts/build_site_index.py`",
     "`python scripts/build_site_index.py --check`",
     "`site/src/index.contract.json`",
-    "`spec/TABLE_OF_CONTENTS.md`",
+    "`site/src/index.body.md`",
 )
 
 
@@ -32,14 +37,12 @@ class ContractConfig:
     def __init__(
         self,
         *,
-        spec_dir: Path,
-        toc_path: Path,
         output_path: Path,
+        body_path: Path,
         front_matter: str,
     ) -> None:
-        self.spec_dir = spec_dir
-        self.toc_path = toc_path
         self.output_path = output_path
+        self.body_path = body_path
         self.front_matter = front_matter
 
 
@@ -56,9 +59,9 @@ def load_contract_config() -> tuple[ContractConfig | None, list[str]]:
     if not isinstance(payload, dict):
         return None, [f"config root must be an object: {CONFIG_PATH}"]
 
-    if payload.get("contract_id") != "site-index-generator/v1":
+    if payload.get("contract_id") != "site-index-generator/v2":
         errors.append(
-            "config contract_id drift: expected 'site-index-generator/v1' "
+            "config contract_id drift: expected 'site-index-generator/v2' "
             f"observed {payload.get('contract_id')!r}"
         )
 
@@ -70,8 +73,7 @@ def load_contract_config() -> tuple[ContractConfig | None, list[str]]:
         return ROOT / value
 
     output_path = get_path_field("output_path")
-    spec_dir = get_path_field("spec_dir")
-    toc_path = get_path_field("toc_path")
+    body_path = get_path_field("body_path")
 
     front_matter_lines = payload.get("front_matter")
     front_matter = ""
@@ -91,14 +93,13 @@ def load_contract_config() -> tuple[ContractConfig | None, list[str]]:
             if not front_matter.endswith("\n"):
                 front_matter += "\n"
 
-    if errors or output_path is None or spec_dir is None or toc_path is None:
+    if errors or output_path is None or body_path is None:
         return None, errors
 
     return (
         ContractConfig(
-            spec_dir=spec_dir,
-            toc_path=toc_path,
             output_path=output_path,
+            body_path=body_path,
             front_matter=front_matter,
         ),
         [],
@@ -118,10 +119,8 @@ def find_unknown_src_files() -> list[str]:
 
 
 def render_expected(config: ContractConfig) -> tuple[str, int]:
-    names = parse_toc(config.toc_path)
-    paths = validate_files(names, config.spec_dir)
-    text = config.front_matter + stitch(paths)
-    return text, len(paths)
+    text = config.front_matter + render_markdown_source(config.body_path)
+    return text, 1
 
 
 def validate_policy_readme() -> list[str]:

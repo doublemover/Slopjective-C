@@ -11,7 +11,7 @@
     "test:smoke": "npm run test:objc3c:full",
     "test:ci": "npm run check:task-hygiene && npm run test:objc3c:full && python -m pytest tests/tooling -q",
     "build": "npm run build:objc3c-native",
-    "build:spec": "python scripts/build_pages.py && prettier --write \"site/index.md\"",
+    "build:spec": "python scripts/build_site_index.py && prettier --write \"site/index.md\"",
     "build:objc3c-native": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1",
     "package:objc3c-native:runnable-toolchain": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package_objc3c_runnable_toolchain.ps1",
     "compile:objc3c": "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1",

@@ -190,11 +190,11 @@ This appendix preserves issue-era checker anchors and compatibility snippets tha
 are still consumed by local validation scripts. It is intentionally excluded from
 the generated site so the published Section D stays human-readable.
 
-# Objective‑C 3.0 — Module Metadata and ABI Surface Tables {#d}
+# Objective‑C 3.0 — Module Metadata and ABI Surface Tables {#d-legacy}
 
 _Working draft v0.11 — last updated 2026-02-27_
 
-## D.0 Purpose {#d-0}
+## D.0 Purpose {#d-legacy-0}
 
 Objective‑C 3.0 adds source-level semantics that **must survive module boundaries**:
 effects (`async`, `throws`), nullability defaults, executor/actor isolation, and dispatch controls (`objc_direct`, `objc_sealed`, etc.).
@@ -208,13 +208,13 @@ It also summarizes which features are **ABI-affecting** and what ABI stability c
 
 > This document does not mandate a specific on-disk format. It defines _required information_.
 
-## D.1 Terminology {#d-1}
+## D.1 Terminology {#d-legacy-1}
 
 - **Module metadata**: any compiled representation that an importer uses instead of re-parsing raw headers (e.g., Clang module files, serialized AST, interface stubs).
 - **Textual interface**: a tool-emitted, importable text representation intended to preserve semantics for distribution ([B.7](#b-7)).
 - **ABI-affecting**: changes the calling convention, symbol shape, layout, or runtime dispatch surface such that mismatches across translation units could cause miscompilation or runtime faults.
 
-## D.2 Module metadata requirements (normative) {#d-2}
+## D.2 Module metadata requirements (normative) {#d-legacy-2}
 
 A conforming implementation shall preserve, for all exported declarations:
 
@@ -1897,7 +1897,7 @@ OCI-1 requirements:
 OCI-1 versioning and compatibility follow the same rules as [D.2.2](#d-2-2) and [D.3.4](#d-3-4).
 Unknown required OCI-1 fields/capabilities are hard errors.
 
-## D.3 Required metadata tables {#d-3}
+## D.3 Required metadata tables {#d-legacy-3}
 
 ### D.3.1 Table A — “must preserve across module boundaries” {#d-3-1}
 
@@ -1994,7 +1994,7 @@ When OCI-1 is the active interchange path, missing OCI-1 fields map into these s
 | `sendable.boundary`      | Whether Sendable-like checking applies at this boundary                  | Strict Concurrency and Strict System (diagnostic optional in Core/Strict) |
 | `sendable.unsafe_marker` | Unsafe-sendable escape marker metadata                                   | Strict Concurrency and Strict System                                      |
 
-## D.4 Conformance tests (minimum) {#d-4}
+## D.4 Conformance tests (minimum) {#d-legacy-4}
 
 A conforming implementation’s test suite shall include the following module/interface tests.
 
@@ -2046,7 +2046,7 @@ A conforming test suite shall include OCI-1-specific tests that validate:
 - additive OCI-1 minor-version fields marked ignorable are accepted,
 - OCI-1 round-trip preserves `effects.async`, `effects.throws`, and required isolation/sendability fields from [Table F](#d-3-6).
 
-## D.5 Lane-C Typed Edge-Case Metadata Anchors (implementation anchor) {#d-5}
+## D.5 Lane-C Typed Edge-Case Metadata Anchors (implementation anchor) {#d-legacy-5}
 
 deterministic lane-C typed sema-to-lowering edge-case compatibility metadata anchors for `M227-C005` must remain synchronized across typed handoff keys, parse-artifact replay keys, and readiness gating metadata surfaces before lane-C closeout can pass.
 
@@ -8670,3 +8670,5 @@ runnable smoke matrix.
     supported ownership slice and nothing more
 
 <!-- SITE:EXCLUDE-END -->
+
+

@@ -13,14 +13,13 @@ This file defines source ownership for generated `site/index.md`.
 | Source file                 | Responsibility                                                 | Primary owner    | Backup owner     |
 | --------------------------- | -------------------------------------------------------------- | ---------------- | ---------------- |
 | `index.contract.json`       | Generator contract, canonical input/output paths, front matter | compiler/docs    | compiler/tooling |
+| `index.body.md`             | Curated public-facing site content and stable public anchors   | compiler/docs    | spec/maintainers |
 | `README.md`                 | Generated-only policy and contributor guidance                 | compiler/docs    | compiler/release |
-| `spec/TABLE_OF_CONTENTS.md` | Deterministic include ordering consumed by generator           | spec/maintainers | compiler/docs    |
-| `spec/*.md` listed in TOC   | Stitched normative content for site output                     | spec/maintainers | compiler/docs    |
 
 ## Update Workflow
 
 1. Update `site/src/index.contract.json` only when generator contract changes.
-1. Update spec content under `spec/` as needed.
+1. Update the curated site content under `site/src/index.body.md` as needed.
 1. Run `python scripts/build_site_index.py` to regenerate `site/index.md`.
 1. Run `python scripts/build_site_index.py --check` and require pass.
 
@@ -28,5 +27,5 @@ This file defines source ownership for generated `site/index.md`.
 
 - Manual edits to `site/index.md` are unsupported.
 - Contract or policy changes in `site/src/*` require `compiler/docs` review.
-- TOC ordering changes require `spec/maintainers` review.
+- Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
