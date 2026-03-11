@@ -52,6 +52,9 @@ jobs:
       - name: Build native objc3c artifacts
         run: npm run build:objc3c-native
 
+      - name: Refresh binary-derived frontend packets
+        run: npm run build:objc3c-native:contracts
+
       - name: Probe hosted-runner LLVM capabilities
         shell: pwsh
         run: |

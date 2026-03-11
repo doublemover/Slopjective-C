@@ -10483,3 +10483,27 @@ native build surface.
   - missing `compile_commands.json` after configure remains fail-closed
 - explicit handoff
   - `M276-E002` closes the milestone with CI adoption and closeout evidence
+
+## M276 CI And Closeout Semantics (E002)
+
+`M276-E002` closes the build-surface milestone by proving the command taxonomy
+in both local and CI execution environments.
+
+- local semantics
+  - `tmp/build-objc3c-native` is persistent across ordinary issue work
+  - `fast` can reuse the tree when the fingerprint is still valid
+  - stale or drifted trees recover through `build:objc3c-native:reconfigure`
+- CI semantics
+  - hosted runners start from clean workspaces
+  - `fast`, `contracts`, and `full` therefore communicate proof scope rather
+    than warm-cache expectations
+- workflow adoption
+  - `.github/workflows/task-hygiene.yml`
+    - proves the fast binary path
+    - proves the contracts-only packet path
+  - `.github/workflows/compiler-closeout.yml`
+    - proves the full closeout path on demand
+- closeout evidence
+  - `tmp/reports/m276/M276-E002/`
+  - records cold-build, warm-build, invalid-fingerprint fallback,
+    contracts-only, and full-build proofs

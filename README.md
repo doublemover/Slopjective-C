@@ -314,6 +314,17 @@ Supported stale-tree recovery:
 - use `npm run build:objc3c-native:reconfigure`
 - do not delete the build tree
 
+CI and closeout semantics:
+
+- local issue work benefits from the persistent tree under `tmp/build-objc3c-native`
+- CI runners start from clean workspaces, so `fast`, `contracts`, and `full`
+  describe proof scope rather than cache expectations
+- the active Windows core workflow proves `build:objc3c-native` plus
+  `build:objc3c-native:contracts`
+- the manual compiler closeout workflow proves `build:objc3c-native:full`
+- milestone closeout evidence for this build-surface tranche lives under
+  `tmp/reports/m276/M276-E002/`
+
 ## Quickstart
 
 Build the public site overview:

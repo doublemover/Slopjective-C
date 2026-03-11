@@ -1,4 +1,4 @@
-name: Compiler Closeout (Legacy Manual)
+name: Compiler Closeout (Manual)
 
 on:
   workflow_dispatch:
@@ -7,10 +7,25 @@ permissions:
   contents: read
 
 jobs:
-  legacy-closeout-note:
-    runs-on: ubuntu-latest
+  compiler-closeout:
+    runs-on: windows-latest
+    timeout-minutes: 90
     steps:
-      - name: Explain legacy workflow status
-        run: |
-          echo "This legacy roadmap closeout workflow is manual-only."
-          echo "Active validation now lives in ObjC3C Core CI, Spec Quality, and Publish Spec."
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build full native objc3c closeout surface
+        run: npm run build:objc3c-native:full

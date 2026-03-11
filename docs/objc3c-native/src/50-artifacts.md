@@ -315,6 +315,30 @@ native build surface.
 - next issue
   - `M276-E002`
 
+## CI and closeout semantics (M276-E002)
+
+`M276-E002` closes the build-surface tranche by proving the command taxonomy in
+both local and CI contexts.
+
+- local semantics
+  - `tmp/build-objc3c-native` is persistent
+  - `fast` can reuse the existing tree
+  - `reconfigure` is the supported recovery path for stale or drifted trees
+- CI semantics
+  - hosted runners are ephemeral and start clean
+  - `fast`, `contracts`, and `full` therefore describe validation scope, not
+    cache expectations
+- workflow split
+  - `.github/workflows/task-hygiene.yml`
+    - proves `build:objc3c-native`
+    - proves `build:objc3c-native:contracts`
+  - `.github/workflows/compiler-closeout.yml`
+    - proves `build:objc3c-native:full`
+- closeout evidence
+  - `tmp/reports/m276/M276-E002/`
+  - includes cold-build, warm-build, invalid-fingerprint fallback,
+    contracts-only, and full-build proofs
+
 ## Executable class/protocol/category source closure (M256-A001)
 
 `M256-A001` freezes the executable source-closure handoff before runtime-oriented
