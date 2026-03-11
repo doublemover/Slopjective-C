@@ -989,6 +989,8 @@ inline constexpr const char *kObjc3BlockSourceModelCompletionLaneContract =
     "m261-block-source-model-v1";
 inline constexpr const char *kObjc3BlockSourceStorageAnnotationLaneContract =
     "m261-block-source-storage-annotations-v1";
+inline constexpr const char *kObjc3BlockRuntimeSemanticRulesLaneContract =
+    "m261-block-runtime-semantic-rules-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1734,6 +1736,7 @@ std::string Objc3OwnershipRuntimeGateSummary();
 std::string Objc3ExecutableBlockSourceClosureSummary();
 std::string Objc3ExecutableBlockSourceModelCompletionSummary();
 std::string Objc3ExecutableBlockSourceStorageAnnotationSummary();
+std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

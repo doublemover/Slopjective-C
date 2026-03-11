@@ -1385,6 +1385,12 @@ class Objc3IREmitter {
         << frontend_metadata_
                .lowering_block_source_storage_annotation_replay_key
         << "\n";
+    // M261-B001 block-runtime-semantic-rules freeze anchor: emit the current
+    // semantic-rule boundary so block runtime follow-on work can preserve the
+    // source-only admission/native fail-closed split without rediscovering it
+    // from prose or historical issue packets.
+    out << "; executable_block_runtime_semantic_rules = "
+        << Objc3ExecutableBlockRuntimeSemanticRulesSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

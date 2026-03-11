@@ -902,6 +902,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // escape-shape source annotations remain parser-owned at this stage
           // and ride the same source-only admission path without claiming that
           // runnable block lowering or helper emission already exists.
+          // M261-B001 block-runtime-semantic-rules freeze anchor: the pass
+          // manager freezes this exact source-only admission boundary as the
+          // current semantic contract while native emit paths still fail
+          // closed on runnable block semantics.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

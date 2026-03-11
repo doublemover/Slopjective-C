@@ -164,6 +164,10 @@ Current implementation boundary:
 - source-only frontend runs now also publish truthful byref/helper/escape-shape
   source annotations (`M261-A003`) before runnable byref lowering, helper
   emission, or heap-promotion runtime support exists.
+- the current semantic rule boundary is now frozen (`M261-B001`): source-only
+  block admission is allowed for manifest projection only, while native emit
+  paths still fail closed before runnable capture, helper, escape, or
+  invocation semantics exist.
 - explicit block pointer declarator spellings and explicit byref storage
   spellings are not yet part of the supported source surface.
 

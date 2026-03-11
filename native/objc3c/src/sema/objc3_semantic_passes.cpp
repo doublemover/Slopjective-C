@@ -765,6 +765,9 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     // projection runs may admit block literals through sema so manifest-only
     // tooling can prove the completed source model, while native emit paths
     // continue to fail closed until later M261 lowering/runtime issues land.
+    // M261-B001 block-runtime-semantic-rules freeze anchor: current semantic
+    // behavior is intentionally split between source-only admission and native
+    // fail-closed rejection, with no runnable block object semantics implied.
     if (context.allow_source_only_block_literals) {
       return;
     }
@@ -3155,6 +3158,11 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       return IsSameSemanticType(then_type, else_type) ? then_type : MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::BlockLiteral: {
+      // M261-B001 block-runtime-semantic-rules freeze anchor: the current
+      // block-literal semantic rule boundary only proves deterministic
+      // parameter/capture metadata on the source surface and classifies the
+      // value as function-shaped; runnable invocation and runtime object
+      // semantics remain outside this boundary.
       const bool parameter_count_match = expr->block_parameter_names_lexicographic.size() == expr->block_parameter_count;
       const bool capture_count_match = expr->block_capture_names_lexicographic.size() == expr->block_capture_count;
       const bool parameters_deterministic =

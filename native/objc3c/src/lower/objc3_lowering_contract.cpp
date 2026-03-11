@@ -930,6 +930,30 @@ std::string Objc3ExecutableBlockSourceStorageAnnotationSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary() {
+  std::ostringstream out;
+  // M261-B001 block-runtime-semantic-rules freeze anchor: lane-B now freezes
+  // the current semantic split where source-only block admission is truthful,
+  // deterministic capture/byref/helper/escape annotations exist, and native
+  // emit paths still fail closed before runnable block semantics land.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockRuntimeSemanticRulesContractId
+      << ";capture_legality_model="
+      << Expr::kObjc3ExecutableBlockRuntimeCaptureLegalityModel
+      << ";storage_class_model="
+      << Expr::kObjc3ExecutableBlockRuntimeStorageClassModel
+      << ";escape_behavior_model="
+      << Expr::kObjc3ExecutableBlockRuntimeEscapeBehaviorModel
+      << ";helper_generation_model="
+      << Expr::kObjc3ExecutableBlockRuntimeHelperGenerationModel
+      << ";invocation_model="
+      << Expr::kObjc3ExecutableBlockRuntimeInvocationModel
+      << ";fail_closed_model="
+      << Expr::kObjc3ExecutableBlockRuntimeFailClosedModel
+      << ";lane_contract=" << kObjc3BlockRuntimeSemanticRulesLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -9881,3 +9881,23 @@ copy/dispose helper-intent, and escape-shape annotations.
   - copy/dispose helper lowering
   - heap promotion or runnable block-object execution
 - the next issue is `M261-B001`
+
+## M261 Block Runtime Semantic Rules (B001)
+
+`M261-B001` freezes the current semantic-rule boundary for blocks before
+runnable lane-B work begins.
+
+- source-only frontend admission remains the only positive path:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+- the current semantic boundary is:
+  - block literals remain source-only function-shaped values
+  - deterministic capture/byref/helper/escape metadata is preserved
+  - native emit paths still fail closed with `O3S221`
+- the emitted IR boundary now carries:
+  - `; executable_block_runtime_semantic_rules = ...`
+- non-goals remain:
+  - runnable capture legality beyond deterministic metadata checks
+  - runnable byref lowering or helper emission
+  - heap promotion or block-object execution
+  - runnable block invocation semantics
+- the next issue is `M261-B002`

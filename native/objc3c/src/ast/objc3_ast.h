@@ -73,6 +73,24 @@ struct Expr {
       "block-source-model-publishes-heap-promotion-relevant-escape-shape-categories-before-runnable-block-escape-analysis";
   static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationLaneContract =
       "m261-block-source-storage-annotations-v1";
+  // M261-B001 block-runtime-semantic-rules freeze constants: lane-B now
+  // freezes the truthful semantic boundary that current source-only block
+  // admission exposes while native emit paths still fail closed on runnable
+  // block semantics.
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeSemanticRulesContractId =
+      "objc3c-executable-block-runtime-semantic-rules/m261-b001-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeCaptureLegalityModel =
+      "block-runtime-semantics-freeze-capture-legality-on-deterministic-source-owned-capture-inventory";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeStorageClassModel =
+      "block-runtime-semantics-freeze-byref-storage-as-source-annotation-only-until-runnable-byref-lowering-lands";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeEscapeBehaviorModel =
+      "block-runtime-semantics-freeze-escape-shape-as-source-annotation-only-until-runnable-heap-promotion-lands";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeHelperGenerationModel =
+      "block-runtime-semantics-freeze-helper-intent-as-source-annotation-only-until-runnable-helper-lowering-lands";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeInvocationModel =
+      "block-runtime-semantics-freeze-block-literals-as-source-only-function-shaped-values-while-runnable-invocation-fails-closed";
+  static inline constexpr const char *kObjc3ExecutableBlockRuntimeFailClosedModel =
+      "block-runtime-semantics-fail-closed-on-native-emit-before-runnable-block-semantics-land";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

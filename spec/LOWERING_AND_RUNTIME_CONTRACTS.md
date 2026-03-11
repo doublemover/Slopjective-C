@@ -7677,3 +7677,32 @@ through lane-D runnable work must consume directly.
   - `spec/planning/compiler/m261/m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion_packet.md`
   - `python scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
   - `M261-B001` is the next issue.
+
+## M261 block runtime semantic rules (B001)
+
+`M261-B001` freezes the truthful semantic-rule boundary that the current block
+implementation exposes before lane-B begins implementing runnable capture,
+byref, helper, escape, or invocation behavior.
+
+- contract id
+  `objc3c-executable-block-runtime-semantic-rules/m261-b001-v1`
+- current semantic-rule content:
+  - source-only block admission remains the only supported positive path.
+  - block literals are currently validated as deterministic function-shaped
+    source values only.
+  - byref, helper-intent, and escape-shape truth remains source-owned and is
+    not yet runnable runtime behavior.
+  - native emit paths still fail closed on block literals with `O3S221`.
+- emitted IR boundary:
+  - `; executable_block_runtime_semantic_rules = ...`
+- non-goals:
+  - runnable capture legality beyond deterministic metadata checks
+  - runnable byref lowering
+  - helper lowering or helper emission
+  - heap promotion or block-object execution
+  - runnable block invocation semantics
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_block_runtime_semantic_rules_contract_and_architecture_freeze_b001_expectations.md`
+  - `spec/planning/compiler/m261/m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
+  - `M261-B002` is the next issue.

@@ -10571,6 +10571,10 @@ class Objc3Parser {
     // mutated/byref/helper/escape-shape source annotations directly from the
     // block body and surrounding expression context so later runnable block
     // lanes consume deterministic source truth instead of reconstructing it.
+    // M261-B001 block-runtime-semantic-rules freeze anchor: these parser-owned
+    // annotations are the complete current legality input for block runtime
+    // semantics; no runnable byref/helper/heap-promotion behavior is implied
+    // by their presence yet.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

@@ -1000,6 +1000,40 @@ Recommended M261 lane-A expansion check:
 - `python scripts/check_m261_a003_byref_storage_helper_intent_and_escape_shape_source_annotations_core_feature_expansion.py`
 - `M261-B001` is the next issue.
 
+## M261 block runtime semantic rules (M261-B001)
+
+`M261-B001` freezes the current semantic-rule boundary for blocks before lane-B
+begins implementing runnable capture legality, byref behavior, helper
+generation, or invocation semantics.
+
+- contract id
+  `objc3c-executable-block-runtime-semantic-rules/m261-b001-v1`
+
+Current semantic-rule details:
+
+- source-only frontend admission remains the only supported positive path:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+    may admit block literals through sema for manifest projection.
+- current semantic truth is intentionally limited to:
+  - deterministic capture inventory and source-owned byref/helper/escape-shape
+    annotations.
+  - block literals classified as function-shaped source values only.
+  - native emit paths fail closed before runnable block semantics land.
+- emitted/native boundary details:
+  - the native IR boundary now carries
+    `; executable_block_runtime_semantic_rules = ...`.
+  - native emit paths still reject block literals with `O3S221`.
+- explicit non-goals in this freeze:
+  - no runnable capture legality beyond deterministic source metadata checks.
+  - no runnable byref storage lowering or heap-promotion behavior.
+  - no copy/dispose helper lowering or helper emission.
+  - no runnable block invocation or block-object execution semantics.
+
+Recommended M261 lane-B freeze check:
+
+- `python scripts/check_m261_b001_block_runtime_semantic_rules_contract_and_architecture_freeze.py`
+- `M261-B002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint
