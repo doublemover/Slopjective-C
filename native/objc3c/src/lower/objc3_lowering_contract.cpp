@@ -1240,6 +1240,23 @@ std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled) {
   return out.str();
 }
 
+std::string Objc3ArcSemanticRulesSummary() {
+  std::ostringstream out;
+  // M262-B001 ARC semantic-rule freeze anchor: explicit ARC mode is now a real
+  // admission boundary, but property ownership conflicts, atomic
+  // ownership-aware storage, and broader ARC inference still fail closed until
+  // later lane-B implementation issues land.
+  out << "contract=" << Expr::kObjc3ArcSemanticRulesContractId
+      << ";source_model=" << Expr::kObjc3ArcSemanticRulesSourceModel
+      << ";semantic_model=" << Expr::kObjc3ArcSemanticRulesSemanticModel
+      << ";weak_unowned_lane=" << kObjc3WeakUnownedSemanticsLoweringLaneContract
+      << ";arc_fixit_lane=" << kObjc3ArcDiagnosticsFixitLoweringLaneContract
+      << ";fail_closed_model=" << Expr::kObjc3ArcSemanticRulesFailClosedModel
+      << ";non_goal_model=" << Expr::kObjc3ArcSemanticRulesNonGoalModel
+      << ";next_issue=M262-B002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

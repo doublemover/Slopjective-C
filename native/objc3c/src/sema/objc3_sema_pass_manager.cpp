@@ -2278,6 +2278,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // ARC mode now widens executable ownership-qualified
   // function/method
   // signatures without claiming full ARC automation.
+  // M262-B001 ARC semantic-rule freeze anchor: the pass-manager handoff still
+  // treats ARC semantic legality as explicit-mode-only, preserving deterministic
+  // weak/unowned and ARC-fixit surfaces while broader inference remains
+  // deferred.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

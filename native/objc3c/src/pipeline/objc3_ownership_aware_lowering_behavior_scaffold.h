@@ -12,6 +12,9 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // autoreleasepool profiling, and ARC fix-it summaries while explicit
   // -fobjc-arc mode only widens the executable signature boundary rather than
   // claiming full ARC automation.
+  // M262-B001 ARC semantic-rule freeze anchor: this scaffold remains explicit
+  // about legality/inference boundaries so later ARC lifetime work cannot
+  // silently treat property conflicts or inferred ownership as already live.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

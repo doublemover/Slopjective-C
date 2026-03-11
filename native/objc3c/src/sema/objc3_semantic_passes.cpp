@@ -2763,6 +2763,10 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   // properties. Conflicting explicit storage modifiers fail before metadata
   // emission so later runtime lanes do not have to recover storage intent from
   // inconsistent source.
+  // M262-B001 ARC semantic-rule freeze anchor: explicit ARC mode does not
+  // relax property ownership conflicts, atomic ownership-aware storage, or
+  // broader inference. Those forms remain deterministic semantic failures
+  // until later ARC lifetime implementation issues land.
   const auto active_runtime_backed_storage_modifier = [&]() -> std::string {
     if (info.is_copy) {
       return "copy";

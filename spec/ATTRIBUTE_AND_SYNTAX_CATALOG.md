@@ -78,6 +78,15 @@ Current implementation status (`M262-A002`):
 - generalized ARC cleanup synthesis and full ARC lifetime automation are still
   deferred to later `M262` issues
 
+### B.2.5 ARC semantic rules and forbidden forms (implementation note) {#b-2-5}
+
+Current implementation status (`M262-B001`):
+
+- explicit ARC mode does not yet imply generalized ARC inference
+- conflicting property ownership forms still fail with deterministic diagnostics
+- atomic ownership-aware properties still fail with deterministic diagnostics
+- broader ARC lifetime extension and method-family ARC semantics remain deferred
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

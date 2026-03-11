@@ -1534,6 +1534,31 @@ Recommended M262 lane-A implementation check:
 - `python scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
 - `M262-B001` is the next issue.
 
+## M262 ARC semantic rules and forbidden forms (M262-B001)
+
+`M262-B001` freezes the semantic legality boundary that remains truthful after
+explicit ARC mode handling is live.
+
+- contract id
+  `objc3c-arc-semantic-rules/m262-b001-v1`
+- explicit ARC mode does not yet imply generalized ARC inference:
+  - ownership-qualified executable signatures are admitted only when they are
+    spelled explicitly
+  - property ownership conflicts still fail closed
+  - atomic ownership-aware properties still fail closed
+- emitted IR now carries:
+  - `; arc_semantic_rules = ...`
+  - `!objc3.objc_arc_semantic_rules`
+- still explicitly deferred:
+  - no implicit retain/release inference
+  - no lifetime extension semantics
+  - no method-family ARC semantics yet
+
+Recommended M262 lane-B freeze check:
+
+- `python scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
+- `M262-B002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

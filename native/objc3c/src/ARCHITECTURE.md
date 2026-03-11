@@ -9853,6 +9853,20 @@ mode for the currently supported ownership-qualified executable slice.
   `!objc3.objc_arc_mode_handling`
 - the next issue is `M262-B001`
 
+## M262 ARC Semantic Rules And Forbidden Forms (B001)
+
+`M262-B001` freezes the semantic legality boundary that remains truthful after
+explicit ARC mode admission lands.
+
+- explicit ARC mode still leaves forbidden property forms fail-closed
+- conflicting property ownership forms remain deterministic semantic failures
+- atomic ownership-aware properties remain deterministic semantic failures
+- broader ARC inference, lifetime extension, and method-family ARC semantics
+  remain deferred
+- emitted IR now publishes the `arc_semantic_rules` comment and
+  `!objc3.objc_arc_semantic_rules`
+- the next issue is `M262-B002`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

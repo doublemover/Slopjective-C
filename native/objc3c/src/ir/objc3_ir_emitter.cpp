@@ -1476,6 +1476,11 @@ class Objc3IREmitter {
     // aligned on when ownership-qualified executable signatures are runnable.
     out << "; arc_mode_handling = "
         << Objc3ArcModeHandlingSummary(frontend_metadata_.arc_mode_enabled) << "\n";
+    // M262-B001 ARC semantic-rule freeze anchor: publish the semantic
+    // fail-closed boundary for property conflicts and deferred inference so IR
+    // evidence stays aligned with semantic validation.
+    out << "; arc_semantic_rules = "
+        << Objc3ArcSemanticRulesSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2693,6 +2698,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runnable_block_execution_matrix = !{!74}\n";
     out << "!objc3.objc_arc_source_mode_boundary = !{!75}\n";
     out << "!objc3.objc_arc_mode_handling = !{!76}\n";
+    out << "!objc3.objc_arc_semantic_rules = !{!77}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4005,6 +4011,21 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingNonGoalModel)
+        << "\"}\n";
+    out << "!77 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesSemanticModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3WeakUnownedSemanticsLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcDiagnosticsFixitLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcSemanticRulesNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

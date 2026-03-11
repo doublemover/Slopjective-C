@@ -8112,3 +8112,30 @@ mode without claiming full ARC automation.
   - `spec/planning/compiler/m262/m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation_packet.md`
   - `python scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py`
   - `M262-B001` is the next issue.
+
+## M262 ARC semantic rules and forbidden forms (B001)
+
+`M262-B001` freezes the semantic legality boundary that remains truthful once
+explicit ARC mode exists.
+
+- contract id
+  `objc3c-arc-semantic-rules/m262-b001-v1`
+- source model
+  `explicit-arc-mode-admits-only-explicit-ownership-surfaces-while-forbidden-property-forms-and-broad-inference-remain-fail-closed`
+- semantic model
+  `conflicting-property-ownership-forms-and-atomic-ownership-aware-storage-still-fail-closed-while-general-arc-inference-remains-deferred`
+- current boundary:
+  - explicit ARC mode admits only explicitly spelled ownership-qualified
+    executable surfaces
+  - conflicting property ownership forms still fail closed
+  - atomic ownership-aware properties still fail closed
+  - broad ARC inference, lifetime extension, and method-family ARC semantics
+    are still deferred
+  - emitted IR now carries:
+    `; arc_semantic_rules = ...`
+    and `!objc3.objc_arc_semantic_rules`
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m262_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze_b001_expectations.md`
+  - `spec/planning/compiler/m262/m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze_packet.md`
+  - `python scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py`
+  - `M262-B002` is the next issue.

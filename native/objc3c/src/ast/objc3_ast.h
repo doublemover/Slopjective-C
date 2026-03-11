@@ -223,6 +223,16 @@ struct Expr {
       "non-arc-mode-still-rejects-executable-ownership-qualified-method-and-function-signatures";
   static inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
       "no-generalized-arc-cleanup-synthesis-no-implicit-nonarc-promotion-no-full-arc-automation-yet";
+  static inline constexpr const char *kObjc3ArcSemanticRulesContractId =
+      "objc3c-arc-semantic-rules/m262-b001-v1";
+  static inline constexpr const char *kObjc3ArcSemanticRulesSourceModel =
+      "explicit-arc-mode-admits-only-explicit-ownership-surfaces-while-forbidden-property-forms-and-broad-inference-remain-fail-closed";
+  static inline constexpr const char *kObjc3ArcSemanticRulesSemanticModel =
+      "conflicting-property-ownership-forms-and-atomic-ownership-aware-storage-still-fail-closed-while-general-arc-inference-remains-deferred";
+  static inline constexpr const char *kObjc3ArcSemanticRulesFailClosedModel =
+      "forbidden-arc-property-forms-and-non-inferred-lifetime-semantics-terminate-deterministically";
+  static inline constexpr const char *kObjc3ArcSemanticRulesNonGoalModel =
+      "no-implicit-retain-release-inference-no-lifetime-extension-no-method-family-based-arc-semantics-yet";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
