@@ -8185,3 +8185,20 @@ package root.
 - truthful boundary
   - package-root execution still assumes the staged repo-relative layout from `M259-D002`
   - release-gate closure remains deferred to `M259-E001`
+
+## M259 runnable object-model release-gate metadata anchors (E001)
+
+`M259-E001` still does not widen the metadata ABI. It freezes which existing
+release evidence summaries and runtime proof surfaces must remain green before
+`M259-E002` can expand into the conformance matrix.
+
+- contract id
+  `objc3c-runnable-object-model-release-gate/m259-e001-v1`
+- preserved gate evidence anchors
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json`
+  - `tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json`
+- truthful boundary
+  - no full runnable conformance matrix claim yet
+  - the next implementation issue is `M259-E002`

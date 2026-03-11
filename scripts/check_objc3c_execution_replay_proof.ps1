@@ -31,6 +31,9 @@ $proofDir = Join-Path $proofRoot $proofRunId
 # M259-D003 platform-bringup anchor: supported repo-root/package-root replay
 # must document the live override surface for `OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH`
 # and `OBJC3C_NATIVE_EXECUTION_RUN_ID` on the supported Windows host baseline.
+# M259-E001 release-gate-freeze anchor: execution replay proof remains one
+# preserved lane-E release-gate input alongside `M259-A002`, `M259-B002`,
+# `M259-C002`, and `M259-D003`; full matrix expansion remains deferred to `M259-E002`.
 $summaryPath = Join-Path $proofDir "summary.json"
 $smokeScript = Join-Path $repoRoot "scripts/check_objc3c_native_execution_smoke.ps1"
 $executionRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"

@@ -7231,3 +7231,32 @@ supported Windows bring-up requirements and environment override surface above
   - package-root execution still assumes the repo-relative staged layout from `M259-D002`
   - no system install or auto-provisioning claim lands here
   - the next implementation issue is `M259-E001`
+
+## M259 runnable object-model release gate (E001)
+
+`M259-E001` freezes the final lane-E release-gate boundary for the current
+runnable object-model slice without yet widening into the full conformance
+matrix promised by `M259-E002`.
+
+- contract id
+  `objc3c-runnable-object-model-release-gate/m259-e001-v1`
+- gate model
+  `lane-e-release-gate-over-a002-b002-c002-d003`
+- evidence model
+  `freeze-the-release-gate-over-canonical-sample-compatibility-replay-and-bringup`
+- failure model
+  `fail-closed-on-release-gate-claim-drift`
+- required preserved inputs
+  - `M259-A002`
+  - `M259-B002`
+  - `M259-C002`
+  - `M259-D003`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+  - `scripts/check_objc3c_execution_replay_proof.ps1`
+- explicit non-goals
+  - no full runnable conformance matrix claim yet
+  - no block/ARC release claim yet
+  - no installer or cross-platform release claim yet
+- truthful boundary
+  - `M259-E001` freezes the gate only
+  - the next implementation issue is `M259-E002`

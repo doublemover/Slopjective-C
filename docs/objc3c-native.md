@@ -11375,6 +11375,31 @@ root or the staged package root.
   - no toolchain auto-provisioning claim
   - release-gate closure remains deferred to `M259-E001`
 
+## M259 runnable object-model release gate (E001)
+
+`M259-E001` freezes the final lane-E gate for the current runnable object-model
+slice by pinning the exact A/B/C/D evidence chain and documenting the
+non-goals that still remain outside the release claim.
+
+- contract id
+  `objc3c-runnable-object-model-release-gate/m259-e001-v1`
+- gate model
+  `lane-e-release-gate-over-a002-b002-c002-d003`
+- required preserved gate inputs
+  - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
+  - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
+  - `tmp/reports/m259/M259-C002/object_and_ir_replay_proof_plus_metadata_inspection_summary.json`
+  - `tmp/reports/m259/M259-D003/platform_prerequisites_and_runtime_bring_up_documentation_summary.json`
+  - `scripts/check_objc3c_native_execution_smoke.ps1`
+  - `scripts/check_objc3c_execution_replay_proof.ps1`
+- explicit non-goals
+  - no full runnable conformance matrix claim yet
+  - no block/ARC release claim yet
+  - no system install or cross-platform release claim
+- truthful boundary
+  - `M259-E001` freezes the gate only
+  - `M259-E002` widens this into the full runnable object-model conformance matrix
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current
