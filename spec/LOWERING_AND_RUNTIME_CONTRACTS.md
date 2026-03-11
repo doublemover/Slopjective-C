@@ -7517,3 +7517,28 @@ runtime hook emission.
   - live public autoreleasepool push/pop APIs still do not exist here
 - truthful boundary
   - `M260-D002` is the next implementation issue
+
+## M260 reference counting, weak table, and autoreleasepool implementation (D002)
+
+`M260-D002` upgrades the frozen D001 helper boundary into runnable runtime
+memory-management behavior.
+
+- contract id
+  `objc3c-runtime-memory-management-implementation/m260-d002-v1`
+- refcount model
+  `runtime-managed-instance-retain-counts-destroy-strong-owned-storage-on-final-release`
+- weak model
+  `weak-side-table-tracks-runtime-storage-observers-and-zeroes-them-on-final-release`
+- autoreleasepool model
+  `private-autoreleasepool-push-pop-scopes-retain-autoreleased-runtime-values-until-lifo-drain`
+- failure model
+  `memory-management-runtime-support-remains-private-lowered-and-runtime-probe-driven`
+- live runtime surface
+  - LLVM IR now publishes `runtime_memory_management_implementation` summaries
+    and `!objc3.objc_runtime_memory_management_implementation`
+  - native lowering now emits private autoreleasepool push/pop helper calls
+  - runtime-backed getters, setters, retain/release, weak zeroing, and pool
+    drain behavior now form one executable path
+- truthful boundary
+  - the helper/runtime surface still stays private to the runtime internals
+  - `M260-E001` is the next issue

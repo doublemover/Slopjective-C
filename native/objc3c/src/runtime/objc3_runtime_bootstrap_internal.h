@@ -211,6 +211,18 @@ typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   const char *matched_attachment_owner_identity;
 } objc3_runtime_protocol_conformance_query_snapshot;
 
+typedef struct objc3_runtime_memory_management_state_snapshot {
+  uint64_t live_runtime_instance_count;
+  uint64_t weak_target_count;
+  uint64_t weak_slot_ref_count;
+  uint64_t autoreleasepool_depth;
+  uint64_t autoreleasepool_max_depth;
+  uint64_t queued_autorelease_value_count;
+  uint64_t drained_autorelease_value_count;
+  int last_autoreleased_value;
+  int last_drained_autorelease_value;
+} objc3_runtime_memory_management_state_snapshot;
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
@@ -300,6 +312,13 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
+// M260-D002 runtime-memory-management implementation anchor: autoreleasepool
+// scopes, refcount draining, and weak zeroing remain private runtime/lowering
+// mechanics until a later milestone makes a deliberate public-ABI decision.
+void objc3_runtime_push_autoreleasepool_scope(void);
+void objc3_runtime_pop_autoreleasepool_scope(void);
+int objc3_runtime_copy_memory_management_state_for_testing(
+    objc3_runtime_memory_management_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

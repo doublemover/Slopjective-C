@@ -9779,3 +9779,18 @@ summary-only lane into live runtime-owned helper calls.
   and `!objc3.objc_runtime_memory_management_api`
 - no public autoreleasepool push/pop runtime API lands here
 - the next issue is `M260-D002`
+
+## M260 Reference Counting Weak Table And Autoreleasepool Implementation (D002)
+
+`M260-D002` upgrades the D001 freeze into the live runtime memory-management
+baseline for supported runtime-backed object programs.
+
+- `@autoreleasepool` now lowers through private runtime push/pop helpers
+- autoreleased runtime values now drain on pool pop with deterministic LIFO
+  order
+- weak-side-table entries now zero on final release after strong owned storage
+  teardown
+- LLVM IR now publishes the `runtime_memory_management_implementation`
+  boundary comment and `!objc3.objc_runtime_memory_management_implementation`
+- the public runtime header still remains unchanged
+- the next issue is `M260-E001`

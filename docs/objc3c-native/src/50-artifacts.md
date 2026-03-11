@@ -5285,6 +5285,30 @@ weak storage, and autorelease semantics after `M260-C002`.
     APIs still remain outside this issue
   - `M260-D002` is the next issue
 
+## M260 reference counting, weak table, and autoreleasepool implementation (D002)
+
+`M260-D002` upgrades the frozen `M260-D001` helper surface into live runtime
+memory-management behavior for the supported runtime-backed object baseline.
+
+- contract id
+  `objc3c-runtime-memory-management-implementation/m260-d002-v1`
+- canonical proof artifacts
+  - `tests/tooling/fixtures/native/m260_d002_reference_counting_weak_autoreleasepool_positive.objc3`
+  - `tests/tooling/runtime/m260_d002_reference_counting_weak_autoreleasepool_probe.cpp`
+- live runtime truths
+  - `@autoreleasepool` now lowers through private
+    `objc3_runtime_push_autoreleasepool_scope` /
+    `objc3_runtime_pop_autoreleasepool_scope`
+  - runtime-backed instances now drain autoreleased values on pool pop while
+    preserving deterministic weak-slot zeroing on final release
+  - the public runtime header still does not widen
+- validation
+  - `check:objc3c:m260-d002-lane-d-readiness`
+- truthful boundary
+  - the runtime memory-management surface is runnable now, but it still remains
+    private/lowered rather than a public ownership API
+  - `M260-E001` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

@@ -408,7 +408,17 @@ struct RuntimeDispatchFrame {
   std::vector<int> autorelease_values;
 };
 
+struct RuntimeAutoreleasePoolFrame {
+  std::vector<int> values;
+};
+
 thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
+thread_local std::vector<RuntimeAutoreleasePoolFrame>
+    g_runtime_autoreleasepool_frames;
+thread_local std::uint64_t g_runtime_autoreleasepool_max_depth = 0;
+thread_local std::uint64_t g_runtime_autoreleasepool_drained_value_count = 0;
+thread_local int g_runtime_last_autoreleased_value = 0;
+thread_local int g_runtime_last_drained_autorelease_value = 0;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -506,6 +516,59 @@ std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
   RuntimeDispatchFrame frame = std::move(g_runtime_dispatch_frames.back());
   g_runtime_dispatch_frames.pop_back();
   return std::move(frame.autorelease_values);
+}
+
+void ResetRuntimeAutoreleasepoolStateForTesting() {
+  g_runtime_dispatch_frames.clear();
+  g_runtime_autoreleasepool_frames.clear();
+  g_runtime_autoreleasepool_max_depth = 0;
+  g_runtime_autoreleasepool_drained_value_count = 0;
+  g_runtime_last_autoreleased_value = 0;
+  g_runtime_last_drained_autorelease_value = 0;
+}
+
+void PushRuntimeAutoreleasePoolFrame() {
+  g_runtime_autoreleasepool_frames.push_back({});
+  g_runtime_autoreleasepool_max_depth = std::max<std::uint64_t>(
+      g_runtime_autoreleasepool_max_depth,
+      static_cast<std::uint64_t>(g_runtime_autoreleasepool_frames.size()));
+}
+
+std::vector<int> PopRuntimeAutoreleasePoolFrameValues() {
+  if (g_runtime_autoreleasepool_frames.empty()) {
+    return {};
+  }
+  RuntimeAutoreleasePoolFrame frame =
+      std::move(g_runtime_autoreleasepool_frames.back());
+  g_runtime_autoreleasepool_frames.pop_back();
+  return std::move(frame.values);
+}
+
+std::uint64_t CountQueuedAutoreleaseValues() {
+  std::uint64_t total = 0;
+  for (const RuntimeAutoreleasePoolFrame &frame : g_runtime_autoreleasepool_frames) {
+    total += static_cast<std::uint64_t>(frame.values.size());
+  }
+  return total;
+}
+
+void EnqueueAutoreleaseValue(int value) {
+  if (value == 0) {
+    return;
+  }
+  g_runtime_last_autoreleased_value = value;
+  if (!g_runtime_autoreleasepool_frames.empty()) {
+    g_runtime_autoreleasepool_frames.back().values.push_back(value);
+    return;
+  }
+  if (g_runtime_dispatch_frames.size() >= 2u) {
+    g_runtime_dispatch_frames[g_runtime_dispatch_frames.size() - 2u]
+        .autorelease_values.push_back(value);
+    return;
+  }
+  if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
+    frame->autorelease_values.push_back(value);
+  }
 }
 
 bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value) {
@@ -2173,9 +2236,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
       if (UsesStrongOwnedRuntimeHooks(*runtime_property_accessor) &&
           value != 0) {
         RetainRuntimeValueUnlocked(state, value);
-        if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
-          frame->autorelease_values.push_back(value);
-        }
+        EnqueueAutoreleaseValue(value);
       }
       return value;
     }
@@ -3476,6 +3537,37 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_memory_management_state_for_testing(
+    objc3_runtime_memory_management_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->live_runtime_instance_count = 0;
+  snapshot->weak_target_count = 0;
+  snapshot->weak_slot_ref_count = 0;
+  snapshot->autoreleasepool_depth =
+      static_cast<std::uint64_t>(g_runtime_autoreleasepool_frames.size());
+  snapshot->autoreleasepool_max_depth = g_runtime_autoreleasepool_max_depth;
+  snapshot->queued_autorelease_value_count = CountQueuedAutoreleaseValues();
+  snapshot->drained_autorelease_value_count =
+      g_runtime_autoreleasepool_drained_value_count;
+  snapshot->last_autoreleased_value = g_runtime_last_autoreleased_value;
+  snapshot->last_drained_autorelease_value =
+      g_runtime_last_drained_autorelease_value;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->live_runtime_instance_count = state.live_runtime_instance_count;
+  snapshot->weak_target_count =
+      static_cast<std::uint64_t>(state.weak_slot_refs_by_target_receiver.size());
+  for (const auto &entry : state.weak_slot_refs_by_target_receiver) {
+    snapshot->weak_slot_ref_count +=
+        static_cast<std::uint64_t>(entry.second.size());
+  }
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -3628,10 +3720,29 @@ extern "C" int objc3_runtime_release_i32(int value) {
 }
 
 extern "C" int objc3_runtime_autorelease_i32(int value) {
-  if (RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame()) {
-    frame->autorelease_values.push_back(value);
-  }
+  EnqueueAutoreleaseValue(value);
   return value;
+}
+
+// M260-D002 runtime-memory-management implementation anchor: autoreleasepool
+// scopes are now private runtime-owned stack frames that retain queued values
+// until pop-time LIFO drain, while public ABI widening remains deferred.
+extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
+  PushRuntimeAutoreleasePoolFrame();
+}
+
+extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
+  const std::vector<int> values = PopRuntimeAutoreleasePoolFrameValues();
+  if (values.empty()) {
+    return;
+  }
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  for (auto it = values.rbegin(); it != values.rend(); ++it) {
+    g_runtime_last_drained_autorelease_value = *it;
+    ++g_runtime_autoreleasepool_drained_value_count;
+    ReleaseRuntimeValueUnlocked(state, *it);
+  }
 }
 
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
@@ -3835,4 +3946,5 @@ void objc3_runtime_reset_for_testing(void) {
   state.last_replayed_image_count = 0;
   state.last_replayed_module_name.clear();
   state.last_replayed_translation_unit_identity_key.clear();
+  ResetRuntimeAutoreleasepoolStateForTesting();
 }

@@ -827,6 +827,35 @@ std::string Objc3RuntimeMemoryManagementApiSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeMemoryManagementImplementationSummary() {
+  std::ostringstream out;
+  // M260-D002 runtime memory-management implementation anchor: runtime-backed
+  // object execution now owns live refcount, weak-table, and autoreleasepool
+  // behavior behind private helper entrypoints and emitted autoreleasepool
+  // lowering rather than the older summary-only/fail-closed lane.
+  out << "contract=" << kObjc3RuntimeMemoryManagementImplementationContractId
+      << ";refcount_model="
+      << kObjc3RuntimeMemoryManagementImplementationRefcountModel
+      << ";weak_model="
+      << kObjc3RuntimeMemoryManagementImplementationWeakModel
+      << ";autoreleasepool_model="
+      << kObjc3RuntimeMemoryManagementImplementationAutoreleasepoolModel
+      << ";fail_closed_model="
+      << kObjc3RuntimeMemoryManagementImplementationFailClosedModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";push_autoreleasepool_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";pop_autoreleasepool_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";weak_load_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";weak_store_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -635,6 +635,10 @@ inline constexpr const char *kObjc3RuntimeReleaseI32Symbol =
     "objc3_runtime_release_i32";
 inline constexpr const char *kObjc3RuntimeAutoreleaseI32Symbol =
     "objc3_runtime_autorelease_i32";
+inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
+    "objc3_runtime_push_autoreleasepool_scope";
+inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
+    "objc3_runtime_pop_autoreleasepool_scope";
 // M260-D001 runtime memory-management API freeze anchor: the stable public
 // runtime ABI remains register/lookup/dispatch only, while lowered
 // retain/release/autorelease/current-property/weak helper entrypoints stay on
@@ -650,6 +654,19 @@ inline constexpr const char *kObjc3RuntimeMemoryManagementApiAutoreleasepoolMode
     "no-public-autoreleasepool-push-pop-api-yet-autorelease-helper-drains-only-on-dispatch-frame-return";
 inline constexpr const char *kObjc3RuntimeMemoryManagementApiFailClosedModel =
     "no-public-memory-management-header-widening-no-user-facing-arc-entrypoints-yet";
+// M260-D002 runtime memory-management implementation anchor: runtime-backed
+// objects now execute refcount, weak-table, and autoreleasepool semantics
+// through private runtime helpers while preserving the frozen D001 public ABI.
+inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationContractId =
+    "objc3c-runtime-memory-management-implementation/m260-d002-v1";
+inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationRefcountModel =
+    "runtime-managed-instance-retain-counts-destroy-strong-owned-storage-on-final-release";
+inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationWeakModel =
+    "weak-side-table-tracks-runtime-storage-observers-and-zeroes-them-on-final-release";
+inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationAutoreleasepoolModel =
+    "private-autoreleasepool-push-pop-scopes-retain-autoreleased-runtime-values-until-lifo-drain";
+inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationFailClosedModel =
+    "memory-management-runtime-support-remains-private-lowered-and-runtime-probe-driven";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1662,6 +1679,7 @@ std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
 std::string Objc3OwnershipLoweringBaselineSummary();
 std::string Objc3OwnershipRuntimeHookEmissionSummary();
 std::string Objc3RuntimeMemoryManagementApiSummary();
+std::string Objc3RuntimeMemoryManagementImplementationSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

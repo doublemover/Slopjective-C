@@ -1336,6 +1336,22 @@ class Objc3IREmitter {
           << ";synthesized_storage_globals="
           << synthesized_property_storages_.size() << "\n";
     }
+    if (synthesized_property_accessor_count_ > 0u ||
+        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u) {
+      // M260-D002 runtime memory-management implementation anchor: emitted IR
+      // now carries the private autoreleasepool push/pop runtime surface and
+      // the live refcount/weak/autoreleasepool execution model that native mode
+      // consumes for runtime-backed object programs.
+      out << "; runtime_memory_management_implementation = "
+          << Objc3RuntimeMemoryManagementImplementationSummary()
+          << ";synthesized_accessor_entries="
+          << synthesized_property_accessor_count_
+          << ";synthesized_storage_globals="
+          << synthesized_property_storages_.size()
+          << ";autoreleasepool_scope_sites="
+          << frontend_metadata_.autoreleasepool_scope_lowering_scope_sites
+          << "\n";
+    }
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2134,6 +2150,7 @@ class Objc3IREmitter {
     std::string continue_label;
     std::string break_label;
     bool continue_allowed = false;
+    std::size_t autoreleasepool_depth = 0;
   };
 
   struct FunctionContext {
@@ -2141,6 +2158,7 @@ class Objc3IREmitter {
     std::vector<std::string> code_lines;
     std::vector<std::unordered_map<std::string, std::string>> scopes;
     std::vector<ControlLabels> control_stack;
+    std::vector<std::string> autoreleasepool_scope_symbols;
     std::unordered_set<std::string> nil_bound_ptrs;
     std::unordered_set<std::string> nonzero_bound_ptrs;
     std::unordered_map<std::string, int> const_value_ptrs;
@@ -2532,6 +2550,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_executable_synthesized_accessor_property_lowering = !{!68}\n";
     out << "!objc3.objc_runtime_ownership_hook_emission = !{!69}\n";
     out << "!objc3.objc_runtime_memory_management_api = !{!70}\n";
+    out << "!objc3.objc_runtime_memory_management_implementation = !{!71}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3709,6 +3728,40 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
         << ", i64 "
         << static_cast<unsigned long long>(synthesized_property_storages_.size())
+        << "}\n";
+    out << "!71 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationRefcountModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationWeakModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationAutoreleasepoolModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationFailClosedModel)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
+        << "\", i64 "
+        << static_cast<unsigned long long>(synthesized_property_accessor_count_)
+        << ", i64 "
+        << static_cast<unsigned long long>(synthesized_property_storages_.size())
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.autoreleasepool_scope_lowering_scope_sites)
         << "}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -7818,6 +7871,17 @@ class Objc3IREmitter {
     return prefix + std::to_string(ctx.label_counter++);
   }
 
+  void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
+                                        std::size_t target_depth) const {
+    while (ctx.autoreleasepool_scope_symbols.size() > target_depth) {
+      ctx.code_lines.push_back("  call void @" +
+                               std::string(
+                                   kObjc3RuntimePopAutoreleasepoolScopeSymbol) +
+                               "()");
+      ctx.autoreleasepool_scope_symbols.pop_back();
+    }
+  }
+
   std::string LookupVarPtr(const FunctionContext &ctx, const std::string &name) const {
     for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
       auto found = it->find(name);
@@ -8847,9 +8911,11 @@ class Objc3IREmitter {
           return;
         }
         if (ret->value == nullptr) {
+          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
           EmitTypedReturn("0", ctx);
         } else {
           const std::string value = EmitExpr(ret->value.get(), ctx);
+          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
           EmitTypedReturn(value, ctx);
         }
         ctx.terminated = true;
@@ -8866,8 +8932,11 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Break: {
         if (ctx.control_stack.empty()) {
+          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
+          EmitAutoreleasepoolUnwindToDepth(
+              ctx, ctx.control_stack.back().autoreleasepool_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
         }
         ctx.terminated = true;
@@ -8875,15 +8944,20 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Continue: {
         std::string continue_label;
+        std::size_t continue_autoreleasepool_depth =
+            ctx.autoreleasepool_scope_symbols.size();
         for (auto it = ctx.control_stack.rbegin(); it != ctx.control_stack.rend(); ++it) {
           if (it->continue_allowed) {
             continue_label = it->continue_label;
+            continue_autoreleasepool_depth = it->autoreleasepool_depth;
             break;
           }
         }
         if (continue_label.empty()) {
+          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
+          EmitAutoreleasepoolUnwindToDepth(ctx, continue_autoreleasepool_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
         ctx.terminated = true;
@@ -8896,11 +8970,23 @@ class Objc3IREmitter {
         if (block_stmt == nullptr) {
           return;
         }
+        const std::size_t autoreleasepool_depth =
+            ctx.autoreleasepool_scope_symbols.size();
+        if (block_stmt->is_autoreleasepool_scope) {
+          ctx.code_lines.push_back(
+              "  call void @" +
+              std::string(kObjc3RuntimePushAutoreleasepoolScopeSymbol) + "()");
+          ctx.autoreleasepool_scope_symbols.push_back(
+              block_stmt->autoreleasepool_scope_symbol);
+        }
         ctx.scopes.push_back({});
         for (const auto &nested_stmt : block_stmt->body) {
           EmitStatement(nested_stmt.get(), ctx);
         }
         ctx.scopes.pop_back();
+        if (!ctx.terminated) {
+          EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
+        }
         return;
       }
       case Stmt::Kind::Expr: {
@@ -8929,7 +9015,9 @@ class Objc3IREmitter {
 
         ctx.code_lines.push_back(body_label + ":");
         ctx.scopes.push_back({});
-        ctx.control_stack.push_back({cond_label, end_label, true});
+        ctx.control_stack.push_back(
+            {cond_label, end_label, true,
+             ctx.autoreleasepool_scope_symbols.size()});
         ctx.terminated = false;
         for (const auto &s : while_stmt->body) {
           EmitStatement(s.get(), ctx);
@@ -8957,7 +9045,9 @@ class Objc3IREmitter {
 
         ctx.code_lines.push_back(body_label + ":");
         ctx.scopes.push_back({});
-        ctx.control_stack.push_back({cond_label, end_label, true});
+        ctx.control_stack.push_back(
+            {cond_label, end_label, true,
+             ctx.autoreleasepool_scope_symbols.size()});
         ctx.terminated = false;
         for (const auto &s : do_while_stmt->body) {
           EmitStatement(s.get(), ctx);
@@ -9006,7 +9096,9 @@ class Objc3IREmitter {
 
         ctx.code_lines.push_back(body_label + ":");
         ctx.scopes.push_back({});
-        ctx.control_stack.push_back({step_label, end_label, true});
+        ctx.control_stack.push_back(
+            {step_label, end_label, true,
+             ctx.autoreleasepool_scope_symbols.size()});
         ctx.terminated = false;
         for (const auto &s : for_stmt->body) {
           EmitStatement(s.get(), ctx);
@@ -9086,7 +9178,8 @@ class Objc3IREmitter {
           const SwitchCase &case_stmt = switch_stmt->cases[arm_index];
           ctx.code_lines.push_back(arm_labels[arm_index] + ":");
           ctx.scopes.push_back({});
-          ctx.control_stack.push_back({"", end_label, false});
+          ctx.control_stack.push_back(
+              {"", end_label, false, ctx.autoreleasepool_scope_symbols.size()});
           ctx.terminated = false;
           for (const auto &case_body_stmt : case_stmt.body) {
             EmitStatement(case_body_stmt.get(), ctx);
@@ -9229,7 +9322,8 @@ class Objc3IREmitter {
       emit_runtime_dispatch_declaration(
           kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
     }
-    if (synthesized_property_accessor_count_ > 0u) {
+    if (synthesized_property_accessor_count_ > 0u ||
+        frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u) {
       emit_declaration_once(kObjc3RuntimeReadCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(
@@ -9267,6 +9361,16 @@ class Objc3IREmitter {
                             "declare i32 @" +
                                 std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
                                 "(i32)\n");
+      emit_declaration_once(kObjc3RuntimePushAutoreleasepoolScopeSymbol,
+                            "declare void @" +
+                                std::string(
+                                    kObjc3RuntimePushAutoreleasepoolScopeSymbol) +
+                                "()\n");
+      emit_declaration_once(kObjc3RuntimePopAutoreleasepoolScopeSymbol,
+                            "declare void @" +
+                                std::string(
+                                    kObjc3RuntimePopAutoreleasepoolScopeSymbol) +
+                                "()\n");
     }
     for (const auto &entry : function_signatures_) {
       if (defined_functions_.find(entry.first) != defined_functions_.end()) {

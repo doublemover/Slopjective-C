@@ -1,0 +1,22 @@
+module runtime_memory_management_positive;
+
+@interface Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, weak) __weak id weakValue;
+@end
+
+@implementation Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, weak) __weak id weakValue;
+@end
+
+fn poolRoundTrip(box: id) -> id {
+  @autoreleasepool {
+    [box setWeakValue: [box currentValue]];
+    @autoreleasepool {
+      return [box weakValue];
+    }
+  }
+
+  return 0;
+}

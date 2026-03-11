@@ -711,27 +711,13 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       return;
     }
     if (stmt->block_stmt->is_autoreleasepool_scope) {
-      RecordUnsupportedFeatureClaimDiagnostic(
-          stats.arc_source_rejection_site_count,
-          stmt->block_stmt->line,
-          stmt->block_stmt->column,
-          "unsupported feature claim: '@autoreleasepool' is not yet runnable in Objective-C 3 native mode",
-          diagnostics,
-          stats);
       // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
-      // owned runtime-backed object or synthesized property storage now
-      // upgrades the generic autoreleasepool rejection into a more specific
-      // destruction-order failure so later lowering/runtime lanes do not have
-      // to rediscover the ownership-sensitive edge inventory from source.
-      if (context.has_owned_runtime_backed_object_storage) {
-        RecordUnsupportedFeatureClaimDiagnostic(
-            stats.arc_source_rejection_site_count,
-            stmt->block_stmt->line,
-            stmt->block_stmt->column,
-            "unsupported feature claim: '@autoreleasepool' with owned runtime-backed object or synthesized property storage requires destruction-order semantics that are not yet runnable in Objective-C 3 native mode",
-            diagnostics,
-            stats);
-      }
+      // lane-B identified the ownership-sensitive destruction-order surface so
+      // later runtime work would not need to recover it from source.
+      // M260-D002 runtime-memory-management implementation anchor: native mode
+      // now accepts `@autoreleasepool` blocks and relies on emitted runtime
+      // push/pop helpers plus live refcount/weak-table support instead of the
+      // earlier fail-closed diagnostic path.
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(

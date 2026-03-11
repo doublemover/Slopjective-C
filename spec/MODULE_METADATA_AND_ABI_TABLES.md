@@ -8409,3 +8409,25 @@ freeze how emitted IR advertises the runtime memory-management helper ABI.
 - truthful boundary
   - live public autoreleasepool push/pop APIs still remain outside this issue
   - `M260-D002` is the next issue
+
+## M260 reference counting, weak table, and autoreleasepool metadata anchors (D002)
+
+`M260-D002` does not add a new descriptor family, but it upgrades emitted IR so
+the runtime memory-management implementation surface becomes executable.
+
+- contract id
+  `objc3c-runtime-memory-management-implementation/m260-d002-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/d002/positive/module.ll`
+  - `tmp/artifacts/compilation/objc3c-native/m260/d002/positive/module.obj`
+  - `tmp/reports/m260/M260-D002/reference_counting_weak_autoreleasepool_summary.json`
+- emitted metadata truths
+  - emitted IR now carries `!objc3.objc_runtime_memory_management_implementation`
+  - emitted IR publishes private autoreleasepool push/pop helper symbols in the
+    same runtime memory-management contract surface as retain/release/weak hooks
+  - emitted `@autoreleasepool` blocks now materialize real helper callsites in
+    the lowered function bodies
+- truthful boundary
+  - the runtime memory-management implementation remains private and lowered,
+    not a widened public runtime API
+  - `M260-E001` is the next issue
