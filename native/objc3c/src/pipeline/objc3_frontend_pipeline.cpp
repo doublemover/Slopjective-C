@@ -4394,6 +4394,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
 
     Objc3SemanticValidationOptions semantic_options;
     semantic_options.max_message_send_args = options.lowering.max_message_send_args;
+    // M261-A002 block-source-model-completion anchor: source-only frontend
+    // runs may admit block literals through semantic validation when both IR
+    // and object emission are disabled, but native emit paths must continue to
+    // fail closed until runnable block lowering lands.
+    semantic_options.allow_source_only_block_literals =
+        !options.emit_ir && !options.emit_object;
 
     Objc3SemaPassManagerInput sema_input;
     sema_input.program = &result.program;

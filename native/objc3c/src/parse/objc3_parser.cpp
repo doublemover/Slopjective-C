@@ -4658,6 +4658,77 @@ static std::string BuildBlockLiteralCaptureProfile(const std::vector<std::string
   return out.str();
 }
 
+struct ParsedBlockParameterSourceModel {
+  std::string name;
+  std::string type_spelling = "implicit-unspecified";
+  bool explicit_type = false;
+};
+
+static std::vector<std::string> BuildSortedUniqueStrings(
+    std::vector<std::string> values);
+
+static std::string BuildBlockParameterSignatureEntry(
+    const ParsedBlockParameterSourceModel &parameter) {
+  std::ostringstream out;
+  out << "name=" << parameter.name
+      << ";type=" << parameter.type_spelling
+      << ";explicit_type=" << (parameter.explicit_type ? "true" : "false");
+  return out.str();
+}
+
+static std::vector<std::string> BuildBlockParameterSignatureEntriesLexicographic(
+    const std::vector<ParsedBlockParameterSourceModel> &parameters) {
+  std::vector<std::string> entries;
+  entries.reserve(parameters.size());
+  for (const auto &parameter : parameters) {
+    entries.push_back(BuildBlockParameterSignatureEntry(parameter));
+  }
+  return BuildSortedUniqueStrings(std::move(entries));
+}
+
+static std::string BuildBlockSignatureProfile(
+    const std::vector<ParsedBlockParameterSourceModel> &parameters) {
+  const std::size_t explicit_typed_parameter_count =
+      static_cast<std::size_t>(std::count_if(
+          parameters.begin(), parameters.end(),
+          [](const ParsedBlockParameterSourceModel &parameter) {
+            return parameter.explicit_type;
+          }));
+  const std::size_t implicit_parameter_count =
+      parameters.size() - explicit_typed_parameter_count;
+  std::ostringstream out;
+  out << "block-signature:parameters=" << parameters.size()
+      << ";explicit-typed=" << explicit_typed_parameter_count
+      << ";implicit=" << implicit_parameter_count
+      << ";return-surface=body-inferred";
+  return out.str();
+}
+
+static std::string BuildBlockCaptureInventoryEntry(const std::string &capture_name) {
+  return "name=" + capture_name +
+         ";storage=by-value-readonly;byref=false;mutable=false";
+}
+
+static std::vector<std::string> BuildBlockCaptureInventoryEntriesLexicographic(
+    const std::vector<std::string> &capture_names_lexicographic) {
+  std::vector<std::string> entries;
+  entries.reserve(capture_names_lexicographic.size());
+  for (const auto &capture_name : capture_names_lexicographic) {
+    entries.push_back(BuildBlockCaptureInventoryEntry(capture_name));
+  }
+  return BuildSortedUniqueStrings(std::move(entries));
+}
+
+static std::string BuildBlockCaptureInventoryProfile(
+    std::size_t capture_count,
+    std::size_t byvalue_readonly_capture_count) {
+  std::ostringstream out;
+  out << "block-capture-inventory:captures=" << capture_count
+      << ";byvalue-readonly=" << byvalue_readonly_capture_count
+      << ";byref=0;mutable=0";
+  return out.str();
+}
+
 static std::string BuildBlockLiteralAbiLayoutProfile(std::size_t parameter_count,
                                                      std::size_t capture_count,
                                                      std::size_t body_statement_count) {
@@ -4687,6 +4758,44 @@ static std::string BuildBlockLiteralInvokeTrampolineSymbol(unsigned line,
   out << "__objc3_block_invoke_" << line << "_" << column
       << "_p" << parameter_count
       << "_c" << capture_count;
+  return out.str();
+}
+
+static std::vector<std::string> BuildBlockInvokeSurfaceEntriesLexicographic(
+    const Expr &block) {
+  std::vector<std::string> entries;
+  entries.push_back("descriptor=" + block.block_abi_descriptor_symbol);
+  entries.push_back("invoke=" + block.block_invoke_trampoline_symbol);
+  return BuildSortedUniqueStrings(std::move(entries));
+}
+
+static std::string BuildBlockInvokeSurfaceProfile(const Expr &block) {
+  std::ostringstream out;
+  out << "block-invoke-surface:invoke-arg-slots="
+      << block.block_abi_invoke_argument_slots
+      << ";capture-words=" << block.block_abi_capture_word_count
+      << ";descriptor-symbol=" << block.block_abi_descriptor_symbol
+      << ";invoke-symbol=" << block.block_invoke_trampoline_symbol
+      << ";return-surface=body-inferred";
+  return out.str();
+}
+
+static std::string BuildBlockSourceModelReplayKey(const Expr &block) {
+  std::ostringstream out;
+  out << "signature_entries="
+      << block.block_parameter_signature_entries_lexicographic.size()
+      << ";explicit_typed_parameters="
+      << block.block_explicit_typed_parameter_count
+      << ";capture_inventory_entries="
+      << block.block_capture_inventory_entries_lexicographic.size()
+      << ";byvalue_readonly_captures="
+      << block.block_byvalue_readonly_capture_count
+      << ";invoke_surface_entries="
+      << block.block_invoke_surface_entries_lexicographic.size()
+      << ";deterministic="
+      << (block.block_source_model_is_normalized ? "true" : "false")
+      << ";lane_contract="
+      << Expr::kObjc3ExecutableBlockSourceModelLaneContract;
   return out.str();
 }
 
@@ -10115,12 +10224,14 @@ class Objc3Parser {
     block->line = caret.line;
     block->column = caret.column;
 
-    std::vector<std::string> parameter_names;
+    std::vector<ParsedBlockParameterSourceModel> parameters;
     if (Match(TokenKind::LParen)) {
       if (!At(TokenKind::RParen)) {
         while (true) {
+          ParsedBlockParameterSourceModel parameter;
           if (At(TokenKind::KwI32) || At(TokenKind::KwBool) || At(TokenKind::KwVoid)) {
-            Advance();
+            parameter.explicit_type = true;
+            parameter.type_spelling = Advance().text;
           }
           if (!At(TokenKind::Identifier)) {
             const Token &token = Peek();
@@ -10128,7 +10239,9 @@ class Objc3Parser {
                 token.line, token.column, "O3P166", "expected parameter identifier in block literal"));
             return nullptr;
           }
-          parameter_names.push_back(Advance().text);
+          const Token name_token = Advance();
+          parameter.name = name_token.text;
+          parameters.push_back(std::move(parameter));
           if (!Match(TokenKind::Comma)) {
             break;
           }
@@ -10155,11 +10268,39 @@ class Objc3Parser {
 
     const auto body = ParseBlock();
     bool deterministic_capture_set = true;
+    std::vector<std::string> parameter_names;
+    parameter_names.reserve(parameters.size());
+    for (const auto &parameter : parameters) {
+      parameter_names.push_back(parameter.name);
+    }
     block->block_parameter_count = parameter_names.size();
     block->block_parameter_names_lexicographic = BuildSortedUniqueStrings(parameter_names);
+    // M261-A002 block-source-model-completion anchor: parser now publishes the
+    // canonical parameter-signature, capture-inventory, and invoke-surface
+    // source model directly on the AST so source-only frontend runs can carry
+    // that closure forward before runnable block lowering still fails closed.
+    block->block_parameter_signature_entries_lexicographic =
+        BuildBlockParameterSignatureEntriesLexicographic(parameters);
+    block->block_explicit_typed_parameter_count = static_cast<std::size_t>(
+        std::count_if(parameters.begin(), parameters.end(),
+                      [](const ParsedBlockParameterSourceModel &parameter) {
+                        return parameter.explicit_type;
+                      }));
+    block->block_implicit_parameter_count =
+        block->block_parameter_count - block->block_explicit_typed_parameter_count;
+    block->block_signature_profile = BuildBlockSignatureProfile(parameters);
     block->block_capture_names_lexicographic =
         BuildBlockLiteralCaptureSet(body, parameter_names, deterministic_capture_set);
     block->block_capture_count = block->block_capture_names_lexicographic.size();
+    block->block_capture_inventory_entries_lexicographic =
+        BuildBlockCaptureInventoryEntriesLexicographic(
+            block->block_capture_names_lexicographic);
+    block->block_byvalue_readonly_capture_count =
+        block->block_capture_count;
+    block->block_capture_inventory_profile =
+        BuildBlockCaptureInventoryProfile(
+            block->block_capture_count,
+            block->block_byvalue_readonly_capture_count);
     block->block_body_statement_count = body.size();
     block->block_capture_set_deterministic = deterministic_capture_set;
     block->block_capture_profile =
@@ -10181,14 +10322,18 @@ class Objc3Parser {
         block->column,
         block->block_parameter_count,
         block->block_capture_count);
+    block->block_invoke_surface_entries_lexicographic =
+        BuildBlockInvokeSurfaceEntriesLexicographic(*block);
+    block->block_invoke_surface_profile =
+        BuildBlockInvokeSurfaceProfile(*block);
     block->block_abi_has_invoke_trampoline = true;
     block->block_abi_layout_is_normalized =
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
-    block->block_storage_mutable_capture_count = block->block_capture_count;
-    block->block_storage_byref_slot_count = block->block_capture_count;
-    block->block_storage_requires_byref_cells = block->block_storage_byref_slot_count > 0u;
+    block->block_storage_mutable_capture_count = 0;
+    block->block_storage_byref_slot_count = 0;
+    block->block_storage_requires_byref_cells = false;
     block->block_storage_escape_analysis_enabled = true;
-    block->block_storage_escape_to_heap = block->block_storage_requires_byref_cells;
+    block->block_storage_escape_to_heap = false;
     block->block_storage_escape_profile =
         BuildBlockStorageEscapeProfile(
             block->block_storage_mutable_capture_count,
@@ -10249,6 +10394,15 @@ class Objc3Parser {
     block->block_determinism_perf_baseline_profile_is_normalized =
         block->block_copy_dispose_profile_is_normalized &&
         block->block_determinism_perf_baseline_weight >= block->block_capture_count;
+    block->block_source_model_is_normalized =
+        block->block_literal_is_normalized &&
+        block->block_capture_set_deterministic &&
+        block->block_abi_layout_is_normalized &&
+        block->block_storage_escape_profile_is_normalized &&
+        block->block_copy_dispose_profile_is_normalized &&
+        block->block_determinism_perf_baseline_profile_is_normalized;
+    block->block_source_model_replay_key =
+        BuildBlockSourceModelReplayKey(*block);
     return block;
   }
 

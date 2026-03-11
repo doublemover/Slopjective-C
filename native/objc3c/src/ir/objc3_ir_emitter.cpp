@@ -1366,6 +1366,15 @@ class Objc3IREmitter {
     // closure before runtime lowering remains fail closed.
     out << "; executable_block_source_closure = "
         << Objc3ExecutableBlockSourceClosureSummary() << "\n";
+    // M261-A002 block-source-model-completion anchor: emit the completed
+    // source-model replay boundary so source-only frontend runs and later
+    // lowering work can agree on typed parameter signatures, capture storage
+    // inventories, and invoke-surface symbols without reconstructing them.
+    out << "; executable_block_source_model_completion = "
+        << Objc3ExecutableBlockSourceModelCompletionSummary()
+        << ";replay_key="
+        << frontend_metadata_.lowering_block_source_model_completion_replay_key
+        << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

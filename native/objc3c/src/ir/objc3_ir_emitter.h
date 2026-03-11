@@ -565,6 +565,17 @@ struct Objc3IRFrontendMetadata {
   std::size_t arc_diagnostics_fixit_lowering_ownership_arc_empty_fixit_hint_sites = 0;
   std::size_t arc_diagnostics_fixit_lowering_contract_violation_sites = 0;
   bool deterministic_arc_diagnostics_fixit_lowering_handoff = false;
+  std::string lowering_block_source_model_completion_replay_key;
+  std::size_t block_source_model_completion_block_literal_sites = 0;
+  std::size_t block_source_model_completion_signature_entries_total = 0;
+  std::size_t block_source_model_completion_explicit_typed_parameter_entries_total = 0;
+  std::size_t block_source_model_completion_implicit_parameter_entries_total = 0;
+  std::size_t block_source_model_completion_capture_inventory_entries_total = 0;
+  std::size_t block_source_model_completion_byvalue_readonly_capture_entries_total = 0;
+  std::size_t block_source_model_completion_invoke_surface_entries_total = 0;
+  std::size_t block_source_model_completion_non_normalized_sites = 0;
+  std::size_t block_source_model_completion_contract_violation_sites = 0;
+  bool deterministic_block_source_model_completion_handoff = false;
   std::string lowering_block_literal_capture_replay_key;
   std::size_t block_literal_capture_lowering_block_literal_sites = 0;
   std::size_t block_literal_capture_lowering_block_parameter_entries = 0;

@@ -6994,6 +6994,223 @@ Objc3BlockLiteralCaptureLoweringContract BuildBlockLiteralCaptureLoweringContrac
   return contract;
 }
 
+bool IsStrictlySortedUniqueStrings(const std::vector<std::string> &entries) {
+  if (!std::is_sorted(entries.begin(), entries.end())) {
+    return false;
+  }
+  return std::adjacent_find(entries.begin(), entries.end()) == entries.end();
+}
+
+void AccumulateBlockSourceModelCompletionFromExpr(
+    const Expr *expr,
+    Objc3BlockSourceModelCompletionContract &contract);
+
+void AccumulateBlockSourceModelCompletionFromStmt(
+    const Stmt *stmt,
+    Objc3BlockSourceModelCompletionContract &contract) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->let_stmt->value.get(), contract);
+      }
+      break;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->assign_stmt->value.get(), contract);
+      }
+      break;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->return_stmt->value.get(), contract);
+      }
+      break;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->if_stmt->condition.get(), contract);
+        for (const auto &child : stmt->if_stmt->then_body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+        for (const auto &child : stmt->if_stmt->else_body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+      }
+      break;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        for (const auto &child : stmt->do_while_stmt->body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->do_while_stmt->condition.get(), contract);
+      }
+      break;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->for_stmt->init.value.get(), contract);
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->for_stmt->condition.get(), contract);
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->for_stmt->step.value.get(), contract);
+        for (const auto &child : stmt->for_stmt->body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+      }
+      break;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->switch_stmt->condition.get(), contract);
+        for (const auto &switch_case : stmt->switch_stmt->cases) {
+          for (const auto &child : switch_case.body) {
+            AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+          }
+        }
+      }
+      break;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->while_stmt->condition.get(), contract);
+        for (const auto &child : stmt->while_stmt->body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+      }
+      break;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        for (const auto &child : stmt->block_stmt->body) {
+          AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
+        }
+      }
+      break;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        AccumulateBlockSourceModelCompletionFromExpr(
+            stmt->expr_stmt->value.get(), contract);
+      }
+      break;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      break;
+  }
+}
+
+void AccumulateBlockSourceModelCompletionFromExpr(
+    const Expr *expr,
+    Objc3BlockSourceModelCompletionContract &contract) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    ++contract.block_literal_sites;
+    contract.signature_entries_total +=
+        expr->block_parameter_signature_entries_lexicographic.size();
+    contract.explicit_typed_parameter_entries_total +=
+        expr->block_explicit_typed_parameter_count;
+    contract.implicit_parameter_entries_total +=
+        expr->block_implicit_parameter_count;
+    contract.capture_inventory_entries_total +=
+        expr->block_capture_inventory_entries_lexicographic.size();
+    contract.byvalue_readonly_capture_entries_total +=
+        expr->block_byvalue_readonly_capture_count;
+    contract.invoke_surface_entries_total +=
+        expr->block_invoke_surface_entries_lexicographic.size();
+
+    if (!expr->block_source_model_is_normalized) {
+      ++contract.non_normalized_sites;
+    }
+
+    bool contract_violation = false;
+    contract_violation |=
+        expr->block_parameter_signature_entries_lexicographic.size() !=
+        expr->block_parameter_count;
+    contract_violation |=
+        expr->block_explicit_typed_parameter_count +
+                expr->block_implicit_parameter_count !=
+        expr->block_parameter_count;
+    contract_violation |=
+        expr->block_capture_inventory_entries_lexicographic.size() !=
+        expr->block_capture_count;
+    contract_violation |=
+        expr->block_byvalue_readonly_capture_count != expr->block_capture_count;
+    contract_violation |=
+        expr->block_invoke_surface_entries_lexicographic.size() != 2u;
+    contract_violation |= expr->block_signature_profile.empty();
+    contract_violation |= expr->block_capture_inventory_profile.empty();
+    contract_violation |= expr->block_invoke_surface_profile.empty();
+    contract_violation |= expr->block_abi_descriptor_symbol.empty();
+    contract_violation |= expr->block_invoke_trampoline_symbol.empty();
+    contract_violation |= expr->block_source_model_replay_key.empty();
+    contract_violation |= !IsStrictlySortedUniqueStrings(
+        expr->block_parameter_signature_entries_lexicographic);
+    contract_violation |= !IsStrictlySortedUniqueStrings(
+        expr->block_capture_inventory_entries_lexicographic);
+    contract_violation |= !IsStrictlySortedUniqueStrings(
+        expr->block_invoke_surface_entries_lexicographic);
+
+    if (contract_violation) {
+      ++contract.contract_violation_sites;
+    }
+  }
+
+  AccumulateBlockSourceModelCompletionFromExpr(expr->receiver.get(), contract);
+  AccumulateBlockSourceModelCompletionFromExpr(expr->left.get(), contract);
+  AccumulateBlockSourceModelCompletionFromExpr(expr->right.get(), contract);
+  AccumulateBlockSourceModelCompletionFromExpr(expr->third.get(), contract);
+  for (const auto &arg : expr->args) {
+    AccumulateBlockSourceModelCompletionFromExpr(arg.get(), contract);
+  }
+}
+
+Objc3BlockSourceModelCompletionContract BuildBlockSourceModelCompletionContract(
+    const Objc3Program &program) {
+  Objc3BlockSourceModelCompletionContract contract;
+
+  for (const auto &global : program.globals) {
+    AccumulateBlockSourceModelCompletionFromExpr(global.value.get(), contract);
+  }
+  for (const auto &function : program.functions) {
+    for (const auto &stmt : function.body) {
+      AccumulateBlockSourceModelCompletionFromStmt(stmt.get(), contract);
+    }
+  }
+  for (const auto &protocol : program.protocols) {
+    for (const auto &method : protocol.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceModelCompletionFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceModelCompletionFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        AccumulateBlockSourceModelCompletionFromStmt(stmt.get(), contract);
+      }
+    }
+  }
+
+  contract.deterministic = contract.non_normalized_sites == 0u &&
+                           contract.contract_violation_sites == 0u;
+  return contract;
+}
+
 Objc3BlockAbiInvokeTrampolineLoweringContract BuildBlockAbiInvokeTrampolineLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3BlockAbiInvokeTrampolineLoweringContract contract;
@@ -8445,6 +8662,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string block_literal_capture_lowering_replay_key =
       Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
+  // M261-A002 block-source-model-completion anchor: frontend artifacts now
+  // derive the authoritative block signature/capture/invoke source-model
+  // contract directly from the AST so source-only frontend runs can emit a
+  // stable manifest handoff before runnable block lowering exists.
+  const Objc3BlockSourceModelCompletionContract block_source_model_completion_contract =
+      BuildBlockSourceModelCompletionContract(pipeline_result.program.ast);
+  if (!IsValidObjc3BlockSourceModelCompletionContract(
+          block_source_model_completion_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid block source model completion contract");
+  }
+  const std::string block_source_model_completion_replay_key =
+      Objc3BlockSourceModelCompletionReplayKey(
+          block_source_model_completion_contract);
   const Objc3BlockAbiInvokeTrampolineLoweringContract block_abi_invoke_trampoline_lowering_contract =
       BuildBlockAbiInvokeTrampolineLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
@@ -11551,6 +11783,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"lowering_block_literal_capture_replay_key\":\""
            << block_literal_capture_lowering_replay_key
            << "\""
+           << ",\"deterministic_block_source_model_completion_handoff\":"
+           << (block_source_model_completion_contract.deterministic ? "true"
+                                                                   : "false")
+           << ",\"block_source_model_completion_block_literal_sites\":"
+           << block_source_model_completion_contract.block_literal_sites
+           << ",\"block_source_model_completion_signature_entries_total\":"
+           << block_source_model_completion_contract.signature_entries_total
+           << ",\"block_source_model_completion_explicit_typed_parameter_entries_total\":"
+           << block_source_model_completion_contract
+                  .explicit_typed_parameter_entries_total
+           << ",\"block_source_model_completion_implicit_parameter_entries_total\":"
+           << block_source_model_completion_contract
+                  .implicit_parameter_entries_total
+           << ",\"block_source_model_completion_capture_inventory_entries_total\":"
+           << block_source_model_completion_contract
+                  .capture_inventory_entries_total
+           << ",\"block_source_model_completion_byvalue_readonly_capture_entries_total\":"
+           << block_source_model_completion_contract
+                  .byvalue_readonly_capture_entries_total
+           << ",\"block_source_model_completion_invoke_surface_entries_total\":"
+           << block_source_model_completion_contract
+                  .invoke_surface_entries_total
+           << ",\"block_source_model_completion_non_normalized_sites\":"
+           << block_source_model_completion_contract.non_normalized_sites
+           << ",\"block_source_model_completion_contract_violation_sites\":"
+           << block_source_model_completion_contract.contract_violation_sites
+           << ",\"lowering_block_source_model_completion_replay_key\":\""
+           << block_source_model_completion_replay_key
+           << "\""
            << ",\"deterministic_block_abi_invoke_trampoline_lowering_handoff\":"
            << (block_abi_invoke_trampoline_lowering_contract.deterministic ? "true" : "false")
            << ",\"block_abi_invoke_trampoline_lowering_sites\":"
@@ -12682,6 +12943,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << block_literal_capture_lowering_replay_key
            << "\",\"deterministic_handoff\":"
            << (block_literal_capture_lowering_contract.deterministic ? "true" : "false")
+           << "}"
+           << ",\"objc_block_source_model_completion_surface\":{\"block_literal_sites\":"
+           << block_source_model_completion_contract.block_literal_sites
+           << ",\"signature_entries_total\":"
+           << block_source_model_completion_contract.signature_entries_total
+           << ",\"explicit_typed_parameter_entries_total\":"
+           << block_source_model_completion_contract
+                  .explicit_typed_parameter_entries_total
+           << ",\"implicit_parameter_entries_total\":"
+           << block_source_model_completion_contract
+                  .implicit_parameter_entries_total
+           << ",\"capture_inventory_entries_total\":"
+           << block_source_model_completion_contract
+                  .capture_inventory_entries_total
+           << ",\"byvalue_readonly_capture_entries_total\":"
+           << block_source_model_completion_contract
+                  .byvalue_readonly_capture_entries_total
+           << ",\"invoke_surface_entries_total\":"
+           << block_source_model_completion_contract
+                  .invoke_surface_entries_total
+           << ",\"non_normalized_sites\":"
+           << block_source_model_completion_contract.non_normalized_sites
+           << ",\"contract_violation_sites\":"
+           << block_source_model_completion_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << block_source_model_completion_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (block_source_model_completion_contract.deterministic ? "true"
+                                                                   : "false")
            << "}"
            << ",\"objc_block_abi_invoke_trampoline_lowering_surface\":{\"block_literal_sites\":"
            << block_abi_invoke_trampoline_lowering_contract.block_literal_sites
@@ -13891,6 +14181,35 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       block_literal_capture_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_block_literal_capture_lowering_handoff =
       block_literal_capture_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_block_source_model_completion_replay_key =
+      block_source_model_completion_replay_key;
+  ir_frontend_metadata.block_source_model_completion_block_literal_sites =
+      block_source_model_completion_contract.block_literal_sites;
+  ir_frontend_metadata.block_source_model_completion_signature_entries_total =
+      block_source_model_completion_contract.signature_entries_total;
+  ir_frontend_metadata
+      .block_source_model_completion_explicit_typed_parameter_entries_total =
+      block_source_model_completion_contract
+          .explicit_typed_parameter_entries_total;
+  ir_frontend_metadata
+      .block_source_model_completion_implicit_parameter_entries_total =
+      block_source_model_completion_contract
+          .implicit_parameter_entries_total;
+  ir_frontend_metadata
+      .block_source_model_completion_capture_inventory_entries_total =
+      block_source_model_completion_contract.capture_inventory_entries_total;
+  ir_frontend_metadata
+      .block_source_model_completion_byvalue_readonly_capture_entries_total =
+      block_source_model_completion_contract
+          .byvalue_readonly_capture_entries_total;
+  ir_frontend_metadata.block_source_model_completion_invoke_surface_entries_total =
+      block_source_model_completion_contract.invoke_surface_entries_total;
+  ir_frontend_metadata.block_source_model_completion_non_normalized_sites =
+      block_source_model_completion_contract.non_normalized_sites;
+  ir_frontend_metadata.block_source_model_completion_contract_violation_sites =
+      block_source_model_completion_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_block_source_model_completion_handoff =
+      block_source_model_completion_contract.deterministic;
   ir_frontend_metadata.lowering_block_abi_invoke_trampoline_replay_key =
       block_abi_invoke_trampoline_lowering_replay_key;
   ir_frontend_metadata.block_abi_invoke_trampoline_lowering_block_literal_sites =

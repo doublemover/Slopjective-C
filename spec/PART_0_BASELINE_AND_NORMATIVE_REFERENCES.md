@@ -158,6 +158,9 @@ Current implementation boundary:
 
 - the native compiler currently freezes block literal source closure first
   (`M261-A001`) and still fail-closes runnable block semantics after parsing.
+- source-only frontend runs may now admit block literals and publish completed
+  signature/capture/invoke source modeling (`M261-A002`) when both IR and
+  object emission are disabled.
 - explicit block pointer declarator spellings and explicit byref storage
   spellings are not yet part of the supported source surface.
 

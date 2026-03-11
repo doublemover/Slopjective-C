@@ -1000,6 +1000,40 @@ Recommended M261 lane-A contract check:
 - `python scripts/check_m261_a001_executable_block_source_closure_contract_and_architecture_freeze.py`
 - `M261-A002` is the next issue.
 
+## M261 block source model completion (M261-A002)
+
+`M261-A002` upgrades the frozen `M261-A001` block-literal surface into a real
+source-only frontend capability.
+
+- contract id
+  `objc3c-executable-block-source-model-completion/m261-a002-v1`
+
+Current source-model details:
+
+- source-only frontend positive path:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+    may now admit block literals through sema.
+  - the emitted manifest publishes
+    `objc_block_source_model_completion_surface`.
+- truthful source model now includes:
+  - deterministic parameter-signature entries with explicit-typed and implicit
+    parameter counts.
+  - deterministic capture-inventory entries with the current truthful storage
+    class: by-value readonly only.
+  - deterministic invoke-surface entries for the descriptor and invoke
+    trampoline symbols.
+- native emit path remains fail-closed:
+  - `objc3c-native.exe` still rejects runnable block lowering with `O3S221`.
+- explicit non-goals in this implementation:
+  - no explicit `__block` byref spelling yet.
+  - no copy/dispose helper emission yet.
+  - no runnable block object/runtime invocation yet.
+
+Recommended M261 lane-A implementation check:
+
+- `python scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
+- `M261-B001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

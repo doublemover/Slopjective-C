@@ -985,6 +985,8 @@ inline constexpr const char *kObjc3BlockCopyDisposeLoweringLaneContract =
     "m169-block-copy-dispose-lowering-v1";
 inline constexpr const char *kObjc3BlockDeterminismPerfBaselineLoweringLaneContract =
     "m170-block-determinism-perf-baseline-lowering-v1";
+inline constexpr const char *kObjc3BlockSourceModelCompletionLaneContract =
+    "m261-block-source-model-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1324,6 +1326,19 @@ struct Objc3BlockLiteralCaptureLoweringContract {
   std::size_t block_empty_capture_sites = 0;
   std::size_t block_nondeterministic_capture_sites = 0;
   std::size_t block_non_normalized_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
+struct Objc3BlockSourceModelCompletionContract {
+  std::size_t block_literal_sites = 0;
+  std::size_t signature_entries_total = 0;
+  std::size_t explicit_typed_parameter_entries_total = 0;
+  std::size_t implicit_parameter_entries_total = 0;
+  std::size_t capture_inventory_entries_total = 0;
+  std::size_t byvalue_readonly_capture_entries_total = 0;
+  std::size_t invoke_surface_entries_total = 0;
+  std::size_t non_normalized_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
 };
@@ -1695,6 +1710,7 @@ std::string Objc3RuntimeMemoryManagementApiSummary();
 std::string Objc3RuntimeMemoryManagementImplementationSummary();
 std::string Objc3OwnershipRuntimeGateSummary();
 std::string Objc3ExecutableBlockSourceClosureSummary();
+std::string Objc3ExecutableBlockSourceModelCompletionSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();
@@ -1786,6 +1802,10 @@ bool IsValidObjc3ArcDiagnosticsFixitLoweringContract(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
 std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
     const Objc3ArcDiagnosticsFixitLoweringContract &contract);
+bool IsValidObjc3BlockSourceModelCompletionContract(
+    const Objc3BlockSourceModelCompletionContract &contract);
+std::string Objc3BlockSourceModelCompletionReplayKey(
+    const Objc3BlockSourceModelCompletionContract &contract);
 bool IsValidObjc3BlockLiteralCaptureLoweringContract(
     const Objc3BlockLiteralCaptureLoweringContract &contract);
 std::string Objc3BlockLiteralCaptureLoweringReplayKey(

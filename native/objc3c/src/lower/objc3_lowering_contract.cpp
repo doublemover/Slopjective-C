@@ -892,6 +892,27 @@ std::string Objc3ExecutableBlockSourceClosureSummary() {
   return out.str();
 }
 
+std::string Objc3ExecutableBlockSourceModelCompletionSummary() {
+  std::ostringstream out;
+  // M261-A002 block-source-model-completion anchor: lane-A now upgrades the
+  // frozen block source closure into a deterministic parameter/capture/invoke
+  // source model that source-only frontend runs may publish before runnable
+  // lowering still fails closed on native emit paths.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockSourceModelCompletionContractId
+      << ";signature_model=" << Expr::kObjc3ExecutableBlockSignatureModel
+      << ";capture_inventory_model="
+      << Expr::kObjc3ExecutableBlockCaptureInventoryModel
+      << ";invoke_surface_model="
+      << Expr::kObjc3ExecutableBlockInvokeSurfaceModel
+      << ";evidence_model="
+      << Expr::kObjc3ExecutableBlockSourceModelEvidenceModel
+      << ";fail_closed_model="
+      << Expr::kObjc3ExecutableBlockSourceModelFailureModel
+      << ";lane_contract=" << kObjc3BlockSourceModelCompletionLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C
@@ -1926,6 +1947,45 @@ std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
          ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3ArcDiagnosticsFixitLoweringLaneContract;
+}
+
+bool IsValidObjc3BlockSourceModelCompletionContract(
+    const Objc3BlockSourceModelCompletionContract &contract) {
+  const bool explicit_parameter_count_valid =
+      contract.explicit_typed_parameter_entries_total <=
+      contract.signature_entries_total;
+  const bool implicit_parameter_count_valid =
+      contract.implicit_parameter_entries_total <=
+      contract.signature_entries_total;
+  const bool readonly_capture_count_valid =
+      contract.byvalue_readonly_capture_entries_total <=
+      contract.capture_inventory_entries_total;
+  const bool invoke_surface_count_valid =
+      contract.invoke_surface_entries_total >=
+      contract.block_literal_sites * 2u;
+  const bool non_normalized_sites_valid =
+      contract.non_normalized_sites <= contract.block_literal_sites;
+  return explicit_parameter_count_valid &&
+         implicit_parameter_count_valid &&
+         readonly_capture_count_valid &&
+         invoke_surface_count_valid &&
+         non_normalized_sites_valid;
+}
+
+std::string Objc3BlockSourceModelCompletionReplayKey(
+    const Objc3BlockSourceModelCompletionContract &contract) {
+  return "signature_entries=" +
+         std::to_string(contract.signature_entries_total) +
+         ";explicit_typed_parameters=" +
+         std::to_string(contract.explicit_typed_parameter_entries_total) +
+         ";capture_inventory_entries=" +
+         std::to_string(contract.capture_inventory_entries_total) +
+         ";byvalue_readonly_captures=" +
+         std::to_string(contract.byvalue_readonly_capture_entries_total) +
+         ";invoke_surface_entries=" +
+         std::to_string(contract.invoke_surface_entries_total) +
+         ";deterministic=" + (contract.deterministic ? "true" : "false") +
+         ";lane_contract=" + kObjc3BlockSourceModelCompletionLaneContract;
 }
 
 bool IsValidObjc3BlockLiteralCaptureLoweringContract(

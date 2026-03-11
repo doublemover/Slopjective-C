@@ -449,6 +449,7 @@ struct Objc3UnsupportedFeatureClaimEnforcementStats {
 struct Objc3UnsupportedFeatureClaimContext {
   std::size_t owned_runtime_backed_object_property_sites = 0;
   bool has_owned_runtime_backed_object_storage = false;
+  bool allow_source_only_block_literals = false;
 };
 
 static bool IsRuntimeBackedObjectProperty(const Objc3PropertyDecl &property) {
@@ -465,7 +466,8 @@ static bool IsOwnedRuntimeBackedObjectProperty(const Objc3PropertyDecl &property
 }
 
 static Objc3UnsupportedFeatureClaimContext
-BuildUnsupportedFeatureClaimContext(const Objc3Program &ast) {
+BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
+                                    bool allow_source_only_block_literals) {
   Objc3UnsupportedFeatureClaimContext context;
   std::unordered_set<std::string> seen_owned_storage_sites;
   const auto record_properties = [&](const auto &owner_name,
@@ -490,6 +492,7 @@ BuildUnsupportedFeatureClaimContext(const Objc3Program &ast) {
   }
   context.has_owned_runtime_backed_object_storage =
       context.owned_runtime_backed_object_property_sites > 0u;
+  context.allow_source_only_block_literals = allow_source_only_block_literals;
   return context;
 }
 
@@ -758,6 +761,13 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
   // parse successfully they still fail closed here until M261-A002 and later
   // runtime issues make them runnable.
   case Expr::Kind::BlockLiteral:
+    // M261-A002 block-source-model-completion anchor: source-only frontend
+    // projection runs may admit block literals through sema so manifest-only
+    // tooling can prove the completed source model, while native emit paths
+    // continue to fail closed until later M261 lowering/runtime issues land.
+    if (context.allow_source_only_block_literals) {
+      return;
+    }
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.blocks_source_rejection_site_count,
         expr->line,
@@ -912,13 +922,14 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
 static Objc3UnsupportedFeatureClaimEnforcementStats
 DiagnoseUnsupportedFeatureClaimSources(
     const Objc3Program &ast,
+    bool allow_source_only_block_literals,
     std::vector<std::string> &diagnostics) {
   // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
   // runnable-core positive path at zero-site readiness and reject accepted
   // unsupported advanced sources deterministically with O3S221.
   Objc3UnsupportedFeatureClaimEnforcementStats stats;
   const Objc3UnsupportedFeatureClaimContext context =
-      BuildUnsupportedFeatureClaimContext(ast);
+      BuildUnsupportedFeatureClaimContext(ast, allow_source_only_block_literals);
   for (const auto &fn : ast.functions) {
     DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats, context);
   }
@@ -11082,6 +11093,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     const Objc3ParsedProgram &program,
     bool legacy_compatibility_mode,
     bool migration_assist_enabled,
+    bool allow_source_only_block_literals,
     std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   Objc3SemanticIntegrationSurface surface;
@@ -12184,7 +12196,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // in sema before lowering/runtime handoff proceeds.
   const Objc3UnsupportedFeatureClaimEnforcementStats
       unsupported_feature_enforcement =
-          DiagnoseUnsupportedFeatureClaimSources(ast, diagnostics);
+          DiagnoseUnsupportedFeatureClaimSources(
+              ast, allow_source_only_block_literals, diagnostics);
   // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed
   // legality summary that classifies live compatibility/migration selections,
   // source-only claim downgrades, and unsupported strictness/macro claim

@@ -45,6 +45,20 @@ struct Expr {
       "fail-closed-on-block-source-surface-drift-before-block-runtime-realization";
   static inline constexpr const char *kObjc3ExecutableBlockSourceNonGoalModel =
       "no-block-pointer-declarator-spellings-no-explicit-byref-storage-spellings-no-block-runtime-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceModelCompletionContractId =
+      "objc3c-executable-block-source-model-completion/m261-a002-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockSignatureModel =
+      "block-source-model-publishes-deterministic-parameter-signature-entries-before-runnable-block-realization";
+  static inline constexpr const char *kObjc3ExecutableBlockCaptureInventoryModel =
+      "block-source-model-publishes-deterministic-capture-storage-inventory-before-byref-and-helper-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockInvokeSurfaceModel =
+      "block-source-model-publishes-deterministic-descriptor-and-invoke-surface-symbols-before-runnable-block-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceModelEvidenceModel =
+      "source-only-runner-manifest-success-plus-native-fail-closed-block-probe";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceModelFailureModel =
+      "fail-closed-on-block-signature-capture-or-invoke-source-model-drift-before-runnable-block-lowering";
+  static inline constexpr const char *kObjc3ExecutableBlockSourceModelLaneContract =
+      "m261-block-source-model-v1";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {
@@ -118,14 +132,25 @@ struct Expr {
   bool dispatch_surface_is_normalized = false;
   std::vector<std::string> block_parameter_names_lexicographic;
   std::size_t block_parameter_count = 0;
+  std::vector<std::string> block_parameter_signature_entries_lexicographic;
+  std::size_t block_explicit_typed_parameter_count = 0;
+  std::size_t block_implicit_parameter_count = 0;
+  std::string block_signature_profile;
   std::vector<std::string> block_capture_names_lexicographic;
   std::size_t block_capture_count = 0;
+  std::vector<std::string> block_capture_inventory_entries_lexicographic;
+  std::size_t block_byvalue_readonly_capture_count = 0;
+  std::string block_capture_inventory_profile;
   std::size_t block_body_statement_count = 0;
   std::string block_capture_profile;
   bool block_capture_set_deterministic = false;
   bool block_literal_is_normalized = false;
   std::size_t block_abi_invoke_argument_slots = 0;
   std::size_t block_abi_capture_word_count = 0;
+  std::vector<std::string> block_invoke_surface_entries_lexicographic;
+  std::string block_invoke_surface_profile;
+  std::string block_source_model_replay_key;
+  bool block_source_model_is_normalized = false;
   std::string block_abi_layout_profile;
   std::string block_abi_descriptor_symbol;
   std::string block_invoke_trampoline_symbol;

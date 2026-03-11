@@ -894,10 +894,15 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
       result.integration_surface =
+          // M261-A002 block-source-model-completion anchor: the semantic
+          // integration surface receives the explicit source-only
+          // block-literal admission bit so lane-A can publish the completed
+          // source model without widening runnable block support.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,
               input.migration_assist,
+              input.validation_options.allow_source_only_block_literals,
               pass_diagnostics);
     } else if (pass == Objc3SemaPassId::ValidateBodies) {
       ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);

@@ -7612,3 +7612,34 @@ object model exists.
   - runnable block lowering, block pointer declarator spellings, and explicit
     `__block` byref storage spellings remain outside this issue.
   - `M261-A002` is the next issue.
+
+## M261 block source model completion (A002)
+
+`M261-A002` upgrades the frozen A001 block source surface into a deterministic
+source-only frontend capability that later block sema/lowering/runtime work can
+consume directly.
+
+- contract id
+  `objc3c-executable-block-source-model-completion/m261-a002-v1`
+- source-only positive path:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+    admits block literals through sema and emits the
+    `objc_block_source_model_completion_surface` manifest object.
+- source model content:
+  - parameter-signature entries and explicit/implicit parameter counts
+  - capture-inventory entries and truthful by-value readonly storage counts
+  - invoke-surface entries for descriptor and invoke trampoline symbols
+  - deterministic replay key
+- emitted IR boundary:
+  - `; executable_block_source_model_completion = ...`
+- fail-closed rule:
+  - runnable native emit paths still reject block literals with `O3S221`.
+- non-goals:
+  - explicit `__block` storage spelling
+  - copy/dispose helper emission
+  - runnable block object/runtime lowering
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation_a002_expectations.md`
+  - `spec/planning/compiler/m261/m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation_packet.md`
+  - `python scripts/check_m261_a002_block_literal_signature_capture_inventory_and_invoke_surface_source_modeling_core_feature_implementation.py`
+  - `M261-B001` is the next issue.

@@ -9838,3 +9838,23 @@ exists in parser/AST land.
   - no explicit `__block` byref storage spellings yet
   - no runnable block lowering yet
 - the next issue is `M261-A002`
+
+## M261 Block Source Model Completion (A002)
+
+`M261-A002` upgrades the frozen block source closure into a deterministic
+source-only frontend capability.
+
+- source-only frontend runner may now admit block literals:
+  - `objc3c-frontend-c-api-runner.exe --no-emit-ir --no-emit-object`
+- the emitted manifest now carries:
+  - block parameter-signature entries
+  - explicit/implicit parameter counts
+  - capture-inventory entries with truthful by-value readonly storage
+  - invoke-surface entries for descriptor and invoke trampoline symbols
+  - a deterministic block source-model replay key
+- native emit paths still fail closed with `O3S221`
+- non-goals remain:
+  - explicit `__block` storage spelling
+  - block copy/dispose helper emission
+  - runnable block object/runtime lowering
+- the next issue is `M261-B001`

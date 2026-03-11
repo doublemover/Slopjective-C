@@ -1,0 +1,14 @@
+module m261_block_source_model_completion_positive;
+
+fn source_model_probe() -> i32 {
+  let seed = 7;
+  let extra = 3;
+  let closure = ^(i32 lhs, rhs, bool enabled) {
+    let total = lhs + rhs + seed + extra;
+    if (enabled) {
+      return total;
+    }
+    return rhs;
+  };
+  return seed + extra;
+}
