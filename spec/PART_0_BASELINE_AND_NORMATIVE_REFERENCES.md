@@ -187,6 +187,11 @@ Current implementation boundary:
     stack byref cells plus copy/dispose helper bodies for the local nonescaping
     byref/object-capture path, while true escaping heap-promotion hooks remain
     deferred until `M261-C004`.
+  - lane-C now also widens the truthful escaping slice (`M261-C004`): readonly
+    scalar block values can escape through call arguments or return values via
+    private runtime promotion/invoke hooks, while byref-forwarded and
+    ownership-sensitive escaping captures remain deferred to lane-D runtime
+    work.
   - explicit block pointer declarator spellings and explicit byref storage
     spellings are not yet part of the supported source surface.
 

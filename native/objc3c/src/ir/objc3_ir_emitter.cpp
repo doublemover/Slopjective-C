@@ -1345,6 +1345,8 @@ class Objc3IREmitter {
     }
     if (synthesized_property_accessor_count_ > 0u ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
+        frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites >
+            0u ||
         frontend_metadata_.block_copy_dispose_lowering_copy_helper_required_sites > 0u ||
         frontend_metadata_.block_copy_dispose_lowering_dispose_helper_required_sites > 0u) {
       // M260-D002 runtime memory-management implementation anchor: emitted IR
@@ -1425,6 +1427,12 @@ class Objc3IREmitter {
     // escaping heap promotion remains deferred to later M261 issues.
     out << "; executable_block_byref_helper_lowering = "
         << Objc3ExecutableBlockByrefHelperLoweringSummary() << "\n";
+    // M261-C004 escaping-block runtime-hook anchor: lane-C now publishes the
+    // escaping readonly-scalar block slice that lowers through runtime
+    // promotion/invoke hooks while pointer-managed escaping captures remain
+    // explicitly deferred to later runtime issues.
+    out << "; executable_block_escape_runtime_hook_lowering = "
+        << Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2229,6 +2237,7 @@ class Objc3IREmitter {
   struct BlockBinding {
     std::string storage_ptr;
     const Expr *literal = nullptr;
+    std::string promoted_handle_ptr;
   };
 
   struct PendingBlockDisposeCall {
@@ -8052,11 +8061,20 @@ class Objc3IREmitter {
            expr.block_escape_shape_symbol == "message-argument";
   }
 
+  static bool BlockLiteralSupportsScalarRuntimePromotion(const Expr &expr) {
+    return !BlockLiteralUsesPointerCaptureStorage(expr);
+  }
+
+  static bool BlockLiteralSupportsEscapingRuntimeHookLowering(const Expr &expr) {
+    return expr.block_storage_escape_to_heap &&
+           BlockLiteralSupportsScalarRuntimePromotion(expr);
+  }
+
   static bool BlockLiteralRequiresFutureRuntimeLanes(const Expr &expr) {
     return !expr.block_source_model_is_normalized ||
            !expr.block_runtime_capture_ownership_is_normalized ||
-           expr.block_storage_escape_to_heap ||
-           BlockLiteralRequiresEscapingRuntimeHooks(expr) ||
+           (expr.block_storage_escape_to_heap &&
+            !BlockLiteralSupportsEscapingRuntimeHookLowering(expr)) ||
            (expr.block_storage_requires_byref_cells &&
             expr.block_storage_byref_layout_symbol.empty()) ||
            ((expr.block_runtime_copy_helper_required ||
@@ -8077,6 +8095,28 @@ class Objc3IREmitter {
     return expr.block_dispose_helper_symbol.empty()
                ? std::string("objc3_block_dispose_helper_missing_symbol")
                : expr.block_dispose_helper_symbol;
+  }
+
+  static std::uint64_t AlignBlockStorageBytes(std::uint64_t value,
+                                              std::uint64_t alignment) {
+    if (alignment == 0u) {
+      return value;
+    }
+    const std::uint64_t remainder = value % alignment;
+    return remainder == 0u ? value : value + (alignment - remainder);
+  }
+
+  static std::uint64_t BlockStorageStaticSizeBytes(const Expr &expr) {
+    const std::uint64_t capture_count = static_cast<std::uint64_t>(
+        expr.block_capture_names_lexicographic.size());
+    if (!BlockLiteralUsesPointerCaptureStorage(expr)) {
+      return AlignBlockStorageBytes(
+          static_cast<std::uint64_t>(sizeof(void *)) +
+              capture_count * static_cast<std::uint64_t>(sizeof(std::int32_t)),
+          static_cast<std::uint64_t>(alignof(void *)));
+    }
+    return static_cast<std::uint64_t>(sizeof(void *) * 3u) +
+           capture_count * static_cast<std::uint64_t>(sizeof(void *));
   }
 
   void EmitPendingBlockDisposeHelpers(FunctionContext &ctx) const {
@@ -8187,12 +8227,63 @@ class Objc3IREmitter {
     block_function_definitions_.push_back(out.str());
   }
 
+  std::string EmitPromotedBlockHandle(const Expr &expr,
+                                      const std::string &storage_ptr,
+                                      FunctionContext &ctx,
+                                      bool allow_nonescaping_scalar_promotion =
+                                          false) const {
+    // M261-C004 escaping-block runtime-hook anchor: readonly-scalar escaping
+    // block values now lower through a private runtime promotion hook instead
+    // of failing closed at the first escaping expression use.
+    const bool supported = allow_nonescaping_scalar_promotion
+                               ? BlockLiteralSupportsScalarRuntimePromotion(expr)
+                               : BlockLiteralSupportsEscapingRuntimeHookLowering(
+                                     expr);
+    if (!supported) {
+      return EmitUnsupportedI32Value(
+          "escaping block value still requires pointer-managed heap promotion or byref forwarding that lands in later M261 runtime issues");
+    }
+    const std::string promoted = NewTemp(ctx);
+    ctx.code_lines.push_back(
+        "  " + promoted + " = call i32 @" +
+        std::string(kObjc3RuntimePromoteBlockI32Symbol) + "(ptr " + storage_ptr +
+        ", i64 " + std::to_string(BlockStorageStaticSizeBytes(expr)) +
+        ", i32 0)");
+    return promoted;
+  }
+
+  std::string EmitPromotedBlockHandleLoad(BlockBinding &binding,
+                                          FunctionContext &ctx) const {
+    if (!binding.promoted_handle_ptr.empty()) {
+      const std::string loaded = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
+                               binding.promoted_handle_ptr + ", align 4");
+      return loaded;
+    }
+    if (binding.literal == nullptr || binding.storage_ptr.empty()) {
+      return EmitUnsupportedI32Value(
+          "missing block literal metadata for escaping block-handle lowering");
+    }
+    const std::string promoted =
+        EmitPromotedBlockHandle(*binding.literal, binding.storage_ptr, ctx,
+                                true);
+    if (promoted == "poison") {
+      return promoted;
+    }
+    binding.promoted_handle_ptr =
+        "%block.promoted.addr." + std::to_string(ctx.temp_counter++);
+    ctx.entry_lines.push_back("  " + binding.promoted_handle_ptr +
+                              " = alloca i32, align 4");
+    ctx.code_lines.push_back("  store i32 " + promoted + ", ptr " +
+                             binding.promoted_handle_ptr + ", align 4");
+    return promoted;
+  }
+
   std::string EmitIdentifierValue(const std::string &name,
                                   FunctionContext &ctx) const {
-    if (ctx.block_bindings.find(name) != ctx.block_bindings.end()) {
-      return EmitUnsupportedI32Value(
-          "block value '" + name +
-          "' cannot yet be used as a scalar expression outside direct invocation");
+    auto block_it = ctx.block_bindings.find(name);
+    if (block_it != ctx.block_bindings.end()) {
+      return EmitPromotedBlockHandleLoad(block_it->second, ctx);
     }
     const std::string ptr = LookupVarPtr(ctx, name);
     if (!ptr.empty()) {
@@ -8402,6 +8493,24 @@ class Objc3IREmitter {
     if (binding.literal == nullptr) {
       return EmitUnsupportedI32Value(
           "missing block literal metadata for local callable invocation");
+    }
+
+    if (!binding.promoted_handle_ptr.empty()) {
+      std::array<std::string, 4> args{"0", "0", "0", "0"};
+      for (std::size_t i = 0; i < call_expr->args.size() && i < args.size();
+           ++i) {
+        args[i] = EmitExpr(call_expr->args[i].get(), ctx);
+      }
+      const std::string handle = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + handle + " = load i32, ptr " +
+                               binding.promoted_handle_ptr + ", align 4");
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back(
+          "  " + out + " = call i32 @" +
+          std::string(kObjc3RuntimeInvokeBlockI32Symbol) + "(i32 " + handle +
+          ", i32 " + args[0] + ", i32 " + args[1] + ", i32 " + args[2] +
+          ", i32 " + args[3] + ")");
+      return out;
     }
 
     const std::string storage_type = BuildBlockStorageType(*binding.literal);
@@ -9203,6 +9312,13 @@ class Objc3IREmitter {
       case Expr::Kind::NilLiteral:
         return "0";
       case Expr::Kind::BlockLiteral:
+        if (BlockLiteralSupportsEscapingRuntimeHookLowering(*expr)) {
+          const std::string storage_ptr = EmitBlockLiteralStorage(*expr, ctx);
+          if (storage_ptr == "poison") {
+            return storage_ptr;
+          }
+          return EmitPromotedBlockHandle(*expr, storage_ptr, ctx);
+        }
         return EmitUnsupportedI32Value(
             "block literal values must be bound to a local name before use");
       case Expr::Kind::Identifier: {
@@ -9404,8 +9520,17 @@ class Objc3IREmitter {
           if (storage_ptr == "poison") {
             return;
           }
-          ctx.block_bindings[let->name] = BlockBinding{storage_ptr, let->value.get()};
+          ctx.block_bindings[let->name] =
+              BlockBinding{storage_ptr, let->value.get(), ""};
           return;
+        }
+        if (let->value != nullptr && let->value->kind == Expr::Kind::Identifier) {
+          const auto existing_block_it =
+              ctx.block_bindings.find(let->value->ident);
+          if (existing_block_it != ctx.block_bindings.end()) {
+            ctx.block_bindings[let->name] = existing_block_it->second;
+            return;
+          }
         }
         // Evaluate the initializer against the currently visible scope first so
         // shadowing declarations can read the previous binding deterministically.
@@ -9852,6 +9977,8 @@ class Objc3IREmitter {
     }
     if (synthesized_property_accessor_count_ > 0u ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
+        frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites >
+            0u ||
         frontend_metadata_.block_copy_dispose_lowering_copy_helper_required_sites > 0u ||
         frontend_metadata_.block_copy_dispose_lowering_dispose_helper_required_sites > 0u) {
       emit_declaration_once(kObjc3RuntimeReadCurrentPropertyI32Symbol,
@@ -9891,6 +10018,14 @@ class Objc3IREmitter {
                             "declare i32 @" +
                                 std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
                                 "(i32)\n");
+      emit_declaration_once(kObjc3RuntimePromoteBlockI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimePromoteBlockI32Symbol) +
+                                "(ptr, i64, i32)\n");
+      emit_declaration_once(kObjc3RuntimeInvokeBlockI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeInvokeBlockI32Symbol) +
+                                "(i32, i32, i32, i32, i32)\n");
       emit_declaration_once(kObjc3RuntimePushAutoreleasepoolScopeSymbol,
                             "declare void @" +
                                 std::string(

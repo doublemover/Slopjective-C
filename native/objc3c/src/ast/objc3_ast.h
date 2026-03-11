@@ -159,6 +159,18 @@ struct Expr {
       "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-until-m261-c004-and-m261-d002";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-byref-mutation-and-owned-capture-helper-lowering-through-emitted-block-helper-bodies";
+  // M261-C004 escaping-block runtime-hook constants: lane-C widens runnable
+  // block lowering to readonly-scalar escaping cases by lowering heap
+  // promotion and invoke hooks against the native runtime while ownership-
+  // sensitive escaping captures stay deferred to lane-D runtime work.
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId =
+      "objc3c-executable-block-escape-runtime-hook-lowering/m261-c004-v1";
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringActiveModel =
+      "native-lowering-emits-runtime-block-promotion-and-invoke-hooks-for-readonly-scalar-escaping-block-values";
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringDeferredModel =
+      "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-until-m261-d002-and-m261-d003";
+  static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel =
+      "native-compile-link-run-proves-returned-and-argument-passed-readonly-scalar-block-values-through-runtime-promotion-hooks";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

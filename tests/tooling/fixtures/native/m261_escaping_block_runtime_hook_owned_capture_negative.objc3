@@ -1,0 +1,19 @@
+module m261_escaping_block_runtime_hook_owned_capture_negative;
+
+fn materialize(handle: i32) -> i32 {
+  return handle;
+}
+
+fn helper(ownedValue: id, weakValue: __weak id) -> i32 {
+  let closure = ^() {
+    if (ownedValue == weakValue) {
+      return 11;
+    }
+    return 3;
+  };
+  return materialize(closure);
+}
+
+fn main() -> i32 {
+  return helper(11, 11);
+}

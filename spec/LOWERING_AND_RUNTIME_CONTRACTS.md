@@ -7864,3 +7864,38 @@ for local nonescaping block captures.
   - `spec/planning/compiler/m261/m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation_packet.md`
   - `python scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
   - `M261-C004` is the next issue.
+
+## M261 heap-promotion and escaping-block runtime hook lowering (C004)
+
+`M261-C004` widens the runnable `M261-C003` block lowering slice to admit
+readonly scalar block values that escape through call arguments or return
+values.
+
+- contract id
+  `objc3c-executable-block-escape-runtime-hook-lowering/m261-c004-v1`
+- active supported slice:
+  - native lowering emits private runtime heap-promotion and invoke hooks for
+    readonly scalar escaping block values
+  - local block bindings can be promoted by scalar use in call-argument or
+    return-value positions
+  - direct subsequent invocation resolves through the promoted runtime handle
+  - compile/link/run proof exits `14` and `0` on the canonical escaping
+    fixtures
+- emitted proof details:
+  - IR carries
+    `; executable_block_escape_runtime_hook_lowering = ...`
+  - IR declares and calls
+    `@objc3_runtime_promote_block_i32` and
+    `@objc3_runtime_invoke_block_i32`
+  - object emission remains `llvm-direct`
+- deferred to `M261-D001` and later:
+  - block-object ABI freeze for the private runtime hook surface
+  - runtime-managed escaping blocks with byref forwarding
+  - runtime-managed escaping blocks with owned-object capture lifetimes
+  - generalized block allocation/copy/dispose semantics outside the readonly
+    scalar slice
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m261_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion_c004_expectations.md`
+  - `spec/planning/compiler/m261/m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion_packet.md`
+  - `python scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
+  - `M261-D001` is the next issue.

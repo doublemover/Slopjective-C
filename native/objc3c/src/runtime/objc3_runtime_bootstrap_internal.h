@@ -312,6 +312,14 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
+// M261-C004 escaping-block runtime-hook anchor: block promotion/invoke helpers
+// remain private lowering/runtime entrypoints until later lane-D runtime work
+// freezes the block-object ABI surface.
+int objc3_runtime_promote_block_i32(const void *storage,
+                                    uint64_t storage_size_bytes,
+                                    int has_pointer_capture_storage);
+int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1, int a2,
+                                   int a3);
 // M260-D002 runtime-memory-management implementation anchor: autoreleasepool
 // scopes, refcount draining, and weak zeroing remain private runtime/lowering
 // mechanics until a later milestone makes a deliberate public-ABI decision.

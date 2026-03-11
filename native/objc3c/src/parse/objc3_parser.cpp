@@ -10635,6 +10635,10 @@ class Objc3Parser {
     // only the deterministic source inventory here; sema layers
     // ownership-sensitive helper eligibility on top without widening this
     // source-only parser contract.
+    // M261-C004 escaping-block runtime-hook anchor: parser continues to own
+    // the exact escape-shape source classification, including which block
+    // literal sites are truthful heap-promotion candidates for later lane-C
+    // runtime-hook lowering.
     block->block_copy_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_dispose_helper_intent_required =

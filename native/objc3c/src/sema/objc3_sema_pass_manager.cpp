@@ -924,6 +924,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // consumes the same pass-manager handoff while ValidateBodies
           // populates the live byref layout and runtime helper fields needed
           // for emitted local nonescaping block lowering.
+          // M261-C004 escaping-block runtime-hook anchor: the same
+          // deterministic pass-manager handoff now also carries truthful
+          // escape-to-heap source facts so lane-C can widen only the
+          // readonly-scalar escaping slice through private runtime promotion
+          // and invoke hooks.
           BuildSemanticIntegrationSurface(
               *input.program,
               input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy,

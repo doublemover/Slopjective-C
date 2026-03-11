@@ -635,6 +635,10 @@ inline constexpr const char *kObjc3RuntimeReleaseI32Symbol =
     "objc3_runtime_release_i32";
 inline constexpr const char *kObjc3RuntimeAutoreleaseI32Symbol =
     "objc3_runtime_autorelease_i32";
+inline constexpr const char *kObjc3RuntimePromoteBlockI32Symbol =
+    "objc3_runtime_promote_block_i32";
+inline constexpr const char *kObjc3RuntimeInvokeBlockI32Symbol =
+    "objc3_runtime_invoke_block_i32";
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
@@ -1002,6 +1006,8 @@ inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkLoweringLaneC
     "m261-block-object-invoke-thunk-lowering-v1";
 inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringLaneContract =
     "m261-block-byref-helper-lowering-v1";
+inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringLaneContract =
+    "m261-block-escape-runtime-hook-lowering-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1751,6 +1757,7 @@ std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary();
 std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary();
 std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary();
 std::string Objc3ExecutableBlockByrefHelperLoweringSummary();
+std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

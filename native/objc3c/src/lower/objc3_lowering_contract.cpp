@@ -1039,7 +1039,35 @@ std::string Objc3ExecutableBlockByrefHelperLoweringSummary() {
       << ";runtime_semantic_lane_contract="
       << kObjc3BlockRuntimeSemanticRulesLaneContract
       << ";lane_contract="
-      << kObjc3ExecutableBlockByrefHelperLoweringLaneContract;
+      << kObjc3ExecutableBlockEscapeRuntimeHookLoweringLaneContract;
+  return out.str();
+}
+
+std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() {
+  std::ostringstream out;
+  // M261-C004 escaping-block runtime-hook implementation anchor: lane-C now
+  // widens runnable native block lowering to escaping readonly-scalar block
+  // values by emitting runtime heap-promotion and invoke hooks, while
+  // ownership-sensitive escaping captures remain deferred to later lane-D
+  // runtime work.
+  out << "contract="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId
+      << ";previous_contract="
+      << Expr::kObjc3ExecutableBlockByrefHelperLoweringContractId
+      << ";active_model="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringActiveModel
+      << ";deferred_model="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringDeferredModel
+      << ";execution_evidence_model="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel
+      << ";storage_lane_contract="
+      << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";copy_dispose_lane_contract="
+      << kObjc3BlockCopyDisposeLoweringLaneContract
+      << ";runtime_semantic_lane_contract="
+      << kObjc3BlockRuntimeSemanticRulesLaneContract
+      << ";lane_contract="
+      << kObjc3ExecutableBlockEscapeRuntimeHookLoweringLaneContract;
   return out.str();
 }
 

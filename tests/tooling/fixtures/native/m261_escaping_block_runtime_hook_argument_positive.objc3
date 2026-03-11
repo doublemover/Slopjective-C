@@ -1,0 +1,18 @@
+module m261_escaping_block_runtime_hook_argument_positive;
+
+fn materialize(handle: i32) -> i32 {
+  return handle;
+}
+
+fn main() -> i32 {
+  let seed = 7;
+  let extra = 2;
+  let closure = ^(i32 value) {
+    return seed + extra + value;
+  };
+  let handle = materialize(closure);
+  if (handle == 0) {
+    return 1;
+  }
+  return closure(5);
+}

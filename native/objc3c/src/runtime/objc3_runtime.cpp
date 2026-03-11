@@ -267,6 +267,17 @@ struct RuntimeInstanceRecord {
   std::uint64_t retain_count = 1;
 };
 
+using RuntimeBlockInvokeFn = int (*)(void *, int, int, int, int);
+
+struct RuntimeBlockRecord {
+  int block_handle = 0;
+  bool has_pointer_capture_storage = false;
+  std::size_t storage_size_bytes = 0;
+  std::vector<unsigned char> storage_bytes;
+  RuntimeBlockInvokeFn invoke = nullptr;
+  std::uint64_t retain_count = 1;
+};
+
 struct RealizedClassNode {
   std::string module_name;
   std::string translation_unit_identity_key;
@@ -380,9 +391,11 @@ struct RuntimeState {
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
+  std::unordered_map<int, RuntimeBlockRecord> runtime_blocks_by_handle;
   std::unordered_map<int, std::vector<RuntimeWeakSlotRef>>
       weak_slot_refs_by_target_receiver;
   int next_runtime_instance_receiver = 0x100000;
+  int next_runtime_block_handle = 0x200000;
   std::uint64_t live_runtime_instance_count = 0;
   std::uint64_t last_allocated_runtime_instance_receiver = 0;
   std::uint64_t last_allocated_runtime_instance_base_identity = 0;
@@ -480,8 +493,10 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
 
 void ClearRuntimeInstanceStateUnlocked(RuntimeState &state) {
   state.runtime_instances_by_receiver.clear();
+  state.runtime_blocks_by_handle.clear();
   state.weak_slot_refs_by_target_receiver.clear();
   state.next_runtime_instance_receiver = 0x100000;
+  state.next_runtime_block_handle = 0x200000;
   state.live_runtime_instance_count = 0;
   state.last_allocated_runtime_instance_receiver = 0;
   state.last_allocated_runtime_instance_base_identity = 0;
@@ -2154,22 +2169,36 @@ void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
 
 void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
   const auto instance_it = state.runtime_instances_by_receiver.find(value);
-  if (instance_it == state.runtime_instances_by_receiver.end()) {
+  if (instance_it != state.runtime_instances_by_receiver.end()) {
+    ++instance_it->second.retain_count;
     return;
   }
-  ++instance_it->second.retain_count;
+  const auto block_it = state.runtime_blocks_by_handle.find(value);
+  if (block_it == state.runtime_blocks_by_handle.end()) {
+    return;
+  }
+  ++block_it->second.retain_count;
 }
 
 void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
   const auto instance_it = state.runtime_instances_by_receiver.find(value);
-  if (instance_it == state.runtime_instances_by_receiver.end()) {
+  if (instance_it != state.runtime_instances_by_receiver.end()) {
+    if (instance_it->second.retain_count > 1u) {
+      --instance_it->second.retain_count;
+      return;
+    }
+    DestroyRuntimeInstanceUnlocked(state, value);
     return;
   }
-  if (instance_it->second.retain_count > 1u) {
-    --instance_it->second.retain_count;
+  const auto block_it = state.runtime_blocks_by_handle.find(value);
+  if (block_it == state.runtime_blocks_by_handle.end()) {
     return;
   }
-  DestroyRuntimeInstanceUnlocked(state, value);
+  if (block_it->second.retain_count > 1u) {
+    --block_it->second.retain_count;
+    return;
+  }
+  state.runtime_blocks_by_handle.erase(block_it);
 }
 
 int InvokeRuntimeBuiltinMethod(RuntimeState &state,
@@ -3722,6 +3751,62 @@ extern "C" int objc3_runtime_release_i32(int value) {
 extern "C" int objc3_runtime_autorelease_i32(int value) {
   EnqueueAutoreleaseValue(value);
   return value;
+}
+
+extern "C" int objc3_runtime_promote_block_i32(
+    const void *storage, std::uint64_t storage_size_bytes,
+    int has_pointer_capture_storage) {
+  if (storage == nullptr || storage_size_bytes == 0u ||
+      has_pointer_capture_storage != 0) {
+    return 0;
+  }
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  int block_handle = state.next_runtime_block_handle;
+  while (block_handle <= 0 ||
+         state.runtime_instances_by_receiver.find(block_handle) !=
+             state.runtime_instances_by_receiver.end() ||
+         state.runtime_blocks_by_handle.find(block_handle) !=
+             state.runtime_blocks_by_handle.end()) {
+    ++block_handle;
+  }
+  state.next_runtime_block_handle = block_handle + 1;
+  RuntimeBlockRecord record;
+  record.block_handle = block_handle;
+  record.has_pointer_capture_storage = false;
+  record.storage_size_bytes =
+      static_cast<std::size_t>(std::max<std::uint64_t>(storage_size_bytes, 1u));
+  record.storage_bytes.assign(record.storage_size_bytes, 0u);
+  std::memcpy(record.storage_bytes.data(), storage, record.storage_size_bytes);
+  record.invoke =
+      *reinterpret_cast<RuntimeBlockInvokeFn *>(record.storage_bytes.data());
+  if (record.invoke == nullptr) {
+    return 0;
+  }
+  state.runtime_blocks_by_handle.emplace(block_handle, std::move(record));
+  return block_handle;
+}
+
+extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
+                                              int a2, int a3) {
+  RuntimeBlockInvokeFn invoke = nullptr;
+  std::vector<unsigned char> storage_bytes;
+  {
+    RuntimeState &state = State();
+    std::lock_guard<std::mutex> lock(state.mutex);
+    const auto block_it = state.runtime_blocks_by_handle.find(block_handle);
+    if (block_it == state.runtime_blocks_by_handle.end() ||
+        block_it->second.has_pointer_capture_storage ||
+        block_it->second.invoke == nullptr) {
+      return 0;
+    }
+    invoke = block_it->second.invoke;
+    storage_bytes = block_it->second.storage_bytes;
+  }
+  if (invoke == nullptr || storage_bytes.empty()) {
+    return 0;
+  }
+  return invoke(storage_bytes.data(), a0, a1, a2, a3);
 }
 
 // M260-D002 runtime-memory-management implementation anchor: autoreleasepool

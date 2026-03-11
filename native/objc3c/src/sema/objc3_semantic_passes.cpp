@@ -709,6 +709,16 @@ static bool IsSameSemanticType(const SemanticTypeInfo &lhs, const SemanticTypeIn
   return lhs.vector_lane_count == rhs.vector_lane_count && lhs.vector_base_spelling == rhs.vector_base_spelling;
 }
 
+static bool IsEscapingBlockRuntimeHandleCompatible(
+    const SemanticTypeInfo &expected, const SemanticTypeInfo &value) {
+  if (!IsCallableSemanticType(value) || !IsScalarSemanticType(expected)) {
+    return false;
+  }
+  return expected.type == ValueType::I32 ||
+         expected.type == ValueType::ObjCId ||
+         expected.type == ValueType::ObjCObjectPtr;
+}
+
 static std::string SemanticTypeName(const SemanticTypeInfo &info) {
   if (!info.is_vector) {
     if (info.is_callable) {
@@ -3507,7 +3517,12 @@ static void ValidateBlockLiteralCaptureLegality(
   mutable_expr->block_storage_requires_byref_cells =
       expr->block_byref_capture_count > 0u;
   mutable_expr->block_storage_escape_analysis_enabled = true;
-  mutable_expr->block_storage_escape_to_heap = false;
+  // M261-C004 escaping-block runtime-hook anchor: the live lowering profile
+  // now inherits the parser-owned escape-shape heap candidate directly, so
+  // later lane-C emission can distinguish true escaping block values from the
+  // nonescaping stack-only slice.
+  mutable_expr->block_storage_escape_to_heap =
+      expr->block_escape_shape_promotes_to_heap_candidate;
   mutable_expr->block_runtime_copy_helper_required = false;
   mutable_expr->block_runtime_dispose_helper_required = false;
   mutable_expr->block_runtime_capture_ownership_is_normalized = false;
@@ -4001,12 +4016,15 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                 AreScalarI32AliasCompatible(expected, arg_type);
             const bool objc_reference_coercion =
                 AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+            const bool block_handle_coercion =
+                IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
             if (!IsUnknownSemanticType(expected) &&
                 !IsUnknownSemanticType(arg_type) &&
                 !IsSameSemanticType(arg_type, expected) &&
                 !bool_coercion &&
                 !i32_alias_coercion &&
-                !objc_reference_coercion) {
+                !objc_reference_coercion &&
+                !block_handle_coercion) {
               diagnostics.push_back(
                   MakeDiag(expr->args[i]->line,
                            expr->args[i]->column,
@@ -4052,11 +4070,14 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
           const bool i32_alias_coercion = AreScalarI32AliasCompatible(expected, arg_type);
           const bool objc_reference_coercion =
               AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+          const bool block_handle_coercion =
+              IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
               !IsSameSemanticType(arg_type, expected) &&
               !bool_coercion &&
               !i32_alias_coercion &&
-              !objc_reference_coercion) {
+              !objc_reference_coercion &&
+              !block_handle_coercion) {
             diagnostics.push_back(MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S206",
                                            "type mismatch: expected '" + SemanticTypeName(expected) +
                                                "' argument for parameter " + std::to_string(i) + " of '" +
@@ -4273,7 +4294,8 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::Bool &&
          value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr)) ||
         (target_known_objc_ref && value_known_objc_ref &&
-         AreObjCReferenceTypesAssignmentCompatible(target_type, value_type));
+         AreObjCReferenceTypesAssignmentCompatible(target_type, value_type)) ||
+        IsEscapingBlockRuntimeHandleCompatible(target_type, value_type);
     if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) &&
         !value_known_scalar && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
@@ -4554,7 +4576,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
              expected_return_type.type == ValueType::Bool && return_type.type == ValueType::I32 &&
              IsBoolLikeI32Literal(ret->value.get())) ||
-            AreObjCReferenceTypesAssignmentCompatible(expected_return_type, return_type);
+            AreObjCReferenceTypesAssignmentCompatible(expected_return_type, return_type) ||
+            IsEscapingBlockRuntimeHandleCompatible(expected_return_type, return_type);
         if (!return_matches && !IsUnknownSemanticType(return_type) &&
             !(IsScalarSemanticType(return_type) && return_type.type == ValueType::Function)) {
           diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",

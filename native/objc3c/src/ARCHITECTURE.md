@@ -10006,3 +10006,30 @@ byref/object captures.
   - first-class escaping block values
   - runtime-managed block allocation/copy semantics beyond the local slice
 - the next issue is `M261-C004`
+
+## M261 Heap-Promotion And Escaping-Block Runtime Hook Lowering (C004)
+
+`M261-C004` widens the runnable local block slice so escaping readonly-scalar
+block values can lower through private runtime promotion and invoke hooks.
+
+- supported slice:
+  - readonly scalar block captures may escape through call-argument and
+    return-value positions
+  - scalar block-use sites promote the block through
+    `objc3_runtime_promote_block_i32`
+  - later direct invocation of that same local binding resolves through
+    `objc3_runtime_invoke_block_i32`
+  - local readonly-scalar escaping fixtures now compile/link/run with exits
+    `14` and `0`
+- proof surface:
+  - native IR now carries
+    `; executable_block_escape_runtime_hook_lowering = ...`
+  - emitted IR explicitly declares and calls the private runtime hook symbols
+  - object emission remains `llvm-direct`
+- deferred work remains in `M261-D001` and later:
+  - public/runtime-frozen block-object ABI for the private hook surface
+  - byref-forwarded escaping block promotion
+  - owned-object capture escape lifetimes
+  - runtime-managed block allocation/copy/dispose outside the readonly-scalar
+    slice
+- the next issue is `M261-D001`

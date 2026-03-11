@@ -1273,6 +1273,42 @@ Recommended M261 lane-C implementation check:
 - `python scripts/check_m261_c003_byref_cell_copy_helper_and_dispose_helper_lowering_core_feature_implementation.py`
 - `M261-C004` is the next issue.
 
+## M261 heap-promotion and escaping-block runtime hook lowering (M261-C004)
+
+`M261-C004` widens the runnable `M261-C003` block slice to admit readonly
+scalar block values that escape through call arguments or return values.
+
+- contract id
+  `objc3c-executable-block-escape-runtime-hook-lowering/m261-c004-v1`
+
+Current runnable slice:
+
+- supported positive path:
+  - local block literals with readonly scalar captures
+  - escaping through call arguments or return values
+  - heap-promotion through the private runtime hook
+    `objc3_runtime_promote_block_i32`
+  - direct subsequent invocation through the private runtime hook
+    `objc3_runtime_invoke_block_i32`
+- emitted/native proof details:
+  - the native IR boundary now also carries
+    `; executable_block_escape_runtime_hook_lowering = ...`.
+  - native compile/link/run now succeeds for:
+    - `m261_escaping_block_runtime_hook_argument_positive.objc3` with exit `14`
+    - `m261_escaping_block_runtime_hook_return_positive.objc3` with exit `0`
+  - object emission stays on `llvm-direct`.
+- still fail-closed:
+  - byref-forwarded escaping blocks
+  - escaping owned-object capture blocks
+  - runtime-managed block copy/allocation semantics outside the readonly scalar
+    slice
+  - those cases still fail closed with `O3L300`.
+
+Recommended M261 lane-C implementation check:
+
+- `python scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py`
+- `M261-D001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint
