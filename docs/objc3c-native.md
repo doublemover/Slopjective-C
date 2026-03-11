@@ -11671,6 +11671,31 @@ memory-management behavior for the supported runtime-backed object baseline.
     private/lowered rather than a public ownership API
   - `M260-E001` is the next issue
 
+## M260 ownership runtime gate freeze (E001)
+
+`M260-E001` freezes the evidence contract for the supported ownership runtime
+baseline that `M260-E002` must exercise.
+
+- contract id
+  `objc3c-ownership-runtime-gate-freeze/m260-e001-v1`
+- supported runtime slice
+  - strong runtime-backed property ownership through private hooks
+  - weak zeroing on final release
+  - `@autoreleasepool` lowering and private runtime pool drain behavior
+- explicit non-goals
+  - no ARC automation
+  - no block ownership runtime
+  - no public ownership/autoreleasepool ABI widening
+- canonical evidence anchors
+  - `tmp/reports/m260/M260-C002/ownership_runtime_hook_emission_summary.json`
+  - `tmp/reports/m260/M260-D001/runtime_memory_management_api_contract_summary.json`
+  - `tmp/reports/m260/M260-D002/reference_counting_weak_autoreleasepool_summary.json`
+- validation
+  - `check:objc3c:m260-e001-lane-e-readiness`
+- truthful boundary
+  - `M260-E002` must prove this exact baseline and no more
+  - `M260-E002` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

@@ -667,6 +667,19 @@ inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationAutorele
     "private-autoreleasepool-push-pop-scopes-retain-autoreleased-runtime-values-until-lifo-drain";
 inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationFailClosedModel =
     "memory-management-runtime-support-remains-private-lowered-and-runtime-probe-driven";
+// M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes the
+// supported ownership runtime baseline and its non-goals so later integration
+// issues cannot silently claim ARC-, block-, or public-ABI-level support.
+inline constexpr const char *kObjc3OwnershipRuntimeGateContractId =
+    "objc3c-ownership-runtime-gate-freeze/m260-e001-v1";
+inline constexpr const char *kObjc3OwnershipRuntimeGateSupportedModel =
+    "runtime-backed-object-baseline-proves-strong-weak-and-autoreleasepool-behavior-through-private-runtime-hooks";
+inline constexpr const char *kObjc3OwnershipRuntimeGateEvidenceModel =
+    "gate-consumes-m260-c002-d001-d002-contract-summaries-and-runtime-probe-evidence";
+inline constexpr const char *kObjc3OwnershipRuntimeGateNonGoalModel =
+    "no-arc-automation-no-block-ownership-runtime-no-public-ownership-api-widening";
+inline constexpr const char *kObjc3OwnershipRuntimeGateFailClosedModel =
+    "integration-gate-must-not-claim-more-than-the-supported-runtime-backed-ownership-baseline";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1680,6 +1693,7 @@ std::string Objc3OwnershipLoweringBaselineSummary();
 std::string Objc3OwnershipRuntimeHookEmissionSummary();
 std::string Objc3RuntimeMemoryManagementApiSummary();
 std::string Objc3RuntimeMemoryManagementImplementationSummary();
+std::string Objc3OwnershipRuntimeGateSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

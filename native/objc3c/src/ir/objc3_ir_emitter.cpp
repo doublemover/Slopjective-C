@@ -1352,6 +1352,12 @@ class Objc3IREmitter {
           << frontend_metadata_.autoreleasepool_scope_lowering_scope_sites
           << "\n";
     }
+    // M260-E001 ownership-runtime-gate freeze anchor: lane-E freezes the
+    // supported ownership runtime slice and its explicit non-goals as a
+    // dedicated emitted boundary so later smoke/docs work can validate the
+    // correct baseline without rediscovering it from prose alone.
+    out << "; ownership_runtime_gate = "
+        << Objc3OwnershipRuntimeGateSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2551,6 +2557,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_ownership_hook_emission = !{!69}\n";
     out << "!objc3.objc_runtime_memory_management_api = !{!70}\n";
     out << "!objc3.objc_runtime_memory_management_implementation = !{!71}\n";
+    out << "!objc3.objc_ownership_runtime_gate = !{!72}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -3763,6 +3770,24 @@ class Objc3IREmitter {
         << static_cast<unsigned long long>(
                frontend_metadata_.autoreleasepool_scope_lowering_scope_sites)
         << "}\n";
+    out << "!72 = !{!\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeGateContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeGateSupportedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeGateEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeGateNonGoalModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeGateFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3OwnershipRuntimeHookEmissionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeMemoryManagementImplementationContractId)
+        << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_depth_total) << ", i64 "

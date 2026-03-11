@@ -8431,3 +8431,24 @@ the runtime memory-management implementation surface becomes executable.
   - the runtime memory-management implementation remains private and lowered,
     not a widened public runtime API
   - `M260-E001` is the next issue
+
+## M260 ownership runtime gate metadata anchors (E001)
+
+`M260-E001` does not add a new descriptor family, but it freezes the emitted
+gate metadata that ties the supported ownership baseline to its existing
+evidence anchors.
+
+- contract id
+  `objc3c-ownership-runtime-gate-freeze/m260-e001-v1`
+- canonical proof artifacts
+  - `tmp/reports/m260/M260-C002/ownership_runtime_hook_emission_summary.json`
+  - `tmp/reports/m260/M260-D001/runtime_memory_management_api_contract_summary.json`
+  - `tmp/reports/m260/M260-D002/reference_counting_weak_autoreleasepool_summary.json`
+- emitted metadata truths
+  - emitted IR now carries `!objc3.objc_ownership_runtime_gate`
+  - emitted IR publishes the supported-model, evidence-model, and non-goal
+    strings for the ownership baseline gate
+  - the gate metadata points back to the already-live C002, D001, and D002
+    contracts instead of inventing a parallel runtime surface
+- truthful boundary
+  - `M260-E002` must preserve and exercise this exact gate contract

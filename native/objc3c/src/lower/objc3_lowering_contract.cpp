@@ -856,6 +856,25 @@ std::string Objc3RuntimeMemoryManagementImplementationSummary() {
   return out.str();
 }
 
+std::string Objc3OwnershipRuntimeGateSummary() {
+  std::ostringstream out;
+  // M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes the
+  // supported ownership runtime slice and its non-goals using the already-live
+  // C002/D001/D002 implementation surfaces as the truthful evidence boundary.
+  out << "contract=" << kObjc3OwnershipRuntimeGateContractId
+      << ";supported_model=" << kObjc3OwnershipRuntimeGateSupportedModel
+      << ";evidence_model=" << kObjc3OwnershipRuntimeGateEvidenceModel
+      << ";non_goal_model=" << kObjc3OwnershipRuntimeGateNonGoalModel
+      << ";fail_closed_model=" << kObjc3OwnershipRuntimeGateFailClosedModel
+      << ";ownership_hook_contract="
+      << kObjc3OwnershipRuntimeHookEmissionContractId
+      << ";memory_api_contract="
+      << kObjc3RuntimeMemoryManagementApiContractId
+      << ";memory_implementation_contract="
+      << kObjc3RuntimeMemoryManagementImplementationContractId;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -9794,3 +9794,16 @@ baseline for supported runtime-backed object programs.
   boundary comment and `!objc3.objc_runtime_memory_management_implementation`
 - the public runtime header still remains unchanged
 - the next issue is `M260-E001`
+
+## M260 Ownership Runtime Gate Freeze (E001)
+
+`M260-E001` freezes the supported ownership runtime slice for the lane-E gate.
+
+- the gate covers the runtime-backed strong/weak/autoreleasepool baseline only
+- LLVM IR now publishes the `ownership_runtime_gate` boundary comment and
+  `!objc3.objc_ownership_runtime_gate`
+- the gate explicitly points at the existing `M260-C002`, `M260-D001`, and
+  `M260-D002` contract surfaces as its evidence model
+- ARC automation, blocks ownership runtime, and public ownership API widening
+  remain non-goals here
+- the next issue is `M260-E002`

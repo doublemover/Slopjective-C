@@ -7542,3 +7542,26 @@ memory-management behavior.
 - truthful boundary
   - the helper/runtime surface still stays private to the runtime internals
   - `M260-E001` is the next issue
+
+## M260 ownership runtime gate freeze (E001)
+
+`M260-E001` freezes the evidence contract for the supported ownership runtime
+baseline.
+
+- contract id
+  `objc3c-ownership-runtime-gate-freeze/m260-e001-v1`
+- supported model
+  `runtime-backed-object-baseline-proves-strong-weak-and-autoreleasepool-behavior-through-private-runtime-hooks`
+- evidence model
+  `gate-consumes-m260-c002-d001-d002-contract-summaries-and-runtime-probe-evidence`
+- non-goal model
+  `no-arc-automation-no-block-ownership-runtime-no-public-ownership-api-widening`
+- failure model
+  `integration-gate-must-not-claim-more-than-the-supported-runtime-backed-ownership-baseline`
+- emitted/runtime anchors
+  - LLVM IR now publishes `ownership_runtime_gate` summaries and
+    `!objc3.objc_ownership_runtime_gate`
+  - the gate consumes the already-live C002/D001/D002 boundaries rather than
+    redefining the runtime surface
+- truthful boundary
+  - `M260-E002` must prove exactly this frozen runtime-backed ownership slice

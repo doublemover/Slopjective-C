@@ -718,6 +718,10 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       // now accepts `@autoreleasepool` blocks and relies on emitted runtime
       // push/pop helpers plus live refcount/weak-table support instead of the
       // earlier fail-closed diagnostic path.
+      // M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes
+      // this accepted autoreleasepool slice as part of the supported ownership
+      // runtime baseline and leaves ARC/block/public-ABI widening as explicit
+      // non-goals for later milestones.
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
