@@ -7284,3 +7284,25 @@ matrix for the current runnable object-model subset.
   - only the current runnable object-model subset is covered
   - no block/ARC conformance claim yet
   - the next implementation issue is `M259-E003`
+
+## M259 runnable object-model closeout and sign-off (E003)
+
+`M259-E003` closes the tranche with synchronized docs, operator commands,
+sample references, and sign-off evidence over every predecessor issue in
+`M259`.
+
+- contract id
+  `objc3c-runnable-object-model-closeout-signoff/m259-e003-v1`
+- closeout model
+  `runbook-plus-signoff-summary-over-all-m259-predecessor-summaries`
+- evidence model
+  `tracked-runbook-and-signoff-summary-with-predecessor-green-chain`
+- failure model
+  `fail-closed-on-closeout-drift-or-missing-predecessor-signoff`
+- required closeout assets
+  - `docs/runbooks/m259_runnable_object_model_closeout.md`
+  - `tmp/reports/m259/M259-E003/runnable_object_model_closeout_signoff_summary.json`
+- truthful boundary
+  - `M259` closes the runnable object-model slice only
+  - block/ARC work remains deferred to `M260+`
+  - the next implementation issue is `M260-A001`

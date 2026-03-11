@@ -11419,6 +11419,24 @@ command, or prior green evidence summary.
   - no block/ARC conformance claim lands here
   - docs/runbook/sign-off closeout remains deferred to `M259-E003`
 
+## M259 runnable object-model closeout and sign-off (E003)
+
+`M259-E003` closes the runnable object-model slice with one synchronized
+runbook and one sign-off summary over every predecessor issue in `M259`.
+
+- contract id
+  `objc3c-runnable-object-model-closeout-signoff/m259-e003-v1`
+- runbook artifact
+  `docs/runbooks/m259_runnable_object_model_closeout.md`
+- required sign-off inputs
+  - all predecessor `M259` summaries from `A001` through `E002`
+  - canonical build/package/compile/smoke/replay commands
+  - canonical sample and conformance-matrix references
+- truthful boundary
+  - `M259` closes the runnable object-model slice only
+  - block/ARC work remains in `M260+`
+  - the next implementation issue is `M260-A001`
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

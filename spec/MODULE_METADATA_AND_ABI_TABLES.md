@@ -8221,3 +8221,28 @@ inspection command plus one proving summary.
 - truthful boundary
   - no block/ARC conformance claim yet
   - the next implementation issue is `M259-E003`
+
+## M259 runnable object-model closeout metadata anchors (E003)
+
+`M259-E003` still does not widen the metadata ABI. It freezes the final sign-off
+artifact chain that closes the runnable object-model tranche.
+
+- contract id
+  `objc3c-runnable-object-model-closeout-signoff/m259-e003-v1`
+- closeout artifacts
+  - `docs/runbooks/m259_runnable_object_model_closeout.md`
+  - `tmp/reports/m259/M259-E003/runnable_object_model_closeout_signoff_summary.json`
+- predecessor summary chain
+  - `tmp/reports/m259/M259-A001/`
+  - `tmp/reports/m259/M259-A002/`
+  - `tmp/reports/m259/M259-B001/`
+  - `tmp/reports/m259/M259-B002/`
+  - `tmp/reports/m259/M259-C001/`
+  - `tmp/reports/m259/M259-C002/`
+  - `tmp/reports/m259/M259-D001/`
+  - `tmp/reports/m259/M259-D002/`
+  - `tmp/reports/m259/M259-D003/`
+  - `tmp/reports/m259/M259-E001/`
+  - `tmp/reports/m259/M259-E002/`
+- truthful boundary
+  - the next implementation issue is `M260-A001`

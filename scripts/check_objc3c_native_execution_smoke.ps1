@@ -42,6 +42,8 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-E002 conformance-matrix anchor: execution smoke remains one concrete
 # command-backed row in the runnable conformance matrix rather than an implicit
 # blanket claim about unsupported runtime surfaces.
+# M259-E003 closeout-signoff anchor: execution smoke remains one preserved
+# operator command in the final `M259` closeout runbook and sign-off summary.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId
