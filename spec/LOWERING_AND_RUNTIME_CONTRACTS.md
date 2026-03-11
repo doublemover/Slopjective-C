@@ -7433,3 +7433,34 @@ property storage would require deferred destruction-order support.
   - no live autoreleasepool lowering or runtime support lands here
   - no destruction-order runtime remains lands here
   - `M260-C001` is the next implementation issue
+
+## M260 ownership lowering baseline freeze (C001)
+
+`M260-C001` freezes the current lane-C lowering boundary for runtime-backed
+object ownership.
+
+- contract id
+  `objc3c-ownership-lowering-baseline-freeze/m260-c001-v1`
+- ownership qualifier model
+  `ownership-qualifier-lowering-remains-legacy-summary-driven-for-runtime-backed-object-metadata`
+- runtime hook model
+  `retain-release-autorelease-and-weak-lowering-stays-summary-only-without-live-runtime-hook-emission`
+- autoreleasepool model
+  `autoreleasepool-lowering-remains-summary-only-without-emitted-push-pop-hooks`
+- failure model
+  `no-live-ownership-runtime-hooks-no-arc-weak-side-table-entrypoints-no-destruction-lowering-yet`
+- preserved lowering surfaces
+  - `ownership_qualifier_lowering` remains the canonical replay surface for
+    executable ownership qualifiers that still fail closed semantically
+  - `retain_release_operation_lowering` remains the canonical replay surface
+    for retain/release/autorelease counts until `M260-C002`
+  - `autoreleasepool_scope_lowering` remains the canonical replay surface for
+    non-runnable autoreleasepool lowering until `M260-C002`
+  - `weak_unowned_semantics_lowering` remains the canonical replay surface for
+    weak/unowned lowering counts until `M260-C002`
+- truthful boundary
+  - runtime-backed ownership metadata and storage legality are already live
+  - no retain/release/autorelease function calls are emitted into LLVM IR yet
+  - no autoreleasepool push/pop entrypoints are emitted yet
+  - no weak side-table runtime entrypoints are emitted yet
+  - `M260-C002` is the next implementation issue

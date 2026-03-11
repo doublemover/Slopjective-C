@@ -5203,6 +5203,32 @@ synthesized property storage would require deferred destruction-order support.
   - no destruction-order runtime remains lands here
   - `M260-C001` is the next issue
 
+## M260 ownership lowering baseline freeze (C001)
+
+`M260-C001` freezes the current lane-C ownership lowering boundary for the
+runtime-backed object slice.
+
+- contract id
+  `objc3c-ownership-lowering-baseline-freeze/m260-c001-v1`
+- canonical proof fixture
+  - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_legality_positive.objc3`
+- preserved lowering truths
+  - ownership qualifier lowering remains published through the legacy
+    `ownership_qualifier_lowering` replay surface
+  - retain/release lowering remains published through the legacy
+    `retain_release_operation_lowering` replay surface
+  - autoreleasepool lowering remains published through the legacy
+    `autoreleasepool_scope_lowering` replay surface
+  - weak/unowned lowering remains published through the legacy
+    `weak_unowned_semantics_lowering` replay surface
+- truthful boundary
+  - runtime-backed ownership metadata and storage legality remain live from
+    `M260-A002` and `M260-B002`
+  - no live retain/release/autorelease runtime hook calls are emitted yet
+  - no live autoreleasepool push/pop hooks are emitted yet
+  - no live weak side-table runtime entrypoints are emitted yet
+  - `M260-C002` is the next issue
+
 ## Fail-closed unsupported-feature claim enforcement (M264-B002)
 
 `M264-B002` turns the accepted-but-not-runnable source surfaces in the current

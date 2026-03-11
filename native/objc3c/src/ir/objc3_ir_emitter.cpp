@@ -1298,6 +1298,12 @@ class Objc3IREmitter {
     // storage edges.
     out << "; runtime_backed_autoreleasepool_destruction_order = "
         << Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() << "\n";
+    // M260-C001 ownership-lowering baseline freeze anchor: the current IR
+    // surface keeps ownership qualifier, retain/release, autoreleasepool, and
+    // weak/unowned lowering on deterministic summary lanes only.
+    // No live runtime ownership hooks are emitted here before M260-C002.
+    out << "; ownership_lowering_baseline = "
+        << Objc3OwnershipLoweringBaselineSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

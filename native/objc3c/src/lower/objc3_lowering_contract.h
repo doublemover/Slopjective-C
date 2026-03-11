@@ -590,6 +590,21 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderFailClosedModel =
         "fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage";
+// M260-C001 ownership-lowering baseline freeze anchor: lane-C freezes the
+// current lowering boundary where runtime-backed ownership metadata and sema
+// legality are live, but executable retain/release/autorelease/weak behavior
+// still remains represented by legacy lowering summaries rather than emitted
+// runtime hooks.
+inline constexpr const char *kObjc3OwnershipLoweringBaselineContractId =
+    "objc3c-ownership-lowering-baseline-freeze/m260-c001-v1";
+inline constexpr const char *kObjc3OwnershipLoweringBaselineQualifierModel =
+    "ownership-qualifier-lowering-remains-legacy-summary-driven-for-runtime-backed-object-metadata";
+inline constexpr const char *kObjc3OwnershipLoweringBaselineRuntimeHookModel =
+    "retain-release-autorelease-and-weak-lowering-stays-summary-only-without-live-runtime-hook-emission";
+inline constexpr const char *kObjc3OwnershipLoweringBaselineAutoreleasepoolModel =
+    "autoreleasepool-lowering-remains-summary-only-without-emitted-push-pop-hooks";
+inline constexpr const char *kObjc3OwnershipLoweringBaselineFailClosedModel =
+    "no-live-ownership-runtime-hooks-no-arc-weak-side-table-entrypoints-no-destruction-lowering-yet";
 // M256-C002 executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
@@ -1599,6 +1614,7 @@ std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary();
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary();
 std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary();
 std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary();
+std::string Objc3OwnershipLoweringBaselineSummary();
 std::string Objc3ExecutableMethodBodyBindingSummary();
 std::string Objc3ExecutableRealizationRecordsSummary();
 std::string Objc3RuntimeClassRealizationSummary();

@@ -746,6 +746,29 @@ std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() {
   return out.str();
 }
 
+std::string Objc3OwnershipLoweringBaselineSummary() {
+  std::ostringstream out;
+  // M260-C001 ownership-lowering baseline freeze anchor: runtime-backed
+  // ownership metadata and sema legality are already live, but retain/release,
+  // autoreleasepool, and weak/unowned execution still stop at legacy lowering
+  // summaries instead of emitting a summary-only-without-live-runtime-hook-emission
+  // widening before M260-C002.
+  out << "contract=" << kObjc3OwnershipLoweringBaselineContractId
+      << ";ownership_qualifier_model="
+      << kObjc3OwnershipLoweringBaselineQualifierModel
+      << ";runtime_hook_model="
+      << kObjc3OwnershipLoweringBaselineRuntimeHookModel
+      << ";autoreleasepool_model="
+      << kObjc3OwnershipLoweringBaselineAutoreleasepoolModel
+      << ";fail_closed_model="
+      << kObjc3OwnershipLoweringBaselineFailClosedModel
+      << ";ownership_qualifier_lane=" << kObjc3OwnershipQualifierLoweringLaneContract
+      << ";retain_release_lane=" << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";autoreleasepool_lane=" << kObjc3AutoreleasePoolScopeLoweringLaneContract
+      << ";weak_unowned_lane=" << kObjc3WeakUnownedSemanticsLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

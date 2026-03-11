@@ -819,6 +819,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // property/member ownership metadata is truthful, but executable
   // retain/release legality, `@autoreleasepool`, and destruction ordering
   // remain fail-closed until the later M260 storage legality/runtime issues.
+  // M260-C001 ownership-lowering baseline freeze anchor: lane-C preserves the
+  // legacy ownership lowering summaries those later runtime issues must
+  // replace, but no executable retain/release/autorelease/weak runtime hooks
+  // are emitted out of function-level ownership qualifiers yet.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
@@ -868,6 +872,10 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   // M260-B001 retainable-object semantic-rule freeze anchor: method-level
   // retain/release legality and destruction-order behavior remain deferred even
   // though runtime-backed property/member ownership metadata is already live.
+  // M260-C001 ownership-lowering baseline freeze anchor: method-level
+  // ownership qualifiers still terminate in semantic unsupported-feature
+  // diagnostics while the preserved lowering summaries remain the only
+  // ownership hook surface available to IR closeout.
   if (method.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,

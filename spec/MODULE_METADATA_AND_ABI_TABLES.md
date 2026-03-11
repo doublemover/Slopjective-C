@@ -8345,3 +8345,25 @@ requirements from emitted metadata.
   - owned runtime-backed storage plus `@autoreleasepool` now fails with a
     destruction-order diagnostic before metadata emission proceeds
   - `M260-C001` is the next issue
+
+## M260 ownership lowering baseline metadata anchors (C001)
+
+`M260-C001` does not introduce a new ownership metadata ABI family. It freezes
+the current lowering baseline so emitted manifests and IR must keep carrying the
+legacy ownership lowering summaries until `M260-C002` lands live runtime hook
+emission.
+
+- contract id
+  `objc3c-ownership-lowering-baseline-freeze/m260-c001-v1`
+- canonical proof artifacts
+  - `tmp/artifacts/compilation/objc3c-native/m260/c001/positive/module.manifest.json`
+  - `tmp/artifacts/compilation/objc3c-native/m260/c001/positive/module.ll`
+- truthful boundary
+  - emitted property/member ownership metadata remains unchanged from
+    `M260-A002/B002`
+  - emitted manifests still carry the canonical `m161`/`m162`/`m163`/`m164`
+    lowering replay keys
+  - emitted IR still carries the canonical ownership-lowering profile comments
+    and named metadata nodes, but it does not yet emit live ownership runtime
+    hook calls
+  - `M260-C002` is the next issue

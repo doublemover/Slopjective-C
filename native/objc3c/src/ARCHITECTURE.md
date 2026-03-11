@@ -9732,3 +9732,18 @@ property storage would require deferred destruction-order support.
 - emitted ownership metadata remains unchanged in this lane; the expansion is a
   semantic admission rule only
 - the next issue is `M260-C001`
+
+## M260 Ownership Lowering Baseline Freeze (C001)
+
+`M260-C001` freezes the current lowering boundary for runtime-backed object
+ownership.
+
+- ownership qualifier, retain/release, autoreleasepool, and weak/unowned
+  lowering remain expressed through the preserved `m161`/`m162`/`m163`/`m164`
+  summary lanes
+- runtime-backed ownership metadata and storage legality remain live from the
+  earlier M260 lanes
+- no live retain/release/autorelease runtime hook calls are emitted yet
+- no live autoreleasepool push/pop hooks are emitted yet
+- no live weak side-table runtime entrypoints are emitted yet
+- the next issue is `M260-C002`
