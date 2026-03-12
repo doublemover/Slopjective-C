@@ -1186,6 +1186,22 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
   return out.str();
 }
 
+std::string Objc3Part3OptionalKeypathLoweringSummary() {
+  std::ostringstream out;
+  out << "contract_id=" << kObjc3Part3OptionalKeypathLoweringContractId
+      << ";optional_model="
+      << kObjc3Part3OptionalKeypathLoweringOptionalModel
+      << ";typed_keypath_model="
+      << kObjc3Part3OptionalKeypathLoweringTypedKeypathModel
+      << ";authority_model="
+      << kObjc3Part3OptionalKeypathLoweringAuthorityModel
+      << ";fail_closed_model="
+      << kObjc3Part3OptionalKeypathLoweringFailClosedModel
+      << ";lane_contract="
+      << kObjc3Part3OptionalKeypathLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3ArcSourceModeBoundarySummary() {
   std::ostringstream out;
   // M262-A001 ARC source-surface/mode-boundary anchor: ownership qualifiers,
@@ -2993,6 +3009,68 @@ std::string Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
          ";contract_violation_sites=" + std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" + kObjc3BlockDeterminismPerfBaselineLoweringLaneContract;
+}
+
+bool IsValidObjc3Part3OptionalKeypathLoweringContract(
+    const Objc3Part3OptionalKeypathLoweringContract &contract) {
+  if (contract.optional_binding_clause_sites > contract.optional_binding_sites ||
+      contract.typed_keypath_self_root_sites >
+          contract.typed_keypath_literal_sites ||
+      contract.typed_keypath_class_root_sites >
+          contract.typed_keypath_literal_sites) {
+    return false;
+  }
+  if (contract.live_optional_lowering_sites !=
+      contract.optional_binding_sites + contract.optional_send_sites +
+          contract.nil_coalescing_sites) {
+    return false;
+  }
+  if (contract.single_evaluation_nil_short_circuit_sites !=
+      contract.optional_binding_clause_sites + contract.optional_send_sites +
+          contract.nil_coalescing_sites) {
+    return false;
+  }
+  if (contract.deferred_typed_keypath_sites !=
+      contract.typed_keypath_literal_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites >
+      contract.live_optional_lowering_sites + contract.deferred_typed_keypath_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part3OptionalKeypathLoweringReplayKey(
+    const Objc3Part3OptionalKeypathLoweringContract &contract) {
+  return std::string("optional_binding_sites=") +
+         std::to_string(contract.optional_binding_sites) +
+         ";optional_binding_clause_sites=" +
+         std::to_string(contract.optional_binding_clause_sites) +
+         ";optional_send_sites=" +
+         std::to_string(contract.optional_send_sites) +
+         ";nil_coalescing_sites=" +
+         std::to_string(contract.nil_coalescing_sites) +
+         ";typed_keypath_literal_sites=" +
+         std::to_string(contract.typed_keypath_literal_sites) +
+         ";typed_keypath_self_root_sites=" +
+         std::to_string(contract.typed_keypath_self_root_sites) +
+         ";typed_keypath_class_root_sites=" +
+         std::to_string(contract.typed_keypath_class_root_sites) +
+         ";live_optional_lowering_sites=" +
+         std::to_string(contract.live_optional_lowering_sites) +
+         ";single_evaluation_nil_short_circuit_sites=" +
+         std::to_string(contract.single_evaluation_nil_short_circuit_sites) +
+         ";deferred_typed_keypath_sites=" +
+         std::to_string(contract.deferred_typed_keypath_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3Part3OptionalKeypathLoweringLaneContract;
 }
 
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(

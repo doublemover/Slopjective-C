@@ -361,24 +361,24 @@ def main(argv: Sequence[str] | None = None) -> int:
             SnippetCheck("M265-B002-PKT-03", "optional-flow"),
         ]),
         (DOC_SOURCE, [
-            SnippetCheck("M265-B002-DOCSRC-01", "ordinary sends now fail closed for nullable receivers"),
-            SnippetCheck("M265-B002-DOCSRC-02", "guard let` / `guard var` `else` blocks now fail closed unless they exit the"),
-            SnippetCheck("M265-B002-DOCSRC-03", "nil-coalescing `??` now lowers as a real short-circuit path in native IR"),
+            SnippetCheck("M265-B002-DOCSRC-01", "ordinary sends still fail closed for nullable receivers unless the receiver"),
+            SnippetCheck("M265-B002-DOCSRC-02", "optional bindings and `guard` bindings lower natively with one"),
+            SnippetCheck("M265-B002-DOCSRC-03", "nil-coalescing `??` now lowers natively under the same single-evaluation"),
         ]),
         (DOC_NATIVE, [
-            SnippetCheck("M265-B002-DOCNATIVE-01", "ordinary sends now fail closed for nullable receivers"),
-            SnippetCheck("M265-B002-DOCNATIVE-02", "guard let` / `guard var` `else` blocks now fail closed unless they exit the"),
+            SnippetCheck("M265-B002-DOCNATIVE-01", "ordinary sends still fail closed for nullable receivers unless the receiver"),
+            SnippetCheck("M265-B002-DOCNATIVE-02", "optional bindings and `guard` bindings lower natively with one"),
         ]),
         (SPEC_AM, [
             SnippetCheck("M265-B002-AM-01", "Lane B now carries live optional-flow semantics"),
-            SnippetCheck("M265-B002-AM-02", "Optional sends fail closed for non-ObjC-reference receivers, ordinary sends"),
+            SnippetCheck("M265-B002-AM-02", "Ordinary sends still fail closed for nullable receivers unless they have"),
         ]),
         (SPEC_ATTR, [
-            SnippetCheck("M265-B002-ATTR-01", "Current implementation status (`M265-B003`)"),
+            SnippetCheck("M265-B002-ATTR-01", "Current implementation status (`M265-C001`)"),
             SnippetCheck("M265-B002-ATTR-02", "guard let` / `guard var` `else` blocks now fail closed unless they exit the"),
         ]),
         (SPEC_PART3, [
-            SnippetCheck("M265-B002-PART3-01", "Implementation note (`M265-B003`)"),
+            SnippetCheck("M265-B002-PART3-01", "Implementation note (`M265-C001`)"),
             SnippetCheck("M265-B002-PART3-02", "Nil-coalescing `??` now lowers as a real short-circuit path."),
         ]),
         (SEMA_CONTRACT_H, [

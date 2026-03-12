@@ -321,39 +321,32 @@ Recommended frontend contract checks:
 - `python scripts/check_m265_a001_optionals_nullability_pragmatic_generics_and_key_path_source_closure_contract_and_architecture_freeze.py`
 - `python scripts/check_m265_a002_frontend_support_for_optional_sends_binds_coalescing_and_typed_key_paths_core_feature_implementation.py`
 
-## M265 Part 3 semantic model
+## M265 Part 3 lowering boundary
 
-Lane B now carries the live semantic/refinement slice for the admitted Part 3
-surface before later M265 lowering/runtime issues broaden it further.
+Current implementation status (`M265-C001`):
 
-Currently live:
-
-- optional binding sites are counted and validated against synthetic binding
-  clause lowering
-- `guard let` / `guard var` sites are distinguished from plain `if let` /
-  `if var`
-- `if let` / `guard let` bindings now refine admitted nullable ObjC-reference
-  sources into nonnull local bindings on the success path
-- `guard let` / `guard var` `else` blocks now fail closed unless they exit the
-  current scope
-- nil-comparison flow such as `if (value != nil)` now refines ordinary sends
-  and direct returns on the proven-nonnull path
-- nil-coalescing `??` now lowers as a real short-circuit path in native IR
-- optional sends now fail closed for non-ObjC-reference receivers
-- ordinary sends now fail closed for nullable receivers unless the receiver has
-  been proven nonnull or optional-send syntax is used
-- typed key-path roots now fail closed unless they resolve to `self`, a known
-  class type, or an ObjC-reference-compatible identifier
-- single-component class-root key paths such as `@keypath(Person, name)` now
-  fail closed unless the component names a readable property on the root
+- optional binding, optional send, and nil-coalescing sites now publish a
+  lowering-owned packet in addition to the earlier source/sema packets
+- optional bindings and `guard` bindings lower natively with one
+  single-evaluation control-flow model
+- optional sends now lower natively with single-evaluation nil short-circuit
+  behavior; selector arguments are not evaluated on the nil arm
+- nil-coalescing `??` now lowers natively under the same single-evaluation
+  short-circuit model
+- ordinary sends still fail closed for nullable receivers unless the receiver
+  has been proven nonnull or optional-send syntax is used
+- typed key-path literals remain source/sema surfaces and are published
+  truthfully as deferred-from-native-lowering packets
+- native IR/object emission still fails closed on typed key-path literals until
+  later executable key-path lowering work lands
 - generic Objective-C method declarations written as `- <T> ...` remain
-  reserved for a future revision and now diagnose explicitly
-- pragmatic generic-erasure and nullability site counts are published through
-  the semantic surface
+  reserved for a future revision and continue to diagnose explicitly
 
 Current fail-closed boundary:
 
 - `?.` optional-member access remains fail closed
+- typed key-path literals such as `@keypath(...)` remain fail closed on the
+  native lowering path
 - multi-component typed key-path member chains still fail closed until later
   executable key-path lowering work
 - broader Part 3 lowering/runtime work still remains in later `M265` / `M266`
@@ -361,11 +354,11 @@ Current fail-closed boundary:
 
 Published packet:
 
-- `frontend.pipeline.semantic_surface.objc_part3_type_semantic_model`
+- `frontend.pipeline.semantic_surface.objc_part3_optional_keypath_lowering_contract`
 
-Recommended semantic contract check:
+Recommended lowering contract check:
 
-- `python scripts/check_m265_b002_optional_flow_binding_and_refinement_semantics_core_feature_implementation.py`
+- `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`
 
 ## M151 frontend symbol graph and scope-resolution parser surface
 

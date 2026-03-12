@@ -26,9 +26,13 @@ Current implementation note:
 - Lane B now carries live optional-flow semantics for optional bindings,
   nil-comparison refinement, nil-coalescing, and ordinary-vs-optional send
   legality.
-- Optional sends fail closed for non-ObjC-reference receivers, ordinary sends
-  now fail closed for nullable receivers unless they have been proven nonnull,
-  and `guard let` / `guard var` `else` bodies must exit the current scope.
+- Lane C now carries the first lowering-owned Part 3 packet for optional
+  bindings, optional sends, and nil-coalescing.
+- Optional sends now lower natively with single-evaluation nil short-circuit
+  behavior; selector arguments are not evaluated on the nil arm.
+- Ordinary sends still fail closed for nullable receivers unless they have
+  been proven nonnull, and `guard let` / `guard var` `else` bodies must exit
+  the current scope.
 - Typed key-path roots now fail closed unless they resolve to `self`, a known
   class type, or an ObjC-reference-compatible identifier; class-root
   single-component paths fail closed unless the component names a readable
@@ -37,6 +41,8 @@ Current implementation note:
   reserved in v1 and now diagnose explicitly.
 - Only optional-member access written as `?.` remains fail-closed at the
   current boundary.
+- Typed key-path literals remain truthful source/sema surfaces but still fail
+  closed on the native lowering path.
 - Multi-component typed key-path member chains, executable typed key-path
   behavior, and the broader Part 3 surface remain future work.
 

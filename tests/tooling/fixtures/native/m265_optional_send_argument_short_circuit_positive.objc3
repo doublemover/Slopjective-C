@@ -1,0 +1,13 @@
+module optionalSendArgumentShortCircuit;
+
+let counter = 0;
+
+fn bump() -> i32 {
+  counter = counter + 1;
+  return 7;
+}
+
+fn main() -> i32 {
+  let sent = [nil? mix: bump()];
+  return counter + sent;
+}

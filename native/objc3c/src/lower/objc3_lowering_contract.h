@@ -1274,6 +1274,8 @@ inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringLaneContrac
     "m261-block-byref-helper-lowering-v1";
 inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringLaneContract =
     "m261-block-escape-runtime-hook-lowering-v1";
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringLaneContract =
+    "m265-part3-optional-keypath-lowering-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1710,6 +1712,21 @@ struct Objc3BlockDeterminismPerfBaselineLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part3OptionalKeypathLoweringContract {
+  std::size_t optional_binding_sites = 0;
+  std::size_t optional_binding_clause_sites = 0;
+  std::size_t optional_send_sites = 0;
+  std::size_t nil_coalescing_sites = 0;
+  std::size_t typed_keypath_literal_sites = 0;
+  std::size_t typed_keypath_self_root_sites = 0;
+  std::size_t typed_keypath_class_root_sites = 0;
+  std::size_t live_optional_lowering_sites = 0;
+  std::size_t single_evaluation_nil_short_circuit_sites = 0;
+  std::size_t deferred_typed_keypath_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3LightweightGenericsConstraintLoweringContract {
   std::size_t generic_constraint_sites = 0;
   std::size_t generic_suffix_sites = 0;
@@ -2029,6 +2046,21 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3RunnableBlockExecutionMatrixSummary();
+// M265-C001 Part 3 lowering freeze anchor: native lowering now truthfully
+// freezes the live optional binding/send/coalescing path with single-evaluation
+// nil short-circuit semantics while keeping typed key-path artifact emission
+// deferred and fail closed until M265-C003.
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringContractId =
+    "objc3c-part3-optional-keypath-lowering/m265-c001-v1";
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringOptionalModel =
+    "optional-bindings-sends-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringTypedKeypathModel =
+    "typed-keypath-literals-remain-source-and-semantic-surfaces-and-fail-closed-before-m265-c003";
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringAuthorityModel =
+    "part3-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
+inline constexpr const char *kObjc3Part3OptionalKeypathLoweringFailClosedModel =
+    "native-lowering-fails-closed-on-typed-keypath-ir-emission-and-on-optional-lowering-contract-drift";
+std::string Objc3Part3OptionalKeypathLoweringSummary();
 std::string Objc3ArcSourceModeBoundarySummary();
 std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);
 std::string Objc3ExecutableMethodBodyBindingSummary();
@@ -2152,6 +2184,10 @@ bool IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(
     const Objc3BlockDeterminismPerfBaselineLoweringContract &contract);
 std::string Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
     const Objc3BlockDeterminismPerfBaselineLoweringContract &contract);
+bool IsValidObjc3Part3OptionalKeypathLoweringContract(
+    const Objc3Part3OptionalKeypathLoweringContract &contract);
+std::string Objc3Part3OptionalKeypathLoweringReplayKey(
+    const Objc3Part3OptionalKeypathLoweringContract &contract);
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
     const Objc3LightweightGenericsConstraintLoweringContract &contract);
 std::string Objc3LightweightGenericsConstraintLoweringReplayKey(

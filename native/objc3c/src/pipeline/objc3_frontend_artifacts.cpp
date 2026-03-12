@@ -39,6 +39,10 @@ std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph);
 std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
     const Objc3ExecutableMetadataSemanticConsistencyBoundary &boundary);
+inline constexpr const char
+    *kObjc3Part3OptionalKeypathLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part3_optional_keypath_lowering_contract";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -389,6 +393,85 @@ std::string BuildPart3TypeSemanticModelSummaryJson(
       << ",\"ready_for_lowering_and_runtime\":"
       << (summary.ready_for_lowering_and_runtime ? "true" : "false")
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
+  return out.str();
+}
+
+std::string BuildPart3OptionalKeypathLoweringContractJson(
+    const Objc3Part3OptionalKeypathLoweringContract &contract,
+    const Objc3Part3TypeSemanticModelSummary &semantic_summary,
+    const std::string &semantic_summary_replay_key,
+    const std::string &message_send_selector_lowering_replay_key,
+    const std::string &dispatch_abi_marshalling_replay_key,
+    const std::string &nil_receiver_semantics_foldability_replay_key,
+    const std::string &replay_key) {
+  std::ostringstream out;
+  const bool source_semantic_model_ready = semantic_summary.deterministic;
+  const bool typed_keypath_artifact_emission_deferred =
+      contract.deferred_typed_keypath_sites ==
+      contract.typed_keypath_literal_sites;
+  const bool ready_for_native_optional_lowering =
+      contract.deterministic && contract.contract_violation_sites == 0;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringSurfacePath)
+      << "\",\"source_semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"optional_model\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringOptionalModel)
+      << "\",\"typed_keypath_model\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringTypedKeypathModel)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringAuthorityModel)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringFailClosedModel)
+      << "\",\"optional_binding_sites\":"
+      << contract.optional_binding_sites
+      << ",\"optional_binding_clause_sites\":"
+      << contract.optional_binding_clause_sites
+      << ",\"optional_send_sites\":" << contract.optional_send_sites
+      << ",\"nil_coalescing_sites\":" << contract.nil_coalescing_sites
+      << ",\"typed_keypath_literal_sites\":"
+      << contract.typed_keypath_literal_sites
+      << ",\"typed_keypath_self_root_sites\":"
+      << contract.typed_keypath_self_root_sites
+      << ",\"typed_keypath_class_root_sites\":"
+      << contract.typed_keypath_class_root_sites
+      << ",\"live_optional_lowering_sites\":"
+      << contract.live_optional_lowering_sites
+      << ",\"single_evaluation_nil_short_circuit_sites\":"
+      << contract.single_evaluation_nil_short_circuit_sites
+      << ",\"deferred_typed_keypath_sites\":"
+      << contract.deferred_typed_keypath_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"fail_closed\":true"
+      << ",\"source_semantic_model_ready\":"
+      << (source_semantic_model_ready ? "true" : "false")
+      << ",\"message_send_selector_lowering_ready\":true"
+      << ",\"dispatch_abi_marshalling_ready\":true"
+      << ",\"nil_receiver_semantics_foldability_ready\":true"
+      << ",\"live_optional_binding_lowering_landed\":true"
+      << ",\"live_optional_send_lowering_landed\":true"
+      << ",\"live_nil_coalescing_lowering_landed\":true"
+      << ",\"single_evaluation_nil_short_circuit_landed\":true"
+      << ",\"typed_keypath_artifact_emission_deferred\":"
+      << (typed_keypath_artifact_emission_deferred ? "true" : "false")
+      << ",\"ready_for_native_optional_lowering\":"
+      << (ready_for_native_optional_lowering ? "true" : "false")
+      << ",\"ready_for_typed_keypath_artifact_emission\":false"
+      << ",\"semantic_summary_replay_key\":\""
+      << EscapeJsonString(semantic_summary_replay_key)
+      << "\",\"message_send_selector_lowering_replay_key\":\""
+      << EscapeJsonString(message_send_selector_lowering_replay_key)
+      << "\",\"dispatch_abi_marshalling_replay_key\":\""
+      << EscapeJsonString(dispatch_abi_marshalling_replay_key)
+      << "\",\"nil_receiver_semantics_foldability_replay_key\":\""
+      << EscapeJsonString(nil_receiver_semantics_foldability_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key) << "\"}";
   return out.str();
 }
 
@@ -8172,6 +8255,35 @@ Objc3BlockDeterminismPerfBaselineLoweringContract BuildBlockDeterminismPerfBasel
   return contract;
 }
 
+Objc3Part3OptionalKeypathLoweringContract
+BuildPart3OptionalKeypathLoweringContract(
+    const Objc3Part3TypeSemanticModelSummary &summary) {
+  Objc3Part3OptionalKeypathLoweringContract contract;
+  contract.optional_binding_sites = summary.optional_binding_sites;
+  contract.optional_binding_clause_sites = summary.optional_binding_clause_sites;
+  contract.optional_send_sites = summary.optional_send_sites;
+  contract.nil_coalescing_sites = summary.nil_coalescing_sites;
+  contract.typed_keypath_literal_sites = summary.typed_keypath_literal_sites;
+  contract.typed_keypath_self_root_sites = summary.typed_keypath_self_root_sites;
+  contract.typed_keypath_class_root_sites = summary.typed_keypath_class_root_sites;
+  contract.live_optional_lowering_sites =
+      summary.optional_binding_sites + summary.optional_send_sites +
+      summary.nil_coalescing_sites;
+  contract.single_evaluation_nil_short_circuit_sites =
+      summary.optional_binding_clause_sites + summary.optional_send_sites +
+      summary.nil_coalescing_sites;
+  contract.deferred_typed_keypath_sites = summary.typed_keypath_literal_sites;
+  contract.contract_violation_sites =
+      summary.optional_binding_contract_violation_sites +
+      summary.optional_send_contract_violation_sites +
+      summary.optional_flow_contract_violation_sites;
+  contract.deterministic =
+      summary.deterministic && contract.contract_violation_sites == 0 &&
+      contract.deferred_typed_keypath_sites ==
+          contract.typed_keypath_literal_sites;
+  return contract;
+}
+
 Objc3LightweightGenericsConstraintLoweringContract BuildLightweightGenericsConstraintLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3LightweightGenericsConstraintLoweringContract contract;
@@ -9327,6 +9439,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string nil_receiver_semantics_foldability_replay_key =
       Objc3NilReceiverSemanticsFoldabilityReplayKey(nil_receiver_semantics_foldability_contract);
+  const Objc3Part3OptionalKeypathLoweringContract
+      part3_optional_keypath_lowering_contract =
+          BuildPart3OptionalKeypathLoweringContract(
+              part3_type_semantic_model_summary);
+  if (!IsValidObjc3Part3OptionalKeypathLoweringContract(
+          part3_optional_keypath_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid Part 3 optional/key-path lowering contract");
+  }
+  const std::string part3_optional_keypath_lowering_replay_key =
+      Objc3Part3OptionalKeypathLoweringReplayKey(
+          part3_optional_keypath_lowering_contract);
   const Objc3SuperDispatchMethodFamilyContract super_dispatch_method_family_contract =
       BuildSuperDispatchMethodFamilyContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3SuperDispatchMethodFamilyContract(super_dispatch_method_family_contract)) {
@@ -14160,6 +14285,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
            << "}"
+           << ",\"objc_part3_optional_keypath_lowering_contract\":"
+           << BuildPart3OptionalKeypathLoweringContractJson(
+                  part3_optional_keypath_lowering_contract,
+                  part3_type_semantic_model_summary,
+                  part3_type_semantic_model_summary.replay_key,
+                  message_send_selector_lowering_replay_key,
+                  dispatch_abi_marshalling_replay_key,
+                  nil_receiver_semantics_foldability_replay_key,
+                  part3_optional_keypath_lowering_replay_key)
            << ",\"objc_module_import_graph_lowering_surface\":{\"module_import_graph_sites\":"
            << module_import_graph_lowering_contract.module_import_graph_sites
            << ",\"import_edge_candidate_sites\":"

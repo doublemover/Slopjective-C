@@ -22,12 +22,14 @@ Objective‑C 3.0 improves type safety without abandoning Objective‑C’s mode
 
 This part defines **syntax**, **static semantics**, **dynamic semantics**, and **required diagnostics** for these features.
 
-Implementation note (`M265-B003`):
+Implementation note (`M265-C001`):
 
-- The live compiler now publishes a sema-owned Part 3 packet for optional
-  bindings, optional-flow refinement, optional sends, pragmatic
-  generic-erasure/nullability site counts, and typed key-path legality.
-- Optional sends currently fail closed unless the receiver is
+- The live compiler now publishes both a sema-owned Part 3 packet and a
+  lowering-owned Part 3 packet for optional bindings, optional sends,
+  nil-coalescing, pragmatic generic-erasure/nullability site counts, and typed
+  key-path legality.
+- Optional sends now lower natively with single-evaluation nil short-circuit
+  behavior and still fail closed unless the receiver is
   ObjC-reference-compatible.
 - Ordinary sends now fail closed for nullable receivers unless the receiver has
   been proven nonnull or optional-send syntax is used.
@@ -36,6 +38,8 @@ Implementation note (`M265-B003`):
 - Nil-coalescing `??` now lowers as a real short-circuit path.
 - Typed key-path roots currently fail closed unless they resolve to `self`, a
   known class type, or an ObjC-reference-compatible identifier.
+- Typed key-path literals remain deferred from native IR/object lowering and
+  still fail closed on that path until later executable key-path work lands.
 - Single-component class-root key paths now fail closed unless the named
   component is a readable property on the root type.
 - Generic Objective-C method declarations written as `- <T> ...` remain

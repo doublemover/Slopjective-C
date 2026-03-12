@@ -575,6 +575,8 @@ class Objc3IREmitter {
       out << "; nil_receiver_semantics_foldability_lowering = "
           << frontend_metadata_.lowering_nil_receiver_semantics_foldability_replay_key << "\n";
     }
+    out << "; part3_optional_keypath_lowering = "
+        << Objc3Part3OptionalKeypathLoweringSummary() << "\n";
     if (!frontend_metadata_.lowering_super_dispatch_method_family_replay_key.empty()) {
       out << "; super_dispatch_method_family_lowering = "
           << frontend_metadata_.lowering_super_dispatch_method_family_replay_key << "\n";
@@ -10014,7 +10016,8 @@ class Objc3IREmitter {
     return true;
   }
 
-  LoweredMessageSend LowerMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
+  LoweredMessageSend LowerMessageSendHeader(const Expr *expr,
+                                           FunctionContext &ctx) const {
     LoweredMessageSend lowered;
     lowered.args.assign(lowering_ir_boundary_.runtime_dispatch_arg_slots, "0");
     if (expr == nullptr) {
@@ -10031,9 +10034,22 @@ class Objc3IREmitter {
     lowered.dispatch_symbol =
         Objc3DispatchSurfaceRuntimeEntrypointSymbol(
             lowered.dispatch_surface_family);
+    return lowered;
+  }
+
+  void MaterializeMessageSendArgs(const Expr *expr, LoweredMessageSend &lowered,
+                                  FunctionContext &ctx) const {
+    if (expr == nullptr) {
+      return;
+    }
     for (std::size_t i = 0; i < expr->args.size() && i < lowered.args.size(); ++i) {
       lowered.args[i] = EmitExpr(expr->args[i].get(), ctx);
     }
+  }
+
+  LoweredMessageSend LowerMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
+    LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
+    MaterializeMessageSendArgs(expr, lowered, ctx);
     return lowered;
   }
 
@@ -10147,6 +10163,40 @@ class Objc3IREmitter {
   }
 
   std::string EmitMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
+    if (expr != nullptr && expr->optional_send_enabled) {
+      LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
+      if (lowered.receiver_is_compile_time_zero) {
+        return "0";
+      }
+      if (lowered.receiver_is_compile_time_nonzero) {
+        MaterializeMessageSendArgs(expr, lowered, ctx);
+        return EmitRuntimeDispatch(lowered, ctx);
+      }
+
+      const std::string is_nil = NewTemp(ctx);
+      const std::string nil_label = NewLabel(ctx, "opt_send_nil_");
+      const std::string dispatch_label = NewLabel(ctx, "opt_send_dispatch_");
+      const std::string merge_label = NewLabel(ctx, "opt_send_merge_");
+      const std::string out = NewTemp(ctx);
+
+      ctx.code_lines.push_back("  " + is_nil + " = icmp eq i32 " +
+                               lowered.receiver + ", 0");
+      ctx.code_lines.push_back("  br i1 " + is_nil + ", label %" + nil_label +
+                               ", label %" + dispatch_label);
+      ctx.code_lines.push_back(nil_label + ":");
+      ctx.code_lines.push_back("  br label %" + merge_label);
+      ctx.code_lines.push_back(dispatch_label + ":");
+      lowered.receiver_is_compile_time_zero = false;
+      lowered.receiver_is_compile_time_nonzero = true;
+      MaterializeMessageSendArgs(expr, lowered, ctx);
+      const std::string dispatch_value = EmitRuntimeDispatch(lowered, ctx);
+      ctx.code_lines.push_back("  br label %" + merge_label);
+      ctx.code_lines.push_back(merge_label + ":");
+      ctx.code_lines.push_back("  " + out + " = phi i32 [0, %" + nil_label +
+                               "], [" + dispatch_value + ", %" +
+                               dispatch_label + "]");
+      return out;
+    }
     const LoweredMessageSend lowered = LowerMessageSendExpr(expr, ctx);
     return EmitRuntimeDispatch(lowered, ctx);
   }
