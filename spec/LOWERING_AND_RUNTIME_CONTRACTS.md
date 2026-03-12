@@ -8379,3 +8379,15 @@ private ARC debug snapshot surface for deterministic validation.
   - no broader ARC runtime completeness claim beyond the supported runnable
     slice
 - `M262-E001` is the next issue.
+
+## M262 runnable ARC runtime gate (E001)
+
+Contract id: `objc3c-runnable-arc-runtime-gate/m262-e001-v1`
+
+`M262-E001` freezes the lane-E gate for the currently supported runnable ARC
+slice. The gate consumes the `M262-A002`, `M262-B003`, `M262-C004`, and
+`M262-D003` proof chain, publishes `!objc3.objc_runnable_arc_runtime_gate`,
+and fails closed if the integrated ARC evidence drifts.
+
+Evidence model:
+`a002-b003-c004-d003-summary-chain`

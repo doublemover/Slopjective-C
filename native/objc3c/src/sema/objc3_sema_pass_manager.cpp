@@ -2316,6 +2316,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // also preserves the explicit block-escape and return-autorelease packets,
   // while lane-C owns the branch-stable cleanup ordering needed to combine
   // them truthfully.
+  // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes this existing
+  // source, semantic, lowering, and runtime proof chain and must not regress
+  // into parser-only or metadata-only evidence.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

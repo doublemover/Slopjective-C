@@ -1873,6 +1873,23 @@ Recommended M262 lane-D ARC-debug check:
 - `python scripts/check_m262_d003_ownership_debug_instrumentation_and_runtime_validation_hooks_for_arc_core_feature_expansion.py`
 - `M262-E001` is the next issue.
 
+## M262 runnable ARC runtime gate (M262-E001)
+
+Contract id: `objc3c-runnable-arc-runtime-gate/m262-e001-v1`
+
+`M262-E001` freezes the current runnable ARC lane-E gate above the
+`A002/B003/C004/D003` proof chain. It consumes the existing ARC mode-handling,
+interaction, lowering, and runtime proofs and publishes the gate boundary
+through `!objc3.objc_runnable_arc_runtime_gate`.
+
+The gate is intentionally narrow:
+
+- it does not widen ARC source or semantic behavior
+- it does not add new lowering or runtime helper behavior
+- it does not claim conformance-matrix or operator closeout coverage yet
+
+`M262-E002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

@@ -1523,6 +1523,26 @@ std::string Objc3RuntimeArcDebugInstrumentationSummary() {
   return out.str();
 }
 
+std::string Objc3RunnableArcRuntimeGateSummary() {
+  std::ostringstream out;
+  // M262-E001 runnable-arc-runtime gate anchor: lane-E freezes the supported
+  // runnable ARC slice by consuming the current mode-handling, interaction,
+  // lowering, and runtime proofs rather than widening source, lowering, or
+  // public runtime behavior.
+  out << "contract=" << kObjc3RunnableArcRuntimeGateContractId
+      << ";evidence_model=" << kObjc3RunnableArcRuntimeGateEvidenceModel
+      << ";active_gate_model=" << kObjc3RunnableArcRuntimeGateActiveModel
+      << ";non_goal_model=" << kObjc3RunnableArcRuntimeGateNonGoalModel
+      << ";mode_contract=" << kObjc3ArcModeHandlingContractId
+      << ";interaction_contract=" << kObjc3ArcInteractionSemanticsContractId
+      << ";lowering_contract="
+      << kObjc3ArcBlockAutoreleaseReturnLoweringContractId
+      << ";runtime_contract=" << kObjc3RuntimeArcDebugInstrumentationContractId
+      << ";fail_closed_model=" << kObjc3RunnableArcRuntimeGateFailClosedModel
+      << ";next_issue=M262-E002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

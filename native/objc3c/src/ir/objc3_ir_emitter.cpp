@@ -1534,6 +1534,11 @@ class Objc3IREmitter {
     // helper traffic without widening the public runtime ABI.
     out << "; runtime_arc_debug_instrumentation = "
         << Objc3RuntimeArcDebugInstrumentationSummary() << "\n";
+    // M262-E001 runnable-arc-runtime gate anchor: lane-E freezes the supported
+    // ARC slice above the existing mode-handling, interaction, lowering, and
+    // runtime proof chain without claiming closeout-matrix coverage yet.
+    out << "; runnable_arc_runtime_gate = "
+        << Objc3RunnableArcRuntimeGateSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2821,6 +2826,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_arc_helper_api_surface = !{!83}\n";
     out << "!objc3.objc_runtime_arc_helper_runtime_support = !{!84}\n";
     out << "!objc3.objc_runtime_arc_debug_instrumentation = !{!85}\n";
+    out << "!objc3.objc_runnable_arc_runtime_gate = !{!86}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4358,6 +4364,25 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeArcDebugInstrumentationFailClosedModel)
+        << "\"}\n";
+    out << "!86 = !{!\""
+        << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateEvidenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateActiveModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateNonGoalModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcModeHandlingContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcInteractionSemanticsContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcDebugInstrumentationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

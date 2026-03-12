@@ -1322,6 +1322,9 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // publishes return-autorelease and block-escape intent; terminal branch
   // cleanup ordering and escaping-block/autorelease-return composition remain
   // the responsibility of lane-C lowering.
+  // M262-E001 runnable-arc-runtime gate anchor: lane-E freezes the supported
+  // ARC slice against parser-only or metadata-only claims; sema remains the
+  // truthful source of the A/B-lane legality and ownership packets it consumes.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
@@ -2713,6 +2716,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
     // ARC properties now publish the same lifetime and synthesized-accessor
     // ownership profiles that later property/runtime lanes already consume for
     // explicitly qualified ownership spellings.
+    // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes this
+    // canonical property ARC packet as part of the runnable ARC proof chain.
     if (info.is_weak || property_has_attribute_named("weak") ||
         property_profile_contains(info.property_attribute_profile, "weak=1")) {
       info.ownership_lifetime_profile = "weak";

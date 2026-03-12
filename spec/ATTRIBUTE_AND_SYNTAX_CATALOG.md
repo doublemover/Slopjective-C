@@ -185,6 +185,8 @@ Current implementation status (`M262-D002`):
 - `M262-D003` now layers private ARC debug counters and last-value/property
   context snapshots above that same supported runtime slice without changing
   the source syntax surface
+- `M262-E001` freezes the runnable ARC gate above the current
+  `A002/B003/C004/D003` proof chain and still does not change source syntax
 
 ## B.3 Concurrency and executors {#b-3}
 

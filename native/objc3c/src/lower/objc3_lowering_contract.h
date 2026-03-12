@@ -812,6 +812,17 @@ inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationValidationModel
 inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationFailClosedModel =
     "arc-debug-hooks-remain-private-testing-surface-only-and-must-not-claim-broader-runtime-completeness";
 std::string Objc3RuntimeArcDebugInstrumentationSummary();
+inline constexpr const char *kObjc3RunnableArcRuntimeGateContractId =
+    "objc3c-runnable-arc-runtime-gate/m262-e001-v1";
+inline constexpr const char *kObjc3RunnableArcRuntimeGateEvidenceModel =
+    "a002-b003-c004-d003-summary-chain";
+inline constexpr const char *kObjc3RunnableArcRuntimeGateActiveModel =
+    "runnable-arc-gate-consumes-arc-mode-semantics-lowering-and-runtime-proofs-rather-than-parser-only-or-metadata-only-claims";
+inline constexpr const char *kObjc3RunnableArcRuntimeGateNonGoalModel =
+    "no-runnable-arc-closeout-matrix-no-public-runtime-abi-widening-no-cross-module-arc-claims-before-m262-e002";
+inline constexpr const char *kObjc3RunnableArcRuntimeGateFailClosedModel =
+    "fail-closed-on-runnable-arc-runtime-evidence-drift";
+std::string Objc3RunnableArcRuntimeGateSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

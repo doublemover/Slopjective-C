@@ -40,6 +40,9 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // scaffold still carries only source-side return-autorelease and block-escape
   // intent while lane-C owns the actual branch-stable cleanup ordering when
   // escaping blocks and autoreleasing returns compose.
+  // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes the
+  // already-proven ARC source, semantic, lowering, and runtime summaries
+  // without widening this scaffold beyond its truthful source-side packet role.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

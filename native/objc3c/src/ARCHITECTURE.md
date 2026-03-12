@@ -10078,6 +10078,15 @@ snapshots for deterministic helper-traffic validation.
   - broader ARC runtime completeness claims beyond the supported runnable slice
 - the next issue is `M262-E001`
 
+## M262 Runnable ARC Runtime Gate (E001)
+
+`M262-E001` freezes the supported runnable ARC slice for the lane-E gate.
+
+- it consumes `A002/B003/C004/D003`
+- it publishes `!objc3.objc_runnable_arc_runtime_gate`
+- it explicitly fails closed on evidence drift
+- the next issue is `M262-E002`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already
