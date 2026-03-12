@@ -10,6 +10,9 @@
 std::filesystem::path BuildManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+  // M265-E001 type-surface executable gate anchor: the emitted manifest
+  // remains the authoritative published semantic packet surface consumed by
+  // the lane-E executable Part 3 gate.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

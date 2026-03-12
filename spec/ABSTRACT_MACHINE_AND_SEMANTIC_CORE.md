@@ -352,3 +352,15 @@ Separate compilation therefore keeps the runnable Part 3 contract truthful: the
 consumer module can observe that the provider landed native optional lowering,
 retained typed key-path descriptors, and the runtime helper boundary required
 to materialize those descriptors after startup registration.
+
+## M265 executable type-surface gate (E001)
+
+`objc3c-type-surface-executable-conformance-gate/m265-e001-v1`
+
+The first lane-E gate for Part 3 freezes one integrated executable claim over
+optional bindings, optional sends, nil coalescing, typed key-path artifacts,
+and cross-module preservation. The gate consumes the current `A002`, `B003`,
+`C003`, and `D003` evidence chain and rejects drift if any one of those proofs
+stops publishing the currently supported runnable surface.
+
+This executable gate covers optional bindings, optional sends, nil coalescing, typed key-path artifacts, and cross-module preservation as one synchronized claim.

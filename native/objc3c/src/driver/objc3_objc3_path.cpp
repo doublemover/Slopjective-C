@@ -111,6 +111,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     const std::string source = ReadText(cli_options.input);
     const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
     Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
+    // M265-E001 type-surface executable gate anchor: lane-E consumes the
+    // emitted manifest/IR/object triplet as the canonical integrated proof for
+    // the currently runnable optional/key-path slice.
     WriteDiagnosticsArtifacts(cli_options.out_dir,
                               cli_options.emit_prefix,
                               artifacts.stage_diagnostics,

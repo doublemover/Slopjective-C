@@ -495,3 +495,12 @@ runtime-owned declaration inventory. This keeps optional sends, optional-member
 access, and validated typed key-path literals attached to explicit imported
 semantic packets instead of relying on implicit recovery from unrelated
 metadata-section counts.
+
+## M265 executable type-surface gate (E001)
+
+`objc3c-type-surface-executable-conformance-gate/m265-e001-v1`
+
+The lane-E freeze for Part 3 accepts only the currently implemented runnable
+slice. It binds the supported optional-binding, optional-send, nil-coalescing,
+generic-preservation, and typed key-path facts into one executable gate.
+`M265-E002` is the first issue allowed to broaden this gate into a runnable matrix.

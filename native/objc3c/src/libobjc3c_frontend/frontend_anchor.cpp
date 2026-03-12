@@ -30,6 +30,11 @@ struct objc3c_frontend_context {
   std::string object_path;
 };
 
+// M265-E001 type-surface executable gate anchor: the C frontend bridge must
+// keep surfacing manifest/IR/object publication paths so the lane-E gate can
+// validate the currently runnable Part 3 slice without inventing a parallel
+// proof channel.
+
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {
     return;

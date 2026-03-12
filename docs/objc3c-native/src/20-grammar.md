@@ -319,6 +319,24 @@ Current cross-module preservation boundary (`M265-D003`):
 - linked multi-image programs keep imported typed key-path runtime metadata
   visible after import-surface ingestion and startup registration
 
+## M265 type-surface executable conformance gate (M265-E001)
+
+`objc3c-type-surface-executable-conformance-gate/m265-e001-v1`
+
+This lane-E gate freezes the currently runnable Part 3 type-surface slice as a
+single integrated claim instead of treating the upstream `A002`/`B003`/`C003`/
+`D003` proofs as unrelated evidence.
+
+- Evidence model:
+  `a002-b003-c003-d003-summary-chain`
+- The gate must keep optional bindings, optional sends, nil coalescing, typed
+  key-path artifacts, and cross-module preservation synchronized as one
+  executable surface.
+- The integrated native fixture must continue to prove the truthful supported
+  counts for bindings, sends, coalescing, and typed key-path literals on the
+  `llvm-direct` path.
+- `M265-E002` is the next issue.
+
 Recommended lowering contract check:
 
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`

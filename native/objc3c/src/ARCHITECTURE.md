@@ -8810,6 +8810,18 @@ claiming a new public ABI.
 - full multi-component key-path application/evaluation remains deferred to
   later runtime work
 
+## M265 Type-Surface Executable Conformance Gate (E001)
+
+`M265-E001` freezes the supported executable Part 3 slice for lane-E.
+
+- contract id:
+  `objc3c-type-surface-executable-conformance-gate/m265-e001-v1`
+- evidence model:
+  `a002-b003-c003-d003-summary-chain`
+- the gate consumes the already-landed frontend, sema, lowering, runtime, and
+  cross-module proofs as one integrated executable claim
+- `M265-E002` is the next issue.
+
 ## M256 executable class/protocol/category source closure (A001)
 
 `M256-A001` freezes the first runnable object-model source boundary:
