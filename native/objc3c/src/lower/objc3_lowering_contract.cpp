@@ -1543,6 +1543,22 @@ std::string Objc3RunnableArcRuntimeGateSummary() {
   return out.str();
 }
 
+std::string Objc3RunnableArcCloseoutSummary() {
+  std::ostringstream out;
+  // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
+  // tranche by consuming the existing mode-handling, interaction, lowering,
+  // runtime, and gate proofs plus integrated execution smoke instead of
+  // widening the supported source/runtime slice.
+  out << "contract=" << kObjc3RunnableArcCloseoutContractId
+      << ";matrix_model=" << kObjc3RunnableArcCloseoutMatrixModel
+      << ";smoke_model=" << kObjc3RunnableArcCloseoutSmokeModel
+      << ";gate_contract=" << kObjc3RunnableArcRuntimeGateContractId
+      << ";runtime_contract=" << kObjc3RuntimeArcDebugInstrumentationContractId
+      << ";fail_closed_model=" << kObjc3RunnableArcCloseoutFailClosedModel
+      << ";next_issue=M263-A001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

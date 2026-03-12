@@ -417,6 +417,7 @@ function Get-BuildFingerprint {
     source_dir = $SourceDir
     runtime_output_dir = $RuntimeOutputDir
     library_output_dir = $LibraryOutputDir
+    build_type = "Release"
     direct_object_emission = $true
     warning_parity = $true
   }
@@ -483,6 +484,7 @@ function Invoke-CMakeConfigure {
       -G Ninja `
       "-DCMAKE_MAKE_PROGRAM=$NinjaTool" `
       "-DCMAKE_CXX_COMPILER=$Clangxx" `
+      "-DCMAKE_BUILD_TYPE=Release" `
       "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" `
       "-DOBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION=ON" `
       "-DOBJC3C_ENABLE_WARNING_PARITY=ON" `

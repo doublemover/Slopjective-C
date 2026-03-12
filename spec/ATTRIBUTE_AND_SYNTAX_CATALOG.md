@@ -187,6 +187,9 @@ Current implementation status (`M262-D002`):
   the source syntax surface
 - `M262-E001` freezes the runnable ARC gate above the current
   `A002/B003/C004/D003` proof chain and still does not change source syntax
+- `M262-E002` closes only the currently supported ARC slice through integrated
+  smoke rows, the private `M262-D003` property/runtime probe row, and the
+  operator runbook; it does not widen ARC syntax or semantics
 
 ## B.3 Concurrency and executors {#b-3}
 

@@ -1817,6 +1817,21 @@ The gate is intentionally narrow:
 
 `M262-E002` is the next issue.
 
+## M262 runnable ARC closeout matrix and runbook (M262-E002)
+
+Contract id: `objc3c-runnable-arc-closeout/m262-e002-v1`
+
+`M262-E002` closes the current ARC tranche by consuming the
+`A002/B003/C004/D003/E001` proof chain, three ARC-positive execution-smoke
+rows, and the operator runbook.
+
+The closeout is intentionally narrow:
+
+- it does not widen ARC source or semantic behavior
+- it does not add new lowering or runtime helper behavior
+- it treats property/runtime behavior as a private `M262-D003` probe-backed row
+- it hands off to `M263-A001`
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

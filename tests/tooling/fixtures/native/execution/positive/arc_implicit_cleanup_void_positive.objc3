@@ -1,0 +1,10 @@
+module arc_implicit_cleanup_void_positive;
+
+fn sink(value: id) -> void {
+  let closure = ^() { return value; };
+}
+
+fn main() -> i32 {
+  sink(5);
+  return 0;
+}

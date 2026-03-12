@@ -10087,6 +10087,17 @@ snapshots for deterministic helper-traffic validation.
 - it explicitly fails closed on evidence drift
 - the next issue is `M262-E002`
 
+## M262 Runnable ARC Closeout Matrix And Runbook (E002)
+
+`M262-E002` closes the current ARC milestone without widening the supported
+slice.
+
+- it consumes `A002/B003/C004/D003/E001`
+- it consumes the dedicated ARC execution-smoke run `m262_e002_arc_closeout`
+- it treats the private `M262-D003` property/runtime probe as the property row
+- it explicitly fails closed on smoke or runbook drift
+- the next issue is `M263-A001`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

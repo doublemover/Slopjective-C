@@ -1,0 +1,8 @@
+{
+  "fixture": "arc_implicit_cleanup_void_positive.objc3",
+  "execution": {
+    "native_compile_args": [
+      "-fobjc-arc"
+    ]
+  }
+}

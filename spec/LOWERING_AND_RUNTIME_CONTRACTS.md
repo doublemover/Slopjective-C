@@ -8391,3 +8391,21 @@ and fails closed if the integrated ARC evidence drifts.
 
 Evidence model:
 `a002-b003-c004-d003-summary-chain`
+
+## M262 runnable ARC closeout matrix and runbook (E002)
+
+Contract id: `objc3c-runnable-arc-closeout/m262-e002-v1`
+
+`M262-E002` closes the supported runnable ARC slice by consuming the
+`M262-A002`, `M262-B003`, `M262-C004`, `M262-D003`, and `M262-E001` proof
+chain plus the canonical ARC-positive execution-smoke rows under the dedicated
+closeout run id.
+
+Matrix model:
+`closeout-matrix-consumes-a002-b003-c004-d003-and-e001-evidence-without-widening-the-supported-runnable-arc-slice`
+
+Smoke model:
+`integrated-arc-fixtures-and-private-property-runtime-probes-prove-supported-cleanup-block-and-property-behavior-through-native-toolchain-and-runtime`
+
+Failure model:
+`fail-closed-on-runnable-arc-closeout-drift-or-runbook-mismatch`

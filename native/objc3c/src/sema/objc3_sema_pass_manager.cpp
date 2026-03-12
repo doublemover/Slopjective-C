@@ -2319,6 +2319,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes this existing
   // source, semantic, lowering, and runtime proof chain and must not regress
   // into parser-only or metadata-only evidence.
+  // M262-E002 runnable-arc-closeout anchor: the closeout matrix consumes this
+  // unchanged proof chain plus integrated smoke instead of broadening parser
+  // or semantic acceptance in lane E.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

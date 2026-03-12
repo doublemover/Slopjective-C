@@ -43,6 +43,9 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes the
   // already-proven ARC source, semantic, lowering, and runtime summaries
   // without widening this scaffold beyond its truthful source-side packet role.
+  // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
+  // tranche by combining those preserved summaries with integrated execution
+  // smoke and operator docs rather than widening lowering behavior here.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

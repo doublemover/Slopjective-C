@@ -823,6 +823,15 @@ inline constexpr const char *kObjc3RunnableArcRuntimeGateNonGoalModel =
 inline constexpr const char *kObjc3RunnableArcRuntimeGateFailClosedModel =
     "fail-closed-on-runnable-arc-runtime-evidence-drift";
 std::string Objc3RunnableArcRuntimeGateSummary();
+inline constexpr const char *kObjc3RunnableArcCloseoutContractId =
+    "objc3c-runnable-arc-closeout/m262-e002-v1";
+inline constexpr const char *kObjc3RunnableArcCloseoutMatrixModel =
+    "closeout-matrix-consumes-a002-b003-c004-d003-and-e001-evidence-without-widening-the-supported-runnable-arc-slice";
+inline constexpr const char *kObjc3RunnableArcCloseoutSmokeModel =
+    "integrated-arc-fixtures-and-private-property-runtime-probes-prove-supported-cleanup-block-and-property-behavior-through-native-toolchain-and-runtime";
+inline constexpr const char *kObjc3RunnableArcCloseoutFailClosedModel =
+    "fail-closed-on-runnable-arc-closeout-drift-or-runbook-mismatch";
+std::string Objc3RunnableArcCloseoutSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

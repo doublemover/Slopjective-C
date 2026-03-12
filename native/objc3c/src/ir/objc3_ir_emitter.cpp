@@ -1539,6 +1539,11 @@ class Objc3IREmitter {
     // runtime proof chain without claiming closeout-matrix coverage yet.
     out << "; runnable_arc_runtime_gate = "
         << Objc3RunnableArcRuntimeGateSummary() << "\n";
+    // M262-E002 runnable-arc-closeout anchor: lane-E consumes the already-live
+    // ARC proof chain plus integrated execution smoke as the closeout surface
+    // without widening the supported ARC semantics or runtime ABI.
+    out << "; runnable_arc_closeout = " << Objc3RunnableArcCloseoutSummary()
+        << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="

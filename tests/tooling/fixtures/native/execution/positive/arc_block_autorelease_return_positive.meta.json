@@ -1,0 +1,8 @@
+{
+  "fixture": "arc_block_autorelease_return_positive.objc3",
+  "execution": {
+    "native_compile_args": [
+      "-fobjc-arc"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+module arc_block_autorelease_return_positive;
+
+fn make(value: id) -> __autoreleasing id {
+  let closure = ^() { return value; };
+  return closure();
+}
+
+fn main() -> i32 {
+  return make(9);
+}
