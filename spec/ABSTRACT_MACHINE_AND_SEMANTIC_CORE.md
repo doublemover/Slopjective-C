@@ -44,6 +44,9 @@ Current implementation note:
 - Typed key-path literals remain truthful source/sema surfaces, and the
   validated single-component subset now lowers natively into retained
   descriptor handles.
+- The current runtime/helper boundary for that subset still stays narrow:
+  optional sends execute through selector lookup plus dispatch, while full
+  typed key-path runtime evaluation remains deferred to later runtime work.
 - Multi-component typed key-path member chains, full typed key-path
   application/runtime behavior, and the broader Part 3 surface remain future
   work.

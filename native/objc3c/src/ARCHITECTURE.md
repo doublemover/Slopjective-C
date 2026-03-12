@@ -8766,6 +8766,23 @@ for the live runtime path:
   assert the canonical live runtime symbol rather than the compatibility shim
 - the compatibility shim remains explicit non-authoritative evidence only
 
+## M265 optional/key-path runtime helper boundary (D001)
+
+`M265-D001` freezes the truthful runtime/helper boundary for the current
+Part 3 executable slice:
+
+- contract id
+  `objc3c-part3-optional-keypath-runtime-helper-contract/m265-d001-v1`
+- published semantic surface
+  `frontend.pipeline.semantic_surface.objc_part3_optional_keypath_runtime_helper_contract`
+- optional sends and optional-member access keep using the public runtime
+  selector lookup / dispatch entrypoints
+- lowering still owns nil short-circuit semantics
+- validated single-component typed key-path sites now publish stable
+  descriptor handles plus retained `objc3.runtime.keypath_descriptors`
+  payloads
+- full runtime key-path evaluation helpers remain deferred to `M265-D002`
+
 ## M256 executable class/protocol/category source closure (A001)
 
 `M256-A001` freezes the first runnable object-model source boundary:

@@ -577,6 +577,8 @@ class Objc3IREmitter {
     }
     out << "; part3_optional_keypath_lowering = "
         << Objc3Part3OptionalKeypathLoweringSummary() << "\n";
+    out << "; part3_optional_keypath_runtime_helper_contract = "
+        << Objc3Part3OptionalKeypathRuntimeHelperContractSummary() << "\n";
     if (!frontend_metadata_.lowering_super_dispatch_method_family_replay_key.empty()) {
       out << "; super_dispatch_method_family_lowering = "
           << frontend_metadata_.lowering_super_dispatch_method_family_replay_key << "\n";
@@ -6699,6 +6701,10 @@ class Objc3IREmitter {
           << "\n";
     }
     if (!typed_keypath_artifacts_.empty()) {
+      // M265-D001 runtime-helper freeze anchor: the emitted descriptor
+      // aggregate plus stable handle ordinals are the current runtime-facing
+      // key-path boundary; full runtime evaluation helpers remain deferred to
+      // the next lane-D issue.
       out << "; typed_keypath_artifact_emission = "
           << "contract=objc3c-part3-typed-keypath-artifact-emission/m265-c003-v1"
           << ";keypath_count=" << typed_keypath_artifacts_.size()

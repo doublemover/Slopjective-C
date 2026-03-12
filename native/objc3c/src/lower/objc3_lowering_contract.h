@@ -2065,7 +2065,23 @@ inline constexpr const char *kObjc3Part3OptionalKeypathLoweringAuthorityModel =
     "part3-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringFailClosedModel =
     "native-lowering-fails-closed-on-lowering-contract-drift-and-on-semantically-unsupported-typed-keypath-shapes";
+inline constexpr const char *kObjc3Part3OptionalKeypathRuntimeHelperContractId =
+    "objc3c-part3-optional-keypath-runtime-helper-contract/m265-d001-v1";
+inline constexpr const char
+    *kObjc3Part3OptionalKeypathRuntimeHelperSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part3_optional_keypath_runtime_helper_contract";
+inline constexpr const char
+    *kObjc3Part3OptionalKeypathRuntimeHelperOptionalModel =
+        "optional-send-and-optional-member-access-sites-use-lowering-owned-nil-short-circuit-plus-public-runtime-selector-lookup-dispatch";
+inline constexpr const char
+    *kObjc3Part3OptionalKeypathRuntimeHelperTypedKeypathModel =
+        "validated-single-component-typed-keypath-sites-publish-stable-descriptor-handles-and-retained-descriptor-sections-while-runtime-evaluation-helpers-remain-a-follow-on-private-runtime-step";
+inline constexpr const char
+    *kObjc3Part3OptionalKeypathRuntimeHelperDiagnosticModel =
+        "unsupported-typed-keypath-shapes-and-non-objc-optional-member-access-fail-closed-before-runtime";
 std::string Objc3Part3OptionalKeypathLoweringSummary();
+std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary();
 std::string Objc3ArcSourceModeBoundarySummary();
 std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);
 std::string Objc3ExecutableMethodBodyBindingSummary();

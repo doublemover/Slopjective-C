@@ -597,6 +597,11 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // module.obj, @llvm.used retention, and retained __objc3_sec_* aggregate
   // symbols. Later archive/link/startup registration work may extend the
   // pipeline, but it may not replace or silently bypass these current anchors.
+  // M265-D001 optional/key-path runtime-helper freeze anchor: the same
+  // llvm-direct object path must preserve the retained keypath descriptor
+  // section and the emitted runtime-link sidecars so the current optional-send
+  // runtime path and typed key-path descriptor-handle boundary stay truthful
+  // until D002 lands full runtime key-path execution helpers.
   // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});

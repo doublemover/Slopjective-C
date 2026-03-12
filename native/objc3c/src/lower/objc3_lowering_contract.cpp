@@ -1208,6 +1208,31 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
+  std::ostringstream out;
+  // M265-D001 runtime-helper freeze anchor: lane-D freezes the truthful
+  // runtime boundary for the already-live optional-send path plus the newly
+  // emitted typed key-path descriptor-handle artifacts without claiming full
+  // runtime key-path evaluation before M265-D002.
+  out << "contract_id=" << kObjc3Part3OptionalKeypathRuntimeHelperContractId
+      << ";surface_path=" << kObjc3Part3OptionalKeypathRuntimeHelperSurfacePath
+      << ";optional_model="
+      << kObjc3Part3OptionalKeypathRuntimeHelperOptionalModel
+      << ";typed_keypath_model="
+      << kObjc3Part3OptionalKeypathRuntimeHelperTypedKeypathModel
+      << ";diagnostic_model="
+      << kObjc3Part3OptionalKeypathRuntimeHelperDiagnosticModel
+      << ";lookup_selector_symbol="
+      << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
+      << ";dispatch_i32_symbol="
+      << kObjc3RuntimeSupportLibraryDispatchI32Symbol
+      << ";keypath_descriptor_section="
+      << kObjc3RuntimeKeypathDescriptorLogicalSection
+      << ";keypath_descriptor_aggregate=__objc3_sec_keypath_descriptors"
+      << ";typed_keypath_runtime_execution_helper_landed=false";
+  return out.str();
+}
+
 std::string Objc3ArcSourceModeBoundarySummary() {
   std::ostringstream out;
   // M262-A001 ARC source-surface/mode-boundary anchor: ownership qualifiers,

@@ -75,6 +75,9 @@ Current implementation status (`M265-C001`):
 - typed key-path literals such as `@keypath(...)` are admitted as parser-owned
   source forms and the validated single-component subset now lowers on the
   native path into retained descriptor handles
+- the current runtime/helper contract for that subset keeps optional sends on
+  the public lookup/dispatch path and keeps unsupported key-path shapes
+  compile-time fail-closed until later runtime work lands
 - class-root key paths such as `@keypath(Person, name)` now fail closed unless
   the named component is a readable property on the root type
 - generic Objective-C method declarations written as `- <T> ...` remain

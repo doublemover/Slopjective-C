@@ -329,6 +329,12 @@ int objc3_runtime_copy_property_entry_for_testing(
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);
+// M265-D001 optional/key-path runtime-helper freeze anchor: the current Part 3
+// runtime boundary does not add a new public helper API. Optional sends remain
+// routed through the public selector lookup/dispatch entrypoints, while the
+// validated typed key-path slice currently exposes retained descriptor handles
+// and sections as the runtime-facing input boundary. Full runtime key-path
+// evaluation helpers remain deferred to M265-D002.
 // M260-C002 ownership runtime hook emission anchor: lowering-generated
 // synthesized accessors target these private runtime helpers so retain/release,
 // autorelease, and weak property paths execute against realized runtime-backed

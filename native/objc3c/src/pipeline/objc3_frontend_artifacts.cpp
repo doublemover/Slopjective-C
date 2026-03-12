@@ -481,6 +481,78 @@ std::string BuildPart3OptionalKeypathLoweringContractJson(
   return out.str();
 }
 
+std::string BuildPart3OptionalKeypathRuntimeHelperContractJson(
+    const Objc3Part3OptionalKeypathLoweringContract &contract,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary &runtime_link_wiring,
+    const std::string &lowering_replay_key) {
+  const bool optional_send_runtime_ready =
+      runtime_link_wiring.ready_for_runtime_library_consumption &&
+      contract.live_optional_lowering_sites >= contract.optional_send_sites;
+  const bool typed_keypath_descriptor_handles_ready =
+      contract.live_typed_keypath_artifact_sites ==
+          contract.typed_keypath_literal_sites &&
+      contract.deferred_typed_keypath_sites == 0;
+  const bool typed_keypath_runtime_execution_helper_landed = false;
+  const bool diagnostic_fallback_ready = true;
+  std::ostringstream replay_key;
+  replay_key << "contract="
+             << kObjc3Part3OptionalKeypathRuntimeHelperContractId
+             << ";lowering_replay=" << lowering_replay_key
+             << ";runtime_link_ready="
+             << (runtime_link_wiring.ready_for_runtime_library_consumption
+                     ? "true"
+                     : "false")
+             << ";optional_send_sites=" << contract.optional_send_sites
+             << ";live_optional_lowering_sites="
+             << contract.live_optional_lowering_sites
+             << ";typed_keypath_literal_sites="
+             << contract.typed_keypath_literal_sites
+             << ";live_typed_keypath_artifact_sites="
+             << contract.live_typed_keypath_artifact_sites;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathRuntimeHelperContractId)
+      << "\",\"source_lowering_contract_id\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringContractId)
+      << "\",\"runtime_link_wiring_contract_id\":\""
+      << EscapeJsonString(kObjc3RuntimeSupportLibraryLinkWiringContractId)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathRuntimeHelperSurfacePath)
+      << "\",\"optional_send_helper_model\":\""
+      << EscapeJsonString(kObjc3Part3OptionalKeypathRuntimeHelperOptionalModel)
+      << "\",\"typed_keypath_helper_model\":\""
+      << EscapeJsonString(
+             kObjc3Part3OptionalKeypathRuntimeHelperTypedKeypathModel)
+      << "\",\"diagnostic_fallback_model\":\""
+      << EscapeJsonString(
+             kObjc3Part3OptionalKeypathRuntimeHelperDiagnosticModel)
+      << "\",\"public_lookup_selector_symbol\":\""
+      << EscapeJsonString(kObjc3RuntimeSupportLibraryLookupSelectorSymbol)
+      << "\",\"public_dispatch_i32_symbol\":\""
+      << EscapeJsonString(kObjc3RuntimeSupportLibraryDispatchI32Symbol)
+      << "\",\"keypath_descriptor_section\":\""
+      << EscapeJsonString(kObjc3RuntimeKeypathDescriptorLogicalSection)
+      << "\",\"keypath_descriptor_aggregate_symbol\":\"__objc3_sec_keypath_descriptors\""
+      << ",\"runtime_library_archive_available\":"
+      << (runtime_link_wiring.runtime_library_archive_available ? "true"
+                                                                : "false")
+      << ",\"runtime_library_consumption_ready\":"
+      << (runtime_link_wiring.ready_for_runtime_library_consumption ? "true"
+                                                                    : "false")
+      << ",\"optional_send_runtime_ready\":"
+      << (optional_send_runtime_ready ? "true" : "false")
+      << ",\"typed_keypath_descriptor_handles_ready\":"
+      << (typed_keypath_descriptor_handles_ready ? "true" : "false")
+      << ",\"typed_keypath_runtime_execution_helper_landed\":"
+      << (typed_keypath_runtime_execution_helper_landed ? "true" : "false")
+      << ",\"diagnostic_fallback_ready\":"
+      << (diagnostic_fallback_ready ? "true" : "false")
+      << ",\"fail_closed\":true"
+      << ",\"replay_key\":\"" << EscapeJsonString(replay_key.str()) << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
     const Objc3Program &program,
     const Objc3ParserContractSnapshot &parser_contract_snapshot,
@@ -14291,20 +14363,29 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << generic_metadata_abi_lowering_contract.contract_violation_sites
            << ",\"replay_key\":\""
            << generic_metadata_abi_lowering_replay_key
-           << "\",\"deterministic_handoff\":"
-           << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
-           << "}"
-           << ",\"objc_part3_optional_keypath_lowering_contract\":"
-           << BuildPart3OptionalKeypathLoweringContractJson(
+             << "\",\"deterministic_handoff\":"
+             << (generic_metadata_abi_lowering_contract.deterministic ? "true" : "false")
+             << "}"
+             << ",\"objc_part3_optional_keypath_lowering_contract\":"
+            << BuildPart3OptionalKeypathLoweringContractJson(
                   part3_optional_keypath_lowering_contract,
                   part3_type_semantic_model_summary,
                   part3_type_semantic_model_summary.replay_key,
                   message_send_selector_lowering_replay_key,
-                  dispatch_abi_marshalling_replay_key,
-                  nil_receiver_semantics_foldability_replay_key,
-                  part3_optional_keypath_lowering_replay_key)
-           << ",\"objc_module_import_graph_lowering_surface\":{\"module_import_graph_sites\":"
-           << module_import_graph_lowering_contract.module_import_graph_sites
+                    dispatch_abi_marshalling_replay_key,
+                    nil_receiver_semantics_foldability_replay_key,
+                    part3_optional_keypath_lowering_replay_key)
+            // M265-D001 runtime-helper freeze anchor: lane-D publishes one
+            // canonical runtime/helper boundary packet above the live lowering
+            // contract and the runtime link wiring surface while full key-path
+            // execution helpers remain deferred to D002.
+            << ",\"objc_part3_optional_keypath_runtime_helper_contract\":"
+            << BuildPart3OptionalKeypathRuntimeHelperContractJson(
+                   part3_optional_keypath_lowering_contract,
+                   runtime_support_library_link_wiring,
+                   part3_optional_keypath_lowering_replay_key)
+             << ",\"objc_module_import_graph_lowering_surface\":{\"module_import_graph_sites\":"
+             << module_import_graph_lowering_contract.module_import_graph_sites
            << ",\"import_edge_candidate_sites\":"
            << module_import_graph_lowering_contract.import_edge_candidate_sites
            << ",\"namespace_segment_sites\":"

@@ -3885,6 +3885,13 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
   return LookupSelectorUnlocked(selector);
 }
 
+// M265-D001 optional/key-path runtime-helper freeze anchor: the live Part 3
+// runtime helper boundary intentionally remains minimal here. Optional sends
+// already execute through objc3_runtime_lookup_selector plus
+// objc3_runtime_dispatch_i32 with lowering-owned nil short-circuit semantics,
+// while validated typed key-path sites currently contribute retained descriptor
+// handles and descriptor sections without claiming full runtime evaluation yet.
+
 // M260-D001 runtime memory-management API freeze anchor: lowered ownership
 // helpers remain private runtime entrypoints reached through IR and runtime
 // probes, while the stable public runtime header stays limited to

@@ -366,6 +366,19 @@ Current fail-closed boundary:
 Published packet:
 
 - `frontend.pipeline.semantic_surface.objc_part3_optional_keypath_lowering_contract`
+- `frontend.pipeline.semantic_surface.objc_part3_optional_keypath_runtime_helper_contract`
+
+Current runtime-helper boundary (`M265-D001`):
+
+- optional sends and optional-member access continue to execute through the
+  public runtime selector lookup and dispatch entrypoints
+- lowering still owns nil short-circuit semantics; the runtime helper boundary
+  does not add a separate optional-send entrypoint
+- validated typed key-path sites now hand runtime-facing stable descriptor
+  handles plus retained `objc3.runtime.keypath_descriptors` payloads to later
+  lane-D work
+- unsupported typed key-path shapes and non-ObjC optional-member access remain
+  compile-time fail-closed diagnostics rather than runtime fallbacks
 
 Recommended lowering contract check:
 
