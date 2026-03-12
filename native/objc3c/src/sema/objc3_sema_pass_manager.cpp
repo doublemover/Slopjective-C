@@ -2249,6 +2249,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       IsEquivalentRetainReleaseOperationSummary(
           result.integration_surface.retain_release_operation_summary,
           result.type_metadata_handoff.retain_release_operation_summary) &&
+      // M262-D001 runtime ARC helper API surface anchor: sema continues to
+      // publish ownership and helper-need summaries only; the concrete helper
+      // ABI itself remains frozen in the runtime/lowering boundary rather than
+      // becoming a semantic contract here.
       result.type_metadata_handoff.retain_release_operation_summary.retain_insertion_sites <=
           result.type_metadata_handoff.retain_release_operation_summary.ownership_qualified_sites +
               result.type_metadata_handoff.retain_release_operation_summary.contract_violation_sites &&

@@ -8304,3 +8304,26 @@ inventory for the runnable ARC slice.
   - no public ARC runtime ABI
   - no cross-module ARC optimization
 - `M262-D001` is the next issue.
+
+## M262 runtime ARC helper API surface (D001)
+
+`M262-D001` freezes the truthful private runtime helper ABI that the current
+ARC lowering slice already consumes.
+
+- canonical contract id:
+  - `objc3c-runtime-arc-helper-api-surface-freeze/m262-d001-v1`
+- canonical runtime/helper models:
+  - `public-runtime-abi-stays-register-lookup-dispatch-while-arc-helper-entrypoints-remain-private-bootstrap-internal-runtime-abi`
+  - `weak-storage-and-current-property-access-remain-served-through-private-runtime-helper-entrypoints-and-runtime-side-tables`
+  - `autorelease-return-and-autoreleasepool-support-remain-private-runtime-helper-behavior-without-public-abi-widening`
+- emitted IR must now carry:
+  - `; runtime_arc_helper_api_surface = ...`
+  - `!objc3.objc_runtime_arc_helper_api_surface`
+- the frozen private helper ABI currently covers:
+  - retain/release/autorelease helpers
+  - current-property strong and weak access helpers
+  - private autoreleasepool push/pop hooks
+- explicit non-goals:
+  - no public ARC runtime header widening
+  - no user-facing ARC helper ABI
+- `M262-D002` is the next issue.

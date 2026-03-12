@@ -10975,6 +10975,10 @@ class Objc3Parser {
     // M255-C002.
     // M255-C002 runtime call ABI generation anchor: parser still does not pick
     // the runtime entrypoint itself. Lowering now cuts normalized instance and
+    // M262-D001 runtime ARC helper API surface anchor: parser-owned ARC and
+    // ownership spelling remains purely descriptive; the private ARC helper
+    // ABI stays a later lowering/runtime concern rather than a source-level
+    // promise here.
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
     // M255-C003.

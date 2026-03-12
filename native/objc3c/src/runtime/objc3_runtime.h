@@ -75,6 +75,9 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // mechanics rather than public runtime ABI. The stable public header must stay
 // at registration, lookup, dispatch, and testing snapshots until later runtime
 // work makes a deliberate widening decision.
+// M262-D001 runtime-arc-helper-api-surface anchor: later ARC-specific runtime
+// helper freezing keeps that same rule in place, including autoreleasepool
+// hooks. No dedicated public ARC helper ABI is published here.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

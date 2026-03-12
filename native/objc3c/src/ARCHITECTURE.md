@@ -10004,6 +10004,28 @@ inventory for the runnable ARC slice.
   - cross-module ARC optimization
 - the next issue is `M262-D001`
 
+## M262 Runtime ARC Helper API Surface (D001)
+
+Lane D now freezes the private runtime helper ABI that the current ARC
+lowering slice already consumes.
+
+- canonical runtime contract:
+  - `objc3c-runtime-arc-helper-api-surface-freeze/m262-d001-v1`
+- lane-D responsibility remains explicit:
+  - the public runtime header still stays registration/lookup/dispatch only
+  - private ARC helper entrypoints remain the canonical runtime-owned lane-D boundary
+- emitted IR now publishes:
+  - `; runtime_arc_helper_api_surface = ...`
+  - `!objc3.objc_runtime_arc_helper_api_surface`
+- the frozen helper surface currently covers:
+  - retain/release/autorelease helpers
+  - current-property and weak-property helper entrypoints
+  - private autoreleasepool push/pop hooks
+- still deferred:
+  - public ARC runtime header widening
+  - user-facing ARC helper ABI
+- the next issue is `M262-D002`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

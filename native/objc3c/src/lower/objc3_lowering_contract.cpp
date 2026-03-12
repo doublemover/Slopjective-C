@@ -1423,6 +1423,40 @@ std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeArcHelperApiSurfaceSummary() {
+  std::ostringstream out;
+  // M262-D001 runtime ARC helper API surface anchor: lane-D now freezes the
+  // private runtime helper ABI that current ARC lowering already consumes so
+  // later runtime implementation work can widen behavior without silently
+  // widening the public runtime header.
+  out << "contract=" << kObjc3RuntimeArcHelperApiSurfaceContractId
+      << ";reference_model=" << kObjc3RuntimeArcHelperApiSurfaceReferenceModel
+      << ";weak_model=" << kObjc3RuntimeArcHelperApiSurfaceWeakModel
+      << ";autoreleasepool_model="
+      << kObjc3RuntimeArcHelperApiSurfaceAutoreleasepoolModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";read_current_property_symbol="
+      << kObjc3RuntimeReadCurrentPropertyI32Symbol
+      << ";write_current_property_symbol="
+      << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+      << ";exchange_current_property_symbol="
+      << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+      << ";load_weak_current_property_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";store_weak_current_property_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+      << ";push_autoreleasepool_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";pop_autoreleasepool_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";fail_closed_model="
+      << kObjc3RuntimeArcHelperApiSurfaceFailClosedModel
+      << ";next_issue=M262-D002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

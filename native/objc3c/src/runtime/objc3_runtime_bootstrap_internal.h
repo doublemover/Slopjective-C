@@ -304,6 +304,9 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 // internal header is the canonical home for lowered ownership helper
 // entrypoints until later runtime work decides whether any part of the memory
 // management surface should become public.
+// M262-D001 runtime-arc-helper-api-surface anchor: the same private header now
+// truthfully freezes the ARC helper ABI consumed by ARC lowering, including
+// weak/current-property helpers plus private autoreleasepool push/pop hooks.
 int objc3_runtime_read_current_property_i32(void);
 void objc3_runtime_write_current_property_i32(int value);
 int objc3_runtime_exchange_current_property_i32(int value);

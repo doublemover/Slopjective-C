@@ -150,6 +150,26 @@ Current implementation status (`M262-C002`):
 - this implementation does not yet claim a generalized local cleanup stack,
   exception-cleanup widening, or cross-module ARC optimization
 
+### B.2.10 Runtime ARC helper API surface (implementation note) {#b-2-10}
+
+Current implementation status (`M262-D001`):
+
+- lane D now freezes one truthful runtime/helper contract:
+  - `objc3c-runtime-arc-helper-api-surface-freeze/m262-d001-v1`
+- private ARC helper entrypoints and autoreleasepool hooks remain internal runtime ABI
+- private ARC helper entrypoints and autoreleasepool hooks remain internal
+  runtime ABI
+- the public runtime header still remains registration, lookup, dispatch, and
+  testing snapshots only
+- the frozen private helper surface covers retain/release/autorelease,
+  current-property access, weak-property access, and private autoreleasepool
+  push/pop hooks
+- emitted IR now carries:
+  - `; runtime_arc_helper_api_surface = ...`
+  - `!objc3.objc_runtime_arc_helper_api_surface = !{...}`
+- this freeze does not yet claim a public ARC runtime helper ABI or any
+  user-facing ARC runtime header widening
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

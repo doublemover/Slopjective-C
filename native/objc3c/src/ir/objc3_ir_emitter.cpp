@@ -1517,6 +1517,12 @@ class Objc3IREmitter {
     // rather than re-deriving cleanup ordering from semantic summaries.
     out << "; arc_block_autorelease_return_lowering = "
         << Objc3ArcBlockAutoreleaseReturnLoweringSummary() << "\n";
+    // M262-D001 runtime ARC helper API surface anchor: publish the private
+    // helper ABI boundary that current ARC lowering already consumes so later
+    // runtime implementation work extends a truthful runtime contract instead
+    // of inferring helper availability from emitted calls alone.
+    out << "; runtime_arc_helper_api_surface = "
+        << Objc3RuntimeArcHelperApiSurfaceSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2801,6 +2807,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_automatic_insertions = !{!80}\n";
     out << "!objc3.objc_arc_cleanup_weak_lifetime_hooks = !{!81}\n";
     out << "!objc3.objc_arc_block_autorelease_return_lowering = !{!82}\n";
+    out << "!objc3.objc_runtime_arc_helper_api_surface = !{!83}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4249,6 +4256,37 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel)
+        << "\"}\n";
+    out << "!83 = !{!\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceReferenceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceWeakModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceAutoreleasepoolModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReadCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeWriteCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeExchangeCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

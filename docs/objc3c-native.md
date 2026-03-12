@@ -1761,6 +1761,46 @@ Recommended M262 lane-C implementation check:
 - `python scripts/check_m262_c004_arc_and_block_interaction_lowering_with_autorelease_return_conventions_core_feature_expansion.py`
 - `M262-D001` is the next issue.
 
+## M262 runtime ARC helper API surface (M262-D001)
+
+`M262-D001` freezes the truthful private runtime helper ABI that the current
+ARC lowering slice already consumes.
+
+Current implementation status (`M262-D001`):
+
+- lane D now freezes one canonical runtime/helper contract:
+  - `objc3c-runtime-arc-helper-api-surface-freeze/m262-d001-v1`
+- the supported `D001` boundary is defined as:
+  - the public runtime header still exposes only registration, lookup,
+    dispatch, and testing snapshots
+  - ARC helper entrypoints remain private to
+    `objc3_runtime_bootstrap_internal.h`
+  - `objc3_runtime_push_autoreleasepool_scope` remains a private helper
+  - private ARC helper entrypoints and autoreleasepool hooks remain internal
+    runtime ABI
+- the frozen helper surface currently covers:
+  - `objc3_runtime_retain_i32`
+  - `objc3_runtime_release_i32`
+  - `objc3_runtime_autorelease_i32`
+  - `objc3_runtime_read_current_property_i32`
+  - `objc3_runtime_write_current_property_i32`
+  - `objc3_runtime_exchange_current_property_i32`
+  - `objc3_runtime_load_weak_current_property_i32`
+  - `objc3_runtime_store_weak_current_property_i32`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+- emitted IR now carries:
+  - `; runtime_arc_helper_api_surface = ...`
+  - `!objc3.objc_runtime_arc_helper_api_surface`
+- still explicitly deferred:
+  - no public ARC runtime header widening
+  - no user-facing ARC helper ABI
+
+Recommended M262 lane-D freeze check:
+
+- `python scripts/check_m262_d001_runtime_arc_helper_api_surface_contract_and_architecture_freeze.py`
+- `M262-D002` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint
