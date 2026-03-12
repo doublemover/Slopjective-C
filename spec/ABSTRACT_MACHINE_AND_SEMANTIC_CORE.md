@@ -466,6 +466,16 @@ M267-A001 source-closure note:
 - runnable error propagation, catch dispatch, and native thrown-error ABI remain
   deferred to later `M267` issues
 
+M267-A002 source-closure note:
+
+- canonical `objc_nserror` / `objc_status_code(...)` declaration markers are now
+  admitted as deterministic frontend/source-only Part 6 surfaces
+- the frontend summary now counts marker sites and required
+  `success` / `error_type` / `mapping` clause sites
+- malformed `objc_status_code(...)` payloads fail closed in the parser
+- runtime status-to-error execution and thrown-error propagation remain deferred
+  to later `M267` issues
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

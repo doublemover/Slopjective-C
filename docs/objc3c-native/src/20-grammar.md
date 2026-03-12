@@ -3280,3 +3280,20 @@ The frontend now freezes one truthful Part 6 source surface in
   validation when both IR and object emission are disabled
 - runnable propagation, `try`, `throw`, `do/catch`, and native error ABI remain
   deferred to later `M267` sema/lowering/runtime issues
+
+## M267 frontend canonical bridge-marker completion
+
+The frontend now accepts the canonical Part 6 declaration markers:
+
+- `__attribute__((objc_nserror))`
+- `__attribute__((objc_status_code(success: ..., error_type: ..., mapping: ...)))`
+
+Current implementation boundary:
+
+- function and Objective-C method declarations normalize these markers into the
+  Part 6 frontend semantic surface
+- the semantic surface now counts canonical `objc_nserror` and
+  `objc_status_code(...)` markers and the required status-code clauses
+- malformed `objc_status_code(...)` payloads fail closed in the parser
+- runtime `try` lowering, bridge temporaries, and status-to-error execution
+  remain deferred to later `M267` issues

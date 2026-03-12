@@ -1,0 +1,21 @@
+module m267_error_bridge_marker_surface;
+
+@protocol Base
+@end
+
+@interface Widget<Base>
+- (BOOL)decodeNSError:(id)payload error:(NSError*)outError __attribute__((objc_nserror));
+@end
+
+@implementation Widget
+- (BOOL)decodeNSError:(id)payload error:(NSError*)outError __attribute__((objc_nserror)) {
+  return true;
+}
+@end
+
+extern fn mapStatus(status: i32) -> NSError;
+extern fn decodeStatus(payload: id, outError: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+
+fn main() -> i32 {
+  return 0;
+}

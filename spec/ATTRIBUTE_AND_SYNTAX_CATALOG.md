@@ -503,6 +503,20 @@ Current implementation status (`M267-A001`):
   constructs in the current native implementation
 - runnable propagation, catch handling, and native error ABI are still deferred
   to later `M267` issues
+
+## M267 current canonical error bridge-marker frontend boundary
+
+Current implementation status (`M267-A002`):
+
+- canonical declaration markers are now admitted on function and Objective-C
+  method declarations:
+  - `__attribute__((objc_nserror))`
+  - `__attribute__((objc_status_code(success: ..., error_type: ..., mapping: ...)))`
+- the frontend Part 6 semantic surface now counts marker sites and required
+  status-code clause sites deterministically
+- malformed `objc_status_code(...)` payloads fail closed in the parser
+- runnable bridge execution, `try` lowering, and native thrown-error ABI remain
+  deferred to later `M267` issues
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

@@ -1360,7 +1360,7 @@ inline constexpr const char *kObjc3Part6ErrorSourceClosureContractId =
 inline constexpr const char *kObjc3Part6ErrorSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part6_error_source_closure";
 inline constexpr const char *kObjc3Part6ErrorSourceClosureSourceModel =
-    "throws-declarations-result-carrier-profiles-and-nserror-bridging-profiles-are-live-frontend-owned-source-surfaces-while-try-throw-and-do-catch-remain-reserved-fail-closed";
+    "throws-declarations-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-try-throw-and-do-catch-remain-reserved-fail-closed";
 inline constexpr const char *kObjc3Part6ErrorSourceClosureFailureModel =
     "try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-part6-sema-lowering-and-runtime-work";
 
@@ -1389,12 +1389,18 @@ struct Objc3FrontendPart6ErrorSourceClosureSummary {
   std::size_t ns_error_bridging_sites = 0;
   std::size_t ns_error_out_parameter_sites = 0;
   std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t objc_nserror_attribute_sites = 0;
+  std::size_t objc_status_code_attribute_sites = 0;
+  std::size_t status_code_success_clause_sites = 0;
+  std::size_t status_code_error_type_clause_sites = 0;
+  std::size_t status_code_mapping_clause_sites = 0;
   std::size_t try_keyword_sites = 0;
   std::size_t throw_keyword_sites = 0;
   std::size_t catch_keyword_sites = 0;
   bool throws_declaration_source_supported = false;
   bool result_carrier_source_supported = false;
   bool ns_error_bridging_source_supported = false;
+  bool error_bridge_marker_source_supported = false;
   bool try_keyword_reserved = false;
   bool throw_keyword_reserved = false;
   bool catch_keyword_reserved = false;
@@ -4553,6 +4559,7 @@ inline bool IsReadyObjc3FrontendPart6ErrorSourceClosureSummary(
          summary.throws_declaration_source_supported &&
          summary.result_carrier_source_supported &&
          summary.ns_error_bridging_source_supported &&
+         summary.error_bridge_marker_source_supported &&
          summary.try_keyword_reserved && summary.throw_keyword_reserved &&
          summary.catch_keyword_reserved && summary.try_fail_closed &&
          summary.throw_fail_closed && summary.do_catch_fail_closed &&

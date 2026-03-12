@@ -446,6 +446,16 @@ std::string BuildPart6ErrorSourceClosureSummaryJson(
       << summary.ns_error_out_parameter_sites
       << ",\"ns_error_bridge_path_sites\":"
       << summary.ns_error_bridge_path_sites
+      << ",\"objc_nserror_attribute_sites\":"
+      << summary.objc_nserror_attribute_sites
+      << ",\"objc_status_code_attribute_sites\":"
+      << summary.objc_status_code_attribute_sites
+      << ",\"status_code_success_clause_sites\":"
+      << summary.status_code_success_clause_sites
+      << ",\"status_code_error_type_clause_sites\":"
+      << summary.status_code_error_type_clause_sites
+      << ",\"status_code_mapping_clause_sites\":"
+      << summary.status_code_mapping_clause_sites
       << ",\"try_keyword_sites\":" << summary.try_keyword_sites
       << ",\"throw_keyword_sites\":" << summary.throw_keyword_sites
       << ",\"catch_keyword_sites\":" << summary.catch_keyword_sites
@@ -455,6 +465,8 @@ std::string BuildPart6ErrorSourceClosureSummaryJson(
       << (summary.result_carrier_source_supported ? "true" : "false")
       << ",\"ns_error_bridging_source_supported\":"
       << (summary.ns_error_bridging_source_supported ? "true" : "false")
+      << ",\"error_bridge_marker_source_supported\":"
+      << (summary.error_bridge_marker_source_supported ? "true" : "false")
       << ",\"try_keyword_reserved\":"
       << (summary.try_keyword_reserved ? "true" : "false")
       << ",\"throw_keyword_reserved\":"

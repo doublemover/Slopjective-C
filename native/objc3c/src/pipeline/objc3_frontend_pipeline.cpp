@@ -4323,6 +4323,11 @@ std::string BuildPart6ErrorSourceClosureReplayKey(
       << ";nserror_sites=" << summary.ns_error_bridging_sites << ":"
       << summary.ns_error_out_parameter_sites << ":"
       << summary.ns_error_bridge_path_sites
+      << ";bridge_marker_sites=" << summary.objc_nserror_attribute_sites << ":"
+      << summary.objc_status_code_attribute_sites << ":"
+      << summary.status_code_success_clause_sites << ":"
+      << summary.status_code_error_type_clause_sites << ":"
+      << summary.status_code_mapping_clause_sites
       << ";reserved_keyword_sites=" << summary.try_keyword_sites << ":"
       << summary.throw_keyword_sites << ":" << summary.catch_keyword_sites
       << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
@@ -4748,6 +4753,17 @@ BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
     summary.ns_error_bridging_sites += fn.ns_error_bridging_sites;
     summary.ns_error_out_parameter_sites += fn.ns_error_out_parameter_sites;
     summary.ns_error_bridge_path_sites += fn.ns_error_bridge_path_sites;
+    summary.objc_nserror_attribute_sites += fn.objc_nserror_attribute_sites;
+    summary.objc_status_code_attribute_sites +=
+        fn.objc_status_code_attribute_sites;
+    summary.status_code_success_clause_sites +=
+        fn.status_code_success_clause_sites;
+    summary.status_code_error_type_clause_sites +=
+        fn.status_code_error_type_clause_sites;
+    summary.status_code_mapping_clause_sites +=
+        fn.status_code_mapping_clause_sites;
+    throws_profiles_normalized =
+        throws_profiles_normalized && fn.error_bridge_marker_profile_is_normalized;
   }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
@@ -4771,12 +4787,26 @@ BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
       summary.ns_error_out_parameter_sites +=
           method.ns_error_out_parameter_sites;
       summary.ns_error_bridge_path_sites += method.ns_error_bridge_path_sites;
+      summary.objc_nserror_attribute_sites +=
+          method.objc_nserror_attribute_sites;
+      summary.objc_status_code_attribute_sites +=
+          method.objc_status_code_attribute_sites;
+      summary.status_code_success_clause_sites +=
+          method.status_code_success_clause_sites;
+      summary.status_code_error_type_clause_sites +=
+          method.status_code_error_type_clause_sites;
+      summary.status_code_mapping_clause_sites +=
+          method.status_code_mapping_clause_sites;
+      throws_profiles_normalized =
+          throws_profiles_normalized &&
+          method.error_bridge_marker_profile_is_normalized;
     }
   }
 
   summary.throws_declaration_source_supported = true;
   summary.result_carrier_source_supported = true;
   summary.ns_error_bridging_source_supported = true;
+  summary.error_bridge_marker_source_supported = true;
   summary.try_keyword_reserved = true;
   summary.throw_keyword_reserved = true;
   summary.catch_keyword_reserved = true;
@@ -4786,6 +4816,12 @@ BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
   summary.deterministic_handoff =
       throws_profiles_normalized && result_profiles_normalized &&
       ns_error_profiles_normalized &&
+      summary.status_code_success_clause_sites <=
+          summary.objc_status_code_attribute_sites &&
+      summary.status_code_error_type_clause_sites <=
+          summary.objc_status_code_attribute_sites &&
+      summary.status_code_mapping_clause_sites <=
+          summary.objc_status_code_attribute_sites &&
       summary.result_success_sites + summary.result_failure_sites <=
           summary.result_like_sites &&
       summary.ns_error_bridge_path_sites <=

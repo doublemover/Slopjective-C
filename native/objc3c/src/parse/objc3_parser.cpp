@@ -6068,6 +6068,25 @@ class Objc3Parser {
     target.ns_error_bridge_boundary_sites = source.ns_error_bridge_boundary_sites;
     target.ns_error_bridging_contract_violation_sites = source.ns_error_bridging_contract_violation_sites;
     target.ns_error_bridging_profile = source.ns_error_bridging_profile;
+    target.objc_nserror_declared = source.objc_nserror_declared;
+    target.objc_status_code_declared = source.objc_status_code_declared;
+    target.error_bridge_marker_profile_is_normalized =
+        source.error_bridge_marker_profile_is_normalized;
+    target.objc_nserror_attribute_sites = source.objc_nserror_attribute_sites;
+    target.objc_status_code_attribute_sites = source.objc_status_code_attribute_sites;
+    target.status_code_success_clause_sites = source.status_code_success_clause_sites;
+    target.status_code_error_type_clause_sites =
+        source.status_code_error_type_clause_sites;
+    target.status_code_mapping_clause_sites = source.status_code_mapping_clause_sites;
+    target.error_bridge_marker_contract_violation_sites =
+        source.error_bridge_marker_contract_violation_sites;
+    target.objc_status_code_success_literal =
+        source.objc_status_code_success_literal;
+    target.objc_status_code_error_type_spelling =
+        source.objc_status_code_error_type_spelling;
+    target.objc_status_code_mapping_symbol =
+        source.objc_status_code_mapping_symbol;
+    target.error_bridge_marker_profile = source.error_bridge_marker_profile;
     target.unwind_cleanup_profile_is_normalized = source.unwind_cleanup_profile_is_normalized;
     target.deterministic_unwind_cleanup_handoff =
         source.deterministic_unwind_cleanup_handoff;
@@ -6307,6 +6326,10 @@ class Objc3Parser {
     return At(TokenKind::Identifier) && Peek().text == "throws";
   }
 
+  bool AtIdentifierText(const char *text) const {
+    return At(TokenKind::Identifier) && Peek().text == text;
+  }
+
   bool ParseOptionalThrowsClause(FunctionDecl &fn) {
     if (!AtThrowsClauseKeyword()) {
       return true;
@@ -6333,6 +6356,220 @@ class Objc3Parser {
     }
     method.throws_declared = true;
     return true;
+  }
+
+  std::string ParseAttributeArgumentText() {
+    std::string text;
+    while (!At(TokenKind::Eof) && !At(TokenKind::Comma) &&
+           !At(TokenKind::RParen)) {
+      text += Advance().text;
+    }
+    return text;
+  }
+
+  template <typename TCallableDecl>
+  bool ParseStatusCodeBridgeAttributePayload(TCallableDecl &decl,
+                                             const Token &attribute_token) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P271",
+          "missing '(' after objc_status_code attribute"));
+      return false;
+    }
+
+    bool saw_success = false;
+    bool saw_error_type = false;
+    bool saw_mapping = false;
+    while (!At(TokenKind::Eof) && !At(TokenKind::RParen)) {
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P272",
+                     "invalid objc_status_code clause label"));
+        return false;
+      }
+      const Token clause = Advance();
+      if (!Match(TokenKind::Colon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P273",
+            "missing ':' after objc_status_code clause label"));
+        return false;
+      }
+      const std::string value_text = ParseAttributeArgumentText();
+      if (value_text.empty()) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P274",
+                     "objc_status_code clause value must not be empty"));
+        return false;
+      }
+
+      if (clause.text == "success") {
+        if (saw_success) {
+          diagnostics_.push_back(MakeDiag(
+              clause.line, clause.column, "O3P275",
+              "duplicate objc_status_code success clause"));
+          return false;
+        }
+        decl.objc_status_code_success_literal = value_text;
+        saw_success = true;
+      } else if (clause.text == "error_type") {
+        if (saw_error_type) {
+          diagnostics_.push_back(MakeDiag(
+              clause.line, clause.column, "O3P276",
+              "duplicate objc_status_code error_type clause"));
+          return false;
+        }
+        decl.objc_status_code_error_type_spelling = value_text;
+        saw_error_type = true;
+      } else if (clause.text == "mapping") {
+        if (saw_mapping) {
+          diagnostics_.push_back(MakeDiag(
+              clause.line, clause.column, "O3P277",
+              "duplicate objc_status_code mapping clause"));
+          return false;
+        }
+        decl.objc_status_code_mapping_symbol = value_text;
+        saw_mapping = true;
+      } else {
+        diagnostics_.push_back(MakeDiag(
+            clause.line, clause.column, "O3P278",
+            "unsupported objc_status_code clause '" + clause.text + "'"));
+        return false;
+      }
+
+      if (At(TokenKind::Comma)) {
+        Advance();
+      } else {
+        break;
+      }
+    }
+
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P279",
+          "missing ')' after objc_status_code attribute payload"));
+      return false;
+    }
+
+    if (!saw_success || !saw_error_type || !saw_mapping) {
+      diagnostics_.push_back(MakeDiag(
+          attribute_token.line, attribute_token.column, "O3P280",
+          "objc_status_code requires success, error_type, and mapping clauses"));
+      return false;
+    }
+
+    decl.objc_status_code_declared = true;
+    return true;
+  }
+
+  template <typename TCallableDecl>
+  bool ParseSingleCallableBridgeAttribute(TCallableDecl &decl) {
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P281",
+                   "invalid callable attribute name"));
+      return false;
+    }
+    const Token attribute_name = Advance();
+    if (attribute_name.text == "objc_nserror") {
+      if (decl.objc_nserror_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P282",
+                     "duplicate objc_nserror attribute"));
+        return false;
+      }
+      decl.objc_nserror_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_status_code") {
+      if (decl.objc_status_code_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P283",
+                     "duplicate objc_status_code attribute"));
+        return false;
+      }
+      return ParseStatusCodeBridgeAttributePayload(decl, attribute_name);
+    }
+
+    diagnostics_.push_back(MakeDiag(
+        attribute_name.line, attribute_name.column, "O3P284",
+        "unsupported callable attribute '" + attribute_name.text + "'"));
+    return false;
+  }
+
+  template <typename TCallableDecl>
+  bool ParseOptionalCallableBridgeAttributes(TCallableDecl &decl) {
+    while (AtIdentifierText("__attribute__")) {
+      Advance();
+      if (!Match(TokenKind::LParen) || !Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P285",
+            "malformed __attribute__ callable annotation"));
+        return false;
+      }
+
+      do {
+        if (!ParseSingleCallableBridgeAttribute(decl)) {
+          return false;
+        }
+      } while (Match(TokenKind::Comma));
+
+      if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P286",
+            "missing '))' after callable attribute list"));
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <typename TCallableDecl>
+  void FinalizeErrorBridgeMarkerProfile(TCallableDecl &decl) {
+    decl.objc_nserror_attribute_sites = decl.objc_nserror_declared ? 1u : 0u;
+    decl.objc_status_code_attribute_sites =
+        decl.objc_status_code_declared ? 1u : 0u;
+    decl.status_code_success_clause_sites =
+        decl.objc_status_code_success_literal.empty() ? 0u : 1u;
+    decl.status_code_error_type_clause_sites =
+        decl.objc_status_code_error_type_spelling.empty() ? 0u : 1u;
+    decl.status_code_mapping_clause_sites =
+        decl.objc_status_code_mapping_symbol.empty() ? 0u : 1u;
+    decl.error_bridge_marker_contract_violation_sites = 0u;
+    if (decl.objc_nserror_declared && decl.objc_status_code_declared) {
+      decl.error_bridge_marker_contract_violation_sites += 1u;
+    }
+    if (decl.objc_status_code_declared &&
+        (decl.status_code_success_clause_sites != 1u ||
+         decl.status_code_error_type_clause_sites != 1u ||
+         decl.status_code_mapping_clause_sites != 1u)) {
+      decl.error_bridge_marker_contract_violation_sites += 1u;
+    }
+    decl.error_bridge_marker_profile = std::string("error-bridge-markers:objc_nserror=") +
+                                       (decl.objc_nserror_declared ? "true" : "false") +
+                                       ";objc_status_code=" +
+                                       (decl.objc_status_code_declared ? "true" : "false") +
+                                       ";success=" + decl.objc_status_code_success_literal +
+                                       ";error_type=" +
+                                       decl.objc_status_code_error_type_spelling +
+                                       ";mapping=" +
+                                       decl.objc_status_code_mapping_symbol +
+                                       ";contract_violation_sites=" +
+                                       std::to_string(
+                                           decl.error_bridge_marker_contract_violation_sites);
+    decl.error_bridge_marker_profile_is_normalized =
+        decl.error_bridge_marker_contract_violation_sites == 0u &&
+        (!decl.objc_status_code_declared ||
+         (decl.status_code_success_clause_sites == 1u &&
+          decl.status_code_error_type_clause_sites == 1u &&
+          decl.status_code_mapping_clause_sites == 1u));
   }
 
   void FinalizeThrowsDeclarationProfile(FunctionDecl &fn, bool has_return_annotation) {
@@ -7507,12 +7744,17 @@ class Objc3Parser {
       return false;
     }
 
+    if (!ParseOptionalCallableBridgeAttributes(method)) {
+      return false;
+    }
+
     if (Match(TokenKind::Semicolon)) {
       method.has_body = false;
       method.body.clear();
       FinalizeThrowsDeclarationProfile(method);
       FinalizeResultLikeProfile(method);
       FinalizeNSErrorBridgingProfile(method);
+      FinalizeErrorBridgeMarkerProfile(method);
       FinalizeUnwindCleanupProfile(method);
       FinalizeErrorDiagnosticsRecoveryProfile(method);
       FinalizeAsyncContinuationProfile(method);
@@ -7547,6 +7789,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(method);
     FinalizeResultLikeProfile(method);
     FinalizeNSErrorBridgingProfile(method);
+    FinalizeErrorBridgeMarkerProfile(method);
     FinalizeUnwindCleanupProfile(method);
     FinalizeErrorDiagnosticsRecoveryProfile(method);
     FinalizeAsyncContinuationProfile(method);
@@ -8191,6 +8434,11 @@ class Objc3Parser {
       return nullptr;
     }
 
+    if (!ParseOptionalCallableBridgeAttributes(*fn)) {
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
       const Token qualifier = Advance();
       const std::string message = qualifier.kind == TokenKind::KwPure
@@ -8206,6 +8454,7 @@ class Objc3Parser {
       FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
       FinalizeResultLikeProfile(*fn);
       FinalizeNSErrorBridgingProfile(*fn);
+      FinalizeErrorBridgeMarkerProfile(*fn);
       FinalizeUnwindCleanupProfile(*fn);
       FinalizeErrorDiagnosticsRecoveryProfile(*fn);
       FinalizeAsyncContinuationProfile(*fn);
@@ -8242,6 +8491,7 @@ class Objc3Parser {
     FinalizeThrowsDeclarationProfile(*fn, has_return_annotation);
     FinalizeResultLikeProfile(*fn);
     FinalizeNSErrorBridgingProfile(*fn);
+    FinalizeErrorBridgeMarkerProfile(*fn);
     FinalizeUnwindCleanupProfile(*fn);
     FinalizeErrorDiagnosticsRecoveryProfile(*fn);
     FinalizeAsyncContinuationProfile(*fn);
