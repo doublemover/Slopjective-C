@@ -48,6 +48,12 @@ std::filesystem::path BuildVersionedConformanceReportArtifactPath(
           kObjc3VersionedConformanceReportLoweringArtifactSuffix);
 }
 
+std::filesystem::path BuildConformancePublicationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".objc3-conformance-publication.json");
+}
+
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
@@ -127,6 +133,14 @@ void WriteVersionedConformanceReportArtifact(
     const std::string &emit_prefix,
     const std::string &artifact_json) {
   WriteText(BuildVersionedConformanceReportArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WriteConformancePublicationArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildConformancePublicationArtifactPath(out_dir, emit_prefix),
             artifact_json);
 }
 

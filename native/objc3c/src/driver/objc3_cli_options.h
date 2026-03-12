@@ -21,6 +21,13 @@ enum class Objc3ArcMode {
   kEnabled,
 };
 
+enum class Objc3ConformanceProfile {
+  kCore,
+  kStrict,
+  kStrictConcurrency,
+  kStrictSystem,
+};
+
 struct Objc3CliOptions {
   std::filesystem::path input;
   std::filesystem::path out_dir = std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
@@ -35,6 +42,8 @@ struct Objc3CliOptions {
   std::uint32_t language_version = 3;
   Objc3CompatMode compat_mode = Objc3CompatMode::kCanonical;
   Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
+  Objc3ConformanceProfile conformance_profile =
+      Objc3ConformanceProfile::kCore;
   bool migration_assist = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1;
   std::vector<std::filesystem::path> imported_runtime_surface_paths;
@@ -43,4 +52,5 @@ struct Objc3CliOptions {
 };
 
 std::string Objc3CliUsage();
+std::string ConformanceProfileName(Objc3ConformanceProfile profile);
 bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::string &error);

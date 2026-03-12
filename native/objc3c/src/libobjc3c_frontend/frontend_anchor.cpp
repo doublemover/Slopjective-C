@@ -571,6 +571,57 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         result->process_exit_code = 2;
         result->success = 0;
         objc3c_frontend_set_error(context, io_error.c_str());
+      } else {
+        std::string conformance_publication_artifact_json;
+        std::string conformance_publication_error;
+        if (!TryBuildObjc3ConformanceReportPublicationArtifact(
+                {.contract_id =
+                     "objc3c-driver-conformance-report-publication/m264-d001-v1",
+                 .schema_id = "objc3c-driver-conformance-publication-v1",
+                 .selected_profile = "core",
+                 .selected_profile_supported = true,
+                 .supported_profile_ids = {"core"},
+                 .rejected_profile_ids = {"strict", "strict-concurrency",
+                                          "strict-system"},
+                 .effective_compatibility_mode =
+                     (frontend_options.compatibility_mode ==
+                              Objc3FrontendCompatibilityMode::kLegacy
+                          ? "legacy"
+                          : "canonical"),
+                 .migration_assist_enabled =
+                     frontend_options.migration_assist,
+                 .publication_model =
+                     "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
+                 .publication_surface_kind = "frontend-c-api",
+                 .fail_closed_diagnostic_model =
+                     "core-profile-live-other-known-profiles-fail-closed-before-publication",
+                 .lowered_report_contract_id =
+                     "objc3c-versioned-conformance-report-lowering/m264-c001-v1",
+                 .runtime_capability_contract_id =
+                     "objc3c-runtime-capability-reporting/m264-c002-v1",
+                 .public_conformance_schema_id =
+                     "objc3-conformance-report/v1",
+                 .report_artifact_relative_path =
+                     (emit_prefix +
+                      kObjc3VersionedConformanceReportLoweringArtifactSuffix)},
+                conformance_publication_artifact_json,
+                conformance_publication_error)) {
+          result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+          result->process_exit_code = 2;
+          result->success = 0;
+          objc3c_frontend_set_error(context,
+                                    conformance_publication_error.c_str());
+        } else {
+          const std::filesystem::path conformance_publication_out =
+              BuildConformancePublicationArtifactPath(out_dir, emit_prefix);
+          if (!WriteTextFile(conformance_publication_out,
+                             conformance_publication_artifact_json, io_error)) {
+            result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+            result->process_exit_code = 2;
+            result->success = 0;
+            objc3c_frontend_set_error(context, io_error.c_str());
+          }
+        }
       }
     }
   }

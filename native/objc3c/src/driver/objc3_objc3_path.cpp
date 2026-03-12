@@ -20,6 +20,12 @@ namespace fs = std::filesystem;
 
 int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   try {
+    if (cli_options.conformance_profile != Objc3ConformanceProfile::kCore) {
+      std::cerr << "unsupported --objc3-conformance-profile selection: "
+                << ConformanceProfileName(cli_options.conformance_profile)
+                << " (current runnable profile is core)\n";
+      return 125;
+    }
     const std::string source = ReadText(cli_options.input);
     const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
     Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
@@ -84,6 +90,43 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         cli_options.out_dir,
         cli_options.emit_prefix,
         artifacts.versioned_conformance_report_artifact_json);
+    std::string conformance_publication_artifact_json;
+    std::string conformance_publication_error;
+    if (!TryBuildObjc3ConformanceReportPublicationArtifact(
+            {.contract_id = "objc3c-driver-conformance-report-publication/m264-d001-v1",
+             .schema_id = "objc3c-driver-conformance-publication-v1",
+             .selected_profile =
+                 ConformanceProfileName(cli_options.conformance_profile),
+             .selected_profile_supported = true,
+             .supported_profile_ids = {"core"},
+             .rejected_profile_ids = {"strict", "strict-concurrency",
+                                      "strict-system"},
+             .effective_compatibility_mode =
+                 (cli_options.compat_mode == Objc3CompatMode::kLegacy
+                      ? "legacy"
+                      : "canonical"),
+             .migration_assist_enabled = cli_options.migration_assist,
+             .publication_model =
+                 "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
+             .publication_surface_kind = "native-cli",
+             .fail_closed_diagnostic_model =
+                 "core-profile-live-other-known-profiles-fail-closed-before-publication",
+             .lowered_report_contract_id =
+                 "objc3c-versioned-conformance-report-lowering/m264-c001-v1",
+             .runtime_capability_contract_id =
+                 "objc3c-runtime-capability-reporting/m264-c002-v1",
+             .public_conformance_schema_id = "objc3-conformance-report/v1",
+             .report_artifact_relative_path =
+                 (cli_options.emit_prefix +
+                  kObjc3VersionedConformanceReportLoweringArtifactSuffix)},
+            conformance_publication_artifact_json,
+            conformance_publication_error)) {
+      std::cerr << conformance_publication_error << "\n";
+      return 125;
+    }
+    WriteConformancePublicationArtifact(cli_options.out_dir,
+                                        cli_options.emit_prefix,
+                                        conformance_publication_artifact_json);
 
     // M251-A003 expands the handoff so manifest projection survives fail-closed
     // later lowering/object gates; native runtime linking remains a later

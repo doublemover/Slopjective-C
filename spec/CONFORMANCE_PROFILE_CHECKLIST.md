@@ -369,6 +369,19 @@ Current required truth:
 - the public report remains replay-stable until a later publication lane owns
   wall-clock stamping
 
+## M264 driver publication contract (implementation note)
+
+The driver/runtime-adjacent publication boundary must also stay explicit:
+
+- native CLI accepts `--objc3-conformance-profile`
+- current live profile is `core`
+- known future profiles `strict`, `strict-concurrency`, and `strict-system`
+  fail closed before publication
+- both driver surfaces publish
+  `module.objc3-conformance-publication.json`
+- the publication artifact points back to the lowered conformance report, the
+  runtime capability report contract, and the public schema
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend

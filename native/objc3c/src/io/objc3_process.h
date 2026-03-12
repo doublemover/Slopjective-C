@@ -193,6 +193,24 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs;
 };
 
+struct Objc3ConformanceReportPublicationArtifactInputs {
+  std::string contract_id;
+  std::string schema_id;
+  std::string selected_profile;
+  bool selected_profile_supported = false;
+  std::vector<std::string> supported_profile_ids;
+  std::vector<std::string> rejected_profile_ids;
+  std::string effective_compatibility_mode;
+  bool migration_assist_enabled = false;
+  std::string publication_model;
+  std::string publication_surface_kind;
+  std::string fail_closed_diagnostic_model;
+  std::string lowered_report_contract_id;
+  std::string runtime_capability_contract_id;
+  std::string public_conformance_schema_id;
+  std::string report_artifact_relative_path;
+};
+
 int RunProcess(const std::string &executable, const std::vector<std::string> &args);
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
@@ -229,4 +247,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
     std::string &plan_json,
     std::string &linker_response_payload,
+    std::string &error);
+bool TryBuildObjc3ConformanceReportPublicationArtifact(
+    const Objc3ConformanceReportPublicationArtifactInputs &inputs,
+    std::string &artifact_json,
     std::string &error);

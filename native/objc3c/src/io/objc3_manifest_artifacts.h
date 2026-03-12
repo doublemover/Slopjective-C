@@ -21,6 +21,9 @@ std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
 std::filesystem::path BuildVersionedConformanceReportArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildConformancePublicationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
@@ -53,6 +56,10 @@ void WriteRuntimeAwareImportModuleArtifact(
     const std::string &emit_prefix,
     const std::string &artifact_json);
 void WriteVersionedConformanceReportArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
+void WriteConformancePublicationArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);

@@ -5204,6 +5204,27 @@ Validation proves:
 - the frontend runner emits the same machine-readable capability payload on the
   manifest-only path
 - the public conformance report stays deterministic for replay and closeout
+
+## Driver publication contract (M264-D001)
+
+`M264-D001` freezes the current driver/publication boundary for truthful
+conformance claim emission.
+
+Current live behavior:
+
+- native CLI accepts `--objc3-conformance-profile`
+- current live profile is `core`
+- non-core profile selections fail closed before publication
+- both the native CLI path and the frontend C API runner write
+  `module.objc3-conformance-publication.json`
+
+The publication artifact records:
+
+- selected profile and whether it is currently supported
+- supported vs rejected profile ids
+- publication surface kind (`native-cli` or `frontend-c-api`)
+- linked lowered/runtime/public conformance contract ids
+- the canonical emitted sidecar path `module.objc3-conformance-report.json`
 - both paths preserve the same truthful runnable/source-only/unsupported claim
   surface
 

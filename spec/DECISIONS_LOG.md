@@ -274,6 +274,32 @@ surface would recreate the over-claim problem `M264` is intended to remove.
 
 ---
 
+## D-022: Driver publication and profile selection stay fail-closed until richer conformance operations land {#decisions-d-022}
+
+**Decision:** The native driver shall expose a conformance profile selection
+surface, but the currently runnable profile remains `core`. Known future
+profiles (`strict`, `strict-concurrency`, `strict-system`) shall fail closed
+before publication, and both active driver surfaces shall publish one
+machine-readable `module.objc3-conformance-publication.json` artifact next to
+the lowered conformance sidecar.
+
+The publication artifact shall record:
+
+- selected profile,
+- supported vs rejected profile ids,
+- publication surface kind,
+- lowered/runtime/public contract ids,
+- the canonical lowered sidecar path.
+
+**Rationale:** Publication needs a truthful operator-facing boundary before the
+later emit/validate/consume operations are added. That boundary must not imply
+that unimplemented profiles are selectable today.
+
+**Spec impact:** [Part 12](#part-12) conformance publication semantics and
+[D](#d) emitted artifact inventory.
+
+---
+
 ## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
 
 **Decision:** Until the native toolchain ships a standalone textual interface

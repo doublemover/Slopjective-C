@@ -1625,3 +1625,68 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   linker_response_payload = response_out.str();
   return true;
 }
+
+bool TryBuildObjc3ConformanceReportPublicationArtifact(
+    const Objc3ConformanceReportPublicationArtifactInputs &inputs,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  // D001 publication remains fail-closed until richer profiles are runnable:
+  // core-profile-live-other-known-profiles-fail-closed-before-publication
+
+  if (inputs.contract_id.empty() || inputs.schema_id.empty() ||
+      inputs.selected_profile.empty() || inputs.supported_profile_ids.empty() ||
+      inputs.rejected_profile_ids.empty() ||
+      inputs.effective_compatibility_mode.empty() ||
+      inputs.publication_model.empty() ||
+      inputs.publication_surface_kind.empty() ||
+      inputs.fail_closed_diagnostic_model.empty() ||
+      inputs.lowered_report_contract_id.empty() ||
+      inputs.runtime_capability_contract_id.empty() ||
+      inputs.public_conformance_schema_id.empty() ||
+      inputs.report_artifact_relative_path.empty()) {
+    error = "conformance report publication artifact inputs are incomplete";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
+      << "\",\n"
+      << "  \"schema_id\": \"" << EscapeJsonString(inputs.schema_id)
+      << "\",\n"
+      << "  \"selected_profile\": \""
+      << EscapeJsonString(inputs.selected_profile) << "\",\n"
+      << "  \"selected_profile_supported\": "
+      << (inputs.selected_profile_supported ? "true" : "false") << ",\n"
+      << "  \"supported_profile_ids\": "
+      << BuildIndentedStringArrayJson(inputs.supported_profile_ids, "    ")
+      << ",\n"
+      << "  \"rejected_profile_ids\": "
+      << BuildIndentedStringArrayJson(inputs.rejected_profile_ids, "    ")
+      << ",\n"
+      << "  \"effective_compatibility_mode\": \""
+      << EscapeJsonString(inputs.effective_compatibility_mode) << "\",\n"
+      << "  \"migration_assist_enabled\": "
+      << (inputs.migration_assist_enabled ? "true" : "false") << ",\n"
+      << "  \"publication_model\": \""
+      << EscapeJsonString(inputs.publication_model) << "\",\n"
+      << "  \"publication_surface_kind\": \""
+      << EscapeJsonString(inputs.publication_surface_kind) << "\",\n"
+      << "  \"fail_closed_diagnostic_model\": \""
+      << EscapeJsonString(inputs.fail_closed_diagnostic_model) << "\",\n"
+      << "  \"lowered_report_contract_id\": \""
+      << EscapeJsonString(inputs.lowered_report_contract_id) << "\",\n"
+      << "  \"runtime_capability_contract_id\": \""
+      << EscapeJsonString(inputs.runtime_capability_contract_id) << "\",\n"
+      << "  \"public_conformance_schema_id\": \""
+      << EscapeJsonString(inputs.public_conformance_schema_id) << "\",\n"
+      << "  \"report_artifact\": \""
+      << EscapeJsonString(inputs.report_artifact_relative_path) << "\",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
