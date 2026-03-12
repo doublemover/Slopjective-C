@@ -2251,8 +2251,11 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.retain_release_operation_summary) &&
       // M262-D001 runtime ARC helper API surface anchor: sema continues to
       // publish ownership and helper-need summaries only; the concrete helper
-      // ABI itself remains frozen in the runtime/lowering boundary rather than
-      // becoming a semantic contract here.
+      // ABI itself remains frozen in the runtime/lowering boundary.
+      // M262-D002 runtime ARC helper implementation anchor: sema continues to
+      // publish ownership and helper-need summaries only, while the supported
+      // property/weak/autorelease-return ARC slice now reaches a live linked
+      // helper/runtime boundary rather than a semantic promise here.
       result.type_metadata_handoff.retain_release_operation_summary.retain_insertion_sites <=
           result.type_metadata_handoff.retain_release_operation_summary.ownership_qualified_sites +
               result.type_metadata_handoff.retain_release_operation_summary.contract_violation_sites &&

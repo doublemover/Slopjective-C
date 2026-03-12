@@ -10026,6 +10026,30 @@ lowering slice already consumes.
   - user-facing ARC helper ABI
 - the next issue is `M262-D002`
 
+## M262 Runtime ARC Helper Runtime Support (D002)
+
+Lane D now proves the private ARC helper ABI from `M262-D001` is a live linked
+runtime capability for the supported ARC property/weak and autorelease-return
+slice.
+
+- canonical runtime-support contract:
+  - `objc3c-runtime-arc-helper-runtime-support/m262-d002-v1`
+- lane-D responsibility remains explicit:
+  - keep the helper ABI private to the bootstrap-internal runtime surface
+  - prove ARC property lowering reaches the weak helper entrypoints
+  - prove ARC autorelease-return programs link against the runtime library and execute
+- emitted IR now publishes:
+  - `; runtime_arc_helper_runtime_support = ...`
+  - `!objc3.objc_runtime_arc_helper_runtime_support`
+- the supported runtime surface currently covers:
+  - retain/release/autorelease helpers
+  - weak current-property helper entrypoints
+  - private autoreleasepool push/pop hooks
+- still deferred:
+  - public ARC runtime header widening
+  - ownership debug instrumentation
+- the next issue is `M262-D003`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

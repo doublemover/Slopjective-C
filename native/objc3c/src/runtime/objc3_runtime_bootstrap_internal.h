@@ -310,6 +310,10 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 int objc3_runtime_read_current_property_i32(void);
 void objc3_runtime_write_current_property_i32(int value);
 int objc3_runtime_exchange_current_property_i32(int value);
+// M262-D002 runtime ARC helper implementation anchor: these helpers are not
+// just a frozen private ABI surface anymore; they are the live runtime-owned
+// entrypoints that the supported ARC property/weak/autorelease-return slice
+// links and executes through.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
 int objc3_runtime_retain_i32(int value);

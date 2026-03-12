@@ -20,6 +20,9 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
     // M262-D001 runtime ARC helper API surface anchor: driver orchestration
     // continues to toggle ARC lowering and runtime linkage without widening
     // the private ARC helper ABI into new CLI-facing surface.
+    // M262-D002 runtime ARC helper implementation anchor: driver orchestration
+    // now proves the private ARC helper ABI is both internal and linked as a
+    // live runtime capability for the supported ARC execution slice.
     // M261-D001 block-runtime API/object-layout freeze anchor: the compilation
     // driver keeps block runtime mechanics behind the native objc3 path only;
     // no extra CLI surface or public runtime ABI routing is introduced here.

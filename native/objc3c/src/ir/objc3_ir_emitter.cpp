@@ -1523,6 +1523,12 @@ class Objc3IREmitter {
     // of inferring helper availability from emitted calls alone.
     out << "; runtime_arc_helper_api_surface = "
         << Objc3RuntimeArcHelperApiSurfaceSummary() << "\n";
+    // M262-D002 runtime ARC helper implementation anchor: publish the live
+    // executable helper-runtime support boundary so later diagnostics or debug
+    // instrumentation work extends a truthful runtime capability rather than
+    // another summary-only marker.
+    out << "; runtime_arc_helper_runtime_support = "
+        << Objc3RuntimeArcHelperRuntimeSupportSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2808,6 +2814,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_cleanup_weak_lifetime_hooks = !{!81}\n";
     out << "!objc3.objc_arc_block_autorelease_return_lowering = !{!82}\n";
     out << "!objc3.objc_runtime_arc_helper_api_surface = !{!83}\n";
+    out << "!objc3.objc_runtime_arc_helper_runtime_support = !{!84}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4287,6 +4294,33 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeArcHelperApiSurfaceFailClosedModel)
+        << "\"}\n";
+    out << "!84 = !{!\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportDependencyModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportWeakModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportAutoreleaseReturnModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportExecutionModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeArcHelperRuntimeSupportFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

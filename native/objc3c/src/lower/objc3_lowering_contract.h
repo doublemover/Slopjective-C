@@ -788,6 +788,19 @@ inline constexpr const char *kObjc3RuntimeArcHelperApiSurfaceAutoreleasepoolMode
 inline constexpr const char *kObjc3RuntimeArcHelperApiSurfaceFailClosedModel =
     "no-public-runtime-arc-helper-api-no-user-facing-arc-runtime-header-widening-yet";
 std::string Objc3RuntimeArcHelperApiSurfaceSummary();
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportContractId =
+    "objc3c-runtime-arc-helper-runtime-support/m262-d002-v1";
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportDependencyModel =
+    "m260-d002-runtime-baseline-plus-m262-c004-lowering-plus-m262-d001-private-helper-surface";
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportWeakModel =
+    "arc-generated-weak-current-property-access-lowers-and-links-through-private-runtime-helper-entrypoints";
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportAutoreleaseReturnModel =
+    "arc-generated-autorelease-return-paths-link-and-execute-through-private-runtime-helper-entrypoints";
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportExecutionModel =
+    "runtime-library-backed-helper-entrypoints-remain-private-but-executable-through-linked-native-arc-programs";
+inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportFailClosedModel =
+    "unsupported-arc-runtime-surfaces-stay-private-fixture-proven-and-fail-closed-outside-the-supported-slice";
+std::string Objc3RuntimeArcHelperRuntimeSupportSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

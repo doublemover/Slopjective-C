@@ -3759,6 +3759,10 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
 // M262-D001 runtime ARC helper API surface anchor: ARC-specific lowering now
 // also depends on this same private helper cluster, including autoreleasepool
 // scope hooks, but the ABI remains bootstrap-internal rather than public.
+// M262-D002 runtime ARC helper implementation anchor: ARC-specific lowering
+// now also depends on this same private helper cluster as a live linked
+// runtime capability for the supported property/weak/autorelease-return slice,
+// while the ABI remains bootstrap-internal rather than public.
 extern "C" int objc3_runtime_read_current_property_i32(void) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||

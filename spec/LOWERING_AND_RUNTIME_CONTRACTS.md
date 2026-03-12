@@ -8327,3 +8327,29 @@ ARC lowering slice already consumes.
   - no public ARC runtime header widening
   - no user-facing ARC helper ABI
 - `M262-D002` is the next issue.
+
+## M262 runtime ARC helper runtime support (D002)
+
+`M262-D002` proves the private ARC helper ABI frozen by `M262-D001` is a live
+runtime-backed capability for the supported ARC property/weak and
+autorelease-return slice.
+
+- canonical contract id:
+  - `objc3c-runtime-arc-helper-runtime-support/m262-d002-v1`
+- canonical runtime-support models:
+  - `m260-d002-runtime-baseline-plus-m262-c004-lowering-plus-m262-d001-private-helper-surface`
+  - `arc-generated-weak-current-property-access-lowers-and-links-through-private-runtime-helper-entrypoints`
+  - `arc-generated-autorelease-return-paths-link-and-execute-through-private-runtime-helper-entrypoints`
+  - `runtime-library-backed-helper-entrypoints-remain-private-but-executable-through-linked-native-arc-programs`
+- emitted IR must now carry:
+  - `; runtime_arc_helper_runtime_support = ...`
+  - `!objc3.objc_runtime_arc_helper_runtime_support`
+- the supported runtime proof must now cover:
+  - ARC property fixtures lowering through weak current-property helpers and
+    emitting object artifacts successfully
+  - ARC autorelease-return fixtures linking against the native runtime library
+    and executing successfully
+- explicit non-goals:
+  - no public ARC helper ABI
+  - no debug or ownership instrumentation hooks yet
+- `M262-D003` is the next issue.

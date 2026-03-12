@@ -170,6 +170,19 @@ Current implementation status (`M262-D001`):
 - this freeze does not yet claim a public ARC runtime helper ABI or any
   user-facing ARC runtime header widening
 
+Current implementation status (`M262-D002`):
+
+- lane D now proves one truthful runtime-support contract:
+  - `objc3c-runtime-arc-helper-runtime-support/m262-d002-v1`
+- private ARC helper entrypoints remain internal runtime ABI, but they are now
+  validated as linked native ARC programs rather than freeze-only markers
+- the supported runtime proof covers:
+  - ARC-generated weak current-property helper lowering
+  - ARC-generated autorelease-return execution through the runtime library
+- emitted IR now carries:
+  - `; runtime_arc_helper_runtime_support = ...`
+  - `!objc3.objc_runtime_arc_helper_runtime_support = !{...}`
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

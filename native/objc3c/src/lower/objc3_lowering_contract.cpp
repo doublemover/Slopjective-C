@@ -1457,6 +1457,36 @@ std::string Objc3RuntimeArcHelperApiSurfaceSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeArcHelperRuntimeSupportSummary() {
+  std::ostringstream out;
+  // M262-D002 runtime ARC helper implementation anchor: lane-D now proves the
+  // private ARC helper ABI from D001 is linked and executable for the
+  // currently supported ARC property/weak/autorelease-return slice.
+  out << "contract=" << kObjc3RuntimeArcHelperRuntimeSupportContractId
+      << ";dependency_model="
+      << kObjc3RuntimeArcHelperRuntimeSupportDependencyModel
+      << ";weak_model=" << kObjc3RuntimeArcHelperRuntimeSupportWeakModel
+      << ";autorelease_return_model="
+      << kObjc3RuntimeArcHelperRuntimeSupportAutoreleaseReturnModel
+      << ";execution_model="
+      << kObjc3RuntimeArcHelperRuntimeSupportExecutionModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";load_weak_current_property_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";store_weak_current_property_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+      << ";push_autoreleasepool_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";pop_autoreleasepool_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";fail_closed_model="
+      << kObjc3RuntimeArcHelperRuntimeSupportFailClosedModel
+      << ";next_issue=M262-D003";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

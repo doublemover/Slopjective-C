@@ -1801,6 +1801,43 @@ Recommended M262 lane-D freeze check:
 - `python scripts/check_m262_d001_runtime_arc_helper_api_surface_contract_and_architecture_freeze.py`
 - `M262-D002` is the next issue.
 
+## M262 runtime ARC helper runtime support (M262-D002)
+
+`M262-D002` proves the private ARC helper ABI frozen by `M262-D001` is a live
+compiler/runtime capability for the supported ARC property/weak and
+autorelease-return slice.
+
+Current implementation status (`M262-D002`):
+
+- lane D now proves one canonical runtime-support contract:
+  - `objc3c-runtime-arc-helper-runtime-support/m262-d002-v1`
+- the supported `D002` boundary is defined as:
+  - ARC-generated weak current-property access lowers through the private
+    runtime helper entrypoints and emits object code successfully
+  - ARC-generated autorelease-return paths lower through the private runtime
+    helper entrypoints, link against the native runtime library, and execute
+    successfully
+  - the helper ABI remains private to the bootstrap-internal runtime surface
+- emitted IR now carries:
+  - `; runtime_arc_helper_runtime_support = ...`
+  - `!objc3.objc_runtime_arc_helper_runtime_support`
+- the live helper/runtime support currently covers:
+  - `objc3_runtime_retain_i32`
+  - `objc3_runtime_release_i32`
+  - `objc3_runtime_autorelease_i32`
+  - `objc3_runtime_load_weak_current_property_i32`
+  - `objc3_runtime_store_weak_current_property_i32`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+- still explicitly deferred:
+  - no public ARC runtime header widening
+  - no debug or ownership instrumentation hooks yet
+
+Recommended M262 lane-D runtime-support check:
+
+- `python scripts/check_m262_d002_arc_helper_entrypoints_weak_operations_and_autorelease_return_runtime_support_core_feature_implementation.py`
+- `M262-D003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint
