@@ -1318,6 +1318,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // publishes the canonical ownership and block-interaction packets; scope
   // cleanup scheduling, weak current-property helper calls, and block-capture
   // lifetime cleanup remain the responsibility of lane-C lowering.
+  // M262-C004 ARC/block autorelease-return lowering anchor: sema still only
+  // publishes return-autorelease and block-escape intent; terminal branch
+  // cleanup ordering and escaping-block/autorelease-return composition remain
+  // the responsibility of lane-C lowering.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,

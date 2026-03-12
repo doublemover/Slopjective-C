@@ -1511,6 +1511,12 @@ class Objc3IREmitter {
     // lowering/runtime surface rather than inferred behavior.
     out << "; arc_cleanup_weak_lifetime_hooks = "
         << Objc3ArcCleanupWeakLifetimeHooksSummary() << "\n";
+    // M262-C004 ARC/block autorelease-return implementation anchor: publish
+    // the supported escaping-block plus autoreleasing-return edge inventory so
+    // later runtime ARC work extends a real branch-stable lowering surface
+    // rather than re-deriving cleanup ordering from semantic summaries.
+    out << "; arc_block_autorelease_return_lowering = "
+        << Objc3ArcBlockAutoreleaseReturnLoweringSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2794,6 +2800,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_interaction_semantics = !{!79}\n";
     out << "!objc3.objc_arc_automatic_insertions = !{!80}\n";
     out << "!objc3.objc_arc_cleanup_weak_lifetime_hooks = !{!81}\n";
+    out << "!objc3.objc_arc_block_autorelease_return_lowering = !{!82}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4215,6 +4222,33 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksFailureModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel)
+        << "\"}\n";
+    out << "!82 = !{!\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePromoteBlockI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeInvokeBlockI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -8355,6 +8389,21 @@ class Objc3IREmitter {
     }
   }
 
+  void EmitPendingBlockDisposeTerminalCleanupToDepth(
+      const FunctionContext &ctx, std::size_t target_depth,
+      std::vector<std::string> &out_lines) const {
+    for (std::size_t index = ctx.pending_block_dispose_calls.size();
+         index > target_depth; --index) {
+      const PendingBlockDisposeCall &call =
+          ctx.pending_block_dispose_calls[index - 1u];
+      if (call.helper_symbol.empty() || call.storage_ptr.empty()) {
+        continue;
+      }
+      out_lines.push_back("  call void @" + call.helper_symbol + "(ptr " +
+                          call.storage_ptr + ")");
+    }
+  }
+
   void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
     if (ctx.scopes.empty()) {
       return;
@@ -8525,6 +8574,29 @@ class Objc3IREmitter {
       ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
                                std::string(kObjc3RuntimeReleaseI32Symbol) +
                                "(i32 " + loaded_value + ")");
+      (void)released_value;
+    }
+  }
+
+  void EmitArcOwnedTerminalCleanupToDepth(const FunctionContext &ctx,
+                                          std::size_t target_depth,
+                                          std::vector<std::string> &out_lines,
+                                          int &temp_counter) const {
+    for (std::size_t index = ctx.arc_owned_cleanup_ptrs.size();
+         index > target_depth; --index) {
+      const std::string &ptr = ctx.arc_owned_cleanup_ptrs[index - 1u];
+      if (ptr.empty()) {
+        continue;
+      }
+      const std::string loaded_value =
+          "%t" + std::to_string(temp_counter++);
+      out_lines.push_back("  " + loaded_value + " = load i32, ptr " + ptr +
+                          ", align 4");
+      const std::string released_value =
+          "%t" + std::to_string(temp_counter++);
+      out_lines.push_back("  " + released_value + " = call i32 @" +
+                          std::string(kObjc3RuntimeReleaseI32Symbol) +
+                          "(i32 " + loaded_value + ")");
       (void)released_value;
     }
   }
@@ -9029,10 +9101,21 @@ class Objc3IREmitter {
     EmitArcOwnedCleanupUnwindToDepth(ctx, 0u);
   }
 
+  void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t autoreleasepool_depth,
+                                  std::size_t pending_block_dispose_depth,
+                                  std::size_t arc_cleanup_depth) const {
+    EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
+    EmitPendingBlockDisposeTerminalCleanupToDepth(
+        ctx, pending_block_dispose_depth, ctx.code_lines);
+    EmitArcOwnedTerminalCleanupToDepth(
+        ctx, arc_cleanup_depth, ctx.code_lines, ctx.temp_counter);
+  }
+
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
     if (ctx.return_type == ValueType::Void) {
-      EmitPendingBlockDisposeHelpers(ctx);
-      EmitArcOwnedCleanupReleases(ctx);
+      EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
+      EmitArcOwnedTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines, ctx.temp_counter);
       ctx.code_lines.push_back("  ret void");
       return;
     }
@@ -9051,8 +9134,9 @@ class Objc3IREmitter {
                                "(i32 " + returned_value + ")");
       returned_value = autoreleased_value;
     }
-    EmitPendingBlockDisposeHelpers(ctx);
-    EmitArcOwnedCleanupReleases(ctx);
+    EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
+    EmitArcOwnedTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines, ctx.temp_counter);
     if (ctx.return_type == ValueType::Bool) {
       const std::string bool_i1 = CoerceI32ToBoolI1(returned_value, ctx);
       ctx.code_lines.push_back("  ret i1 " + bool_i1);
@@ -10051,17 +10135,13 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Break: {
         if (ctx.control_stack.empty()) {
-          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-          EmitPendingBlockDisposeHelpers(ctx);
-          EmitArcOwnedCleanupReleases(ctx);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
-          EmitAutoreleasepoolUnwindToDepth(
-              ctx, ctx.control_stack.back().autoreleasepool_depth);
-          EmitPendingBlockDisposeUnwindToDepth(
-              ctx, ctx.control_stack.back().pending_block_dispose_depth);
-          EmitArcOwnedCleanupUnwindToDepth(
-              ctx, ctx.control_stack.back().arc_cleanup_depth);
+          EmitTerminalCleanupToDepth(
+              ctx, ctx.control_stack.back().autoreleasepool_depth,
+              ctx.control_stack.back().pending_block_dispose_depth,
+              ctx.control_stack.back().arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
         }
         ctx.terminated = true;
@@ -10079,9 +10159,7 @@ class Objc3IREmitter {
           }
         }
         if (continue_label.empty()) {
-          EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-          EmitPendingBlockDisposeHelpers(ctx);
-          EmitArcOwnedCleanupReleases(ctx);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           const ControlLabels &target = *std::find_if(
@@ -10090,10 +10168,9 @@ class Objc3IREmitter {
                 return labels.continue_allowed &&
                        labels.continue_label == continue_label;
               });
-          EmitAutoreleasepoolUnwindToDepth(ctx, continue_autoreleasepool_depth);
-          EmitPendingBlockDisposeUnwindToDepth(
-              ctx, target.pending_block_dispose_depth);
-          EmitArcOwnedCleanupUnwindToDepth(ctx, target.arc_cleanup_depth);
+          EmitTerminalCleanupToDepth(
+              ctx, continue_autoreleasepool_depth,
+              target.pending_block_dispose_depth, target.arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
         ctx.terminated = true;

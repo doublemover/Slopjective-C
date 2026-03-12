@@ -766,6 +766,17 @@ inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksFailureModel =
 inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel =
     "no-general-weak-local-storage-lowering-no-exception-cleanup-stack-no-cross-module-arc-optimization";
 std::string Objc3ArcCleanupWeakLifetimeHooksSummary();
+inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringContractId =
+    "objc3c-arc-block-autorelease-return-lowering/m262-c004-v1";
+inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringSourceModel =
+    "lane-c-extends-the-supported-arc-lowering-slice-with-escaping-block-owned-capture-cleanup-and-autorelease-return-conventions";
+inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringModel =
+    "escaping-block-promotion-and-terminal-branch-cleanup-compose-with-autoreleasing-returns-without-dropping-live-owned-storage-cleanup";
+inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel =
+    "only-supported-escaping-block-owned-capture-and-autorelease-return-edge-cases-materialize-runtime-lowering";
+inline constexpr const char *kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel =
+    "no-general-method-family-arc-automation-no-public-runtime-arc-abi-no-cross-module-arc-optimization";
+std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

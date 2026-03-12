@@ -1728,6 +1728,39 @@ Recommended M262 lane-C implementation check:
 - `python scripts/check_m262_c003_cleanup_emission_weak_load_store_lowering_and_lifetime_extension_hooks_core_feature_implementation.py`
 - `M262-C004` is the next issue.
 
+## M262 ARC and block-interaction lowering with autorelease-return conventions (M262-C004)
+
+`M262-C004` closes the supported escaping-block plus autoreleasing-return edge
+inventory for the runnable ARC slice.
+
+Current implementation status (`M262-C004`):
+
+- lowering now publishes one canonical contract:
+  - `objc3c-arc-block-autorelease-return-lowering/m262-c004-v1`
+- the supported `C004` boundary is defined as:
+  - escaping block promotion through the retained `M261-C004` runtime-hook path
+  - terminal branch cleanup emission that does not consume sibling-branch ARC
+    cleanup state during code generation
+  - autoreleasing returns that still perform the required cleanup/dispose work
+    after block interaction
+- emitted IR now carries:
+  - `; arc_block_autorelease_return_lowering = ...`
+  - `!objc3.objc_arc_block_autorelease_return_lowering`
+- the supported happy path now materially proves:
+  - escaping block promotion remains live under `-fobjc-arc`
+  - branch-local cleanup emission does not erase later cleanup obligations
+  - autoreleasing returns still emit `objc3_runtime_autorelease_i32` and the
+    corresponding release/dispose cleanup on both branch paths
+- still explicitly deferred:
+  - no generalized method-family ARC automation
+  - no public ARC runtime ABI
+  - no cross-module ARC optimization
+
+Recommended M262 lane-C implementation check:
+
+- `python scripts/check_m262_c004_arc_and_block_interaction_lowering_with_autorelease_return_conventions_core_feature_expansion.py`
+- `M262-D001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

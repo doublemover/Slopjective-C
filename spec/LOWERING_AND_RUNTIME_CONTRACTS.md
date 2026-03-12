@@ -8276,3 +8276,31 @@ subset.
   - no exception cleanup stack
   - no cross-module ARC optimization
 - `M262-C004` is the next issue.
+
+## M262 ARC and block-interaction lowering with autorelease-return conventions (C004)
+
+`M262-C004` closes the supported escaping-block plus autoreleasing-return edge
+inventory for the runnable ARC slice.
+
+- canonical contract id:
+  - `objc3c-arc-block-autorelease-return-lowering/m262-c004-v1`
+- supported source inputs now consumed by lane C:
+  - the `M262-C003` cleanup/weak/lifetime boundary
+  - the retained escaping-block runtime-hook lowering from `M261-C004`
+  - explicit return-autorelease packets already published by ARC sema
+- canonical lowering model:
+  - `escaping-block-promotion-and-terminal-branch-cleanup-compose-with-autoreleasing-returns-without-dropping-live-owned-storage-cleanup`
+- emitted IR must now carry:
+  - `; arc_block_autorelease_return_lowering = ...`
+  - `!objc3.objc_arc_block_autorelease_return_lowering = !{...}`
+- supported edge handling now covers:
+  - escaping block promotion under explicit ARC mode
+  - terminal branch cleanup that does not consume sibling-branch ARC cleanup
+    state during code generation
+  - autoreleasing returns that still execute required dispose/release cleanup
+    after block interaction
+- explicit non-goals:
+  - no generalized method-family ARC automation
+  - no public ARC runtime ABI
+  - no cross-module ARC optimization
+- `M262-D001` is the next issue.

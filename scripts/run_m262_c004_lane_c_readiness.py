@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Run the focused M262-C004 lane-C readiness chain."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+from typing import Sequence
+
+ROOT = Path(__file__).resolve().parents[1]
+BUILD_HELPER = ROOT / "scripts" / "ensure_objc3c_native_build.py"
+DEPENDENCY_TOKEN = "M262-A001..A002 + M262-B001..B003 + M262-C001..C003 + M261-C004"
+
+COMMAND_CHAIN: tuple[Sequence[str], ...] = (
+    (sys.executable, "scripts/build_objc3c_native_docs.py"),
+    (
+        sys.executable,
+        str(BUILD_HELPER),
+        "--mode",
+        "fast",
+        "--reason",
+        "m262-c004-lane-c-readiness",
+        "--summary-out",
+        "tmp/reports/m262/M262-C004/ensure_objc3c_native_build_summary.json",
+    ),
+    (sys.executable, "scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m261_c004_heap_promotion_and_escaping_block_runtime_hook_lowering_core_feature_expansion.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_c002_automatic_retain_release_autorelease_insertion_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_c003_cleanup_emission_weak_load_store_lowering_and_lifetime_extension_hooks_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_c004_arc_and_block_interaction_lowering_with_autorelease_return_conventions_core_feature_expansion.py"),
+    (sys.executable, "-m", "pytest", "tests/tooling/test_check_m262_c004_arc_and_block_interaction_lowering_with_autorelease_return_conventions_core_feature_expansion.py", "-q"),
+)
+
+
+def run_chain() -> int:
+    print(f"[info] dependency continuity token: {DEPENDENCY_TOKEN} (lane C now proves escaping-block ARC interaction and autoreleasing-return cleanup stay correct on both branch paths above the retained C003 cleanup boundary)")
+    for command in COMMAND_CHAIN:
+        text = " ".join(command)
+        print(f"[run] {text}")
+        completed = subprocess.run(command, cwd=ROOT, check=False)
+        if completed.returncode != 0:
+            print(f"[error] command failed with exit code {completed.returncode}: {text}", file=sys.stderr)
+            return completed.returncode
+    print("[ok] M262-C004 lane-C readiness chain completed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(run_chain())

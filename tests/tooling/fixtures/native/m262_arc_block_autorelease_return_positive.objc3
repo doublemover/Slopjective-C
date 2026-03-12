@@ -1,0 +1,18 @@
+module m262_arc_block_autorelease_return_positive;
+
+fn materialize(seed: i32) -> i32 {
+  return seed;
+}
+
+fn make(value: id) -> __autoreleasing id {
+  let closure = ^() { return value; };
+  let token = materialize(closure);
+  if (token == 0) {
+    return 0;
+  }
+  return value;
+}
+
+fn main() -> i32 {
+  return make(9);
+}

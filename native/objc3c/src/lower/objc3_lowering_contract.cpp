@@ -1393,6 +1393,36 @@ std::string Objc3ArcCleanupWeakLifetimeHooksSummary() {
   return out.str();
 }
 
+std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary() {
+  std::ostringstream out;
+  // M262-C004 ARC/block autorelease-return lowering anchor: lane-C now closes
+  // the supported escaping-block plus autoreleasing-return edge inventory by
+  // preserving terminal cleanup state across sibling branches while block
+  // promotion/dispose helpers and autorelease-return conventions remain
+  // runtime-lowered together.
+  out << "contract=" << kObjc3ArcBlockAutoreleaseReturnLoweringContractId
+      << ";source_model="
+      << kObjc3ArcBlockAutoreleaseReturnLoweringSourceModel
+      << ";lowering_model="
+      << kObjc3ArcBlockAutoreleaseReturnLoweringModel
+      << ";arc_cleanup_contract="
+      << kObjc3ArcCleanupWeakLifetimeHooksContractId
+      << ";arc_insertion_contract=" << kObjc3ArcAutomaticInsertionContractId
+      << ";block_escape_contract="
+      << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";promote_block_symbol=" << kObjc3RuntimePromoteBlockI32Symbol
+      << ";invoke_block_symbol=" << kObjc3RuntimeInvokeBlockI32Symbol
+      << ";fail_closed_model="
+      << kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel
+      << ";non_goal_model="
+      << kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel
+      << ";next_issue=M262-D001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

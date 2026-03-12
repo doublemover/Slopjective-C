@@ -36,6 +36,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // that lane-C lowering consumes for scope cleanup, weak current-property
   // helper paths, and deterministic lifetime cleanup on scope and implicit
   // exits.
+  // M262-C004 ARC/block autorelease-return implementation anchor: this
+  // scaffold still carries only source-side return-autorelease and block-escape
+  // intent while lane-C owns the actual branch-stable cleanup ordering when
+  // escaping blocks and autoreleasing returns compose.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

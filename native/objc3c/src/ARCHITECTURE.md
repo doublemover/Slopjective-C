@@ -9979,6 +9979,31 @@ and weak/runtime continuity for the currently supported executable subset.
   - cross-module ARC optimization
 - the next issue is `M262-C004`
 
+## M262 ARC And Block-Interaction Lowering With Autorelease-Return Conventions (C004)
+
+Lane C now closes the supported escaping-block plus autoreleasing-return edge
+inventory for the runnable ARC slice.
+
+- canonical lowering contract:
+  - `objc3c-arc-block-autorelease-return-lowering/m262-c004-v1`
+- lane-C implementation remains explicit about responsibility:
+  - sema still owns block-escape and return-autorelease intent
+  - lowering now owns branch-stable terminal cleanup emission when escaping
+    block promotion and autoreleasing returns compose
+- emitted IR now publishes:
+  - `; arc_block_autorelease_return_lowering = ...`
+  - `!objc3.objc_arc_block_autorelease_return_lowering`
+- supported `C004` behavior currently covers:
+  - escaping block promotion under explicit ARC mode
+  - terminal branch cleanup that preserves sibling-branch ARC cleanup state
+  - autoreleasing returns that still execute required dispose/release cleanup
+    after block interaction
+- still deferred:
+  - generalized method-family ARC automation
+  - public ARC runtime ABI
+  - cross-module ARC optimization
+- the next issue is `M262-D001`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

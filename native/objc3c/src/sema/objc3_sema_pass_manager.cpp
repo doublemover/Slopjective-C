@@ -2302,6 +2302,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // continues to be semantic-only while preserving the packets lowering now
   // consumes for scope-exit cleanup ordering, weak current-property helper
   // usage, and deterministic block-capture lifetime cleanup.
+  // M262-C004 ARC/block autorelease-return implementation anchor: the handoff
+  // also preserves the explicit block-escape and return-autorelease packets,
+  // while lane-C owns the branch-stable cleanup ordering needed to combine
+  // them truthfully.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

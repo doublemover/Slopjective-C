@@ -88,6 +88,9 @@ Current implementation status (`M262-B001`):
 - broader method-family ARC semantics remain deferred
 - `M262-C003` now covers the supported cleanup-emission, weak current-property,
   and block-capture lifetime-extension lowering slice for explicit ARC mode
+- `M262-C004` now covers the supported escaping-block plus autoreleasing-return
+  lowering slice where branch-local cleanup and ARC return conventions must
+  compose without manual ownership management
 
 ### B.2.6 ARC inference and lifetime-extension semantics (implementation note) {#b-2-6}
 
@@ -140,6 +143,7 @@ Current implementation status (`M262-C002`):
   - retain-on-entry for ARC-owned runnable parameters
   - release-on-exit for tracked ARC-owned storage
   - autorelease-return lowering for supported autoreleasing returns
+  - branch-local cleanup and ARC return conventions must compose without manual ownership management
 - emitted IR now carries:
   - `; arc_automatic_insertions = ...`
   - `!objc3.objc_arc_automatic_insertions = !{...}`
