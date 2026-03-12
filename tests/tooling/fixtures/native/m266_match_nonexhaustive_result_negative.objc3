@@ -1,0 +1,12 @@
+module m266MatchNonExhaustiveResultNegative;
+
+fn classify(token: id) -> i32 {
+  match (token) {
+    case .Ok(let value): {
+      value;
+      return 1;
+    }
+  }
+
+  return 2;
+}

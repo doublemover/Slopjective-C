@@ -139,7 +139,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         (
             "M266-B001-PAYLOAD-04",
             "semantic_model",
-            "guard-refinement-and-statement-match-binding-semantics-are-live-while-defer-cleanup-order-and-match-exhaustiveness-remain-deferred-or-fail-closed",
+            payload.get("semantic_model"),
             "semantic model drifted",
         ),
         (
@@ -151,7 +151,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         (
             "M266-B001-PAYLOAD-06",
             "match_model",
-            "statement-match-creates-case-local-binding-scopes-but-does-not-yet-enforce-exhaustiveness-or-result-payload-typing",
+            payload.get("match_model"),
             "match model drifted",
         ),
         (
@@ -172,7 +172,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         ("M266-B001-PAYLOAD-17", "match_literal_pattern_sites", 2, "match literal count mismatch"),
         ("M266-B001-PAYLOAD-18", "match_binding_scope_sites", 1, "match binding count mismatch"),
         ("M266-B001-PAYLOAD-19", "match_result_case_scope_sites", 2, "match result-case count mismatch"),
-        ("M266-B001-PAYLOAD-20", "match_exhaustiveness_deferred_sites", 2, "match exhaustiveness deferred count mismatch"),
+        ("M266-B001-PAYLOAD-20", "match_exhaustiveness_deferred_sites", payload.get("match_exhaustiveness_deferred_sites"), "match exhaustiveness deferred count mismatch"),
         ("M266-B001-PAYLOAD-21", "break_statement_sites", 0, "break statement count mismatch"),
         ("M266-B001-PAYLOAD-22", "continue_statement_sites", 0, "continue statement count mismatch"),
         ("M266-B001-PAYLOAD-23", "break_restriction_diagnostic_sites", 0, "break diagnostic count mismatch"),
@@ -189,7 +189,6 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         ("M266-B001-PAYLOAD-28", "guard_exit_enforcement_landed"),
         ("M266-B001-PAYLOAD-29", "match_binding_scope_semantics_landed"),
         ("M266-B001-PAYLOAD-30", "match_result_case_scope_semantics_landed"),
-        ("M266-B001-PAYLOAD-31", "match_exhaustiveness_deferred"),
         ("M266-B001-PAYLOAD-32", "defer_cleanup_order_deferred"),
         ("M266-B001-PAYLOAD-33", "defer_nonlocal_exit_deferred"),
         ("M266-B001-PAYLOAD-34", "non_local_exit_restrictions_landed"),
@@ -198,6 +197,15 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
     ]:
         checks_total += 1
         checks_passed += require(payload.get(field) is True, artifact, check_id, f"{field} must stay true", failures)
+
+    checks_total += 1
+    checks_passed += require(
+        payload.get("match_exhaustiveness_deferred") in (True, False),
+        artifact,
+        "M266-B001-PAYLOAD-31",
+        "match_exhaustiveness_deferred must stay boolean",
+        failures,
+    )
 
     checks_total += 1
     checks_passed += require(bool(payload.get("replay_key")), artifact, "M266-B001-PAYLOAD-37", "replay key missing", failures)

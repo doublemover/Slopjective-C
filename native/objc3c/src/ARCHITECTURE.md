@@ -35,7 +35,10 @@ Current-state note:
   (`frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`)
   so guard refinement, guard else-exit enforcement, case-local match binding
   scopes, and loop-control legality are recorded as live semantics while defer
-  cleanup ordering and match exhaustiveness remain explicit deferred truths.
+  cleanup ordering remains an explicit deferred truth.
+- `M266-B002` upgrades that packet with live exhaustiveness semantics for the
+  admitted `match` slice so bool/result-case completeness and catch-all
+  completeness are enforced in sema rather than described only in contracts.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.

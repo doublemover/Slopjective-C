@@ -499,6 +499,14 @@ std::string BuildPart5ControlFlowSemanticModelSummaryJson(
       << summary.match_binding_scope_sites
       << ",\"match_result_case_scope_sites\":"
       << summary.match_result_case_scope_sites
+      << ",\"match_exhaustive_statement_sites\":"
+      << summary.match_exhaustive_statement_sites
+      << ",\"match_bool_exhaustive_sites\":"
+      << summary.match_bool_exhaustive_sites
+      << ",\"match_result_case_exhaustive_sites\":"
+      << summary.match_result_case_exhaustive_sites
+      << ",\"match_non_exhaustive_diagnostic_sites\":"
+      << summary.match_non_exhaustive_diagnostic_sites
       << ",\"match_exhaustiveness_deferred_sites\":"
       << summary.match_exhaustiveness_deferred_sites
       << ",\"break_statement_sites\":" << summary.break_statement_sites
@@ -518,6 +526,8 @@ std::string BuildPart5ControlFlowSemanticModelSummaryJson(
       << (summary.match_binding_scope_semantics_landed ? "true" : "false")
       << ",\"match_result_case_scope_semantics_landed\":"
       << (summary.match_result_case_scope_semantics_landed ? "true" : "false")
+      << ",\"match_exhaustiveness_semantics_landed\":"
+      << (summary.match_exhaustiveness_semantics_landed ? "true" : "false")
       << ",\"match_exhaustiveness_deferred\":"
       << (summary.match_exhaustiveness_deferred ? "true" : "false")
       << ",\"defer_cleanup_order_deferred\":"

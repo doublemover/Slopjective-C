@@ -1,0 +1,31 @@
+module m266GuardMatchExhaustivenessPositive;
+
+fn classify(maybeValue: id?, token: id, flag: bool) -> i32 {
+  guard let ready = maybeValue, flag else {
+    return 7;
+  }
+
+  match (flag) {
+    case true: {
+      ready;
+    }
+    case false: {
+      return 10;
+    }
+  }
+
+  match (token) {
+    case .Ok(let value): {
+      value;
+      return 20;
+    }
+    case .Err(let error): {
+      error;
+      return 21;
+    }
+  }
+}
+
+fn main(maybeValue: id?, token: id, flag: bool) -> i32 {
+  return classify(maybeValue, token, flag);
+}

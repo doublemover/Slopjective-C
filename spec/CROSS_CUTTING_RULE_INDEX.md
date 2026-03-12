@@ -20,9 +20,16 @@ Current Part 5 semantic-model note:
   `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
   now freezes the current live control-flow legality surface.
 - Guard refinement, guard else-exit enforcement, statement-match binding scope,
-  result-case binding scope, and `break` / `continue` legality are live.
-- `defer` cleanup ordering and `match` exhaustiveness remain explicit deferred
-  semantics rather than implied implementation claims.
+  result-case binding scope, live bool/result-case exhaustiveness, and
+  `break` / `continue` legality are live.
+- `defer` cleanup ordering remains explicit deferred semantics rather than an
+  implied implementation claim.
+
+Current Part 5 exhaustiveness note:
+
+- admitted `match` statements must now be exhaustive for the supported surface
+- catch-all, `true` + `false`, and `.Ok(...)` + `.Err(...)` are currently the
+  live exhaustive forms
 
 ## Scope-exit and `defer` rules
 

@@ -393,7 +393,14 @@ M266-B001 semantic model note:
 - `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
   now records the truthful sema boundary for Part 5.
 - live today: guard refinement, guard else-exit enforcement, statement-match
-  binding scopes, result-case binding scopes, and `break` / `continue`
-  legality.
-- deferred today: `defer` cleanup ordering, `defer`-mediated non-local exit,
-  and `match` exhaustiveness.
+  binding scopes, result-case binding scopes, live bool/result-case
+  exhaustiveness, and `break` / `continue` legality.
+- deferred today: `defer` cleanup ordering and `defer`-mediated non-local
+  exit.
+
+M266-B002 implementation note:
+
+- admitted `match` statements now fail closed unless they are exhaustive for
+  the supported surface.
+- currently supported exhaustive forms are catch-all branches, `true` plus
+  `false`, and `.Ok(...)` plus `.Err(...)`.

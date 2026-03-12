@@ -4958,6 +4958,50 @@ static bool StatementDefinitelyExitsScope(const Stmt *stmt) {
   return false;
 }
 
+struct MatchExhaustivenessInfo {
+  bool exhaustive = false;
+  bool bool_exhaustive = false;
+  bool result_case_exhaustive = false;
+};
+
+static bool IsMatchCatchAllPattern(const SwitchCase &case_stmt) {
+  return case_stmt.is_default ||
+         case_stmt.match_pattern_kind == MatchPatternKind::Wildcard ||
+         case_stmt.match_pattern_kind == MatchPatternKind::Binding;
+}
+
+static MatchExhaustivenessInfo ClassifyMatchExhaustiveness(
+    const SwitchStmt &switch_stmt) {
+  MatchExhaustivenessInfo info;
+  bool saw_true = false;
+  bool saw_false = false;
+  bool saw_ok = false;
+  bool saw_err = false;
+  for (const auto &case_stmt : switch_stmt.cases) {
+    if (IsMatchCatchAllPattern(case_stmt)) {
+      info.exhaustive = true;
+      return info;
+    }
+    if (case_stmt.match_pattern_kind == MatchPatternKind::LiteralBool) {
+      if (case_stmt.value == 0) {
+        saw_false = true;
+      } else {
+        saw_true = true;
+      }
+    } else if (case_stmt.match_pattern_kind == MatchPatternKind::ResultCase) {
+      if (case_stmt.match_result_case_name == "Ok") {
+        saw_ok = true;
+      } else if (case_stmt.match_result_case_name == "Err") {
+        saw_err = true;
+      }
+    }
+  }
+  info.bool_exhaustive = saw_true && saw_false;
+  info.result_case_exhaustive = saw_ok && saw_err;
+  info.exhaustive = info.bool_exhaustive || info.result_case_exhaustive;
+  return info;
+}
+
 struct BranchNonnullRefinement {
   std::string symbol_name;
   bool refine_then = false;
@@ -5341,6 +5385,13 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
           switch_stmt->condition.get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
       if (switch_stmt->match_surface_enabled) {
+        const MatchExhaustivenessInfo exhaustiveness =
+            ClassifyMatchExhaustiveness(*switch_stmt);
+        if (!exhaustiveness.exhaustive) {
+          diagnostics.push_back(MakeDiag(
+              switch_stmt->line, switch_stmt->column, "O3S206",
+              "type mismatch: match statement must be exhaustive for the admitted pattern surface"));
+        }
         for (const auto &case_stmt : switch_stmt->cases) {
           scopes.push_back({});
           if ((case_stmt.match_pattern_kind == MatchPatternKind::Binding ||
@@ -5899,7 +5950,19 @@ static void CollectPart5ControlFlowSemanticStmtSites(
       const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
       if (switch_stmt->match_surface_enabled) {
         ++summary.match_statement_semantic_sites;
-        ++summary.match_exhaustiveness_deferred_sites;
+        const MatchExhaustivenessInfo exhaustiveness =
+            ClassifyMatchExhaustiveness(*switch_stmt);
+        if (exhaustiveness.exhaustive) {
+          ++summary.match_exhaustive_statement_sites;
+        } else {
+          ++summary.match_non_exhaustive_diagnostic_sites;
+        }
+        if (exhaustiveness.bool_exhaustive) {
+          ++summary.match_bool_exhaustive_sites;
+        }
+        if (exhaustiveness.result_case_exhaustive) {
+          ++summary.match_result_case_exhaustive_sites;
+        }
         for (const auto &case_stmt : switch_stmt->cases) {
           if (case_stmt.is_default) {
             ++summary.match_default_pattern_sites;
@@ -6008,9 +6071,12 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
   summary.match_result_case_scope_semantics_landed =
       summary.match_result_case_scope_sites <=
       summary.match_statement_semantic_sites;
+  summary.match_exhaustiveness_semantics_landed =
+      summary.match_statement_semantic_sites ==
+      summary.match_exhaustive_statement_sites +
+          summary.match_non_exhaustive_diagnostic_sites;
   summary.match_exhaustiveness_deferred =
-      summary.match_exhaustiveness_deferred_sites ==
-      summary.match_statement_semantic_sites;
+      summary.match_exhaustiveness_deferred_sites != 0;
   summary.defer_cleanup_order_deferred = true;
   summary.defer_nonlocal_exit_deferred = true;
   summary.non_local_exit_restrictions_landed =
@@ -6035,7 +6101,13 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
           summary.match_statement_semantic_sites &&
       summary.match_result_case_scope_sites <=
           summary.match_statement_semantic_sites &&
-      summary.match_exhaustiveness_deferred &&
+      summary.match_exhaustive_statement_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_non_exhaustive_diagnostic_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_exhaustiveness_deferred_sites == 0 &&
+      summary.match_exhaustiveness_semantics_landed &&
+      !summary.match_exhaustiveness_deferred &&
       summary.non_local_exit_restrictions_landed &&
       summary.guard_refinement_semantics_landed &&
       summary.guard_exit_enforcement_landed &&
@@ -6064,6 +6136,12 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
       << ";match-bindings=" << summary.match_binding_scope_sites
       << ";match-result-bindings="
       << summary.match_result_case_scope_sites
+      << ";match-exhaustive=" << summary.match_exhaustive_statement_sites
+      << ";match-bool-exhaustive=" << summary.match_bool_exhaustive_sites
+      << ";match-result-exhaustive="
+      << summary.match_result_case_exhaustive_sites
+      << ";match-nonexhaustive-diagnostics="
+      << summary.match_non_exhaustive_diagnostic_sites
       << ";match-exhaustiveness-deferred="
       << summary.match_exhaustiveness_deferred_sites
       << ";break-sites=" << summary.break_statement_sites

@@ -318,11 +318,11 @@ inline constexpr const char *kObjc3Part5ControlFlowSemanticModelContractId =
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelRule =
-    "guard-refinement-and-statement-match-binding-semantics-are-live-while-defer-cleanup-order-and-match-exhaustiveness-remain-deferred-or-fail-closed";
+    "guard-refinement-and-statement-match-binding-plus-exhaustiveness-semantics-are-live-while-defer-cleanup-order-remains-deferred-or-fail-closed";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelDeferRule =
     "defer-cleanup-order-and-defer-mediated-nonlocal-exit-remain-frontloaded-fail-closed-until-later-m266-lowering-and-runtime-work";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelMatchRule =
-    "statement-match-creates-case-local-binding-scopes-but-does-not-yet-enforce-exhaustiveness-or-result-payload-typing";
+    "statement-match-enforces-catch-all-bool-and-result-case-exhaustiveness-with-case-local-binding-scopes-while-result-payload-typing-remains-deferred";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelExitRule =
     "break-and-continue-restrictions-are-live-while-defer-mediated-nonlocal-exit-semantics-remain-deferred";
 
@@ -347,6 +347,10 @@ struct Objc3Part5ControlFlowSemanticModelSummary {
   std::size_t match_literal_pattern_sites = 0;
   std::size_t match_binding_scope_sites = 0;
   std::size_t match_result_case_scope_sites = 0;
+  std::size_t match_exhaustive_statement_sites = 0;
+  std::size_t match_bool_exhaustive_sites = 0;
+  std::size_t match_result_case_exhaustive_sites = 0;
+  std::size_t match_non_exhaustive_diagnostic_sites = 0;
   std::size_t match_exhaustiveness_deferred_sites = 0;
   std::size_t break_statement_sites = 0;
   std::size_t continue_statement_sites = 0;
@@ -357,6 +361,7 @@ struct Objc3Part5ControlFlowSemanticModelSummary {
   bool guard_exit_enforcement_landed = false;
   bool match_binding_scope_semantics_landed = false;
   bool match_result_case_scope_semantics_landed = false;
+  bool match_exhaustiveness_semantics_landed = false;
   bool match_exhaustiveness_deferred = false;
   bool defer_cleanup_order_deferred = false;
   bool defer_nonlocal_exit_deferred = false;
@@ -379,7 +384,8 @@ inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
          summary.guard_exit_enforcement_landed &&
          summary.match_binding_scope_semantics_landed &&
          summary.match_result_case_scope_semantics_landed &&
-         summary.match_exhaustiveness_deferred &&
+         summary.match_exhaustiveness_semantics_landed &&
+         !summary.match_exhaustiveness_deferred &&
          summary.defer_cleanup_order_deferred &&
          summary.defer_nonlocal_exit_deferred &&
          summary.non_local_exit_restrictions_landed &&

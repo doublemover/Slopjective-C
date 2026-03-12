@@ -1,0 +1,11 @@
+module m266MatchNonExhaustiveBoolNegative;
+
+fn classify(flag: bool) -> i32 {
+  match (flag) {
+    case true: {
+      return 1;
+    }
+  }
+
+  return 2;
+}

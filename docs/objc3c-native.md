@@ -469,11 +469,11 @@ at `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`.
   - fail-closed `guard ... else` scope-exit enforcement
   - statement-form `match` case-local binding scopes
   - result-case pattern case-local binding scopes
+  - live bool/result-case exhaustiveness plus catch-all exhaustiveness
   - `break` / `continue` legality restrictions
 - still deferred today:
   - `defer` cleanup ordering semantics
   - `defer`-mediated non-local exit semantics
-  - `match` exhaustiveness enforcement
   - result payload typing beyond the current binding-scope surface
 
 Recommended semantic contract check:
