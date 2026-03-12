@@ -1548,6 +1548,7 @@ the `B002` inference baseline.
 Recommended M262 lane-B expansion check:
 
 - `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
+- `M262-C001` is the next issue.
 
 ## M262 ARC lowering ABI and cleanup model (M262-C001)
 

@@ -9899,6 +9899,7 @@ baseline.
   ARC retain/release accounting
 - emitted IR now publishes the `arc_interaction_semantics` comment and
   `!objc3.objc_arc_interaction_semantics`
+- the next issue is `M262-C001`
 
 ## M262 ARC Lowering ABI And Cleanup Model (C001)
 

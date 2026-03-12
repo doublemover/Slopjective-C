@@ -3,44 +3,46 @@
 Contract ID: `objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1`
 Status: Accepted
 Issue: `#7199`
-Scope: M262 lane-C freeze of the current ARC lowering ABI and cleanup boundary that already exists in the native pipeline.
+Scope: M262 lane-C freeze of the current ARC lowering ABI and cleanup boundary for the supported runnable slice.
 
 ## Objective
 
-Freeze the current ARC lowering ABI/cleanup boundary so later retain/release insertion, cleanup emission, weak lowering, and autorelease-return work extend one explicit contract instead of inferring it from older semantic packets.
+Freeze the current ARC lowering ABI and cleanup boundary that lane C already depends on. The compiler currently publishes ARC semantic packets, unwind-cleanup accounting, and private runtime helper entrypoints into emitted IR, but it does not yet perform generalized ARC cleanup insertion or broader ARC automation. This issue makes that boundary explicit so later implementation can widen it deliberately.
 
 ## Required Invariants
 
-1. `lower/objc3_lowering_contract.h` remains the canonical declaration point for:
+1. `native/objc3c/src/lower/objc3_lowering_contract.h` remains the canonical declaration point for:
    - `objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1`
-   - ABI model `owned-value-lowering-targets-private-runtime-retain-release-autorelease-and-weak-helper-entrypoints-without-public-runtime-abi-expansion`
-   - cleanup model `cleanup-scheduling-remains-explicit-summary-and-helper-boundary-only-until-m262-c002`
-   - fail-closed model `no-implicit-cleanup-scope-insertion-no-helper-rebinding-no-public-runtime-abi-widening-before-later-lane-c-runtime-work`
-2. `lower/objc3_lowering_contract.cpp` publishes one deterministic summary for the ARC lowering ABI/cleanup boundary.
-3. `sema/objc3_semantic_passes.cpp`, `sema/objc3_sema_pass_manager.cpp`, and `pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` remain explicit that sema/scaffold own semantic ARC packets only and do not claim cleanup scheduling or helper-call placement.
-4. `ir/objc3_ir_emitter.cpp` publishes the boundary directly into emitted IR through `; arc_lowering_abi_cleanup_model = ...`.
-5. The frozen helper boundary remains explicit and private/runtime-internal:
+   - abi model `private-runtime-helper-call-boundary-over-retain-release-autorelease-weak-property-and-block-helpers`
+   - cleanup model `helper-call-plus-autoreleasepool-scope-lowering-without-general-cleanup-stack-or-return-slot-optimization`
+   - fail-closed model `unsupported-ownership-qualified-signatures-and-generalized-arc-cleanups-remain-fail-closed`
+   - non-goal model `no-full-arc-automation-no-exception-cleanup-widening-no-objc-runtime-abi-parity-claim`.
+2. `native/objc3c/src/lower/objc3_lowering_contract.cpp` publishes one deterministic summary for the current ARC lowering ABI and cleanup boundary.
+3. `native/objc3c/src/sema/objc3_semantic_passes.cpp` remains explicit that sema owns ARC legality, inferred lifetime packets, synthesized property ownership packets, and interaction semantics, but not lowering helper placement or cleanup scheduling.
+4. `native/objc3c/src/sema/objc3_sema_pass_manager.cpp` remains explicit that the ARC handoff preserves semantic packets and unwind-cleanup accounting without claiming a completed cleanup-insertion pipeline.
+5. `native/objc3c/src/pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h` remains explicit that the scaffold is the source-side ownership/ARC replay surface and not the cleanup implementation itself.
+6. `native/objc3c/src/ir/objc3_ir_emitter.cpp` publishes the boundary directly into emitted IR through `; arc_lowering_abi_cleanup_model = ...`.
+7. The current helper boundary remains private/runtime-internal and explicitly names:
    - `objc3_runtime_retain_i32`
    - `objc3_runtime_release_i32`
    - `objc3_runtime_autorelease_i32`
    - `objc3_runtime_load_weak_current_property_i32`
    - `objc3_runtime_store_weak_current_property_i32`
    - `objc3_runtime_push_autoreleasepool_scope`
-   - `objc3_runtime_pop_autoreleasepool_scope`
+   - `objc3_runtime_pop_autoreleasepool_scope`.
 
 ## Dynamic Coverage
 
-1. Native compile probe over `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3` proves emitted IR carries the new lowering-boundary line and still references the current retain/release/weak helper surface.
-2. Native compile probe over `tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3` proves emitted IR carries the same boundary and the current autorelease helper boundary.
+1. Native compile probe over `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3` proves emitted IR carries the new boundary line, retains the private retain/release/autorelease helper ABI, and keeps block copy/dispose helper ownership calls inside a non-empty `module.obj`.
+2. Native compile probe over `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3` proves emitted IR carries the same boundary line and retains the weak property plus autorelease helper ABI inside a non-empty `module.obj`.
 
 ## Non-Goals And Fail-Closed Rules
 
-- `M262-C001` does not implement automatic retain/release/autorelease insertion.
-- `M262-C001` does not implement general cleanup-scope emission.
-- `M262-C001` does not implement generalized weak load/store lowering.
-- `M262-C001` does not widen any runtime helper to a new public ABI surface.
-- If this boundary drifts, later lane-C and lane-D work must fail closed instead of silently widening ARC lowering behavior.
-- The contract must explicitly hand off to `M262-C002`.
+- `M262-C001` does not introduce generalized ARC cleanup insertion.
+- `M262-C001` does not introduce automatic autorelease-return rewrite automation.
+- `M262-C001` does not widen unsupported ownership-qualified signature spellings into the runnable native slice.
+- `M262-C001` does not claim public ARC runtime ABI stability.
+- If the ARC lowering boundary drifts, later lane-C implementation must fail closed rather than silently widening helper placement or cleanup scope behavior.
 
 ## Architecture And Spec Anchors
 
@@ -63,4 +65,4 @@ Freeze the current ARC lowering ABI/cleanup boundary so later retain/release ins
 
 ## Evidence Path
 
-- `tmp/reports/m262/M262-C001/arc_lowering_abi_cleanup_model_summary.json`
+- `tmp/reports/m262/M262-C001/arc_lowering_abi_cleanup_model_contract_summary.json`

@@ -6,20 +6,15 @@ from __future__ import annotations
 import subprocess
 import sys
 from pathlib import Path
+from typing import Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-CHECKER = ROOT / "scripts" / "check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py"
-TEST = ROOT / "tests" / "tooling" / "test_check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py"
 BUILD_HELPER = ROOT / "scripts" / "ensure_objc3c_native_build.py"
+DEPENDENCY_TOKEN = "M262-A001..A002 + M262-B001..B003"
 
-
-def run(cmd: list[str]) -> None:
-    subprocess.run(cmd, cwd=ROOT, check=True)
-
-
-def main() -> int:
-    run([sys.executable, "scripts/build_objc3c_native_docs.py"])
-    run([
+COMMAND_CHAIN: tuple[Sequence[str], ...] = (
+    (sys.executable, "scripts/build_objc3c_native_docs.py"),
+    (
         sys.executable,
         str(BUILD_HELPER),
         "--mode",
@@ -28,11 +23,29 @@ def main() -> int:
         "m262-c001-lane-c-readiness",
         "--summary-out",
         "tmp/reports/m262/M262-C001/ensure_objc3c_native_build_summary.json",
-    ])
-    run([sys.executable, str(CHECKER)])
-    run([sys.executable, "-m", "pytest", str(TEST), "-q"])
+    ),
+    (sys.executable, "scripts/check_m262_a001_arc_source_surface_and_mode_boundary_contract_and_architecture_freeze.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_a002_arc_mode_handling_for_methods_properties_returns_and_block_captures_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b001_arc_semantic_rules_and_forbidden_forms_contract_and_architecture_freeze.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py", "--skip-dynamic-probes"),
+    (sys.executable, "scripts/check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py"),
+    (sys.executable, "-m", "pytest", "tests/tooling/test_check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py", "-q"),
+)
+
+
+def run_chain() -> int:
+    print(f"[info] dependency continuity token: {DEPENDENCY_TOKEN} (lane C freezes the current ARC helper ABI and cleanup boundary above the existing semantic packets)")
+    for command in COMMAND_CHAIN:
+        text = " ".join(command)
+        print(f"[run] {text}")
+        completed = subprocess.run(command, cwd=ROOT, check=False)
+        if completed.returncode != 0:
+            print(f"[error] command failed with exit code {completed.returncode}: {text}", file=sys.stderr)
+            return completed.returncode
+    print("[ok] M262-C001 lane-C readiness chain completed")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_chain())

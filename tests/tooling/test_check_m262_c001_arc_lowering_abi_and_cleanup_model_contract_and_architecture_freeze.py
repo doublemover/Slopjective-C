@@ -6,14 +6,21 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECKER = ROOT / "scripts" / "check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py"
-SUMMARY = ROOT / "tmp" / "reports" / "m262" / "M262-C001" / "arc_lowering_abi_cleanup_model_summary.json"
+SCRIPT = ROOT / "scripts" / "check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py"
+SUMMARY = ROOT / "tmp" / "reports" / "m262" / "M262-C001" / "arc_lowering_abi_cleanup_model_contract_summary.json"
 CONTRACT_ID = "objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1"
 
 
-def test_m262_c001_checker_emits_summary() -> None:
-    subprocess.run([sys.executable, str(CHECKER), "--skip-dynamic-probes"], cwd=ROOT, check=True)
+def test_checker_passes() -> None:
+    completed = subprocess.run(
+        [sys.executable, str(SCRIPT), "--skip-dynamic-probes"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stdout + completed.stderr
     payload = json.loads(SUMMARY.read_text(encoding="utf-8"))
+    assert payload["ok"] is True
     assert payload["contract_id"] == CONTRACT_ID
-    assert payload["next_issue"] == "M262-C002"
-    assert payload["checks_failed"] == 0
+    assert payload["dynamic_probes_executed"] is False
