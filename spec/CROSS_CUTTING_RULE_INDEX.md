@@ -4,6 +4,13 @@ _Working draft v0.11 — last updated 2026-02-27_
 
 This index identifies rules whose semantics are shared across multiple parts and records one canonical normative home for each rule. Non-canonical locations should reference the canonical section instead of restating full normative text.
 
+Current implementation note:
+
+- The live frontend only admits the existing `guard` binding surface plus
+  `switch` / `case` as the current pattern carrier.
+- `defer` and `match` are reserved keywords with explicit fail-closed parser
+  diagnostics until the runnable `M266` execution work lands.
+
 ## Scope-exit and `defer` rules
 
 | Rule                                                                                | Canonical normative home                | Non-canonical cross-reference locations                    |

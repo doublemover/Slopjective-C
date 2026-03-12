@@ -1,0 +1,9 @@
+module m266DeferStatementFailClosedNegative;
+
+fn main() -> i32 {
+  defer {
+    return 1;
+  }
+
+  return 0;
+}

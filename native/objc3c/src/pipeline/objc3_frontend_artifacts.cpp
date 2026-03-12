@@ -348,6 +348,46 @@ std::string BuildPart3TypeSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart5ControlFlowSourceClosureSummaryJson(
+    const Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"supported_construct_ids\":"
+      << BuildStringArrayJson(summary.supported_construct_ids)
+      << ",\"fail_closed_construct_ids\":"
+      << BuildStringArrayJson(summary.fail_closed_construct_ids)
+      << ",\"guard_binding_sites\":" << summary.guard_binding_sites
+      << ",\"guard_binding_clause_sites\":" << summary.guard_binding_clause_sites
+      << ",\"switch_case_pattern_sites\":" << summary.switch_case_pattern_sites
+      << ",\"switch_default_pattern_sites\":"
+      << summary.switch_default_pattern_sites
+      << ",\"defer_keyword_sites\":" << summary.defer_keyword_sites
+      << ",\"match_keyword_sites\":" << summary.match_keyword_sites
+      << ",\"guard_binding_source_supported\":"
+      << (summary.guard_binding_source_supported ? "true" : "false")
+      << ",\"switch_case_pattern_source_supported\":"
+      << (summary.switch_case_pattern_source_supported ? "true" : "false")
+      << ",\"defer_keyword_reserved\":"
+      << (summary.defer_keyword_reserved ? "true" : "false")
+      << ",\"match_keyword_reserved\":"
+      << (summary.match_keyword_reserved ? "true" : "false")
+      << ",\"defer_fail_closed\":"
+      << (summary.defer_fail_closed ? "true" : "false")
+      << ",\"match_fail_closed\":"
+      << (summary.match_fail_closed ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart3TypeSemanticModelSummaryJson(
     const Objc3Part3TypeSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -9424,6 +9464,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.object_pointer_nullability_generics_summary;
   const Objc3FrontendPart3TypeSourceClosureSummary &part3_type_source_closure_summary =
       pipeline_result.part3_type_source_closure_summary;
+  const Objc3FrontendPart5ControlFlowSourceClosureSummary
+      &part5_control_flow_source_closure_summary =
+          pipeline_result.part5_control_flow_source_closure_summary;
   const Objc3Part3TypeSemanticModelSummary part3_type_semantic_model_summary =
       BuildPart3TypeSemanticModelSummary(
           pipeline_result.program.ast, pipeline_result.integration_surface, 4u);
@@ -13620,6 +13663,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part3_type_source_closure\":"
            << BuildPart3TypeSourceClosureSummaryJson(
                   part3_type_source_closure_summary)
+           << ",\"objc_part5_control_flow_source_closure\":"
+           << BuildPart5ControlFlowSourceClosureSummaryJson(
+                  part5_control_flow_source_closure_summary)
            << ",\"objc_part3_type_semantic_model\":"
            << BuildPart3TypeSemanticModelSummaryJson(
                   part3_type_semantic_model_summary)
@@ -14739,6 +14785,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part3_type_source_closure\":"
            << BuildPart3TypeSourceClosureSummaryJson(
                   part3_type_source_closure_summary)
+           << ",\"objc_part5_control_flow_source_closure\":"
+           << BuildPart5ControlFlowSourceClosureSummaryJson(
+                  part5_control_flow_source_closure_summary)
            << ",\"objc_part3_type_semantic_model\":"
            << BuildPart3TypeSemanticModelSummaryJson(
                   part3_type_semantic_model_summary)

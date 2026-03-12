@@ -9125,7 +9125,7 @@ class Objc3Parser {
         return;
       }
       if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwGuard) ||
-          At(TokenKind::KwDo) ||
+          At(TokenKind::KwDefer) || At(TokenKind::KwDo) || At(TokenKind::KwMatch) ||
           At(TokenKind::KwFor) || At(TokenKind::KwSwitch) || At(TokenKind::KwWhile) || At(TokenKind::KwBreak) ||
           At(TokenKind::KwContinue) || At(TokenKind::KwAtAutoreleasePool) || AtIdentifierAssignment() ||
           AtIdentifierUpdate() || AtPrefixUpdate() || At(TokenKind::RBrace)) {
@@ -9385,6 +9385,16 @@ class Objc3Parser {
       return stmt;
     }
 
+    if (Match(TokenKind::KwDefer)) {
+      const Token &token = Previous();
+      // M266-A001 source-closure anchor: reserve defer syntax in the parser so
+      // diagnostics and manifest truth stay deterministic until runnable defer
+      // lowering exists.
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P154", "unsupported 'defer' statement"));
+      return nullptr;
+    }
+
     if (Match(TokenKind::KwDo)) {
       auto stmt = std::make_unique<Stmt>();
       stmt->kind = Stmt::Kind::DoWhile;
@@ -9596,6 +9606,15 @@ class Objc3Parser {
         return nullptr;
       }
       return stmt;
+    }
+
+    if (Match(TokenKind::KwMatch)) {
+      const Token &token = Previous();
+      // M266-A001 source-closure anchor: reserve match syntax at parse time
+      // instead of letting it drift as an identifier-led statement.
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P155", "unsupported 'match' statement"));
+      return nullptr;
     }
 
     if (Match(TokenKind::KwSwitch)) {

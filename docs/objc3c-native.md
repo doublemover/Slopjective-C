@@ -425,6 +425,27 @@ without widening it.
   fake runtime behavior claim
 - `M266-A001` is the next issue after `M265` closeout
 
+## M266 frontend control-flow and safety source closure
+
+The current Part 5 frontend boundary is intentionally narrow and truthful.
+
+- `guard let` / `guard var` stays admitted through the existing parser-owned
+  optional-binding surface and feeds the live guard-binding legality work that
+  landed in `M265`
+- `switch` / `case` remains the only supported pattern carrier in the current
+  parser slice
+- `defer` and `match` are now reserved as explicit frontend keywords and fail
+  closed with targeted parser diagnostics instead of drifting as plain
+  identifiers
+- the frontend publishes this boundary in
+  `frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure`
+  so later `M266` sema/lowering/runtime work can widen one deterministic Part 5
+  contract instead of rebuilding grammar truth from docs
+
+Recommended frontend contract check:
+
+- `python scripts/check_m266_a001_defer_guard_match_and_pattern_source_closure_contract_and_architecture_freeze.py`
+
 Recommended lowering contract check:
 
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`

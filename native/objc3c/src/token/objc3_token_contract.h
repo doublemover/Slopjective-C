@@ -19,9 +19,11 @@ enum class Objc3LexTokenKind {
   KwIf,
   KwElse,
   KwGuard,
+  KwDefer,
   KwDo,
   KwFor,
   KwSwitch,
+  KwMatch,
   KwCase,
   KwDefault,
   KwWhile,
@@ -178,6 +180,20 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
     "source-only:nil-coalescing";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
+
+// M266-A001 control-flow source-closure anchor: the frontend now owns the
+// Part 5 keyword reservation boundary directly. Guard bindings stay admitted
+// through the existing runnable/syntactic slice, switch/case remains the only
+// supported pattern carrier today, and defer/match are promoted to explicit
+// fail-closed keywords instead of drifting as ordinary identifiers.
+inline constexpr const char *kObjc3Part5SourceSurfaceGuardBindings =
+    "part5-source:guard-bindings";
+inline constexpr const char *kObjc3Part5SourceSurfaceSwitchCasePatterns =
+    "part5-source:switch-case-patterns";
+inline constexpr const char *kObjc3Part5FailClosedConstructDefer =
+    "part5-fail-closed:defer-statement";
+inline constexpr const char *kObjc3Part5FailClosedConstructMatch =
+    "part5-fail-closed:match-statement";
 
 // M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed

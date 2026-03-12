@@ -33,6 +33,10 @@ Current implementation note:
 - Ordinary sends still fail closed for nullable receivers unless they have
   been proven nonnull, and `guard let` / `guard var` `else` bodies must exit
   the current scope.
+- The current Part 5 frontend boundary is now explicit: `guard` bindings and
+  `switch` / `case` remain the admitted control-flow source surface, while
+  `defer` and `match` are reserved fail-closed keywords until the runnable
+  `M266` lowering/runtime work lands.
 - Typed key-path roots now fail closed unless they resolve to `self`, a known
   class type, or an ObjC-reference-compatible identifier; class-root
   single-component paths fail closed unless the component names a readable

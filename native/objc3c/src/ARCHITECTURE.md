@@ -25,6 +25,10 @@ Adapter and integration modules:
 Current-state note:
 
 - `main.cpp` is now driver-only and delegates to `driver/objc3_driver_main.h`.
+- `M266-A001` adds a dedicated Part 5 frontend semantic-surface packet
+  (`frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure`)
+  so `guard` / `switch` parser truth and reserved `defer` / `match`
+  fail-closed behavior travel through one deterministic pipeline handoff.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.

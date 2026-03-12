@@ -1291,6 +1291,47 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part5ControlFlowSourceClosureContractId =
+    "objc3c-part5-control-flow-source-closure/m266-a001-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure";
+inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSourceModel =
+    "guard-bindings-and-switch-case-patterns-are-frontend-owned-control-flow-surfaces-while-defer-and-match-are-explicitly-reserved-fail-closed-keywords";
+inline constexpr const char *kObjc3Part5ControlFlowSourceClosureFailureModel =
+    "defer-and-match-remain-fail-closed-until-runnable-part5-lowering-lands-and-the-existing-guard-switch-surface-stays-the-only-admitted-part5-control-flow-subset";
+
+struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
+  std::string contract_id = kObjc3Part5ControlFlowSourceClosureContractId;
+  std::string frontend_surface_path =
+      kObjc3Part5ControlFlowSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part5ControlFlowSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part5ControlFlowSourceClosureFailureModel;
+  std::vector<std::string> supported_construct_ids = {
+      kObjc3Part5SourceSurfaceGuardBindings,
+      kObjc3Part5SourceSurfaceSwitchCasePatterns,
+  };
+  std::vector<std::string> fail_closed_construct_ids = {
+      kObjc3Part5FailClosedConstructDefer,
+      kObjc3Part5FailClosedConstructMatch,
+  };
+  std::size_t guard_binding_sites = 0;
+  std::size_t guard_binding_clause_sites = 0;
+  std::size_t switch_case_pattern_sites = 0;
+  std::size_t switch_default_pattern_sites = 0;
+  std::size_t defer_keyword_sites = 0;
+  std::size_t match_keyword_sites = 0;
+  bool guard_binding_source_supported = false;
+  bool switch_case_pattern_source_supported = false;
+  bool defer_keyword_reserved = false;
+  bool match_keyword_reserved = false;
+  bool defer_fail_closed = false;
+  bool match_fail_closed = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -4361,6 +4402,33 @@ inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
+    const Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3Part5ControlFlowSourceClosureContractId &&
+         summary.frontend_surface_path ==
+             kObjc3Part5ControlFlowSourceClosureSurfacePath &&
+         summary.source_model == kObjc3Part5ControlFlowSourceClosureSourceModel &&
+         summary.failure_model ==
+             kObjc3Part5ControlFlowSourceClosureFailureModel &&
+         summary.supported_construct_ids.size() == 2 &&
+         summary.supported_construct_ids[0] ==
+             kObjc3Part5SourceSurfaceGuardBindings &&
+         summary.supported_construct_ids[1] ==
+             kObjc3Part5SourceSurfaceSwitchCasePatterns &&
+         summary.fail_closed_construct_ids.size() == 2 &&
+         summary.fail_closed_construct_ids[0] ==
+             kObjc3Part5FailClosedConstructDefer &&
+         summary.fail_closed_construct_ids[1] ==
+             kObjc3Part5FailClosedConstructMatch &&
+         summary.guard_binding_source_supported &&
+         summary.switch_case_pattern_source_supported &&
+         summary.defer_keyword_reserved && summary.match_keyword_reserved &&
+         summary.defer_fail_closed && summary.match_fail_closed &&
+         summary.deterministic_handoff &&
+         summary.ready_for_semantic_expansion &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3VersionedConformanceReportLoweringSummary {
   std::string contract_id =
       kObjc3VersionedConformanceReportLoweringContractId;
@@ -4624,6 +4692,8 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
   Objc3FrontendPart3TypeSourceClosureSummary part3_type_source_closure_summary;
+  Objc3FrontendPart5ControlFlowSourceClosureSummary
+      part5_control_flow_source_closure_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;

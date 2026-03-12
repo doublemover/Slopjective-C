@@ -159,12 +159,19 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwElse;
       } else if (ident == "guard") {
         kind = TokenKind::KwGuard;
+      // M266-A001 source-closure anchor: reserve defer/match as explicit
+      // frontend-owned keywords so later Part 5 work can fail closed
+      // deterministically instead of drifting as plain identifiers.
+      } else if (ident == "defer") {
+        kind = TokenKind::KwDefer;
       } else if (ident == "do") {
         kind = TokenKind::KwDo;
       } else if (ident == "for") {
         kind = TokenKind::KwFor;
       } else if (ident == "switch") {
         kind = TokenKind::KwSwitch;
+      } else if (ident == "match") {
+        kind = TokenKind::KwMatch;
       } else if (ident == "case") {
         kind = TokenKind::KwCase;
       } else if (ident == "default") {

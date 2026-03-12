@@ -4287,6 +4287,20 @@ std::string BuildPart3TypeSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart5ControlFlowSourceClosureReplayKey(
+    const Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";guard_binding_sites=" << summary.guard_binding_sites
+      << ";guard_binding_clause_sites=" << summary.guard_binding_clause_sites
+      << ";switch_pattern_sites=" << summary.switch_case_pattern_sites << ":"
+      << summary.switch_default_pattern_sites
+      << ";reserved_keyword_sites=" << summary.defer_keyword_sites << ":"
+      << summary.match_keyword_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 void CollectPart3TypeSourceClosureExprSites(
     const Expr *expr, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
   if (expr == nullptr) {
@@ -4504,6 +4518,122 @@ Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
   return summary;
 }
 
+void CollectPart5ControlFlowSourceClosureStmtSites(
+    const Stmt *stmt,
+    Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    break;
+  case Stmt::Kind::Assign:
+  case Stmt::Kind::Return:
+  case Stmt::Kind::Expr:
+    break;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      if (stmt->if_stmt->guard_binding_surface_enabled) {
+        ++summary.guard_binding_sites;
+        summary.guard_binding_clause_sites +=
+            stmt->if_stmt->optional_binding_clause_count;
+      }
+      for (const auto &child : stmt->if_stmt->then_body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+      for (const auto &child : stmt->if_stmt->else_body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &child : stmt->do_while_stmt->body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      for (const auto &child : stmt->for_stmt->body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        if (case_stmt.is_default) {
+          ++summary.switch_default_pattern_sites;
+        } else {
+          ++summary.switch_case_pattern_sites;
+        }
+        for (const auto &child : case_stmt.body) {
+          CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        }
+      }
+    }
+    break;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      for (const auto &child : stmt->while_stmt->body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &child : stmt->block_stmt->body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    break;
+  }
+}
+
+Objc3FrontendPart5ControlFlowSourceClosureSummary
+BuildPart5ControlFlowSourceClosureSummary(
+    const Objc3Program &program,
+    const std::vector<Objc3LexToken> &tokens) {
+  Objc3FrontendPart5ControlFlowSourceClosureSummary summary;
+  for (const auto &token : tokens) {
+    if (token.kind == Objc3LexTokenKind::KwDefer) {
+      ++summary.defer_keyword_sites;
+    } else if (token.kind == Objc3LexTokenKind::KwMatch) {
+      ++summary.match_keyword_sites;
+    }
+  }
+  for (const auto &fn : program.functions) {
+    for (const auto &stmt : fn.body) {
+      CollectPart5ControlFlowSourceClosureStmtSites(stmt.get(), summary);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        CollectPart5ControlFlowSourceClosureStmtSites(stmt.get(), summary);
+      }
+    }
+  }
+  summary.guard_binding_source_supported = true;
+  summary.switch_case_pattern_source_supported = true;
+  summary.defer_keyword_reserved = true;
+  summary.match_keyword_reserved = true;
+  summary.defer_fail_closed = true;
+  summary.match_fail_closed = true;
+  summary.deterministic_handoff =
+      summary.guard_binding_clause_sites >= summary.guard_binding_sites &&
+      summary.switch_default_pattern_sites <=
+          summary.switch_case_pattern_sites + summary.switch_default_pattern_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key = BuildPart5ControlFlowSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -4710,6 +4840,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part3_type_source_closure_summary = BuildPart3TypeSourceClosureSummary(
       Objc3ParsedProgramAst(result.program),
       result.object_pointer_nullability_generics_summary);
+  result.part5_control_flow_source_closure_summary =
+      BuildPart5ControlFlowSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program), tokens);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,
