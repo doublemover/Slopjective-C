@@ -243,6 +243,16 @@ struct Expr {
       "non-arc-mode-keeps-unqualified-object-signatures-non-inferred-and-zero-retain-release-lifetime-accounting";
   static inline constexpr const char *kObjc3ArcInferenceLifetimeNonGoalModel =
       "no-full-arc-cleanup-synthesis-no-weak-autorelease-return-property-synthesis-or-block-interaction-arc-semantics-yet";
+  static inline constexpr const char *kObjc3ArcInteractionSemanticsContractId =
+      "objc3c-arc-interaction-semantics/m262-b003-v1";
+  static inline constexpr const char *kObjc3ArcInteractionSemanticsSourceModel =
+      "explicit-arc-mode-now-covers-weak-autorelease-return-property-synthesis-and-block-ownership-interactions-for-the-supported-runnable-slice";
+  static inline constexpr const char *kObjc3ArcInteractionSemanticsSemanticModel =
+      "weak-properties-and-nonowning-captures-stay-nonretaining-autorelease-returns-stay-profiled-and-synthesized-property-accessors-publish-owned-lifetime-packets-under-arc";
+  static inline constexpr const char *kObjc3ArcInteractionSemanticsFailClosedModel =
+      "unsupported-arc-cleanup-and-broader-interactions-still-remain-explicitly-deferred";
+  static inline constexpr const char *kObjc3ArcInteractionSemanticsNonGoalModel =
+      "no-general-arc-cleanup-insertion-no-cross-module-arc-interop-no-full-method-family-automation-yet";
   // Legacy extraction anchor retained for contract tests:
   // enum class Kind { Number, BoolLiteral, NilLiteral, Identifier, Binary, Conditional, Call, MessageSend };
   enum class Kind {

@@ -1280,6 +1280,33 @@ std::string Objc3ArcInferenceLifetimeSummary() {
   return out.str();
 }
 
+std::string Objc3ArcInteractionSemanticsSummary() {
+  std::ostringstream out;
+  // M262-B003 ARC interaction-semantics expansion anchor: explicit ARC mode
+  // now carries one truthful semantic packet over weak/non-owning property
+  // and block interactions, explicit autorelease returns, and synthesized
+  // property accessor ownership packets for the supported runnable slice,
+  // while generalized ARC cleanup and broader automation remain deferred.
+  out << "contract=" << Expr::kObjc3ArcInteractionSemanticsContractId
+      << ";source_model=" << Expr::kObjc3ArcInteractionSemanticsSourceModel
+      << ";semantic_model=" << Expr::kObjc3ArcInteractionSemanticsSemanticModel
+      << ";arc_inference_contract=" << Expr::kObjc3ArcInferenceLifetimeContractId
+      << ";weak_unowned_lane=" << kObjc3WeakUnownedSemanticsLoweringLaneContract
+      << ";retain_release_lane="
+      << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";autoreleasepool_lane="
+      << kObjc3AutoreleasePoolScopeLoweringLaneContract
+      << ";block_escape_lane=" << kObjc3BlockStorageEscapeLoweringLaneContract
+      << ";synthesized_accessor_contract="
+      << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
+      << ";fail_closed_model="
+      << Expr::kObjc3ArcInteractionSemanticsFailClosedModel
+      << ";non_goal_model="
+      << Expr::kObjc3ArcInteractionSemanticsNonGoalModel
+      << ";next_issue=M262-C001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

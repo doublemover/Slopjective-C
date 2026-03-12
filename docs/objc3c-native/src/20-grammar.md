@@ -1521,6 +1521,35 @@ Recommended M262 lane-B implementation check:
 - `python scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
 - `M262-B003` is the next issue.
 
+## M262 weak, autorelease-return, property-synthesis, and block-interaction ARC semantics (M262-B003)
+
+`M262-B003` closes the current semantic interaction inventory that sits above
+the `B002` inference baseline.
+
+- contract id
+  `objc3c-arc-interaction-semantics/m262-b003-v1`
+- supported ARC interaction behavior:
+  - attribute-only strong properties now publish strong-owned synthesized
+    accessor ownership packets under ARC mode
+  - attribute-only weak properties now publish weak synthesized accessor
+    ownership packets under ARC mode
+  - explicit `__autoreleasing` returns remain profiled through autorelease
+    insertion accounting
+  - owned block captures keep nonzero retain/release behavior under ARC mode
+  - weak/unowned block captures stay non-owning under ARC mode
+- emitted IR now carries:
+  - `; arc_interaction_semantics = ...`
+  - `!objc3.objc_arc_interaction_semantics`
+- still explicitly deferred:
+  - no generalized ARC cleanup insertion
+  - no full method-family automation
+  - no broader cross-module ARC interactions yet
+
+Recommended M262 lane-B expansion check:
+
+- `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
+- `M262-C001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

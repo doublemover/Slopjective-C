@@ -1487,6 +1487,12 @@ class Objc3IREmitter {
     // ownership spelling into inferred strong-owned retain/release activity.
     out << "; arc_inference_lifetime = "
         << Objc3ArcInferenceLifetimeSummary() << "\n";
+    // M262-B003 ARC interaction-semantics expansion anchor: publish the
+    // supported weak/autorelease-return/property-synthesis/block-interaction
+    // semantic boundary so emitted IR stays aligned with the live ARC slice
+    // instead of forcing later issues to reconstruct it out of older packets.
+    out << "; arc_interaction_semantics = "
+        << Objc3ArcInteractionSemanticsSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2706,6 +2712,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_mode_handling = !{!76}\n";
     out << "!objc3.objc_arc_semantic_rules = !{!77}\n";
     out << "!objc3.objc_arc_inference_lifetime = !{!78}\n";
+    out << "!objc3.objc_arc_interaction_semantics = !{!79}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4052,6 +4059,29 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeNonGoalModel)
+        << "\"}\n";
+    out << "!79 = !{!\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsSemanticModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3WeakUnownedSemanticsLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RetainReleaseOperationLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3AutoreleasePoolScopeLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3BlockStorageEscapeLoweringLaneContract)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

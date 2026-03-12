@@ -8168,3 +8168,32 @@ signatures.
   - `spec/planning/compiler/m262/m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation_packet.md`
   - `python scripts/check_m262_b002_implicit_retain_release_inference_and_lifetime_extension_semantics_core_feature_implementation.py`
   - `M262-B003` is the next issue.
+
+## M262 weak, autorelease-return, property-synthesis, and block-interaction ARC semantics (B003)
+
+`M262-B003` closes the next semantic interaction layer above the B002
+inference baseline.
+
+- contract id
+  `objc3c-arc-interaction-semantics/m262-b003-v1`
+- source model
+  `explicit-arc-mode-now-covers-weak-autorelease-return-property-synthesis-and-block-ownership-interactions-for-the-supported-runnable-slice`
+- semantic model
+  `weak-properties-and-nonowning-captures-stay-nonretaining-autorelease-returns-stay-profiled-and-synthesized-property-accessors-publish-owned-lifetime-packets-under-arc`
+- current boundary:
+  - attribute-only strong properties now publish strong-owned lifetime and
+    synthesized accessor ownership packets under ARC mode
+  - attribute-only weak properties now publish weak lifetime and synthesized
+    accessor ownership packets under ARC mode
+  - explicit autorelease returns stay profiled through autorelease insertion
+    accounting
+  - owned block captures retain nonzero retain/release behavior under ARC mode
+  - weak and unowned block captures remain non-owning under ARC mode
+  - emitted IR now carries:
+    `; arc_interaction_semantics = ...`
+    and `!objc3.objc_arc_interaction_semantics`
+- architecture/spec/checker anchors for this issue are:
+  - `docs/contracts/m262_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion_b003_expectations.md`
+  - `spec/planning/compiler/m262/m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion_packet.md`
+  - `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
+  - `M262-C001` is the next issue.

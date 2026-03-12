@@ -9884,6 +9884,23 @@ signatures.
   surface for this issue
 - the next issue is `M262-B003`
 
+## M262 Weak, Autorelease-Return, Property-Synthesis, And Block-Interaction ARC Semantics (B003)
+
+`M262-B003` closes the next semantic interaction layer above the ARC inference
+baseline.
+
+- attribute-only strong properties now publish strong-owned lifetime and
+  synthesized accessor ownership packets under ARC mode
+- attribute-only weak properties now publish weak lifetime and synthesized
+  accessor ownership packets under ARC mode
+- explicit autorelease returns remain profiled through autorelease insertion
+  accounting
+- owned block captures remain distinguishable from weak/unowned captures in
+  ARC retain/release accounting
+- emitted IR now publishes the `arc_interaction_semantics` comment and
+  `!objc3.objc_arc_interaction_semantics`
+- the next issue is `M262-C001`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

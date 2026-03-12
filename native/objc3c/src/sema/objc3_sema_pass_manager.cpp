@@ -2287,6 +2287,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // activity for the supported unqualified object slice, while non-ARC still
   // preserves the zero-inference baseline and later ARC cleanup work remains
   // deferred.
+  // M262-B003 ARC interaction-semantics expansion anchor: the handoff now also
+  // preserves the semantic packets that distinguish weak/non-owning storage,
+  // explicit autorelease returns, synthesized accessor ownership packets, and
+  // block-capture interactions inside the supported ARC slice.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

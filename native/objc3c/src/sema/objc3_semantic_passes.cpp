@@ -2565,6 +2565,49 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
                                            const std::string &owner_kind,
                                            bool arc_mode_enabled,
                                            std::vector<std::string> &diagnostics) {
+  const auto property_has_attribute_named =
+      [&property](std::string_view name) {
+        for (const auto &attribute : property.attributes) {
+          if (attribute.name == name) {
+            return true;
+          }
+        }
+        return false;
+      };
+  const auto property_is_object_like = [](const Objc3PropertyInfo &info) {
+    return info.id_spelling || info.instancetype_spelling ||
+           info.object_pointer_type_spelling || info.type == ValueType::ObjCId ||
+           info.type == ValueType::ObjCClass ||
+           info.type == ValueType::ObjCInstancetype ||
+           info.type == ValueType::ObjCObjectPtr;
+  };
+  const auto property_profile_contains =
+      [](const std::string &profile, std::string_view needle) {
+        return profile.find(std::string(needle)) != std::string::npos;
+      };
+  const bool property_has_arc_runtime_owned_attribute =
+      property_has_attribute_named("strong") ||
+      property_has_attribute_named("copy") ||
+      property_has_attribute_named("weak") ||
+      property_profile_contains(property.property_attribute_profile, "strong=1") ||
+      property_profile_contains(property.property_attribute_profile, "copy=1") ||
+      property_profile_contains(property.property_attribute_profile, "weak=1");
+  const auto build_accessor_ownership_profile =
+      [](const Objc3PropertyInfo &info) {
+        std::ostringstream out;
+        out << "getter=" << info.effective_getter_selector
+            << ";setter_available=" << (info.effective_setter_available ? 1 : 0)
+            << ";setter=";
+        if (info.effective_setter_available) {
+          out << info.effective_setter_selector;
+        } else {
+          out << "<none>";
+        }
+        out << ";ownership_lifetime=" << info.ownership_lifetime_profile
+            << ";runtime_hook=" << info.ownership_runtime_hook_profile;
+        return out.str();
+      };
+
   Objc3PropertyInfo info;
   info.type = property.type;
   info.is_vector = property.vector_spelling;
@@ -2632,8 +2675,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   const bool arc_inferred_strong_object_property =
       arc_mode_enabled && !info.has_ownership_qualifier && !info.is_weak &&
       !info.is_unowned && !info.is_assign &&
-      (info.id_spelling || info.instancetype_spelling ||
-       info.object_pointer_type_spelling);
+      property_is_object_like(info);
   if (arc_inferred_strong_object_property) {
     // M262-B002 ARC inference/lifetime implementation anchor: under explicit
     // ARC mode, unqualified object properties in the supported runnable slice
@@ -2653,6 +2695,43 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
     info.ownership_arc_fixit_hint.clear();
     info.ownership_lifetime_profile = "strong-owned";
     info.ownership_runtime_hook_profile.clear();
+  }
+
+  if (arc_mode_enabled &&
+      (property_is_object_like(info) ||
+       property_has_arc_runtime_owned_attribute) &&
+      info.ownership_lifetime_profile.empty()) {
+    // M262-B003 ARC interaction-semantics anchor: attribute-only strong/weak
+    // ARC properties now publish the same lifetime and synthesized-accessor
+    // ownership profiles that later property/runtime lanes already consume for
+    // explicitly qualified ownership spellings.
+    if (info.is_weak || property_has_attribute_named("weak") ||
+        property_profile_contains(info.property_attribute_profile, "weak=1")) {
+      info.ownership_lifetime_profile = "weak";
+      info.ownership_runtime_hook_profile = "objc-weak-side-table";
+      info.ownership_is_weak_reference = true;
+    } else if (info.is_strong || info.is_copy ||
+               property_has_attribute_named("strong") ||
+               property_has_attribute_named("copy") ||
+               property_profile_contains(info.property_attribute_profile,
+                                         "strong=1") ||
+               property_profile_contains(info.property_attribute_profile,
+                                         "copy=1")) {
+      info.ownership_lifetime_profile = "strong-owned";
+      info.ownership_runtime_hook_profile.clear();
+    }
+  }
+  if (arc_mode_enabled &&
+      (property_is_object_like(info) ||
+       property_has_arc_runtime_owned_attribute) &&
+      info.accessor_ownership_profile.empty() &&
+      (!info.ownership_lifetime_profile.empty() ||
+       !info.ownership_runtime_hook_profile.empty())) {
+    // M262-B003 ARC interaction-semantics anchor: synthesized accessor
+    // ownership packets now stay aligned with ARC-inferred or attribute-owned
+    // property lifetime profiles instead of remaining blank for the same
+    // executable storage model.
+    info.accessor_ownership_profile = build_accessor_ownership_profile(info);
   }
 
   std::unordered_map<std::string, std::size_t> attribute_name_counts;
@@ -13527,6 +13606,54 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   std::sort(interface_names.begin(), interface_names.end());
 
   handoff.interfaces_lexicographic.reserve(interface_names.size());
+  const auto apply_arc_property_interaction_metadata =
+      [](Objc3SemanticPropertyTypeMetadata &property_metadata) {
+        const auto profile_contains =
+            [&property_metadata](std::string_view needle) {
+              return property_metadata.property_attribute_profile.find(
+                         std::string(needle)) != std::string::npos;
+            };
+        const auto rebuild_accessor_profile =
+            [&property_metadata]() {
+              std::ostringstream out;
+              out << "getter=" << property_metadata.effective_getter_selector
+                  << ";setter_available="
+                  << (property_metadata.effective_setter_available ? 1 : 0)
+                  << ";setter=";
+              if (property_metadata.effective_setter_available) {
+                out << property_metadata.effective_setter_selector;
+              } else {
+                out << "<none>";
+              }
+              out << ";ownership_lifetime="
+                  << property_metadata.ownership_lifetime_profile
+                  << ";runtime_hook="
+                  << property_metadata.ownership_runtime_hook_profile;
+              property_metadata.accessor_ownership_profile = out.str();
+            };
+
+        if (property_metadata.ownership_lifetime_profile.empty()) {
+          if (profile_contains("weak=1")) {
+            property_metadata.ownership_lifetime_profile = "weak";
+            property_metadata.ownership_runtime_hook_profile =
+                "objc-weak-side-table";
+            property_metadata.ownership_is_weak_reference = true;
+          } else if (profile_contains("strong=1") ||
+                     profile_contains("copy=1")) {
+            property_metadata.ownership_lifetime_profile = "strong-owned";
+            property_metadata.ownership_runtime_hook_profile.clear();
+          }
+        }
+        if ((!property_metadata.ownership_lifetime_profile.empty() ||
+             !property_metadata.ownership_runtime_hook_profile.empty()) &&
+            (property_metadata.accessor_ownership_profile.empty() ||
+             (property_metadata.accessor_ownership_profile.find(
+                  "ownership_lifetime=") != std::string::npos &&
+              property_metadata.accessor_ownership_profile.find(
+                  "ownership_lifetime=;") != std::string::npos))) {
+          rebuild_accessor_profile();
+        }
+      };
   for (const std::string &name : interface_names) {
     const auto interface_it = surface.interfaces.find(name);
     if (interface_it == surface.interfaces.end()) {
@@ -13642,6 +13769,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       // lowering and must not widen the public runtime header here.
       property_metadata.accessor_ownership_profile =
           source.accessor_ownership_profile;
+      apply_arc_property_interaction_metadata(property_metadata);
       property_metadata.executable_ivar_layout_symbol =
           source.executable_ivar_layout_symbol;
       property_metadata.executable_ivar_layout_slot_index =
@@ -13951,6 +14079,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.effective_setter_selector;
       property_metadata.accessor_ownership_profile =
           source.accessor_ownership_profile;
+      apply_arc_property_interaction_metadata(property_metadata);
       property_metadata.executable_ivar_layout_symbol =
           source.executable_ivar_layout_symbol;
       property_metadata.executable_ivar_layout_slot_index =

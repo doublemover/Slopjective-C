@@ -99,6 +99,20 @@ Current implementation status (`M262-B002`):
 - full ARC cleanup synthesis and broader ARC interaction surfaces remain
   deferred to later `M262` issues
 
+### B.2.7 ARC interaction semantics (implementation note) {#b-2-7}
+
+Current implementation status (`M262-B003`):
+
+- under `-fobjc-arc`, attribute-only strong properties now publish strong-owned
+  lifetime and synthesized-accessor ownership packets
+- under `-fobjc-arc`, attribute-only weak properties now publish weak lifetime
+  and synthesized-accessor ownership packets
+- explicit `__autoreleasing` returns remain profiled through autorelease
+  insertion accounting
+- owned vs non-owning block captures remain distinguishable in ARC retain/release
+  accounting
+- generalized ARC cleanup and broader ARC automation still remain deferred
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

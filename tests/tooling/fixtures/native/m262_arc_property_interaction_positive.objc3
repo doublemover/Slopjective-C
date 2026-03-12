@@ -1,0 +1,11 @@
+module m262_arc_property_interaction_positive;
+
+@interface ArcBox
+@property (nonatomic, strong) id currentValue;
+@property (nonatomic, weak) id weakValue;
+@end
+
+@implementation ArcBox
+@property (nonatomic, strong) id currentValue;
+@property (nonatomic, weak) id weakValue;
+@end

@@ -19,6 +19,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // truthfully carries inferred strong-owned retain/release activity for the
   // supported ARC slice, without widening into the still-deferred cleanup,
   // weak, autorelease-return, or property-synthesis ARC behaviors.
+  // M262-B003 ARC interaction-semantics expansion anchor: this scaffold now
+  // also truthfully carries the supported weak/non-owning, autorelease-return,
+  // synthesized-accessor, and block-interaction semantic packets that sit on
+  // top of the retained ARC inference baseline.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

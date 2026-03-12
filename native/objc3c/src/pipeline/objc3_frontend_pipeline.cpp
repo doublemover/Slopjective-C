@@ -625,8 +625,58 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     const Objc3Program &program) {
   Objc3RuntimeMetadataSourceRecordSet records;
 
+  const auto apply_arc_property_interaction_metadata =
+      [](Objc3RuntimeMetadataPropertySourceRecord &property_record) {
+        const auto profile_contains =
+            [&property_record](std::string_view needle) {
+              return property_record.property_attribute_profile.find(
+                         std::string(needle)) != std::string::npos;
+            };
+        const auto rebuild_accessor_profile = [&property_record]() {
+          std::ostringstream out;
+          out << "getter=" << property_record.effective_getter_selector
+              << ";setter_available="
+              << (property_record.effective_setter_available ? 1 : 0)
+              << ";setter=";
+          if (property_record.effective_setter_available) {
+            out << property_record.effective_setter_selector;
+          } else {
+            out << "<none>";
+          }
+          out << ";ownership_lifetime="
+              << property_record.ownership_lifetime_profile
+              << ";runtime_hook="
+              << property_record.ownership_runtime_hook_profile;
+          property_record.accessor_ownership_profile = out.str();
+        };
+
+        if (property_record.ownership_lifetime_profile.empty()) {
+          if (profile_contains("weak=1")) {
+            property_record.ownership_lifetime_profile = "weak";
+            property_record.ownership_runtime_hook_profile =
+                "objc-weak-side-table";
+          } else if (profile_contains("strong=1") ||
+                     profile_contains("copy=1")) {
+            property_record.ownership_lifetime_profile = "strong-owned";
+            property_record.ownership_runtime_hook_profile.clear();
+          }
+        }
+
+        if ((!property_record.ownership_lifetime_profile.empty() ||
+             !property_record.ownership_runtime_hook_profile.empty()) &&
+            (property_record.accessor_ownership_profile.empty() ||
+             (property_record.accessor_ownership_profile.find(
+                  "ownership_lifetime=") != std::string::npos &&
+              property_record.accessor_ownership_profile.find(
+                  "ownership_lifetime=;") != std::string::npos))) {
+          rebuild_accessor_profile();
+        }
+      };
+
   const auto append_property_records =
-      [&records](const auto &properties, const std::string &owner_kind, const std::string &owner_name) {
+      [&records, &apply_arc_property_interaction_metadata](
+          const auto &properties, const std::string &owner_kind,
+          const std::string &owner_name) {
         for (const auto &property : properties) {
           Objc3RuntimeMetadataPropertySourceRecord property_record;
           property_record.owner_kind = owner_kind;
@@ -656,6 +706,7 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
               property.effective_setter_selector;
           property_record.accessor_ownership_profile =
               property.accessor_ownership_profile;
+          apply_arc_property_interaction_metadata(property_record);
           property_record.executable_ivar_layout_symbol =
               property.executable_ivar_layout_symbol;
           property_record.executable_ivar_layout_slot_index =
@@ -900,12 +951,54 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
   };
   std::vector<MethodEdgeRecord> method_edge_records;
 
+  const auto apply_arc_property_interaction_metadata =
+      [](Objc3ExecutableMetadataPropertyGraphNode &node) {
+        const auto profile_contains = [&node](std::string_view needle) {
+          return node.property_attribute_profile.find(std::string(needle)) !=
+                 std::string::npos;
+        };
+        const auto rebuild_accessor_profile = [&node]() {
+          std::ostringstream out;
+          out << "getter=" << node.effective_getter_selector
+              << ";setter_available="
+              << (node.effective_setter_available ? 1 : 0) << ";setter=";
+          if (node.effective_setter_available) {
+            out << node.effective_setter_selector;
+          } else {
+            out << "<none>";
+          }
+          out << ";ownership_lifetime=" << node.ownership_lifetime_profile
+              << ";runtime_hook=" << node.ownership_runtime_hook_profile;
+          node.accessor_ownership_profile = out.str();
+        };
+
+        if (node.ownership_lifetime_profile.empty()) {
+          if (profile_contains("weak=1")) {
+            node.ownership_lifetime_profile = "weak";
+            node.ownership_runtime_hook_profile = "objc-weak-side-table";
+          } else if (profile_contains("strong=1") ||
+                     profile_contains("copy=1")) {
+            node.ownership_lifetime_profile = "strong-owned";
+            node.ownership_runtime_hook_profile.clear();
+          }
+        }
+        if ((!node.ownership_lifetime_profile.empty() ||
+             !node.ownership_runtime_hook_profile.empty()) &&
+            (node.accessor_ownership_profile.empty() ||
+             (node.accessor_ownership_profile.find("ownership_lifetime=") !=
+                  std::string::npos &&
+              node.accessor_ownership_profile.find("ownership_lifetime=;") !=
+                  std::string::npos))) {
+          rebuild_accessor_profile();
+        }
+      };
+
   const auto add_property_nodes =
-      [&graph, &add_owner_edge](const auto &properties,
-                                const std::string &owner_kind,
-                                const std::string &owner_name,
-                                const std::string &declaration_owner_identity,
-                                const std::string &export_owner_identity) {
+      [&graph, &add_owner_edge, &apply_arc_property_interaction_metadata](
+          const auto &properties, const std::string &owner_kind,
+          const std::string &owner_name,
+          const std::string &declaration_owner_identity,
+          const std::string &export_owner_identity) {
         for (const auto &property : properties) {
           Objc3ExecutableMetadataPropertyGraphNode node;
           node.owner_kind = owner_kind;
@@ -938,6 +1031,7 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
               property.effective_setter_selector;
           node.accessor_ownership_profile =
               property.accessor_ownership_profile;
+          apply_arc_property_interaction_metadata(node);
           node.executable_ivar_layout_symbol =
               property.executable_ivar_layout_symbol;
           node.executable_ivar_layout_slot_index =
