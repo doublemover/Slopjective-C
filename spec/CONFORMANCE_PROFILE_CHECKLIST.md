@@ -402,6 +402,21 @@ Current truthful support:
   `module.objc3-conformance-validation.json`
 - the validated selected profile remains `core`
 
+## M264 versioning and conformance truth gate (implementation note)
+
+The lane-E gate for this milestone freezes one integrated truth boundary:
+
+- claimed profile remains `core`
+- compatibility selection remains live
+- migration assist remains live
+- strictness and strict concurrency remain fail-closed
+- feature-macro claims remain suppressed
+- runtime/public capability reports remain a truthful projection of the lowered
+  conformance report
+- driver publication and validation operations remain JSON-only
+- frontend C API publication remains equivalent to the native CLI lowered truth
+  surface
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend

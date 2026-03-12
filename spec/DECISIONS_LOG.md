@@ -323,6 +323,35 @@ artifact inventory.
 
 ---
 
+## D-024: The M264 milestone gate freezes one core/json-only conformance boundary {#decisions-d-024}
+
+**Decision:** The lane-E gate for `M264` shall freeze one integrated operator
+boundary spanning the driver, frontend C API runner, lowered conformance
+report, runtime/public capability payloads, D001 publication sidecar, and D002
+validation sidecar.
+
+That gate currently permits only:
+
+- claimed profile `core`
+- compatibility selection `canonical|legacy`
+- migration-assist selection
+- JSON conformance publication/validation
+
+It explicitly does not permit:
+
+- strict or strict-concurrency profile claims
+- feature-macro publication for those unavailable modes
+- YAML conformance publication or validation
+
+**Rationale:** The milestone needs one explicit closeout boundary so future
+milestones do not silently widen claims beyond the runnable native subset that
+is actually shipped today.
+
+**Spec impact:** [Part 12](#part-12) conformance publication/validation and
+[D](#d) emitted artifact inventory.
+
+---
+
 ## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
 
 **Decision:** Until the native toolchain ships a standalone textual interface

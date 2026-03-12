@@ -5264,6 +5264,29 @@ Truth boundary:
 - validation consumes the already-emitted truthful sidecars rather than
   synthesizing a richer claim surface
 
+## Versioning and conformance truth gate (M264-E001)
+
+`M264-E001` freezes the integrated milestone gate for versioning, compatibility,
+strictness, macro, runtime-capability, publication, and validation truth.
+
+The gate currently means:
+
+- the runnable claimed profile remains `core`
+- compatibility selection remains `canonical|legacy`
+- migration assist remains live
+- strictness, strict concurrency, and separate-compilation macro claims remain
+  fail-closed / suppressed
+- the emitted machine-readable surface consists of:
+  - `module.objc3-conformance-report.json`
+  - `module.objc3-conformance-publication.json`
+  - `module.objc3-conformance-validation.json`
+- the frontend C API runner must publish the same lowered report/publication
+  truth surface as the native CLI
+- the validation path must consume only the shipped JSON sidecars
+
+The gate is satisfied only if the A/B/C/D milestone packets remain aligned and
+the live native/frontend probes preserve that same boundary.
+
 ## Canonical interface and feature-macro truthfulness (M264-B003)
 
 `M264-B003` closes the remaining sema-owned truth gap around separate compilation.

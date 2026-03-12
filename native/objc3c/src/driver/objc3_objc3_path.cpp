@@ -85,6 +85,9 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
     return 125;
   }
 
+  // M264-E001 versioning/conformance truth-gate anchor: this validation mode
+  // is the integrated operator-side consumer of the D001 publication sidecar
+  // and the C001/C002 lowered/runtime capability reports.
   WriteConformanceValidationArtifact(cli_options.out_dir,
                                      cli_options.emit_prefix,
                                      validation_artifact_json);
@@ -169,6 +172,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         cli_options.out_dir,
         cli_options.emit_prefix,
         artifacts.versioned_conformance_report_artifact_json);
+    // M264-E001 versioning/conformance truth-gate anchor: lane-E freezes this
+    // emitted lowered report plus the D001 publication sidecar and D002
+    // validation mode as one core/json-only fail-closed operator surface.
     if (cli_options.emit_objc3_conformance) {
       // D002 explicit operator parity: the native path already publishes the
       // JSON conformance sidecar by default, and this flag keeps that behavior

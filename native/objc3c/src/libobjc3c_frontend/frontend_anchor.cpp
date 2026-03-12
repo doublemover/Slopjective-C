@@ -572,6 +572,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         result->success = 0;
         objc3c_frontend_set_error(context, io_error.c_str());
       } else {
+        // M264-E001 versioning/conformance truth-gate anchor: the frontend C
+        // API path must continue to publish the same truthful lowered report
+        // plus D001 publication sidecar that the native CLI consumes and the
+        // D002 validation path checks.
         std::string conformance_publication_artifact_json;
         std::string conformance_publication_error;
         if (!TryBuildObjc3ConformanceReportPublicationArtifact(

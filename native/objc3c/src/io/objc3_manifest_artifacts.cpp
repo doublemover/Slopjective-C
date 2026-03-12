@@ -57,6 +57,9 @@ std::filesystem::path BuildConformancePublicationArtifactPath(
 std::filesystem::path BuildConformanceValidationArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+  // M264-E001 versioning/conformance truth-gate anchor: the validation
+  // artifact is the canonical integrated operator-side summary of the emitted
+  // report/publication pair.
   return out_dir / (emit_prefix + ".objc3-conformance-validation.json");
 }
 
