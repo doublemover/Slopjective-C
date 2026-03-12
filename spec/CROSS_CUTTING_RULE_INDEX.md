@@ -61,7 +61,9 @@ Current Part 5 cleanup/unwind runtime note:
   - `objc3_runtime_push_autoreleasepool_scope`
   - `objc3_runtime_pop_autoreleasepool_scope`
   - `objc3_runtime_copy_memory_management_state_for_testing`
-- no public cleanup/unwind runtime ABI widens in this freeze
+- `M266-D002` widens native runnable proof across ordinary exit, guard-mediated
+  early return, and nested-scope return unwind without widening a public
+  cleanup/unwind runtime ABI
 
 Current Part 5 exhaustiveness note:
 

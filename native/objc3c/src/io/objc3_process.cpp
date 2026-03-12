@@ -976,6 +976,8 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
       << "  \"runtime_library_resolution_model\": \""
       << EscapeJsonString(inputs.runtime_library_resolution_model) << "\",\n"
+      << "  \"cleanup_unwind_runtime_link_model\": \""
+      << "linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"driver_linker_flag_consumption_model\": \""
       << EscapeJsonString(inputs.driver_linker_flag_consumption_model)
       << "\",\n"
@@ -1710,6 +1712,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
                                       "    ")
       << ",\n"
+      << "  \"cleanup_unwind_runtime_link_model\": "
+      << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""
       << EscapeJsonString(inputs.runtime_support_library_archive_relative_path)
       << "\",\n"

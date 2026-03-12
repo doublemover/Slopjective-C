@@ -436,6 +436,9 @@ int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1, int a2,
 // M260-D002 runtime-memory-management implementation anchor: autoreleasepool
 // scopes, refcount draining, and weak zeroing remain private runtime/lowering
 // mechanics until a later milestone makes a deliberate public-ABI decision.
+// M266-D002 runtime cleanup/unwind implementation anchor: wider runnable
+// cleanup execution still uses this same private helper cluster rather than
+// widening a public cleanup/unwind ABI surface.
 void objc3_runtime_push_autoreleasepool_scope(void);
 void objc3_runtime_pop_autoreleasepool_scope(void);
 int objc3_runtime_copy_memory_management_state_for_testing(

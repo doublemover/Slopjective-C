@@ -56,6 +56,9 @@ Current-state note:
   cleanup slice: native probes consume the emitted linker-response/runtime-
   archive sidecars, while the runtime-owned cleanup carrier remains the private
   autoreleasepool push/pop plus memory-state snapshot surface.
+- `M266-D002` widens that runnable proof through ordinary lexical exit,
+  guard-mediated early return, and nested-scope return unwind while preserving
+  the same private runtime-owned cleanup carrier.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.
@@ -10818,4 +10821,3 @@ in both local and CI execution environments.
   - `tmp/reports/m276/M276-E002/`
   - records cold-build, warm-build, invalid-fingerprint fallback,
     contracts-only, and full-build proofs
-

@@ -8726,8 +8726,13 @@ class Objc3IREmitter {
 
   void EmitDeferredCleanupForScopeBucket(
       const std::vector<const BlockStmt *> &bucket, FunctionContext &ctx) const {
-    for (std::size_t index = bucket.size(); index > 0; --index) {
-      EmitDeferredCleanupBlock(bucket[index - 1u], ctx);
+    // Defer cleanup execution pushes/pops lexical scopes while replaying each
+    // deferred block. Copy the bucket first so those scope-vector mutations do
+    // not invalidate the source bucket reference mid-iteration when one scope
+    // owns multiple defer blocks.
+    const std::vector<const BlockStmt *> stable_bucket = bucket;
+    for (std::size_t index = stable_bucket.size(); index > 0; --index) {
+      EmitDeferredCleanupBlock(stable_bucket[index - 1u], ctx);
     }
   }
 
@@ -11504,13 +11509,7 @@ class Objc3IREmitter {
 
     if (!ctx.terminated) {
       EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-      EmitPendingBlockDisposeHelpers(ctx);
-      EmitArcOwnedCleanupReleases(ctx);
-      if (fn.return_type == ValueType::Void) {
-        ctx.code_lines.push_back("  ret void");
-      } else {
-        ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(fn.return_type)) + " 0");
-      }
+      EmitTypedReturn("0", ctx);
     }
 
     for (const auto &line : ctx.entry_lines) {
@@ -11586,13 +11585,7 @@ class Objc3IREmitter {
 
     if (!ctx.terminated) {
       EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-      EmitPendingBlockDisposeHelpers(ctx);
-      EmitArcOwnedCleanupReleases(ctx);
-      if (method.return_type == ValueType::Void) {
-        ctx.code_lines.push_back("  ret void");
-      } else {
-        ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(method.return_type)) + " 0");
-      }
+      EmitTypedReturn("0", ctx);
     }
 
     for (const auto &line : ctx.entry_lines) {

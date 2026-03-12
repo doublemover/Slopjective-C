@@ -507,8 +507,17 @@ API already exists.
   - `objc3_runtime_copy_memory_management_state_for_testing`
 - this issue does not claim a new public cleanup-stack ABI, exception runtime,
   or generalized unwind personality surface
-- `M266-D002` is the next issue that widens runnable cleanup/unwind execution
-  evidence beyond this frozen boundary
+- `M266-D002` widens runnable cleanup/unwind execution beyond this frozen
+  boundary:
+  - ordinary lexical exit executes deferred cleanups through native executable
+    proof
+  - guard-mediated early return executes deferred cleanups through native
+    executable proof
+  - nested-scope return unwind executes inner-to-outer cleanup ordering
+    through native executable proof
+  - the runtime side still remains intentionally private and continues to use
+    the same autoreleasepool helper cluster as the cleanup carrier
+- `M266-E001` is the next issue after this runtime implementation lands
 
 Recommended runtime contract check:
 

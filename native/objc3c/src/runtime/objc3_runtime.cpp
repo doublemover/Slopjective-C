@@ -4435,6 +4435,9 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
 // M266-D001 cleanup-unwind integration anchor: current Part 5 cleanup/unwind
 // execution proofs reuse this private pool-frame drain path and the paired
 // memory-management snapshots as the runtime-owned cleanup carrier.
+// M266-D002 runtime cleanup/unwind implementation anchor: the broader runnable
+// cleanup execution matrix still proves cleanup through this same private
+// helper cluster while public runtime headers remain unchanged.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
 }

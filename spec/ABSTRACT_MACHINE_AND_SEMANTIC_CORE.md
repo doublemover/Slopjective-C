@@ -429,7 +429,7 @@ M266-D001 runtime/toolchain note:
   - emitted native object/executable artifacts from the existing `M266-C002` lowering slice
   - the emitted linker-response/runtime-archive sidecars used to link those executables
   - the private autoreleasepool push/pop and memory-state snapshot hooks that remain the runtime-owned cleanup carrier
-- broader cleanup/unwind runtime execution remains the follow-on `M266-D002` implementation target
+- `M266-D002` now widens that runnable execution surface across ordinary lexical exit, guard-mediated early return, and nested-scope return unwind while keeping the runtime-owned cleanup carrier private
 
 M266-B002 implementation note:
 
