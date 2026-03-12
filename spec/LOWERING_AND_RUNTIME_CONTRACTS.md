@@ -8222,3 +8222,29 @@ on, without claiming that later ARC automation issues are complete.
   - no generalized weak load/store lowering yet
   - no automatic autorelease-return rewrite automation yet
 - `M262-C002` is the next issue.
+
+## M262 ARC automatic retain release autorelease insertion (C002)
+
+`M262-C002` promotes the frozen ARC lowering boundary into a real helper-call
+insertion path for the supported runnable ARC slice.
+
+- canonical contract id:
+  - `objc3c-arc-automatic-insertion/m262-c002-v1`
+- supported source inputs now consumed by lane C:
+  - ARC semantic insertion packets from `M262-A002`, `M262-B002`, and
+    `M262-B003`
+  - the helper ABI and cleanup boundary frozen in `M262-C001`
+- canonical lowering model:
+  - `owned-params-retain-on-entry-release-on-exit-and-autoreleasing-returns-lower-through-private-runtime-helpers`
+- emitted IR must now carry:
+  - `; arc_automatic_insertions = ...`
+  - `!objc3.objc_arc_automatic_insertions = !{...}`
+- supported automatic insertion now covers:
+  - retain-on-entry for ARC-owned runnable parameters
+  - release-on-exit for tracked ARC-owned storage
+  - autorelease-return lowering for supported autoreleasing returns
+- explicit non-goals:
+  - no generalized local ARC cleanup stack
+  - no exception-cleanup widening
+  - no cross-module ARC optimization
+- `M262-C003` is the next issue.

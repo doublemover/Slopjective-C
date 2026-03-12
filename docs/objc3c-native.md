@@ -1655,6 +1655,39 @@ Recommended M262 lane-C freeze check:
 - `python scripts/check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py`
 - `M262-C002` is the next issue.
 
+## M262 ARC automatic retain release autorelease insertion (M262-C002)
+
+Lane C now consumes the frozen ARC lowering boundary plus the semantic
+insertion packets and emits real retain, release, and autorelease helper calls
+for the supported runnable slice.
+
+Current implementation status (`M262-C002`):
+
+- lowering now publishes one canonical contract:
+  - `objc3c-arc-automatic-insertion/m262-c002-v1`
+- the supported automatic-insertion boundary is defined as:
+  - ARC semantic insertion packets from `M262-A002`, `M262-B002`, and
+    `M262-B003`
+  - the frozen lowering/helper ABI boundary from `M262-C001`
+  - runtime helper insertion only for the supported runnable function and
+    method parameter/return paths
+- emitted IR now carries:
+  - `; arc_automatic_insertions = ...`
+  - `!objc3.objc_arc_automatic_insertions`
+- supported ARC helper placement now materializes:
+  - retain-on-entry for ARC-owned runnable parameters
+  - release-on-exit for tracked ARC-owned storage
+  - autorelease-return lowering for supported autoreleasing returns
+- still explicitly deferred:
+  - no generalized local ARC cleanup stack
+  - no exception-cleanup widening
+  - no cross-module ARC optimization
+
+Recommended M262 lane-C implementation check:
+
+- `python scripts/check_m262_c002_automatic_retain_release_autorelease_insertion_core_feature_implementation.py`
+- `M262-C003` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

@@ -744,6 +744,17 @@ inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelFailClosedModel =
 inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelNonGoalModel =
     "no-full-arc-automation-no-exception-cleanup-widening-no-objc-runtime-abi-parity-claim";
 std::string Objc3ArcLoweringAbiCleanupModelSummary();
+inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
+    "objc3c-arc-automatic-insertion/m262-c002-v1";
+inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =
+    "lane-c-consumes-arc-semantic-insertion-flags-for-supported-function-and-method-param-return-lowering";
+inline constexpr const char *kObjc3ArcAutomaticInsertionLoweringModel =
+    "owned-params-retain-on-entry-release-on-exit-and-autoreleasing-returns-lower-through-private-runtime-helpers";
+inline constexpr const char *kObjc3ArcAutomaticInsertionFailureModel =
+    "only-supported-runnable-arc-param-return-insertion-paths-materialize-automatic-helper-calls";
+inline constexpr const char *kObjc3ArcAutomaticInsertionNonGoalModel =
+    "no-general-local-lifetime-inference-no-full-cleanup-stack-no-cross-module-arc-optimization";
+std::string Objc3ArcAutomaticInsertionSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

@@ -1500,6 +1500,11 @@ class Objc3IREmitter {
     // semantic packets.
     out << "; arc_lowering_abi_cleanup_model = "
         << Objc3ArcLoweringAbiCleanupModelSummary() << "\n";
+    // M262-C002 ARC automatic-insertion implementation anchor: publish the
+    // live param/return helper-insertion boundary so later ARC work extends a
+    // real lowering surface instead of a summary-only semantic contract.
+    out << "; arc_automatic_insertions = "
+        << Objc3ArcAutomaticInsertionSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2324,11 +2329,16 @@ class Objc3IREmitter {
     std::unordered_set<std::string> nonzero_bound_ptrs;
     std::unordered_map<std::string, int> const_value_ptrs;
     std::unordered_map<std::string, int> immediate_identifiers;
+    std::vector<std::string> arc_owned_cleanup_ptrs;
+    std::unordered_set<std::string> arc_owned_cleanup_ptr_set;
+    std::unordered_set<std::string> arc_owned_storage_ptrs;
     ValueType return_type = ValueType::I32;
     int temp_counter = 0;
     int label_counter = 0;
     bool terminated = false;
     bool global_proofs_invalidated = false;
+    bool arc_return_insert_retain = false;
+    bool arc_return_insert_autorelease = false;
   };
 
   static const char *LLVMScalarType(ValueType type) {
@@ -2339,6 +2349,58 @@ class Objc3IREmitter {
       return "void";
     }
     return "i32";
+  }
+
+  static bool IsArcExecutableObjectParam(const FuncParam &param) {
+    return param.id_spelling || param.instancetype_spelling ||
+           param.object_pointer_type_spelling;
+  }
+
+  static bool IsArcExecutableObjectReturn(const FunctionDecl &fn) {
+    return fn.return_id_spelling || fn.return_instancetype_spelling ||
+           fn.return_object_pointer_type_spelling;
+  }
+
+  static bool IsArcExecutableObjectReturn(const Objc3MethodDecl &method) {
+    return method.return_id_spelling || method.return_instancetype_spelling ||
+           method.return_object_pointer_type_spelling;
+  }
+
+  static bool EffectiveArcParamInsertRetain(const FuncParam &param,
+                                            bool arc_mode_enabled) {
+    return param.ownership_insert_retain ||
+           (arc_mode_enabled && !param.has_ownership_qualifier &&
+            IsArcExecutableObjectParam(param));
+  }
+
+  static bool EffectiveArcParamInsertRelease(const FuncParam &param,
+                                             bool arc_mode_enabled) {
+    return param.ownership_insert_release ||
+           (arc_mode_enabled && !param.has_ownership_qualifier &&
+            IsArcExecutableObjectParam(param));
+  }
+
+  static bool EffectiveArcReturnInsertRetain(const FunctionDecl &fn,
+                                             bool arc_mode_enabled) {
+    return fn.return_ownership_insert_retain ||
+           (arc_mode_enabled && !fn.has_return_ownership_qualifier &&
+            IsArcExecutableObjectReturn(fn));
+  }
+
+  static bool EffectiveArcReturnInsertRetain(const Objc3MethodDecl &method,
+                                             bool arc_mode_enabled) {
+    return method.return_ownership_insert_retain ||
+           (arc_mode_enabled && !method.has_return_ownership_qualifier &&
+            IsArcExecutableObjectReturn(method));
+  }
+
+  static bool EffectiveArcReturnInsertAutorelease(const FunctionDecl &fn) {
+    return fn.return_ownership_insert_autorelease;
+  }
+
+  static bool EffectiveArcReturnInsertAutorelease(
+      const Objc3MethodDecl &method) {
+    return method.return_ownership_insert_autorelease;
   }
 
   static std::map<std::string, LoweredFunctionSignature> BuildLoweredFunctionSignatures(const Objc3Program &program) {
@@ -2720,6 +2782,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_semantic_rules = !{!77}\n";
     out << "!objc3.objc_arc_inference_lifetime = !{!78}\n";
     out << "!objc3.objc_arc_interaction_semantics = !{!79}\n";
+    out << "!objc3.objc_arc_automatic_insertions = !{!80}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4089,6 +4152,31 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsNonGoalModel)
+        << "\"}\n";
+    out << "!80 = !{!\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionLoweringModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInferenceLifetimeContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcLoweringAbiCleanupModelContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionFailureModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -8827,18 +8915,62 @@ class Objc3IREmitter {
     args.push_back("i32 " + arg_i32);
   }
 
+  void RegisterArcOwnedCleanupPtr(const std::string &ptr,
+                                  FunctionContext &ctx) const {
+    if (ptr.empty() || !ctx.arc_owned_cleanup_ptr_set.insert(ptr).second) {
+      return;
+    }
+    ctx.arc_owned_cleanup_ptrs.push_back(ptr);
+    ctx.arc_owned_storage_ptrs.insert(ptr);
+  }
+
+  void EmitArcOwnedCleanupReleases(FunctionContext &ctx) const {
+    for (auto it = ctx.arc_owned_cleanup_ptrs.rbegin();
+         it != ctx.arc_owned_cleanup_ptrs.rend(); ++it) {
+      if (it->empty()) {
+        continue;
+      }
+      const std::string loaded_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
+                               *it + ", align 4");
+      const std::string released_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeReleaseI32Symbol) +
+                               "(i32 " + loaded_value + ")");
+      (void)released_value;
+    }
+  }
+
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
-    EmitPendingBlockDisposeHelpers(ctx);
     if (ctx.return_type == ValueType::Void) {
+      EmitPendingBlockDisposeHelpers(ctx);
+      EmitArcOwnedCleanupReleases(ctx);
       ctx.code_lines.push_back("  ret void");
       return;
     }
+    std::string returned_value = i32_value;
+    if (ctx.arc_return_insert_retain) {
+      const std::string retained_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeRetainI32Symbol) +
+                               "(i32 " + returned_value + ")");
+      returned_value = retained_value;
+    }
+    if (ctx.arc_return_insert_autorelease) {
+      const std::string autoreleased_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
+                               "(i32 " + returned_value + ")");
+      returned_value = autoreleased_value;
+    }
+    EmitPendingBlockDisposeHelpers(ctx);
+    EmitArcOwnedCleanupReleases(ctx);
     if (ctx.return_type == ValueType::Bool) {
-      const std::string bool_i1 = CoerceI32ToBoolI1(i32_value, ctx);
+      const std::string bool_i1 = CoerceI32ToBoolI1(returned_value, ctx);
       ctx.code_lines.push_back("  ret i1 " + bool_i1);
       return;
     }
-    ctx.code_lines.push_back("  ret i32 " + i32_value);
+    ctx.code_lines.push_back("  ret i32 " + returned_value);
   }
 
   void EmitTypedParamStore(const FuncParam &param, std::size_t index, const std::string &ptr, FunctionContext &ctx) const {
@@ -8848,7 +8980,21 @@ class Objc3IREmitter {
       ctx.entry_lines.push_back("  store i32 " + widened + ", ptr " + ptr + ", align 4");
       return;
     }
-    ctx.entry_lines.push_back("  store i32 %arg" + std::to_string(index) + ", ptr " + ptr + ", align 4");
+    std::string stored_value = "%arg" + std::to_string(index);
+    if (EffectiveArcParamInsertRetain(param, frontend_metadata_.arc_mode_enabled)) {
+      const std::string retained_value =
+          "%arg" + std::to_string(index) + ".retained." +
+          std::to_string(ctx.temp_counter++);
+      ctx.entry_lines.push_back("  " + retained_value + " = call i32 @" +
+                                std::string(kObjc3RuntimeRetainI32Symbol) +
+                                "(i32 " + stored_value + ")");
+      stored_value = retained_value;
+    }
+    ctx.entry_lines.push_back("  store i32 " + stored_value + ", ptr " + ptr +
+                              ", align 4");
+    if (EffectiveArcParamInsertRelease(param, frontend_metadata_.arc_mode_enabled)) {
+      RegisterArcOwnedCleanupPtr(ptr, ctx);
+    }
   }
 
   void EmitAssignmentStore(const std::string &ptr, const std::string &op, const Expr *value_expr,
@@ -8880,7 +9026,25 @@ class Objc3IREmitter {
         return;
       }
       const std::string value = EmitExpr(value_expr, ctx);
-      ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
+      if (ctx.arc_owned_storage_ptrs.find(ptr) != ctx.arc_owned_storage_ptrs.end()) {
+        const std::string retained_value = NewTemp(ctx);
+        const std::string previous_value = NewTemp(ctx);
+        const std::string released_value = NewTemp(ctx);
+        ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
+                                 std::string(kObjc3RuntimeRetainI32Symbol) +
+                                 "(i32 " + value + ")");
+        ctx.code_lines.push_back("  " + previous_value +
+                                 " = load i32, ptr " + ptr + ", align 4");
+        ctx.code_lines.push_back("  store i32 " + retained_value + ", ptr " +
+                                 ptr + ", align 4");
+        ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
+                                 std::string(kObjc3RuntimeReleaseI32Symbol) +
+                                 "(i32 " + previous_value + ")");
+        (void)released_value;
+      } else {
+        ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr +
+                                 ", align 4");
+      }
       if (has_assigned_nil_value && ptr.rfind("@", 0) != 0) {
         ctx.nil_bound_ptrs.insert(ptr);
       }
@@ -10146,6 +10310,47 @@ class Objc3IREmitter {
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
     bool emitted = false;
     std::unordered_set<std::string> declared_symbols;
+    const auto requires_arc_helper_declarations = [&]() {
+      for (const auto &fn : program_.functions) {
+        if (EffectiveArcReturnInsertRetain(
+                fn, frontend_metadata_.arc_mode_enabled) ||
+            fn.return_ownership_insert_release ||
+            EffectiveArcReturnInsertAutorelease(fn)) {
+          return true;
+        }
+        for (const auto &param : fn.params) {
+          if (EffectiveArcParamInsertRetain(
+                  param, frontend_metadata_.arc_mode_enabled) ||
+              EffectiveArcParamInsertRelease(
+                  param, frontend_metadata_.arc_mode_enabled) ||
+              param.ownership_insert_autorelease) {
+            return true;
+          }
+        }
+      }
+      for (const auto &method_def : method_definitions_) {
+        if (method_def.method == nullptr) {
+          continue;
+        }
+        const Objc3MethodDecl &method = *method_def.method;
+        if (EffectiveArcReturnInsertRetain(
+                method, frontend_metadata_.arc_mode_enabled) ||
+            method.return_ownership_insert_release ||
+            EffectiveArcReturnInsertAutorelease(method)) {
+          return true;
+        }
+        for (const auto &param : method.params) {
+          if (EffectiveArcParamInsertRetain(
+                  param, frontend_metadata_.arc_mode_enabled) ||
+              EffectiveArcParamInsertRelease(
+                  param, frontend_metadata_.arc_mode_enabled) ||
+              param.ownership_insert_autorelease) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
     const auto emit_declaration_once =
         [&](const std::string &symbol, const std::string &declaration) {
           if (symbol.empty() || !declared_symbols.insert(symbol).second) {
@@ -10190,6 +10395,7 @@ class Objc3IREmitter {
           kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
     }
     if (synthesized_property_accessor_count_ > 0u ||
+        requires_arc_helper_declarations() ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
         frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites >
             0u ||
@@ -10340,6 +10546,10 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = fn.return_type;
+    ctx.arc_return_insert_retain =
+        EffectiveArcReturnInsertRetain(fn, frontend_metadata_.arc_mode_enabled);
+    ctx.arc_return_insert_autorelease =
+        EffectiveArcReturnInsertAutorelease(fn);
     ctx.scopes.push_back({});
     SeedKnownClassReceiverBindings(ctx);
 
@@ -10398,6 +10608,10 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = method.return_type;
+    ctx.arc_return_insert_retain = EffectiveArcReturnInsertRetain(
+        method, frontend_metadata_.arc_mode_enabled);
+    ctx.arc_return_insert_autorelease =
+        EffectiveArcReturnInsertAutorelease(method);
     ctx.scopes.push_back({});
     SeedKnownClassReceiverBindings(ctx);
     const int implementation_class_identity =

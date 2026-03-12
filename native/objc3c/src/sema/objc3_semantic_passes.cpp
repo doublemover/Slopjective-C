@@ -13610,6 +13610,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   // ARC legality, inferred lifetime packets, and synthesized property ownership
   // metadata only; it does not schedule cleanups or choose lowering helper
   // placement.
+  // M262-C002 ARC automatic-insertion implementation anchor: sema now also
+  // exports the supported ARC insertion flags and normalized property ownership
+  // metadata that lane C consumes for helper placement, while helper emission
+  // itself remains lowering-owned.
   const auto apply_arc_property_interaction_metadata =
       [](Objc3SemanticPropertyTypeMetadata &property_metadata) {
         const auto profile_contains =

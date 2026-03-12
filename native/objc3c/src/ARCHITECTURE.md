@@ -9929,6 +9929,31 @@ entrypoints.
   - autorelease-return rewrite automation
 - the next issue is `M262-C002`
 
+## M262 ARC Automatic Retain Release Autorelease Insertion (C002)
+
+Lane C now consumes the semantic ARC insertion packets and the frozen helper ABI
+boundary to emit real retain, release, and autorelease helper calls for the
+supported runnable slice.
+
+- canonical lowering contract:
+  - `objc3c-arc-automatic-insertion/m262-c002-v1`
+- lane-C implementation remains explicit about ownership:
+  - sema owns legality, insertion packets, and normalized property ownership
+    metadata
+  - lowering now consumes the semantic insertion flags and emits real helper calls
+- emitted IR now publishes:
+  - `; arc_automatic_insertions = ...`
+  - `!objc3.objc_arc_automatic_insertions`
+- supported automatic insertion currently covers:
+  - retain-on-entry for ARC-owned runnable parameters
+  - release-on-exit for tracked ARC-owned storage
+  - autorelease-return lowering for supported autoreleasing returns
+- still deferred:
+  - generalized local ARC cleanup stacks
+  - exception-cleanup widening
+  - cross-module ARC optimization
+- the next issue is `M262-C003`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

@@ -27,6 +27,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // semantic/source packet only and does not by itself schedule ARC cleanup
   // scopes or claim helper-call placement; later lane-C lowering must consume
   // it explicitly.
+  // M262-C002 ARC automatic-insertion implementation anchor: this scaffold now
+  // explicitly feeds the supported ARC helper-placement path, but remains a
+  // source-side replay packet rather than the place where retain/release/
+  // autorelease calls are emitted.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

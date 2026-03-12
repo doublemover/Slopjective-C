@@ -1345,6 +1345,28 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
   return out.str();
 }
 
+std::string Objc3ArcAutomaticInsertionSummary() {
+  std::ostringstream out;
+  // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the
+  // existing ARC semantic insertion flags for the supported runnable slice so
+  // ordinary function and method lowering materializes retain/release/
+  // autorelease helper calls instead of publishing summary-only intent.
+  out << "contract=" << kObjc3ArcAutomaticInsertionContractId
+      << ";source_model=" << kObjc3ArcAutomaticInsertionSourceModel
+      << ";lowering_model=" << kObjc3ArcAutomaticInsertionLoweringModel
+      << ";arc_mode_contract=" << Expr::kObjc3ArcModeHandlingContractId
+      << ";arc_inference_contract=" << Expr::kObjc3ArcInferenceLifetimeContractId
+      << ";arc_interaction_contract=" << Expr::kObjc3ArcInteractionSemanticsContractId
+      << ";arc_cleanup_contract=" << kObjc3ArcLoweringAbiCleanupModelContractId
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";fail_closed_model=" << kObjc3ArcAutomaticInsertionFailureModel
+      << ";non_goal_model=" << kObjc3ArcAutomaticInsertionNonGoalModel
+      << ";next_issue=M262-C003";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

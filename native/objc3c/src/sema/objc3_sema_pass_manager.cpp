@@ -2294,6 +2294,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // M262-C001 ARC lowering ABI/cleanup freeze anchor: this handoff remains
   // semantic-only and must not silently claim cleanup scheduling, helper-call
   // placement, or runtime ABI widening before the lane-C lowering issues land.
+  // M262-C002 ARC automatic-insertion implementation anchor: the handoff now
+  // also preserves the supported ARC insertion flags that lowering consumes for
+  // helper placement, without moving retain/release/autorelease emission into
+  // sema itself.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

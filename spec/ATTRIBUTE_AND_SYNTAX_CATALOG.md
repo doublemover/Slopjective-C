@@ -129,6 +129,21 @@ Current implementation status (`M262-C001`):
 - this freeze does not yet claim general ARC cleanup insertion,
   autorelease-return rewrite automation, or public ARC runtime ABI exposure
 
+### B.2.9 ARC automatic insertion boundary (implementation note) {#b-2-9}
+
+Current implementation status (`M262-C002`):
+
+- lane C now consumes the ARC semantic insertion packets and emits real helper calls for the supported runnable slice
+- the supported live insertion surface currently covers:
+  - retain-on-entry for ARC-owned runnable parameters
+  - release-on-exit for tracked ARC-owned storage
+  - autorelease-return lowering for supported autoreleasing returns
+- emitted IR now carries:
+  - `; arc_automatic_insertions = ...`
+  - `!objc3.objc_arc_automatic_insertions = !{...}`
+- this implementation does not yet claim a generalized local cleanup stack,
+  exception-cleanup widening, or cross-module ARC optimization
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}
