@@ -616,9 +616,9 @@ std::string BuildPart5ControlFlowSafetyLoweringContractJson(
       << ",\"fail_closed\":true"
       << ",\"source_semantic_model_ready\":"
       << (source_semantic_model_ready ? "true" : "false")
-      << ",\"ready_for_native_guard_lowering\":false"
+      << ",\"ready_for_native_guard_lowering\":true"
       << ",\"ready_for_native_match_lowering\":false"
-      << ",\"ready_for_native_defer_lowering\":false"
+      << ",\"ready_for_native_defer_lowering\":true"
       << ",\"semantic_summary_replay_key\":\""
       << EscapeJsonString(semantic_summary_replay_key)
       << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
@@ -8729,13 +8729,12 @@ BuildPart5ControlFlowSafetyLoweringContract(
                                 summary.guard_condition_clause_semantic_sites;
   contract.match_statement_sites = summary.match_statement_semantic_sites;
   contract.defer_statement_sites = summary.defer_statement_semantic_sites;
-  contract.live_guard_short_circuit_sites = 0;
+  contract.live_guard_short_circuit_sites = contract.guard_statement_sites;
   contract.live_match_dispatch_sites = 0;
-  contract.live_defer_cleanup_sites = 0;
-  contract.fail_closed_guard_short_circuit_sites =
-      contract.guard_statement_sites;
+  contract.live_defer_cleanup_sites = contract.defer_statement_sites;
+  contract.fail_closed_guard_short_circuit_sites = 0;
   contract.fail_closed_match_dispatch_sites = contract.match_statement_sites;
-  contract.fail_closed_defer_cleanup_sites = contract.defer_statement_sites;
+  contract.fail_closed_defer_cleanup_sites = 0;
   contract.deterministic_fail_closed_sites =
       contract.fail_closed_guard_short_circuit_sites +
       contract.fail_closed_match_dispatch_sites +

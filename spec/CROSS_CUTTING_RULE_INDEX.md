@@ -41,8 +41,11 @@ Current Part 5 lowering note:
 
 - `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`
   now records the truthful native-lowering boundary.
-- admitted `guard`, statement-form `match`, and source-only `defer` sites
-  remain fail-closed in native LLVM lowering today.
+- Current Part 5 defer and guard lowering note:
+- `M266-C002` now lowers boolean-clause `guard` and lexical `defer` cleanup
+  insertion natively.
+- statement-form `match` remains the only admitted Part 5 surface still
+  fail-closed in native LLVM lowering today.
 - current fail-closed lowering probes terminate deterministically with
   `O3L300`.
 
@@ -65,4 +68,3 @@ Current Part 5 exhaustiveness note:
 ## Maintenance rule
 
 When adding a new cross cutting normative rule, update this file and convert secondary locations to explicit cross references.
-

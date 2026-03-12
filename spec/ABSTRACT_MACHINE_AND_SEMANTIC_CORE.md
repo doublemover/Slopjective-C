@@ -415,11 +415,11 @@ M266-B003 implementation note:
 M266-C001 lowering note:
 
 - `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract` now freezes the truthful lowering boundary for admitted Part 5 control-flow constructs.
-- `guard`, statement-form `match`, and source-only `defer` remain frontend/sema-owned today.
+- `guard`, statement-form `match`, and source-only `defer` were the original frozen lowering boundary.
+- M266-C002 lowering note: native IR now executes `guard` short-circuit control flow and lexical `defer` cleanup insertion directly, while statement-form `match` remains the only Part 5 lowering surface still fail-closed.
 - native LLVM lowering still fail-closes these surfaces with deterministic `O3L300` diagnostics until later runnable lowering/runtime work lands.
 
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
 - currently supported exhaustive forms are catch-all branches, 	rue plus alse, and .Ok(...) plus .Err(...).
-

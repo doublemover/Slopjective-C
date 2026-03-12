@@ -4927,12 +4927,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     // fail closed until runnable block lowering lands.
     semantic_options.allow_source_only_block_literals =
         !options.emit_ir && !options.emit_object;
-    // M266-B003 defer-semantic-completion anchor: source-only frontend runs
-    // may admit `defer` through semantic validation so lane-B can freeze the
-    // legality/order model, while native emit paths keep cleanup insertion
-    // fail-closed until M266-C002 lowering lands.
-    semantic_options.allow_source_only_defer_statements =
-        !options.emit_ir && !options.emit_object;
+    // M266-C002 defer-lowering anchor: defer statements are now admitted for
+    // native validation because lane C owns executable cleanup insertion in
+    // the IR path rather than keeping defer as a source-only semantic claim.
+    semantic_options.allow_source_only_defer_statements = true;
     semantic_options.arc_mode_enabled =
         options.arc_mode == Objc3FrontendArcMode::kEnabled;
 

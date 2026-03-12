@@ -442,7 +442,7 @@ admits more real syntax than the initial `M266-A001` freeze.
   - binding patterns `let name` / `var name`
   - result-case patterns such as `.Ok(let value)` and `.Err(let error)`
 - source-only `defer { ... }` statements are now admitted as a frontend/sema-owned Part 5 control-flow surface
-- native emit paths still fail closed for runnable `defer` lowering with `O3S221` until later lane-C/lane-D work lands
+- native emit paths now lower runnable `defer` cleanup insertion and boolean-clause `guard` short-circuit control flow through `M266-C002`
 - expression-form `match` arms using `=>`, guarded patterns using `where`, and
   type-test patterns using contextual `is` still fail closed with targeted
   parser diagnostics
@@ -473,19 +473,17 @@ at `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`.
   - live bool/result-case exhaustiveness plus catch-all exhaustiveness
   - `break` / `continue` legality restrictions
 - still deferred today:
-  - runnable guard short-circuit lowering
   - runnable statement-form `match` dispatch lowering
-  - runnable `defer` cleanup lowering/runtime execution
   - result payload typing beyond the current binding-scope surface
 
 M266-C001 lowering note:
 
 - the frontend now publishes `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`
-- this packet truthfully freezes the current lowering boundary:
-  - `guard` is admitted in frontend/sema and remains fail-closed in native IR lowering
-  - statement-form `match` is admitted in frontend/sema and remains fail-closed in native IR lowering
-  - source-only `defer { ... }` is admitted in frontend/sema and remains fail-closed in native IR lowering
-- current native fail-closed probes terminate with deterministic `O3L300` lowering diagnostics instead of silently widening the runnable surface
+- this packet is now a historical freeze for the original lowering boundary:
+  - `M266-C002` upgrades native IR lowering to live short-circuit `guard` execution
+  - `M266-C002` upgrades native IR lowering to live lexical `defer` cleanup insertion on ordinary and non-local scope exit
+  - statement-form `match` remains admitted in frontend/sema and still fails closed in native IR lowering
+- current implementation proof bundle: `objc3c-part5-defer-guard-lowering-implementation/m266-c002-v1`
 
 Recommended semantic contract check:
 

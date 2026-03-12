@@ -2352,6 +2352,7 @@ class Objc3IREmitter {
     std::string continue_label;
     std::string break_label;
     bool continue_allowed = false;
+    std::size_t scope_depth = 0;
     std::size_t autoreleasepool_depth = 0;
     std::size_t pending_block_dispose_depth = 0;
     std::size_t arc_cleanup_depth = 0;
@@ -2385,6 +2386,7 @@ class Objc3IREmitter {
     std::vector<PendingBlockDisposeCall> pending_block_dispose_calls;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
+    std::vector<std::vector<const BlockStmt *>> pending_defer_scope_blocks;
     std::vector<std::size_t> pending_block_dispose_scope_depths;
     std::vector<std::size_t> arc_cleanup_scope_depths;
     std::unordered_set<std::string> nil_bound_ptrs;
@@ -8684,9 +8686,58 @@ class Objc3IREmitter {
 
   void PushScope(FunctionContext &ctx) const {
     ctx.scopes.push_back({});
+    ctx.pending_defer_scope_blocks.push_back({});
     ctx.pending_block_dispose_scope_depths.push_back(
         ctx.pending_block_dispose_calls.size());
     ctx.arc_cleanup_scope_depths.push_back(ctx.arc_owned_cleanup_ptrs.size());
+  }
+
+  void EmitDeferredCleanupBlock(const BlockStmt *block_stmt,
+                                FunctionContext &ctx) const {
+    // M266-C002 defer/guard lowering anchor: defer bodies now lower into
+    // explicit LIFO scope cleanups that execute inside the same lexical cleanup
+    // pipeline as existing block-dispose and ARC-owned teardown, rather than
+    // running eagerly at the original statement site.
+    if (block_stmt == nullptr) {
+      return;
+    }
+    const bool outer_terminated = ctx.terminated;
+    ctx.terminated = false;
+    const std::size_t autoreleasepool_depth =
+        ctx.autoreleasepool_scope_symbols.size();
+    if (block_stmt->is_autoreleasepool_scope) {
+      ctx.code_lines.push_back(
+          "  call void @" +
+          std::string(kObjc3RuntimePushAutoreleasepoolScopeSymbol) + "()");
+      ctx.autoreleasepool_scope_symbols.push_back(
+          block_stmt->autoreleasepool_scope_symbol);
+    }
+    PushScope(ctx);
+    for (const auto &nested_stmt : block_stmt->body) {
+      EmitStatement(nested_stmt.get(), ctx);
+    }
+    const bool block_terminated = ctx.terminated;
+    PopScope(ctx, !block_terminated);
+    if (!block_terminated) {
+      EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
+    }
+    ctx.terminated = outer_terminated;
+  }
+
+  void EmitDeferredCleanupForScopeBucket(
+      const std::vector<const BlockStmt *> &bucket, FunctionContext &ctx) const {
+    for (std::size_t index = bucket.size(); index > 0; --index) {
+      EmitDeferredCleanupBlock(bucket[index - 1u], ctx);
+    }
+  }
+
+  void EmitDeferredCleanupTerminalToDepth(FunctionContext &ctx,
+                                          std::size_t target_scope_depth) const {
+    for (std::size_t index = ctx.pending_defer_scope_blocks.size();
+         index > target_scope_depth; --index) {
+      EmitDeferredCleanupForScopeBucket(ctx.pending_defer_scope_blocks[index - 1u],
+                                        ctx);
+    }
   }
 
   void EmitPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
@@ -8723,6 +8774,13 @@ class Objc3IREmitter {
     }
     const auto scope_bindings = std::move(ctx.scopes.back());
     ctx.scopes.pop_back();
+    const auto deferred_blocks =
+        ctx.pending_defer_scope_blocks.empty()
+            ? std::vector<const BlockStmt *>{}
+            : std::move(ctx.pending_defer_scope_blocks.back());
+    if (!ctx.pending_defer_scope_blocks.empty()) {
+      ctx.pending_defer_scope_blocks.pop_back();
+    }
     const std::size_t target_block_dispose_depth =
         ctx.pending_block_dispose_scope_depths.empty()
             ? 0u
@@ -8736,6 +8794,7 @@ class Objc3IREmitter {
       ctx.arc_cleanup_scope_depths.pop_back();
     }
     if (emit_cleanup) {
+      EmitDeferredCleanupForScopeBucket(deferred_blocks, ctx);
       EmitPendingBlockDisposeUnwindToDepth(ctx, target_block_dispose_depth);
       EmitArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth);
     }
@@ -9434,9 +9493,11 @@ class Objc3IREmitter {
     EmitArcOwnedCleanupUnwindToDepth(ctx, 0u);
   }
 
-  void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t autoreleasepool_depth,
+  void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t scope_depth,
+                                  std::size_t autoreleasepool_depth,
                                   std::size_t pending_block_dispose_depth,
                                   std::size_t arc_cleanup_depth) const {
+    EmitDeferredCleanupTerminalToDepth(ctx, scope_depth);
     EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
     EmitPendingBlockDisposeTerminalCleanupToDepth(
         ctx, pending_block_dispose_depth, ctx.code_lines);
@@ -9446,6 +9507,7 @@ class Objc3IREmitter {
 
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
     if (ctx.return_type == ValueType::Void) {
+      EmitDeferredCleanupTerminalToDepth(ctx, 0u);
       EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
       EmitArcOwnedTerminalCleanupToDepth(
           ctx, 0u, ctx.code_lines, ctx.temp_counter);
@@ -9467,6 +9529,7 @@ class Objc3IREmitter {
                                "(i32 " + returned_value + ")");
       returned_value = autoreleased_value;
     }
+    EmitDeferredCleanupTerminalToDepth(ctx, 0u);
     EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
     EmitArcOwnedTerminalCleanupToDepth(
         ctx, 0u, ctx.code_lines, ctx.temp_counter);
@@ -9658,13 +9721,13 @@ class Objc3IREmitter {
       return;
     }
 
+    const bool is_guard = if_stmt->guard_binding_surface_enabled ||
+                          if_stmt->guard_condition_list_surface_enabled;
     const std::size_t binding_count =
         std::min(if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
-    if (binding_count == 0u) {
+    if (binding_count == 0u && !is_guard) {
       return;
     }
-
-    const bool is_guard = if_stmt->guard_binding_surface_enabled;
     const std::string success_label =
         NewLabel(ctx, is_guard ? "guard_success_" : "if_bind_success_");
     const std::string failure_label =
@@ -9699,7 +9762,33 @@ class Objc3IREmitter {
     }
 
     if (is_guard) {
+      const std::string guard_ready_label =
+          if_stmt->guard_condition_exprs.empty()
+              ? success_label
+              : NewLabel(ctx, "guard_ready_");
+      if (binding_count == 0u) {
+        ctx.code_lines.push_back("  br label %" + success_label);
+      }
       ctx.code_lines.push_back(success_label + ":");
+      for (const auto &guard_condition : if_stmt->guard_condition_exprs) {
+        const std::string condition_value = EmitExpr(guard_condition.get(), ctx);
+        const std::string condition_i1 = NewTemp(ctx);
+        const bool is_last_condition =
+            guard_condition.get() == if_stmt->guard_condition_exprs.back().get();
+        const std::string next_label =
+            is_last_condition ? guard_ready_label
+                              : NewLabel(ctx, "guard_clause_");
+        ctx.code_lines.push_back("  " + condition_i1 + " = icmp ne i32 " +
+                                 condition_value + ", 0");
+        ctx.code_lines.push_back("  br i1 " + condition_i1 + ", label %" +
+                                 next_label + ", label %" + failure_label);
+        if (!is_last_condition) {
+          ctx.code_lines.push_back(next_label + ":");
+        }
+      }
+      if (guard_ready_label != success_label) {
+        ctx.code_lines.push_back(guard_ready_label + ":");
+      }
       const auto promoted_bindings = ctx.scopes.back();
       PopScope(ctx, false);
       for (const auto &binding : promoted_bindings) {
@@ -10687,11 +10776,12 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Break: {
         if (ctx.control_stack.empty()) {
-          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           EmitTerminalCleanupToDepth(
-              ctx, ctx.control_stack.back().autoreleasepool_depth,
+              ctx, ctx.control_stack.back().scope_depth,
+              ctx.control_stack.back().autoreleasepool_depth,
               ctx.control_stack.back().pending_block_dispose_depth,
               ctx.control_stack.back().arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
@@ -10711,7 +10801,7 @@ class Objc3IREmitter {
           }
         }
         if (continue_label.empty()) {
-          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           const ControlLabels &target = *std::find_if(
@@ -10721,7 +10811,7 @@ class Objc3IREmitter {
                        labels.continue_label == continue_label;
               });
           EmitTerminalCleanupToDepth(
-              ctx, continue_autoreleasepool_depth,
+              ctx, target.scope_depth, continue_autoreleasepool_depth,
               target.pending_block_dispose_depth, target.arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
@@ -10730,8 +10820,7 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Empty:
         return;
-      case Stmt::Kind::Block:
-      case Stmt::Kind::Defer: {
+      case Stmt::Kind::Block: {
         const BlockStmt *block_stmt = stmt->block_stmt.get();
         if (block_stmt == nullptr) {
           return;
@@ -10753,6 +10842,14 @@ class Objc3IREmitter {
         if (!ctx.terminated) {
           EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
         }
+        return;
+      }
+      case Stmt::Kind::Defer: {
+        const BlockStmt *block_stmt = stmt->block_stmt.get();
+        if (block_stmt == nullptr || ctx.pending_defer_scope_blocks.empty()) {
+          return;
+        }
+        ctx.pending_defer_scope_blocks.back().push_back(block_stmt);
         return;
       }
       case Stmt::Kind::Expr: {
@@ -10782,7 +10879,7 @@ class Objc3IREmitter {
         ctx.code_lines.push_back(body_label + ":");
         PushScope(ctx);
         ctx.control_stack.push_back(
-            {cond_label, end_label, true,
+            {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
@@ -10814,7 +10911,7 @@ class Objc3IREmitter {
         ctx.code_lines.push_back(body_label + ":");
         PushScope(ctx);
         ctx.control_stack.push_back(
-            {cond_label, end_label, true,
+            {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
@@ -10867,7 +10964,7 @@ class Objc3IREmitter {
         ctx.code_lines.push_back(body_label + ":");
         PushScope(ctx);
         ctx.control_stack.push_back(
-            {step_label, end_label, true,
+            {step_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
@@ -10949,11 +11046,12 @@ class Objc3IREmitter {
         for (std::size_t arm_index = 0; arm_index < switch_stmt->cases.size(); ++arm_index) {
           const SwitchCase &case_stmt = switch_stmt->cases[arm_index];
           ctx.code_lines.push_back(arm_labels[arm_index] + ":");
-          PushScope(ctx);
-          ctx.control_stack.push_back(
-              {"", end_label, false, ctx.autoreleasepool_scope_symbols.size(),
-               ctx.pending_block_dispose_calls.size(),
-               ctx.arc_owned_cleanup_ptrs.size()});
+        PushScope(ctx);
+        ctx.control_stack.push_back(
+            {"", end_label, false, ctx.scopes.size() - 1u,
+             ctx.autoreleasepool_scope_symbols.size(),
+             ctx.pending_block_dispose_calls.size(),
+             ctx.arc_owned_cleanup_ptrs.size()});
           ctx.terminated = false;
           for (const auto &case_body_stmt : case_stmt.body) {
             EmitStatement(case_body_stmt.get(), ctx);
@@ -10980,7 +11078,8 @@ class Objc3IREmitter {
         if (if_stmt == nullptr) {
           return;
         }
-        if (if_stmt->optional_binding_surface_enabled) {
+        if (if_stmt->optional_binding_surface_enabled ||
+            if_stmt->guard_condition_list_surface_enabled) {
           EmitOptionalBindingIfStatement(if_stmt, ctx);
           return;
         }

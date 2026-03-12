@@ -48,6 +48,10 @@ Current-state note:
   so the native pipeline records the truthful fail-closed boundary for admitted
   `guard`, statement-form `match`, and source-only `defer` surfaces until later
   runnable lowering/runtime work materializes executable control-flow artifacts.
+- `M266-C002` upgrades that lowering/runtime work so boolean-clause `guard`
+  and lexical `defer` cleanup insertion now lower directly in native IR, while
+  statement-form `match` remains the only admitted Part 5 lowering surface that
+  still fails closed.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.
@@ -10810,5 +10814,4 @@ in both local and CI execution environments.
   - `tmp/reports/m276/M276-E002/`
   - records cold-build, warm-build, invalid-fingerprint fallback,
     contracts-only, and full-build proofs
-
 
