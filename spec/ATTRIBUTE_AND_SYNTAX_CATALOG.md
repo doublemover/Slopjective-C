@@ -113,6 +113,22 @@ Current implementation status (`M262-B003`):
   accounting
 - generalized ARC cleanup and broader ARC automation still remain deferred
 
+### B.2.8 ARC lowering ABI and cleanup boundary (implementation note) {#b-2-8}
+
+Current implementation status (`M262-C001`):
+
+- lane C now freezes one truthful ARC lowering boundary instead of inferring it
+  from older semantic packets
+- the frozen boundary is the combination of:
+  - ARC semantic packets from `M262-A002`, `M262-B001`, `M262-B002`, and
+    `M262-B003`
+  - unwind-cleanup accounting already carried by the lowering handoff
+  - the current private helper entrypoints for retain/release, autorelease,
+    weak property interaction, block helper ownership, and autoreleasepool
+    scope
+- this freeze does not yet claim general ARC cleanup insertion,
+  autorelease-return rewrite automation, or public ARC runtime ABI exposure
+
 ## B.3 Concurrency and executors {#b-3}
 
 ### B.3.1 Executor affinity annotation (canonical) {#b-3-1}

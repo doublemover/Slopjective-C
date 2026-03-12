@@ -13606,6 +13606,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   std::sort(interface_names.begin(), interface_names.end());
 
   handoff.interfaces_lexicographic.reserve(interface_names.size());
+  // M262-C001 ARC lowering ABI/cleanup freeze anchor: sema continues to own
+  // ARC legality, inferred lifetime packets, and synthesized property ownership
+  // metadata only; it does not schedule cleanups or choose lowering helper
+  // placement.
   const auto apply_arc_property_interaction_metadata =
       [](Objc3SemanticPropertyTypeMetadata &property_metadata) {
         const auto profile_contains =

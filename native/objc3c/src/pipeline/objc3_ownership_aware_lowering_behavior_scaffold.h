@@ -23,6 +23,10 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // also truthfully carries the supported weak/non-owning, autorelease-return,
   // synthesized-accessor, and block-interaction semantic packets that sit on
   // top of the retained ARC inference baseline.
+  // M262-C001 ARC lowering ABI/cleanup freeze anchor: this scaffold remains a
+  // semantic/source packet only and does not by itself schedule ARC cleanup
+  // scopes or claim helper-call placement; later lane-C lowering must consume
+  // it explicitly.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

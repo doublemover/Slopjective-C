@@ -2291,6 +2291,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // preserves the semantic packets that distinguish weak/non-owning storage,
   // explicit autorelease returns, synthesized accessor ownership packets, and
   // block-capture interactions inside the supported ARC slice.
+  // M262-C001 ARC lowering ABI/cleanup freeze anchor: this handoff remains
+  // semantic-only and must not silently claim cleanup scheduling, helper-call
+  // placement, or runtime ABI widening before the lane-C lowering issues land.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

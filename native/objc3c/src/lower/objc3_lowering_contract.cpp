@@ -1307,6 +1307,44 @@ std::string Objc3ArcInteractionSemanticsSummary() {
   return out.str();
 }
 
+std::string Objc3ArcLoweringAbiCleanupModelSummary() {
+  std::ostringstream out;
+  // M262-C001 ARC lowering ABI/cleanup freeze anchor: lane-C now freezes the
+  // current lowering boundary as the combination of semantic ARC packets,
+  // unwind-cleanup accounting, and private runtime helper entrypoints, while
+  // generalized cleanup scheduling and helper-placement automation remain
+  // deferred to the later lane-C implementation issues.
+  out << "contract=" << kObjc3ArcLoweringAbiCleanupModelContractId
+      << ";source_model=" << kObjc3ArcLoweringAbiCleanupModelSourceModel
+      << ";abi_model=" << kObjc3ArcLoweringAbiCleanupModelAbiModel
+      << ";cleanup_model=" << kObjc3ArcLoweringAbiCleanupModelCleanupModel
+      << ";arc_mode_contract=" << Expr::kObjc3ArcModeHandlingContractId
+      << ";arc_semantic_rules_contract=" << Expr::kObjc3ArcSemanticRulesContractId
+      << ";arc_inference_contract=" << Expr::kObjc3ArcInferenceLifetimeContractId
+      << ";arc_interaction_contract=" << Expr::kObjc3ArcInteractionSemanticsContractId
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";weak_load_symbol=" << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";weak_store_symbol=" << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+      << ";autoreleasepool_push_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";autoreleasepool_pop_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";retain_release_lane="
+      << kObjc3RetainReleaseOperationLoweringLaneContract
+      << ";weak_unowned_lane=" << kObjc3WeakUnownedSemanticsLoweringLaneContract
+      << ";autoreleasepool_lane="
+      << kObjc3AutoreleasePoolScopeLoweringLaneContract
+      << ";unwind_cleanup_lane=" << kObjc3UnwindCleanupLoweringLaneContract
+      << ";fail_closed_model="
+      << kObjc3ArcLoweringAbiCleanupModelFailClosedModel
+      << ";non_goal_model="
+      << kObjc3ArcLoweringAbiCleanupModelNonGoalModel
+      << ";next_issue=M262-C002";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -731,6 +731,19 @@ inline constexpr const char *kObjc3ArcInteractionSemanticsFailClosedModel =
 inline constexpr const char *kObjc3ArcInteractionSemanticsNonGoalModel =
     "no-general-arc-cleanup-insertion-no-cross-module-arc-interop-no-full-method-family-automation-yet";
 std::string Objc3ArcInteractionSemanticsSummary();
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelContractId =
+    "objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1";
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelSourceModel =
+    "arc-inference-and-interaction-semantic-packets-feed-one-lane-c-helper-call-and-cleanup-boundary";
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelAbiModel =
+    "private-runtime-helper-call-boundary-over-retain-release-autorelease-weak-property-and-block-helpers";
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelCleanupModel =
+    "helper-call-plus-autoreleasepool-scope-lowering-without-general-cleanup-stack-or-return-slot-optimization";
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelFailClosedModel =
+    "unsupported-ownership-qualified-signatures-and-generalized-arc-cleanups-remain-fail-closed";
+inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelNonGoalModel =
+    "no-full-arc-automation-no-exception-cleanup-widening-no-objc-runtime-abi-parity-claim";
+std::string Objc3ArcLoweringAbiCleanupModelSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

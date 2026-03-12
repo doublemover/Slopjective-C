@@ -1621,7 +1621,38 @@ the `B002` inference baseline.
 Recommended M262 lane-B expansion check:
 
 - `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
-- `M262-C001` is the next issue.
+
+## M262 ARC lowering ABI and cleanup model (M262-C001)
+
+Lane C now freezes the current ARC lowering boundary without claiming the later
+retain/release insertion and cleanup-scheduling work is already complete.
+
+Current implementation status (`M262-C001`):
+
+- lowering now publishes one canonical contract:
+  - `objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1`
+- the frozen boundary is defined as:
+  - ARC semantic packets from sema plus unwind-cleanup accounting plus private
+    runtime helper entrypoints
+- the current private helper boundary is explicit:
+  - `objc3_runtime_retain_i32`
+  - `objc3_runtime_release_i32`
+  - `objc3_runtime_autorelease_i32`
+  - `objc3_runtime_load_weak_current_property_i32`
+  - `objc3_runtime_store_weak_current_property_i32`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+- emitted IR now carries:
+  - `; arc_lowering_abi_cleanup_model = ...`
+- still explicitly deferred:
+  - no general ARC cleanup-scope insertion yet
+  - no generalized weak load/store lowering yet
+  - no automatic autorelease-return rewrite pipeline yet
+
+Recommended M262 lane-C freeze check:
+
+- `python scripts/check_m262_c001_arc_lowering_abi_and_cleanup_model_contract_and_architecture_freeze.py`
+- `M262-C002` is the next issue.
 
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 

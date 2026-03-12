@@ -9899,7 +9899,34 @@ baseline.
   ARC retain/release accounting
 - emitted IR now publishes the `arc_interaction_semantics` comment and
   `!objc3.objc_arc_interaction_semantics`
-- the next issue is `M262-C001`
+
+## M262 ARC Lowering ABI And Cleanup Model (C001)
+
+Lane C now freezes the current ARC lowering boundary as the combination of ARC
+semantic packets, unwind-cleanup accounting, and private runtime helper
+entrypoints.
+
+- canonical lowering contract:
+  - `objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1`
+- lane-C freeze remains explicit about ownership:
+  - sema owns legality, inferred lifetime packets, and synthesized property
+    ownership metadata
+  - lowering owns helper-call ABI publication and later cleanup scheduling work
+- emitted IR now publishes:
+  - `; arc_lowering_abi_cleanup_model = ...`
+- current helper boundary remains private/runtime-internal:
+  - `objc3_runtime_retain_i32`
+  - `objc3_runtime_release_i32`
+  - `objc3_runtime_autorelease_i32`
+  - `objc3_runtime_load_weak_current_property_i32`
+  - `objc3_runtime_store_weak_current_property_i32`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+- still deferred:
+  - general ARC cleanup insertion
+  - generalized weak load/store lowering
+  - autorelease-return rewrite automation
+- the next issue is `M262-C002`
 
 ## M261 Executable Block Source Closure (A001)
 

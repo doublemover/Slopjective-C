@@ -8196,4 +8196,28 @@ inference baseline.
   - `docs/contracts/m262_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion_b003_expectations.md`
   - `spec/planning/compiler/m262/m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion_packet.md`
   - `python scripts/check_m262_b003_weak_autorelease_property_synthesis_and_block_interaction_arc_semantics_core_feature_expansion.py`
-  - `M262-C001` is the next issue.
+
+## M262 ARC lowering ABI and cleanup model (C001)
+
+`M262-C001` freezes the current ARC lowering boundary that lane C already relies
+on, without claiming that later ARC automation issues are complete.
+
+- canonical contract id:
+  - `objc3c-arc-lowering-abi-cleanup-model/m262-c001-v1`
+- frozen boundary contents:
+  - ARC semantic packets from `M262-A002`, `M262-B001`, `M262-B002`, and
+    `M262-B003`
+  - unwind-cleanup accounting already carried by the lowering handoff
+  - the current private runtime helper entrypoints for retain/release,
+    autorelease, weak property interaction, and autoreleasepool scope
+- canonical ABI model:
+  - `owned-value-lowering-targets-private-runtime-retain-release-autorelease-and-weak-helper-entrypoints-without-public-runtime-abi-expansion`
+- canonical cleanup model:
+  - `cleanup-scheduling-remains-explicit-summary-and-helper-boundary-only-until-m262-c002`
+- emitted IR must now carry:
+  - `; arc_lowering_abi_cleanup_model = ...`
+- explicit non-goals:
+  - no general ARC cleanup-scope insertion yet
+  - no generalized weak load/store lowering yet
+  - no automatic autorelease-return rewrite automation yet
+- `M262-C002` is the next issue.

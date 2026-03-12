@@ -1493,6 +1493,13 @@ class Objc3IREmitter {
     // instead of forcing later issues to reconstruct it out of older packets.
     out << "; arc_interaction_semantics = "
         << Objc3ArcInteractionSemanticsSummary() << "\n";
+    // M262-C001 ARC lowering ABI/cleanup freeze anchor: publish the current
+    // lowering/helper boundary directly into IR so later retain/release,
+    // cleanup-scheduling, weak lowering, and autorelease-return work must
+    // preserve one explicit contract instead of inferring it from older ARC
+    // semantic packets.
+    out << "; arc_lowering_abi_cleanup_model = "
+        << Objc3ArcLoweringAbiCleanupModelSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
