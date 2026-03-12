@@ -504,12 +504,36 @@ struct RuntimeAutoreleasePoolFrame {
 };
 
 thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
+thread_local RuntimeDispatchFrame g_runtime_testing_dispatch_frame;
+thread_local bool g_runtime_has_testing_dispatch_frame = false;
 thread_local std::vector<RuntimeAutoreleasePoolFrame>
     g_runtime_autoreleasepool_frames;
 thread_local std::uint64_t g_runtime_autoreleasepool_max_depth = 0;
 thread_local std::uint64_t g_runtime_autoreleasepool_drained_value_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_retain_call_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_release_call_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_autorelease_call_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_autoreleasepool_push_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_autoreleasepool_pop_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_current_property_read_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_current_property_write_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_current_property_exchange_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_load_count = 0;
+thread_local std::uint64_t g_runtime_arc_debug_weak_current_property_store_count = 0;
 thread_local int g_runtime_last_autoreleased_value = 0;
 thread_local int g_runtime_last_drained_autorelease_value = 0;
+thread_local int g_runtime_arc_debug_last_retain_value = 0;
+thread_local int g_runtime_arc_debug_last_release_value = 0;
+thread_local int g_runtime_arc_debug_last_autorelease_value = 0;
+thread_local int g_runtime_arc_debug_last_property_read_value = 0;
+thread_local int g_runtime_arc_debug_last_property_written_value = 0;
+thread_local int g_runtime_arc_debug_last_property_exchange_previous_value = 0;
+thread_local int g_runtime_arc_debug_last_property_exchange_new_value = 0;
+thread_local int g_runtime_arc_debug_last_weak_loaded_value = 0;
+thread_local int g_runtime_arc_debug_last_weak_stored_value = 0;
+thread_local int g_runtime_arc_debug_last_property_receiver = 0;
+thread_local std::string g_runtime_arc_debug_last_property_name;
+thread_local std::string g_runtime_arc_debug_last_property_owner_identity;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -589,8 +613,11 @@ std::size_t AlignTo(std::size_t value, std::size_t alignment) {
 }
 
 RuntimeDispatchFrame *CurrentRuntimeDispatchFrame() {
-  return g_runtime_dispatch_frames.empty() ? nullptr
-                                           : &g_runtime_dispatch_frames.back();
+  if (!g_runtime_dispatch_frames.empty()) {
+    return &g_runtime_dispatch_frames.back();
+  }
+  return g_runtime_has_testing_dispatch_frame ? &g_runtime_testing_dispatch_frame
+                                              : nullptr;
 }
 
 void PushRuntimeDispatchFrame(int receiver, std::uint64_t base_identity,
@@ -613,15 +640,65 @@ std::vector<int> PopRuntimeDispatchFrameAutoreleaseValues() {
 
 void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_dispatch_frames.clear();
+  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
+  g_runtime_has_testing_dispatch_frame = false;
   g_runtime_autoreleasepool_frames.clear();
   g_runtime_autoreleasepool_max_depth = 0;
   g_runtime_autoreleasepool_drained_value_count = 0;
   g_runtime_last_autoreleased_value = 0;
   g_runtime_last_drained_autorelease_value = 0;
+  g_runtime_arc_debug_retain_call_count = 0;
+  g_runtime_arc_debug_release_call_count = 0;
+  g_runtime_arc_debug_autorelease_call_count = 0;
+  g_runtime_arc_debug_autoreleasepool_push_count = 0;
+  g_runtime_arc_debug_autoreleasepool_pop_count = 0;
+  g_runtime_arc_debug_current_property_read_count = 0;
+  g_runtime_arc_debug_current_property_write_count = 0;
+  g_runtime_arc_debug_current_property_exchange_count = 0;
+  g_runtime_arc_debug_weak_current_property_load_count = 0;
+  g_runtime_arc_debug_weak_current_property_store_count = 0;
+  g_runtime_arc_debug_last_retain_value = 0;
+  g_runtime_arc_debug_last_release_value = 0;
+  g_runtime_arc_debug_last_autorelease_value = 0;
+  g_runtime_arc_debug_last_property_read_value = 0;
+  g_runtime_arc_debug_last_property_written_value = 0;
+  g_runtime_arc_debug_last_property_exchange_previous_value = 0;
+  g_runtime_arc_debug_last_property_exchange_new_value = 0;
+  g_runtime_arc_debug_last_weak_loaded_value = 0;
+  g_runtime_arc_debug_last_weak_stored_value = 0;
+  g_runtime_arc_debug_last_property_receiver = 0;
+  g_runtime_arc_debug_last_property_name.clear();
+  g_runtime_arc_debug_last_property_owner_identity.clear();
+}
+
+void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
+  g_runtime_arc_debug_last_property_receiver =
+      frame != nullptr ? frame->receiver : 0;
+  g_runtime_arc_debug_last_property_name.clear();
+  g_runtime_arc_debug_last_property_owner_identity.clear();
+  if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
+      frame->runtime_property_accessor->property_descriptor == nullptr) {
+    return;
+  }
+  const EmittedPropertyDescriptor &descriptor =
+      *frame->runtime_property_accessor->property_descriptor;
+  if (descriptor.property_name != nullptr) {
+    g_runtime_arc_debug_last_property_name = descriptor.property_name;
+  }
+  if (descriptor.declaration_owner_identity != nullptr) {
+    g_runtime_arc_debug_last_property_owner_identity =
+        descriptor.declaration_owner_identity;
+  } else if (descriptor.export_owner_identity != nullptr) {
+    g_runtime_arc_debug_last_property_owner_identity =
+        descriptor.export_owner_identity;
+  } else if (descriptor.owner_identity != nullptr) {
+    g_runtime_arc_debug_last_property_owner_identity = descriptor.owner_identity;
+  }
 }
 
 void PushRuntimeAutoreleasePoolFrame() {
   g_runtime_autoreleasepool_frames.push_back({});
+  ++g_runtime_arc_debug_autoreleasepool_push_count;
   g_runtime_autoreleasepool_max_depth = std::max<std::uint64_t>(
       g_runtime_autoreleasepool_max_depth,
       static_cast<std::uint64_t>(g_runtime_autoreleasepool_frames.size()));
@@ -3682,6 +3759,54 @@ int objc3_runtime_copy_memory_management_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_arc_debug_state_for_testing(
+    objc3_runtime_arc_debug_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->retain_call_count = g_runtime_arc_debug_retain_call_count;
+  snapshot->release_call_count = g_runtime_arc_debug_release_call_count;
+  snapshot->autorelease_call_count = g_runtime_arc_debug_autorelease_call_count;
+  snapshot->autoreleasepool_push_count =
+      g_runtime_arc_debug_autoreleasepool_push_count;
+  snapshot->autoreleasepool_pop_count =
+      g_runtime_arc_debug_autoreleasepool_pop_count;
+  snapshot->current_property_read_count =
+      g_runtime_arc_debug_current_property_read_count;
+  snapshot->current_property_write_count =
+      g_runtime_arc_debug_current_property_write_count;
+  snapshot->current_property_exchange_count =
+      g_runtime_arc_debug_current_property_exchange_count;
+  snapshot->weak_current_property_load_count =
+      g_runtime_arc_debug_weak_current_property_load_count;
+  snapshot->weak_current_property_store_count =
+      g_runtime_arc_debug_weak_current_property_store_count;
+  snapshot->last_retain_value = g_runtime_arc_debug_last_retain_value;
+  snapshot->last_release_value = g_runtime_arc_debug_last_release_value;
+  snapshot->last_autorelease_value = g_runtime_arc_debug_last_autorelease_value;
+  snapshot->last_property_read_value =
+      g_runtime_arc_debug_last_property_read_value;
+  snapshot->last_property_written_value =
+      g_runtime_arc_debug_last_property_written_value;
+  snapshot->last_property_exchange_previous_value =
+      g_runtime_arc_debug_last_property_exchange_previous_value;
+  snapshot->last_property_exchange_new_value =
+      g_runtime_arc_debug_last_property_exchange_new_value;
+  snapshot->last_weak_loaded_value = g_runtime_arc_debug_last_weak_loaded_value;
+  snapshot->last_weak_stored_value = g_runtime_arc_debug_last_weak_stored_value;
+  snapshot->last_property_receiver = g_runtime_arc_debug_last_property_receiver;
+  snapshot->last_property_name =
+      g_runtime_arc_debug_last_property_name.empty()
+          ? nullptr
+          : g_runtime_arc_debug_last_property_name.c_str();
+  snapshot->last_property_owner_identity =
+      g_runtime_arc_debug_last_property_owner_identity.empty()
+          ? nullptr
+          : g_runtime_arc_debug_last_property_owner_identity.c_str();
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -3765,25 +3890,34 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
 // while the ABI remains bootstrap-internal rather than public.
 extern "C" int objc3_runtime_read_current_property_i32(void) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  ++g_runtime_arc_debug_current_property_read_count;
+  RecordArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
+    g_runtime_arc_debug_last_property_read_value = 0;
     return 0;
   }
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
+    g_runtime_arc_debug_last_property_read_value = 0;
     return 0;
   }
   int value = 0;
-  return ReadRuntimeManagedPropertyValueUnlocked(
+  const int result = ReadRuntimeManagedPropertyValueUnlocked(
              state, instance_it->second, *frame->runtime_property_accessor, value)
-             ? value
-             : 0;
+                         ? value
+                         : 0;
+  g_runtime_arc_debug_last_property_read_value = result;
+  return result;
 }
 
 extern "C" void objc3_runtime_write_current_property_i32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  ++g_runtime_arc_debug_current_property_write_count;
+  g_runtime_arc_debug_last_property_written_value = value;
+  RecordArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
     return;
@@ -3800,33 +3934,93 @@ extern "C" void objc3_runtime_write_current_property_i32(int value) {
 
 extern "C" int objc3_runtime_exchange_current_property_i32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
+  ++g_runtime_arc_debug_current_property_exchange_count;
+  g_runtime_arc_debug_last_property_exchange_new_value = value;
+  RecordArcDebugPropertyContext(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
+    g_runtime_arc_debug_last_property_exchange_previous_value = 0;
     return 0;
   }
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   const auto instance_it = state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
+    g_runtime_arc_debug_last_property_exchange_previous_value = 0;
     return 0;
   }
   int previous_value = 0;
-  return ExchangeRuntimeManagedPropertyValueUnlocked(
+  const int result = ExchangeRuntimeManagedPropertyValueUnlocked(
              state, instance_it->second, *frame->runtime_property_accessor, value,
              previous_value)
-             ? previous_value
-             : 0;
+                         ? previous_value
+                         : 0;
+  g_runtime_arc_debug_last_property_exchange_previous_value = result;
+  return result;
+}
+
+extern "C" int objc3_runtime_bind_current_property_context_for_testing(
+    int receiver, const char *class_name, const char *property_name) {
+  if (receiver == 0 || class_name == nullptr || class_name[0] == '\0' ||
+      property_name == nullptr || property_name[0] == '\0') {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto instance_it = state.runtime_instances_by_receiver.find(receiver);
+  const auto found = state.realized_class_node_indices_by_name.find(class_name);
+  if (instance_it == state.runtime_instances_by_receiver.end() ||
+      found == state.realized_class_node_indices_by_name.end() ||
+      found->second.empty()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+  const std::size_t node_index = found->second.front();
+  if (node_index >= state.realized_class_nodes.size()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  const RealizedClassNode &start_node = state.realized_class_nodes[node_index];
+  const RealizedClassNode *resolved_node = nullptr;
+  bool inherited = false;
+  const RealizedPropertyAccessor *accessor =
+      FindRuntimePropertyAccessorByNameUnlocked(
+          state, start_node, property_name, resolved_node, inherited);
+  if (accessor == nullptr || resolved_node == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
+  g_runtime_testing_dispatch_frame.receiver = receiver;
+  g_runtime_testing_dispatch_frame.base_identity =
+      instance_it->second.base_identity;
+  g_runtime_testing_dispatch_frame.runtime_property_accessor = accessor;
+  g_runtime_has_testing_dispatch_frame = true;
+  RecordArcDebugPropertyContext(&g_runtime_testing_dispatch_frame);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
+  g_runtime_testing_dispatch_frame = RuntimeDispatchFrame{};
+  g_runtime_has_testing_dispatch_frame = false;
 }
 
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
-  return objc3_runtime_read_current_property_i32();
+  ++g_runtime_arc_debug_weak_current_property_load_count;
+  const int result = objc3_runtime_read_current_property_i32();
+  g_runtime_arc_debug_last_weak_loaded_value = result;
+  return result;
 }
 
 extern "C" void objc3_runtime_store_weak_current_property_i32(int value) {
+  ++g_runtime_arc_debug_weak_current_property_store_count;
+  g_runtime_arc_debug_last_weak_stored_value = value;
   objc3_runtime_write_current_property_i32(value);
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {
+  ++g_runtime_arc_debug_retain_call_count;
+  g_runtime_arc_debug_last_retain_value = value;
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   RetainRuntimeValueUnlocked(state, value);
@@ -3834,6 +4028,8 @@ extern "C" int objc3_runtime_retain_i32(int value) {
 }
 
 extern "C" int objc3_runtime_release_i32(int value) {
+  ++g_runtime_arc_debug_release_call_count;
+  g_runtime_arc_debug_last_release_value = value;
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   ReleaseRuntimeValueUnlocked(state, value);
@@ -3841,6 +4037,8 @@ extern "C" int objc3_runtime_release_i32(int value) {
 }
 
 extern "C" int objc3_runtime_autorelease_i32(int value) {
+  ++g_runtime_arc_debug_autorelease_call_count;
+  g_runtime_arc_debug_last_autorelease_value = value;
   EnqueueAutoreleaseValue(value);
   return value;
 }
@@ -3940,6 +4138,7 @@ extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
 }
 
 extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
+  ++g_runtime_arc_debug_autoreleasepool_pop_count;
   const std::vector<int> values = PopRuntimeAutoreleasePoolFrameValues();
   if (values.empty()) {
     return;

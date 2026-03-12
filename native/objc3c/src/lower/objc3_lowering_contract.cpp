@@ -1487,6 +1487,42 @@ std::string Objc3RuntimeArcHelperRuntimeSupportSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeArcDebugInstrumentationSummary() {
+  std::ostringstream out;
+  // M262-D003 ownership-debug/runtime-validation anchor: lane-D now widens
+  // the live ARC helper runtime surface with private testing snapshots and
+  // deterministic counters so supported ARC helper traffic can be proven
+  // without widening the public runtime ABI.
+  out << "contract=" << kObjc3RuntimeArcDebugInstrumentationContractId
+      << ";dependency_model="
+      << kObjc3RuntimeArcDebugInstrumentationDependencyModel
+      << ";coverage_model="
+      << kObjc3RuntimeArcDebugInstrumentationCoverageModel
+      << ";validation_model="
+      << kObjc3RuntimeArcDebugInstrumentationValidationModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";read_current_property_symbol="
+      << kObjc3RuntimeReadCurrentPropertyI32Symbol
+      << ";write_current_property_symbol="
+      << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+      << ";exchange_current_property_symbol="
+      << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+      << ";load_weak_current_property_symbol="
+      << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";store_weak_current_property_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+      << ";push_autoreleasepool_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";pop_autoreleasepool_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";fail_closed_model="
+      << kObjc3RuntimeArcDebugInstrumentationFailClosedModel
+      << ";next_issue=M262-E001";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

@@ -182,6 +182,9 @@ Current implementation status (`M262-D002`):
 - emitted IR now carries:
   - `; runtime_arc_helper_runtime_support = ...`
   - `!objc3.objc_runtime_arc_helper_runtime_support = !{...}`
+- `M262-D003` now layers private ARC debug counters and last-value/property
+  context snapshots above that same supported runtime slice without changing
+  the source syntax surface
 
 ## B.3 Concurrency and executors {#b-3}
 

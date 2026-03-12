@@ -10982,6 +10982,10 @@ class Objc3Parser {
     // ownership spelling remains purely descriptive, but the supported
     // property/weak/autorelease-return slice now continues into a live linked
     // runtime-helper path rather than stopping at a freeze-only boundary.
+    // M262-D003 ownership-debug/runtime-validation anchor: parser-owned ARC
+    // and ownership spelling still does not promise any source-level debug
+    // surface; lane-D owns the private runtime snapshot hooks above these same
+    // source packets.
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
     // M255-C003.

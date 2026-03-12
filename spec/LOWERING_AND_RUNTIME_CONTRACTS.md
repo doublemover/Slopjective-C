@@ -8353,3 +8353,29 @@ autorelease-return slice.
   - no public ARC helper ABI
   - no debug or ownership instrumentation hooks yet
 - `M262-D003` is the next issue.
+
+## M262 ARC ownership debug instrumentation and runtime validation hooks (D003)
+
+`M262-D003` extends the live helper/runtime surface from `M262-D002` with a
+private ARC debug snapshot surface for deterministic validation.
+
+- canonical contract id:
+  - `objc3c-runtime-arc-debug-instrumentation/m262-d003-v1`
+- canonical debug/instrumentation models:
+  - `m262-d002-live-helper-runtime-plus-private-bootstrap-internal-debug-snapshots`
+  - `retain-release-autorelease-weak-current-property-and-autoreleasepool-helper-traffic-publishes-deterministic-debug-counters-and-last-value-context`
+  - `runtime-probes-and-targeted-arc-fixtures-consume-private-debug-snapshots-without-widening-the-public-runtime-abi`
+- emitted IR must now carry:
+  - `; runtime_arc_debug_instrumentation = ...`
+  - `!objc3.objc_runtime_arc_debug_instrumentation`
+- the supported runtime proof must now cover:
+  - deterministic counters for retain/release/autorelease helper traffic
+  - deterministic counters for current-property and weak current-property helper traffic
+  - deterministic counters for autoreleasepool push/pop helper traffic
+  - last-value/property-context publication through private testing snapshots
+- explicit non-goals:
+  - no public ARC debug ABI
+  - no user-facing ownership tracing hooks
+  - no broader ARC runtime completeness claim beyond the supported runnable
+    slice
+- `M262-E001` is the next issue.

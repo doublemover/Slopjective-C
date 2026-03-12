@@ -10050,6 +10050,34 @@ slice.
   - ownership debug instrumentation
 - the next issue is `M262-D003`
 
+## M262 ARC Ownership Debug Instrumentation And Runtime Validation Hooks (D003)
+
+Lane D now extends the live ARC helper/runtime surface with private testing
+snapshots for deterministic helper-traffic validation.
+
+- canonical debug contract:
+  - `objc3c-runtime-arc-debug-instrumentation/m262-d003-v1`
+- lane-D responsibility remains explicit:
+  - keep ARC debug hooks private to the bootstrap-internal runtime header
+  - publish deterministic counters for retain/release/autorelease, current-property,
+    weak current-property, and autoreleasepool helper traffic
+  - expose last-value/property-context state for runtime probes and checker
+    evidence
+- emitted IR now publishes:
+  - `; runtime_arc_debug_instrumentation = ...`
+  - `!objc3.objc_runtime_arc_debug_instrumentation`
+- the supported debug surface currently covers:
+  - retain/release/autorelease helper counters
+  - current-property read/write/exchange counters
+  - weak current-property load/store counters
+  - autoreleasepool push/pop counters
+  - last helper values plus last property name/owner context
+- still deferred:
+  - public ARC debug ABI
+  - user-facing ownership tracing hooks
+  - broader ARC runtime completeness claims beyond the supported runnable slice
+- the next issue is `M262-E001`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

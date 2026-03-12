@@ -223,6 +223,31 @@ typedef struct objc3_runtime_memory_management_state_snapshot {
   int last_drained_autorelease_value;
 } objc3_runtime_memory_management_state_snapshot;
 
+typedef struct objc3_runtime_arc_debug_state_snapshot {
+  uint64_t retain_call_count;
+  uint64_t release_call_count;
+  uint64_t autorelease_call_count;
+  uint64_t autoreleasepool_push_count;
+  uint64_t autoreleasepool_pop_count;
+  uint64_t current_property_read_count;
+  uint64_t current_property_write_count;
+  uint64_t current_property_exchange_count;
+  uint64_t weak_current_property_load_count;
+  uint64_t weak_current_property_store_count;
+  int last_retain_value;
+  int last_release_value;
+  int last_autorelease_value;
+  int last_property_read_value;
+  int last_property_written_value;
+  int last_property_exchange_previous_value;
+  int last_property_exchange_new_value;
+  int last_weak_loaded_value;
+  int last_weak_stored_value;
+  int last_property_receiver;
+  const char *last_property_name;
+  const char *last_property_owner_identity;
+} objc3_runtime_arc_debug_state_snapshot;
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
@@ -310,6 +335,13 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 int objc3_runtime_read_current_property_i32(void);
 void objc3_runtime_write_current_property_i32(int value);
 int objc3_runtime_exchange_current_property_i32(int value);
+// M262-D003 ownership-debug/runtime-validation anchor: private testing hooks
+// may bind one live runtime property context at a time so probes can exercise
+// the existing current-property helpers directly without widening the public
+// runtime ABI.
+int objc3_runtime_bind_current_property_context_for_testing(
+    int receiver, const char *class_name, const char *property_name);
+void objc3_runtime_clear_current_property_context_for_testing(void);
 // M262-D002 runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice
@@ -344,6 +376,12 @@ void objc3_runtime_push_autoreleasepool_scope(void);
 void objc3_runtime_pop_autoreleasepool_scope(void);
 int objc3_runtime_copy_memory_management_state_for_testing(
     objc3_runtime_memory_management_state_snapshot *snapshot);
+// M262-D003 ownership-debug/runtime-validation anchor: ARC ownership-debug
+// counters and last-value/property context remain a private runtime-testing
+// surface so lane-D can validate ARC helper traffic without widening the
+// public runtime ABI.
+int objc3_runtime_copy_arc_debug_state_for_testing(
+    objc3_runtime_arc_debug_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

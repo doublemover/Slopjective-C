@@ -1765,6 +1765,41 @@ Recommended M262 lane-D runtime-support check:
 - `python scripts/check_m262_d002_arc_helper_entrypoints_weak_operations_and_autorelease_return_runtime_support_core_feature_implementation.py`
 - `M262-D003` is the next issue.
 
+## M262 ARC ownership debug instrumentation and runtime validation hooks (M262-D003)
+
+`M262-D003` extends the live helper/runtime boundary with a private ARC debug
+snapshot surface for the supported runnable slice.
+
+Current implementation status (`M262-D003`):
+
+- lane D now proves one canonical ARC debug contract:
+  - `objc3c-runtime-arc-debug-instrumentation/m262-d003-v1`
+- the supported `D003` boundary is defined as:
+  - retain/release/autorelease helper traffic publishes deterministic counters
+    and last-value state
+  - current-property, weak current-property, and autoreleasepool helper traffic
+    publishes deterministic counters and last property context
+  - the debug surface remains private to the bootstrap-internal runtime header
+- emitted IR now carries:
+  - `; runtime_arc_debug_instrumentation = ...`
+  - `!objc3.objc_runtime_arc_debug_instrumentation`
+- the live ARC debug surface currently covers:
+  - retain/release/autorelease helper call counts
+  - autoreleasepool push/pop helper call counts
+  - current-property read/write/exchange helper call counts
+  - weak current-property load/store helper call counts
+  - last helper values plus last property name/owner context
+- still explicitly deferred:
+  - no public ARC debug ABI
+  - no user-facing ownership tracing hooks
+  - no broader ARC runtime completeness claim beyond the supported runnable
+    slice
+
+Recommended M262 lane-D ARC-debug check:
+
+- `python scripts/check_m262_d003_ownership_debug_instrumentation_and_runtime_validation_hooks_for_arc_core_feature_expansion.py`
+- `M262-E001` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

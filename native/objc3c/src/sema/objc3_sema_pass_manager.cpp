@@ -2256,6 +2256,9 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       // publish ownership and helper-need summaries only, while the supported
       // property/weak/autorelease-return ARC slice now reaches a live linked
       // helper/runtime boundary rather than a semantic promise here.
+      // M262-D003 ownership-debug/runtime-validation anchor: sema still does
+      // not own ARC debug counters or helper-traffic probes; it only preserves
+      // the packets that the private runtime/testing surface consumes.
       result.type_metadata_handoff.retain_release_operation_summary.retain_insertion_sites <=
           result.type_metadata_handoff.retain_release_operation_summary.ownership_qualified_sites +
               result.type_metadata_handoff.retain_release_operation_summary.contract_violation_sites &&
