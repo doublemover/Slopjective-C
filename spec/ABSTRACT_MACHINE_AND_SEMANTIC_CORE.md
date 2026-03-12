@@ -21,8 +21,12 @@ Current implementation note:
 - The live compiler does not yet implement the full Part 3 execution surface.
 - Today it freezes protocol `@optional` partitions plus object-pointer
   nullability/generic suffix carriers as source-level frontend behavior.
-- Optional chaining/send, nil-coalescing, and typed key-path execution remain
-  future work and are still fail-closed.
+- The frontend now also admits parser-owned optional binding, optional-send,
+  nil-coalescing, and typed key-path source forms.
+- Only optional-member access written as `?.` remains fail-closed at the
+  current lane-A boundary.
+- Runnable optional flow semantics, truthful binding flow after `guard let`,
+  and executable key-path behavior remain future work.
 
 ### AM.0.1 Normative anchor map {#am-0-1}
 

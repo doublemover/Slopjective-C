@@ -302,6 +302,12 @@ std::string BuildPart3TypeSourceClosureSummaryJson(
       << summary.nullability_suffix_entries
       << ",\"generic_suffix_entries\":"
       << summary.generic_suffix_entries
+      << ",\"optional_binding_sites\":"
+      << summary.optional_binding_sites
+      << ",\"guard_binding_sites\":"
+      << summary.guard_binding_sites
+      << ",\"optional_send_sites\":"
+      << summary.optional_send_sites
       << ",\"optional_member_access_sites\":"
       << summary.optional_member_access_sites
       << ",\"nil_coalescing_sites\":"
@@ -314,6 +320,14 @@ std::string BuildPart3TypeSourceClosureSummaryJson(
       << (summary.object_pointer_nullability_source_supported ? "true" : "false")
       << ",\"pragmatic_generic_suffix_source_supported\":"
       << (summary.pragmatic_generic_suffix_source_supported ? "true" : "false")
+      << ",\"optional_binding_source_supported\":"
+      << (summary.optional_binding_source_supported ? "true" : "false")
+      << ",\"optional_send_source_supported\":"
+      << (summary.optional_send_source_supported ? "true" : "false")
+      << ",\"nil_coalescing_source_supported\":"
+      << (summary.nil_coalescing_source_supported ? "true" : "false")
+      << ",\"typed_keypath_literal_source_supported\":"
+      << (summary.typed_keypath_literal_source_supported ? "true" : "false")
       << ",\"optional_member_access_fail_closed\":"
       << (summary.optional_member_access_fail_closed ? "true" : "false")
       << ",\"nil_coalescing_fail_closed\":"

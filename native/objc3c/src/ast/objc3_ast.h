@@ -292,6 +292,9 @@ struct Expr {
   std::string selector;
   MessageSendForm message_send_form = MessageSendForm::None;
   std::string message_send_form_symbol;
+  bool optional_send_enabled = false;
+  std::string optional_send_symbol;
+  bool optional_send_is_normalized = false;
   std::vector<MessageSendSelectorPiece> selector_lowering_pieces;
   std::string selector_lowering_symbol;
   bool selector_lowering_is_normalized = false;
@@ -394,6 +397,12 @@ struct Expr {
   std::size_t block_determinism_perf_baseline_weight = 0;
   bool block_determinism_perf_baseline_profile_is_normalized = false;
   std::string block_determinism_perf_baseline_profile;
+  bool typed_keypath_literal_enabled = false;
+  bool typed_keypath_root_is_self = false;
+  std::string typed_keypath_root_name;
+  std::vector<std::string> typed_keypath_components;
+  std::string typed_keypath_literal_profile;
+  bool typed_keypath_literal_is_normalized = false;
   std::vector<std::unique_ptr<Stmt>> block_body;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;

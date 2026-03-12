@@ -3991,6 +3991,15 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
     case Expr::Kind::NilLiteral:
       return MakeScalarSemanticType(ValueType::ObjCId);
     case Expr::Kind::Identifier: {
+      if (expr->typed_keypath_literal_enabled) {
+        if (!expr->typed_keypath_literal_is_normalized ||
+            expr->typed_keypath_components.empty()) {
+          diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                         "type mismatch: typed key-path literal normalization failed"));
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        return MakeScalarSemanticType(ValueType::ObjCId);
+      }
       if (expr->ident == "super" && !message_send_context.inside_method) {
         diagnostics.push_back(MakeDiag(
             expr->line, expr->column, "O3S216",
@@ -4022,6 +4031,38 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       const SemanticTypeInfo rhs = ValidateExpr(
           expr->right.get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
+
+      if (expr->op == "??") {
+        const bool lhs_reference_like =
+            IsObjCReferenceSemanticType(lhs) || IsCallableSemanticType(lhs);
+        const bool rhs_reference_like =
+            IsObjCReferenceSemanticType(rhs) || IsCallableSemanticType(rhs);
+        if (!IsUnknownSemanticType(lhs) && !lhs_reference_like) {
+          diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                         "type mismatch: nil-coalescing lhs must be ObjC-reference-compatible"));
+        }
+        if (!IsUnknownSemanticType(rhs) && !rhs_reference_like) {
+          diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                         "type mismatch: nil-coalescing rhs must be ObjC-reference-compatible"));
+        }
+        if (IsUnknownSemanticType(lhs)) {
+          return rhs;
+        }
+        if (IsUnknownSemanticType(rhs)) {
+          return lhs;
+        }
+        if (AreObjCReferenceTypesAssignmentCompatible(lhs, rhs)) {
+          return lhs.type == rhs.type ? lhs : MakeScalarSemanticType(ValueType::ObjCId);
+        }
+        if (IsCallableSemanticType(lhs) && IsCallableSemanticType(rhs) &&
+            lhs.callable_param_types == rhs.callable_param_types &&
+            lhs.callable_return_type == rhs.callable_return_type) {
+          return lhs;
+        }
+        diagnostics.push_back(MakeDiag(expr->line, expr->column, "O3S206",
+                                       "type mismatch: nil-coalescing operands must be type-compatible"));
+        return MakeScalarSemanticType(ValueType::Unknown);
+      }
 
       if (expr->op == "+" || expr->op == "-" || expr->op == "*" || expr->op == "/" || expr->op == "%") {
         if (!IsUnknownSemanticType(lhs) && !IsScalarI32CompatibleType(lhs)) {

@@ -4278,11 +4278,160 @@ std::string BuildPart3TypeSourceClosureReplayKey(
       << ";pointer_declarator_entries=" << summary.pointer_declarator_entries
       << ";nullability_suffix_entries=" << summary.nullability_suffix_entries
       << ";generic_suffix_entries=" << summary.generic_suffix_entries
-      << ";unsupported_sites="
-      << summary.optional_member_access_sites << ":" << summary.nil_coalescing_sites << ":"
+      << ";optional_sites="
+      << summary.optional_binding_sites << ":" << summary.guard_binding_sites << ":"
+      << summary.optional_send_sites << ":" << summary.nil_coalescing_sites << ":"
       << summary.typed_keypath_literal_sites
+      << ";unsupported_sites=" << summary.optional_member_access_sites
       << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
+}
+
+void CollectPart3TypeSourceClosureExprSites(
+    const Expr *expr, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::Binary && expr->op == "??") {
+    ++summary.nil_coalescing_sites;
+  }
+  if (expr->kind == Expr::Kind::MessageSend && expr->optional_send_enabled) {
+    ++summary.optional_send_sites;
+  }
+  if (expr->typed_keypath_literal_enabled) {
+    ++summary.typed_keypath_literal_sites;
+  }
+  CollectPart3TypeSourceClosureExprSites(expr->receiver.get(), summary);
+  CollectPart3TypeSourceClosureExprSites(expr->left.get(), summary);
+  CollectPart3TypeSourceClosureExprSites(expr->right.get(), summary);
+  CollectPart3TypeSourceClosureExprSites(expr->third.get(), summary);
+  for (const auto &arg : expr->args) {
+    CollectPart3TypeSourceClosureExprSites(arg.get(), summary);
+  }
+  for (const auto &stmt : expr->block_body) {
+    if (stmt != nullptr) {
+      const Stmt *nested = stmt.get();
+      switch (nested->kind) {
+      case Stmt::Kind::Let:
+        if (nested->let_stmt != nullptr) {
+          CollectPart3TypeSourceClosureExprSites(nested->let_stmt->value.get(), summary);
+        }
+        break;
+      case Stmt::Kind::Assign:
+        if (nested->assign_stmt != nullptr) {
+          CollectPart3TypeSourceClosureExprSites(nested->assign_stmt->value.get(), summary);
+        }
+        break;
+      case Stmt::Kind::Return:
+        if (nested->return_stmt != nullptr) {
+          CollectPart3TypeSourceClosureExprSites(nested->return_stmt->value.get(), summary);
+        }
+        break;
+      case Stmt::Kind::Expr:
+        if (nested->expr_stmt != nullptr) {
+          CollectPart3TypeSourceClosureExprSites(nested->expr_stmt->value.get(), summary);
+        }
+        break;
+      case Stmt::Kind::If:
+      case Stmt::Kind::DoWhile:
+      case Stmt::Kind::For:
+      case Stmt::Kind::Switch:
+      case Stmt::Kind::While:
+      case Stmt::Kind::Block:
+      case Stmt::Kind::Break:
+      case Stmt::Kind::Continue:
+      case Stmt::Kind::Empty:
+        break;
+      }
+    }
+  }
+}
+
+void CollectPart3TypeSourceClosureStmtSites(
+    const Stmt *stmt, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
+    }
+    break;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->assign_stmt->value.get(), summary);
+    }
+    break;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
+    }
+    break;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
+    }
+    break;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
+      for (const auto &child : stmt->if_stmt->then_body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+      for (const auto &child : stmt->if_stmt->else_body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
+      for (const auto &child : stmt->do_while_stmt->body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
+      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
+      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
+      for (const auto &child : stmt->for_stmt->body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        for (const auto &child : case_stmt.body) {
+          CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        }
+      }
+    }
+    break;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart3TypeSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
+      for (const auto &child : stmt->while_stmt->body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &child : stmt->block_stmt->body) {
+        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+      }
+    }
+    break;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    break;
+  }
 }
 
 Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
@@ -4320,9 +4469,23 @@ Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
   summary.protocol_optional_partition_source_supported = true;
   summary.object_pointer_nullability_source_supported = true;
   summary.pragmatic_generic_suffix_source_supported = true;
+  summary.optional_binding_source_supported = true;
+  summary.optional_send_source_supported = true;
+  summary.nil_coalescing_source_supported = true;
+  summary.typed_keypath_literal_source_supported = true;
   summary.optional_member_access_fail_closed = true;
-  summary.nil_coalescing_fail_closed = true;
-  summary.typed_keypath_literal_fail_closed = true;
+  for (const auto &fn : program.functions) {
+    for (const auto &stmt : fn.body) {
+      CollectPart3TypeSourceClosureStmtSites(stmt.get(), summary);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        CollectPart3TypeSourceClosureStmtSites(stmt.get(), summary);
+      }
+    }
+  }
   summary.deterministic_handoff =
       object_pointer_summary
           .deterministic_object_pointer_nullability_generics_handoff &&

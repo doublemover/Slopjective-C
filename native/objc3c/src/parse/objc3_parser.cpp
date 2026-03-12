@@ -84,6 +84,25 @@ static std::string BuildMessageSendFormSymbol(Expr::MessageSendForm form) {
   }
 }
 
+static std::string BuildOptionalSendSymbol(bool enabled) {
+  return enabled ? "optional-send:enabled" : "optional-send:disabled";
+}
+
+static std::string BuildTypedKeyPathLiteralProfile(const std::string &root_name,
+                                                   bool root_is_self,
+                                                   const std::vector<std::string> &components) {
+  std::ostringstream out;
+  out << "typed-keypath:root=" << (root_is_self ? "self" : root_name)
+      << ";components=";
+  for (std::size_t i = 0; i < components.size(); ++i) {
+    if (i != 0u) {
+      out << ".";
+    }
+    out << components[i];
+  }
+  return out.str();
+}
+
 static std::string BuildMessageSendSelectorLoweringSymbol(
     const std::vector<Expr::MessageSendSelectorPiece> &pieces) {
   std::string normalized_selector;
@@ -9082,7 +9101,8 @@ class Objc3Parser {
       if (Match(TokenKind::Semicolon)) {
         return;
       }
-      if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwDo) ||
+      if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwGuard) ||
+          At(TokenKind::KwDo) ||
           At(TokenKind::KwFor) || At(TokenKind::KwSwitch) || At(TokenKind::KwWhile) || At(TokenKind::KwBreak) ||
           At(TokenKind::KwContinue) || At(TokenKind::KwAtAutoreleasePool) || AtIdentifierAssignment() ||
           AtIdentifierUpdate() || AtPrefixUpdate() || At(TokenKind::RBrace)) {
@@ -9225,6 +9245,46 @@ class Objc3Parser {
       stmt->if_stmt->line = Previous().line;
       stmt->if_stmt->column = Previous().column;
 
+      if (At(TokenKind::KwLet) || At(TokenKind::KwVar)) {
+        auto clauses = ParseOptionalBindingClauses();
+        if (clauses.empty()) {
+          return nullptr;
+        }
+        stmt->if_stmt->condition = std::make_unique<Expr>();
+        stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
+        stmt->if_stmt->condition->bool_value = true;
+        stmt->if_stmt->condition->line = stmt->line;
+        stmt->if_stmt->condition->column = stmt->column;
+        auto user_then_body = ParseControlBody();
+        if (block_failed_) {
+          block_failed_ = false;
+          return nullptr;
+        }
+        for (auto &clause : clauses) {
+          auto synthetic = std::make_unique<Stmt>();
+          synthetic->kind = Stmt::Kind::Let;
+          synthetic->line = clause.line;
+          synthetic->column = clause.column;
+          synthetic->let_stmt = std::make_unique<LetStmt>();
+          synthetic->let_stmt->name = clause.name;
+          synthetic->let_stmt->line = clause.line;
+          synthetic->let_stmt->column = clause.column;
+          synthetic->let_stmt->value = std::move(clause.value);
+          stmt->if_stmt->then_body.push_back(std::move(synthetic));
+        }
+        for (auto &nested : user_then_body) {
+          stmt->if_stmt->then_body.push_back(std::move(nested));
+        }
+        if (Match(TokenKind::KwElse)) {
+          stmt->if_stmt->else_body = ParseControlBody();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+        }
+        return stmt;
+      }
+
       if (!Match(TokenKind::LParen)) {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after if"));
@@ -9251,6 +9311,37 @@ class Objc3Parser {
           block_failed_ = false;
           return nullptr;
         }
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwGuard)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::If;
+      stmt->if_stmt = std::make_unique<IfStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->if_stmt->line = Previous().line;
+      stmt->if_stmt->column = Previous().column;
+      auto clauses = ParseOptionalBindingClauses();
+      if (clauses.empty()) {
+        return nullptr;
+      }
+      (void)clauses;
+      stmt->if_stmt->condition = std::make_unique<Expr>();
+      stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
+      stmt->if_stmt->condition->bool_value = false;
+      stmt->if_stmt->condition->line = stmt->line;
+      stmt->if_stmt->condition->column = stmt->column;
+      if (!Match(TokenKind::KwElse)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'else' after guard binding"));
+        return nullptr;
+      }
+      stmt->if_stmt->else_body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
       }
       return stmt;
     }
@@ -9756,8 +9847,66 @@ class Objc3Parser {
 
   std::unique_ptr<Expr> ParseExpression() { return ParseConditional(); }
 
+  struct ParsedOptionalBindingClause {
+    std::string name;
+    bool is_mutable = false;
+    std::unique_ptr<Expr> value;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
+  std::vector<ParsedOptionalBindingClause> ParseOptionalBindingClauses() {
+    std::vector<ParsedOptionalBindingClause> clauses;
+    bool binding_is_mutable = false;
+    if (Match(TokenKind::KwLet)) {
+      binding_is_mutable = false;
+    } else if (Match(TokenKind::KwVar)) {
+      binding_is_mutable = true;
+    } else {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected 'let' or 'var' in optional binding"));
+      return {};
+    }
+
+    while (true) {
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected identifier in optional binding"));
+        return {};
+      }
+      const Token name_token = Advance();
+      if (!Match(TokenKind::Equal)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "missing '=' in optional binding"));
+        return {};
+      }
+      ParsedOptionalBindingClause clause;
+      clause.name = name_token.text;
+      clause.is_mutable = binding_is_mutable;
+      clause.line = name_token.line;
+      clause.column = name_token.column;
+      clause.value = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (clause.value == nullptr) {
+        return {};
+      }
+      clauses.push_back(std::move(clause));
+      if (!Match(TokenKind::Comma)) {
+        break;
+      }
+      if (At(TokenKind::KwLet)) {
+        Advance();
+        binding_is_mutable = false;
+      } else if (At(TokenKind::KwVar)) {
+        Advance();
+        binding_is_mutable = true;
+      }
+    }
+    return clauses;
+  }
+
   std::unique_ptr<Expr> ParseConditional() {
-    auto expr = ParseLogicalOr();
+    auto expr = ParseNilCoalescing();
     if (expr == nullptr) {
       return nullptr;
     }
@@ -9790,6 +9939,29 @@ class Objc3Parser {
     node->left = std::move(expr);
     node->right = std::move(when_true);
     node->third = std::move(when_false);
+    return node;
+  }
+
+  std::unique_ptr<Expr> ParseNilCoalescing() {
+    auto expr = ParseLogicalOr();
+    if (expr == nullptr) {
+      return nullptr;
+    }
+    if (!Match(TokenKind::QuestionQuestion)) {
+      return expr;
+    }
+    const Token op = Previous();
+    auto rhs = ParseNilCoalescing();
+    if (rhs == nullptr) {
+      return nullptr;
+    }
+    auto node = std::make_unique<Expr>();
+    node->kind = Expr::Kind::Binary;
+    node->op = op.text;
+    node->line = op.line;
+    node->column = op.column;
+    node->left = std::move(expr);
+    node->right = std::move(rhs);
     return node;
   }
 
@@ -10803,6 +10975,58 @@ class Objc3Parser {
     if (Match(TokenKind::Caret)) {
       return ParseBlockLiteralExpression();
     }
+    if (Match(TokenKind::KwAtKeypath)) {
+      const Token keypath_token = Previous();
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after @keypath"));
+        return nullptr;
+      }
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected key-path root identifier"));
+        return nullptr;
+      }
+      const Token root = Advance();
+      if (!Match(TokenKind::Comma)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "missing ',' after key-path root"));
+        return nullptr;
+      }
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected key-path component"));
+        return nullptr;
+      }
+      std::vector<std::string> components;
+      components.push_back(Advance().text);
+      while (Match(TokenKind::Dot)) {
+        if (!At(TokenKind::Identifier)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected identifier after '.' in key path"));
+          return nullptr;
+        }
+        components.push_back(Advance().text);
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after @keypath"));
+        return nullptr;
+      }
+      auto expr = std::make_unique<Expr>();
+      expr->kind = Expr::Kind::Identifier;
+      expr->ident = "__objc3_keypath_literal";
+      expr->line = keypath_token.line;
+      expr->column = keypath_token.column;
+      expr->typed_keypath_literal_enabled = true;
+      expr->typed_keypath_root_is_self = root.text == "self";
+      expr->typed_keypath_root_name = root.text;
+      expr->typed_keypath_components = std::move(components);
+      expr->typed_keypath_literal_profile = BuildTypedKeyPathLiteralProfile(
+          expr->typed_keypath_root_name, expr->typed_keypath_root_is_self, expr->typed_keypath_components);
+      expr->typed_keypath_literal_is_normalized = !expr->typed_keypath_components.empty();
+      return expr;
+    }
     if (Match(TokenKind::Identifier)) {
       auto expr = std::make_unique<Expr>();
       expr->kind = Expr::Kind::Identifier;
@@ -10857,6 +11081,14 @@ class Objc3Parser {
                                         "invalid receiver expression in message send"));
       }
       return nullptr;
+    }
+    if (Match(TokenKind::Question)) {
+      message->optional_send_enabled = true;
+      message->optional_send_symbol = BuildOptionalSendSymbol(true);
+      message->optional_send_is_normalized = true;
+    } else {
+      message->optional_send_symbol = BuildOptionalSendSymbol(false);
+      message->optional_send_is_normalized = true;
     }
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {

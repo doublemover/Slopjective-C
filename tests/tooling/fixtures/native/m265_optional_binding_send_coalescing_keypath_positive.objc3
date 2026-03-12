@@ -1,0 +1,18 @@
+module optionalsFrontend;
+
+fn main(maybeValue: id?, fallback: id) -> i32 {
+  if let chosen = maybeValue {
+    let local = chosen;
+  } else {
+    return 1;
+  }
+
+  guard let ready = maybeValue else {
+    return 2;
+  }
+
+  let resolved = maybeValue ?? fallback;
+  let sent = [maybeValue? description];
+  let path = @keypath(self, title);
+  return 0;
+}

@@ -55,14 +55,19 @@ Implementations may treat the following as aliases with identical semantics:
 
 ### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
 
-Current implementation status (`M265-A001`):
+Current implementation status (`M265-A002`):
 
 - protocol `@required` / `@optional` partitions are live in the frontend
 - object-pointer nullability and pragmatic generic suffix carriers are live in
   parameter, return, and property type parsing
+- optional binding forms `if let`, `if var`, `guard let`, and `guard var` are
+  admitted as parser-owned source forms
+- optional sends written as `[receiver? selector]` are admitted as parser-owned
+  source forms
+- nil-coalescing `??` is admitted as a parser-owned source form
+- typed key-path literals such as `@keypath(...)` are admitted as parser-owned
+  source forms
 - optional-member access `?.` is still fail-closed
-- nil-coalescing `??` is still fail-closed
-- typed key-path literals such as `@keypath(...)` are still fail-closed
 
 ### B.2.3 ARC source-surface and current mode boundary (implementation note) {#b-2-3}
 

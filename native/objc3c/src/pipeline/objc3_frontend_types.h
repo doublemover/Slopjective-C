@@ -1232,13 +1232,13 @@ struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
 };
 
 inline constexpr const char *kObjc3Part3TypeSourceClosureContractId =
-    "objc3c-part3-type-source-closure/m265-a001-v1";
+    "objc3c-part3-type-source-closure/m265-a002-v1";
 inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part3_type_source_closure";
 inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
-    "protocol-optional-partitions-and-object-pointer-nullability-generic-suffix-carriers-are-live-source-surfaces";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
-    "optional-member-access-nil-coalescing-and-typed-keypath-literals-remain-fail-closed-until-later-m265-issues";
+    "optional-member-access-remains-fail-closed-until-later-m265-issues";
 
 struct Objc3FrontendPart3TypeSourceClosureSummary {
   std::string contract_id = kObjc3Part3TypeSourceClosureContractId;
@@ -1249,11 +1249,13 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
       kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions,
       kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes,
       kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes,
+      kObjc3SourceOnlyFeatureClaimOptionalBindings,
+      kObjc3SourceOnlyFeatureClaimOptionalSends,
+      kObjc3SourceOnlyFeatureClaimNilCoalescing,
+      kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals,
   };
   std::vector<std::string> unsupported_claim_ids = {
       kObjc3UnsupportedFeatureClaimOptionalMemberAccess,
-      kObjc3UnsupportedFeatureClaimNilCoalescing,
-      kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals,
   };
   std::size_t protocol_required_method_count = 0;
   std::size_t protocol_optional_method_count = 0;
@@ -1263,15 +1265,22 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
   std::size_t pointer_declarator_entries = 0;
   std::size_t nullability_suffix_entries = 0;
   std::size_t generic_suffix_entries = 0;
+  std::size_t optional_binding_sites = 0;
+  std::size_t guard_binding_sites = 0;
+  std::size_t optional_send_sites = 0;
   std::size_t optional_member_access_sites = 0;
   std::size_t nil_coalescing_sites = 0;
   std::size_t typed_keypath_literal_sites = 0;
   bool protocol_optional_partition_source_supported = false;
   bool object_pointer_nullability_source_supported = false;
   bool pragmatic_generic_suffix_source_supported = false;
+  bool optional_binding_source_supported = false;
+  bool optional_send_source_supported = false;
+  bool nil_coalescing_source_supported = false;
+  bool typed_keypath_literal_source_supported = false;
   bool optional_member_access_fail_closed = true;
-  bool nil_coalescing_fail_closed = true;
-  bool typed_keypath_literal_fail_closed = true;
+  bool nil_coalescing_fail_closed = false;
+  bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -4288,29 +4297,32 @@ inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
          summary.frontend_surface_path == kObjc3Part3TypeSourceClosureSurfacePath &&
          summary.source_model == kObjc3Part3TypeSourceClosureSourceModel &&
          summary.failure_model == kObjc3Part3TypeSourceClosureFailureModel &&
-         summary.source_only_claim_ids.size() == 3 &&
+         summary.source_only_claim_ids.size() == 7 &&
          summary.source_only_claim_ids[0] ==
              kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions &&
          summary.source_only_claim_ids[1] ==
              kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes &&
          summary.source_only_claim_ids[2] ==
              kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes &&
-         summary.unsupported_claim_ids.size() == 3 &&
+         summary.source_only_claim_ids[3] ==
+             kObjc3SourceOnlyFeatureClaimOptionalBindings &&
+         summary.source_only_claim_ids[4] ==
+             kObjc3SourceOnlyFeatureClaimOptionalSends &&
+         summary.source_only_claim_ids[5] ==
+             kObjc3SourceOnlyFeatureClaimNilCoalescing &&
+         summary.source_only_claim_ids[6] ==
+             kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals &&
+         summary.unsupported_claim_ids.size() == 1 &&
          summary.unsupported_claim_ids[0] ==
              kObjc3UnsupportedFeatureClaimOptionalMemberAccess &&
-         summary.unsupported_claim_ids[1] ==
-             kObjc3UnsupportedFeatureClaimNilCoalescing &&
-         summary.unsupported_claim_ids[2] ==
-             kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals &&
          summary.protocol_optional_partition_source_supported &&
          summary.object_pointer_nullability_source_supported &&
          summary.pragmatic_generic_suffix_source_supported &&
+         summary.optional_binding_source_supported &&
+         summary.optional_send_source_supported &&
+         summary.nil_coalescing_source_supported &&
+         summary.typed_keypath_literal_source_supported &&
          summary.optional_member_access_fail_closed &&
-         summary.nil_coalescing_fail_closed &&
-         summary.typed_keypath_literal_fail_closed &&
-         summary.optional_member_access_sites == 0 &&
-         summary.nil_coalescing_sites == 0 &&
-         summary.typed_keypath_literal_sites == 0 &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();

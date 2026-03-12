@@ -116,6 +116,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           tokens.push_back(Token{TokenKind::KwAtProperty, "@property", token_line, token_column});
           continue;
         }
+        if (directive == "keypath") {
+          tokens.push_back(Token{TokenKind::KwAtKeypath, "@keypath", token_line, token_column});
+          continue;
+        }
         if (directive == "end") {
           tokens.push_back(Token{TokenKind::KwAtEnd, "@end", token_line, token_column});
           continue;
@@ -139,6 +143,8 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwModule;
       } else if (ident == "let") {
         kind = TokenKind::KwLet;
+      } else if (ident == "var") {
+        kind = TokenKind::KwVar;
       } else if (ident == "fn") {
         kind = TokenKind::KwFn;
       } else if (ident == "pure") {
@@ -151,6 +157,8 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwIf;
       } else if (ident == "else") {
         kind = TokenKind::KwElse;
+      } else if (ident == "guard") {
+        kind = TokenKind::KwGuard;
       } else if (ident == "do") {
         kind = TokenKind::KwDo;
       } else if (ident == "for") {
@@ -246,6 +254,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
       case ':':
         tokens.push_back(Token{TokenKind::Colon, ":", token_line, token_column});
         break;
+      case '.':
+        tokens.push_back(Token{TokenKind::Dot, ".", token_line, token_column});
+        break;
       case ';':
         tokens.push_back(Token{TokenKind::Semicolon, ";", token_line, token_column});
         break;
@@ -315,10 +326,15 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         }
         break;
       case '?':
-        // M265-A001 Part 3 source-closure anchor: the lexer still emits a
-        // single '?' token for ternary parsing and nullability suffix carriers.
-        // Optional-member access '?.' and nil-coalescing '??' remain fail-closed
-        // until later M265 parser/lowering issues land.
+        if (MatchChar('?')) {
+          tokens.push_back(Token{TokenKind::QuestionQuestion, "??", token_line, token_column});
+          break;
+        }
+        if (MatchChar('.')) {
+          diagnostics.push_back(
+              MakeDiag(token_line, token_column + 1u, "O3L001", "unexpected character '.'"));
+          break;
+        }
         tokens.push_back(Token{TokenKind::Question, "?", token_line, token_column});
         break;
       case '~':

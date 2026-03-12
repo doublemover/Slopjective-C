@@ -11,12 +11,14 @@ enum class Objc3LexTokenKind {
   Number,
   KwModule,
   KwLet,
+  KwVar,
   KwFn,
   KwPure,
   KwExtern,
   KwReturn,
   KwIf,
   KwElse,
+  KwGuard,
   KwDo,
   KwFor,
   KwSwitch,
@@ -45,6 +47,7 @@ enum class Objc3LexTokenKind {
   KwAtRequired,
   KwAtOptional,
   KwAtProperty,
+  KwAtKeypath,
   KwAtEnd,
   KwAtAutoreleasePool,
   LParen,
@@ -55,6 +58,7 @@ enum class Objc3LexTokenKind {
   RBrace,
   Comma,
   Colon,
+  Dot,
   Semicolon,
   Equal,
   PlusEqual,
@@ -84,6 +88,7 @@ enum class Objc3LexTokenKind {
   AndAnd,
   OrOr,
   Question,
+  QuestionQuestion,
   Tilde,
   Plus,
   Minus,
@@ -163,6 +168,14 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerNullabilit
     "source-only:object-pointer-nullability-suffixes";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes =
     "source-only:pragmatic-generic-suffixes";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimOptionalBindings =
+    "source-only:optional-bindings";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimOptionalSends =
+    "source-only:optional-sends";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
+    "source-only:nil-coalescing";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
+    "source-only:typed-keypath-literals";
 
 // M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed
@@ -183,10 +196,6 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
     "unsupported:arc";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
     "unsupported:optional-member-access";
-inline constexpr const char *kObjc3UnsupportedFeatureClaimNilCoalescing =
-    "unsupported:nil-coalescing";
-inline constexpr const char *kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals =
-    "unsupported:typed-keypath-literals";
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";

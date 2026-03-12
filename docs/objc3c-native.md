@@ -295,22 +295,31 @@ Currently live in the frontend:
   annotations
 - nullability suffix carriers (`?` / `!`) on those object-pointer spellings
 - pragmatic generic suffix carriers such as `id<Protocol>*?`
+- optional binding forms `if let`, `if var`, `guard let`, and `guard var`
+- optional sends written as `[receiver? selector]`
+- nil-coalescing expressions written with `??`
+- typed key-path literals such as `@keypath(self, title)`
 
 Current fail-closed boundary:
 
 - `?.` optional-member access is not admitted yet
-- `??` nil-coalescing is not admitted yet
-- typed key-path literals such as `@keypath(...)` are not admitted yet
 
 Deterministic current behavior:
 
 - `?.` fails in the lexer on `.` with `O3L001`
-- `??` fails in parsing with `invalid expression [O3P103]`
-- `@keypath` fails as an unsupported `@` directive with `O3L001`
+- `if let` / `guard let` are parser-owned source forms in this lane and lower
+  into deterministic frontend control-flow scaffolding for later `M265` sema
+  and lowering work
+- optional sends are admitted as parser-owned message-send forms and published
+  through the frontend semantic surface
+- `??` and `@keypath(...)` are admitted as parser-owned source forms and
+  published through the frontend semantic surface
+- only `?.` remains fail-closed in the current frontend boundary
 
-Recommended M265-A001 frontend contract check:
+Recommended frontend contract checks:
 
 - `python scripts/check_m265_a001_optionals_nullability_pragmatic_generics_and_key_path_source_closure_contract_and_architecture_freeze.py`
+- `python scripts/check_m265_a002_frontend_support_for_optional_sends_binds_coalescing_and_typed_key_paths_core_feature_implementation.py`
 
 ## M151 frontend symbol graph and scope-resolution parser surface
 
