@@ -613,11 +613,13 @@ std::string BuildPart5ControlFlowSafetyLoweringContractJson(
       << contract.contract_violation_sites
       << ",\"deterministic\":"
       << (contract.deterministic ? "true" : "false")
-      << ",\"fail_closed\":true"
+      << ",\"fail_closed\":"
+      << (contract.deterministic_fail_closed_sites > 0u ? "true" : "false")
       << ",\"source_semantic_model_ready\":"
       << (source_semantic_model_ready ? "true" : "false")
       << ",\"ready_for_native_guard_lowering\":true"
-      << ",\"ready_for_native_match_lowering\":false"
+      << ",\"ready_for_native_match_lowering\":"
+      << (contract.fail_closed_match_dispatch_sites == 0u ? "true" : "false")
       << ",\"ready_for_native_defer_lowering\":true"
       << ",\"semantic_summary_replay_key\":\""
       << EscapeJsonString(semantic_summary_replay_key)
@@ -8729,11 +8731,19 @@ BuildPart5ControlFlowSafetyLoweringContract(
                                 summary.guard_condition_clause_semantic_sites;
   contract.match_statement_sites = summary.match_statement_semantic_sites;
   contract.defer_statement_sites = summary.defer_statement_semantic_sites;
+  // M266-C003 lowering contract anchor: lane-C now treats admitted match
+  // statements as live only when they stay inside the current literal/default/
+  // wildcard/binding slice. Result-case payload matching remains explicitly
+  // fail-closed until a later runtime ABI tranche lands.
+  const bool result_case_patterns_present =
+      summary.match_result_case_scope_sites > 0u;
   contract.live_guard_short_circuit_sites = contract.guard_statement_sites;
-  contract.live_match_dispatch_sites = 0;
+  contract.live_match_dispatch_sites =
+      result_case_patterns_present ? 0u : contract.match_statement_sites;
   contract.live_defer_cleanup_sites = contract.defer_statement_sites;
   contract.fail_closed_guard_short_circuit_sites = 0;
-  contract.fail_closed_match_dispatch_sites = contract.match_statement_sites;
+  contract.fail_closed_match_dispatch_sites =
+      contract.match_statement_sites - contract.live_match_dispatch_sites;
   contract.fail_closed_defer_cleanup_sites = 0;
   contract.deterministic_fail_closed_sites =
       contract.fail_closed_guard_short_circuit_sites +

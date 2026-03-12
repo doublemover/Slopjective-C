@@ -443,6 +443,10 @@ admits more real syntax than the initial `M266-A001` freeze.
   - result-case patterns such as `.Ok(let value)` and `.Err(let error)`
 - source-only `defer { ... }` statements are now admitted as a frontend/sema-owned Part 5 control-flow surface
 - native emit paths now lower runnable `defer` cleanup insertion and boolean-clause `guard` short-circuit control flow through `M266-C002`
+- native emit paths now also lower literal/default/wildcard/binding `match`
+  arms through `M266-C003`
+- result-case `match` arms remain explicitly fail-closed in native lowering
+  until a runtime `Result` payload ABI lands
 - expression-form `match` arms using `=>`, guarded patterns using `where`, and
   type-test patterns using contextual `is` still fail closed with targeted
   parser diagnostics

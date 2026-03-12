@@ -2091,13 +2091,13 @@ inline constexpr const char *kObjc3Part3OptionalKeypathLoweringFailClosedModel =
 inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringGuardModel =
     "native-lowering-executes-guard-clauses-via-short-circuit-control-flow-and-else-edge-cleanup";
 inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringMatchModel =
-    "frontend-and-sema-admit-statement-match-exhaustiveness-while-native-lowering-remains-explicitly-fail-closed";
+    "native-lowering-executes-literal-default-wildcard-and-binding-match-arms-while-result-case-patterns-remain-explicitly-fail-closed";
 inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringDeferModel =
     "native-lowering-registers-defer-cleanups-per-scope-and-emits-lifo-cleanup-insertion-on-scope-exit";
 inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringAuthorityModel =
     "part5-source-closure-plus-part5-semantic-model-own-the-current-lowering-boundary";
 inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringFailClosedModel =
-    "native-ir-emission-still-fails-closed-with-o3l300-on-unlowered-statement-match-control-flow-sites";
+    "native-ir-emission-fails-closed-with-o3l300-on-result-case-match-patterns-until-a-runtime-result-payload-abi-lands";
 inline constexpr const char *kObjc3Part3OptionalKeypathRuntimeHelperContractId =
     "objc3c-part3-optional-keypath-runtime-helper-contract/m265-d001-v1";
 inline constexpr const char

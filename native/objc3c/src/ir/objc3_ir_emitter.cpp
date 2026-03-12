@@ -9145,11 +9145,9 @@ class Objc3IREmitter {
     if (immediate_it != ctx.immediate_identifiers.end()) {
       return std::to_string(immediate_it->second);
     }
-    // M266-C001 control-flow safety lowering freeze anchor: guard/match
-    // bindings and source-only defer sites are admitted upstream in
-    // frontend/sema summaries, but native lowering still fails closed here
-    // until a later Part 5 lowering/runtime tranche materializes executable
-    // control-flow artifacts.
+    // Match bindings are now materialized by the executable Part 5 lowering
+    // path when a live match arm captures the condition value. Remaining
+    // unresolved identifiers still fail closed here.
     return EmitUnsupportedI32Value("unresolved identifier '" + name + "' during IR lowering");
   }
 
@@ -10996,6 +10994,96 @@ class Objc3IREmitter {
 
         const std::string condition_value = EmitExpr(switch_stmt->condition.get(), ctx);
         const std::string end_label = NewLabel(ctx, "switch_end_");
+
+        if (switch_stmt->match_surface_enabled) {
+          // M266-C003 match lowering anchor: statement-form match now lowers
+          // literal/default/wildcard/binding arms as a distinct control-flow
+          // carrier with case-local binding storage and no switch-style
+          // fallthrough, while result-case payload matching remains fail-closed
+          // until a runtime Result ABI exists.
+          std::vector<std::string> arm_labels;
+          arm_labels.reserve(switch_stmt->cases.size());
+          for (std::size_t i = 0; i < switch_stmt->cases.size(); ++i) {
+            const SwitchCase &case_stmt = switch_stmt->cases[i];
+            arm_labels.push_back(case_stmt.is_default
+                                     ? NewLabel(ctx, "match_default_")
+                                     : NewLabel(ctx, "match_case_"));
+          }
+
+          if (!switch_stmt->cases.empty()) {
+            std::vector<std::string> test_labels;
+            test_labels.reserve(switch_stmt->cases.size());
+            for (std::size_t i = 0; i < switch_stmt->cases.size(); ++i) {
+              test_labels.push_back(NewLabel(ctx, "match_test_"));
+            }
+            ctx.code_lines.push_back("  br label %" + test_labels.front());
+            for (std::size_t case_index = 0; case_index < switch_stmt->cases.size(); ++case_index) {
+              const SwitchCase &case_stmt = switch_stmt->cases[case_index];
+              const std::string next_label =
+                  case_index + 1u < switch_stmt->cases.size() ? test_labels[case_index + 1u] : end_label;
+              ctx.code_lines.push_back(test_labels[case_index] + ":");
+              if (case_stmt.is_default ||
+                  case_stmt.match_pattern_kind == MatchPatternKind::Wildcard ||
+                  case_stmt.match_pattern_kind == MatchPatternKind::Binding) {
+                ctx.code_lines.push_back("  br label %" + arm_labels[case_index]);
+                continue;
+              }
+              if (case_stmt.match_pattern_kind == MatchPatternKind::LiteralInteger ||
+                  case_stmt.match_pattern_kind == MatchPatternKind::LiteralBool ||
+                  case_stmt.match_pattern_kind == MatchPatternKind::LiteralNil) {
+                const std::string cmp = NewTemp(ctx);
+                ctx.code_lines.push_back("  " + cmp + " = icmp eq i32 " + condition_value + ", " +
+                                         std::to_string(case_stmt.value));
+                ctx.code_lines.push_back("  br i1 " + cmp + ", label %" + arm_labels[case_index] +
+                                         ", label %" + next_label);
+                continue;
+              }
+              if (case_stmt.match_pattern_kind == MatchPatternKind::ResultCase) {
+                EmitUnsupportedI32Value(
+                    "result-case match lowering remains fail-closed until a runtime Result payload ABI lands");
+                return;
+              }
+              EmitUnsupportedI32Value("unsupported match pattern reached IR lowering");
+              return;
+            }
+          } else {
+            ctx.code_lines.push_back("  br label %" + end_label);
+          }
+
+          for (std::size_t arm_index = 0; arm_index < switch_stmt->cases.size(); ++arm_index) {
+            const SwitchCase &case_stmt = switch_stmt->cases[arm_index];
+            ctx.code_lines.push_back(arm_labels[arm_index] + ":");
+            PushScope(ctx);
+            if (!case_stmt.match_binding_name.empty() &&
+                (case_stmt.match_pattern_kind == MatchPatternKind::Binding)) {
+              const std::string ptr =
+                  "%" + case_stmt.match_binding_name + ".addr." + std::to_string(ctx.temp_counter++);
+              ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+              ctx.code_lines.push_back("  store i32 " + condition_value + ", ptr " + ptr + ", align 4");
+              ctx.scopes.back()[case_stmt.match_binding_name] = ptr;
+            }
+            ctx.control_stack.push_back(
+                {"", end_label, false, ctx.scopes.size() - 1u,
+                 ctx.autoreleasepool_scope_symbols.size(),
+                 ctx.pending_block_dispose_calls.size(),
+                 ctx.arc_owned_cleanup_ptrs.size()});
+            ctx.terminated = false;
+            for (const auto &case_body_stmt : case_stmt.body) {
+              EmitStatement(case_body_stmt.get(), ctx);
+            }
+            const bool arm_terminated = ctx.terminated;
+            ctx.control_stack.pop_back();
+            PopScope(ctx, !arm_terminated);
+
+            if (!arm_terminated) {
+              ctx.code_lines.push_back("  br label %" + end_label);
+            }
+          }
+
+          ctx.code_lines.push_back(end_label + ":");
+          ctx.terminated = false;
+          return;
+        }
 
         std::vector<std::string> arm_labels;
         arm_labels.reserve(switch_stmt->cases.size());

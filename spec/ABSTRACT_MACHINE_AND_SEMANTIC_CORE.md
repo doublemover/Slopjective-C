@@ -385,6 +385,9 @@ Current Part 5 frontend note:
   statement form `match` is now parsed as a frontend owned control flow surface
   the currently admitted pattern slice is limited to wildcard, literal,
   binding, and result case patterns
+  native lowering now executes literal/default/wildcard/binding match arms
+  while result-case payload matching stays fail closed until a runtime Result
+  ABI lands
   expression form `match`, guarded patterns, and type test patterns remain fail closed until later `M266` issues land
   source only `defer { ... }` statements are now admitted in the frontend/sema path, while runnable lowering/runtime execution remains deferred to later `M266` work
 

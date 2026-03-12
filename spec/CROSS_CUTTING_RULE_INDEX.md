@@ -44,8 +44,10 @@ Current Part 5 lowering note:
 - Current Part 5 defer and guard lowering note:
 - `M266-C002` now lowers boolean-clause `guard` and lexical `defer` cleanup
   insertion natively.
-- statement-form `match` remains the only admitted Part 5 surface still
-  fail-closed in native LLVM lowering today.
+- `M266-C003` now lowers literal/default/wildcard/binding statement-form
+  `match` arms natively.
+- result-case statement-form `match` remains fail-closed in native LLVM
+  lowering until a runtime `Result` payload ABI lands.
 - current fail-closed lowering probes terminate deterministically with
   `O3L300`.
 
