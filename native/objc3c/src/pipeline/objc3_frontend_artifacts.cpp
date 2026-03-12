@@ -362,23 +362,49 @@ std::string BuildPart5ControlFlowSourceClosureSummaryJson(
       << BuildStringArrayJson(summary.fail_closed_construct_ids)
       << ",\"guard_binding_sites\":" << summary.guard_binding_sites
       << ",\"guard_binding_clause_sites\":" << summary.guard_binding_clause_sites
+      << ",\"guard_boolean_condition_sites\":"
+      << summary.guard_boolean_condition_sites
       << ",\"switch_case_pattern_sites\":" << summary.switch_case_pattern_sites
       << ",\"switch_default_pattern_sites\":"
       << summary.switch_default_pattern_sites
       << ",\"defer_keyword_sites\":" << summary.defer_keyword_sites
-      << ",\"match_keyword_sites\":" << summary.match_keyword_sites
+      << ",\"match_statement_sites\":" << summary.match_statement_sites
+      << ",\"match_case_pattern_sites\":" << summary.match_case_pattern_sites
+      << ",\"match_default_sites\":" << summary.match_default_sites
+      << ",\"match_wildcard_pattern_sites\":"
+      << summary.match_wildcard_pattern_sites
+      << ",\"match_literal_pattern_sites\":"
+      << summary.match_literal_pattern_sites
+      << ",\"match_binding_pattern_sites\":"
+      << summary.match_binding_pattern_sites
+      << ",\"match_result_case_pattern_sites\":"
+      << summary.match_result_case_pattern_sites
       << ",\"guard_binding_source_supported\":"
       << (summary.guard_binding_source_supported ? "true" : "false")
+      << ",\"guard_condition_list_source_supported\":"
+      << (summary.guard_condition_list_source_supported ? "true" : "false")
       << ",\"switch_case_pattern_source_supported\":"
       << (summary.switch_case_pattern_source_supported ? "true" : "false")
+      << ",\"match_statement_source_supported\":"
+      << (summary.match_statement_source_supported ? "true" : "false")
+      << ",\"match_wildcard_pattern_source_supported\":"
+      << (summary.match_wildcard_pattern_source_supported ? "true" : "false")
+      << ",\"match_literal_pattern_source_supported\":"
+      << (summary.match_literal_pattern_source_supported ? "true" : "false")
+      << ",\"match_binding_pattern_source_supported\":"
+      << (summary.match_binding_pattern_source_supported ? "true" : "false")
+      << ",\"match_result_case_pattern_source_supported\":"
+      << (summary.match_result_case_pattern_source_supported ? "true" : "false")
       << ",\"defer_keyword_reserved\":"
       << (summary.defer_keyword_reserved ? "true" : "false")
-      << ",\"match_keyword_reserved\":"
-      << (summary.match_keyword_reserved ? "true" : "false")
       << ",\"defer_fail_closed\":"
       << (summary.defer_fail_closed ? "true" : "false")
-      << ",\"match_fail_closed\":"
-      << (summary.match_fail_closed ? "true" : "false")
+      << ",\"match_expression_fail_closed\":"
+      << (summary.match_expression_fail_closed ? "true" : "false")
+      << ",\"guarded_pattern_fail_closed\":"
+      << (summary.guarded_pattern_fail_closed ? "true" : "false")
+      << ",\"type_test_pattern_fail_closed\":"
+      << (summary.type_test_pattern_fail_closed ? "true" : "false")
       << ",\"deterministic_handoff\":"
       << (summary.deterministic_handoff ? "true" : "false")
       << ",\"ready_for_semantic_expansion\":"
@@ -9074,7 +9100,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                executable_metadata_runtime_ingest_binary_boundary) &&
            runtime_metadata_section_scaffold.class_descriptor_count > 0u;
   }();
-
   std::string post_pipeline_failure_code;
   std::string post_pipeline_failure_message;
   const auto record_post_pipeline_failure = [&](const char *code, std::string message) {

@@ -1,0 +1,12 @@
+module m266MatchTypeTestPatternFailClosedNegative;
+
+fn classify(value: id) -> i32 {
+  match (value) {
+    case is ReadyType: {
+      return 1;
+    }
+    default: {
+      return 2;
+    }
+  }
+}

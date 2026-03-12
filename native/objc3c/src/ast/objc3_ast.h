@@ -470,7 +470,10 @@ struct IfStmt {
   std::vector<std::unique_ptr<Stmt>> else_body;
   bool optional_binding_surface_enabled = false;
   bool guard_binding_surface_enabled = false;
+  bool guard_condition_list_surface_enabled = false;
   std::size_t optional_binding_clause_count = 0;
+  std::size_t guard_boolean_condition_clause_count = 0;
+  std::vector<std::unique_ptr<Expr>> guard_condition_exprs;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -501,11 +504,26 @@ struct ForStmt {
   unsigned column = 1;
 };
 
+enum class MatchPatternKind {
+  None,
+  LiteralInteger,
+  LiteralBool,
+  LiteralNil,
+  Wildcard,
+  Binding,
+  ResultCase,
+};
+
 struct SwitchCase {
   bool is_default = false;
   int value = 0;
   unsigned value_line = 1;
   unsigned value_column = 1;
+  bool match_pattern_enabled = false;
+  MatchPatternKind match_pattern_kind = MatchPatternKind::None;
+  bool match_binding_mutable = false;
+  std::string match_binding_name;
+  std::string match_result_case_name;
   std::vector<std::unique_ptr<Stmt>> body;
   unsigned line = 1;
   unsigned column = 1;
@@ -514,6 +532,7 @@ struct SwitchCase {
 struct SwitchStmt {
   std::unique_ptr<Expr> condition;
   std::vector<SwitchCase> cases;
+  bool match_surface_enabled = false;
   unsigned line = 1;
   unsigned column = 1;
 };

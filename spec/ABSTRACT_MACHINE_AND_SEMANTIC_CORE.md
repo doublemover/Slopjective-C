@@ -377,7 +377,13 @@ The milestone closeout matrix keeps the current Part 3 implementation truthful.
 Runnable rows cover optional-send short-circuiting, optional binding/refinement,
 optional-member access, and validated typed key-path execution. Pragmatic
 generic annotations remain represented through preserved metadata and replay
-evidence rather than a fabricated runtime behavior claim. `M266-A001` is the
-next issue after this closeout.
+evidence rather than a fabricated runtime behavior claim.
 
-Pragmatic generic annotations remain represented through preserved metadata and replay evidence rather than a fabricated runtime behavior claim.
+Current Part 5 frontend note:
+
+- `guard` now admits optional-binding plus boolean-clause lists
+- statement-form `match` is now parsed as a frontend-owned control-flow surface
+- the currently admitted pattern slice is limited to wildcard, literal,
+  binding, and result-case patterns
+- `defer`, expression-form `match`, guarded patterns, and type-test patterns
+  remain fail closed until later `M266` issues land

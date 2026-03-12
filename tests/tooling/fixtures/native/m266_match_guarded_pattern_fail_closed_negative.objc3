@@ -1,0 +1,12 @@
+module m266MatchGuardedPatternFailClosedNegative;
+
+fn classify(value: i32) -> i32 {
+  match (value) {
+    case let captured where true: {
+      return 1;
+    }
+    default: {
+      return 2;
+    }
+  }
+}

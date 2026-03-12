@@ -5202,6 +5202,17 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         for (const auto &binding : refined_bindings) {
           scopes.back()[binding.first] = binding.second;
         }
+        for (const auto &guard_condition : if_stmt->guard_condition_exprs) {
+          const SemanticTypeInfo condition_type = ValidateExpr(
+              guard_condition.get(), scopes, globals, functions, diagnostics,
+              max_message_send_args, message_send_context);
+          if (!IsUnknownSemanticType(condition_type) &&
+              !IsScalarBoolCompatibleType(condition_type)) {
+            diagnostics.push_back(MakeDiag(
+                if_stmt->line, if_stmt->column, "O3S206",
+                "type mismatch: guard condition must be bool-compatible"));
+          }
+        }
         ValidateStatementsFromIndex(if_stmt->then_body, binding_count, scopes, globals,
                                     functions, expected_return_type, function_name,
                                     diagnostics, loop_depth, switch_depth,
@@ -5224,6 +5235,29 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
               scopes.back()[binding.first] = binding.second;
             }
           }
+        }
+      } else if (if_stmt->guard_condition_list_surface_enabled) {
+        for (const auto &guard_condition : if_stmt->guard_condition_exprs) {
+          const SemanticTypeInfo condition_type = ValidateExpr(
+              guard_condition.get(), scopes, globals, functions, diagnostics,
+              max_message_send_args, message_send_context);
+          if (!IsUnknownSemanticType(condition_type) &&
+              !IsScalarBoolCompatibleType(condition_type)) {
+            diagnostics.push_back(MakeDiag(
+                if_stmt->line, if_stmt->column, "O3S206",
+                "type mismatch: guard condition must be bool-compatible"));
+          }
+        }
+        scopes.push_back({});
+        ValidateStatements(if_stmt->else_body, scopes, globals, functions,
+                           expected_return_type, function_name, diagnostics,
+                           loop_depth, switch_depth, max_message_send_args,
+                           message_send_context);
+        scopes.pop_back();
+        if (!StatementListDefinitelyExitsScope(if_stmt->else_body)) {
+          diagnostics.push_back(MakeDiag(
+              if_stmt->line, if_stmt->column, "O3S206",
+              "type mismatch: guard condition else block must exit the current scope"));
         }
       } else {
         const SemanticTypeInfo condition_type = ValidateExpr(
@@ -5306,6 +5340,22 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       const SemanticTypeInfo condition_type = ValidateExpr(
           switch_stmt->condition.get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
+      if (switch_stmt->match_surface_enabled) {
+        for (const auto &case_stmt : switch_stmt->cases) {
+          scopes.push_back({});
+          if ((case_stmt.match_pattern_kind == MatchPatternKind::Binding ||
+               case_stmt.match_pattern_kind == MatchPatternKind::ResultCase) &&
+              !case_stmt.match_binding_name.empty()) {
+            scopes.back()[case_stmt.match_binding_name] = condition_type;
+          }
+          ValidateStatements(case_stmt.body, scopes, globals, functions,
+                             expected_return_type, function_name, diagnostics,
+                             loop_depth, switch_depth + 1,
+                             max_message_send_args, message_send_context);
+          scopes.pop_back();
+        }
+        return;
+      }
       if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
         diagnostics.push_back(MakeDiag(switch_stmt->line, switch_stmt->column, "O3S206",
                                        "type mismatch: switch condition must be i32-compatible"));

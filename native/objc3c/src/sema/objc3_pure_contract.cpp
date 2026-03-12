@@ -345,7 +345,6 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
     }
     function_effects[fn.name] = std::move(info);
   }
-
   std::vector<std::string> ordered_functions;
   ordered_functions.reserve(function_effects.size());
   for (const auto &entry : function_effects) {
@@ -435,7 +434,6 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
       changed = true;
     }
   }
-
   std::unordered_set<std::string> reported;
   for (const auto &fn : ast.functions) {
     if (fn.is_prototype || !fn.is_pure) {

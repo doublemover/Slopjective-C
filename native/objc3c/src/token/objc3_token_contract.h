@@ -188,12 +188,28 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
 // fail-closed keywords instead of drifting as ordinary identifiers.
 inline constexpr const char *kObjc3Part5SourceSurfaceGuardBindings =
     "part5-source:guard-bindings";
+inline constexpr const char *kObjc3Part5SourceSurfaceGuardConditionLists =
+    "part5-source:guard-condition-lists";
 inline constexpr const char *kObjc3Part5SourceSurfaceSwitchCasePatterns =
     "part5-source:switch-case-patterns";
+inline constexpr const char *kObjc3Part5SourceSurfaceMatchStatement =
+    "part5-source:match-statement";
+inline constexpr const char *kObjc3Part5SourceSurfaceMatchWildcardPatterns =
+    "part5-source:match-wildcard-patterns";
+inline constexpr const char *kObjc3Part5SourceSurfaceMatchLiteralPatterns =
+    "part5-source:match-literal-patterns";
+inline constexpr const char *kObjc3Part5SourceSurfaceMatchBindingPatterns =
+    "part5-source:match-binding-patterns";
+inline constexpr const char *kObjc3Part5SourceSurfaceMatchResultCasePatterns =
+    "part5-source:match-result-case-patterns";
 inline constexpr const char *kObjc3Part5FailClosedConstructDefer =
     "part5-fail-closed:defer-statement";
-inline constexpr const char *kObjc3Part5FailClosedConstructMatch =
-    "part5-fail-closed:match-statement";
+inline constexpr const char *kObjc3Part5FailClosedConstructMatchExpression =
+    "part5-fail-closed:match-expression";
+inline constexpr const char *kObjc3Part5FailClosedConstructGuardedPatterns =
+    "part5-fail-closed:guarded-match-patterns";
+inline constexpr const char *kObjc3Part5FailClosedConstructMatchTypeTestPatterns =
+    "part5-fail-closed:match-type-test-patterns";
 
 // M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed

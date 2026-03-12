@@ -352,26 +352,34 @@ without widening it.
   fake runtime behavior claim
 - `M266-A001` is the next issue after `M265` closeout
 
-## M266 frontend control-flow and safety source closure
+## M266 frontend pattern grammar and guard surface
 
-The current Part 5 frontend boundary is intentionally narrow and truthful.
+The current Part 5 frontend boundary is still intentionally narrow, but it now
+admits more real syntax than the initial `M266-A001` freeze.
 
-- `guard let` / `guard var` stays admitted through the existing parser-owned
-  optional-binding surface and feeds the live guard-binding legality work that
-  landed in `M265`
-- `switch` / `case` remains the only supported pattern carrier in the current
-  parser slice
-- `defer` and `match` are now reserved as explicit frontend keywords and fail
-  closed with targeted parser diagnostics instead of drifting as plain
-  identifiers
-- the frontend publishes this boundary in
+- `guard let` / `guard var` remains admitted through the existing parser-owned
+  optional-binding surface
+- `guard` now also accepts comma-separated boolean clauses after optional
+  bindings, for example `guard let ready = maybeValue, true else { ... }`
+- statement-form `match (...) { ... }` is now admitted as a frontend-owned
+  control-flow carrier
+- the currently supported `match` pattern slice is:
+  - wildcard `_`
+  - literal integer, `true`, `false`, and `nil`
+  - binding patterns `let name` / `var name`
+  - result-case patterns such as `.Ok(let value)` and `.Err(let error)`
+- `defer` still fails closed with a targeted parser diagnostic
+- expression-form `match` arms using `=>`, guarded patterns using `where`, and
+  type-test patterns using contextual `is` still fail closed with targeted
+  parser diagnostics
+- the frontend publishes this widened boundary in
   `frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure`
   so later `M266` sema/lowering/runtime work can widen one deterministic Part 5
   contract instead of rebuilding grammar truth from docs
 
 Recommended frontend contract check:
 
-- `python scripts/check_m266_a001_defer_guard_match_and_pattern_source_closure_contract_and_architecture_freeze.py`
+- `python scripts/check_m266_a002_frontend_pattern_grammar_and_guard_surface_completion_core_feature_implementation.py`
 
 Recommended lowering contract check:
 

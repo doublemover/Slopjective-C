@@ -6,10 +6,13 @@ This index identifies rules whose semantics are shared across multiple parts and
 
 Current implementation note:
 
-- The live frontend only admits the existing `guard` binding surface plus
-  `switch` / `case` as the current pattern carrier.
-- `defer` and `match` are reserved keywords with explicit fail-closed parser
-  diagnostics until the runnable `M266` execution work lands.
+- The live frontend admits `guard` optional-binding clauses plus comma-separated
+  boolean guard clauses.
+- Statement-form `match` is now admitted as a frontend-owned control-flow
+  carrier with wildcard, literal, binding, and result-case patterns.
+- `defer`, expression-form `match`, guarded patterns, and type-test patterns
+  still fail closed with explicit parser diagnostics until later `M266`
+  execution work lands.
 
 ## Scope-exit and `defer` rules
 

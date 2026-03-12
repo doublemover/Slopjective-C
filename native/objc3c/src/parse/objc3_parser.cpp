@@ -9348,33 +9348,39 @@ class Objc3Parser {
       stmt->column = Previous().column;
       stmt->if_stmt->line = Previous().line;
       stmt->if_stmt->column = Previous().column;
-      auto clauses = ParseOptionalBindingClauses();
+      auto clauses = ParseGuardConditionClauses();
       if (clauses.empty()) {
         return nullptr;
       }
-      stmt->if_stmt->optional_binding_surface_enabled = true;
-      stmt->if_stmt->guard_binding_surface_enabled = true;
-      stmt->if_stmt->optional_binding_clause_count = clauses.size();
+      stmt->if_stmt->guard_condition_list_surface_enabled = true;
       stmt->if_stmt->condition = std::make_unique<Expr>();
       stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
       stmt->if_stmt->condition->bool_value = false;
       stmt->if_stmt->condition->line = stmt->line;
       stmt->if_stmt->condition->column = stmt->column;
       for (auto &clause : clauses) {
-        auto synthetic = std::make_unique<Stmt>();
-        synthetic->kind = Stmt::Kind::Let;
-        synthetic->line = clause.line;
-        synthetic->column = clause.column;
-        synthetic->let_stmt = std::make_unique<LetStmt>();
-        synthetic->let_stmt->name = clause.name;
-        synthetic->let_stmt->line = clause.line;
-        synthetic->let_stmt->column = clause.column;
-        synthetic->let_stmt->value = std::move(clause.value);
-        stmt->if_stmt->then_body.push_back(std::move(synthetic));
+        if (clause.kind == ParsedGuardConditionClause::Kind::OptionalBinding) {
+          stmt->if_stmt->optional_binding_surface_enabled = true;
+          stmt->if_stmt->guard_binding_surface_enabled = true;
+          ++stmt->if_stmt->optional_binding_clause_count;
+          auto synthetic = std::make_unique<Stmt>();
+          synthetic->kind = Stmt::Kind::Let;
+          synthetic->line = clause.binding.line;
+          synthetic->column = clause.binding.column;
+          synthetic->let_stmt = std::make_unique<LetStmt>();
+          synthetic->let_stmt->name = clause.binding.name;
+          synthetic->let_stmt->line = clause.binding.line;
+          synthetic->let_stmt->column = clause.binding.column;
+          synthetic->let_stmt->value = std::move(clause.binding.value);
+          stmt->if_stmt->then_body.push_back(std::move(synthetic));
+        } else {
+          ++stmt->if_stmt->guard_boolean_condition_clause_count;
+          stmt->if_stmt->guard_condition_exprs.push_back(std::move(clause.condition));
+        }
       }
       if (!Match(TokenKind::KwElse)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'else' after guard binding"));
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'else' after guard condition list"));
         return nullptr;
       }
       stmt->if_stmt->else_body = ParseControlBody();
@@ -9609,12 +9615,122 @@ class Objc3Parser {
     }
 
     if (Match(TokenKind::KwMatch)) {
-      const Token &token = Previous();
-      // M266-A001 source-closure anchor: reserve match syntax at parse time
-      // instead of letting it drift as an identifier-led statement.
-      diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P155", "unsupported 'match' statement"));
-      return nullptr;
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Switch;
+      stmt->switch_stmt = std::make_unique<SwitchStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->switch_stmt->line = Previous().line;
+      stmt->switch_stmt->column = Previous().column;
+      stmt->switch_stmt->match_surface_enabled = true;
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after match"));
+        return nullptr;
+      }
+      stmt->switch_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (stmt->switch_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after match scrutinee"));
+        return nullptr;
+      }
+      if (!Match(TokenKind::LBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "missing '{' for match body"));
+        return nullptr;
+      }
+
+      while (!At(TokenKind::RBrace) && !At(TokenKind::Eof)) {
+        if (Match(TokenKind::KwCase)) {
+          SwitchCase case_stmt;
+          case_stmt.line = Previous().line;
+          case_stmt.column = Previous().column;
+          case_stmt.is_default = false;
+          if (!ParseMatchPattern(case_stmt)) {
+            return nullptr;
+          }
+          if (At(TokenKind::Identifier) && Peek().text == "where") {
+            const Token token = Advance();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P157", "unsupported guarded match pattern"));
+            return nullptr;
+          }
+          if (At(TokenKind::Equal) && index_ + 1 < tokens_.size() &&
+              tokens_[index_ + 1].kind == TokenKind::Greater) {
+            const Token token = Peek();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P156", "reserved expression-form 'match' arm"));
+            return nullptr;
+          }
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after match pattern"));
+            return nullptr;
+          }
+          if (!At(TokenKind::LBrace)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "match case requires braced body"));
+            return nullptr;
+          }
+          case_stmt.body = ParseBlock();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+          stmt->switch_stmt->cases.push_back(std::move(case_stmt));
+          continue;
+        }
+
+        if (Match(TokenKind::KwDefault)) {
+          SwitchCase default_stmt;
+          default_stmt.line = Previous().line;
+          default_stmt.column = Previous().column;
+          default_stmt.is_default = true;
+          default_stmt.match_pattern_enabled = true;
+          default_stmt.match_pattern_kind = MatchPatternKind::Wildcard;
+          if (At(TokenKind::Equal) && index_ + 1 < tokens_.size() &&
+              tokens_[index_ + 1].kind == TokenKind::Greater) {
+            const Token token = Peek();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P156", "reserved expression-form 'match' arm"));
+            return nullptr;
+          }
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after default label"));
+            return nullptr;
+          }
+          if (!At(TokenKind::LBrace)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "match default requires braced body"));
+            return nullptr;
+          }
+          default_stmt.body = ParseBlock();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+          stmt->switch_stmt->cases.push_back(std::move(default_stmt));
+          continue;
+        }
+
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P103", "expected 'case' or 'default' in match body"));
+        return nullptr;
+      }
+
+      if (!Match(TokenKind::RBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '}' after match body"));
+        return nullptr;
+      }
+      return stmt;
     }
 
     if (Match(TokenKind::KwSwitch)) {
@@ -9913,6 +10029,59 @@ class Objc3Parser {
     unsigned column = 1;
   };
 
+  struct ParsedGuardConditionClause {
+    enum class Kind {
+      OptionalBinding,
+      BooleanExpr,
+    };
+
+    Kind kind = Kind::BooleanExpr;
+    ParsedOptionalBindingClause binding;
+    std::unique_ptr<Expr> condition;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
+
+  ParsedOptionalBindingClause ParseOptionalBindingClauseWithMutability(
+      bool binding_is_mutable) {
+    ParsedOptionalBindingClause clause;
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P103", "expected identifier in optional binding"));
+      return clause;
+    }
+    const Token name_token = Advance();
+    if (!Match(TokenKind::Equal)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "missing '=' in optional binding"));
+      return clause;
+    }
+    clause.name = name_token.text;
+    clause.is_mutable = binding_is_mutable;
+    clause.line = name_token.line;
+    clause.column = name_token.column;
+    clause.value = ParseExpressionWithBlockLiteralSourceUse(
+        BlockLiteralSourceUseKind::ExpressionSite);
+    return clause;
+  }
+
+  ParsedOptionalBindingClause ParseOptionalBindingClause() {
+    bool binding_is_mutable = false;
+    if (Match(TokenKind::KwLet)) {
+      binding_is_mutable = false;
+    } else if (Match(TokenKind::KwVar)) {
+      binding_is_mutable = true;
+    } else {
+      ParsedOptionalBindingClause clause;
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P103", "expected 'let' or 'var' in optional binding"));
+      return clause;
+    }
+    return ParseOptionalBindingClauseWithMutability(binding_is_mutable);
+  }
+
   std::vector<ParsedOptionalBindingClause> ParseOptionalBindingClauses() {
     std::vector<ParsedOptionalBindingClause> clauses;
     bool binding_is_mutable = false;
@@ -9922,30 +10091,14 @@ class Objc3Parser {
       binding_is_mutable = true;
     } else {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected 'let' or 'var' in optional binding"));
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P103", "expected 'let' or 'var' in optional binding"));
       return {};
     }
-
     while (true) {
-      if (!At(TokenKind::Identifier)) {
-        const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "expected identifier in optional binding"));
-        return {};
-      }
-      const Token name_token = Advance();
-      if (!Match(TokenKind::Equal)) {
-        const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "missing '=' in optional binding"));
-        return {};
-      }
-      ParsedOptionalBindingClause clause;
-      clause.name = name_token.text;
-      clause.is_mutable = binding_is_mutable;
-      clause.line = name_token.line;
-      clause.column = name_token.column;
-      clause.value = ParseExpressionWithBlockLiteralSourceUse(
-          BlockLiteralSourceUseKind::ExpressionSite);
-      if (clause.value == nullptr) {
+      ParsedOptionalBindingClause clause =
+          ParseOptionalBindingClauseWithMutability(binding_is_mutable);
+      if (clause.value == nullptr || clause.name.empty()) {
         return {};
       }
       clauses.push_back(std::move(clause));
@@ -9961,6 +10114,141 @@ class Objc3Parser {
       }
     }
     return clauses;
+  }
+
+  std::vector<ParsedGuardConditionClause> ParseGuardConditionClauses() {
+    std::vector<ParsedGuardConditionClause> clauses;
+    while (true) {
+      ParsedGuardConditionClause clause;
+      clause.line = Peek().line;
+      clause.column = Peek().column;
+      if (At(TokenKind::KwLet) || At(TokenKind::KwVar)) {
+        clause.kind = ParsedGuardConditionClause::Kind::OptionalBinding;
+        clause.binding = ParseOptionalBindingClause();
+        if (clause.binding.value == nullptr || clause.binding.name.empty()) {
+          return {};
+        }
+      } else {
+        clause.kind = ParsedGuardConditionClause::Kind::BooleanExpr;
+        clause.condition = ParseExpressionWithBlockLiteralSourceUse(
+            BlockLiteralSourceUseKind::ExpressionSite);
+        if (clause.condition == nullptr) {
+          return {};
+        }
+      }
+      clauses.push_back(std::move(clause));
+      if (!Match(TokenKind::Comma)) {
+        break;
+      }
+    }
+    return clauses;
+  }
+
+  bool ParseMatchPattern(SwitchCase &case_stmt) {
+    case_stmt.match_pattern_enabled = true;
+    if (At(TokenKind::Identifier) && Peek().text == "_") {
+      const Token wildcard = Advance();
+      case_stmt.match_pattern_kind = MatchPatternKind::Wildcard;
+      case_stmt.value_line = wildcard.line;
+      case_stmt.value_column = wildcard.column;
+      return true;
+    }
+
+    if (Match(TokenKind::Number)) {
+      case_stmt.match_pattern_kind = MatchPatternKind::LiteralInteger;
+      case_stmt.value_line = Previous().line;
+      case_stmt.value_column = Previous().column;
+      case_stmt.value = std::atoi(Previous().text.c_str());
+      return true;
+    }
+    if (Match(TokenKind::KwTrue) || Match(TokenKind::KwFalse)) {
+      case_stmt.match_pattern_kind = MatchPatternKind::LiteralBool;
+      case_stmt.value_line = Previous().line;
+      case_stmt.value_column = Previous().column;
+      case_stmt.value = Previous().kind == TokenKind::KwTrue ? 1 : 0;
+      return true;
+    }
+    if (Match(TokenKind::KwNil)) {
+      case_stmt.match_pattern_kind = MatchPatternKind::LiteralNil;
+      case_stmt.value_line = Previous().line;
+      case_stmt.value_column = Previous().column;
+      case_stmt.value = 0;
+      return true;
+    }
+    if (Match(TokenKind::KwLet) || Match(TokenKind::KwVar)) {
+      const Token binding_token = Previous();
+      const bool is_mutable = binding_token.kind == TokenKind::KwVar;
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P103", "expected identifier in match binding pattern"));
+        return false;
+      }
+      const Token name_token = Advance();
+      case_stmt.match_pattern_kind = MatchPatternKind::Binding;
+      case_stmt.match_binding_mutable = is_mutable;
+      case_stmt.match_binding_name = name_token.text;
+      case_stmt.value_line = name_token.line;
+      case_stmt.value_column = name_token.column;
+      return true;
+    }
+    if (At(TokenKind::Identifier) && Peek().text == "is") {
+      const Token token = Advance();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P158", "unsupported type-test match pattern"));
+      return false;
+    }
+    if (Match(TokenKind::Dot)) {
+      const Token &result_case = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(
+            MakeDiag(result_case.line, result_case.column, "O3P103", "invalid result-case match pattern"));
+        return false;
+      }
+      if (Previous().text != "Ok" && Previous().text != "Err") {
+        diagnostics_.push_back(
+            MakeDiag(Previous().line, Previous().column, "O3P103", "invalid result-case match pattern"));
+        return false;
+      }
+      const Token result_name = Previous();
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P106", "missing '(' after result-case pattern"));
+        return false;
+      }
+      if (!(Match(TokenKind::KwLet) || Match(TokenKind::KwVar))) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P103", "expected 'let' or 'var' in result-case pattern"));
+        return false;
+      }
+      const bool is_mutable = Previous().kind == TokenKind::KwVar;
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P103", "expected identifier in result-case pattern"));
+        return false;
+      }
+      const Token name_token = Advance();
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P109", "missing ')' after result-case pattern"));
+        return false;
+      }
+      case_stmt.match_pattern_kind = MatchPatternKind::ResultCase;
+      case_stmt.match_result_case_name = result_name.text;
+      case_stmt.match_binding_mutable = is_mutable;
+      case_stmt.match_binding_name = name_token.text;
+      case_stmt.value_line = result_name.line;
+      case_stmt.value_column = result_name.column;
+      return true;
+    }
+
+    const Token &token = Peek();
+    diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "invalid match pattern"));
+    return false;
   }
 
   std::unique_ptr<Expr> ParseConditional() {

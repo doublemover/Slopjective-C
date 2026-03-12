@@ -1,0 +1,45 @@
+module m266FrontendPatternGuardSurfacePositive;
+
+fn classify(maybeValue: id?, tag: i32, resultToken: id) -> i32 {
+  guard let ready = maybeValue, true else {
+    return 7;
+  }
+
+  match (tag) {
+    case 1: {
+      return 10;
+    }
+    case let capture: {
+      capture;
+    }
+    case _: {
+    }
+    default: {
+      return 12;
+    }
+  }
+
+  match (resultToken) {
+    case .Ok(let value): {
+      value;
+      return 20;
+    }
+    case .Err(let error): {
+      error;
+      return 21;
+    }
+    case nil: {
+      return 22;
+    }
+    default: {
+      return 23;
+    }
+  }
+
+  ready;
+  return 30;
+}
+
+fn main(maybeValue: id?, token: id) -> i32 {
+  return classify(maybeValue, 2, token);
+}

@@ -4293,10 +4293,17 @@ std::string BuildPart5ControlFlowSourceClosureReplayKey(
   out << summary.contract_id
       << ";guard_binding_sites=" << summary.guard_binding_sites
       << ";guard_binding_clause_sites=" << summary.guard_binding_clause_sites
+      << ";guard_boolean_condition_sites="
+      << summary.guard_boolean_condition_sites
       << ";switch_pattern_sites=" << summary.switch_case_pattern_sites << ":"
       << summary.switch_default_pattern_sites
-      << ";reserved_keyword_sites=" << summary.defer_keyword_sites << ":"
-      << summary.match_keyword_sites
+      << ";match_surface_sites=" << summary.match_statement_sites << ":"
+      << summary.match_case_pattern_sites << ":" << summary.match_default_sites
+      << ":" << summary.match_wildcard_pattern_sites << ":"
+      << summary.match_literal_pattern_sites << ":"
+      << summary.match_binding_pattern_sites << ":"
+      << summary.match_result_case_pattern_sites
+      << ";reserved_keyword_sites=" << summary.defer_keyword_sites
       << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
 }
@@ -4538,6 +4545,10 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
         summary.guard_binding_clause_sites +=
             stmt->if_stmt->optional_binding_clause_count;
       }
+      if (stmt->if_stmt->guard_condition_list_surface_enabled) {
+        summary.guard_boolean_condition_sites +=
+            stmt->if_stmt->guard_boolean_condition_clause_count;
+      }
       for (const auto &child : stmt->if_stmt->then_body) {
         CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
       }
@@ -4562,11 +4573,44 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
     break;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
+      if (stmt->switch_stmt->match_surface_enabled) {
+        ++summary.match_statement_sites;
+      } else {
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          if (case_stmt.is_default) {
+            ++summary.switch_default_pattern_sites;
+          } else {
+            ++summary.switch_case_pattern_sites;
+          }
+          for (const auto &child : case_stmt.body) {
+            CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+          }
+        }
+        break;
+      }
       for (const auto &case_stmt : stmt->switch_stmt->cases) {
         if (case_stmt.is_default) {
-          ++summary.switch_default_pattern_sites;
+          ++summary.match_default_sites;
         } else {
-          ++summary.switch_case_pattern_sites;
+          ++summary.match_case_pattern_sites;
+          switch (case_stmt.match_pattern_kind) {
+          case MatchPatternKind::Wildcard:
+            ++summary.match_wildcard_pattern_sites;
+            break;
+          case MatchPatternKind::LiteralInteger:
+          case MatchPatternKind::LiteralBool:
+          case MatchPatternKind::LiteralNil:
+            ++summary.match_literal_pattern_sites;
+            break;
+          case MatchPatternKind::Binding:
+            ++summary.match_binding_pattern_sites;
+            break;
+          case MatchPatternKind::ResultCase:
+            ++summary.match_result_case_pattern_sites;
+            break;
+          case MatchPatternKind::None:
+            break;
+          }
         }
         for (const auto &child : case_stmt.body) {
           CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
@@ -4603,8 +4647,6 @@ BuildPart5ControlFlowSourceClosureSummary(
   for (const auto &token : tokens) {
     if (token.kind == Objc3LexTokenKind::KwDefer) {
       ++summary.defer_keyword_sites;
-    } else if (token.kind == Objc3LexTokenKind::KwMatch) {
-      ++summary.match_keyword_sites;
     }
   }
   for (const auto &fn : program.functions) {
@@ -4620,15 +4662,27 @@ BuildPart5ControlFlowSourceClosureSummary(
     }
   }
   summary.guard_binding_source_supported = true;
+  summary.guard_condition_list_source_supported = true;
   summary.switch_case_pattern_source_supported = true;
+  summary.match_statement_source_supported = true;
+  summary.match_wildcard_pattern_source_supported = true;
+  summary.match_literal_pattern_source_supported = true;
+  summary.match_binding_pattern_source_supported = true;
+  summary.match_result_case_pattern_source_supported = true;
   summary.defer_keyword_reserved = true;
-  summary.match_keyword_reserved = true;
   summary.defer_fail_closed = true;
-  summary.match_fail_closed = true;
+  summary.match_expression_fail_closed = true;
+  summary.guarded_pattern_fail_closed = true;
+  summary.type_test_pattern_fail_closed = true;
   summary.deterministic_handoff =
       summary.guard_binding_clause_sites >= summary.guard_binding_sites &&
+      summary.guard_boolean_condition_sites +
+              summary.guard_binding_sites >=
+          summary.guard_binding_sites &&
       summary.switch_default_pattern_sites <=
-          summary.switch_case_pattern_sites + summary.switch_default_pattern_sites;
+          summary.switch_case_pattern_sites + summary.switch_default_pattern_sites &&
+      summary.match_default_sites <=
+          summary.match_statement_sites + summary.match_default_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key = BuildPart5ControlFlowSourceClosureReplayKey(summary);
   return summary;
@@ -4855,7 +4909,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                              result.sema_type_metadata_handoff);
-
   if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
     NormalizeProgramDispatchSurfaceClassification(
         MutableObjc3ParsedProgramAst(result.program));
@@ -4905,7 +4958,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);
     }
   }
-
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

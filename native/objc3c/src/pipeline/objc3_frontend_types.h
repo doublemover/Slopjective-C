@@ -1292,13 +1292,13 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
 };
 
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureContractId =
-    "objc3c-part5-control-flow-source-closure/m266-a001-v1";
+    "objc3c-part5-control-flow-source-closure/m266-a002-v1";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSourceModel =
-    "guard-bindings-and-switch-case-patterns-are-frontend-owned-control-flow-surfaces-while-defer-and-match-are-explicitly-reserved-fail-closed-keywords";
+    "guard-condition-lists-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-defer-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureFailureModel =
-    "defer-and-match-remain-fail-closed-until-runnable-part5-lowering-lands-and-the-existing-guard-switch-surface-stays-the-only-admitted-part5-control-flow-subset";
+    "defer-remains-reserved-match-is-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-m266-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3Part5ControlFlowSourceClosureContractId;
@@ -1308,24 +1308,46 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string failure_model = kObjc3Part5ControlFlowSourceClosureFailureModel;
   std::vector<std::string> supported_construct_ids = {
       kObjc3Part5SourceSurfaceGuardBindings,
+      kObjc3Part5SourceSurfaceGuardConditionLists,
       kObjc3Part5SourceSurfaceSwitchCasePatterns,
+      kObjc3Part5SourceSurfaceMatchStatement,
+      kObjc3Part5SourceSurfaceMatchWildcardPatterns,
+      kObjc3Part5SourceSurfaceMatchLiteralPatterns,
+      kObjc3Part5SourceSurfaceMatchBindingPatterns,
+      kObjc3Part5SourceSurfaceMatchResultCasePatterns,
   };
   std::vector<std::string> fail_closed_construct_ids = {
       kObjc3Part5FailClosedConstructDefer,
-      kObjc3Part5FailClosedConstructMatch,
+      kObjc3Part5FailClosedConstructMatchExpression,
+      kObjc3Part5FailClosedConstructGuardedPatterns,
+      kObjc3Part5FailClosedConstructMatchTypeTestPatterns,
   };
   std::size_t guard_binding_sites = 0;
   std::size_t guard_binding_clause_sites = 0;
+  std::size_t guard_boolean_condition_sites = 0;
   std::size_t switch_case_pattern_sites = 0;
   std::size_t switch_default_pattern_sites = 0;
   std::size_t defer_keyword_sites = 0;
-  std::size_t match_keyword_sites = 0;
+  std::size_t match_statement_sites = 0;
+  std::size_t match_case_pattern_sites = 0;
+  std::size_t match_default_sites = 0;
+  std::size_t match_wildcard_pattern_sites = 0;
+  std::size_t match_literal_pattern_sites = 0;
+  std::size_t match_binding_pattern_sites = 0;
+  std::size_t match_result_case_pattern_sites = 0;
   bool guard_binding_source_supported = false;
+  bool guard_condition_list_source_supported = false;
   bool switch_case_pattern_source_supported = false;
+  bool match_statement_source_supported = false;
+  bool match_wildcard_pattern_source_supported = false;
+  bool match_literal_pattern_source_supported = false;
+  bool match_binding_pattern_source_supported = false;
+  bool match_result_case_pattern_source_supported = false;
   bool defer_keyword_reserved = false;
-  bool match_keyword_reserved = false;
   bool defer_fail_closed = false;
-  bool match_fail_closed = false;
+  bool match_expression_fail_closed = false;
+  bool guarded_pattern_fail_closed = false;
+  bool type_test_pattern_fail_closed = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -4410,20 +4432,44 @@ inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
          summary.source_model == kObjc3Part5ControlFlowSourceClosureSourceModel &&
          summary.failure_model ==
              kObjc3Part5ControlFlowSourceClosureFailureModel &&
-         summary.supported_construct_ids.size() == 2 &&
+         summary.supported_construct_ids.size() == 8 &&
          summary.supported_construct_ids[0] ==
              kObjc3Part5SourceSurfaceGuardBindings &&
          summary.supported_construct_ids[1] ==
+             kObjc3Part5SourceSurfaceGuardConditionLists &&
+         summary.supported_construct_ids[2] ==
              kObjc3Part5SourceSurfaceSwitchCasePatterns &&
-         summary.fail_closed_construct_ids.size() == 2 &&
+         summary.supported_construct_ids[3] ==
+             kObjc3Part5SourceSurfaceMatchStatement &&
+         summary.supported_construct_ids[4] ==
+             kObjc3Part5SourceSurfaceMatchWildcardPatterns &&
+         summary.supported_construct_ids[5] ==
+             kObjc3Part5SourceSurfaceMatchLiteralPatterns &&
+         summary.supported_construct_ids[6] ==
+             kObjc3Part5SourceSurfaceMatchBindingPatterns &&
+         summary.supported_construct_ids[7] ==
+             kObjc3Part5SourceSurfaceMatchResultCasePatterns &&
+         summary.fail_closed_construct_ids.size() == 4 &&
          summary.fail_closed_construct_ids[0] ==
              kObjc3Part5FailClosedConstructDefer &&
          summary.fail_closed_construct_ids[1] ==
-             kObjc3Part5FailClosedConstructMatch &&
+             kObjc3Part5FailClosedConstructMatchExpression &&
+         summary.fail_closed_construct_ids[2] ==
+             kObjc3Part5FailClosedConstructGuardedPatterns &&
+         summary.fail_closed_construct_ids[3] ==
+             kObjc3Part5FailClosedConstructMatchTypeTestPatterns &&
          summary.guard_binding_source_supported &&
+         summary.guard_condition_list_source_supported &&
          summary.switch_case_pattern_source_supported &&
-         summary.defer_keyword_reserved && summary.match_keyword_reserved &&
-         summary.defer_fail_closed && summary.match_fail_closed &&
+         summary.match_statement_source_supported &&
+         summary.match_wildcard_pattern_source_supported &&
+         summary.match_literal_pattern_source_supported &&
+         summary.match_binding_pattern_source_supported &&
+         summary.match_result_case_pattern_source_supported &&
+         summary.defer_keyword_reserved && summary.defer_fail_closed &&
+         summary.match_expression_fail_closed &&
+         summary.guarded_pattern_fail_closed &&
+         summary.type_test_pattern_fail_closed &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
