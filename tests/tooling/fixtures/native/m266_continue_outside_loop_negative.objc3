@@ -1,0 +1,6 @@
+module m266ContinueOutsideLoopNegative;
+
+fn main() -> i32 {
+  continue;
+  return 0;
+}

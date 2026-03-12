@@ -310,6 +310,83 @@ struct Objc3Part3TypeSemanticModelSummary {
   std::string replay_key;
 };
 
+inline constexpr const char
+    *kObjc3Part5ControlFlowSemanticModelFrontendDependencyContractId =
+        "objc3c-part5-control-flow-source-closure/m266-a002-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelContractId =
+    "objc3c-part5-control-flow-semantic-model/m266-b001-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelRule =
+    "guard-refinement-and-statement-match-binding-semantics-are-live-while-defer-cleanup-order-and-match-exhaustiveness-remain-deferred-or-fail-closed";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelDeferRule =
+    "defer-cleanup-order-and-defer-mediated-nonlocal-exit-remain-frontloaded-fail-closed-until-later-m266-lowering-and-runtime-work";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelMatchRule =
+    "statement-match-creates-case-local-binding-scopes-but-does-not-yet-enforce-exhaustiveness-or-result-payload-typing";
+inline constexpr const char *kObjc3Part5ControlFlowSemanticModelExitRule =
+    "break-and-continue-restrictions-are-live-while-defer-mediated-nonlocal-exit-semantics-remain-deferred";
+
+struct Objc3Part5ControlFlowSemanticModelSummary {
+  std::string contract_id = kObjc3Part5ControlFlowSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part5ControlFlowSemanticModelFrontendDependencyContractId;
+  std::string surface_path = kObjc3Part5ControlFlowSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3Part5ControlFlowSemanticModelRule;
+  std::string defer_model = kObjc3Part5ControlFlowSemanticModelDeferRule;
+  std::string match_model = kObjc3Part5ControlFlowSemanticModelMatchRule;
+  std::string non_local_exit_model = kObjc3Part5ControlFlowSemanticModelExitRule;
+  std::size_t guard_binding_semantic_sites = 0;
+  std::size_t guard_binding_clause_semantic_sites = 0;
+  std::size_t guard_condition_statement_sites = 0;
+  std::size_t guard_condition_clause_semantic_sites = 0;
+  std::size_t guard_exit_enforcement_sites = 0;
+  std::size_t guard_refinement_sites = 0;
+  std::size_t match_statement_semantic_sites = 0;
+  std::size_t match_default_pattern_sites = 0;
+  std::size_t match_wildcard_pattern_sites = 0;
+  std::size_t match_literal_pattern_sites = 0;
+  std::size_t match_binding_scope_sites = 0;
+  std::size_t match_result_case_scope_sites = 0;
+  std::size_t match_exhaustiveness_deferred_sites = 0;
+  std::size_t break_statement_sites = 0;
+  std::size_t continue_statement_sites = 0;
+  std::size_t break_restriction_diagnostic_sites = 0;
+  std::size_t continue_restriction_diagnostic_sites = 0;
+  bool source_dependency_required = false;
+  bool guard_refinement_semantics_landed = false;
+  bool guard_exit_enforcement_landed = false;
+  bool match_binding_scope_semantics_landed = false;
+  bool match_result_case_scope_semantics_landed = false;
+  bool match_exhaustiveness_deferred = false;
+  bool defer_cleanup_order_deferred = false;
+  bool defer_nonlocal_exit_deferred = false;
+  bool non_local_exit_restrictions_landed = false;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
+    const Objc3Part5ControlFlowSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.frontend_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.defer_model.empty() && !summary.match_model.empty() &&
+         !summary.non_local_exit_model.empty() &&
+         summary.source_dependency_required &&
+         summary.guard_refinement_semantics_landed &&
+         summary.guard_exit_enforcement_landed &&
+         summary.match_binding_scope_semantics_landed &&
+         summary.match_result_case_scope_semantics_landed &&
+         summary.match_exhaustiveness_deferred &&
+         summary.defer_cleanup_order_deferred &&
+         summary.defer_nonlocal_exit_deferred &&
+         summary.non_local_exit_restrictions_landed &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3ModuleImportGraphSummary {
   std::size_t module_import_graph_sites = 0;
   std::size_t import_edge_candidate_sites = 0;

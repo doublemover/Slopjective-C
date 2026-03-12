@@ -31,6 +31,11 @@ Current-state note:
   one deterministic pipeline handoff while `defer`, expression-form `match`,
   guarded patterns, and type-test patterns remain explicit fail-closed parser
   surfaces.
+- `M266-B001` adds a sema-owned Part 5 semantic-model packet
+  (`frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`)
+  so guard refinement, guard else-exit enforcement, case-local match binding
+  scopes, and loop-control legality are recorded as live semantics while defer
+  cleanup ordering and match exhaustiveness remain explicit deferred truths.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.

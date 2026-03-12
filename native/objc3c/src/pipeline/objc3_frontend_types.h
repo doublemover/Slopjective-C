@@ -4740,6 +4740,8 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPart3TypeSourceClosureSummary part3_type_source_closure_summary;
   Objc3FrontendPart5ControlFlowSourceClosureSummary
       part5_control_flow_source_closure_summary;
+  Objc3Part5ControlFlowSemanticModelSummary
+      part5_control_flow_semantic_model_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;

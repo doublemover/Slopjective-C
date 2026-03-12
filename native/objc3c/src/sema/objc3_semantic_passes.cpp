@@ -5847,6 +5847,235 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
   return summary;
 }
 
+static void CollectPart5ControlFlowSemanticStmtSitesFromList(
+    const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
+    int switch_depth, Objc3Part5ControlFlowSemanticModelSummary &summary);
+
+static void CollectPart5ControlFlowSemanticStmtSites(
+    const Stmt *stmt, int loop_depth, int switch_depth,
+    Objc3Part5ControlFlowSemanticModelSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      const IfStmt *if_stmt = stmt->if_stmt.get();
+      if (if_stmt->optional_binding_surface_enabled &&
+          if_stmt->guard_binding_surface_enabled) {
+        ++summary.guard_binding_semantic_sites;
+        summary.guard_binding_clause_semantic_sites +=
+            if_stmt->optional_binding_clause_count;
+        summary.guard_refinement_sites += if_stmt->optional_binding_clause_count;
+        ++summary.guard_exit_enforcement_sites;
+        summary.guard_condition_clause_semantic_sites +=
+            if_stmt->guard_boolean_condition_clause_count;
+      } else if (if_stmt->guard_condition_list_surface_enabled) {
+        ++summary.guard_condition_statement_sites;
+        summary.guard_condition_clause_semantic_sites +=
+            if_stmt->guard_boolean_condition_clause_count;
+        ++summary.guard_exit_enforcement_sites;
+      }
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          if_stmt->then_body, loop_depth, switch_depth, summary);
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          if_stmt->else_body, loop_depth, switch_depth, summary);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          stmt->do_while_stmt->body, loop_depth + 1, switch_depth, summary);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          stmt->for_stmt->body, loop_depth + 1, switch_depth, summary);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
+      if (switch_stmt->match_surface_enabled) {
+        ++summary.match_statement_semantic_sites;
+        ++summary.match_exhaustiveness_deferred_sites;
+        for (const auto &case_stmt : switch_stmt->cases) {
+          if (case_stmt.is_default) {
+            ++summary.match_default_pattern_sites;
+          } else {
+            switch (case_stmt.match_pattern_kind) {
+            case MatchPatternKind::Wildcard:
+              ++summary.match_wildcard_pattern_sites;
+              break;
+            case MatchPatternKind::LiteralInteger:
+            case MatchPatternKind::LiteralBool:
+            case MatchPatternKind::LiteralNil:
+              ++summary.match_literal_pattern_sites;
+              break;
+            case MatchPatternKind::Binding:
+              if (!case_stmt.match_binding_name.empty()) {
+                ++summary.match_binding_scope_sites;
+              }
+              break;
+            case MatchPatternKind::ResultCase:
+              if (!case_stmt.match_binding_name.empty()) {
+                ++summary.match_result_case_scope_sites;
+              }
+              break;
+            case MatchPatternKind::None:
+              break;
+            }
+          }
+          CollectPart5ControlFlowSemanticStmtSitesFromList(
+              case_stmt.body, loop_depth, switch_depth + 1, summary);
+        }
+        return;
+      }
+      for (const auto &case_stmt : switch_stmt->cases) {
+        CollectPart5ControlFlowSemanticStmtSitesFromList(
+            case_stmt.body, loop_depth, switch_depth + 1, summary);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          stmt->while_stmt->body, loop_depth + 1, switch_depth, summary);
+    }
+    return;
+  case Stmt::Kind::Block:
+    if (stmt->block_stmt != nullptr) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          stmt->block_stmt->body, loop_depth, switch_depth, summary);
+    }
+    return;
+  case Stmt::Kind::Break:
+    ++summary.break_statement_sites;
+    if (loop_depth <= 0 && switch_depth <= 0) {
+      ++summary.break_restriction_diagnostic_sites;
+    }
+    return;
+  case Stmt::Kind::Continue:
+    ++summary.continue_statement_sites;
+    if (loop_depth <= 0) {
+      ++summary.continue_restriction_diagnostic_sites;
+    }
+    return;
+  case Stmt::Kind::Let:
+  case Stmt::Kind::Assign:
+  case Stmt::Kind::Return:
+  case Stmt::Kind::Expr:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static void CollectPart5ControlFlowSemanticStmtSitesFromList(
+    const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
+    int switch_depth, Objc3Part5ControlFlowSemanticModelSummary &summary) {
+  for (const auto &stmt : statements) {
+    CollectPart5ControlFlowSemanticStmtSites(stmt.get(), loop_depth,
+                                             switch_depth, summary);
+  }
+}
+
+Objc3Part5ControlFlowSemanticModelSummary
+BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
+  Objc3Part5ControlFlowSemanticModelSummary summary;
+  for (const auto &function : ast.functions) {
+    CollectPart5ControlFlowSemanticStmtSitesFromList(function.body, 0, 0,
+                                                     summary);
+  }
+  for (const auto &implementation : ast.implementations) {
+    for (const auto &method : implementation.methods) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(method.body, 0, 0,
+                                                       summary);
+    }
+  }
+
+  summary.source_dependency_required = true;
+  summary.guard_refinement_semantics_landed =
+      summary.guard_refinement_sites ==
+      summary.guard_binding_clause_semantic_sites;
+  summary.guard_exit_enforcement_landed =
+      summary.guard_exit_enforcement_sites ==
+      summary.guard_binding_semantic_sites +
+          summary.guard_condition_statement_sites;
+  summary.match_binding_scope_semantics_landed =
+      summary.match_binding_scope_sites <=
+      summary.match_statement_semantic_sites;
+  summary.match_result_case_scope_semantics_landed =
+      summary.match_result_case_scope_sites <=
+      summary.match_statement_semantic_sites;
+  summary.match_exhaustiveness_deferred =
+      summary.match_exhaustiveness_deferred_sites ==
+      summary.match_statement_semantic_sites;
+  summary.defer_cleanup_order_deferred = true;
+  summary.defer_nonlocal_exit_deferred = true;
+  summary.non_local_exit_restrictions_landed =
+      summary.break_restriction_diagnostic_sites <=
+          summary.break_statement_sites &&
+      summary.continue_restriction_diagnostic_sites <=
+          summary.continue_statement_sites;
+  summary.deterministic =
+      summary.guard_binding_semantic_sites <=
+          summary.guard_binding_clause_semantic_sites &&
+      summary.guard_condition_statement_sites <=
+          summary.guard_exit_enforcement_sites &&
+      summary.guard_condition_clause_semantic_sites >=
+          summary.guard_condition_statement_sites &&
+      summary.match_default_pattern_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_wildcard_pattern_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_literal_pattern_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_binding_scope_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_result_case_scope_sites <=
+          summary.match_statement_semantic_sites &&
+      summary.match_exhaustiveness_deferred &&
+      summary.non_local_exit_restrictions_landed &&
+      summary.guard_refinement_semantics_landed &&
+      summary.guard_exit_enforcement_landed &&
+      summary.match_binding_scope_semantics_landed &&
+      summary.match_result_case_scope_semantics_landed;
+  summary.ready_for_lowering_and_runtime =
+      summary.source_dependency_required &&
+      summary.defer_cleanup_order_deferred &&
+      summary.defer_nonlocal_exit_deferred && summary.deterministic;
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";source-dependency=" << summary.frontend_dependency_contract_id
+      << ";guard-sites=" << summary.guard_binding_semantic_sites
+      << ";guard-clauses=" << summary.guard_binding_clause_semantic_sites
+      << ";guard-condition-statements="
+      << summary.guard_condition_statement_sites
+      << ";guard-condition-clauses="
+      << summary.guard_condition_clause_semantic_sites
+      << ";guard-exit=" << summary.guard_exit_enforcement_sites
+      << ";guard-refinement=" << summary.guard_refinement_sites
+      << ";match-sites=" << summary.match_statement_semantic_sites
+      << ";match-defaults=" << summary.match_default_pattern_sites
+      << ";match-wildcards=" << summary.match_wildcard_pattern_sites
+      << ";match-literals=" << summary.match_literal_pattern_sites
+      << ";match-bindings=" << summary.match_binding_scope_sites
+      << ";match-result-bindings="
+      << summary.match_result_case_scope_sites
+      << ";match-exhaustiveness-deferred="
+      << summary.match_exhaustiveness_deferred_sites
+      << ";break-sites=" << summary.break_statement_sites
+      << ";continue-sites=" << summary.continue_statement_sites
+      << ";break-diagnostics=" << summary.break_restriction_diagnostic_sites
+      << ";continue-diagnostics="
+      << summary.continue_restriction_diagnostic_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
 static void CollectAssignedIdentifiers(const std::vector<std::unique_ptr<Stmt>> &statements,
                                        std::unordered_set<std::string> &assigned);
 

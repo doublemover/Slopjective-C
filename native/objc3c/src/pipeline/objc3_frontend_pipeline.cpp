@@ -38,6 +38,7 @@
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_conformance_corpus_expansion_surface.h"
 #include "pipeline/objc3_semantic_diagnostic_taxonomy_and_fix_it_synthesis_performance_quality_guardrails_surface.h"
 #include "pipeline/objc3_semantic_stability_core_feature_implementation_surface.h"
+#include "sema/objc3_semantic_passes.h"
 #include "pipeline/objc3_semantic_stability_spec_delta_closure_scaffold.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
 #include "sema/objc3_sema_pass_manager.h"
@@ -4958,6 +4959,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);
     }
   }
+  result.part5_control_flow_semantic_model_summary =
+      BuildPart5ControlFlowSemanticModelSummary(
+          Objc3ParsedProgramAst(result.program));
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

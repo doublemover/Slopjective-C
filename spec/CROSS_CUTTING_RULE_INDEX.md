@@ -14,6 +14,16 @@ Current implementation note:
   still fail closed with explicit parser diagnostics until later `M266`
   execution work lands.
 
+Current Part 5 semantic-model note:
+
+- The sema-owned packet
+  `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
+  now freezes the current live control-flow legality surface.
+- Guard refinement, guard else-exit enforcement, statement-match binding scope,
+  result-case binding scope, and `break` / `continue` legality are live.
+- `defer` cleanup ordering and `match` exhaustiveness remain explicit deferred
+  semantics rather than implied implementation claims.
+
 ## Scope-exit and `defer` rules
 
 | Rule                                                                                | Canonical normative home                | Non-canonical cross-reference locations                    |

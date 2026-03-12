@@ -385,6 +385,28 @@ Recommended lowering contract check:
 
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`
 
+## M266 control-flow semantic model
+
+The sema-owned Part 5 packet now records the current live-versus-deferred truth
+at `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`.
+
+- live today:
+  - guard refinement after `guard let` / `guard var`
+  - bool-compatible validation for comma-separated `guard` condition clauses
+  - fail-closed `guard ... else` scope-exit enforcement
+  - statement-form `match` case-local binding scopes
+  - result-case pattern case-local binding scopes
+  - `break` / `continue` legality restrictions
+- still deferred today:
+  - `defer` cleanup ordering semantics
+  - `defer`-mediated non-local exit semantics
+  - `match` exhaustiveness enforcement
+  - result payload typing beyond the current binding-scope surface
+
+Recommended semantic contract check:
+
+- `python scripts/check_m266_b001_control_flow_and_pattern_semantic_model_contract_and_architecture_freeze.py`
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member

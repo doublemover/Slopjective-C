@@ -387,3 +387,13 @@ Current Part 5 frontend note:
   binding, and result-case patterns
 - `defer`, expression-form `match`, guarded patterns, and type-test patterns
   remain fail closed until later `M266` issues land
+
+M266-B001 semantic model note:
+
+- `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`
+  now records the truthful sema boundary for Part 5.
+- live today: guard refinement, guard else-exit enforcement, statement-match
+  binding scopes, result-case binding scopes, and `break` / `continue`
+  legality.
+- deferred today: `defer` cleanup ordering, `defer`-mediated non-local exit,
+  and `match` exhaustiveness.

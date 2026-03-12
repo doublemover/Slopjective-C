@@ -1,0 +1,10 @@
+module m266GuardNonExitSemanticsNegative;
+
+fn classify(maybeValue: id?) -> i32 {
+  guard let ready = maybeValue else {
+    maybeValue;
+  }
+
+  ready;
+  return 1;
+}

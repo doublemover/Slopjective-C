@@ -1,0 +1,6 @@
+module m266BreakOutsideControlFlowNegative;
+
+fn main() -> i32 {
+  break;
+  return 0;
+}
