@@ -1231,6 +1231,53 @@ struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
   bool deterministic_object_pointer_nullability_generics_handoff = true;
 };
 
+inline constexpr const char *kObjc3Part3TypeSourceClosureContractId =
+    "objc3c-part3-type-source-closure/m265-a001-v1";
+inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part3_type_source_closure";
+inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
+    "protocol-optional-partitions-and-object-pointer-nullability-generic-suffix-carriers-are-live-source-surfaces";
+inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
+    "optional-member-access-nil-coalescing-and-typed-keypath-literals-remain-fail-closed-until-later-m265-issues";
+
+struct Objc3FrontendPart3TypeSourceClosureSummary {
+  std::string contract_id = kObjc3Part3TypeSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3Part3TypeSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part3TypeSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part3TypeSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions,
+      kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes,
+      kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes,
+  };
+  std::vector<std::string> unsupported_claim_ids = {
+      kObjc3UnsupportedFeatureClaimOptionalMemberAccess,
+      kObjc3UnsupportedFeatureClaimNilCoalescing,
+      kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals,
+  };
+  std::size_t protocol_required_method_count = 0;
+  std::size_t protocol_optional_method_count = 0;
+  std::size_t protocol_required_property_count = 0;
+  std::size_t protocol_optional_property_count = 0;
+  std::size_t object_pointer_type_spelling_sites = 0;
+  std::size_t pointer_declarator_entries = 0;
+  std::size_t nullability_suffix_entries = 0;
+  std::size_t generic_suffix_entries = 0;
+  std::size_t optional_member_access_sites = 0;
+  std::size_t nil_coalescing_sites = 0;
+  std::size_t typed_keypath_literal_sites = 0;
+  bool protocol_optional_partition_source_supported = false;
+  bool object_pointer_nullability_source_supported = false;
+  bool pragmatic_generic_suffix_source_supported = false;
+  bool optional_member_access_fail_closed = true;
+  bool nil_coalescing_fail_closed = true;
+  bool typed_keypath_literal_fail_closed = true;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -4235,6 +4282,40 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
+    const Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3Part3TypeSourceClosureContractId &&
+         summary.frontend_surface_path == kObjc3Part3TypeSourceClosureSurfacePath &&
+         summary.source_model == kObjc3Part3TypeSourceClosureSourceModel &&
+         summary.failure_model == kObjc3Part3TypeSourceClosureFailureModel &&
+         summary.source_only_claim_ids.size() == 3 &&
+         summary.source_only_claim_ids[0] ==
+             kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions &&
+         summary.source_only_claim_ids[1] ==
+             kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes &&
+         summary.source_only_claim_ids[2] ==
+             kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes &&
+         summary.unsupported_claim_ids.size() == 3 &&
+         summary.unsupported_claim_ids[0] ==
+             kObjc3UnsupportedFeatureClaimOptionalMemberAccess &&
+         summary.unsupported_claim_ids[1] ==
+             kObjc3UnsupportedFeatureClaimNilCoalescing &&
+         summary.unsupported_claim_ids[2] ==
+             kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals &&
+         summary.protocol_optional_partition_source_supported &&
+         summary.object_pointer_nullability_source_supported &&
+         summary.pragmatic_generic_suffix_source_supported &&
+         summary.optional_member_access_fail_closed &&
+         summary.nil_coalescing_fail_closed &&
+         summary.typed_keypath_literal_fail_closed &&
+         summary.optional_member_access_sites == 0 &&
+         summary.nil_coalescing_sites == 0 &&
+         summary.typed_keypath_literal_sites == 0 &&
+         summary.deterministic_handoff &&
+         summary.ready_for_semantic_expansion &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3VersionedConformanceReportLoweringSummary {
   std::string contract_id =
       kObjc3VersionedConformanceReportLoweringContractId;
@@ -4497,6 +4578,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
+  Objc3FrontendPart3TypeSourceClosureSummary part3_type_source_closure_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;

@@ -16,6 +16,14 @@ This document is normative for cross-part behavior. Part-specific rules remain n
 
 If two rules appear to overlap, the more specific construct rule applies, and this document defines how the rules compose.
 
+Current implementation note:
+
+- The live compiler does not yet implement the full Part 3 execution surface.
+- Today it freezes protocol `@optional` partitions plus object-pointer
+  nullability/generic suffix carriers as source-level frontend behavior.
+- Optional chaining/send, nil-coalescing, and typed key-path execution remain
+  future work and are still fail-closed.
+
 ### AM.0.1 Normative anchor map {#am-0-1}
 
 This document composes construct-local rules from the following sections:

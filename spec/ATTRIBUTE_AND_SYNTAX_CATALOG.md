@@ -53,6 +53,17 @@ Implementations may treat the following as aliases with identical semantics:
 - `#pragma clang assume_nonnull begin/end`
 - `NS_ASSUME_NONNULL_BEGIN/NS_ASSUME_NONNULL_END` (macro-based)
 
+### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
+
+Current implementation status (`M265-A001`):
+
+- protocol `@required` / `@optional` partitions are live in the frontend
+- object-pointer nullability and pragmatic generic suffix carriers are live in
+  parameter, return, and property type parsing
+- optional-member access `?.` is still fail-closed
+- nil-coalescing `??` is still fail-closed
+- typed key-path literals such as `@keypath(...)` are still fail-closed
+
 ### B.2.3 ARC source-surface and current mode boundary (implementation note) {#b-2-3}
 
 Current implementation status (`M262-A001`):

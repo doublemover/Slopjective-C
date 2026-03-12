@@ -1,0 +1,5 @@
+module typedKeypathLiteralFailClosed;
+
+fn main() -> i32 {
+  return @keypath(self, title);
+}

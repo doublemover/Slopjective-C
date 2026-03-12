@@ -1,0 +1,6 @@
+module optionalMemberAccessFailClosed;
+
+fn main() -> i32 {
+  let value = 1;
+  return value?.token;
+}

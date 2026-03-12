@@ -283,6 +283,35 @@ Recommended M150 frontend contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m150_frontend_object_pointer_nullability_generics_contract.py -q`
 
+## M265 frontend Part 3 type source closure
+
+Lane A now freezes the truthful parser-owned Part 3 type surface before the
+later M265 issues add runnable optional semantics.
+
+Currently live in the frontend:
+
+- protocol `@required` / `@optional` partitions
+- object-pointer type spellings carried through parameter, return, and property
+  annotations
+- nullability suffix carriers (`?` / `!`) on those object-pointer spellings
+- pragmatic generic suffix carriers such as `id<Protocol>*?`
+
+Current fail-closed boundary:
+
+- `?.` optional-member access is not admitted yet
+- `??` nil-coalescing is not admitted yet
+- typed key-path literals such as `@keypath(...)` are not admitted yet
+
+Deterministic current behavior:
+
+- `?.` fails in the lexer on `.` with `O3L001`
+- `??` fails in parsing with `invalid expression [O3P103]`
+- `@keypath` fails as an unsupported `@` directive with `O3L001`
+
+Recommended M265-A001 frontend contract check:
+
+- `python scripts/check_m265_a001_optionals_nullability_pragmatic_generics_and_key_path_source_closure_contract_and_architecture_freeze.py`
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member

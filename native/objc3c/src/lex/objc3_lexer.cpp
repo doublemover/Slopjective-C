@@ -315,6 +315,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         }
         break;
       case '?':
+        // M265-A001 Part 3 source-closure anchor: the lexer still emits a
+        // single '?' token for ternary parsing and nullability suffix carriers.
+        // Optional-member access '?.' and nil-coalescing '??' remain fail-closed
+        // until later M265 parser/lowering issues land.
         tokens.push_back(Token{TokenKind::Question, "?", token_line, token_column});
         break;
       case '~':

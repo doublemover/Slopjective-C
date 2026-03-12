@@ -9761,6 +9761,9 @@ class Objc3Parser {
     if (expr == nullptr) {
       return nullptr;
     }
+    // M265-A001 Part 3 source-closure anchor: Question currently feeds only
+    // conditional expressions here and nullability suffix parsing elsewhere.
+    // Optional chaining and nil-coalescing are still fail-closed until A002/C002.
     if (!Match(TokenKind::Question)) {
       return expr;
     }
@@ -10082,6 +10085,9 @@ class Objc3Parser {
 
   std::unique_ptr<Expr> ParsePostfix() {
     auto expr = ParsePrimary();
+    // M265-A001 Part 3 source-closure anchor: postfix parsing currently admits
+    // calls and message-send receivers only. Typed key-path literals and
+    // optional-member access are intentionally absent and fail closed today.
     while (expr != nullptr && Match(TokenKind::LParen)) {
       const unsigned callee_line = expr->line;
       const unsigned callee_column = expr->column;

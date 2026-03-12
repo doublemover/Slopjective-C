@@ -153,6 +153,16 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimProperties =
     "source-only:property-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerSurface =
     "source-only:object-pointer-nullability-generics";
+// M265-A001 Part 3 source-closure anchor: the current frontend only admits
+// protocol optional partitions and object-pointer nullability/generic suffix
+// carriers; optional-member access, nil-coalescing, and typed key-path
+// literals remain explicitly fail-closed until later M265 issues land.
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions =
+    "source-only:protocol-optional-partitions";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes =
+    "source-only:object-pointer-nullability-suffixes";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimPragmaticGenericSuffixes =
+    "source-only:pragmatic-generic-suffixes";
 
 // M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed
@@ -171,6 +181,12 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimBlocks =
     "unsupported:blocks";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimArc =
     "unsupported:arc";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
+    "unsupported:optional-member-access";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimNilCoalescing =
+    "unsupported:nil-coalescing";
+inline constexpr const char *kObjc3UnsupportedFeatureClaimTypedKeyPathLiterals =
+    "unsupported:typed-keypath-literals";
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";

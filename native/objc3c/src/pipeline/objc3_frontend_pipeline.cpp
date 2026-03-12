@@ -4266,6 +4266,77 @@ Objc3FrontendObjectPointerNullabilityGenericsSummary BuildObjectPointerNullabili
   return summary;
 }
 
+std::string BuildPart3TypeSourceClosureReplayKey(
+    const Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";protocol_required_methods=" << summary.protocol_required_method_count
+      << ";protocol_optional_methods=" << summary.protocol_optional_method_count
+      << ";protocol_required_properties=" << summary.protocol_required_property_count
+      << ";protocol_optional_properties=" << summary.protocol_optional_property_count
+      << ";object_pointer_type_spelling_sites=" << summary.object_pointer_type_spelling_sites
+      << ";pointer_declarator_entries=" << summary.pointer_declarator_entries
+      << ";nullability_suffix_entries=" << summary.nullability_suffix_entries
+      << ";generic_suffix_entries=" << summary.generic_suffix_entries
+      << ";unsupported_sites="
+      << summary.optional_member_access_sites << ":" << summary.nil_coalescing_sites << ":"
+      << summary.typed_keypath_literal_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
+Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
+    const Objc3Program &program,
+    const Objc3FrontendObjectPointerNullabilityGenericsSummary
+        &object_pointer_summary) {
+  Objc3FrontendPart3TypeSourceClosureSummary summary;
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      if (method_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++summary.protocol_optional_method_count;
+      } else {
+        ++summary.protocol_required_method_count;
+      }
+    }
+    for (const auto &property_decl : protocol_decl.properties) {
+      if (property_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++summary.protocol_optional_property_count;
+      } else {
+        ++summary.protocol_required_property_count;
+      }
+    }
+  }
+
+  summary.object_pointer_type_spelling_sites =
+      object_pointer_summary.object_pointer_type_spellings;
+  summary.pointer_declarator_entries =
+      object_pointer_summary.pointer_declarator_entries;
+  summary.nullability_suffix_entries =
+      object_pointer_summary.nullability_suffix_entries;
+  summary.generic_suffix_entries =
+      object_pointer_summary.generic_suffix_entries;
+  summary.protocol_optional_partition_source_supported = true;
+  summary.object_pointer_nullability_source_supported = true;
+  summary.pragmatic_generic_suffix_source_supported = true;
+  summary.optional_member_access_fail_closed = true;
+  summary.nil_coalescing_fail_closed = true;
+  summary.typed_keypath_literal_fail_closed = true;
+  summary.deterministic_handoff =
+      object_pointer_summary
+          .deterministic_object_pointer_nullability_generics_handoff &&
+      summary.protocol_required_method_count +
+              summary.protocol_optional_method_count >=
+          summary.protocol_optional_method_count &&
+      summary.protocol_required_property_count +
+              summary.protocol_optional_property_count >=
+          summary.protocol_optional_property_count;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key = BuildPart3TypeSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -4469,6 +4540,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPropertyAttributeSummary(Objc3ParsedProgramAst(result.program));
   result.object_pointer_nullability_generics_summary =
       BuildObjectPointerNullabilityGenericsSummary(Objc3ParsedProgramAst(result.program));
+  result.part3_type_source_closure_summary = BuildPart3TypeSourceClosureSummary(
+      Objc3ParsedProgramAst(result.program),
+      result.object_pointer_nullability_generics_summary);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,

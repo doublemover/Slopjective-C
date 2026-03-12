@@ -274,6 +274,61 @@ std::string BuildRunnableFeatureClaimInventoryJson(
   return out.str();
 }
 
+std::string BuildPart3TypeSourceClosureSummaryJson(
+    const Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"unsupported_claim_ids\":"
+      << BuildStringArrayJson(summary.unsupported_claim_ids)
+      << ",\"protocol_required_method_count\":"
+      << summary.protocol_required_method_count
+      << ",\"protocol_optional_method_count\":"
+      << summary.protocol_optional_method_count
+      << ",\"protocol_required_property_count\":"
+      << summary.protocol_required_property_count
+      << ",\"protocol_optional_property_count\":"
+      << summary.protocol_optional_property_count
+      << ",\"object_pointer_type_spelling_sites\":"
+      << summary.object_pointer_type_spelling_sites
+      << ",\"pointer_declarator_entries\":"
+      << summary.pointer_declarator_entries
+      << ",\"nullability_suffix_entries\":"
+      << summary.nullability_suffix_entries
+      << ",\"generic_suffix_entries\":"
+      << summary.generic_suffix_entries
+      << ",\"optional_member_access_sites\":"
+      << summary.optional_member_access_sites
+      << ",\"nil_coalescing_sites\":"
+      << summary.nil_coalescing_sites
+      << ",\"typed_keypath_literal_sites\":"
+      << summary.typed_keypath_literal_sites
+      << ",\"protocol_optional_partition_source_supported\":"
+      << (summary.protocol_optional_partition_source_supported ? "true" : "false")
+      << ",\"object_pointer_nullability_source_supported\":"
+      << (summary.object_pointer_nullability_source_supported ? "true" : "false")
+      << ",\"pragmatic_generic_suffix_source_supported\":"
+      << (summary.pragmatic_generic_suffix_source_supported ? "true" : "false")
+      << ",\"optional_member_access_fail_closed\":"
+      << (summary.optional_member_access_fail_closed ? "true" : "false")
+      << ",\"nil_coalescing_fail_closed\":"
+      << (summary.nil_coalescing_fail_closed ? "true" : "false")
+      << ",\"typed_keypath_literal_fail_closed\":"
+      << (summary.typed_keypath_literal_fail_closed ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
     const Objc3Program &program,
     const Objc3ParserContractSnapshot &parser_contract_snapshot,
@@ -8991,6 +9046,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.property_attribute_summary;
   const Objc3FrontendObjectPointerNullabilityGenericsSummary &object_pointer_nullability_generics_summary =
       pipeline_result.object_pointer_nullability_generics_summary;
+  const Objc3FrontendPart3TypeSourceClosureSummary &part3_type_source_closure_summary =
+      pipeline_result.part3_type_source_closure_summary;
   const Objc3FrontendSymbolGraphScopeResolutionSummary &symbol_graph_scope_resolution_summary =
       pipeline_result.symbol_graph_scope_resolution_summary;
   const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records =
@@ -13164,6 +13221,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // feature-macro claims remain fail-closed until later lanes land.
            << ",\"objc_feature_claim_and_strictness_truth_surface\":"
            << BuildFeatureClaimStrictnessTruthSurfaceJson(options, pipeline_result)
+           // M265-A001 Part 3 source-closure anchor: lane-A freezes the live
+           // parser-owned type-surface truthfully before optional sends,
+           // nil-coalescing, and typed key-path syntax are admitted in A002.
+           << ",\"objc_part3_type_source_closure\":"
+           << BuildPart3TypeSourceClosureSummaryJson(
+                  part3_type_source_closure_summary)
            // M264-B001 semantic freeze anchor: sema publishes the fail-closed
            // legality boundary that classifies live compatibility selections,
            // source-only claim downgrades, and strictness/macro claim
@@ -14259,6 +14322,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
+           << ",\"objc_part3_type_source_closure\":"
+           << BuildPart3TypeSourceClosureSummaryJson(
+                  part3_type_source_closure_summary)
            << ",\"objc_symbol_graph_scope_resolution_surface\":{\"global_symbol_nodes\":"
            << symbol_graph_scope_resolution_summary.global_symbol_nodes
            << ",\"function_symbol_nodes\":"
