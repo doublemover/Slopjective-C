@@ -1,0 +1,16 @@
+module typedKeyPathRuntimeModule;
+
+@interface Person
+@property (readonly) id name;
+@end
+
+@implementation Person
+@end
+
+fn keepTypedKeyPathLive() -> i32 {
+  let path = @keypath(Person, name);
+  if (path != nil) {
+    return 1;
+  }
+  return 0;
+}

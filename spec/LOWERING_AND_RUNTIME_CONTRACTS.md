@@ -5404,15 +5404,15 @@ walks consume one self-describing per-image registration boundary.
 - contract id
   `objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1`
 - registration-table layout model
-  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`
+  `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-keypath-descriptors-image-local-init-state`
 - image-local init-state prefix
   `__objc3_runtime_image_local_init_state_`
-- registration-table ABI version `1`
-- registration-table pointer-field count `11`
+- registration-table ABI version `2`
+- registration-table pointer-field count `12`
 - emitted init stub guards startup with the image-local init-state cell before
   runtime registration
 - emitted registration tables now include section-root and pool-root pointers
-  for later runtime image-walk stages
+  plus key-path descriptor-root pointers for later runtime image-walk stages
 
 ## M254 runtime bootstrap API freeze (D001)
 

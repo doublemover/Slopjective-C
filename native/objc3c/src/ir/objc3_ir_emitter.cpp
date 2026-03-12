@@ -2715,7 +2715,7 @@ class Objc3IREmitter {
   }
 
   static constexpr const char *RuntimeBootstrapRegistrationTableType() {
-    return "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }";
+    return "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }";
   }
 
   void EmitFrontendMetadata(std::ostringstream &out) const {
@@ -8518,6 +8518,9 @@ class Objc3IREmitter {
           emit_selector_string_pools ? "@__objc3_sec_selector_pool" : "null";
       const std::string string_pool_symbol =
           emit_selector_string_pools ? "@__objc3_sec_string_pool" : "null";
+      const std::string keypath_descriptor_root_symbol =
+          emit_typed_keypath_artifacts ? "@__objc3_sec_keypath_descriptors"
+                                       : "null";
       const std::string module_name =
           program_.module_name.empty() ? "objc3_module" : program_.module_name;
       const std::string &translation_unit_identity_key =
@@ -8592,6 +8595,7 @@ class Objc3IREmitter {
           << property_section_root_symbol << ", ptr "
           << ivar_section_root_symbol << ", ptr " << selector_pool_symbol
           << ", ptr " << string_pool_symbol << ", ptr "
+          << keypath_descriptor_root_symbol << ", ptr "
           << image_local_init_state_symbol << " }, align 8\n";
       if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
         // M263-C002 emits first-class image-root/registration-descriptor
@@ -11228,7 +11232,7 @@ class Objc3IREmitter {
     out << "entry:\n";
     out << "  %bootstrap_state_slot = getelementptr inbounds "
         << RuntimeBootstrapRegistrationTableType() << ", ptr "
-        << registration_table_symbol << ", i32 0, i32 12\n";
+        << registration_table_symbol << ", i32 0, i32 13\n";
     out << "  %bootstrap_state_cell = load ptr, ptr %bootstrap_state_slot, align 8\n";
     out << "  %bootstrap_state = load i8, ptr %bootstrap_state_cell, align 1\n";
     out << "  %bootstrap_already_initialized = icmp ne i8 %bootstrap_state, 0\n";

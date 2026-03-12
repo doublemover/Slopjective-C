@@ -1095,13 +1095,13 @@ inline constexpr const char
     *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel =
         "plain-link-omits-bootstrap-images-retained-link-replays-them";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableLayoutModel =
-    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state";
+    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-keypath-descriptors-image-local-init-state";
 inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitializationModel =
     "guarded-once-per-image-local-state-cell";
 inline constexpr std::uint64_t kObjc3RuntimeBootstrapRegistrationTableAbiVersion =
-    1u;
+    2u;
 inline constexpr std::uint64_t
-    kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 11u;
+    kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 12u;
 // M264-C001 versioned conformance-report lowering freeze anchor: lane-C
 // lowers the truthful runnable/source-only/unsupported claim packets into one
 // emitted machine-readable sidecar artifact. Later runtime capability and

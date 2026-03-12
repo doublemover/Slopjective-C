@@ -37,6 +37,20 @@ struct SelectorSlot {
   std::uint64_t last_selector_pool_index = 0;
 };
 
+struct KeyPathSlot {
+  std::uint64_t stable_id = 0;
+  std::string root_name_storage;
+  std::string component_path_storage;
+  std::string profile_storage;
+  std::string generic_metadata_replay_key_storage;
+  bool root_is_self = false;
+  bool ambiguous = false;
+  std::uint64_t component_count = 0;
+  std::uint64_t metadata_provider_count = 0;
+  std::uint64_t first_registration_order_ordinal = 0;
+  std::uint64_t last_registration_order_ordinal = 0;
+};
+
 struct RegisteredImageMetadata {
   std::string module_name;
   std::string translation_unit_identity_key;
@@ -50,6 +64,7 @@ struct RegisteredImageMetadata {
   const objc3_runtime_pointer_aggregate *ivar_descriptor_root = nullptr;
   const objc3_runtime_pointer_aggregate *selector_pool_root = nullptr;
   const objc3_runtime_pointer_aggregate *string_pool_root = nullptr;
+  const objc3_runtime_pointer_aggregate *keypath_descriptor_root = nullptr;
   std::uint64_t discovery_root_entry_count = 0;
   std::uint64_t class_descriptor_count = 0;
   std::uint64_t protocol_descriptor_count = 0;
@@ -58,6 +73,7 @@ struct RegisteredImageMetadata {
   std::uint64_t ivar_descriptor_count = 0;
   std::uint64_t selector_pool_count = 0;
   std::uint64_t string_pool_count = 0;
+  std::uint64_t keypath_descriptor_count = 0;
   bool linker_anchor_matches_discovery_root = false;
   bool used_staged_registration_table = false;
 };
@@ -157,6 +173,15 @@ struct EmittedMethodListEntry {
   std::uint64_t parameter_count;
   const void *implementation;
   std::uint64_t has_body;
+};
+
+struct EmittedKeyPathDescriptor {
+  std::uint64_t stable_id;
+  const char *root_name;
+  const char *component_path;
+  const char *profile;
+  const char *generic_metadata_replay_key;
+  bool root_is_self;
 };
 
 struct EmittedClassRecord {
@@ -410,14 +435,24 @@ struct RuntimeState {
       retained_bootstrap_metadata_by_identity_key;
   std::unordered_map<std::string, std::size_t> selector_index_by_name;
   std::deque<SelectorSlot> selector_slots;
+  std::unordered_map<std::uint64_t, KeyPathSlot> keypath_slots;
   std::uint64_t metadata_backed_selector_count = 0;
   std::uint64_t dynamic_selector_count = 0;
   std::uint64_t metadata_provider_edge_count = 0;
+  std::uint64_t image_backed_keypath_count = 0;
+  std::uint64_t ambiguous_keypath_handle_count = 0;
   std::string last_materialized_selector;
   std::uint64_t last_materialized_stable_id = 0;
   std::uint64_t last_materialized_registration_order_ordinal = 0;
   std::uint64_t last_materialized_selector_pool_index = 0;
   bool last_materialized_from_metadata = false;
+  std::uint64_t last_materialized_keypath_handle = 0;
+  std::uint64_t last_materialized_keypath_registration_order_ordinal = 0;
+  std::string last_materialized_keypath_profile;
+  std::uint64_t last_queried_keypath_handle = 0;
+  bool last_keypath_query_found = false;
+  bool last_keypath_query_ambiguous = false;
+  std::string last_resolved_keypath_profile;
   std::unordered_map<MethodCacheKey, MethodCacheEntry, MethodCacheKeyHash>
       method_cache;
   std::uint64_t method_cache_hit_count = 0;
@@ -445,6 +480,7 @@ struct RuntimeState {
   std::uint64_t last_walked_ivar_descriptor_count = 0;
   std::uint64_t last_walked_selector_pool_count = 0;
   std::uint64_t last_walked_string_pool_count = 0;
+  std::uint64_t last_walked_keypath_descriptor_count = 0;
   bool last_linker_anchor_matches_discovery_root = false;
   bool last_registration_used_staged_table = false;
   std::string last_walked_module_name;
@@ -2564,6 +2600,89 @@ bool MaterializeSelectorLookupEntryUnlocked(RuntimeState &state,
   return true;
 }
 
+std::uint64_t CountKeyPathComponents(const char *component_path) {
+  if (component_path == nullptr || component_path[0] == '\0') {
+    return 0;
+  }
+  std::uint64_t count = 1;
+  for (const unsigned char *cursor =
+           reinterpret_cast<const unsigned char *>(component_path);
+       *cursor != 0U; ++cursor) {
+    if (*cursor == static_cast<unsigned char>('.')) {
+      ++count;
+    }
+  }
+  return count;
+}
+
+bool KeyPathDescriptorsCompatible(const KeyPathSlot &slot,
+                                  const EmittedKeyPathDescriptor &descriptor) {
+  const char *generic_metadata_replay_key =
+      descriptor.generic_metadata_replay_key == nullptr
+          ? ""
+          : descriptor.generic_metadata_replay_key;
+  return slot.root_name_storage == descriptor.root_name &&
+         slot.component_path_storage == descriptor.component_path &&
+         slot.profile_storage == descriptor.profile &&
+         slot.generic_metadata_replay_key_storage ==
+             generic_metadata_replay_key &&
+         slot.root_is_self == descriptor.root_is_self;
+}
+
+bool MaterializeKeyPathDescriptorUnlocked(
+    RuntimeState &state, const EmittedKeyPathDescriptor &descriptor,
+    std::uint64_t registration_order_ordinal) {
+  if (descriptor.stable_id == 0 || descriptor.root_name == nullptr ||
+      descriptor.root_name[0] == '\0' || descriptor.component_path == nullptr ||
+      descriptor.component_path[0] == '\0' || descriptor.profile == nullptr ||
+      descriptor.profile[0] == '\0') {
+    return false;
+  }
+
+  const auto found = state.keypath_slots.find(descriptor.stable_id);
+  if (found == state.keypath_slots.end()) {
+    KeyPathSlot slot;
+    slot.stable_id = descriptor.stable_id;
+    slot.root_name_storage = descriptor.root_name;
+    slot.component_path_storage = descriptor.component_path;
+    slot.profile_storage = descriptor.profile;
+    slot.generic_metadata_replay_key_storage =
+        descriptor.generic_metadata_replay_key == nullptr
+            ? ""
+            : descriptor.generic_metadata_replay_key;
+    slot.root_is_self = descriptor.root_is_self;
+    slot.component_count = CountKeyPathComponents(descriptor.component_path);
+    slot.metadata_provider_count = 1;
+    slot.first_registration_order_ordinal = registration_order_ordinal;
+    slot.last_registration_order_ordinal = registration_order_ordinal;
+    if (slot.component_count == 0) {
+      return false;
+    }
+    state.keypath_slots.emplace(descriptor.stable_id, std::move(slot));
+    ++state.image_backed_keypath_count;
+    state.last_materialized_keypath_handle = descriptor.stable_id;
+    state.last_materialized_keypath_registration_order_ordinal =
+        registration_order_ordinal;
+    state.last_materialized_keypath_profile = descriptor.profile;
+    return true;
+  }
+
+  KeyPathSlot &slot = found->second;
+  if (!KeyPathDescriptorsCompatible(slot, descriptor)) {
+    if (!slot.ambiguous) {
+      slot.ambiguous = true;
+      ++state.ambiguous_keypath_handle_count;
+    }
+  }
+  ++slot.metadata_provider_count;
+  slot.last_registration_order_ordinal = registration_order_ordinal;
+  state.last_materialized_keypath_handle = descriptor.stable_id;
+  state.last_materialized_keypath_registration_order_ordinal =
+      registration_order_ordinal;
+  state.last_materialized_keypath_profile = slot.profile_storage;
+  return true;
+}
+
 std::int64_t ComputeSelectorScore(const char *selector) {
   if (selector == nullptr) {
     return 0;
@@ -2697,6 +2816,7 @@ void ClearImageWalkSnapshotUnlocked(RuntimeState &state) {
   state.last_walked_ivar_descriptor_count = 0;
   state.last_walked_selector_pool_count = 0;
   state.last_walked_string_pool_count = 0;
+  state.last_walked_keypath_descriptor_count = 0;
   state.last_linker_anchor_matches_discovery_root = false;
   state.last_registration_used_staged_table = false;
   state.last_walked_module_name.clear();
@@ -2715,6 +2835,7 @@ void ApplyImageWalkRecordUnlocked(RuntimeState &state,
   state.last_walked_ivar_descriptor_count = record.ivar_descriptor_count;
   state.last_walked_selector_pool_count = record.selector_pool_count;
   state.last_walked_string_pool_count = record.string_pool_count;
+  state.last_walked_keypath_descriptor_count = record.keypath_descriptor_count;
   state.last_linker_anchor_matches_discovery_root =
       record.linker_anchor_matches_discovery_root;
   state.last_registration_used_staged_table =
@@ -2779,6 +2900,16 @@ void ClearLiveRegistrationStateUnlocked(RuntimeState &state) {
   state.last_materialized_registration_order_ordinal = 0;
   state.last_materialized_selector_pool_index = 0;
   state.last_materialized_from_metadata = false;
+  state.keypath_slots.clear();
+  state.image_backed_keypath_count = 0;
+  state.ambiguous_keypath_handle_count = 0;
+  state.last_materialized_keypath_handle = 0;
+  state.last_materialized_keypath_registration_order_ordinal = 0;
+  state.last_materialized_keypath_profile.clear();
+  state.last_queried_keypath_handle = 0;
+  state.last_keypath_query_found = false;
+  state.last_keypath_query_ambiguous = false;
+  state.last_resolved_keypath_profile.clear();
   ClearMethodCacheStateUnlocked(state);
   ClearRealizedClassGraphUnlocked(state);
   ClearRuntimeInstanceStateUnlocked(state);
@@ -2798,8 +2929,8 @@ bool TryWalkRegistrationTableUnlocked(
   // and the walked image snapshot is derived from this validated table rather
   // than from sidecar manifests or replay-only bookkeeping.
   if (registration_table == nullptr ||
-      registration_table->abi_version != 1 ||
-      registration_table->pointer_field_count != 11 ||
+      registration_table->abi_version != 2 ||
+      registration_table->pointer_field_count != 12 ||
       registration_table->image_descriptor == nullptr ||
       !ImageDescriptorsMatch(registration_table->image_descriptor, image) ||
       registration_table->discovery_root == nullptr ||
@@ -2835,6 +2966,8 @@ bool TryWalkRegistrationTableUnlocked(
       AggregateCount(registration_table->selector_pool_root);
   const std::uint64_t string_pool_count =
       AggregateCount(registration_table->string_pool_root);
+  const std::uint64_t keypath_descriptor_count =
+      AggregateCount(registration_table->keypath_descriptor_root);
   const bool linker_anchor_matches_discovery_root =
       linker_anchor_target == registration_table->discovery_root;
 
@@ -2867,6 +3000,11 @@ bool TryWalkRegistrationTableUnlocked(
                                 registration_table->string_pool_root)) {
     return false;
   }
+  if (registration_table->keypath_descriptor_root != nullptr &&
+      !AggregateContainsPointer(registration_table->discovery_root,
+                                registration_table->keypath_descriptor_root)) {
+    return false;
+  }
 
   std::unordered_set<std::string> selector_pool_spelling_set;
   selector_pool_spelling_set.reserve(
@@ -2892,6 +3030,16 @@ bool TryWalkRegistrationTableUnlocked(
       return false;
     }
   }
+  for (std::uint64_t index = 0; index < keypath_descriptor_count; ++index) {
+    const auto *descriptor =
+        reinterpret_cast<const EmittedKeyPathDescriptor *>(
+            AggregateEntry(registration_table->keypath_descriptor_root, index));
+    if (descriptor == nullptr ||
+        !MaterializeKeyPathDescriptorUnlocked(
+            state, *descriptor, image->registration_order_ordinal)) {
+      return false;
+    }
+  }
 
   record.module_name = image->module_name;
   record.translation_unit_identity_key = image->translation_unit_identity_key;
@@ -2905,6 +3053,7 @@ bool TryWalkRegistrationTableUnlocked(
   record.ivar_descriptor_root = registration_table->ivar_descriptor_root;
   record.selector_pool_root = registration_table->selector_pool_root;
   record.string_pool_root = registration_table->string_pool_root;
+  record.keypath_descriptor_root = registration_table->keypath_descriptor_root;
   record.discovery_root_entry_count = discovery_root_entry_count;
   record.class_descriptor_count = class_descriptor_count;
   record.protocol_descriptor_count = protocol_descriptor_count;
@@ -2913,6 +3062,7 @@ bool TryWalkRegistrationTableUnlocked(
   record.ivar_descriptor_count = ivar_descriptor_count;
   record.selector_pool_count = selector_pool_count;
   record.string_pool_count = string_pool_count;
+  record.keypath_descriptor_count = keypath_descriptor_count;
   record.linker_anchor_matches_discovery_root =
       linker_anchor_matches_discovery_root;
   record.used_staged_registration_table = true;
@@ -3136,6 +3286,8 @@ int objc3_runtime_copy_image_walk_state_for_testing(
       state.last_walked_selector_pool_count;
   snapshot->last_walked_string_pool_count =
       state.last_walked_string_pool_count;
+  snapshot->last_walked_keypath_descriptor_count =
+      state.last_walked_keypath_descriptor_count;
   snapshot->last_linker_anchor_matches_discovery_root =
       state.last_linker_anchor_matches_discovery_root ? 1 : 0;
   snapshot->last_registration_used_staged_table =
@@ -3240,6 +3392,134 @@ int objc3_runtime_copy_selector_lookup_entry_for_testing(
   snapshot->last_selector_pool_index = slot.last_selector_pool_index;
   snapshot->canonical_selector = slot.handle.selector;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+// M265-D002 live-optional-send-and-keypath-runtime-support anchor: typed
+// key-path runtime support currently materializes emitted single-component
+// descriptor handles into a private runtime registry plus narrow probe helpers.
+// Optional sends stay on public lookup/dispatch; full multi-component key-path
+// evaluation remains deferred.
+int objc3_runtime_copy_keypath_registry_state_for_testing(
+    objc3_runtime_keypath_registry_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->keypath_table_entry_count =
+      static_cast<std::uint64_t>(state.keypath_slots.size());
+  snapshot->image_backed_keypath_count = state.image_backed_keypath_count;
+  snapshot->ambiguous_keypath_handle_count =
+      state.ambiguous_keypath_handle_count;
+  snapshot->last_materialized_handle = state.last_materialized_keypath_handle;
+  snapshot->last_materialized_registration_order_ordinal =
+      state.last_materialized_keypath_registration_order_ordinal;
+  snapshot->last_queried_handle = state.last_queried_keypath_handle;
+  snapshot->last_query_found = state.last_keypath_query_found ? 1 : 0;
+  snapshot->last_query_ambiguous = state.last_keypath_query_ambiguous ? 1 : 0;
+  snapshot->last_materialized_profile =
+      StableCString(state.last_materialized_keypath_profile);
+  snapshot->last_resolved_profile =
+      StableCString(state.last_resolved_keypath_profile);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_keypath_entry_for_testing(
+    std::uint64_t stable_id, objc3_runtime_keypath_entry_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->found = 0;
+  snapshot->ambiguous = 0;
+  snapshot->root_is_self = 0;
+  snapshot->stable_id = stable_id;
+  snapshot->component_count = 0;
+  snapshot->metadata_provider_count = 0;
+  snapshot->first_registration_order_ordinal = 0;
+  snapshot->last_registration_order_ordinal = 0;
+  snapshot->root_name = nullptr;
+  snapshot->component_path = nullptr;
+  snapshot->profile = nullptr;
+  snapshot->generic_metadata_replay_key = nullptr;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  state.last_queried_keypath_handle = stable_id;
+  state.last_keypath_query_found = false;
+  state.last_keypath_query_ambiguous = false;
+  state.last_resolved_keypath_profile.clear();
+  const auto found = state.keypath_slots.find(stable_id);
+  if (found == state.keypath_slots.end()) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+  }
+
+  const KeyPathSlot &slot = found->second;
+  state.last_keypath_query_found = true;
+  state.last_keypath_query_ambiguous = slot.ambiguous;
+  state.last_resolved_keypath_profile = slot.profile_storage;
+  snapshot->found = 1;
+  snapshot->ambiguous = slot.ambiguous ? 1 : 0;
+  snapshot->root_is_self = slot.root_is_self ? 1 : 0;
+  snapshot->component_count = slot.component_count;
+  snapshot->metadata_provider_count = slot.metadata_provider_count;
+  snapshot->first_registration_order_ordinal =
+      slot.first_registration_order_ordinal;
+  snapshot->last_registration_order_ordinal =
+      slot.last_registration_order_ordinal;
+  snapshot->root_name = StableCString(slot.root_name_storage);
+  snapshot->component_path = StableCString(slot.component_path_storage);
+  snapshot->profile = StableCString(slot.profile_storage);
+  snapshot->generic_metadata_replay_key =
+      slot.generic_metadata_replay_key_storage.empty()
+          ? nullptr
+          : StableCString(slot.generic_metadata_replay_key_storage);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_keypath_component_count_for_testing(int keypath_handle) {
+  if (keypath_handle <= 0) {
+    return 0;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto found =
+      state.keypath_slots.find(static_cast<std::uint64_t>(keypath_handle));
+  state.last_queried_keypath_handle =
+      static_cast<std::uint64_t>(keypath_handle);
+  state.last_keypath_query_found = found != state.keypath_slots.end();
+  state.last_keypath_query_ambiguous =
+      found != state.keypath_slots.end() && found->second.ambiguous;
+  state.last_resolved_keypath_profile =
+      found != state.keypath_slots.end() ? found->second.profile_storage : "";
+  if (found == state.keypath_slots.end() || found->second.ambiguous) {
+    return 0;
+  }
+  return static_cast<int>(found->second.component_count);
+}
+
+int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle) {
+  if (keypath_handle <= 0) {
+    return 0;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  const auto found =
+      state.keypath_slots.find(static_cast<std::uint64_t>(keypath_handle));
+  state.last_queried_keypath_handle =
+      static_cast<std::uint64_t>(keypath_handle);
+  state.last_keypath_query_found = found != state.keypath_slots.end();
+  state.last_keypath_query_ambiguous =
+      found != state.keypath_slots.end() && found->second.ambiguous;
+  state.last_resolved_keypath_profile =
+      found != state.keypath_slots.end() ? found->second.profile_storage : "";
+  if (found == state.keypath_slots.end() || found->second.ambiguous) {
+    return 0;
+  }
+  return found->second.root_is_self ? 1 : 0;
 }
 
 int objc3_runtime_copy_method_cache_state_for_testing(

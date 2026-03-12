@@ -19,7 +19,7 @@ C002_CONTRACT_ID = "objc3c-runtime-constructor-init-stub-emission/m254-c002-v1"
 LOWERING_CONTRACT_ID = "objc3c-runtime-bootstrap-lowering-freeze/m254-c001-v1"
 REGISTRATION_MANIFEST_CONTRACT_ID = "objc3c-translation-unit-registration-manifest/m254-a002-v1"
 REGISTRATION_TABLE_LAYOUT_MODEL = (
-    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state"
+    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-keypath-descriptors-image-local-init-state"
 )
 IMAGE_LOCAL_INITIALIZATION_MODEL = "guarded-once-per-image-local-state-cell"
 REGISTRATION_TABLE_SYMBOL_PREFIX = "__objc3_runtime_registration_table_"
@@ -30,9 +30,9 @@ TABLE_IR_COMMENT_PREFIX = (
     "; runtime_registration_table_image_local_initialization = contract=" + CONTRACT_ID
 )
 C002_IR_COMMENT_PREFIX = "; runtime_bootstrap_ctor_init_emission = contract=" + C002_CONTRACT_ID
-REGISTRATION_TABLE_TYPE = "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }"
-REGISTRATION_TABLE_ABI_VERSION = 1
-REGISTRATION_TABLE_POINTER_FIELD_COUNT = 11
+REGISTRATION_TABLE_TYPE = "{ i64, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr }"
+REGISTRATION_TABLE_ABI_VERSION = 2
+REGISTRATION_TABLE_POINTER_FIELD_COUNT = 12
 COFF_STARTUP_SECTION = ".CRT$XCU"
 REGISTRATION_MANIFEST_ARTIFACT = "module.runtime-registration-manifest.json"
 RUNTIME_LIBRARY = ROOT / "artifacts" / "lib" / "objc3_runtime.lib"

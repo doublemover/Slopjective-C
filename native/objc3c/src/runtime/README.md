@@ -167,16 +167,19 @@ metadata:
 - conflicting category/protocol outcomes fail closed through
   `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
 
-`M265-D001` keeps that runtime helper boundary narrow for the first runnable
-Part 3 tranche:
+`M265-D002` keeps that runtime helper boundary narrow while landing the first
+live typed key-path runtime support for the runnable Part 3 tranche:
 
 - optional sends and optional-member access still execute through
   `objc3_runtime_lookup_selector` plus `objc3_runtime_dispatch_i32`
 - lowering still owns nil short-circuit semantics
 - validated single-component typed key-path literals now contribute stable
   descriptor handles and retained `objc3.runtime.keypath_descriptors` payloads
-- full runtime key-path evaluation helpers are intentionally deferred to
-  `M265-D002`
+  to a private runtime registry
+- private helper/probe entrypoints now expose validated key-path component
+  counts and root-kind queries without widening the public runtime header
+- full multi-component key-path evaluation remains intentionally deferred to
+  later runtime work
 
 `M256-D001` freezes the next runtime-owned object-model boundary that consumes
 the emitted `M256-C003` realization records:

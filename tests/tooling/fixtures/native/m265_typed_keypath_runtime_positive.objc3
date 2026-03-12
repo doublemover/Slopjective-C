@@ -1,0 +1,21 @@
+module typedKeyPathRuntimePositive;
+
+@interface Person
+@property (readonly) id name;
+@end
+
+@implementation Person
+@end
+
+extern fn objc3_runtime_keypath_component_count_for_testing(path: id) -> i32;
+extern fn objc3_runtime_keypath_root_is_self_for_testing(path: id) -> bool;
+
+fn main() -> i32 {
+  let path = @keypath(Person, name);
+  let componentCount = objc3_runtime_keypath_component_count_for_testing(path);
+  let selfRoot = objc3_runtime_keypath_root_is_self_for_testing(path);
+  if (path != nil && componentCount == 1 && !selfRoot) {
+    return 11;
+  }
+  return 0;
+}

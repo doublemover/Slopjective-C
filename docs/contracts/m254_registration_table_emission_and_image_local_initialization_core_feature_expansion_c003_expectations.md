@@ -8,9 +8,9 @@ Scope: Expand the lowering-owned startup bootstrap path so emitted registration 
 
 1. `native/objc3c/src/ir/objc3_ir_emitter.cpp` emits one additional IR boundary line for C003 with:
    - the exact derived registration-table symbol,
-   - layout model `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-image-local-init-state`,
-   - ABI version `1`,
-   - pointer-field count `11`,
+   - layout model `abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-keypath-descriptors-image-local-init-state`,
+   - ABI version `2`,
+   - pointer-field count `12`,
    - the canonical class/protocol/category/property/ivar section-root symbols,
    - selector/string pool roots or `null`, and
    - the exact derived image-local init-state symbol.

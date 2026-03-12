@@ -26,6 +26,7 @@ typedef struct objc3_runtime_registration_table {
   const objc3_runtime_pointer_aggregate *ivar_descriptor_root;
   const objc3_runtime_pointer_aggregate *selector_pool_root;
   const objc3_runtime_pointer_aggregate *string_pool_root;
+  const objc3_runtime_pointer_aggregate *keypath_descriptor_root;
   unsigned char *image_local_init_state;
 } objc3_runtime_registration_table;
 
@@ -39,6 +40,7 @@ typedef struct objc3_runtime_image_walk_state_snapshot {
   uint64_t last_walked_ivar_descriptor_count;
   uint64_t last_walked_selector_pool_count;
   uint64_t last_walked_string_pool_count;
+  uint64_t last_walked_keypath_descriptor_count;
   int last_linker_anchor_matches_discovery_root;
   int last_registration_used_staged_table;
   const char *last_walked_module_name;
@@ -79,6 +81,34 @@ typedef struct objc3_runtime_selector_lookup_entry_snapshot {
   uint64_t last_selector_pool_index;
   const char *canonical_selector;
 } objc3_runtime_selector_lookup_entry_snapshot;
+
+typedef struct objc3_runtime_keypath_registry_state_snapshot {
+  uint64_t keypath_table_entry_count;
+  uint64_t image_backed_keypath_count;
+  uint64_t ambiguous_keypath_handle_count;
+  uint64_t last_materialized_handle;
+  uint64_t last_materialized_registration_order_ordinal;
+  uint64_t last_queried_handle;
+  int last_query_found;
+  int last_query_ambiguous;
+  const char *last_materialized_profile;
+  const char *last_resolved_profile;
+} objc3_runtime_keypath_registry_state_snapshot;
+
+typedef struct objc3_runtime_keypath_entry_snapshot {
+  int found;
+  int ambiguous;
+  int root_is_self;
+  uint64_t stable_id;
+  uint64_t component_count;
+  uint64_t metadata_provider_count;
+  uint64_t first_registration_order_ordinal;
+  uint64_t last_registration_order_ordinal;
+  const char *root_name;
+  const char *component_path;
+  const char *profile;
+  const char *generic_metadata_replay_key;
+} objc3_runtime_keypath_entry_snapshot;
 
 typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t cache_entry_count;
@@ -283,6 +313,10 @@ int objc3_runtime_copy_selector_lookup_table_state_for_testing(
 int objc3_runtime_copy_selector_lookup_entry_for_testing(
     const char *selector,
     objc3_runtime_selector_lookup_entry_snapshot *snapshot);
+int objc3_runtime_copy_keypath_registry_state_for_testing(
+    objc3_runtime_keypath_registry_state_snapshot *snapshot);
+int objc3_runtime_copy_keypath_entry_for_testing(
+    uint64_t stable_id, objc3_runtime_keypath_entry_snapshot *snapshot);
 // M256-D001 class-realization-runtime anchor: the private method-cache
 // snapshots remain the canonical proof surface for realized class/metaclass
 // resolution, category attachment, and protocol-aware negative runtime checks
@@ -335,6 +369,14 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 // validated typed key-path slice currently exposes retained descriptor handles
 // and sections as the runtime-facing input boundary. Full runtime key-path
 // evaluation helpers remain deferred to M265-D002.
+// M265-D002 live-optional-send-and-keypath-runtime-support anchor: the first
+// live typed key-path runtime support stays on this private runtime header.
+// The runtime consumes emitted key-path descriptor roots into an image-backed
+// registry, publishes query/state snapshots for probes, and exposes narrow
+// helper entrypoints for validated single-component handle execution without
+// widening the stable public runtime header yet.
+int objc3_runtime_keypath_component_count_for_testing(int keypath_handle);
+int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle);
 // M260-C002 ownership runtime hook emission anchor: lowering-generated
 // synthesized accessors target these private runtime helpers so retain/release,
 // autorelease, and weak property paths execute against realized runtime-backed

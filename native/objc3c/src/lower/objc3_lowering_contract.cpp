@@ -1210,10 +1210,11 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
 
 std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
   std::ostringstream out;
-  // M265-D001 runtime-helper freeze anchor: lane-D freezes the truthful
-  // runtime boundary for the already-live optional-send path plus the newly
-  // emitted typed key-path descriptor-handle artifacts without claiming full
-  // runtime key-path evaluation before M265-D002.
+  // M265-D002 live-optional-send-and-keypath-runtime-support anchor: optional
+  // sends stay on the public selector lookup/dispatch ABI while validated
+  // single-component typed key-path handles now feed the private runtime
+  // registry/testing helper surface without falsely claiming full
+  // multi-component key-path evaluation.
   out << "contract_id=" << kObjc3Part3OptionalKeypathRuntimeHelperContractId
       << ";surface_path=" << kObjc3Part3OptionalKeypathRuntimeHelperSurfacePath
       << ";optional_model="
@@ -1229,7 +1230,7 @@ std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
       << ";keypath_descriptor_section="
       << kObjc3RuntimeKeypathDescriptorLogicalSection
       << ";keypath_descriptor_aggregate=__objc3_sec_keypath_descriptors"
-      << ";typed_keypath_runtime_execution_helper_landed=false";
+      << ";typed_keypath_runtime_execution_helper_landed=true";
   return out.str();
 }
 

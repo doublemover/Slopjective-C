@@ -492,7 +492,7 @@ std::string BuildPart3OptionalKeypathRuntimeHelperContractJson(
       contract.live_typed_keypath_artifact_sites ==
           contract.typed_keypath_literal_sites &&
       contract.deferred_typed_keypath_sites == 0;
-  const bool typed_keypath_runtime_execution_helper_landed = false;
+  const bool typed_keypath_runtime_execution_helper_landed = true;
   const bool diagnostic_fallback_ready = true;
   std::ostringstream replay_key;
   replay_key << "contract="

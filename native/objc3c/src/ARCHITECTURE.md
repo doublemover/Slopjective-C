@@ -8783,6 +8783,24 @@ Part 3 executable slice:
   payloads
 - full runtime key-path evaluation helpers remain deferred to `M265-D002`
 
+## M265 live optional-send and key-path runtime support (D002)
+
+`M265-D002` keeps optional sends on the existing public runtime dispatch
+surface while adding the first private runtime-owned key-path registry support
+for validated single-component handles:
+
+- `objc3_runtime_registration_table` now carries
+  `keypath_descriptor_root`
+- image registration validates and consumes retained
+  `objc3.runtime.keypath_descriptors` payloads
+- optional sends and optional-member access still execute through
+  `objc3_runtime_lookup_selector` plus `objc3_runtime_dispatch_i32`
+- validated single-component key-path handles now resolve through private
+  runtime helpers and testing snapshots rather than remaining opaque
+  descriptor-only values
+- full multi-component key-path application/evaluation remains deferred to
+  later runtime work
+
 ## M256 executable class/protocol/category source closure (A001)
 
 `M256-A001` freezes the first runnable object-model source boundary:
