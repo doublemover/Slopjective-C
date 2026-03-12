@@ -357,6 +357,12 @@ std::string BuildPart3TypeSemanticModelSummaryJson(
       << ",\"guard_binding_sites\":" << summary.guard_binding_sites
       << ",\"optional_send_sites\":" << summary.optional_send_sites
       << ",\"nil_coalescing_sites\":" << summary.nil_coalescing_sites
+      << ",\"optional_propagation_sites\":"
+      << summary.optional_propagation_sites
+      << ",\"optional_flow_refinement_sites\":"
+      << summary.optional_flow_refinement_sites
+      << ",\"guard_binding_exit_enforcement_sites\":"
+      << summary.guard_binding_exit_enforcement_sites
       << ",\"typed_keypath_literal_sites\":"
       << summary.typed_keypath_literal_sites
       << ",\"typed_keypath_self_root_sites\":"
@@ -369,6 +375,8 @@ std::string BuildPart3TypeSemanticModelSummaryJson(
       << summary.optional_binding_contract_violation_sites
       << ",\"optional_send_contract_violation_sites\":"
       << summary.optional_send_contract_violation_sites
+      << ",\"optional_flow_contract_violation_sites\":"
+      << summary.optional_flow_contract_violation_sites
       << ",\"typed_keypath_contract_violation_sites\":"
       << summary.typed_keypath_contract_violation_sites
       << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")

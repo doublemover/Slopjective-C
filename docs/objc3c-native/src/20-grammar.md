@@ -250,16 +250,25 @@ Recommended frontend contract checks:
 
 ## M265 Part 3 semantic model
 
-Lane B freezes the first sema-owned Part 3 type packet before later M265
-lowering/runtime issues make the surface executable.
+Lane B now carries the live semantic/refinement slice for the admitted Part 3
+surface before later M265 lowering/runtime issues broaden it further.
 
-Currently live in sema:
+Currently live:
 
 - optional binding sites are counted and validated against synthetic binding
   clause lowering
 - `guard let` / `guard var` sites are distinguished from plain `if let` /
   `if var`
+- `if let` / `guard let` bindings now refine admitted nullable ObjC-reference
+  sources into nonnull local bindings on the success path
+- `guard let` / `guard var` `else` blocks now fail closed unless they exit the
+  current scope
+- nil-comparison flow such as `if (value != nil)` now refines ordinary sends
+  and direct returns on the proven-nonnull path
+- nil-coalescing `??` now lowers as a real short-circuit path in native IR
 - optional sends now fail closed for non-ObjC-reference receivers
+- ordinary sends now fail closed for nullable receivers unless the receiver has
+  been proven nonnull or optional-send syntax is used
 - typed key-path roots now fail closed unless they resolve to `self` or an
   in-scope identifier
 - pragmatic generic-erasure and nullability site counts are published through
@@ -268,8 +277,9 @@ Currently live in sema:
 Current fail-closed boundary:
 
 - `?.` optional-member access remains fail closed
-- nil-coalescing and typed key-path literals are admitted as semantic-model
-  sites, but later M265 issues still need to make them runnable lowering paths
+- typed key-path literals are still admitted as semantic-model sites only
+- broader Part 3 lowering/runtime work still remains in later `M265` / `M266`
+  milestones
 
 Published packet:
 
@@ -277,7 +287,7 @@ Published packet:
 
 Recommended semantic contract check:
 
-- `python scripts/check_m265_b001_optional_generic_erasure_and_key_path_semantic_model_contract_and_architecture_freeze.py`
+- `python scripts/check_m265_b002_optional_flow_binding_and_refinement_semantics_core_feature_implementation.py`
 
 ## M151 frontend symbol graph and scope-resolution parser surface
 

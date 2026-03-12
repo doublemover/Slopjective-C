@@ -62,6 +62,8 @@ struct SemanticTypeInfo {
   std::vector<ValueType> callable_param_types;
   ValueType callable_return_type = ValueType::Unknown;
   SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
+  bool has_nullability_suffix = false;
+  bool is_refined_nonnull_reference = false;
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
@@ -98,6 +100,7 @@ static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix = !param.nullability_suffix_tokens.empty();
   }
   return info;
 }
@@ -115,6 +118,7 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &f
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix = !fn.return_nullability_suffix_tokens.empty();
   }
   return info;
 }
@@ -132,6 +136,7 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix = !method.return_nullability_suffix_tokens.empty();
   }
   return info;
 }
@@ -158,6 +163,9 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix =
+        index < fn.param_has_nullability_suffix.size() &&
+        fn.param_has_nullability_suffix[index];
   }
   return info;
 }
@@ -175,6 +183,7 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInf
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix = fn.return_has_nullability_suffix;
   }
   return info;
 }
@@ -207,6 +216,9 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInf
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix =
+        index < method.param_has_nullability_suffix.size() &&
+        method.param_has_nullability_suffix[index];
   }
   return info;
 }
@@ -227,6 +239,7 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
     } else {
       info.ownership_kind = SemanticOwnershipKind::Retained;
     }
+    info.has_nullability_suffix = method.return_has_nullability_suffix;
   }
   return info;
 }
@@ -305,6 +318,21 @@ static bool IsObjCReferenceValueType(ValueType type) {
 
 static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
   return !info.is_vector && IsObjCReferenceValueType(info.type);
+}
+
+static bool IsNullableObjCReferenceSemanticType(const SemanticTypeInfo &info) {
+  return IsObjCReferenceSemanticType(info) && info.has_nullability_suffix &&
+         !info.is_refined_nonnull_reference;
+}
+
+static SemanticTypeInfo MakeNonnullRefinedSemanticType(
+    const SemanticTypeInfo &info) {
+  SemanticTypeInfo refined = info;
+  if (IsObjCReferenceSemanticType(refined)) {
+    refined.has_nullability_suffix = false;
+    refined.is_refined_nonnull_reference = true;
+  }
+  return refined;
 }
 
 static bool IsOwnedObjCReferenceSemanticType(const SemanticTypeInfo &info) {
@@ -4060,10 +4088,13 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
           return rhs;
         }
         if (IsUnknownSemanticType(rhs)) {
-          return lhs;
+          return MakeNonnullRefinedSemanticType(lhs);
         }
         if (AreObjCReferenceTypesAssignmentCompatible(lhs, rhs)) {
-          return lhs.type == rhs.type ? lhs : MakeScalarSemanticType(ValueType::ObjCId);
+          if (lhs.type == rhs.type) {
+            return rhs.has_nullability_suffix ? lhs : MakeNonnullRefinedSemanticType(lhs);
+          }
+          return MakeNonnullRefinedSemanticType(MakeScalarSemanticType(ValueType::ObjCId));
         }
         if (IsCallableSemanticType(lhs) && IsCallableSemanticType(rhs) &&
             lhs.callable_param_types == rhs.callable_param_types &&
@@ -4418,6 +4449,12 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
         "type mismatch: optional send receiver for selector '" + selector +
             "' must be ObjC-reference-compatible"));
   }
+  if (!expr->optional_send_enabled && IsNullableObjCReferenceSemanticType(receiver_type)) {
+    diagnostics.push_back(MakeDiag(
+        expr->line, expr->column, "O3S206",
+        "type mismatch: ordinary send receiver for selector '" + selector +
+            "' must be proven nonnull or use optional send syntax"));
+  }
   if (!IsUnknownSemanticType(receiver_type) && !IsMessageCompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column = expr->receiver != nullptr ? expr->receiver->column : expr->column;
@@ -4550,6 +4587,32 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
                                std::size_t max_message_send_args,
                                const Objc3MessageSendResolutionContext &message_send_context);
+
+static void ValidateStatement(
+    const Stmt *stmt, std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    const SemanticTypeInfo &expected_return_type,
+    const std::string &function_name, std::vector<std::string> &diagnostics,
+    int loop_depth, int switch_depth, std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context);
+
+static void ValidateStatementsFromIndex(
+    const std::vector<std::unique_ptr<Stmt>> &statements, std::size_t start_index,
+    std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    const SemanticTypeInfo &expected_return_type, const std::string &function_name,
+    std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
+    std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context) {
+  for (std::size_t index = start_index; index < statements.size(); ++index) {
+    ValidateStatement(statements[index].get(), scopes, globals, functions,
+                      expected_return_type, function_name, diagnostics,
+                      loop_depth, switch_depth, max_message_send_args,
+                      message_send_context);
+  }
+}
 
 static void ValidateAssignmentCompatibility(const std::string &target_name, const std::string &op,
                                            const Expr *value_expr, unsigned line, unsigned column,
@@ -4718,6 +4781,99 @@ static void CollectAtomicMemoryOrderMappingsInStatements(const std::vector<std::
   }
 }
 
+static bool StatementDefinitelyExitsScope(const Stmt *stmt);
+
+static bool StatementListDefinitelyExitsScope(
+    const std::vector<std::unique_ptr<Stmt>> &statements) {
+  if (statements.empty()) {
+    return false;
+  }
+  return StatementDefinitelyExitsScope(statements.back().get());
+}
+
+static bool StatementDefinitelyExitsScope(const Stmt *stmt) {
+  if (stmt == nullptr) {
+    return false;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Return:
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+      return true;
+    case Stmt::Kind::Block:
+      return stmt->block_stmt != nullptr &&
+             StatementListDefinitelyExitsScope(stmt->block_stmt->body);
+    case Stmt::Kind::If:
+      return stmt->if_stmt != nullptr &&
+             StatementListDefinitelyExitsScope(stmt->if_stmt->then_body) &&
+             StatementListDefinitelyExitsScope(stmt->if_stmt->else_body);
+    case Stmt::Kind::Assign:
+    case Stmt::Kind::Let:
+    case Stmt::Kind::DoWhile:
+    case Stmt::Kind::For:
+    case Stmt::Kind::Switch:
+    case Stmt::Kind::While:
+    case Stmt::Kind::Empty:
+    case Stmt::Kind::Expr:
+      return false;
+  }
+  return false;
+}
+
+struct BranchNonnullRefinement {
+  std::string symbol_name;
+  bool refine_then = false;
+  bool refine_else = false;
+};
+
+static BranchNonnullRefinement AnalyzeNonnullBranchRefinement(
+    const Expr *condition) {
+  BranchNonnullRefinement refinement;
+  if (condition == nullptr || condition->kind != Expr::Kind::Binary) {
+    return refinement;
+  }
+  if (condition->op != "==" && condition->op != "!=") {
+    return refinement;
+  }
+
+  const Expr *identifier_expr = nullptr;
+  const Expr *nil_expr = nullptr;
+  if (condition->left != nullptr && condition->left->kind == Expr::Kind::Identifier &&
+      condition->right != nullptr &&
+      condition->right->kind == Expr::Kind::NilLiteral) {
+    identifier_expr = condition->left.get();
+    nil_expr = condition->right.get();
+  } else if (condition->right != nullptr &&
+             condition->right->kind == Expr::Kind::Identifier &&
+             condition->left != nullptr &&
+             condition->left->kind == Expr::Kind::NilLiteral) {
+    identifier_expr = condition->right.get();
+    nil_expr = condition->left.get();
+  }
+  if (identifier_expr == nullptr || nil_expr == nullptr) {
+    return refinement;
+  }
+
+  refinement.symbol_name = identifier_expr->ident;
+  refinement.refine_then = condition->op == "!=";
+  refinement.refine_else = condition->op == "==";
+  return refinement;
+}
+
+static void ApplyNonnullRefinementToScope(
+    const BranchNonnullRefinement &refinement, bool refine_active,
+    const std::vector<SemanticScope> &source_scopes, SemanticScope &target_scope) {
+  if (!refine_active || refinement.symbol_name.empty()) {
+    return;
+  }
+  const SemanticTypeInfo current_type =
+      ScopeLookupType(source_scopes, refinement.symbol_name);
+  if (IsNullableObjCReferenceSemanticType(current_type)) {
+    target_scope[refinement.symbol_name] =
+        MakeNonnullRefinedSemanticType(current_type);
+  }
+}
+
 static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scopes,
                               const std::unordered_map<std::string, ValueType> &globals,
                               const std::unordered_map<std::string, FunctionInfo> &functions,
@@ -4877,6 +5033,7 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         return;
       }
       if (if_stmt->optional_binding_surface_enabled) {
+        std::vector<std::pair<std::string, SemanticTypeInfo>> refined_bindings;
         const std::size_t binding_count = std::min(
             if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
         for (std::size_t index = 0; index < binding_count; ++index) {
@@ -4892,11 +5049,42 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
               binding_stmt->let_stmt->value.get(), scopes, globals, functions,
               diagnostics, max_message_send_args, message_send_context);
           if (!IsUnknownSemanticType(value_type) &&
-              !IsObjCReferenceSemanticType(value_type)) {
+              !IsNullableObjCReferenceSemanticType(value_type)) {
             diagnostics.push_back(MakeDiag(
                 binding_stmt->let_stmt->line, binding_stmt->let_stmt->column,
                 "O3S206",
-                "type mismatch: optional binding requires an ObjC-reference-compatible source"));
+                "type mismatch: optional binding requires an optional ObjC-reference-compatible source"));
+            continue;
+          }
+          refined_bindings.emplace_back(
+              binding_stmt->let_stmt->name,
+              MakeNonnullRefinedSemanticType(value_type));
+        }
+        scopes.push_back({});
+        for (const auto &binding : refined_bindings) {
+          scopes.back()[binding.first] = binding.second;
+        }
+        ValidateStatementsFromIndex(if_stmt->then_body, binding_count, scopes, globals,
+                                    functions, expected_return_type, function_name,
+                                    diagnostics, loop_depth, switch_depth,
+                                    max_message_send_args, message_send_context);
+        scopes.pop_back();
+        scopes.push_back({});
+        ValidateStatements(if_stmt->else_body, scopes, globals, functions,
+                           expected_return_type, function_name, diagnostics,
+                           loop_depth, switch_depth, max_message_send_args,
+                           message_send_context);
+        scopes.pop_back();
+        if (if_stmt->guard_binding_surface_enabled) {
+          if (!StatementListDefinitelyExitsScope(if_stmt->else_body)) {
+            diagnostics.push_back(MakeDiag(
+                if_stmt->line, if_stmt->column, "O3S206",
+                "type mismatch: guard binding else block must exit the current scope"));
+          }
+          if (!scopes.empty()) {
+            for (const auto &binding : refined_bindings) {
+              scopes.back()[binding.first] = binding.second;
+            }
           }
         }
       } else {
@@ -4907,17 +5095,24 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
           diagnostics.push_back(MakeDiag(if_stmt->line, if_stmt->column, "O3S206",
                                          "type mismatch: if condition must be bool-compatible"));
         }
+        const BranchNonnullRefinement branch_refinement =
+            AnalyzeNonnullBranchRefinement(if_stmt->condition.get());
+        scopes.push_back({});
+        ApplyNonnullRefinementToScope(branch_refinement, branch_refinement.refine_then,
+                                      scopes, scopes.back());
+        ValidateStatements(if_stmt->then_body, scopes, globals, functions, expected_return_type, function_name,
+                           diagnostics, loop_depth, switch_depth,
+                           max_message_send_args, message_send_context);
+        scopes.pop_back();
+        scopes.push_back({});
+        ApplyNonnullRefinementToScope(branch_refinement, branch_refinement.refine_else,
+                                      scopes, scopes.back());
+        ValidateStatements(if_stmt->else_body, scopes, globals, functions, expected_return_type, function_name,
+                           diagnostics, loop_depth, switch_depth,
+                           max_message_send_args, message_send_context);
+        scopes.pop_back();
+        return;
       }
-      scopes.push_back({});
-      ValidateStatements(if_stmt->then_body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth, switch_depth,
-                         max_message_send_args, message_send_context);
-      scopes.pop_back();
-      scopes.push_back({});
-      ValidateStatements(if_stmt->else_body, scopes, globals, functions, expected_return_type, function_name,
-                         diagnostics, loop_depth, switch_depth,
-                         max_message_send_args, message_send_context);
-      scopes.pop_back();
       return;
     }
     case Stmt::Kind::DoWhile: {
@@ -5077,6 +5272,7 @@ static void CollectPart3TypeSemanticExprSites(
 
   if (expr->kind == Expr::Kind::Binary && expr->op == "??") {
     ++summary.nil_coalescing_sites;
+    ++summary.optional_propagation_sites;
   }
   if (expr->kind == Expr::Kind::MessageSend && expr->optional_send_enabled) {
     ++summary.optional_send_sites;
@@ -5194,8 +5390,14 @@ static void CollectPart3TypeSemanticStmtSites(
         ++summary.optional_binding_sites;
         summary.optional_binding_clause_sites +=
             if_stmt->optional_binding_clause_count;
+        summary.optional_flow_refinement_sites +=
+            if_stmt->optional_binding_clause_count;
         if (if_stmt->guard_binding_surface_enabled) {
           ++summary.guard_binding_sites;
+          ++summary.guard_binding_exit_enforcement_sites;
+          if (!StatementListDefinitelyExitsScope(if_stmt->else_body)) {
+            ++summary.optional_flow_contract_violation_sites;
+          }
         }
         const std::size_t binding_count = std::min(
             if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
@@ -5215,6 +5417,11 @@ static void CollectPart3TypeSemanticStmtSites(
         CollectPart3TypeSemanticExprSites(if_stmt->condition.get(), scopes, globals,
                                           functions, max_message_send_args,
                                           message_send_context, summary);
+        const BranchNonnullRefinement refinement =
+            AnalyzeNonnullBranchRefinement(if_stmt->condition.get());
+        if (!refinement.symbol_name.empty()) {
+          ++summary.optional_flow_refinement_sites;
+        }
       }
       scopes.push_back({});
       CollectPart3TypeSemanticStmtSitesFromList(if_stmt->then_body, scopes, globals,
@@ -5383,9 +5590,15 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       summary.optional_binding_contract_violation_sites <=
           summary.optional_binding_clause_sites &&
       summary.optional_send_contract_violation_sites <= summary.optional_send_sites &&
+      summary.optional_flow_contract_violation_sites <=
+          (summary.optional_flow_refinement_sites +
+           summary.guard_binding_exit_enforcement_sites) &&
       summary.typed_keypath_contract_violation_sites <=
           summary.typed_keypath_literal_sites &&
-      summary.typed_keypath_self_root_sites <= summary.typed_keypath_literal_sites;
+      summary.typed_keypath_self_root_sites <= summary.typed_keypath_literal_sites &&
+      summary.optional_propagation_sites == summary.nil_coalescing_sites &&
+      summary.guard_binding_exit_enforcement_sites <=
+          summary.guard_binding_sites;
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   std::ostringstream out;
   out << summary.contract_id << ";bindings=" << summary.optional_binding_sites
@@ -5393,12 +5606,16 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       << ";guards=" << summary.guard_binding_sites
       << ";optional-sends=" << summary.optional_send_sites
       << ";coalescing=" << summary.nil_coalescing_sites
+      << ";propagation=" << summary.optional_propagation_sites
+      << ";refinement=" << summary.optional_flow_refinement_sites
+      << ";guard-exit=" << summary.guard_binding_exit_enforcement_sites
       << ";keypaths=" << summary.typed_keypath_literal_sites
       << ";keypath-self=" << summary.typed_keypath_self_root_sites
       << ";generic-erasure=" << summary.generic_erasure_semantic_sites
       << ";nullability=" << summary.nullability_semantic_sites
       << ";binding-violations=" << summary.optional_binding_contract_violation_sites
       << ";optional-send-violations=" << summary.optional_send_contract_violation_sites
+      << ";flow-violations=" << summary.optional_flow_contract_violation_sites
       << ";keypath-violations=" << summary.typed_keypath_contract_violation_sites;
   summary.replay_key = out.str();
   return summary;
@@ -16216,7 +16433,6 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =
       BuildAutoreleasePoolScopeSummaryFromTypeMetadataHandoff(handoff);
-
   const Objc3InterfaceImplementationSummary &summary = handoff.interface_implementation_summary;
   const Objc3ClassProtocolCategoryLinkingSummary class_protocol_category_linking_summary =
       BuildClassProtocolCategoryLinkingSummary(summary, protocol_category_summary);

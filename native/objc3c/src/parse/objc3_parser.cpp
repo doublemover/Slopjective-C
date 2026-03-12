@@ -4297,7 +4297,10 @@ static bool IsRaceGuardSymbol(const std::string &symbol) {
   }
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("race") != std::string::npos ||
-         lowered.find("guard") != std::string::npos ||
+         lowered.find("raceguard") != std::string::npos ||
+         lowered.find("race_guard") != std::string::npos ||
+         lowered.find("replayguard") != std::string::npos ||
+         lowered.find("replay_guard") != std::string::npos ||
          lowered.find("lock") != std::string::npos;
 }
 

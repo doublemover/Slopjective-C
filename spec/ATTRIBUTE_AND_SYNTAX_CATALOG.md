@@ -55,16 +55,22 @@ Implementations may treat the following as aliases with identical semantics:
 
 ### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
 
-Current implementation status (`M265-B001`):
+Current implementation status (`M265-B002`):
 
 - protocol `@required` / `@optional` partitions are live in the frontend
 - object-pointer nullability and pragmatic generic suffix carriers are live in
   parameter, return, and property type parsing
 - optional binding forms `if let`, `if var`, `guard let`, and `guard var` are
-  now sema-validated against ObjC-reference-compatible sources
+  now sema-validated against admitted nullable ObjC-reference sources and
+  refine those bindings to the nonnull path
 - optional sends written as `[receiver? selector]` are admitted as parser-owned
   source forms and now fail closed for non-ObjC-reference receivers
-- nil-coalescing `??` is admitted as a parser-owned source form
+- ordinary sends now fail closed for nullable receivers unless the receiver has
+  been proven nonnull or optional-send syntax is used
+- nil-coalescing `??` is admitted as a parser-owned source form and now lowers
+  as a real short-circuit path
+- `guard let` / `guard var` `else` blocks now fail closed unless they exit the
+  current scope
 - typed key-path literals such as `@keypath(...)` are admitted as parser-owned
   source forms and now fail closed on unresolved roots
 - optional-member access `?.` is still fail-closed

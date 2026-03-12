@@ -9451,6 +9451,137 @@ class Objc3IREmitter {
     }
   }
 
+  std::string EmitLocalI32Binding(const std::string &name, const Expr *value_expr,
+                                  FunctionContext &ctx,
+                                  bool mark_runtime_nonnull) const {
+    const std::string value = EmitExpr(value_expr, ctx);
+    int const_value = 0;
+    const bool has_const_value =
+        TryGetCompileTimeI32ExprInContext(value_expr, ctx, const_value);
+    const bool has_nil_value =
+        IsCompileTimeNilReceiverExprInContext(value_expr, ctx);
+    const std::string ptr =
+        "%" + name + ".addr." + std::to_string(ctx.temp_counter++);
+    ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+    ctx.scopes.back()[name] = ptr;
+    if (has_nil_value) {
+      ctx.nil_bound_ptrs.insert(ptr);
+    }
+    if (has_const_value) {
+      ctx.const_value_ptrs[ptr] = const_value;
+    }
+    if ((has_const_value && const_value != 0) || mark_runtime_nonnull) {
+      ctx.nonzero_bound_ptrs.insert(ptr);
+    }
+    ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr +
+                             ", align 4");
+    return value;
+  }
+
+  void EmitOptionalBindingIfStatement(const IfStmt *if_stmt,
+                                      FunctionContext &ctx) const {
+    if (if_stmt == nullptr) {
+      return;
+    }
+
+    const std::size_t binding_count =
+        std::min(if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
+    if (binding_count == 0u) {
+      return;
+    }
+
+    const bool is_guard = if_stmt->guard_binding_surface_enabled;
+    const std::string success_label =
+        NewLabel(ctx, is_guard ? "guard_success_" : "if_bind_success_");
+    const std::string failure_label =
+        NewLabel(ctx, is_guard ? "guard_else_" : "if_bind_else_");
+    const std::string merge_label =
+        NewLabel(ctx, is_guard ? "guard_end_" : "if_bind_end_");
+
+    PushScope(ctx);
+    for (std::size_t index = 0; index < binding_count; ++index) {
+      const Stmt *binding_stmt = if_stmt->then_body[index].get();
+      if (binding_stmt == nullptr || binding_stmt->kind != Stmt::Kind::Let ||
+          binding_stmt->let_stmt == nullptr) {
+        (void)EmitUnsupportedI32Value(
+            "optional binding lowering expected synthetic let clauses");
+        PopScope(ctx, false);
+        return;
+      }
+      const LetStmt *binding = binding_stmt->let_stmt.get();
+      const std::string value =
+          EmitLocalI32Binding(binding->name, binding->value.get(), ctx, true);
+      const std::string is_present = NewTemp(ctx);
+      const std::string next_label =
+          (index + 1u == binding_count) ? success_label
+                                        : NewLabel(ctx, "if_bind_clause_");
+      ctx.code_lines.push_back("  " + is_present + " = icmp ne i32 " + value +
+                               ", 0");
+      ctx.code_lines.push_back("  br i1 " + is_present + ", label %" +
+                               next_label + ", label %" + failure_label);
+      if (next_label != success_label) {
+        ctx.code_lines.push_back(next_label + ":");
+      }
+    }
+
+    if (is_guard) {
+      ctx.code_lines.push_back(success_label + ":");
+      const auto promoted_bindings = ctx.scopes.back();
+      PopScope(ctx, false);
+      for (const auto &binding : promoted_bindings) {
+        ctx.scopes.back()[binding.first] = binding.second;
+      }
+      ctx.code_lines.push_back("  br label %" + merge_label);
+
+      ctx.code_lines.push_back(failure_label + ":");
+      PushScope(ctx);
+      ctx.terminated = false;
+      for (const auto &s : if_stmt->else_body) {
+        EmitStatement(s.get(), ctx);
+      }
+      const bool else_terminated = ctx.terminated;
+      PopScope(ctx, !else_terminated);
+      if (!else_terminated) {
+        ctx.code_lines.push_back("  br label %" + merge_label);
+      }
+
+      ctx.code_lines.push_back(merge_label + ":");
+      ctx.terminated = false;
+      return;
+    }
+
+    ctx.code_lines.push_back(success_label + ":");
+    ctx.terminated = false;
+    for (std::size_t index = binding_count; index < if_stmt->then_body.size();
+         ++index) {
+      EmitStatement(if_stmt->then_body[index].get(), ctx);
+    }
+    const bool then_terminated = ctx.terminated;
+    PopScope(ctx, !then_terminated);
+    if (!then_terminated) {
+      ctx.code_lines.push_back("  br label %" + merge_label);
+    }
+
+    ctx.code_lines.push_back(failure_label + ":");
+    PushScope(ctx);
+    ctx.terminated = false;
+    for (const auto &s : if_stmt->else_body) {
+      EmitStatement(s.get(), ctx);
+    }
+    const bool else_terminated = ctx.terminated;
+    PopScope(ctx, !else_terminated);
+    if (!else_terminated) {
+      ctx.code_lines.push_back("  br label %" + merge_label);
+    }
+
+    if (then_terminated && else_terminated) {
+      ctx.terminated = true;
+      return;
+    }
+    ctx.code_lines.push_back(merge_label + ":");
+    ctx.terminated = false;
+  }
+
   bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {
     if (expr == nullptr) {
       return false;
@@ -9598,6 +9729,17 @@ class Objc3IREmitter {
       }
       value = rhs != 0 ? 1 : 0;
       return true;
+    }
+    if (expr->op == "??") {
+      int lhs = 0;
+      if (!TryGetCompileTimeI32ExprInContext(expr->left.get(), ctx, lhs)) {
+        return false;
+      }
+      if (lhs != 0) {
+        value = lhs;
+        return true;
+      }
+      return TryGetCompileTimeI32ExprInContext(expr->right.get(), ctx, value);
     }
     int lhs = 0;
     int rhs = 0;
@@ -10070,6 +10212,31 @@ class Objc3IREmitter {
                                    "], [" + rhs_i1 + ", %" + rhs_done_label + "]");
           ctx.code_lines.push_back("  " + out_i32 + " = zext i1 " + logical_i1 + " to i32");
           return out_i32;
+        }
+        if (expr->op == "??") {
+          const std::string lhs = EmitExpr(expr->left.get(), ctx);
+          const std::string lhs_i1 = NewTemp(ctx);
+          const std::string rhs_label = NewLabel(ctx, "coalesce_rhs_");
+          const std::string lhs_label = NewLabel(ctx, "coalesce_lhs_");
+          const std::string merge_label = NewLabel(ctx, "coalesce_merge_");
+          const std::string rhs_value_name = NewTemp(ctx);
+          const std::string out_value = NewTemp(ctx);
+          ctx.code_lines.push_back("  " + lhs_i1 + " = icmp ne i32 " + lhs +
+                                   ", 0");
+          ctx.code_lines.push_back("  br i1 " + lhs_i1 + ", label %" +
+                                   lhs_label + ", label %" + rhs_label);
+          ctx.code_lines.push_back(rhs_label + ":");
+          const std::string rhs = EmitExpr(expr->right.get(), ctx);
+          ctx.code_lines.push_back("  " + rhs_value_name + " = add i32 " + rhs +
+                                   ", 0");
+          ctx.code_lines.push_back("  br label %" + merge_label);
+          ctx.code_lines.push_back(lhs_label + ":");
+          ctx.code_lines.push_back("  br label %" + merge_label);
+          ctx.code_lines.push_back(merge_label + ":");
+          ctx.code_lines.push_back("  " + out_value + " = phi i32 [" + lhs +
+                                   ", %" + lhs_label + "], [" + rhs_value_name +
+                                   ", %" + rhs_label + "]");
+          return out_value;
         }
 
         const std::string lhs = EmitExpr(expr->left.get(), ctx);
@@ -10584,6 +10751,10 @@ class Objc3IREmitter {
       case Stmt::Kind::If: {
         const IfStmt *if_stmt = stmt->if_stmt.get();
         if (if_stmt == nullptr) {
+          return;
+        }
+        if (if_stmt->optional_binding_surface_enabled) {
+          EmitOptionalBindingIfStatement(if_stmt, ctx);
           return;
         }
 

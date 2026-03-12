@@ -263,7 +263,7 @@ def run_dynamic_probes(args: argparse.Namespace, failures: list[Finding]) -> tup
         checks_passed += sub_passed
 
     negative_specs = [
-        ("binding-non-objc", NEG_BINDING, "type mismatch: optional binding requires an ObjC-reference-compatible source"),
+        ("binding-non-objc", NEG_BINDING, "type mismatch: optional binding requires an optional ObjC-reference-compatible source"),
         ("optional-send-non-objc", NEG_SEND, "type mismatch: optional send receiver for selector 'description' must be ObjC-reference-compatible"),
         ("typed-keypath-missing-root", NEG_KEYPATH, "type mismatch: typed key-path root 'missingRoot' must resolve to 'self' or an in-scope identifier"),
     ]
@@ -312,14 +312,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         (PARSER_CPP, [SnippetCheck("M265-B001-PARSE-01", "stmt->if_stmt->optional_binding_surface_enabled = true;"), SnippetCheck("M265-B001-PARSE-02", "stmt->if_stmt->guard_binding_surface_enabled = true;"), SnippetCheck("M265-B001-PARSE-03", "stmt->if_stmt->then_body.push_back(std::move(synthetic));")]),
         (SEMA_CONTRACT_H, [SnippetCheck("M265-B001-SEMA-01", "struct Objc3Part3TypeSemanticModelSummary"), SnippetCheck("M265-B001-SEMA-02", "optional_binding_sites"), SnippetCheck("M265-B001-SEMA-03", "typed_keypath_contract_violation_sites")]),
         (SEMA_PASSES_H, [SnippetCheck("M265-B001-SEMAH-01", "BuildPart3TypeSemanticModelSummary")]),
-        (SEMA_PASSES_CPP, [SnippetCheck("M265-B001-SEMACPP-01", "typed key-path root '"), SnippetCheck("M265-B001-SEMACPP-02", "optional binding requires an ObjC-reference-compatible source"), SnippetCheck("M265-B001-SEMACPP-03", "optional send receiver for selector '"), SnippetCheck("M265-B001-SEMACPP-04", "BuildPart3TypeSemanticModelSummary(")]),
+        (SEMA_PASSES_CPP, [SnippetCheck("M265-B001-SEMACPP-01", "typed key-path root '"), SnippetCheck("M265-B001-SEMACPP-02", "optional binding requires an optional ObjC-reference-compatible source"), SnippetCheck("M265-B001-SEMACPP-03", "optional send receiver for selector '"), SnippetCheck("M265-B001-SEMACPP-04", "BuildPart3TypeSemanticModelSummary(")]),
         (FRONTEND_TYPES_H, [SnippetCheck("M265-B001-FRONTEND-01", "kObjc3Part3TypeSemanticModelContractId"), SnippetCheck("M265-B001-FRONTEND-02", "kObjc3Part3TypeSemanticModelSurfacePath")]),
         (FRONTEND_ARTIFACTS_CPP, [SnippetCheck("M265-B001-ARTIFACTS-01", "BuildPart3TypeSemanticModelSummaryJson"), SnippetCheck("M265-B001-ARTIFACTS-02", "objc_part3_type_semantic_model"), SnippetCheck("M265-B001-ARTIFACTS-03", "BuildPart3TypeSemanticModelSummary(")]),
-        (DOC_SOURCE, [SnippetCheck("M265-B001-DOCSRC-01", "## M265 Part 3 semantic model"), SnippetCheck("M265-B001-DOCSRC-02", "Lane B freezes the first sema-owned Part 3 type packet")]),
+        (DOC_SOURCE, [SnippetCheck("M265-B001-DOCSRC-01", "## M265 Part 3 semantic model"), SnippetCheck("M265-B001-DOCSRC-02", "Lane B now carries the live semantic/refinement slice")]),
         (DOC_NATIVE, [SnippetCheck("M265-B001-DOCNATIVE-01", "## M265 Part 3 semantic model"), SnippetCheck("M265-B001-DOCNATIVE-02", "optional sends now fail closed for non-ObjC-reference receivers")]),
-        (SPEC_AM, [SnippetCheck("M265-B001-AM-01", "Lane B now publishes the first sema-owned Part 3 packet"), SnippetCheck("M265-B001-AM-02", "key-path roots fail closed")]),
-        (SPEC_ATTR, [SnippetCheck("M265-B001-ATTR-01", "Current implementation status (`M265-B001`)"), SnippetCheck("M265-B001-ATTR-02", "now sema-validated against ObjC-reference-compatible sources")]),
-        (SPEC_PART3, [SnippetCheck("M265-B001-PART3-01", "Implementation note (`M265-B001`)"), SnippetCheck("M265-B001-PART3-02", "Typed key-path roots currently fail closed")]),
+        (SPEC_AM, [SnippetCheck("M265-B001-AM-01", "Lane B now carries live optional-flow semantics for optional bindings"), SnippetCheck("M265-B001-AM-02", "Typed key-path roots still fail closed unless they resolve to `self` or an")]),
+        (SPEC_ATTR, [SnippetCheck("M265-B001-ATTR-01", "Current implementation status (`M265-B002`)"), SnippetCheck("M265-B001-ATTR-02", "now sema-validated against admitted nullable ObjC-reference sources")]),
+        (SPEC_PART3, [SnippetCheck("M265-B001-PART3-01", "Implementation note (`M265-B002`)"), SnippetCheck("M265-B001-PART3-02", "Typed key-path roots currently fail closed")]),
         (PACKAGE_JSON, [SnippetCheck("M265-B001-PKG-01", "check:objc3c:m265-b001-optional-generic-erasure-and-key-path-semantic-model-contract-and-architecture-freeze"), SnippetCheck("M265-B001-PKG-02", "test:tooling:m265-b001-optional-generic-erasure-and-key-path-semantic-model-contract-and-architecture-freeze"), SnippetCheck("M265-B001-PKG-03", "check:objc3c:m265-b001-lane-b-readiness")]),
     ]
 

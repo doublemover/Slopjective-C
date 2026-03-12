@@ -291,12 +291,16 @@ struct Objc3Part3TypeSemanticModelSummary {
   std::size_t guard_binding_sites = 0;
   std::size_t optional_send_sites = 0;
   std::size_t nil_coalescing_sites = 0;
+  std::size_t optional_propagation_sites = 0;
+  std::size_t optional_flow_refinement_sites = 0;
+  std::size_t guard_binding_exit_enforcement_sites = 0;
   std::size_t typed_keypath_literal_sites = 0;
   std::size_t typed_keypath_self_root_sites = 0;
   std::size_t generic_erasure_semantic_sites = 0;
   std::size_t nullability_semantic_sites = 0;
   std::size_t optional_binding_contract_violation_sites = 0;
   std::size_t optional_send_contract_violation_sites = 0;
+  std::size_t optional_flow_contract_violation_sites = 0;
   std::size_t typed_keypath_contract_violation_sites = 0;
   bool deterministic = true;
   bool ready_for_lowering_and_runtime = false;

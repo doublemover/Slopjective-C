@@ -1,0 +1,9 @@
+module guardBindingMissingExit;
+
+fn main(maybeValue: id?) -> i32 {
+  guard let ready = maybeValue else {
+    let fallback = 1;
+  }
+
+  return ready;
+}

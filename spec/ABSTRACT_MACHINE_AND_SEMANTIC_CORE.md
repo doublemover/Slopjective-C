@@ -23,16 +23,18 @@ Current implementation note:
   nullability/generic suffix carriers as source-level frontend behavior.
 - The frontend now also admits parser-owned optional binding, optional-send,
   nil-coalescing, and typed key-path source forms.
-- Lane B now publishes the first sema-owned Part 3 packet covering optional
-  bindings, optional sends, generic-erasure/nullability semantic counts, and
-  typed key-path legality.
-- Optional sends fail closed for non-ObjC-reference receivers, and typed
-  key-path roots fail closed unless they resolve to `self` or an in-scope
-  identifier.
+- Lane B now carries live optional-flow semantics for optional bindings,
+  nil-comparison refinement, nil-coalescing, and ordinary-vs-optional send
+  legality.
+- Optional sends fail closed for non-ObjC-reference receivers, ordinary sends
+  now fail closed for nullable receivers unless they have been proven nonnull,
+  and `guard let` / `guard var` `else` bodies must exit the current scope.
+- Typed key-path roots still fail closed unless they resolve to `self` or an
+  in-scope identifier.
 - Only optional-member access written as `?.` remains fail-closed at the
   current boundary.
-- Runnable optional flow semantics, truthful binding flow after `guard let`,
-  and executable key-path behavior remain future work.
+- Executable typed key-path behavior and the broader Part 3 surface remain
+  future work.
 
 ### AM.0.1 Normative anchor map {#am-0-1}
 

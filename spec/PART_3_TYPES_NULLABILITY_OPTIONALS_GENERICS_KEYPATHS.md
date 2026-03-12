@@ -22,13 +22,18 @@ Objective‑C 3.0 improves type safety without abandoning Objective‑C’s mode
 
 This part defines **syntax**, **static semantics**, **dynamic semantics**, and **required diagnostics** for these features.
 
-Implementation note (`M265-B001`):
+Implementation note (`M265-B002`):
 
 - The live compiler now publishes a sema-owned Part 3 packet for optional
-  bindings, optional sends, pragmatic generic-erasure/nullability site counts,
-  and typed key-path legality.
+  bindings, optional-flow refinement, optional sends, pragmatic
+  generic-erasure/nullability site counts, and typed key-path legality.
 - Optional sends currently fail closed unless the receiver is
   ObjC-reference-compatible.
+- Ordinary sends now fail closed for nullable receivers unless the receiver has
+  been proven nonnull or optional-send syntax is used.
+- `guard let` / `guard var` `else` bodies now fail closed unless they exit the
+  current scope.
+- Nil-coalescing `??` now lowers as a real short-circuit path.
 - Typed key-path roots currently fail closed unless they resolve to `self` or
   an in-scope identifier.
 - `?.` optional-member access remains outside the admitted surface.

@@ -1,0 +1,5 @@
+module ordinarySendNullableReceiver;
+
+fn main(maybeValue: id?) -> i32 {
+  return [maybeValue description];
+}
