@@ -248,6 +248,37 @@ Recommended frontend contract checks:
 - `python scripts/check_m265_a001_optionals_nullability_pragmatic_generics_and_key_path_source_closure_contract_and_architecture_freeze.py`
 - `python scripts/check_m265_a002_frontend_support_for_optional_sends_binds_coalescing_and_typed_key_paths_core_feature_implementation.py`
 
+## M265 Part 3 semantic model
+
+Lane B freezes the first sema-owned Part 3 type packet before later M265
+lowering/runtime issues make the surface executable.
+
+Currently live in sema:
+
+- optional binding sites are counted and validated against synthetic binding
+  clause lowering
+- `guard let` / `guard var` sites are distinguished from plain `if let` /
+  `if var`
+- optional sends now fail closed for non-ObjC-reference receivers
+- typed key-path roots now fail closed unless they resolve to `self` or an
+  in-scope identifier
+- pragmatic generic-erasure and nullability site counts are published through
+  the semantic surface
+
+Current fail-closed boundary:
+
+- `?.` optional-member access remains fail closed
+- nil-coalescing and typed key-path literals are admitted as semantic-model
+  sites, but later M265 issues still need to make them runnable lowering paths
+
+Published packet:
+
+- `frontend.pipeline.semantic_surface.objc_part3_type_semantic_model`
+
+Recommended semantic contract check:
+
+- `python scripts/check_m265_b001_optional_generic_erasure_and_key_path_semantic_model_contract_and_architecture_freeze.py`
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member

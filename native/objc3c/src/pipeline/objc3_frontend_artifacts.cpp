@@ -27,6 +27,7 @@
 #include "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h"
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 #include "pipeline/objc3_runtime_import_surface.h"
+#include "sema/objc3_semantic_passes.h"
 
 namespace {
 
@@ -340,6 +341,40 @@ std::string BuildPart3TypeSourceClosureSummaryJson(
       << (summary.ready_for_semantic_expansion ? "true" : "false")
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\"}";
+  return out.str();
+}
+
+std::string BuildPart3TypeSemanticModelSummaryJson(
+    const Objc3Part3TypeSemanticModelSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"optional_binding_sites\":" << summary.optional_binding_sites
+      << ",\"optional_binding_clause_sites\":"
+      << summary.optional_binding_clause_sites
+      << ",\"guard_binding_sites\":" << summary.guard_binding_sites
+      << ",\"optional_send_sites\":" << summary.optional_send_sites
+      << ",\"nil_coalescing_sites\":" << summary.nil_coalescing_sites
+      << ",\"typed_keypath_literal_sites\":"
+      << summary.typed_keypath_literal_sites
+      << ",\"typed_keypath_self_root_sites\":"
+      << summary.typed_keypath_self_root_sites
+      << ",\"generic_erasure_semantic_sites\":"
+      << summary.generic_erasure_semantic_sites
+      << ",\"nullability_semantic_sites\":"
+      << summary.nullability_semantic_sites
+      << ",\"optional_binding_contract_violation_sites\":"
+      << summary.optional_binding_contract_violation_sites
+      << ",\"optional_send_contract_violation_sites\":"
+      << summary.optional_send_contract_violation_sites
+      << ",\"typed_keypath_contract_violation_sites\":"
+      << summary.typed_keypath_contract_violation_sites
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
   return out.str();
 }
 
@@ -9062,6 +9097,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       pipeline_result.object_pointer_nullability_generics_summary;
   const Objc3FrontendPart3TypeSourceClosureSummary &part3_type_source_closure_summary =
       pipeline_result.part3_type_source_closure_summary;
+  const Objc3Part3TypeSemanticModelSummary part3_type_semantic_model_summary =
+      BuildPart3TypeSemanticModelSummary(
+          pipeline_result.program.ast, pipeline_result.integration_surface, 4u);
   const Objc3FrontendSymbolGraphScopeResolutionSummary &symbol_graph_scope_resolution_summary =
       pipeline_result.symbol_graph_scope_resolution_summary;
   const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records =
@@ -13241,6 +13279,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part3_type_source_closure\":"
            << BuildPart3TypeSourceClosureSummaryJson(
                   part3_type_source_closure_summary)
+           << ",\"objc_part3_type_semantic_model\":"
+           << BuildPart3TypeSemanticModelSummaryJson(
+                  part3_type_semantic_model_summary)
            // M264-B001 semantic freeze anchor: sema publishes the fail-closed
            // legality boundary that classifies live compatibility selections,
            // source-only claim downgrades, and strictness/macro claim
@@ -14339,6 +14380,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part3_type_source_closure\":"
            << BuildPart3TypeSourceClosureSummaryJson(
                   part3_type_source_closure_summary)
+           << ",\"objc_part3_type_semantic_model\":"
+           << BuildPart3TypeSemanticModelSummaryJson(
+                  part3_type_semantic_model_summary)
            << ",\"objc_symbol_graph_scope_resolution_surface\":{\"global_symbol_nodes\":"
            << symbol_graph_scope_resolution_summary.global_symbol_nodes
            << ",\"function_symbol_nodes\":"

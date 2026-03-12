@@ -3998,6 +3998,17 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                                          "type mismatch: typed key-path literal normalization failed"));
           return MakeScalarSemanticType(ValueType::Unknown);
         }
+        if (!expr->typed_keypath_root_is_self &&
+            IsUnknownSemanticType(ScopeLookupType(scopes, expr->typed_keypath_root_name)) &&
+            globals.find(expr->typed_keypath_root_name) == globals.end() &&
+            functions.find(expr->typed_keypath_root_name) == functions.end()) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S206",
+              "type mismatch: typed key-path root '" +
+                  expr->typed_keypath_root_name +
+                  "' must resolve to 'self' or an in-scope identifier"));
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
         return MakeScalarSemanticType(ValueType::ObjCId);
       }
       if (expr->ident == "super" && !message_send_context.inside_method) {
@@ -4400,6 +4411,13 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
   const SemanticTypeInfo receiver_type = ValidateExpr(
       expr->receiver.get(), scopes, globals, functions, diagnostics,
       max_message_send_args, message_send_context);
+  if (expr->optional_send_enabled && !IsUnknownSemanticType(receiver_type) &&
+      !IsObjCReferenceSemanticType(receiver_type)) {
+    diagnostics.push_back(MakeDiag(
+        expr->line, expr->column, "O3S206",
+        "type mismatch: optional send receiver for selector '" + selector +
+            "' must be ObjC-reference-compatible"));
+  }
   if (!IsUnknownSemanticType(receiver_type) && !IsMessageCompatibleType(receiver_type)) {
     const unsigned diag_line = expr->receiver != nullptr ? expr->receiver->line : expr->line;
     const unsigned diag_column = expr->receiver != nullptr ? expr->receiver->column : expr->column;
@@ -4858,12 +4876,37 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       if (if_stmt == nullptr) {
         return;
       }
-      const SemanticTypeInfo condition_type = ValidateExpr(
-          if_stmt->condition.get(), scopes, globals, functions, diagnostics,
-          max_message_send_args, message_send_context);
-      if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
-        diagnostics.push_back(MakeDiag(if_stmt->line, if_stmt->column, "O3S206",
-                                       "type mismatch: if condition must be bool-compatible"));
+      if (if_stmt->optional_binding_surface_enabled) {
+        const std::size_t binding_count = std::min(
+            if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
+        for (std::size_t index = 0; index < binding_count; ++index) {
+          const Stmt *binding_stmt = if_stmt->then_body[index].get();
+          if (binding_stmt == nullptr || binding_stmt->kind != Stmt::Kind::Let ||
+              binding_stmt->let_stmt == nullptr) {
+            diagnostics.push_back(MakeDiag(
+                if_stmt->line, if_stmt->column, "O3S206",
+                "type mismatch: optional binding lowering must start with synthetic let clauses"));
+            continue;
+          }
+          const SemanticTypeInfo value_type = ValidateExpr(
+              binding_stmt->let_stmt->value.get(), scopes, globals, functions,
+              diagnostics, max_message_send_args, message_send_context);
+          if (!IsUnknownSemanticType(value_type) &&
+              !IsObjCReferenceSemanticType(value_type)) {
+            diagnostics.push_back(MakeDiag(
+                binding_stmt->let_stmt->line, binding_stmt->let_stmt->column,
+                "O3S206",
+                "type mismatch: optional binding requires an ObjC-reference-compatible source"));
+          }
+        }
+      } else {
+        const SemanticTypeInfo condition_type = ValidateExpr(
+            if_stmt->condition.get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
+        if (!IsUnknownSemanticType(condition_type) && !IsScalarBoolCompatibleType(condition_type)) {
+          diagnostics.push_back(MakeDiag(if_stmt->line, if_stmt->column, "O3S206",
+                                         "type mismatch: if condition must be bool-compatible"));
+        }
       }
       scopes.push_back({});
       ValidateStatements(if_stmt->then_body, scopes, globals, functions, expected_return_type, function_name,
@@ -5019,6 +5062,346 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                       loop_depth, switch_depth, max_message_send_args,
                       message_send_context);
   }
+}
+
+static void CollectPart3TypeSemanticExprSites(
+    const Expr *expr, const std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    Objc3Part3TypeSemanticModelSummary &summary) {
+  if (expr == nullptr) {
+    return;
+  }
+
+  if (expr->kind == Expr::Kind::Binary && expr->op == "??") {
+    ++summary.nil_coalescing_sites;
+  }
+  if (expr->kind == Expr::Kind::MessageSend && expr->optional_send_enabled) {
+    ++summary.optional_send_sites;
+  }
+  if (expr->kind == Expr::Kind::Identifier && expr->typed_keypath_literal_enabled) {
+    ++summary.typed_keypath_literal_sites;
+    if (expr->typed_keypath_root_is_self) {
+      ++summary.typed_keypath_self_root_sites;
+    }
+    const bool has_valid_shape =
+        expr->typed_keypath_literal_is_normalized &&
+        !expr->typed_keypath_root_name.empty() &&
+        !expr->typed_keypath_components.empty() &&
+        std::all_of(expr->typed_keypath_components.begin(),
+                    expr->typed_keypath_components.end(),
+                    [](const std::string &component) { return !component.empty(); });
+    if (!has_valid_shape) {
+      ++summary.typed_keypath_contract_violation_sites;
+    }
+  }
+
+  CollectPart3TypeSemanticExprSites(expr->receiver.get(), scopes, globals, functions,
+                                    max_message_send_args, message_send_context,
+                                    summary);
+  CollectPart3TypeSemanticExprSites(expr->left.get(), scopes, globals, functions,
+                                    max_message_send_args, message_send_context,
+                                    summary);
+  CollectPart3TypeSemanticExprSites(expr->right.get(), scopes, globals, functions,
+                                    max_message_send_args, message_send_context,
+                                    summary);
+  CollectPart3TypeSemanticExprSites(expr->third.get(), scopes, globals, functions,
+                                    max_message_send_args, message_send_context,
+                                    summary);
+  for (const auto &arg : expr->args) {
+    CollectPart3TypeSemanticExprSites(arg.get(), scopes, globals, functions,
+                                      max_message_send_args,
+                                      message_send_context, summary);
+  }
+}
+
+static void CollectPart3TypeSemanticStmtSites(
+    const Stmt *stmt, std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    Objc3Part3TypeSemanticModelSummary &summary);
+
+static void CollectPart3TypeSemanticStmtSitesFromList(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    Objc3Part3TypeSemanticModelSummary &summary) {
+  for (const auto &stmt : statements) {
+    CollectPart3TypeSemanticStmtSites(stmt.get(), scopes, globals, functions,
+                                      max_message_send_args,
+                                      message_send_context, summary);
+  }
+}
+
+static void CollectPart3TypeSemanticStmtSites(
+    const Stmt *stmt, std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    std::size_t max_message_send_args,
+    const Objc3MessageSendResolutionContext &message_send_context,
+    Objc3Part3TypeSemanticModelSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+
+  switch (stmt->kind) {
+    case Stmt::Kind::Let: {
+      if (stmt->let_stmt == nullptr || scopes.empty()) {
+        return;
+      }
+      CollectPart3TypeSemanticExprSites(stmt->let_stmt->value.get(), scopes, globals,
+                                        functions, max_message_send_args,
+                                        message_send_context, summary);
+      return;
+    }
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        CollectPart3TypeSemanticExprSites(stmt->assign_stmt->value.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        CollectPart3TypeSemanticExprSites(stmt->return_stmt->value.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        CollectPart3TypeSemanticExprSites(stmt->expr_stmt->value.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+      }
+      return;
+    case Stmt::Kind::If: {
+      const IfStmt *if_stmt = stmt->if_stmt.get();
+      if (if_stmt == nullptr) {
+        return;
+      }
+      if (if_stmt->optional_binding_surface_enabled) {
+        ++summary.optional_binding_sites;
+        summary.optional_binding_clause_sites +=
+            if_stmt->optional_binding_clause_count;
+        if (if_stmt->guard_binding_surface_enabled) {
+          ++summary.guard_binding_sites;
+        }
+        const std::size_t binding_count = std::min(
+            if_stmt->optional_binding_clause_count, if_stmt->then_body.size());
+        for (std::size_t index = 0; index < binding_count; ++index) {
+          const Stmt *binding_stmt = if_stmt->then_body[index].get();
+          if (binding_stmt == nullptr || binding_stmt->kind != Stmt::Kind::Let ||
+              binding_stmt->let_stmt == nullptr) {
+            ++summary.optional_binding_contract_violation_sites;
+            continue;
+          }
+          CollectPart3TypeSemanticExprSites(binding_stmt->let_stmt->value.get(),
+                                            scopes, globals, functions,
+                                            max_message_send_args,
+                                            message_send_context, summary);
+        }
+      } else {
+        CollectPart3TypeSemanticExprSites(if_stmt->condition.get(), scopes, globals,
+                                          functions, max_message_send_args,
+                                          message_send_context, summary);
+      }
+      scopes.push_back({});
+      CollectPart3TypeSemanticStmtSitesFromList(if_stmt->then_body, scopes, globals,
+                                                functions,
+                                                max_message_send_args,
+                                                message_send_context, summary);
+      scopes.pop_back();
+      scopes.push_back({});
+      CollectPart3TypeSemanticStmtSitesFromList(if_stmt->else_body, scopes, globals,
+                                                functions,
+                                                max_message_send_args,
+                                                message_send_context, summary);
+      scopes.pop_back();
+      return;
+    }
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        scopes.push_back({});
+        CollectPart3TypeSemanticStmtSitesFromList(stmt->do_while_stmt->body, scopes,
+                                                  globals, functions,
+                                                  max_message_send_args,
+                                                  message_send_context, summary);
+        scopes.pop_back();
+        CollectPart3TypeSemanticExprSites(stmt->do_while_stmt->condition.get(),
+                                          scopes, globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        scopes.push_back({});
+        switch (stmt->for_stmt->init.kind) {
+          case ForClause::Kind::Expr:
+          case ForClause::Kind::Let:
+          case ForClause::Kind::Assign:
+            CollectPart3TypeSemanticExprSites(stmt->for_stmt->init.value.get(), scopes,
+                                              globals, functions,
+                                              max_message_send_args,
+                                              message_send_context, summary);
+            break;
+          case ForClause::Kind::None:
+            break;
+        }
+        CollectPart3TypeSemanticExprSites(stmt->for_stmt->condition.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+        switch (stmt->for_stmt->step.kind) {
+          case ForClause::Kind::Expr:
+          case ForClause::Kind::Let:
+          case ForClause::Kind::Assign:
+            CollectPart3TypeSemanticExprSites(stmt->for_stmt->step.value.get(), scopes,
+                                              globals, functions,
+                                              max_message_send_args,
+                                              message_send_context, summary);
+            break;
+          case ForClause::Kind::None:
+            break;
+        }
+        scopes.push_back({});
+        CollectPart3TypeSemanticStmtSitesFromList(stmt->for_stmt->body, scopes, globals,
+                                                  functions,
+                                                  max_message_send_args,
+                                                  message_send_context, summary);
+        scopes.pop_back();
+        scopes.pop_back();
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        CollectPart3TypeSemanticExprSites(stmt->switch_stmt->condition.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          scopes.push_back({});
+          CollectPart3TypeSemanticStmtSitesFromList(case_stmt.body, scopes, globals,
+                                                    functions,
+                                                    max_message_send_args,
+                                                    message_send_context, summary);
+          scopes.pop_back();
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectPart3TypeSemanticExprSites(stmt->while_stmt->condition.get(), scopes,
+                                          globals, functions,
+                                          max_message_send_args,
+                                          message_send_context, summary);
+        scopes.push_back({});
+        CollectPart3TypeSemanticStmtSitesFromList(stmt->while_stmt->body, scopes,
+                                                  globals, functions,
+                                                  max_message_send_args,
+                                                  message_send_context, summary);
+        scopes.pop_back();
+      }
+      return;
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        scopes.push_back({});
+        CollectPart3TypeSemanticStmtSitesFromList(stmt->block_stmt->body, scopes,
+                                                  globals, functions,
+                                                  max_message_send_args,
+                                                  message_send_context, summary);
+        scopes.pop_back();
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
+    const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
+    std::size_t max_message_send_args) {
+  Objc3Part3TypeSemanticModelSummary summary;
+  summary.generic_erasure_semantic_sites =
+      surface.generic_metadata_abi_summary.generic_metadata_abi_sites;
+  summary.nullability_semantic_sites =
+      surface.nullability_flow_warning_precision_summary.nullability_flow_sites;
+  for (const auto &function : ast.functions) {
+    std::vector<SemanticScope> scopes;
+    scopes.push_back({});
+    for (const auto &param : function.params) {
+      scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
+    }
+    const Objc3MessageSendResolutionContext context;
+    CollectPart3TypeSemanticStmtSitesFromList(function.body, scopes, surface.globals,
+                                              surface.functions,
+                                              max_message_send_args, context,
+                                              summary);
+  }
+  for (const auto &implementation : ast.implementations) {
+    std::string super_name;
+    auto interface_it = surface.interfaces.find(implementation.name);
+    if (interface_it != surface.interfaces.end()) {
+      super_name = interface_it->second.super_name;
+    }
+    for (const auto &method : implementation.methods) {
+      std::vector<SemanticScope> scopes;
+      scopes.push_back({});
+      scopes.back().emplace("self",
+                            MakeScalarSemanticType(ValueType::ObjCInstancetype));
+      if (!super_name.empty()) {
+        scopes.back().emplace("super",
+                              MakeScalarSemanticType(ValueType::ObjCInstancetype));
+      }
+      for (const auto &param : method.params) {
+        scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
+      }
+      Objc3MessageSendResolutionContext context;
+      context.inside_method = true;
+      context.current_implementation_name = implementation.name;
+      context.current_super_name = super_name;
+      CollectPart3TypeSemanticStmtSitesFromList(method.body, scopes, surface.globals,
+                                                surface.functions,
+                                                max_message_send_args, context,
+                                                summary);
+    }
+  }
+  summary.deterministic =
+      summary.optional_binding_contract_violation_sites <=
+          summary.optional_binding_clause_sites &&
+      summary.optional_send_contract_violation_sites <= summary.optional_send_sites &&
+      summary.typed_keypath_contract_violation_sites <=
+          summary.typed_keypath_literal_sites &&
+      summary.typed_keypath_self_root_sites <= summary.typed_keypath_literal_sites;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  std::ostringstream out;
+  out << summary.contract_id << ";bindings=" << summary.optional_binding_sites
+      << ";clauses=" << summary.optional_binding_clause_sites
+      << ";guards=" << summary.guard_binding_sites
+      << ";optional-sends=" << summary.optional_send_sites
+      << ";coalescing=" << summary.nil_coalescing_sites
+      << ";keypaths=" << summary.typed_keypath_literal_sites
+      << ";keypath-self=" << summary.typed_keypath_self_root_sites
+      << ";generic-erasure=" << summary.generic_erasure_semantic_sites
+      << ";nullability=" << summary.nullability_semantic_sites
+      << ";binding-violations=" << summary.optional_binding_contract_violation_sites
+      << ";optional-send-violations=" << summary.optional_send_contract_violation_sites
+      << ";keypath-violations=" << summary.typed_keypath_contract_violation_sites;
+  summary.replay_key = out.str();
+  return summary;
 }
 
 static void CollectAssignedIdentifiers(const std::vector<std::unique_ptr<Stmt>> &statements,

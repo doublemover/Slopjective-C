@@ -9250,6 +9250,8 @@ class Objc3Parser {
         if (clauses.empty()) {
           return nullptr;
         }
+        stmt->if_stmt->optional_binding_surface_enabled = true;
+        stmt->if_stmt->optional_binding_clause_count = clauses.size();
         stmt->if_stmt->condition = std::make_unique<Expr>();
         stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
         stmt->if_stmt->condition->bool_value = true;
@@ -9327,12 +9329,26 @@ class Objc3Parser {
       if (clauses.empty()) {
         return nullptr;
       }
-      (void)clauses;
+      stmt->if_stmt->optional_binding_surface_enabled = true;
+      stmt->if_stmt->guard_binding_surface_enabled = true;
+      stmt->if_stmt->optional_binding_clause_count = clauses.size();
       stmt->if_stmt->condition = std::make_unique<Expr>();
       stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
       stmt->if_stmt->condition->bool_value = false;
       stmt->if_stmt->condition->line = stmt->line;
       stmt->if_stmt->condition->column = stmt->column;
+      for (auto &clause : clauses) {
+        auto synthetic = std::make_unique<Stmt>();
+        synthetic->kind = Stmt::Kind::Let;
+        synthetic->line = clause.line;
+        synthetic->column = clause.column;
+        synthetic->let_stmt = std::make_unique<LetStmt>();
+        synthetic->let_stmt->name = clause.name;
+        synthetic->let_stmt->line = clause.line;
+        synthetic->let_stmt->column = clause.column;
+        synthetic->let_stmt->value = std::move(clause.value);
+        stmt->if_stmt->then_body.push_back(std::move(synthetic));
+      }
       if (!Match(TokenKind::KwElse)) {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'else' after guard binding"));

@@ -1,0 +1,10 @@
+module optionalBindingNonObjcSourceFailClosed;
+
+fn main() -> i32 {
+  if let chosen = 1 {
+    let keep = chosen;
+    return 0;
+  } else {
+    return 1;
+  }
+}

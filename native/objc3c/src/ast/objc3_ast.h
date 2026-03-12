@@ -467,6 +467,9 @@ struct IfStmt {
   std::unique_ptr<Expr> condition;
   std::vector<std::unique_ptr<Stmt>> then_body;
   std::vector<std::unique_ptr<Stmt>> else_body;
+  bool optional_binding_surface_enabled = false;
+  bool guard_binding_surface_enabled = false;
+  std::size_t optional_binding_clause_count = 0;
   unsigned line = 1;
   unsigned column = 1;
 };

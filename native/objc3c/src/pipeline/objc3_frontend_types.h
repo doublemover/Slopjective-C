@@ -1239,6 +1239,12 @@ inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
     "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
     "optional-member-access-remains-fail-closed-until-later-m265-issues";
+inline constexpr const char *kObjc3Part3TypeSemanticModelContractId =
+    "objc3c-part3-type-semantic-model/m265-b001-v1";
+inline constexpr const char *kObjc3Part3TypeSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
+inline constexpr const char *kObjc3Part3TypeSemanticModelCoreRule =
+    "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
 
 struct Objc3FrontendPart3TypeSourceClosureSummary {
   std::string contract_id = kObjc3Part3TypeSourceClosureContractId;

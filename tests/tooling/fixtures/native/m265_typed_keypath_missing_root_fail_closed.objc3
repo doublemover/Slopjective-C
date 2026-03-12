@@ -1,0 +1,6 @@
+module typedKeypathMissingRootFailClosed;
+
+fn main() -> i32 {
+  let path = @keypath(missingRoot, title);
+  return 0;
+}

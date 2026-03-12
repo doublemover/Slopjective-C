@@ -335,7 +335,7 @@ def main(argv: Sequence[str]) -> int:
             SnippetCheck("M265-A002-AM-02", "Only optional-member access written as `?.` remains fail-closed"),
         ],
         SPEC_ATTR: [
-            SnippetCheck("M265-A002-ATTR-01", "Current implementation status (`M265-A002`):"),
+            SnippetCheck("M265-A002-ATTR-01", "Current implementation status (`M265-B001`):"),
             SnippetCheck("M265-A002-ATTR-02", "nil-coalescing `??` is admitted as a parser-owned source form"),
             SnippetCheck("M265-A002-ATTR-03", "optional-member access `?.` is still fail-closed"),
         ],

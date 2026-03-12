@@ -12,6 +12,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                                                 std::vector<std::string> &diagnostics);
 Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
 bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);
+Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
+    const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
+    std::size_t max_message_send_args);
 Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const Objc3ParsedProgram &program);
 Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3SemanticIntegrationSurface &surface);
 void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,

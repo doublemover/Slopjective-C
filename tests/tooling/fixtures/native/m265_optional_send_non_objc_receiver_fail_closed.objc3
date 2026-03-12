@@ -1,0 +1,7 @@
+module optionalSendNonObjcReceiverFailClosed;
+
+fn main() -> i32 {
+  let value = 1;
+  let sent = [value? description];
+  return 0;
+}

@@ -280,6 +280,29 @@ struct Objc3GenericMetadataAbiSummary {
   bool deterministic = true;
 };
 
+struct Objc3Part3TypeSemanticModelSummary {
+  std::string contract_id = "objc3c-part3-type-semantic-model/m265-b001-v1";
+  std::string surface_path =
+      "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
+  std::string semantic_model =
+      "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
+  std::size_t optional_binding_sites = 0;
+  std::size_t optional_binding_clause_sites = 0;
+  std::size_t guard_binding_sites = 0;
+  std::size_t optional_send_sites = 0;
+  std::size_t nil_coalescing_sites = 0;
+  std::size_t typed_keypath_literal_sites = 0;
+  std::size_t typed_keypath_self_root_sites = 0;
+  std::size_t generic_erasure_semantic_sites = 0;
+  std::size_t nullability_semantic_sites = 0;
+  std::size_t optional_binding_contract_violation_sites = 0;
+  std::size_t optional_send_contract_violation_sites = 0;
+  std::size_t typed_keypath_contract_violation_sites = 0;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+};
+
 struct Objc3ModuleImportGraphSummary {
   std::size_t module_import_graph_sites = 0;
   std::size_t import_edge_candidate_sites = 0;

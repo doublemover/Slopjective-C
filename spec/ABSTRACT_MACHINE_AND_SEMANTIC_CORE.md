@@ -23,8 +23,14 @@ Current implementation note:
   nullability/generic suffix carriers as source-level frontend behavior.
 - The frontend now also admits parser-owned optional binding, optional-send,
   nil-coalescing, and typed key-path source forms.
+- Lane B now publishes the first sema-owned Part 3 packet covering optional
+  bindings, optional sends, generic-erasure/nullability semantic counts, and
+  typed key-path legality.
+- Optional sends fail closed for non-ObjC-reference receivers, and typed
+  key-path roots fail closed unless they resolve to `self` or an in-scope
+  identifier.
 - Only optional-member access written as `?.` remains fail-closed at the
-  current lane-A boundary.
+  current boundary.
 - Runnable optional flow semantics, truthful binding flow after `guard let`,
   and executable key-path behavior remain future work.
 
