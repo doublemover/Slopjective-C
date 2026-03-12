@@ -65,6 +65,19 @@ Current Part 5 cleanup/unwind runtime note:
   early return, and nested-scope return unwind without widening a public
   cleanup/unwind runtime ABI
 
+Current Part 5 execution-gate note:
+
+- `M266-E001` freezes one integrated executable gate for the currently
+  supported Part 5 control-flow slice
+- the gate consumes the emitted manifest/IR/object triplet and the
+  `M266-A002` / `M266-B003` / `M266-C003` / `M266-D002` proof chain rather
+  than inventing a separate synthetic reporting path
+- current gate coverage is limited to boolean-clause `guard`, supported
+  exhaustive statement-form `match`, and lexical `defer` cleanup execution on
+  ordinary exit and return unwind
+- expression-form `match`, guarded patterns, type-test patterns, and a public
+  cleanup/unwind runtime ABI remain deferred
+
 Current Part 5 exhaustiveness note:
 
 - admitted `match` statements must now be exhaustive for the supported surface

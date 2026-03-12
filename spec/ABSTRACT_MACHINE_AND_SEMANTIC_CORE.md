@@ -431,6 +431,20 @@ M266-D001 runtime/toolchain note:
   - the private autoreleasepool push/pop and memory-state snapshot hooks that remain the runtime-owned cleanup carrier
 - `M266-D002` now widens that runnable execution surface across ordinary lexical exit, guard-mediated early return, and nested-scope return unwind while keeping the runtime-owned cleanup carrier private
 
+M266-E001 execution gate note:
+
+- `M266-E001` freezes the currently runnable Part 5 claim as one integrated
+  executable gate rather than a parser-only or metadata-only assertion
+- the gate consumes the emitted manifest/IR/object triplet plus the
+  `M266-A002` / `M266-B003` / `M266-C003` / `M266-D002` proof chain
+- the runnable slice is intentionally narrow:
+  - boolean-clause `guard`
+  - supported exhaustive statement-form `match`
+  - lexical `defer` cleanup execution on ordinary exit and return unwind
+- expression-form `match`, guarded patterns, type-test patterns, public
+  cleanup/unwind ABI, and broader result-payload runtime semantics remain out
+  of scope until later milestones
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

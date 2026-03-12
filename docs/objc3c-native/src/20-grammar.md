@@ -450,6 +450,31 @@ Recommended runtime contract check:
 
 - `python scripts/check_m266_d001_cleanup_and_unwind_integration_contract_and_architecture_freeze.py`
 
+## M266 control-flow execution gate (E001)
+
+`objc3c-part5-control-flow-execution-gate/m266-e001-v1`
+
+Lane E now freezes one integrated executable claim for the currently runnable
+Part 5 control-flow slice. The gate consumes the existing `A002`, `B003`,
+`C003`, and `D002` evidence chain plus one integrated native happy-path probe
+instead of widening the language with a synthetic closeout matrix.
+
+- supported runnable slice:
+  - boolean-clause `guard` short-circuit with exiting `else`
+  - statement-form `match` over the currently supported exhaustive forms
+  - lexical `defer` registration with LIFO cleanup execution on ordinary exit
+    and return unwind
+- canonical operator proof remains the emitted manifest/IR/object triplet plus
+  the private runtime cleanup carrier already proven by `M266-D002`
+- explicit non-goals remain:
+  - expression-form `match`
+  - guarded patterns using `where`
+  - type-test patterns
+  - a public cleanup/unwind runtime ABI
+  - result-payload runtime ABI beyond the current fail-closed lowering
+    boundary
+- `M266-E002` is the next issue
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member

@@ -24,6 +24,10 @@
 struct objc3c_frontend_context {
   std::string last_error;
   std::string diagnostics_path;
+  // M266-E001 control-flow execution gate anchor: the C frontend bridge must
+  // keep surfacing manifest/IR/object publication paths unchanged so lane-E
+  // can validate the same native artifact triplet without a synthetic proof
+  // channel.
   std::string manifest_path;
   std::string runtime_metadata_binary_path;
   std::string ir_path;

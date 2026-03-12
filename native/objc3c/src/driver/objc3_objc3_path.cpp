@@ -122,6 +122,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                               artifacts.stage_diagnostics,
                               artifacts.post_pipeline_diagnostics);
     if (!artifacts.manifest_json.empty()) {
+      // M266-E001 control-flow execution gate anchor: lane-E consumes the
+      // emitted manifest/IR/object triplet from this native CLI path as the
+      // truthful integrated proof surface for the currently runnable Part 5
+      // slice.
       // M251-C001 freeze: manifest emission remains the authoritative published
       // metadata-section ABI surface until later object-section emission lands.
       // M251-C002 scaffold: manifest emission mirrors the live runtime-metadata
