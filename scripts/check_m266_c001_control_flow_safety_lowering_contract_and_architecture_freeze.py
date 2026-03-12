@@ -323,9 +323,11 @@ def main(argv: Sequence[str]) -> int:
     summary = {
         "mode": MODE,
         "contract_id": CONTRACT_ID,
+        "ok": not failures,
         "checks_total": checks_total,
         "checks_passed": checks_passed,
         "checks_failed": checks_total - checks_passed,
+        "dynamic_probes_executed": not args.skip_dynamic_probes,
         "failures": [failure.__dict__ for failure in failures],
         "dynamic": dynamic,
     }
