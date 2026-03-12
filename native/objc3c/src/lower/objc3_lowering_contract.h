@@ -1278,6 +1278,8 @@ inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringLaneC
     "m261-block-escape-runtime-hook-lowering-v1";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringLaneContract =
     "m265-part3-optional-keypath-lowering-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringLaneContract =
+    "m266-part5-control-flow-safety-lowering-v1";
 inline constexpr const char *kObjc3LightweightGenericsConstraintLoweringLaneContract =
     "m171-lightweight-generics-constraint-lowering-v1";
 inline constexpr const char *kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract =
@@ -1730,6 +1732,22 @@ struct Objc3Part3OptionalKeypathLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part5ControlFlowSafetyLoweringContract {
+  std::size_t guard_statement_sites = 0;
+  std::size_t guard_clause_sites = 0;
+  std::size_t match_statement_sites = 0;
+  std::size_t defer_statement_sites = 0;
+  std::size_t live_guard_short_circuit_sites = 0;
+  std::size_t live_match_dispatch_sites = 0;
+  std::size_t live_defer_cleanup_sites = 0;
+  std::size_t fail_closed_guard_short_circuit_sites = 0;
+  std::size_t fail_closed_match_dispatch_sites = 0;
+  std::size_t fail_closed_defer_cleanup_sites = 0;
+  std::size_t deterministic_fail_closed_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3LightweightGenericsConstraintLoweringContract {
   std::size_t generic_constraint_sites = 0;
   std::size_t generic_suffix_sites = 0;
@@ -2057,6 +2075,11 @@ std::string Objc3RunnableBlockExecutionMatrixSummary();
 // execution remains a later runtime milestone.
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringContractId =
     "objc3c-part3-optional-keypath-lowering/m265-c001-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringContractId =
+    "objc3c-part5-control-flow-safety-lowering/m266-c001-v1";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part5_control_flow_lowering_contract";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringOptionalModel =
     "optional-bindings-sends-optional-member-access-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringTypedKeypathModel =
@@ -2065,6 +2088,16 @@ inline constexpr const char *kObjc3Part3OptionalKeypathLoweringAuthorityModel =
     "part3-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringFailClosedModel =
     "native-lowering-fails-closed-on-lowering-contract-drift-and-on-semantically-unsupported-typed-keypath-shapes";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringGuardModel =
+    "frontend-and-sema-admit-guard-clauses-while-native-lowering-remains-explicitly-fail-closed";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringMatchModel =
+    "frontend-and-sema-admit-statement-match-exhaustiveness-while-native-lowering-remains-explicitly-fail-closed";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringDeferModel =
+    "source-only-defer-legality-is-sema-owned-while-native-cleanup-lowering-remains-explicitly-fail-closed";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringAuthorityModel =
+    "part5-source-closure-plus-part5-semantic-model-own-the-current-lowering-boundary";
+inline constexpr const char *kObjc3Part5ControlFlowSafetyLoweringFailClosedModel =
+    "native-ir-emission-fails-closed-with-o3l300-on-unlowered-guard-match-and-defer-control-flow-sites";
 inline constexpr const char *kObjc3Part3OptionalKeypathRuntimeHelperContractId =
     "objc3c-part3-optional-keypath-runtime-helper-contract/m265-d001-v1";
 inline constexpr const char
@@ -2081,6 +2114,7 @@ inline constexpr const char
     *kObjc3Part3OptionalKeypathRuntimeHelperDiagnosticModel =
         "unsupported-typed-keypath-shapes-and-non-objc-optional-member-access-fail-closed-before-runtime";
 std::string Objc3Part3OptionalKeypathLoweringSummary();
+std::string Objc3Part5ControlFlowSafetyLoweringSummary();
 std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary();
 std::string Objc3ArcSourceModeBoundarySummary();
 std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);
@@ -2209,6 +2243,10 @@ bool IsValidObjc3Part3OptionalKeypathLoweringContract(
     const Objc3Part3OptionalKeypathLoweringContract &contract);
 std::string Objc3Part3OptionalKeypathLoweringReplayKey(
     const Objc3Part3OptionalKeypathLoweringContract &contract);
+bool IsValidObjc3Part5ControlFlowSafetyLoweringContract(
+    const Objc3Part5ControlFlowSafetyLoweringContract &contract);
+std::string Objc3Part5ControlFlowSafetyLoweringReplayKey(
+    const Objc3Part5ControlFlowSafetyLoweringContract &contract);
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
     const Objc3LightweightGenericsConstraintLoweringContract &contract);
 std::string Objc3LightweightGenericsConstraintLoweringReplayKey(

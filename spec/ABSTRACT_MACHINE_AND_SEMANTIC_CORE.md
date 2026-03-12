@@ -412,6 +412,11 @@ M266-B003 implementation note:
 - source-only defer { ... } statements now contribute live sema cleanup-order accounting and deterministic defer-body non-local-exit diagnostics.
 - runnable defer lowering/runtime execution remains deferred to later lane-C/lane-D work.
 
+M266-C001 lowering note:
+
+- `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract` now freezes the truthful lowering boundary for admitted Part 5 control-flow constructs.
+- `guard`, statement-form `match`, and source-only `defer` remain frontend/sema-owned today.
+- native LLVM lowering still fail-closes these surfaces with deterministic `O3L300` diagnostics until later runnable lowering/runtime work lands.
 
 M266-B002 implementation note:
 

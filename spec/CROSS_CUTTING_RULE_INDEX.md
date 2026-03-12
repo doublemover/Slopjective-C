@@ -37,6 +37,15 @@ Current Part 5 defer note:
 - runnable `defer` lowering/runtime execution remains deferred to later M266
   work.
 
+Current Part 5 lowering note:
+
+- `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`
+  now records the truthful native-lowering boundary.
+- admitted `guard`, statement-form `match`, and source-only `defer` sites
+  remain fail-closed in native LLVM lowering today.
+- current fail-closed lowering probes terminate deterministically with
+  `O3L300`.
+
 Current Part 5 exhaustiveness note:
 
 - admitted `match` statements must now be exhaustive for the supported surface

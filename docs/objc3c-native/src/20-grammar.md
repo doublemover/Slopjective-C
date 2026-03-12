@@ -384,7 +384,7 @@ Recommended frontend contract check:
 
 Recommended lowering contract check:
 
-- `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`
+- `python scripts/check_m266_c001_control_flow_safety_lowering_contract_and_architecture_freeze.py`
 
 ## M266 control-flow semantic model
 
@@ -400,9 +400,19 @@ at `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`.
   - live bool/result-case exhaustiveness plus catch-all exhaustiveness
   - `break` / `continue` legality restrictions
 - still deferred today:
-  - `defer` cleanup ordering semantics
-  - `defer`-mediated non-local exit semantics
+  - runnable guard short-circuit lowering
+  - runnable statement-form `match` dispatch lowering
+  - runnable `defer` cleanup lowering/runtime execution
   - result payload typing beyond the current binding-scope surface
+
+M266-C001 lowering note:
+
+- the frontend now publishes `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`
+- this packet truthfully freezes the current lowering boundary:
+  - `guard` is admitted in frontend/sema and remains fail-closed in native IR lowering
+  - statement-form `match` is admitted in frontend/sema and remains fail-closed in native IR lowering
+  - source-only `defer { ... }` is admitted in frontend/sema and remains fail-closed in native IR lowering
+- current native fail-closed probes terminate with deterministic `O3L300` lowering diagnostics instead of silently widening the runnable surface
 
 Recommended semantic contract check:
 

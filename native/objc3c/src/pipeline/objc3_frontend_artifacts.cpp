@@ -43,6 +43,10 @@ inline constexpr const char
     *kObjc3Part3OptionalKeypathLoweringSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part3_optional_keypath_lowering_contract";
+inline constexpr const char
+    *kObjc3Part5ControlFlowSafetyLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part5_control_flow_safety_lowering_contract";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -556,6 +560,68 @@ std::string BuildPart5ControlFlowSemanticModelSummaryJson(
       << EscapeJsonString(summary.failure_reason)
       << "\""
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildPart5ControlFlowSafetyLoweringContractJson(
+    const Objc3Part5ControlFlowSafetyLoweringContract &contract,
+    const Objc3Part5ControlFlowSemanticModelSummary &semantic_summary,
+    const std::string &semantic_summary_replay_key,
+    const std::string &replay_key) {
+  std::ostringstream out;
+  const bool source_semantic_model_ready =
+      semantic_summary.deterministic &&
+      semantic_summary.ready_for_lowering_and_runtime;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringSurfacePath)
+      << "\",\"source_semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"guard_model\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringGuardModel)
+      << "\",\"match_model\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringMatchModel)
+      << "\",\"defer_model\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringDeferModel)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringAuthorityModel)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringFailClosedModel)
+      << "\",\"guard_statement_sites\":"
+      << contract.guard_statement_sites
+      << ",\"guard_clause_sites\":" << contract.guard_clause_sites
+      << ",\"match_statement_sites\":" << contract.match_statement_sites
+      << ",\"defer_statement_sites\":" << contract.defer_statement_sites
+      << ",\"live_guard_short_circuit_sites\":"
+      << contract.live_guard_short_circuit_sites
+      << ",\"live_match_dispatch_sites\":"
+      << contract.live_match_dispatch_sites
+      << ",\"live_defer_cleanup_sites\":"
+      << contract.live_defer_cleanup_sites
+      << ",\"fail_closed_guard_short_circuit_sites\":"
+      << contract.fail_closed_guard_short_circuit_sites
+      << ",\"fail_closed_match_dispatch_sites\":"
+      << contract.fail_closed_match_dispatch_sites
+      << ",\"fail_closed_defer_cleanup_sites\":"
+      << contract.fail_closed_defer_cleanup_sites
+      << ",\"deterministic_fail_closed_sites\":"
+      << contract.deterministic_fail_closed_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"fail_closed\":true"
+      << ",\"source_semantic_model_ready\":"
+      << (source_semantic_model_ready ? "true" : "false")
+      << ",\"ready_for_native_guard_lowering\":false"
+      << ",\"ready_for_native_match_lowering\":false"
+      << ",\"ready_for_native_defer_lowering\":false"
+      << ",\"semantic_summary_replay_key\":\""
+      << EscapeJsonString(semantic_summary_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
       << "\"}";
   return out.str();
 }
@@ -8654,6 +8720,32 @@ BuildPart3OptionalKeypathLoweringContract(
   return contract;
 }
 
+Objc3Part5ControlFlowSafetyLoweringContract
+BuildPart5ControlFlowSafetyLoweringContract(
+    const Objc3Part5ControlFlowSemanticModelSummary &summary) {
+  Objc3Part5ControlFlowSafetyLoweringContract contract;
+  contract.guard_statement_sites = summary.guard_exit_enforcement_sites;
+  contract.guard_clause_sites = summary.guard_binding_clause_semantic_sites +
+                                summary.guard_condition_clause_semantic_sites;
+  contract.match_statement_sites = summary.match_statement_semantic_sites;
+  contract.defer_statement_sites = summary.defer_statement_semantic_sites;
+  contract.live_guard_short_circuit_sites = 0;
+  contract.live_match_dispatch_sites = 0;
+  contract.live_defer_cleanup_sites = 0;
+  contract.fail_closed_guard_short_circuit_sites =
+      contract.guard_statement_sites;
+  contract.fail_closed_match_dispatch_sites = contract.match_statement_sites;
+  contract.fail_closed_defer_cleanup_sites = contract.defer_statement_sites;
+  contract.deterministic_fail_closed_sites =
+      contract.fail_closed_guard_short_circuit_sites +
+      contract.fail_closed_match_dispatch_sites +
+      contract.fail_closed_defer_cleanup_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic = summary.deterministic &&
+                           summary.ready_for_lowering_and_runtime;
+  return contract;
+}
+
 Objc3LightweightGenericsConstraintLoweringContract BuildLightweightGenericsConstraintLoweringContract(
     const Objc3SemaParityContractSurface &sema_parity_surface) {
   Objc3LightweightGenericsConstraintLoweringContract contract;
@@ -9827,6 +9919,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part3_optional_keypath_lowering_replay_key =
       Objc3Part3OptionalKeypathLoweringReplayKey(
           part3_optional_keypath_lowering_contract);
+  const Objc3Part5ControlFlowSafetyLoweringContract
+      part5_control_flow_safety_lowering_contract =
+          BuildPart5ControlFlowSafetyLoweringContract(
+              part5_control_flow_semantic_model_summary);
+  if (!IsValidObjc3Part5ControlFlowSafetyLoweringContract(
+          part5_control_flow_safety_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid Part 5 control-flow safety lowering contract");
+  }
+  const std::string part5_control_flow_safety_lowering_replay_key =
+      Objc3Part5ControlFlowSafetyLoweringReplayKey(
+          part5_control_flow_safety_lowering_contract);
   const Objc3SuperDispatchMethodFamilyContract super_dispatch_method_family_contract =
       BuildSuperDispatchMethodFamilyContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3SuperDispatchMethodFamilyContract(super_dispatch_method_family_contract)) {
@@ -13800,6 +13905,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part5_control_flow_semantic_model\":"
            << BuildPart5ControlFlowSemanticModelSummaryJson(
                   part5_control_flow_semantic_model_summary)
+           << ",\"objc_part5_control_flow_safety_lowering_contract\":"
+           << BuildPart5ControlFlowSafetyLoweringContractJson(
+                  part5_control_flow_safety_lowering_contract,
+                  part5_control_flow_semantic_model_summary,
+                  part5_control_flow_semantic_model_summary.replay_key,
+                  part5_control_flow_safety_lowering_replay_key)
            << ",\"objc_part3_type_semantic_model\":"
            << BuildPart3TypeSemanticModelSummaryJson(
                   part3_type_semantic_model_summary)
@@ -14676,6 +14787,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     dispatch_abi_marshalling_replay_key,
                     nil_receiver_semantics_foldability_replay_key,
                     part3_optional_keypath_lowering_replay_key)
+             << ",\"objc_part5_control_flow_safety_lowering_contract\":"
+            << BuildPart5ControlFlowSafetyLoweringContractJson(
+                  part5_control_flow_safety_lowering_contract,
+                  part5_control_flow_semantic_model_summary,
+                  part5_control_flow_semantic_model_summary.replay_key,
+                  part5_control_flow_safety_lowering_replay_key)
             // M265-D001 runtime-helper freeze anchor: lane-D publishes one
             // canonical runtime/helper boundary packet above the live lowering
             // contract and the runtime link wiring surface while full key-path
@@ -15018,6 +15135,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"lane_contract\":\"" << kObjc3NilReceiverSemanticsFoldabilityLaneContract
            << "\",\"deterministic_handoff\":"
            << (nil_receiver_semantics_foldability_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_part5_control_flow_safety\":{\"replay_key\":\""
+           << part5_control_flow_safety_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3Part5ControlFlowSafetyLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (part5_control_flow_safety_lowering_contract.deterministic
+                   ? "true"
+                   : "false")
            << "},\n";
   manifest << "  \"lowering_super_dispatch_method_family\":{\"replay_key\":\""
            << super_dispatch_method_family_replay_key
@@ -17752,4 +17878,3 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   return bundle;
 }
-

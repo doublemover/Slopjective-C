@@ -1208,6 +1208,23 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
   return out.str();
 }
 
+std::string Objc3Part5ControlFlowSafetyLoweringSummary() {
+  std::ostringstream out;
+  out << "contract_id=" << kObjc3Part5ControlFlowSafetyLoweringContractId
+      << ";surface_path="
+      << kObjc3Part5ControlFlowSafetyLoweringSurfacePath
+      << ";guard_model=" << kObjc3Part5ControlFlowSafetyLoweringGuardModel
+      << ";match_model=" << kObjc3Part5ControlFlowSafetyLoweringMatchModel
+      << ";defer_model=" << kObjc3Part5ControlFlowSafetyLoweringDeferModel
+      << ";authority_model="
+      << kObjc3Part5ControlFlowSafetyLoweringAuthorityModel
+      << ";fail_closed_model="
+      << kObjc3Part5ControlFlowSafetyLoweringFailClosedModel
+      << ";lane_contract="
+      << kObjc3Part5ControlFlowSafetyLoweringLaneContract;
+  return out.str();
+}
+
 std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
   std::ostringstream out;
   // M265-D002 live-optional-send-and-keypath-runtime-support anchor: optional
@@ -3108,6 +3125,76 @@ std::string Objc3Part3OptionalKeypathLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
          kObjc3Part3OptionalKeypathLoweringLaneContract;
+}
+
+bool IsValidObjc3Part5ControlFlowSafetyLoweringContract(
+    const Objc3Part5ControlFlowSafetyLoweringContract &contract) {
+  if (contract.guard_clause_sites < contract.guard_statement_sites) {
+    return false;
+  }
+  if (contract.live_guard_short_circuit_sites +
+          contract.fail_closed_guard_short_circuit_sites !=
+      contract.guard_statement_sites) {
+    return false;
+  }
+  if (contract.live_match_dispatch_sites +
+          contract.fail_closed_match_dispatch_sites !=
+      contract.match_statement_sites) {
+    return false;
+  }
+  if (contract.live_defer_cleanup_sites +
+          contract.fail_closed_defer_cleanup_sites !=
+      contract.defer_statement_sites) {
+    return false;
+  }
+  if (contract.deterministic_fail_closed_sites !=
+      contract.fail_closed_guard_short_circuit_sites +
+          contract.fail_closed_match_dispatch_sites +
+          contract.fail_closed_defer_cleanup_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites >
+      contract.live_guard_short_circuit_sites +
+          contract.live_match_dispatch_sites +
+          contract.live_defer_cleanup_sites +
+          contract.deterministic_fail_closed_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part5ControlFlowSafetyLoweringReplayKey(
+    const Objc3Part5ControlFlowSafetyLoweringContract &contract) {
+  return std::string("guard_statement_sites=") +
+         std::to_string(contract.guard_statement_sites) +
+         ";guard_clause_sites=" +
+         std::to_string(contract.guard_clause_sites) +
+         ";match_statement_sites=" +
+         std::to_string(contract.match_statement_sites) +
+         ";defer_statement_sites=" +
+         std::to_string(contract.defer_statement_sites) +
+         ";live_guard_short_circuit_sites=" +
+         std::to_string(contract.live_guard_short_circuit_sites) +
+         ";live_match_dispatch_sites=" +
+         std::to_string(contract.live_match_dispatch_sites) +
+         ";live_defer_cleanup_sites=" +
+         std::to_string(contract.live_defer_cleanup_sites) +
+         ";fail_closed_guard_short_circuit_sites=" +
+         std::to_string(contract.fail_closed_guard_short_circuit_sites) +
+         ";fail_closed_match_dispatch_sites=" +
+         std::to_string(contract.fail_closed_match_dispatch_sites) +
+         ";fail_closed_defer_cleanup_sites=" +
+         std::to_string(contract.fail_closed_defer_cleanup_sites) +
+         ";deterministic_fail_closed_sites=" +
+         std::to_string(contract.deterministic_fail_closed_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3Part5ControlFlowSafetyLoweringLaneContract;
 }
 
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(

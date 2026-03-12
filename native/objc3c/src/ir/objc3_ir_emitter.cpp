@@ -577,6 +577,12 @@ class Objc3IREmitter {
     }
     out << "; part3_optional_keypath_lowering = "
         << Objc3Part3OptionalKeypathLoweringSummary() << "\n";
+    // M266-C001 control-flow safety lowering freeze anchor: the frontend now
+    // publishes one lowering-owned packet for admitted Part 5 control-flow
+    // sites while native IR lowering still fails closed on guard/match/defer
+    // execution until later M266 lowering/runtime issues materialize it.
+    out << "; part5_control_flow_safety_lowering = "
+        << Objc3Part5ControlFlowSafetyLoweringSummary() << "\n";
     out << "; part3_optional_keypath_runtime_helper_contract = "
         << Objc3Part3OptionalKeypathRuntimeHelperContractSummary() << "\n";
     if (!frontend_metadata_.lowering_super_dispatch_method_family_replay_key.empty()) {
@@ -9080,6 +9086,11 @@ class Objc3IREmitter {
     if (immediate_it != ctx.immediate_identifiers.end()) {
       return std::to_string(immediate_it->second);
     }
+    // M266-C001 control-flow safety lowering freeze anchor: guard/match
+    // bindings and source-only defer sites are admitted upstream in
+    // frontend/sema summaries, but native lowering still fails closed here
+    // until a later Part 5 lowering/runtime tranche materializes executable
+    // control-flow artifacts.
     return EmitUnsupportedI32Value("unresolved identifier '" + name + "' during IR lowering");
   }
 
@@ -11589,4 +11600,3 @@ bool EmitObjc3IRText(const Objc3Program &program,
   Objc3IREmitter emitter(program, lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }
-

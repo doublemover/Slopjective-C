@@ -38,7 +38,16 @@ Current-state note:
   cleanup ordering remains an explicit deferred truth.
 - `M266-B002` upgrades that packet with live exhaustiveness semantics for the
   admitted `match` slice so bool/result-case completeness and catch-all
-  completeness are enforced in sema rather than described only in contracts.`n- `M266-B003` extends that same packet with source-only `defer` legality, LIFO cleanup-order accounting, and deterministic defer-body non-local-exit diagnostics while runnable defer lowering remains deferred to later lane-C/lane-D work.
+  completeness are enforced in sema rather than described only in contracts.
+- `M266-B003` extends that same packet with source-only `defer` legality, LIFO
+  cleanup-order accounting, and deterministic defer-body non-local-exit
+  diagnostics while runnable defer lowering remains deferred to later lane-C/
+  lane-D work.
+- `M266-C001` adds one lowering-owned packet
+  (`frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`)
+  so the native pipeline records the truthful fail-closed boundary for admitted
+  `guard`, statement-form `match`, and source-only `defer` surfaces until later
+  runnable lowering/runtime work materializes executable control-flow artifacts.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.
