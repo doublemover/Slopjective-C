@@ -504,3 +504,12 @@ The lane-E freeze for Part 3 accepts only the currently implemented runnable
 slice. It binds the supported optional-binding, optional-send, nil-coalescing,
 generic-preservation, and typed key-path facts into one executable gate.
 `M265-E002` is the first issue allowed to broaden this gate into a runnable matrix.
+
+## M265 runnable type-surface closeout matrix (E002)
+
+`objc3c-runnable-type-surface-closeout/m265-e002-v1`
+
+`M265-E002` closes only the currently supported Part 3 slice. Optionals and
+validated typed key paths now have real runtime rows. Pragmatic generics stay
+truthful through preserved metadata/replay evidence because they do not claim a
+separate runtime behavior. `M266-A001` is the next issue after `M265` closeout.

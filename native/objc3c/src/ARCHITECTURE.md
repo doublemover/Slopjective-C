@@ -8822,6 +8822,16 @@ claiming a new public ABI.
   cross-module proofs as one integrated executable claim
 - `M265-E002` is the next issue.
 
+## M265 Runnable Type-Surface Closeout Matrix (E002)
+
+`M265-E002` closes `M265` without widening the supported Part 3 slice.
+
+- runtime rows prove optional-send short-circuiting, optional binding/refinement,
+  optional-member access, and validated typed key-path execution
+- pragmatic generics remain an erased surface, so the matrix represents them
+  through preserved metadata/replay evidence rather than a fake runtime row
+- the next issue is `M266-A001`
+
 ## M256 executable class/protocol/category source closure (A001)
 
 `M256-A001` freezes the first runnable object-model source boundary:

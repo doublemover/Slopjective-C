@@ -337,6 +337,21 @@ single integrated claim instead of treating the upstream `A002`/`B003`/`C003`/
   `llvm-direct` path.
 - `M265-E002` is the next issue.
 
+## M265 runnable optionals, generics, and key-path matrix (M265-E002)
+
+`objc3c-runnable-type-surface-closeout/m265-e002-v1`
+
+This closeout matrix proves the currently supported runnable Part 3 slice
+without widening it.
+
+- runtime rows cover optional-send short-circuiting, optional binding and
+  refinement flow, optional-member access, and validated typed key-path
+  execution
+- pragmatic generic annotations remain erased at runtime, so this matrix keeps
+  them truthful through a preserved metadata/replay row instead of inventing a
+  fake runtime behavior claim
+- `M266-A001` is the next issue after `M265` closeout
+
 Recommended lowering contract check:
 
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`

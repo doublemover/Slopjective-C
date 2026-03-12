@@ -34,6 +34,9 @@ struct objc3c_frontend_context {
 // keep surfacing manifest/IR/object publication paths so the lane-E gate can
 // validate the currently runnable Part 3 slice without inventing a parallel
 // proof channel.
+// M265-E002 runnable-type-surface closeout anchor: the milestone closeout
+// matrix relies on the same publication paths instead of creating a separate
+// synthetic reporting surface.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

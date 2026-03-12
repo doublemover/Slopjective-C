@@ -364,3 +364,16 @@ and cross-module preservation. The gate consumes the current `A002`, `B003`,
 stops publishing the currently supported runnable surface.
 
 This executable gate covers optional bindings, optional sends, nil coalescing, typed key-path artifacts, and cross-module preservation as one synchronized claim.
+
+## M265 runnable type-surface closeout matrix (E002)
+
+`objc3c-runnable-type-surface-closeout/m265-e002-v1`
+
+The milestone closeout matrix keeps the current Part 3 implementation truthful.
+Runnable rows cover optional-send short-circuiting, optional binding/refinement,
+optional-member access, and validated typed key-path execution. Pragmatic
+generic annotations remain represented through preserved metadata and replay
+evidence rather than a fabricated runtime behavior claim. `M266-A001` is the
+next issue after this closeout.
+
+Pragmatic generic annotations remain represented through preserved metadata and replay evidence rather than a fabricated runtime behavior claim.

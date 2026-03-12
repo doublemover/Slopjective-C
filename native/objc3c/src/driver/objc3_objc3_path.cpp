@@ -114,6 +114,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     // M265-E001 type-surface executable gate anchor: lane-E consumes the
     // emitted manifest/IR/object triplet as the canonical integrated proof for
     // the currently runnable optional/key-path slice.
+    // M265-E002 runnable-type-surface closeout anchor: the same emitted
+    // artifact triplet remains the source of truth for the milestone closeout
+    // matrix runtime rows and preserved generic replay evidence.
     WriteDiagnosticsArtifacts(cli_options.out_dir,
                               cli_options.emit_prefix,
                               artifacts.stage_diagnostics,
