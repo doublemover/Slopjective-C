@@ -352,6 +352,39 @@ is actually shipped today.
 
 ---
 
+## D-025: The M264 closeout publishes one release/runtime claim matrix {#decisions-d-025}
+
+**Decision:** The `M264` closeout shall publish one compact machine-readable and
+human-readable release/runtime claim matrix derived from the already-landed
+`A002`, `B003`, `C002`, `D002`, and `E001` evidence plus live native/frontend
+operator probes.
+
+That matrix currently permits only:
+
+- claimed profile `core`
+- compatibility modes `canonical|legacy`
+- migration assist
+- JSON conformance emit/validate operations
+- native CLI report/publication/validation evidence
+- frontend C API report/publication evidence
+
+It explicitly does not permit:
+
+- profile claims for `strict`, `strict-concurrency`, or `strict-system`
+- YAML conformance publication/validation
+- feature-macro publication
+- optional-feature claims for `throws`, `async-await`, `actors`, `blocks`, or
+  `arc`
+
+**Rationale:** The milestone needs one operator-facing release summary that is
+truthful about the actually runnable native subset and does not rely on readers
+to reconstruct the boundary from five prior issue summaries.
+
+**Spec impact:** [Part 12](#part-12) conformance publication semantics and
+[D](#d) module/runtime metadata documentation.
+
+---
+
 ## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
 
 **Decision:** Until the native toolchain ships a standalone textual interface

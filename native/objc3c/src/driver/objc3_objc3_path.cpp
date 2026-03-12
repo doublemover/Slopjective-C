@@ -175,6 +175,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     // M264-E001 versioning/conformance truth-gate anchor: lane-E freezes this
     // emitted lowered report plus the D001 publication sidecar and D002
     // validation mode as one core/json-only fail-closed operator surface.
+    // M264-E002 release/runtime-claim-matrix anchor: the published matrix must
+    // continue to consume this exact native CLI report/publication/validation
+    // surface instead of widening claims beyond the runnable core profile.
     if (cli_options.emit_objc3_conformance) {
       // D002 explicit operator parity: the native path already publishes the
       // JSON conformance sidecar by default, and this flag keeps that behavior

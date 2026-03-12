@@ -576,6 +576,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         // API path must continue to publish the same truthful lowered report
         // plus D001 publication sidecar that the native CLI consumes and the
         // D002 validation path checks.
+        // M264-E002 release/runtime-claim-matrix anchor: the milestone closeout
+        // matrix compares this frontend publication surface against the native
+        // CLI surface and must keep them equivalent for the runnable core
+        // profile.
         std::string conformance_publication_artifact_json;
         std::string conformance_publication_error;
         if (!TryBuildObjc3ConformanceReportPublicationArtifact(

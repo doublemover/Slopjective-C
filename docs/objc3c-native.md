@@ -12589,6 +12589,31 @@ The gate currently means:
 The gate is satisfied only if the A/B/C/D milestone packets remain aligned and
 the live native/frontend probes preserve that same boundary.
 
+## M264 release/runtime claim matrix (E002)
+
+`M264-E002` closes the milestone by publishing one compact release/runtime
+claim matrix that aligns the already-landed source, semantic, lowering,
+publication, validation, and lane-E gate proofs.
+
+- contract id
+  `objc3c-release-runtime-claim-matrix/m264-e002-v1`
+- published matrix outputs
+  - `tmp/reports/m264/M264-E002/release_runtime_claim_matrix.json`
+  - `tmp/reports/m264/M264-E002/release_runtime_claim_matrix.md`
+- matrix rows
+  - claimed profile remains `core`
+  - compatibility modes remain `canonical|legacy`
+  - migration assist remains live
+  - strict, strict-concurrency, and strict-system remain fail-closed and not
+    claimed
+  - feature-macro publication remains suppressed
+  - JSON remains the only runnable emit/validate format
+  - native CLI evidence remains report + publication + validation
+  - frontend C API evidence remains report + publication only
+- truthful boundary
+  - this is a milestone closeout matrix, not a new feature implementation lane
+  - the next issue is `M265-A001`
+
 ## Canonical interface and feature-macro truthfulness (M264-B003)
 
 `M264-B003` closes the remaining sema-owned truth gap around separate compilation.

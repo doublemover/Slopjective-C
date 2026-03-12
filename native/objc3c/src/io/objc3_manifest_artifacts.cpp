@@ -60,6 +60,9 @@ std::filesystem::path BuildConformanceValidationArtifactPath(
   // M264-E001 versioning/conformance truth-gate anchor: the validation
   // artifact is the canonical integrated operator-side summary of the emitted
   // report/publication pair.
+  // M264-E002 release/runtime-claim-matrix anchor: the release matrix consumes
+  // this stable validation artifact name when publishing the milestone closeout
+  // surface.
   return out_dir / (emit_prefix + ".objc3-conformance-validation.json");
 }
 

@@ -417,6 +417,36 @@ The lane-E gate for this milestone freezes one integrated truth boundary:
 - frontend C API publication remains equivalent to the native CLI lowered truth
   surface
 
+## M264 release/runtime claim matrix (implementation note)
+
+The milestone closes by publishing one compact release/runtime claim matrix that
+consumes the already-landed A002/B003/C002/D002/E001 evidence without widening
+the shipped surface.
+
+That closeout matrix must keep the current truth explicit:
+
+- claimed profile remains `core`
+- compatibility modes remain `canonical|legacy`
+- migration assist remains live
+- strict, strict-concurrency, and strict-system remain unclaimed and fail
+  closed
+- feature-macro publication remains suppressed
+- JSON remains the only runnable emit/validate format
+- native CLI evidence remains:
+  - `module.objc3-conformance-report.json`
+  - `module.objc3-conformance-publication.json`
+  - `module.objc3-conformance-validation.json`
+- frontend C API evidence remains:
+  - `module.objc3-conformance-report.json`
+  - `module.objc3-conformance-publication.json`
+
+The published matrix artifacts are:
+
+- `tmp/reports/m264/M264-E002/release_runtime_claim_matrix.json`
+- `tmp/reports/m264/M264-E002/release_runtime_claim_matrix.md`
+
+`M265-A001` is next.
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend
