@@ -125,6 +125,12 @@ A toolchain claiming **ObjC 3.0 v1 Strict System** shall:
 - [x] SPT-0035 **[CORE]** Preserve and record all “must preserve” metadata in [D Table A](#d-3-1). ([D.3.1](#d-3-1)) ([Issue #56](https://github.com/doublemover/Slopjective-C/issues/56)) Evidence: `tests/conformance/module_roundtrip/META-56-01.json`, `tests/conformance/module_roundtrip/META-56-02.json`. Validation: `tests/conformance/module_roundtrip/manifest.json` group `issue_56_metadata_preservation`.
 - [x] SPT-0036 **[STRICT]** Provide an interface verification mode that detects mismatch between compiled module metadata and emitted textual interface. ([Part 12](#part-12)) ([Issue #57](https://github.com/doublemover/Slopjective-C/issues/57)) Evidence: `tests/conformance/module_roundtrip/IFV-57-01.json`, `tests/conformance/module_roundtrip/IFV-57-02.json`. Validation: `tests/conformance/module_roundtrip/manifest.json` group `issue_57_interface_verification_mode`.
 
+Current native implementation note (`M264-B003`): canonical interface claims are
+published as an equivalent-only truth surface through
+`frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+while the standalone textual-interface payload remains
+`no-standalone-interface-payload-yet`.
+
 ### E.3.3 Type system: nullability defaults, optionals, generics, key paths {#e-3-3}
 
 - [x] SPT-0037 **[CORE]** Support nullability qualifiers and treat them as part of the type system in ObjC 3.0 mode. ([Part 3](#part-3)) ([Issue #58](https://github.com/doublemover/Slopjective-C/issues/58)) Evidence: `tests/conformance/semantic/TYP-58-01.json`, `tests/conformance/semantic/TYP-58-02.json`. Validation: `tests/conformance/semantic/manifest.json` group `issue_58_nullability_qualifiers`.
@@ -304,6 +310,25 @@ That packet must keep the semantic classification explicit:
 This is the semantic boundary later lowering/runtime/reporting lanes must
 consume when deciding what Objective-C 3 support can be truthfully claimed.
 
+## M264 canonical interface and feature-macro truthfulness (implementation note)
+
+The same semantic legality packet also owns the current separate-compilation
+truth boundary:
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+That packet must keep the current state explicit:
+
+- standalone textual interface payload mode remains
+  `no-standalone-interface-payload-yet`
+- future canonical interfaces and conformance reports must stay bounded to the
+  current runnable subset plus the already-downgraded source-only claims
+- feature-macro claim publication remains suppressed across those surfaces until
+  the corresponding executable/runtime-backed implementations exist
+
+This prevents the toolchain from implying a canonical interface or feature-macro
+surface that is not actually shipped today.
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend
@@ -312,8 +337,8 @@ accepts source syntax for features that are still not runnable end to end.
 For the current native subset, that means:
 
 - `throws`
-- `@autoreleasepool`
-- ARC ownership qualifiers on executable function/method signatures
+- ARC ownership-qualified parameters on executable function/method signatures
+- ARC ownership-qualified returns on executable function/method signatures
 
 Those accepted source surfaces must stop compilation before lowering/runtime
 handoff and emit deterministic diagnostics rather than allowing conformance

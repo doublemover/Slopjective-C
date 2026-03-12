@@ -4118,7 +4118,14 @@ struct Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary {
       kObjc3CompatibilityStrictnessClaimDowngradeModel;
   std::string rejection_model =
       kObjc3CompatibilityStrictnessClaimRejectionModel;
+  std::string canonical_interface_truth_model =
+      kObjc3CompatibilityStrictnessClaimCanonicalInterfaceTruthModel;
+  std::string separate_compilation_macro_truth_model =
+      kObjc3CompatibilityStrictnessClaimSeparateCompilationMacroTruthModel;
+  std::string canonical_interface_payload_mode =
+      kObjc3CompatibilityStrictnessClaimCanonicalInterfacePayloadMode;
   std::string effective_compatibility_mode = "canonical";
+  std::vector<std::string> suppressed_macro_claim_ids;
   bool migration_assist_enabled = false;
   std::size_t valid_compatibility_mode_count = 0;
   std::size_t live_selection_surface_count = 0;
@@ -4146,6 +4153,8 @@ struct Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary {
   bool live_unsupported_feature_source_rejection_landed = false;
   bool strictness_selection_rejection_semantics_landed = false;
   bool feature_macro_claim_suppression_semantics_landed = false;
+  bool canonical_interface_truth_semantics_landed = false;
+  bool separate_compilation_macro_truth_semantics_landed = false;
   bool selected_configuration_valid = false;
   bool selected_configuration_downgraded = false;
   bool selected_configuration_rejected = false;
@@ -4165,8 +4174,20 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          !summary.feature_claim_truth_surface_contract_id.empty() &&
          !summary.frontend_surface_path.empty() &&
          !summary.semantic_model.empty() && !summary.downgrade_model.empty() &&
-         !summary.rejection_model.empty() && compatibility_mode_valid &&
-         summary.fail_closed && summary.semantic_boundary_ready &&
+         !summary.rejection_model.empty() &&
+         !summary.canonical_interface_truth_model.empty() &&
+         !summary.separate_compilation_macro_truth_model.empty() &&
+         summary.canonical_interface_payload_mode ==
+             kObjc3CompatibilityStrictnessClaimCanonicalInterfacePayloadMode &&
+         compatibility_mode_valid && summary.fail_closed && summary.semantic_boundary_ready &&
+         summary.suppressed_macro_claim_ids.size() ==
+             kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount &&
+         summary.suppressed_macro_claim_ids[0] ==
+             kObjc3SuppressedMacroClaimStrictnessLevel &&
+         summary.suppressed_macro_claim_ids[1] ==
+             kObjc3SuppressedMacroClaimConcurrencyMode &&
+         summary.suppressed_macro_claim_ids[2] ==
+             kObjc3SuppressedMacroClaimConcurrencyStrict &&
          summary.valid_compatibility_mode_count ==
              kObjc3CompatibilityStrictnessClaimValidCompatibilityModeCount &&
          summary.live_selection_surface_count ==
@@ -4204,6 +4225,8 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          summary.live_unsupported_feature_source_rejection_landed &&
          summary.strictness_selection_rejection_semantics_landed &&
          summary.feature_macro_claim_suppression_semantics_landed &&
+         summary.canonical_interface_truth_semantics_landed &&
+         summary.separate_compilation_macro_truth_semantics_landed &&
          summary.selected_configuration_valid &&
          !summary.selected_configuration_downgraded &&
          !summary.selected_configuration_rejected &&

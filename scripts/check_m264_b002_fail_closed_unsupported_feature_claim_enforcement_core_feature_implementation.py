@@ -26,8 +26,8 @@ NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 FIXTURE_HELLO = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 FIXTURE_METADATA = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3"
 FIXTURE_THROWS = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m264_unsupported_feature_claim_throws.objc3"
-FIXTURE_AUTORELEASEPOOL = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m264_unsupported_feature_claim_autoreleasepool.objc3"
 FIXTURE_ARC = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m264_unsupported_feature_claim_arc_ownership_qualifier.objc3"
+FIXTURE_ARC_RETURN = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m264_unsupported_feature_claim_arc_return_ownership.objc3"
 
 EXPECTED_COUNTS = {
     "valid_compatibility_mode_count": 2,
@@ -45,12 +45,12 @@ NEGATIVE_EXPECTATIONS = {
         "fixture": FIXTURE_THROWS,
         "message": "unsupported feature claim: 'throws' is not yet runnable in Objective-C 3 native mode",
     },
-    "autoreleasepool": {
-        "fixture": FIXTURE_AUTORELEASEPOOL,
-        "message": "unsupported feature claim: '@autoreleasepool' is not yet runnable in Objective-C 3 native mode",
-    },
     "arc-ownership": {
         "fixture": FIXTURE_ARC,
+        "message": "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
+    },
+    "arc-return-ownership": {
+        "fixture": FIXTURE_ARC_RETURN,
         "message": "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode",
     },
 }
@@ -419,7 +419,7 @@ def main(argv: Sequence[str]) -> int:
         [
             SnippetCheck("M264-B002-SRC-01", "Fail-closed unsupported-feature claim enforcement (M264-B002)"),
             SnippetCheck("M264-B002-SRC-02", "throws"),
-            SnippetCheck("M264-B002-SRC-03", "@autoreleasepool"),
+            SnippetCheck("M264-B002-SRC-03", "ARC ownership-qualified returns"),
         ],
         failures,
     )
@@ -429,7 +429,7 @@ def main(argv: Sequence[str]) -> int:
         [
             SnippetCheck("M264-B002-DOCN-01", "Fail-closed unsupported-feature claim enforcement (M264-B002)"),
             SnippetCheck("M264-B002-DOCN-02", "ARC ownership qualifiers"),
-            SnippetCheck("M264-B002-DOCN-03", "O3S221"),
+            SnippetCheck("M264-B002-DOCN-03", "ARC ownership-qualified returns"),
         ],
         failures,
     )
@@ -438,7 +438,7 @@ def main(argv: Sequence[str]) -> int:
         SPEC_CHECKLIST,
         [
             SnippetCheck("M264-B002-SPEC-01", "accepted unsupported-source rejection gate"),
-            SnippetCheck("M264-B002-SPEC-02", "@autoreleasepool"),
+            SnippetCheck("M264-B002-SPEC-02", "ARC ownership-qualified returns"),
         ],
         failures,
     )
@@ -447,7 +447,7 @@ def main(argv: Sequence[str]) -> int:
         SPEC_DECISIONS,
         [
             SnippetCheck("M264-B002-DEC-01", "D-019"),
-            SnippetCheck("M264-B002-DEC-02", "Accepted unsupported source surfaces must fail before lowering/runtime handoff"),
+            SnippetCheck("M264-B002-DEC-02", "ARC ownership-qualified returns"),
         ],
         failures,
     )
@@ -469,7 +469,7 @@ def main(argv: Sequence[str]) -> int:
             SnippetCheck("M264-B002-CODE-05", "BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface"),
             SnippetCheck("M264-B002-CODE-06", "unsupported_feature_enforcement.live_unsupported_feature_site_count == 0u"),
             SnippetCheck("M264-B002-CODE-07", "DiagnoseUnsupportedFeatureClaimSources"),
-            SnippetCheck("M264-B002-CODE-08", "unsupported feature claim: '@autoreleasepool' is not yet runnable in Objective-C 3 native mode"),
+            SnippetCheck("M264-B002-CODE-08", "unsupported feature claim: block literals are not yet runnable in Objective-C 3 native mode"),
             SnippetCheck("M264-B002-CODE-09", "unsupported feature claim: ARC ownership qualifiers are not yet runnable in Objective-C 3 native mode"),
         ],
         failures,

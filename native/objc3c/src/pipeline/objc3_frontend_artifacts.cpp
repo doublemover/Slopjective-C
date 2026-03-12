@@ -2177,6 +2177,12 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";semantic_model=" << summary.semantic_model
       << ";downgrade_model=" << summary.downgrade_model
       << ";rejection_model=" << summary.rejection_model
+      << ";canonical_interface_truth_model="
+      << summary.canonical_interface_truth_model
+      << ";separate_compilation_macro_truth_model="
+      << summary.separate_compilation_macro_truth_model
+      << ";canonical_interface_payload_mode="
+      << summary.canonical_interface_payload_mode
       << ";compatibility_mode=" << summary.effective_compatibility_mode
       << ";migration_assist="
       << (summary.migration_assist_enabled ? "true" : "false")
@@ -2192,7 +2198,15 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsReplayKey(
       << summary.blocks_source_rejection_site_count
       << ";arc_source_rejections="
       << summary.arc_source_rejection_site_count
-      << ";semantic_boundary_replay_key="
+      << ";suppressed_macro_claim_ids=";
+  for (std::size_t index = 0; index < summary.suppressed_macro_claim_ids.size();
+       ++index) {
+    if (index > 0u) {
+      out << ",";
+    }
+    out << summary.suppressed_macro_claim_ids[index];
+  }
+  out << ";semantic_boundary_replay_key="
       << summary.semantic_boundary_replay_key;
   return out.str();
 }
@@ -2241,6 +2255,14 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.blocks_source_rejection_site_count;
     summary.arc_source_rejection_site_count =
         semantic_boundary.arc_source_rejection_site_count;
+    summary.canonical_interface_truth_model =
+        semantic_boundary.canonical_interface_truth_model;
+    summary.separate_compilation_macro_truth_model =
+        semantic_boundary.separate_compilation_macro_truth_model;
+    summary.canonical_interface_payload_mode =
+        semantic_boundary.canonical_interface_payload_mode;
+    summary.suppressed_macro_claim_ids =
+        semantic_boundary.suppressed_macro_claim_ids;
     summary.fail_closed = semantic_boundary.fail_closed;
     summary.compatibility_mode_semantics_landed =
         semantic_boundary.compatibility_mode_semantics_landed;
@@ -2256,6 +2278,10 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.strictness_selection_rejection_semantics_landed;
     summary.feature_macro_claim_suppression_semantics_landed =
         semantic_boundary.feature_macro_claim_suppression_semantics_landed;
+    summary.canonical_interface_truth_semantics_landed =
+        semantic_boundary.canonical_interface_truth_semantics_landed;
+    summary.separate_compilation_macro_truth_semantics_landed =
+        semantic_boundary.separate_compilation_macro_truth_semantics_landed;
     summary.selected_configuration_valid =
         semantic_boundary.selected_configuration_valid;
     summary.selected_configuration_downgraded =
@@ -2293,6 +2319,12 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << EscapeJsonString(summary.downgrade_model)
       << "\",\"rejection_model\":\""
       << EscapeJsonString(summary.rejection_model)
+      << "\",\"canonical_interface_truth_model\":\""
+      << EscapeJsonString(summary.canonical_interface_truth_model)
+      << "\",\"separate_compilation_macro_truth_model\":\""
+      << EscapeJsonString(summary.separate_compilation_macro_truth_model)
+      << "\",\"canonical_interface_payload_mode\":\""
+      << EscapeJsonString(summary.canonical_interface_payload_mode)
       << "\",\"effective_compatibility_mode\":\""
       << EscapeJsonString(summary.effective_compatibility_mode)
       << "\",\"migration_assist_enabled\":"
@@ -2325,6 +2357,8 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << summary.rejected_selection_surface_count
       << ",\"suppressed_macro_claim_count\":"
       << summary.suppressed_macro_claim_count
+      << ",\"suppressed_macro_claim_ids\":"
+      << BuildStringArrayJson(summary.suppressed_macro_claim_ids)
       << ",\"fail_closed\":"
       << (summary.fail_closed ? "true" : "false")
       << ",\"semantic_boundary_ready\":"
@@ -2348,6 +2382,12 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << ",\"feature_macro_claim_suppression_semantics_landed\":"
       << (summary.feature_macro_claim_suppression_semantics_landed ? "true"
                                                                    : "false")
+      << ",\"canonical_interface_truth_semantics_landed\":"
+      << (summary.canonical_interface_truth_semantics_landed ? "true"
+                                                             : "false")
+      << ",\"separate_compilation_macro_truth_semantics_landed\":"
+      << (summary.separate_compilation_macro_truth_semantics_landed ? "true"
+                                                                    : "false")
       << ",\"selected_configuration_valid\":"
       << (summary.selected_configuration_valid ? "true" : "false")
       << ",\"selected_configuration_downgraded\":"

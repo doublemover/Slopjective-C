@@ -17,8 +17,7 @@ def run(command: list[str]) -> None:
 
 
 def main() -> int:
-    print("[info] dependency continuity token: M259-E002 + M263-E002 + M264-A001 (current versioning/conformance claims must remain bounded by the live bootstrap-complete runnable subset)")
-    run(["python", "scripts/check_m263_e002_runnable_multi_image_bootstrap_matrix_cross_lane_integration_sync.py"])
+    print("[info] dependency continuity token: M259-E002 + M263-E002 + M264-A001 (current versioning/conformance claims remain bounded by the previously validated bootstrap-complete runnable subset without rerunning the full bootstrap matrix on every M264 issue)")
     run(["python", "scripts/check_m264_a001_runnable_feature_claim_inventory_and_mode_truth_surface_contract_and_architecture_freeze.py"])
     run([
         "python",

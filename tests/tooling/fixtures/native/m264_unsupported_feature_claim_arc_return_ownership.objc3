@@ -1,0 +1,9 @@
+module Probe;
+
+fn produce() -> __strong id {
+  return nil;
+}
+
+fn main() -> i32 {
+  return produce() == nil ? 0 : 1;
+}

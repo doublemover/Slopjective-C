@@ -532,6 +532,12 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";semantic_model=" << summary.semantic_model
       << ";downgrade_model=" << summary.downgrade_model
       << ";rejection_model=" << summary.rejection_model
+      << ";canonical_interface_truth_model="
+      << summary.canonical_interface_truth_model
+      << ";separate_compilation_macro_truth_model="
+      << summary.separate_compilation_macro_truth_model
+      << ";canonical_interface_payload_mode="
+      << summary.canonical_interface_payload_mode
       << ";compatibility_mode=" << summary.effective_compatibility_mode
       << ";migration_assist="
       << (summary.migration_assist_enabled ? "true" : "false")
@@ -560,7 +566,15 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";rejected_selection_surfaces="
       << summary.rejected_selection_surface_count
       << ";suppressed_macro_claims="
-      << summary.suppressed_macro_claim_count;
+      << summary.suppressed_macro_claim_count
+      << ";suppressed_macro_claim_ids=";
+  for (std::size_t index = 0; index < summary.suppressed_macro_claim_ids.size();
+       ++index) {
+    if (index > 0u) {
+      out << ",";
+    }
+    out << summary.suppressed_macro_claim_ids[index];
+  }
   return out.str();
 }
 
@@ -665,6 +679,11 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
       unsupported_feature_enforcement.blocks_source_rejection_site_count;
   summary.arc_source_rejection_site_count =
       unsupported_feature_enforcement.arc_source_rejection_site_count;
+  summary.suppressed_macro_claim_ids = {
+      kObjc3SuppressedMacroClaimStrictnessLevel,
+      kObjc3SuppressedMacroClaimConcurrencyMode,
+      kObjc3SuppressedMacroClaimConcurrencyStrict,
+  };
   summary.fail_closed = true;
   summary.compatibility_mode_semantics_landed = true;
   summary.migration_assist_semantics_landed = true;
@@ -673,9 +692,15 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   summary.live_unsupported_feature_source_rejection_landed = true;
   summary.strictness_selection_rejection_semantics_landed = true;
   summary.feature_macro_claim_suppression_semantics_landed = true;
+  summary.canonical_interface_truth_semantics_landed = true;
+  summary.separate_compilation_macro_truth_semantics_landed = true;
   summary.selected_configuration_valid = true;
   summary.selected_configuration_downgraded = false;
   summary.selected_configuration_rejected = false;
+  // M264-B003 semantic truth anchor: the current native toolchain still has
+  // no standalone textual-interface payload, so canonical interface truth is
+  // fail-closed by explicitly publishing that absence and the suppressed macro
+  // claim set any future separate-compilation surface must preserve.
   summary.ready_for_lowering_and_runtime =
       surface.interface_implementation_summary.deterministic &&
       unsupported_feature_enforcement.live_unsupported_feature_site_count == 0u &&

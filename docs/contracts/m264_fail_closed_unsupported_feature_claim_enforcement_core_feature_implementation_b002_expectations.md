@@ -23,15 +23,15 @@ Requirements:
 3. Accepted unsupported source surfaces fail closed before lowering/runtime
    handoff with deterministic `O3S221` diagnostics:
    - `throws`
-   - `@autoreleasepool`
    - ARC ownership qualifiers on executable function/method signatures
+   - ARC ownership-qualified returns on executable functions/methods
 4. Negative probes do not over-claim later-lane success:
    - diagnostics artifacts are written
    - manifest publication does not occur
    - lowering/runtime handoff does not proceed
-5. Block literals remain documented as unsupported without over-claiming a live
-   B002 proof path while the current parser surface is still gated earlier than
-   the semantic rejection path.
+5. Block literals remain documented as unsupported without over-claiming them
+   as part of the live accepted-source B002 proof path while the current parser
+   and later runnable-subset gates remain distinct.
 6. Explicit anchors remain present in:
    - `native/objc3c/src/sema/objc3_sema_contract.h`
    - `native/objc3c/src/sema/objc3_semantic_passes.cpp`

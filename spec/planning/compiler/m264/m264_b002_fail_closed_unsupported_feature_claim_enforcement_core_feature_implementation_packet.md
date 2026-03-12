@@ -47,7 +47,8 @@ Truth constraints:
 - the semantic legality packet remains the only contract authority for this lane
 - positive runnable/source-only probes publish zero live unsupported rejection
   counts
-- `throws`, `@autoreleasepool`, and executable ARC ownership qualifiers produce
-  deterministic `O3S221` diagnostics
-- block literals remain tracked as unsupported without overstating a live B002
-  proof path while the parser gate still fires earlier
+- `throws`, executable ARC ownership-qualified parameters, and executable ARC
+  ownership-qualified returns produce deterministic `O3S221` diagnostics
+- block literals remain tracked as unsupported without overstating them as part
+  of the live accepted-source B002 proof path while the parser/lowering gates
+  still differ

@@ -12455,6 +12455,34 @@ Validation proves:
 - legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
 - source-only metadata fixtures remain downgraded rather than misreported as runnable
 
+## Canonical interface and feature-macro truthfulness (M264-B003)
+
+`M264-B003` closes the remaining sema-owned truth gap around separate compilation.
+The current native toolchain still does not publish a standalone textual
+interface payload, so the semantic packet must say that explicitly instead of
+silently implying an interface or macro surface that does not exist.
+
+- `frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics`
+
+The packet now makes three things explicit:
+
+- canonical interface payload mode: `no-standalone-interface-payload-yet`
+- suppressed macro claim ids remain:
+  - `macro-claim:__OBJC3_STRICTNESS_LEVEL__`
+  - `macro-claim:__OBJC3_CONCURRENCY_MODE__`
+  - `macro-claim:__OBJC3_CONCURRENCY_STRICT__`
+- any future canonical interface or conformance-report surface must stay bounded
+  to the live runnable subset plus the already-downgraded source-only claims
+
+Validation proves:
+
+- canonical native hello keeps the semantic packet truthful on the executable
+  path
+- legacy plus migration-assist metadata probes keep the same suppressed macro
+  claim set on the manifest-only path
+- issue probes publish no standalone `.obji` / interface payload and therefore
+  do not over-claim separate-compilation support that is still missing
+
 ## M259 fail-closed unsupported advanced-feature diagnostics (B002)
 
 `M259-B002` converts the runnable-core compatibility boundary into a live
@@ -12990,8 +13018,8 @@ The live B002 enforcement proof covers the currently accepted source surfaces
 that would otherwise over-claim runnable support:
 
 - `throws`
-- `@autoreleasepool`
-- ARC ownership qualifiers on executable function/method signatures
+- ARC ownership-qualified parameters on executable function/method signatures
+- ARC ownership-qualified returns on executable function/method signatures
 
 This issue deliberately does not over-claim broader unsupported syntax:
 
@@ -13005,9 +13033,28 @@ Validation proves:
   sites
 - source-only metadata fixtures remain ready with zero live unsupported
   rejection sites
-- negative source probes for `throws`, `@autoreleasepool`, and ARC ownership
-  qualifiers fail closed with `O3S221` and do not advance into manifest/IR/object
-  publication
+- negative source probes for `throws`, ARC ownership-qualified parameters, and
+  ARC ownership-qualified returns fail closed with `O3S221` and do not advance
+  into manifest/IR/object publication
+
+## Canonical interface and feature-macro truthfulness (M264-B003)
+
+`M264-B003` finishes the separate-compilation truth surface for the same
+semantic packet:
+
+- canonical interface claims stay explicitly equivalent-only
+- the payload mode stays `no-standalone-interface-payload-yet`
+- suppressed feature-macro claims are published as an exact ordered list
+
+That keeps the current native subset truthful under separate compilation:
+
+- compatibility and migration-assist are still the only live selection
+  surfaces
+- textual-interface, canonical-spelling, and interface-verification claims are
+  bounded to the manifest/docs equivalence path rather than over-claimed as a
+  standalone emitted interface payload
+- strictness and strict-concurrency macro claims remain suppressed until those
+  executable surfaces exist
 ## Deterministic contract commands
 
 From repo root:

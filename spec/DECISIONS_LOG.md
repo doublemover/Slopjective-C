@@ -246,6 +246,33 @@ support based on parser/sema or contract-only progress.
 
 ---
 
+## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
+
+**Decision:** Until the native toolchain ships a standalone textual interface
+payload, separate-compilation truth must be expressed by the semantic claim
+packet rather than by implied interface or macro surfaces.
+
+The packet shall therefore publish that:
+
+- canonical interface payload mode remains `no-standalone-interface-payload-yet`,
+- future canonical interfaces and conformance reports must stay bounded to the
+  live runnable subset plus the already-downgraded source-only claims,
+- feature-macro publication remains suppressed across those surfaces until the
+  corresponding executable/runtime-backed implementations exist.
+
+**Rationale:** This prevents the current implementation from over-claiming
+separate-compilation support merely because source-level planning or historical
+conformance suites describe textual-interface and macro surfaces.
+
+Current native implementation note (`M264-B003`): the semantic claim packet
+publishes canonical interface truth as equivalent-only with payload mode
+`no-standalone-interface-payload-yet`, and it emits the exact ordered suppressed
+macro-claim set for strictness and strict-concurrency publication.
+
+**Spec impact:** [B](#b), [D](#d), [Part 1](#part-1), and [Part 12](#part-12).
+
+---
+
 ## D-017: Unsupported strictness and macro-claim surfaces stay unadvertised until executable {#decisions-d-017}
 
 **Decision:** The native `objc3c` frontend shall explicitly advertise only the
@@ -302,8 +329,8 @@ For the current Objective-C 3 native subset, the live fail-closed source
 rejection surface includes:
 
 - `throws`,
-- `@autoreleasepool`,
-- ARC ownership qualifiers on executable function/method signatures.
+- ARC ownership-qualified parameters on executable function/method signatures,
+- ARC ownership-qualified returns on executable function/method signatures.
 
 Block literals remain tracked in the unsupported feature inventory, but the
 current parser path is still gated earlier than the B002 semantic rejection
