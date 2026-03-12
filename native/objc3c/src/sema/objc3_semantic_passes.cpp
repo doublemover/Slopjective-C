@@ -1314,6 +1314,10 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // legacy ownership lowering summaries those later runtime issues must
   // replace, but no executable retain/release/autorelease/weak runtime hooks
   // are emitted out of function-level ownership qualifiers yet.
+  // M262-C003 ARC cleanup/weak/lifetime lowering anchor: sema still only
+  // publishes the canonical ownership and block-interaction packets; scope
+  // cleanup scheduling, weak current-property helper calls, and block-capture
+  // lifetime cleanup remain the responsibility of lane-C lowering.
   if (fn.throws_declared) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,

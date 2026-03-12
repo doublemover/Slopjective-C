@@ -31,6 +31,11 @@ struct Objc3OwnershipAwareLoweringBehaviorScaffold {
   // explicitly feeds the supported ARC helper-placement path, but remains a
   // source-side replay packet rather than the place where retain/release/
   // autorelease calls are emitted.
+  // M262-C003 ARC cleanup/weak/lifetime implementation anchor: this scaffold
+  // still only carries the source-side ownership and block-interaction packets
+  // that lane-C lowering consumes for scope cleanup, weak current-property
+  // helper paths, and deterministic lifetime cleanup on scope and implicit
+  // exits.
   bool ownership_qualifier_contract_ready = false;
   bool retain_release_contract_ready = false;
   bool autoreleasepool_scope_contract_ready = false;

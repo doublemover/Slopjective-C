@@ -1688,6 +1688,46 @@ Recommended M262 lane-C implementation check:
 - `python scripts/check_m262_c002_automatic_retain_release_autorelease_insertion_core_feature_implementation.py`
 - `M262-C003` is the next issue.
 
+## M262 ARC cleanup emission weak load-store lowering and lifetime extension hooks (M262-C003)
+
+`M262-C003` extends the supported ARC lowering slice from helper insertion into
+real cleanup scheduling and weak/runtime hook continuity for the currently
+supported executable subset.
+
+Current implementation status (`M262-C003`):
+
+- lowering now publishes one canonical contract:
+  - `objc3c-arc-cleanup-weak-lifetime-hooks/m262-c003-v1`
+- the supported `C003` boundary is defined as:
+  - scope-exit cleanup emission for ARC-owned tracked storage
+  - implicit-exit cleanup emission for supported `void` and scalar-return
+    functions/methods after the live `M262-C002` insertion path
+  - deterministic pending block dispose-helper unwinding on scope exit
+  - continued weak current-property lowering through
+    `objc3_runtime_load_weak_current_property_i32` and
+    `objc3_runtime_store_weak_current_property_i32`
+- emitted IR now carries:
+  - `; arc_cleanup_weak_lifetime_hooks = ...`
+  - `!objc3.objc_arc_cleanup_weak_lifetime_hooks`
+- the supported happy path now materially proves:
+  - scope-local escaping block storage is disposed before control rejoins the
+    merge block
+  - tracked ARC-owned storage is released before the final return on supported
+    exits
+  - implicit `void` exits drain both block-dispose helpers and tracked ARC
+    cleanup before `ret void`
+  - weak current-property lowering remains runtime-hooked instead of degrading
+    into summary-only metadata
+- still explicitly deferred:
+  - no generalized weak local-storage lowering
+  - no exception cleanup stack
+  - no cross-module ARC optimization
+
+Recommended M262 lane-C implementation check:
+
+- `python scripts/check_m262_c003_cleanup_emission_weak_load_store_lowering_and_lifetime_extension_hooks_core_feature_implementation.py`
+- `M262-C004` is the next issue.
+
 ## M171 frontend lightweight generics constraint parser/AST surface (M171-A001)
 
 Frontend parser/AST now emits deterministic lightweight-generic constraint

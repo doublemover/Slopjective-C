@@ -2298,6 +2298,10 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
   // also preserves the supported ARC insertion flags that lowering consumes for
   // helper placement, without moving retain/release/autorelease emission into
   // sema itself.
+  // M262-C003 ARC cleanup/weak/lifetime implementation anchor: the handoff
+  // continues to be semantic-only while preserving the packets lowering now
+  // consumes for scope-exit cleanup ordering, weak current-property helper
+  // usage, and deterministic block-capture lifetime cleanup.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;
   result.deterministic_arc_diagnostics_fixit_handoff =
       result.type_metadata_handoff.arc_diagnostics_fixit_summary.deterministic &&

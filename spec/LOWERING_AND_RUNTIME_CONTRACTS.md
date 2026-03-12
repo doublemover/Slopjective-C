@@ -8248,3 +8248,31 @@ insertion path for the supported runnable ARC slice.
   - no exception-cleanup widening
   - no cross-module ARC optimization
 - `M262-C003` is the next issue.
+
+## M262 ARC cleanup emission weak load-store lowering and lifetime extension hooks (C003)
+
+`M262-C003` widens the supported ARC lowering slice from helper insertion into
+real cleanup emission and weak/runtime continuity for the supported runnable
+subset.
+
+- canonical contract id:
+  - `objc3c-arc-cleanup-weak-lifetime-hooks/m262-c003-v1`
+- supported source inputs now consumed by lane C:
+  - the explicit ARC mode and interaction packets from `M262-A002` and
+    `M262-B003`
+  - the frozen helper ABI boundary from `M262-C001`
+  - the live helper insertion path from `M262-C002`
+- canonical lowering model:
+  - `scope-exit-and-implicit-exit-cleanups-unwind-pending-block-dispose-and-arc-owned-storage-while-weak-current-property-access-stays-runtime-hooked`
+- emitted IR must now carry:
+  - `; arc_cleanup_weak_lifetime_hooks = ...`
+  - `!objc3.objc_arc_cleanup_weak_lifetime_hooks = !{...}`
+- supported cleanup/lifetime behavior now covers:
+  - scope-exit dispose-helper emission for supported block captures
+  - release-on-exit for tracked ARC-owned storage on supported implicit exits
+  - deterministic weak current-property helper continuity under `-fobjc-arc`
+- explicit non-goals:
+  - no generalized weak local-storage lowering
+  - no exception cleanup stack
+  - no cross-module ARC optimization
+- `M262-C004` is the next issue.

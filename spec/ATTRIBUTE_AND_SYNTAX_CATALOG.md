@@ -85,7 +85,9 @@ Current implementation status (`M262-B001`):
 - explicit ARC mode does not yet imply generalized ARC inference
 - conflicting property ownership forms still fail with deterministic diagnostics
 - atomic ownership-aware properties still fail with deterministic diagnostics
-- broader ARC lifetime extension and method-family ARC semantics remain deferred
+- broader method-family ARC semantics remain deferred
+- `M262-C003` now covers the supported cleanup-emission, weak current-property,
+  and block-capture lifetime-extension lowering slice for explicit ARC mode
 
 ### B.2.6 ARC inference and lifetime-extension semantics (implementation note) {#b-2-6}
 

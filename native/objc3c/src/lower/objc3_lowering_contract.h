@@ -755,6 +755,17 @@ inline constexpr const char *kObjc3ArcAutomaticInsertionFailureModel =
 inline constexpr const char *kObjc3ArcAutomaticInsertionNonGoalModel =
     "no-general-local-lifetime-inference-no-full-cleanup-stack-no-cross-module-arc-optimization";
 std::string Objc3ArcAutomaticInsertionSummary();
+inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksContractId =
+    "objc3c-arc-cleanup-weak-lifetime-hooks/m262-c003-v1";
+inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksSourceModel =
+    "lane-c-extends-the-supported-arc-lowering-slice-with-scope-exit-cleanups-weak-current-property-hooks-and-block-capture-lifetime-cleanup";
+inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksLoweringModel =
+    "scope-exit-and-implicit-exit-cleanups-unwind-pending-block-dispose-and-arc-owned-storage-while-weak-current-property-access-stays-runtime-hooked";
+inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksFailureModel =
+    "only-supported-scope-cleanup-weak-current-property-and-captured-lifetime-paths-materialize-runtime-lowering";
+inline constexpr const char *kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel =
+    "no-general-weak-local-storage-lowering-no-exception-cleanup-stack-no-cross-module-arc-optimization";
+std::string Objc3ArcCleanupWeakLifetimeHooksSummary();
 inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =

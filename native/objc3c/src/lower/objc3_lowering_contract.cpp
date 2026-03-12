@@ -1367,6 +1367,32 @@ std::string Objc3ArcAutomaticInsertionSummary() {
   return out.str();
 }
 
+std::string Objc3ArcCleanupWeakLifetimeHooksSummary() {
+  std::ostringstream out;
+  // M262-C003 ARC cleanup/weak/lifetime lowering anchor: lane-C now widens the
+  // supported ARC slice with scope-aware cleanup emission, the retained weak
+  // current-property helper path, and deterministic block-capture lifetime
+  // cleanup without claiming generalized weak-local or exception-driven ARC.
+  out << "contract=" << kObjc3ArcCleanupWeakLifetimeHooksContractId
+      << ";source_model=" << kObjc3ArcCleanupWeakLifetimeHooksSourceModel
+      << ";lowering_model=" << kObjc3ArcCleanupWeakLifetimeHooksLoweringModel
+      << ";arc_mode_contract=" << Expr::kObjc3ArcModeHandlingContractId
+      << ";arc_interaction_contract="
+      << Expr::kObjc3ArcInteractionSemanticsContractId
+      << ";arc_cleanup_contract=" << kObjc3ArcLoweringAbiCleanupModelContractId
+      << ";arc_insertion_contract=" << kObjc3ArcAutomaticInsertionContractId
+      << ";weak_load_symbol=" << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+      << ";weak_store_symbol="
+      << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";fail_closed_model="
+      << kObjc3ArcCleanupWeakLifetimeHooksFailureModel
+      << ";non_goal_model=" << kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel
+      << ";next_issue=M262-C004";
+  return out.str();
+}
+
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
   // M256-C002 executable method-body binding implementation anchor: lane-C

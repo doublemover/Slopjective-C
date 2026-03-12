@@ -1,0 +1,14 @@
+module m262_arc_cleanup_scope_positive;
+
+fn helper(flag: i32, value: id) -> i32 {
+  let result = 0;
+  if (flag != 0) {
+    let closure = ^() { return value; };
+    result = closure();
+  }
+  return result;
+}
+
+fn main() -> i32 {
+  return helper(1, 9);
+}

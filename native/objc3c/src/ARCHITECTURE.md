@@ -9954,6 +9954,31 @@ supported runnable slice.
   - cross-module ARC optimization
 - the next issue is `M262-C003`
 
+## M262 ARC Cleanup Emission Weak Load-Store Lowering And Lifetime Extension Hooks (C003)
+
+Lane C now widens the supported ARC lowering slice with real cleanup emission
+and weak/runtime continuity for the currently supported executable subset.
+
+- canonical lowering contract:
+  - `objc3c-arc-cleanup-weak-lifetime-hooks/m262-c003-v1`
+- lane-C implementation remains explicit about responsibility:
+  - sema still owns legality, ownership packets, and block-interaction
+    normalization
+  - lowering now owns scope-exit cleanup scheduling, implicit-exit cleanup, and
+    deterministic pending block dispose-helper unwinding
+- emitted IR now publishes:
+  - `; arc_cleanup_weak_lifetime_hooks = ...`
+  - `!objc3.objc_arc_cleanup_weak_lifetime_hooks`
+- supported `C003` behavior currently covers:
+  - scope-local block dispose-helper emission before merge/continue/break exits
+  - release-on-exit for tracked ARC-owned storage on supported implicit exits
+  - continued weak current-property helper lowering under explicit ARC mode
+- still deferred:
+  - generalized weak local-storage lowering
+  - exception cleanup stacks
+  - cross-module ARC optimization
+- the next issue is `M262-C004`
+
 ## M261 Executable Block Source Closure (A001)
 
 `M261-A001` freezes the truthful block-literal source closure that already

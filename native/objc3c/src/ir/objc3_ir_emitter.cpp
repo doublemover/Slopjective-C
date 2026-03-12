@@ -1505,6 +1505,12 @@ class Objc3IREmitter {
     // real lowering surface instead of a summary-only semantic contract.
     out << "; arc_automatic_insertions = "
         << Objc3ArcAutomaticInsertionSummary() << "\n";
+    // M262-C003 ARC cleanup/weak/lifetime implementation anchor: publish the
+    // supported scope-exit cleanup, weak current-property helper, and block
+    // lifetime cleanup boundary so later ARC/block widening extends a real
+    // lowering/runtime surface rather than inferred behavior.
+    out << "; arc_cleanup_weak_lifetime_hooks = "
+        << Objc3ArcCleanupWeakLifetimeHooksSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
@@ -2304,6 +2310,8 @@ class Objc3IREmitter {
     std::string break_label;
     bool continue_allowed = false;
     std::size_t autoreleasepool_depth = 0;
+    std::size_t pending_block_dispose_depth = 0;
+    std::size_t arc_cleanup_depth = 0;
   };
 
   struct BlockBinding {
@@ -2325,6 +2333,8 @@ class Objc3IREmitter {
     std::vector<PendingBlockDisposeCall> pending_block_dispose_calls;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
+    std::vector<std::size_t> pending_block_dispose_scope_depths;
+    std::vector<std::size_t> arc_cleanup_scope_depths;
     std::unordered_set<std::string> nil_bound_ptrs;
     std::unordered_set<std::string> nonzero_bound_ptrs;
     std::unordered_map<std::string, int> const_value_ptrs;
@@ -2783,6 +2793,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_arc_inference_lifetime = !{!78}\n";
     out << "!objc3.objc_arc_interaction_semantics = !{!79}\n";
     out << "!objc3.objc_arc_automatic_insertions = !{!80}\n";
+    out << "!objc3.objc_arc_cleanup_weak_lifetime_hooks = !{!81}\n";
     out << "!objc3.objc_message_send_selector_lowering = !{!9}\n";
     out << "!objc3.objc_dispatch_abi_marshalling = !{!10}\n";
     out << "!objc3.objc_nil_receiver_semantics_foldability = !{!11}\n";
@@ -4177,6 +4188,33 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionFailureModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionNonGoalModel)
+        << "\"}\n";
+    out << "!81 = !{!\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksLoweringModel)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcModeHandlingContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(Expr::kObjc3ArcInteractionSemanticsContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcLoweringAbiCleanupModelContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcAutomaticInsertionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksFailureModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -8297,6 +8335,53 @@ class Objc3IREmitter {
     }
   }
 
+  void PushScope(FunctionContext &ctx) const {
+    ctx.scopes.push_back({});
+    ctx.pending_block_dispose_scope_depths.push_back(
+        ctx.pending_block_dispose_calls.size());
+    ctx.arc_cleanup_scope_depths.push_back(ctx.arc_owned_cleanup_ptrs.size());
+  }
+
+  void EmitPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
+                                            std::size_t target_depth) const {
+    while (ctx.pending_block_dispose_calls.size() > target_depth) {
+      const PendingBlockDisposeCall call = ctx.pending_block_dispose_calls.back();
+      ctx.pending_block_dispose_calls.pop_back();
+      if (call.helper_symbol.empty() || call.storage_ptr.empty()) {
+        continue;
+      }
+      ctx.code_lines.push_back("  call void @" + call.helper_symbol + "(ptr " +
+                               call.storage_ptr + ")");
+    }
+  }
+
+  void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
+    if (ctx.scopes.empty()) {
+      return;
+    }
+    const auto scope_bindings = std::move(ctx.scopes.back());
+    ctx.scopes.pop_back();
+    const std::size_t target_block_dispose_depth =
+        ctx.pending_block_dispose_scope_depths.empty()
+            ? 0u
+            : ctx.pending_block_dispose_scope_depths.back();
+    if (!ctx.pending_block_dispose_scope_depths.empty()) {
+      ctx.pending_block_dispose_scope_depths.pop_back();
+    }
+    const std::size_t target_arc_cleanup_depth =
+        ctx.arc_cleanup_scope_depths.empty() ? 0u : ctx.arc_cleanup_scope_depths.back();
+    if (!ctx.arc_cleanup_scope_depths.empty()) {
+      ctx.arc_cleanup_scope_depths.pop_back();
+    }
+    if (emit_cleanup) {
+      EmitPendingBlockDisposeUnwindToDepth(ctx, target_block_dispose_depth);
+      EmitArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth);
+    }
+    for (const auto &binding : scope_bindings) {
+      ctx.block_bindings.erase(binding.first);
+    }
+  }
+
   std::string LookupVarPtr(const FunctionContext &ctx, const std::string &name) const {
     for (auto it = ctx.scopes.rbegin(); it != ctx.scopes.rend(); ++it) {
       auto found = it->find(name);
@@ -8420,13 +8505,27 @@ class Objc3IREmitter {
   }
 
   void EmitPendingBlockDisposeHelpers(FunctionContext &ctx) const {
-    for (auto it = ctx.pending_block_dispose_calls.rbegin();
-         it != ctx.pending_block_dispose_calls.rend(); ++it) {
-      if (it->helper_symbol.empty() || it->storage_ptr.empty()) {
+    EmitPendingBlockDisposeUnwindToDepth(ctx, 0u);
+  }
+
+  void EmitArcOwnedCleanupUnwindToDepth(FunctionContext &ctx,
+                                        std::size_t target_depth) const {
+    while (ctx.arc_owned_cleanup_ptrs.size() > target_depth) {
+      const std::string ptr = ctx.arc_owned_cleanup_ptrs.back();
+      ctx.arc_owned_cleanup_ptrs.pop_back();
+      ctx.arc_owned_cleanup_ptr_set.erase(ptr);
+      ctx.arc_owned_storage_ptrs.erase(ptr);
+      if (ptr.empty()) {
         continue;
       }
-      ctx.code_lines.push_back("  call void @" + it->helper_symbol + "(ptr " +
-                               it->storage_ptr + ")");
+      const std::string loaded_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
+                               ptr + ", align 4");
+      const std::string released_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeReleaseI32Symbol) +
+                               "(i32 " + loaded_value + ")");
+      (void)released_value;
     }
   }
 
@@ -8622,7 +8721,7 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = ValueType::I32;
-    ctx.scopes.push_back({});
+    PushScope(ctx);
 
     const std::string block_storage_type = BuildBlockStorageType(expr);
     const bool pointer_capture_storage =
@@ -8672,7 +8771,9 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
       EmitPendingBlockDisposeHelpers(ctx);
+      EmitArcOwnedCleanupReleases(ctx);
       ctx.code_lines.push_back("  ret i32 0");
     }
 
@@ -8925,20 +9026,7 @@ class Objc3IREmitter {
   }
 
   void EmitArcOwnedCleanupReleases(FunctionContext &ctx) const {
-    for (auto it = ctx.arc_owned_cleanup_ptrs.rbegin();
-         it != ctx.arc_owned_cleanup_ptrs.rend(); ++it) {
-      if (it->empty()) {
-        continue;
-      }
-      const std::string loaded_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
-                               *it + ", align 4");
-      const std::string released_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
-                               std::string(kObjc3RuntimeReleaseI32Symbol) +
-                               "(i32 " + loaded_value + ")");
-      (void)released_value;
-    }
+    EmitArcOwnedCleanupUnwindToDepth(ctx, 0u);
   }
 
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
@@ -9964,10 +10052,16 @@ class Objc3IREmitter {
       case Stmt::Kind::Break: {
         if (ctx.control_stack.empty()) {
           EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
+          EmitPendingBlockDisposeHelpers(ctx);
+          EmitArcOwnedCleanupReleases(ctx);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           EmitAutoreleasepoolUnwindToDepth(
               ctx, ctx.control_stack.back().autoreleasepool_depth);
+          EmitPendingBlockDisposeUnwindToDepth(
+              ctx, ctx.control_stack.back().pending_block_dispose_depth);
+          EmitArcOwnedCleanupUnwindToDepth(
+              ctx, ctx.control_stack.back().arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
         }
         ctx.terminated = true;
@@ -9986,9 +10080,20 @@ class Objc3IREmitter {
         }
         if (continue_label.empty()) {
           EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
+          EmitPendingBlockDisposeHelpers(ctx);
+          EmitArcOwnedCleanupReleases(ctx);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
+          const ControlLabels &target = *std::find_if(
+              ctx.control_stack.rbegin(), ctx.control_stack.rend(),
+              [&continue_label](const ControlLabels &labels) {
+                return labels.continue_allowed &&
+                       labels.continue_label == continue_label;
+              });
           EmitAutoreleasepoolUnwindToDepth(ctx, continue_autoreleasepool_depth);
+          EmitPendingBlockDisposeUnwindToDepth(
+              ctx, target.pending_block_dispose_depth);
+          EmitArcOwnedCleanupUnwindToDepth(ctx, target.arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
         ctx.terminated = true;
@@ -10010,11 +10115,11 @@ class Objc3IREmitter {
           ctx.autoreleasepool_scope_symbols.push_back(
               block_stmt->autoreleasepool_scope_symbol);
         }
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         for (const auto &nested_stmt : block_stmt->body) {
           EmitStatement(nested_stmt.get(), ctx);
         }
-        ctx.scopes.pop_back();
+        PopScope(ctx, !ctx.terminated);
         if (!ctx.terminated) {
           EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
         }
@@ -10045,17 +10150,19 @@ class Objc3IREmitter {
         ctx.code_lines.push_back("  br i1 " + cond_i1 + ", label %" + body_label + ", label %" + end_label);
 
         ctx.code_lines.push_back(body_label + ":");
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         ctx.control_stack.push_back(
             {cond_label, end_label, true,
-             ctx.autoreleasepool_scope_symbols.size()});
+             ctx.autoreleasepool_scope_symbols.size(),
+             ctx.pending_block_dispose_calls.size(),
+             ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : while_stmt->body) {
           EmitStatement(s.get(), ctx);
         }
         const bool body_terminated = ctx.terminated;
         ctx.control_stack.pop_back();
-        ctx.scopes.pop_back();
+        PopScope(ctx, !body_terminated);
         if (!body_terminated) {
           ctx.code_lines.push_back("  br label %" + cond_label);
         }
@@ -10075,17 +10182,19 @@ class Objc3IREmitter {
         ctx.code_lines.push_back("  br label %" + body_label);
 
         ctx.code_lines.push_back(body_label + ":");
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         ctx.control_stack.push_back(
             {cond_label, end_label, true,
-             ctx.autoreleasepool_scope_symbols.size()});
+             ctx.autoreleasepool_scope_symbols.size(),
+             ctx.pending_block_dispose_calls.size(),
+             ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : do_while_stmt->body) {
           EmitStatement(s.get(), ctx);
         }
         const bool body_terminated = ctx.terminated;
         ctx.control_stack.pop_back();
-        ctx.scopes.pop_back();
+        PopScope(ctx, !body_terminated);
         if (!body_terminated) {
           ctx.code_lines.push_back("  br label %" + cond_label);
         }
@@ -10106,7 +10215,7 @@ class Objc3IREmitter {
           return;
         }
 
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         EmitForClause(for_stmt->init, ctx);
 
         const std::string cond_label = NewLabel(ctx, "for_cond_");
@@ -10126,17 +10235,19 @@ class Objc3IREmitter {
         }
 
         ctx.code_lines.push_back(body_label + ":");
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         ctx.control_stack.push_back(
             {step_label, end_label, true,
-             ctx.autoreleasepool_scope_symbols.size()});
+             ctx.autoreleasepool_scope_symbols.size(),
+             ctx.pending_block_dispose_calls.size(),
+             ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : for_stmt->body) {
           EmitStatement(s.get(), ctx);
         }
         const bool body_terminated = ctx.terminated;
         ctx.control_stack.pop_back();
-        ctx.scopes.pop_back();
+        PopScope(ctx, !body_terminated);
         if (!body_terminated) {
           ctx.code_lines.push_back("  br label %" + step_label);
         }
@@ -10146,7 +10257,7 @@ class Objc3IREmitter {
         ctx.code_lines.push_back("  br label %" + cond_label);
 
         ctx.code_lines.push_back(end_label + ":");
-        ctx.scopes.pop_back();
+        PopScope(ctx, true);
         ctx.terminated = false;
         return;
       }
@@ -10208,16 +10319,18 @@ class Objc3IREmitter {
         for (std::size_t arm_index = 0; arm_index < switch_stmt->cases.size(); ++arm_index) {
           const SwitchCase &case_stmt = switch_stmt->cases[arm_index];
           ctx.code_lines.push_back(arm_labels[arm_index] + ":");
-          ctx.scopes.push_back({});
+          PushScope(ctx);
           ctx.control_stack.push_back(
-              {"", end_label, false, ctx.autoreleasepool_scope_symbols.size()});
+              {"", end_label, false, ctx.autoreleasepool_scope_symbols.size(),
+               ctx.pending_block_dispose_calls.size(),
+               ctx.arc_owned_cleanup_ptrs.size()});
           ctx.terminated = false;
           for (const auto &case_body_stmt : case_stmt.body) {
             EmitStatement(case_body_stmt.get(), ctx);
           }
           const bool arm_terminated = ctx.terminated;
           ctx.control_stack.pop_back();
-          ctx.scopes.pop_back();
+          PopScope(ctx, !arm_terminated);
 
           if (!arm_terminated) {
             if (arm_index + 1 < switch_stmt->cases.size()) {
@@ -10248,25 +10361,25 @@ class Objc3IREmitter {
         ctx.code_lines.push_back("  br i1 " + cond_i1 + ", label %" + then_label + ", label %" + else_label);
 
         ctx.code_lines.push_back(then_label + ":");
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         ctx.terminated = false;
         for (const auto &s : if_stmt->then_body) {
           EmitStatement(s.get(), ctx);
         }
         const bool then_terminated = ctx.terminated;
-        ctx.scopes.pop_back();
+        PopScope(ctx, !then_terminated);
         if (!then_terminated) {
           ctx.code_lines.push_back("  br label %" + merge_label);
         }
 
         ctx.code_lines.push_back(else_label + ":");
-        ctx.scopes.push_back({});
+        PushScope(ctx);
         ctx.terminated = false;
         for (const auto &s : if_stmt->else_body) {
           EmitStatement(s.get(), ctx);
         }
         const bool else_terminated = ctx.terminated;
-        ctx.scopes.pop_back();
+        PopScope(ctx, !else_terminated);
         if (!else_terminated) {
           ctx.code_lines.push_back("  br label %" + merge_label);
         }
@@ -10550,7 +10663,7 @@ class Objc3IREmitter {
         EffectiveArcReturnInsertRetain(fn, frontend_metadata_.arc_mode_enabled);
     ctx.arc_return_insert_autorelease =
         EffectiveArcReturnInsertAutorelease(fn);
-    ctx.scopes.push_back({});
+    PushScope(ctx);
     SeedKnownClassReceiverBindings(ctx);
 
     for (std::size_t i = 0; i < fn.params.size(); ++i) {
@@ -10569,7 +10682,9 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
       EmitPendingBlockDisposeHelpers(ctx);
+      EmitArcOwnedCleanupReleases(ctx);
       if (fn.return_type == ValueType::Void) {
         ctx.code_lines.push_back("  ret void");
       } else {
@@ -10612,7 +10727,7 @@ class Objc3IREmitter {
         method, frontend_metadata_.arc_mode_enabled);
     ctx.arc_return_insert_autorelease =
         EffectiveArcReturnInsertAutorelease(method);
-    ctx.scopes.push_back({});
+    PushScope(ctx);
     SeedKnownClassReceiverBindings(ctx);
     const int implementation_class_identity =
         LookupClassReceiverIdentityValue(method_def.implementation_name);
@@ -10649,7 +10764,9 @@ class Objc3IREmitter {
     }
 
     if (!ctx.terminated) {
+      EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
       EmitPendingBlockDisposeHelpers(ctx);
+      EmitArcOwnedCleanupReleases(ctx);
       if (method.return_type == ValueType::Void) {
         ctx.code_lines.push_back("  ret void");
       } else {
