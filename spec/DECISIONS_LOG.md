@@ -318,6 +318,31 @@ recognized surface as implementation-complete.
 
 ---
 
+## D-020: Lowered versioned conformance reports must remain bounded to the truthful frontend claim surface {#decisions-d-020}
+
+**Decision:** The native `objc3c` lowering path shall publish one machine-readable
+versioned conformance-report sidecar derived from the already-truthful frontend
+claim and semantic packets rather than introducing a second independent
+authority.
+
+That lowered report shall keep the current implementation boundary explicit:
+
+- standalone textual interface payload mode remains
+  `no-standalone-interface-payload-yet`,
+- runnable claims remain bounded to the shipped native subset,
+- recognized source-only claims remain downgraded,
+- strictness, strict concurrency, and feature-macro publication remain
+  unsupported until they become executable end to end.
+
+**Rationale:** Truthful conformance reporting requires the emitted report to say
+exactly what the frontend can currently prove, not what the long-range spec
+eventually intends to support.
+
+**Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-019: Accepted unsupported source surfaces must fail before lowering/runtime handoff {#decisions-d-019}
 
 **Decision:** When the native `objc3c` frontend accepts source syntax for a

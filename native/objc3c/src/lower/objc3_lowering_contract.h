@@ -1100,6 +1100,43 @@ inline constexpr std::uint64_t kObjc3RuntimeBootstrapRegistrationTableAbiVersion
     1u;
 inline constexpr std::uint64_t
     kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 11u;
+// M264-C001 versioned conformance-report lowering freeze anchor: lane-C
+// lowers the truthful runnable/source-only/unsupported claim packets into one
+// emitted machine-readable sidecar artifact. Later runtime capability and
+// driver publication issues must preserve this versioned lowering boundary
+// rather than reconstructing claim truth ad hoc from docs or release evidence.
+inline constexpr const char *kObjc3VersionedConformanceReportLoweringContractId =
+    "objc3c-versioned-conformance-report-lowering/m264-c001-v1";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringSemanticContractId =
+        "objc3c-compatibility-strictness-claim-semantics/m264-b001-v1";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringArtifactSuffix =
+        ".objc3-conformance-report.json";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringArtifactSchemaId =
+        "objc3c-versioned-conformance-report-v1";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_versioned_conformance_report_lowering_contract";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringPayloadModel =
+        "frontend-truth-packets-lower-into-one-versioned-machine-readable-conformance-sidecar";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportLoweringAuthorityModel =
+        "runnable-feature-inventory-plus-truth-surface-plus-fail-closed-semantics";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportKnownUnsupportedModel =
+        "unsupported-claims-remain-published-as-known-unsupported-without-runnable-overclaim";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportSelectionModel =
+        "canonical-and-legacy-compatibility-selection-only-strictness-and-concurrency-claims-remain-fail-closed";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportCanonicalInterfaceMode =
+        "no-standalone-interface-payload-yet";
+inline constexpr const char
+    *kObjc3VersionedConformanceReportPublicationModel =
+        "written-next-to-manifest-when-out-dir-is-present";
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
 // object-emission evidence contract over A002/B003/C006/D003 so later closeout
 // work must fail closed if the source-to-section matrix, object-format policy,
@@ -1973,6 +2010,7 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
+std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section);
 std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(

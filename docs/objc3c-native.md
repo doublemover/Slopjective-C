@@ -12455,6 +12455,32 @@ Validation proves:
 - legacy plus migration-assist keeps the semantic packet truthful on the manifest-only path
 - source-only metadata fixtures remain downgraded rather than misreported as runnable
 
+## Versioned conformance-report lowering (M264-C001)
+
+`M264-C001` freezes the current lowering boundary that publishes one machine-readable
+versioned conformance-report sidecar from the already-truthful frontend claim
+and semantic packets.
+
+- `frontend.pipeline.semantic_surface.objc_versioned_conformance_report_lowering_contract`
+- `module.objc3-conformance-report.json`
+
+The current lowering boundary keeps three things explicit:
+
+- the sidecar is sourced from the live frontend truth packets rather than a
+  second independent authority
+- standalone textual interface payload mode remains
+  `no-standalone-interface-payload-yet`
+- strictness, strict-concurrency, feature-macro, and broader unsupported
+  runtime-backed surfaces remain visibly unshipped
+
+Validation proves:
+
+- canonical native hello emits the lowered sidecar next to the manifest, IR,
+  and object outputs
+- the frontend runner emits the same lowered sidecar on the manifest-only path
+- both paths preserve the same truthful runnable/source-only/unsupported claim
+  surface
+
 ## Canonical interface and feature-macro truthfulness (M264-B003)
 
 `M264-B003` closes the remaining sema-owned truth gap around separate compilation.

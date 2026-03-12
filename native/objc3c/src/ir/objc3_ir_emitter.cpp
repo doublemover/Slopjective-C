@@ -6251,6 +6251,18 @@ class Objc3IREmitter {
     // model, so later multi-image lowering must preserve these names/shapes.
     out << "; runtime_bootstrap_lowering_boundary = "
         << Objc3RuntimeBootstrapLoweringBoundarySummary() << "\n";
+    if (frontend_metadata_.versioned_conformance_report_lowering_ready &&
+        !frontend_metadata_.versioned_conformance_report_lowering_replay_key
+             .empty()) {
+      // M264-C001 versioned conformance-report lowering anchor: the emitted
+      // IR now advertises the lowered machine-readable capability report
+      // boundary that mirrors the manifest sidecar publication.
+      out << "; versioned_conformance_report_lowering = "
+          << Objc3VersionedConformanceReportLoweringContractSummary()
+          << ";replay_key="
+          << frontend_metadata_.versioned_conformance_report_lowering_replay_key
+          << "\n";
+    }
     if (ShouldEmitRuntimeBootstrapLowering()) {
       out << "; runtime_bootstrap_ctor_init_emission = "
           << "contract=objc3c-runtime-constructor-init-stub-emission/m254-c002-v1"

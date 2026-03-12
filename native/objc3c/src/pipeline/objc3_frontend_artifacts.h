@@ -14,8 +14,11 @@ struct Objc3FrontendArtifactBundle {
   std::string manifest_json;
   std::string runtime_metadata_binary;
   std::string runtime_aware_import_module_artifact_json;
+  std::string versioned_conformance_report_artifact_json;
   Objc3RuntimeAwareImportModuleFrontendClosureSummary
       runtime_aware_import_module_frontend_closure_summary;
+  Objc3VersionedConformanceReportLoweringSummary
+      versioned_conformance_report_lowering_summary;
   Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
       runtime_registration_descriptor_image_root_source_surface_summary;
   Objc3RuntimeRegistrationDescriptorFrontendClosureSummary

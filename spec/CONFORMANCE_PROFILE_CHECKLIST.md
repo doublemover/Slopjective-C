@@ -329,6 +329,24 @@ That packet must keep the current state explicit:
 This prevents the toolchain from implying a canonical interface or feature-macro
 surface that is not actually shipped today.
 
+## M264 versioned conformance-report lowering (implementation note)
+
+The truthful frontend claim packets must also lower into one machine-readable
+versioned conformance report:
+
+- `frontend.pipeline.semantic_surface.objc_versioned_conformance_report_lowering_contract`
+- emitted sidecar `module.objc3-conformance-report.json`
+
+That lowering boundary must keep the current state explicit:
+
+- the conformance report is derived from the live frontend truth packets
+- standalone textual interface payload mode remains
+  `no-standalone-interface-payload-yet`
+- runnable claims stay bounded to the shipped native subset
+- source-only recognized claims stay downgraded
+- strictness, strict concurrency, and feature-macro publication remain
+  unsupported until they become executable end to end
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend

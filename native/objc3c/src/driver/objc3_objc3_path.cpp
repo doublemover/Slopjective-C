@@ -71,6 +71,19 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         cli_options.out_dir,
         cli_options.emit_prefix,
         artifacts.runtime_aware_import_module_artifact_json);
+    if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
+            artifacts.versioned_conformance_report_lowering_summary)) {
+      std::cerr << "versioned conformance-report lowering summary not ready\n";
+      return 125;
+    }
+    if (artifacts.versioned_conformance_report_artifact_json.empty()) {
+      std::cerr << "versioned conformance-report artifact payload missing\n";
+      return 125;
+    }
+    WriteVersionedConformanceReportArtifact(
+        cli_options.out_dir,
+        cli_options.emit_prefix,
+        artifacts.versioned_conformance_report_artifact_json);
 
     // M251-A003 expands the handoff so manifest projection survives fail-closed
     // later lowering/object gates; native runtime linking remains a later

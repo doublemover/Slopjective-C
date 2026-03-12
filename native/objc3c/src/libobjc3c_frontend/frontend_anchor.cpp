@@ -540,6 +540,41 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
 
+  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir) {
+    if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
+            product.artifact_bundle
+                .versioned_conformance_report_lowering_summary)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(
+          context,
+          "versioned conformance-report lowering summary not ready");
+    } else if (product.artifact_bundle
+                   .versioned_conformance_report_artifact_json.empty()) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(
+          context,
+          "versioned conformance-report artifact payload missing");
+    } else {
+      const std::filesystem::path conformance_report_out =
+          BuildVersionedConformanceReportArtifactPath(out_dir, emit_prefix);
+      std::string io_error;
+      if (!WriteTextFile(
+              conformance_report_out,
+              product.artifact_bundle
+                  .versioned_conformance_report_artifact_json,
+              io_error)) {
+        result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+        result->process_exit_code = 2;
+        result->success = 0;
+        objc3c_frontend_set_error(context, io_error.c_str());
+      }
+    }
+  }
+
   const bool wants_ir_file = options->emit_ir != 0 || options->emit_object != 0;
   std::filesystem::path ir_out;
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && wants_ir_file) {

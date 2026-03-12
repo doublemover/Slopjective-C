@@ -1872,6 +1872,37 @@ std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary() {
   return out.str();
 }
 
+std::string Objc3VersionedConformanceReportLoweringContractSummary() {
+  std::ostringstream out;
+  // M264-C001 lowering freeze anchor: lane-C lowers the existing A/B truth
+  // packets into one emitted machine-readable sidecar so later runtime
+  // capability reporting and driver publication consume the same versioned
+  // report instead of reconstructing feature truth from docs or release notes.
+  out << "contract=" << kObjc3VersionedConformanceReportLoweringContractId
+      << ";semantic_contract_id="
+      << kObjc3VersionedConformanceReportLoweringSemanticContractId
+      << ";artifact_suffix="
+      << kObjc3VersionedConformanceReportLoweringArtifactSuffix
+      << ";artifact_schema_id="
+      << kObjc3VersionedConformanceReportLoweringArtifactSchemaId
+      << ";surface_path="
+      << kObjc3VersionedConformanceReportLoweringSurfacePath
+      << ";payload_model="
+      << kObjc3VersionedConformanceReportLoweringPayloadModel
+      << ";authority_model="
+      << kObjc3VersionedConformanceReportLoweringAuthorityModel
+      << ";known_unsupported_model="
+      << kObjc3VersionedConformanceReportKnownUnsupportedModel
+      << ";selection_model="
+      << kObjc3VersionedConformanceReportSelectionModel
+      << ";canonical_interface_mode="
+      << kObjc3VersionedConformanceReportCanonicalInterfaceMode
+      << ";publication_model="
+      << kObjc3VersionedConformanceReportPublicationModel
+      << ";non_goals=no-new-runtime-capability-families-or-strictness-enablement";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);
