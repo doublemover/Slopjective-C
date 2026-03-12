@@ -1355,6 +1355,58 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part6ErrorSourceClosureContractId =
+    "objc3c-part6-error-source-closure/m267-a001-v1";
+inline constexpr const char *kObjc3Part6ErrorSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part6_error_source_closure";
+inline constexpr const char *kObjc3Part6ErrorSourceClosureSourceModel =
+    "throws-declarations-result-carrier-profiles-and-nserror-bridging-profiles-are-live-frontend-owned-source-surfaces-while-try-throw-and-do-catch-remain-reserved-fail-closed";
+inline constexpr const char *kObjc3Part6ErrorSourceClosureFailureModel =
+    "try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-part6-sema-lowering-and-runtime-work";
+
+struct Objc3FrontendPart6ErrorSourceClosureSummary {
+  std::string contract_id = kObjc3Part6ErrorSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3Part6ErrorSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part6ErrorSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part6ErrorSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimThrowsDeclarations,
+      kObjc3SourceOnlyFeatureClaimResultCarrierProfiles,
+      kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles,
+  };
+  std::vector<std::string> fail_closed_construct_ids = {
+      kObjc3Part6FailClosedConstructTryExpressions,
+      kObjc3Part6FailClosedConstructThrowStatements,
+      kObjc3Part6FailClosedConstructDoCatchStatements,
+  };
+  std::size_t function_throws_declaration_sites = 0;
+  std::size_t method_throws_declaration_sites = 0;
+  std::size_t result_like_sites = 0;
+  std::size_t result_success_sites = 0;
+  std::size_t result_failure_sites = 0;
+  std::size_t result_branch_sites = 0;
+  std::size_t result_payload_sites = 0;
+  std::size_t ns_error_bridging_sites = 0;
+  std::size_t ns_error_out_parameter_sites = 0;
+  std::size_t ns_error_bridge_path_sites = 0;
+  std::size_t try_keyword_sites = 0;
+  std::size_t throw_keyword_sites = 0;
+  std::size_t catch_keyword_sites = 0;
+  bool throws_declaration_source_supported = false;
+  bool result_carrier_source_supported = false;
+  bool ns_error_bridging_source_supported = false;
+  bool try_keyword_reserved = false;
+  bool throw_keyword_reserved = false;
+  bool catch_keyword_reserved = false;
+  bool try_fail_closed = false;
+  bool throw_fail_closed = false;
+  bool do_catch_fail_closed = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -4477,6 +4529,38 @@ inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline bool IsReadyObjc3FrontendPart6ErrorSourceClosureSummary(
+    const Objc3FrontendPart6ErrorSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3Part6ErrorSourceClosureContractId &&
+         summary.frontend_surface_path ==
+             kObjc3Part6ErrorSourceClosureSurfacePath &&
+         summary.source_model == kObjc3Part6ErrorSourceClosureSourceModel &&
+         summary.failure_model == kObjc3Part6ErrorSourceClosureFailureModel &&
+         summary.source_only_claim_ids.size() == 3 &&
+         summary.source_only_claim_ids[0] ==
+             kObjc3SourceOnlyFeatureClaimThrowsDeclarations &&
+         summary.source_only_claim_ids[1] ==
+             kObjc3SourceOnlyFeatureClaimResultCarrierProfiles &&
+         summary.source_only_claim_ids[2] ==
+             kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles &&
+         summary.fail_closed_construct_ids.size() == 3 &&
+         summary.fail_closed_construct_ids[0] ==
+             kObjc3Part6FailClosedConstructTryExpressions &&
+         summary.fail_closed_construct_ids[1] ==
+             kObjc3Part6FailClosedConstructThrowStatements &&
+         summary.fail_closed_construct_ids[2] ==
+             kObjc3Part6FailClosedConstructDoCatchStatements &&
+         summary.throws_declaration_source_supported &&
+         summary.result_carrier_source_supported &&
+         summary.ns_error_bridging_source_supported &&
+         summary.try_keyword_reserved && summary.throw_keyword_reserved &&
+         summary.catch_keyword_reserved && summary.try_fail_closed &&
+         summary.throw_fail_closed && summary.do_catch_fail_closed &&
+         summary.deterministic_handoff &&
+         summary.ready_for_semantic_expansion &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3VersionedConformanceReportLoweringSummary {
   std::string contract_id =
       kObjc3VersionedConformanceReportLoweringContractId;
@@ -4742,6 +4826,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPart3TypeSourceClosureSummary part3_type_source_closure_summary;
   Objc3FrontendPart5ControlFlowSourceClosureSummary
       part5_control_flow_source_closure_summary;
+  Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary
       part5_control_flow_semantic_model_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;

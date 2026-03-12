@@ -4310,6 +4310,25 @@ std::string BuildPart5ControlFlowSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart6ErrorSourceClosureReplayKey(
+    const Objc3FrontendPart6ErrorSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";throws_sites=" << summary.function_throws_declaration_sites << ":"
+      << summary.method_throws_declaration_sites
+      << ";result_sites=" << summary.result_like_sites << ":"
+      << summary.result_success_sites << ":" << summary.result_failure_sites
+      << ":" << summary.result_branch_sites << ":"
+      << summary.result_payload_sites
+      << ";nserror_sites=" << summary.ns_error_bridging_sites << ":"
+      << summary.ns_error_out_parameter_sites << ":"
+      << summary.ns_error_bridge_path_sites
+      << ";reserved_keyword_sites=" << summary.try_keyword_sites << ":"
+      << summary.throw_keyword_sites << ":" << summary.catch_keyword_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 void CollectPart3TypeSourceClosureExprSites(
     const Expr *expr, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
   if (expr == nullptr) {
@@ -4694,6 +4713,88 @@ BuildPart5ControlFlowSourceClosureSummary(
   return summary;
 }
 
+Objc3FrontendPart6ErrorSourceClosureSummary
+BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
+                                    const std::vector<Objc3LexToken> &tokens) {
+  Objc3FrontendPart6ErrorSourceClosureSummary summary;
+  for (const auto &token : tokens) {
+    if (token.kind == Objc3LexTokenKind::KwTry) {
+      ++summary.try_keyword_sites;
+    } else if (token.kind == Objc3LexTokenKind::KwThrow) {
+      ++summary.throw_keyword_sites;
+    } else if (token.kind == Objc3LexTokenKind::KwCatch) {
+      ++summary.catch_keyword_sites;
+    }
+  }
+
+  bool throws_profiles_normalized = true;
+  bool result_profiles_normalized = true;
+  bool ns_error_profiles_normalized = true;
+  for (const auto &fn : program.functions) {
+    if (fn.throws_declared) {
+      ++summary.function_throws_declaration_sites;
+    }
+    throws_profiles_normalized =
+        throws_profiles_normalized && fn.throws_declaration_profile_is_normalized;
+    result_profiles_normalized =
+        result_profiles_normalized && fn.result_like_profile_is_normalized;
+    ns_error_profiles_normalized =
+        ns_error_profiles_normalized && fn.ns_error_bridging_profile_is_normalized;
+    summary.result_like_sites += fn.result_like_sites;
+    summary.result_success_sites += fn.result_success_sites;
+    summary.result_failure_sites += fn.result_failure_sites;
+    summary.result_branch_sites += fn.result_branch_sites;
+    summary.result_payload_sites += fn.result_payload_sites;
+    summary.ns_error_bridging_sites += fn.ns_error_bridging_sites;
+    summary.ns_error_out_parameter_sites += fn.ns_error_out_parameter_sites;
+    summary.ns_error_bridge_path_sites += fn.ns_error_bridge_path_sites;
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      if (method.throws_declared) {
+        ++summary.method_throws_declaration_sites;
+      }
+      throws_profiles_normalized =
+          throws_profiles_normalized &&
+          method.throws_declaration_profile_is_normalized;
+      result_profiles_normalized =
+          result_profiles_normalized && method.result_like_profile_is_normalized;
+      ns_error_profiles_normalized =
+          ns_error_profiles_normalized &&
+          method.ns_error_bridging_profile_is_normalized;
+      summary.result_like_sites += method.result_like_sites;
+      summary.result_success_sites += method.result_success_sites;
+      summary.result_failure_sites += method.result_failure_sites;
+      summary.result_branch_sites += method.result_branch_sites;
+      summary.result_payload_sites += method.result_payload_sites;
+      summary.ns_error_bridging_sites += method.ns_error_bridging_sites;
+      summary.ns_error_out_parameter_sites +=
+          method.ns_error_out_parameter_sites;
+      summary.ns_error_bridge_path_sites += method.ns_error_bridge_path_sites;
+    }
+  }
+
+  summary.throws_declaration_source_supported = true;
+  summary.result_carrier_source_supported = true;
+  summary.ns_error_bridging_source_supported = true;
+  summary.try_keyword_reserved = true;
+  summary.throw_keyword_reserved = true;
+  summary.catch_keyword_reserved = true;
+  summary.try_fail_closed = true;
+  summary.throw_fail_closed = true;
+  summary.do_catch_fail_closed = true;
+  summary.deterministic_handoff =
+      throws_profiles_normalized && result_profiles_normalized &&
+      ns_error_profiles_normalized &&
+      summary.result_success_sites + summary.result_failure_sites <=
+          summary.result_like_sites &&
+      summary.ns_error_bridge_path_sites <=
+          summary.ns_error_out_parameter_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key = BuildPart6ErrorSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -4903,6 +5004,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part5_control_flow_source_closure_summary =
       BuildPart5ControlFlowSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
+  result.part6_error_source_closure_summary =
+      BuildPart6ErrorSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program), tokens);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,
@@ -4931,6 +5035,8 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     // native validation because lane C owns executable cleanup insertion in
     // the IR path rather than keeping defer as a source-only semantic claim.
     semantic_options.allow_source_only_defer_statements = true;
+    semantic_options.allow_source_only_error_runtime_surface =
+        !options.emit_ir && !options.emit_object;
     semantic_options.arc_mode_enabled =
         options.arc_mode == Objc3FrontendArcMode::kEnabled;
 

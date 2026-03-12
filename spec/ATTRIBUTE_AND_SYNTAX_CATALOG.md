@@ -488,6 +488,21 @@ Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 - `let`, `var`
 
 Additional reserved keywords may be added by other parts.
+
+## M267 current Part 6 error source boundary (implementation note)
+
+Current implementation status (`M267-A001`):
+
+- `throws` declaration modifiers on functions and Objective-C methods are now
+  admitted as source-only frontend surfaces
+- deterministic result-like carrier profiling remains attached to function and
+  method declarations
+- deterministic `NSError` bridging profiling remains attached to function and
+  method declarations
+- `try`, `throw`, and `do/catch` are reserved parser-owned fail-closed
+  constructs in the current native implementation
+- runnable propagation, catch handling, and native error ABI are still deferred
+  to later `M267` issues
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

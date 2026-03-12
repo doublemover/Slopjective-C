@@ -955,6 +955,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
               input.migration_assist,
               input.validation_options.allow_source_only_block_literals,
               input.validation_options.allow_source_only_defer_statements,
+              input.validation_options.allow_source_only_error_runtime_surface,
               input.validation_options.arc_mode_enabled,
               pass_diagnostics);
     } else if (pass == Objc3SemaPassId::ValidateBodies) {

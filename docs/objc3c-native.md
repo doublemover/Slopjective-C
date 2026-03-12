@@ -3335,6 +3335,24 @@ Frontend compile-time evaluation engine contract relies on deterministic constan
   2. `npm run test:objc3c:parser-extraction-ast-builder-contract`
   3. `python -m pytest tests/tooling/test_objc3c_m204_frontend_macro_diagnostics_contract.py -q`
   4. `python -m pytest tests/tooling/test_objc3c_m203_frontend_compile_time_eval_contract.py -q`
+
+## M267 frontend Part 6 error source closure
+
+The frontend now freezes one truthful Part 6 source surface in
+`frontend.pipeline.semantic_surface.objc_part6_error_source_closure`.
+
+- live parser/AST/source-only surfaces:
+  - `throws` declarations during frontend-only validation on functions and Objective-C methods
+  - deterministic result-like carrier profiling on function and method bodies
+  - `NSError` bridging profiling remains emitted as deterministic frontend state
+- `try`, `throw`, and `do/catch` remain reserved fail-closed parser constructs:
+  - `try` expressions
+  - `throw` statements
+  - `do { ... } catch { ... }`
+- the current frontend runner may admit `throws` declarations for source-only
+  validation when both IR and object emission are disabled
+- runnable propagation, `try`, `throw`, `do/catch`, and native error ABI remain
+  deferred to later `M267` sema/lowering/runtime issues
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

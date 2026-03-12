@@ -420,6 +420,62 @@ std::string BuildPart5ControlFlowSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart6ErrorSourceClosureSummaryJson(
+    const Objc3FrontendPart6ErrorSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"fail_closed_construct_ids\":"
+      << BuildStringArrayJson(summary.fail_closed_construct_ids)
+      << ",\"function_throws_declaration_sites\":"
+      << summary.function_throws_declaration_sites
+      << ",\"method_throws_declaration_sites\":"
+      << summary.method_throws_declaration_sites
+      << ",\"result_like_sites\":" << summary.result_like_sites
+      << ",\"result_success_sites\":" << summary.result_success_sites
+      << ",\"result_failure_sites\":" << summary.result_failure_sites
+      << ",\"result_branch_sites\":" << summary.result_branch_sites
+      << ",\"result_payload_sites\":" << summary.result_payload_sites
+      << ",\"ns_error_bridging_sites\":" << summary.ns_error_bridging_sites
+      << ",\"ns_error_out_parameter_sites\":"
+      << summary.ns_error_out_parameter_sites
+      << ",\"ns_error_bridge_path_sites\":"
+      << summary.ns_error_bridge_path_sites
+      << ",\"try_keyword_sites\":" << summary.try_keyword_sites
+      << ",\"throw_keyword_sites\":" << summary.throw_keyword_sites
+      << ",\"catch_keyword_sites\":" << summary.catch_keyword_sites
+      << ",\"throws_declaration_source_supported\":"
+      << (summary.throws_declaration_source_supported ? "true" : "false")
+      << ",\"result_carrier_source_supported\":"
+      << (summary.result_carrier_source_supported ? "true" : "false")
+      << ",\"ns_error_bridging_source_supported\":"
+      << (summary.ns_error_bridging_source_supported ? "true" : "false")
+      << ",\"try_keyword_reserved\":"
+      << (summary.try_keyword_reserved ? "true" : "false")
+      << ",\"throw_keyword_reserved\":"
+      << (summary.throw_keyword_reserved ? "true" : "false")
+      << ",\"catch_keyword_reserved\":"
+      << (summary.catch_keyword_reserved ? "true" : "false")
+      << ",\"try_fail_closed\":"
+      << (summary.try_fail_closed ? "true" : "false")
+      << ",\"throw_fail_closed\":"
+      << (summary.throw_fail_closed ? "true" : "false")
+      << ",\"do_catch_fail_closed\":"
+      << (summary.do_catch_fail_closed ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart3TypeSemanticModelSummaryJson(
     const Objc3Part3TypeSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -9696,6 +9752,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart5ControlFlowSourceClosureSummary
       &part5_control_flow_source_closure_summary =
           pipeline_result.part5_control_flow_source_closure_summary;
+  const Objc3FrontendPart6ErrorSourceClosureSummary
+      &part6_error_source_closure_summary =
+          pipeline_result.part6_error_source_closure_summary;
   const Objc3Part3TypeSemanticModelSummary part3_type_semantic_model_summary =
       BuildPart3TypeSemanticModelSummary(
           pipeline_result.program.ast, pipeline_result.integration_surface, 4u);
@@ -13911,6 +13970,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part5_control_flow_source_closure\":"
            << BuildPart5ControlFlowSourceClosureSummaryJson(
                   part5_control_flow_source_closure_summary)
+           << ",\"objc_part6_error_source_closure\":"
+           << BuildPart6ErrorSourceClosureSummaryJson(
+                  part6_error_source_closure_summary)
            << ",\"objc_part5_control_flow_semantic_model\":"
            << BuildPart5ControlFlowSemanticModelSummaryJson(
                   part5_control_flow_semantic_model_summary)
@@ -15048,6 +15110,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part5_control_flow_source_closure\":"
            << BuildPart5ControlFlowSourceClosureSummaryJson(
                   part5_control_flow_source_closure_summary)
+           << ",\"objc_part6_error_source_closure\":"
+           << BuildPart6ErrorSourceClosureSummaryJson(
+                  part6_error_source_closure_summary)
            << ",\"objc_part5_control_flow_semantic_model\":"
            << BuildPart5ControlFlowSemanticModelSummaryJson(
                   part5_control_flow_semantic_model_summary)

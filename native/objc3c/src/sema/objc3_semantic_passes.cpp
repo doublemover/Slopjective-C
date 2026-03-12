@@ -635,6 +635,7 @@ struct Objc3UnsupportedFeatureClaimContext {
   bool has_owned_runtime_backed_object_storage = false;
   bool allow_source_only_block_literals = false;
   bool allow_source_only_defer_statements = false;
+  bool allow_source_only_error_runtime_surface = false;
   bool arc_mode_enabled = false;
 };
 
@@ -655,6 +656,7 @@ static Objc3UnsupportedFeatureClaimContext
 BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
                                     bool allow_source_only_block_literals,
                                     bool allow_source_only_defer_statements,
+                                    bool allow_source_only_error_runtime_surface,
                                     bool arc_mode_enabled) {
   Objc3UnsupportedFeatureClaimContext context;
   std::unordered_set<std::string> seen_owned_storage_sites;
@@ -682,6 +684,8 @@ BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
       context.owned_runtime_backed_object_property_sites > 0u;
   context.allow_source_only_block_literals = allow_source_only_block_literals;
   context.allow_source_only_defer_statements = allow_source_only_defer_statements;
+  context.allow_source_only_error_runtime_surface =
+      allow_source_only_error_runtime_surface;
   context.arc_mode_enabled = arc_mode_enabled;
   return context;
 }
@@ -1420,7 +1424,7 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
   // tranche by consuming this preserved semantic state through integrated smoke
   // and runbook proof rather than widening semantic acceptance here.
-  if (fn.throws_declared) {
+  if (fn.throws_declared && !context.allow_source_only_error_runtime_surface) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
         fn.line,
@@ -1494,7 +1498,7 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
   // ownership qualifiers still terminate in semantic unsupported-feature
   // diagnostics while the preserved lowering summaries remain the only
   // ownership hook surface available to IR closeout.
-  if (method.throws_declared) {
+  if (method.throws_declared && !context.allow_source_only_error_runtime_surface) {
     RecordUnsupportedFeatureClaimDiagnostic(
         stats.throws_source_rejection_site_count,
         method.line,
@@ -1554,6 +1558,7 @@ DiagnoseUnsupportedFeatureClaimSources(
     const Objc3Program &ast,
     bool allow_source_only_block_literals,
     bool allow_source_only_defer_statements,
+    bool allow_source_only_error_runtime_surface,
     bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
@@ -1564,6 +1569,7 @@ DiagnoseUnsupportedFeatureClaimSources(
       BuildUnsupportedFeatureClaimContext(ast,
                                           allow_source_only_block_literals,
                                           allow_source_only_defer_statements,
+                                          allow_source_only_error_runtime_surface,
                                           arc_mode_enabled);
   for (const auto &fn : ast.functions) {
     DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats, context);
@@ -2140,7 +2146,16 @@ static bool SupportsOwnershipQualifierParamTypeSuffix(const FuncParam &param) {
 }
 
 static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling || param.instancetype_spelling;
+  if (param.id_spelling || param.class_spelling || param.instancetype_spelling) {
+    return true;
+  }
+  if (!param.object_pointer_type_spelling) {
+    return false;
+  }
+  std::string lowered_name = param.object_pointer_type_name;
+  std::transform(lowered_name.begin(), lowered_name.end(), lowered_name.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  return lowered_name == "nserror";
 }
 
 static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
@@ -13658,6 +13673,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     bool migration_assist_enabled,
     bool allow_source_only_block_literals,
     bool allow_source_only_defer_statements,
+    bool allow_source_only_error_runtime_surface,
     bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -14816,6 +14832,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
               ast,
               allow_source_only_block_literals,
               allow_source_only_defer_statements,
+              allow_source_only_error_runtime_surface,
               arc_mode_enabled,
               diagnostics);
   // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed

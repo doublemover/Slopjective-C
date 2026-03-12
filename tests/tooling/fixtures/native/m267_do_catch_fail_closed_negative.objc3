@@ -1,0 +1,9 @@
+module m267_do_catch_negative;
+
+fn main() -> i32 {
+  do {
+    return 1;
+  } catch {
+    return 0;
+  }
+}

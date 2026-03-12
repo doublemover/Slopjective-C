@@ -1,0 +1,7 @@
+module m267_try_negative;
+
+extern fn risky() -> i32;
+
+fn main() -> i32 {
+  return try risky();
+}

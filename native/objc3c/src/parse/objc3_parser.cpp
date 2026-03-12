@@ -9424,6 +9424,14 @@ class Objc3Parser {
       return stmt;
     }
 
+    if (Match(TokenKind::KwThrow)) {
+      const Token &token = Previous();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P267",
+                   "unsupported 'throw' statement"));
+      return nullptr;
+    }
+
     if (Match(TokenKind::KwDo)) {
       auto stmt = std::make_unique<Stmt>();
       stmt->kind = Stmt::Kind::DoWhile;
@@ -9436,6 +9444,14 @@ class Objc3Parser {
       stmt->do_while_stmt->body = ParseControlBody();
       if (block_failed_) {
         block_failed_ = false;
+        return nullptr;
+      }
+
+      if (Match(TokenKind::KwCatch)) {
+        const Token &token = Previous();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P269",
+                     "unsupported 'do/catch' statement"));
         return nullptr;
       }
 
@@ -11375,6 +11391,13 @@ class Objc3Parser {
   }
 
   std::unique_ptr<Expr> ParsePrimary() {
+    if (Match(TokenKind::KwTry)) {
+      const Token &token = Previous();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P268",
+                   "unsupported 'try' expression"));
+      return nullptr;
+    }
     if (Match(TokenKind::Number)) {
       auto expr = std::make_unique<Expr>();
       expr->kind = Expr::Kind::Number;

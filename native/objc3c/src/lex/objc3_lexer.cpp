@@ -166,6 +166,12 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwDefer;
       } else if (ident == "do") {
         kind = TokenKind::KwDo;
+      } else if (ident == "try") {
+        kind = TokenKind::KwTry;
+      } else if (ident == "throw") {
+        kind = TokenKind::KwThrow;
+      } else if (ident == "catch") {
+        kind = TokenKind::KwCatch;
       } else if (ident == "for") {
         kind = TokenKind::KwFor;
       } else if (ident == "switch") {

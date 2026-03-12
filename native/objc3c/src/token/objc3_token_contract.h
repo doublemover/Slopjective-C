@@ -21,6 +21,9 @@ enum class Objc3LexTokenKind {
   KwGuard,
   KwDefer,
   KwDo,
+  KwTry,
+  KwThrow,
+  KwCatch,
   KwFor,
   KwSwitch,
   KwMatch,
@@ -180,6 +183,18 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
     "source-only:nil-coalescing";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimThrowsDeclarations =
+    "source-only:throws-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimResultCarrierProfiles =
+    "source-only:result-carrier-profiles";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles =
+    "source-only:nserror-bridging-profiles";
+inline constexpr const char *kObjc3Part6FailClosedConstructTryExpressions =
+    "part6-fail-closed:try-expressions";
+inline constexpr const char *kObjc3Part6FailClosedConstructThrowStatements =
+    "part6-fail-closed:throw-statements";
+inline constexpr const char *kObjc3Part6FailClosedConstructDoCatchStatements =
+    "part6-fail-closed:do-catch-statements";
 
 // M266-A001/B003 control-flow source+semantic surface anchor: the frontend now
 // owns the Part 5 keyword classification boundary directly. Guard bindings,

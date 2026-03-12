@@ -455,6 +455,17 @@ M266-E002 closeout note:
   the supported language or runtime boundary
 - `M267-A001` is the next issue
 
+M267-A001 source-closure note:
+
+- the current Part 6 frontend boundary is now explicit:
+  - `throws` declarations are live source-only frontend surfaces
+  - result-like carrier profiling remains live frontend metadata
+  - `NSError` bridging profiles remain live frontend metadata
+- `try`, `throw`, and `do/catch` are reserved fail-closed parser constructs in
+  the current native implementation
+- runnable error propagation, catch dispatch, and native thrown-error ABI remain
+  deferred to later `M267` issues
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
