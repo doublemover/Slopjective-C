@@ -147,6 +147,8 @@ std::string Objc3CliUsage() {
          "[-fobjc-arc] [-fno-objc-arc] "
          "[--objc3-compat-mode <canonical|legacy>] "
          "[--objc3-conformance-profile <core|strict|strict-concurrency|strict-system>] "
+         "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json|yaml>] "
+         "[--validate-objc3-conformance <report.json>] "
          "[--objc3-migration-assist] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
@@ -178,10 +180,14 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
   }
 
   options = Objc3CliOptions{};
-  options.input = argv[1];
   options.llc_path = DefaultLlcPath();
+  int index = 1;
+  if (argv[1][0] != '-') {
+    options.input = argv[1];
+    index = 2;
+  }
 
-  for (int i = 2; i < argc; ++i) {
+  for (int i = index; i < argc; ++i) {
     std::string flag = argv[i];
     if (flag.rfind("-fobjc-version=", 0) == 0) {
       const std::string version_value = flag.substr(std::string("-fobjc-version=").size());
@@ -228,6 +234,13 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
             profile_text;
         return false;
       }
+    } else if (flag == "--emit-objc3-conformance") {
+      options.emit_objc3_conformance = true;
+    } else if (flag == "--emit-objc3-conformance-format" && i + 1 < argc) {
+      options.emit_objc3_conformance_format = argv[++i];
+    } else if (flag == "--validate-objc3-conformance" && i + 1 < argc) {
+      options.command_mode = Objc3CliCommandMode::kValidateConformance;
+      options.validate_conformance_report_path = argv[++i];
     } else if (flag == "--objc3-migration-assist") {
       options.migration_assist = true;
     } else if (flag == "--objc3-bootstrap-registration-order-ordinal" &&
@@ -284,7 +297,31 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     }
   }
 
-  if (options.language_version != 3) {
+  if (options.command_mode == Objc3CliCommandMode::kValidateConformance) {
+    if (!options.input.empty()) {
+      error =
+          "--validate-objc3-conformance is a validation-only mode and does not accept a source input";
+      return false;
+    }
+    if (options.validate_conformance_report_path.empty()) {
+      error = "missing --validate-objc3-conformance <report.json> path";
+      return false;
+    }
+  } else if (options.input.empty()) {
+    error = Objc3CliUsage();
+    return false;
+  }
+
+  if (options.emit_objc3_conformance_format != "json" &&
+      options.emit_objc3_conformance_format != "yaml") {
+    error =
+        "invalid --emit-objc3-conformance-format (expected json|yaml): " +
+        options.emit_objc3_conformance_format;
+    return false;
+  }
+
+  if (options.command_mode == Objc3CliCommandMode::kCompile &&
+      options.language_version != 3) {
     error = "unsupported Objective-C language version for native frontend (expected 3): " +
             std::to_string(options.language_version);
     return false;

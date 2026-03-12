@@ -28,7 +28,13 @@ enum class Objc3ConformanceProfile {
   kStrictSystem,
 };
 
+enum class Objc3CliCommandMode {
+  kCompile,
+  kValidateConformance,
+};
+
 struct Objc3CliOptions {
+  Objc3CliCommandMode command_mode = Objc3CliCommandMode::kCompile;
   std::filesystem::path input;
   std::filesystem::path out_dir = std::filesystem::path("tmp") / "artifacts" / "compilation" / "objc3c-native";
   std::string emit_prefix = "module";
@@ -44,6 +50,9 @@ struct Objc3CliOptions {
   Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
   Objc3ConformanceProfile conformance_profile =
       Objc3ConformanceProfile::kCore;
+  bool emit_objc3_conformance = false;
+  std::string emit_objc3_conformance_format = "json";
+  std::filesystem::path validate_conformance_report_path;
   bool migration_assist = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1;
   std::vector<std::filesystem::path> imported_runtime_surface_paths;

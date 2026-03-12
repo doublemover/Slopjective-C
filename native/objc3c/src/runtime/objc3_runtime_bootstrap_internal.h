@@ -248,6 +248,14 @@ typedef struct objc3_runtime_arc_debug_state_snapshot {
   const char *last_property_owner_identity;
 } objc3_runtime_arc_debug_state_snapshot;
 
+// M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
+// still does not own profile selection, but the driver/toolchain now consume
+// the emitted `module.objc3-conformance-report.json` plus the sibling
+// `module.objc3-conformance-publication.json` through an explicit validation
+// operation that publishes `module.objc3-conformance-validation.json`.
+// Strictness and strict concurrency remain fail-closed and unclaimed until a
+// later executable lane ships them end to end.
+
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.

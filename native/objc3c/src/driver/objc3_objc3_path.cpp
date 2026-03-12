@@ -14,12 +14,91 @@
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "lower/objc3_lowering_contract.h"
 #include "pipeline/objc3_runtime_import_surface.h"
 
 namespace fs = std::filesystem;
 
+namespace {
+
+bool TryDeriveConformancePublicationPath(const fs::path &report_path,
+                                        fs::path &publication_path) {
+  const std::string report_name = report_path.filename().string();
+  const std::string suffix =
+      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
+  if (report_name.size() <= suffix.size() ||
+      report_name.rfind(suffix) != report_name.size() - suffix.size()) {
+    return false;
+  }
+  const std::string emit_prefix =
+      report_name.substr(0u, report_name.size() - suffix.size());
+  publication_path =
+      BuildConformancePublicationArtifactPath(report_path.parent_path(),
+                                             emit_prefix);
+  return true;
+}
+
+}  // namespace
+
+int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
+  if (cli_options.emit_objc3_conformance_format != "json") {
+    std::cerr << "unsupported --emit-objc3-conformance-format selection: "
+              << cli_options.emit_objc3_conformance_format
+              << " (current validation format is json)\n";
+    return 125;
+  }
+
+  if (!fs::exists(cli_options.validate_conformance_report_path)) {
+    std::cerr << "conformance report not found: "
+              << cli_options.validate_conformance_report_path.string() << "\n";
+    return 2;
+  }
+
+  fs::path publication_path;
+  if (!TryDeriveConformancePublicationPath(
+          cli_options.validate_conformance_report_path, publication_path)) {
+    std::cerr << "validated artifact must end with "
+              << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
+    return 125;
+  }
+  if (!fs::exists(publication_path)) {
+    std::cerr << "conformance publication artifact not found next to report: "
+              << publication_path.string() << "\n";
+    return 125;
+  }
+
+  const std::string report_json =
+      ReadText(cli_options.validate_conformance_report_path);
+  const std::string publication_json = ReadText(publication_path);
+  std::string validation_artifact_json;
+  std::string validation_error;
+  if (!TryBuildObjc3ConformanceClaimValidationArtifact(
+          {.report_artifact_path =
+               cli_options.validate_conformance_report_path.filename().string(),
+           .publication_artifact_path =
+               publication_path.filename().string()},
+          report_json,
+          publication_json,
+          validation_artifact_json,
+          validation_error)) {
+    std::cerr << validation_error << "\n";
+    return 125;
+  }
+
+  WriteConformanceValidationArtifact(cli_options.out_dir,
+                                     cli_options.emit_prefix,
+                                     validation_artifact_json);
+  return 0;
+}
+
 int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   try {
+    if (cli_options.emit_objc3_conformance_format != "json") {
+      std::cerr << "unsupported --emit-objc3-conformance-format selection: "
+                << cli_options.emit_objc3_conformance_format
+                << " (current runnable emission format is json)\n";
+      return 125;
+    }
     if (cli_options.conformance_profile != Objc3ConformanceProfile::kCore) {
       std::cerr << "unsupported --objc3-conformance-profile selection: "
                 << ConformanceProfileName(cli_options.conformance_profile)
@@ -90,6 +169,12 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         cli_options.out_dir,
         cli_options.emit_prefix,
         artifacts.versioned_conformance_report_artifact_json);
+    if (cli_options.emit_objc3_conformance) {
+      // D002 explicit operator parity: the native path already publishes the
+      // JSON conformance sidecar by default, and this flag keeps that behavior
+      // explicit/truthful for toolchain workflows that request the report
+      // directly.
+    }
     std::string conformance_publication_artifact_json;
     std::string conformance_publication_error;
     if (!TryBuildObjc3ConformanceReportPublicationArtifact(

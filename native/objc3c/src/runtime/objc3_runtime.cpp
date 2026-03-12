@@ -17,6 +17,14 @@ namespace {
 constexpr std::int64_t kDispatchModulus = 2147483629LL;
 constexpr std::uint64_t kReceiverIdentityBase = 1024;
 constexpr std::uint64_t kReceiverIdentityStride = 17;
+[[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
+    "objc3c-driver-conformance-report-publication/m264-d001-v1";
+[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimOperationsContractId =
+    "objc3c-toolchain-conformance-claim-operations/m264-d002-v1";
+[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimSelectionModel =
+    "compatibility-mode-plus-migration-assist-drive-current-publication-surface";
+[[maybe_unused]] constexpr const char *kObjc3ConformanceClaimFailureModel =
+    "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
 
 struct SelectorSlot {
   std::string spelling_storage;

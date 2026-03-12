@@ -211,6 +211,11 @@ struct Objc3ConformanceReportPublicationArtifactInputs {
   std::string report_artifact_relative_path;
 };
 
+struct Objc3ConformanceClaimValidationArtifactInputs {
+  std::string report_artifact_path;
+  std::string publication_artifact_path;
+};
+
 int RunProcess(const std::string &executable, const std::vector<std::string> &args);
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
@@ -250,5 +255,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     std::string &error);
 bool TryBuildObjc3ConformanceReportPublicationArtifact(
     const Objc3ConformanceReportPublicationArtifactInputs &inputs,
+    std::string &artifact_json,
+    std::string &error);
+bool TryBuildObjc3ConformanceClaimValidationArtifact(
+    const Objc3ConformanceClaimValidationArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
     std::string &artifact_json,
     std::string &error);

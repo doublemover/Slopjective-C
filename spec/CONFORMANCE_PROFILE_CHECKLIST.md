@@ -382,6 +382,26 @@ The driver/runtime-adjacent publication boundary must also stay explicit:
 - the publication artifact points back to the lowered conformance report, the
   runtime capability report contract, and the public schema
 
+## M264 CLI/toolchain conformance-claim operations (implementation note)
+
+The native toolchain must also expose explicit operator commands for the
+already-emitted conformance sidecars:
+
+- `--emit-objc3-conformance`
+- `--emit-objc3-conformance-format <json|yaml>`
+- `--validate-objc3-conformance <report.json>`
+
+Current truthful support:
+
+- JSON is the only runnable format
+- YAML remains fail-closed
+- validation consumes the emitted
+  `module.objc3-conformance-report.json` plus sibling
+  `module.objc3-conformance-publication.json`
+- validation writes
+  `module.objc3-conformance-validation.json`
+- the validated selected profile remains `core`
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend

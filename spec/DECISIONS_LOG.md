@@ -300,6 +300,29 @@ that unimplemented profiles are selectable today.
 
 ---
 
+## D-023: Emit/validate conformance operations consume the shipped JSON sidecars only {#decisions-d-023}
+
+**Decision:** The native toolchain shall expose explicit conformance operator
+commands equivalent to `--emit-objc3-conformance`,
+`--emit-objc3-conformance-format`, and `--validate-objc3-conformance`, but the
+current runnable format remains JSON only.
+
+The validation path shall consume the already-emitted
+`module.objc3-conformance-report.json` and sibling
+`module.objc3-conformance-publication.json`, then publish one deterministic
+`module.objc3-conformance-validation.json` summary. YAML remains fail-closed
+until a later lane implements it truthfully end to end.
+
+**Rationale:** The spec already claims emit/validate operator equivalence. The
+toolchain therefore needs a real operator surface, but that surface must remain
+bounded to the shipped JSON sidecars instead of implying richer publication
+formats or profile support that do not exist.
+
+**Spec impact:** [Part 12](#part-12) conformance-report operations and emitted
+artifact inventory.
+
+---
+
 ## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
 
 **Decision:** Until the native toolchain ships a standalone textual interface

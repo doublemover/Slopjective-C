@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -56,6 +57,14 @@ inline constexpr const char *kObjc3RuntimeLiveTeardownModel =
     "reset-clears-live-state-zeroes-image-local-init-cells-and-retains-bootstrap-catalog";
 inline constexpr const char *kObjc3RuntimeLiveRestartEvidenceModel =
     "repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations";
+inline constexpr const char *kObjc3ToolchainConformanceClaimOperationsContractId =
+    "objc3c-toolchain-conformance-claim-operations/m264-d002-v1";
+inline constexpr const char *kObjc3ToolchainConformanceClaimValidationSchemaId =
+    "objc3c-driver-conformance-validation-v1";
+inline constexpr const char *kObjc3ToolchainConformanceClaimValidationModel =
+    "driver-validates-versioned-conformance-report-and-publication-sidecars-before-toolchain-consumption";
+inline constexpr const char *kObjc3ToolchainConformanceClaimConsumptionModel =
+    "validation-consumes-json-sidecars-only-and-keeps-unsupported-profiles-fail-closed";
 
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
@@ -323,6 +332,119 @@ std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
   out << indent.substr(0, indent.size() >= 2u ? indent.size() - 2u : 0u)
       << "]";
   return out.str();
+}
+
+void SkipJsonWhitespace(const std::string &text, std::size_t &index) {
+  while (index < text.size() &&
+         std::isspace(static_cast<unsigned char>(text[index])) != 0) {
+    ++index;
+  }
+}
+
+bool TryFindJsonFieldValueStart(const std::string &text,
+                                const std::string &field,
+                                std::size_t &value_start) {
+  const std::string key = "\"" + field + "\"";
+  const std::size_t key_pos = text.find(key);
+  if (key_pos == std::string::npos) {
+    return false;
+  }
+  const std::size_t colon_pos = text.find(':', key_pos + key.size());
+  if (colon_pos == std::string::npos) {
+    return false;
+  }
+  value_start = colon_pos + 1u;
+  SkipJsonWhitespace(text, value_start);
+  return value_start < text.size();
+}
+
+bool TryExtractJsonStringField(const std::string &text,
+                               const std::string &field,
+                               std::string &value) {
+  std::size_t index = 0;
+  if (!TryFindJsonFieldValueStart(text, field, index) || text[index] != '"') {
+    return false;
+  }
+  ++index;
+  std::string decoded;
+  while (index < text.size()) {
+    const char ch = text[index++];
+    if (ch == '\\') {
+      if (index >= text.size()) {
+        return false;
+      }
+      decoded.push_back(text[index++]);
+      continue;
+    }
+    if (ch == '"') {
+      value = decoded;
+      return true;
+    }
+    decoded.push_back(ch);
+  }
+  return false;
+}
+
+bool TryExtractJsonBoolField(const std::string &text,
+                             const std::string &field,
+                             bool &value) {
+  std::size_t index = 0;
+  if (!TryFindJsonFieldValueStart(text, field, index)) {
+    return false;
+  }
+  if (text.compare(index, 4u, "true") == 0) {
+    value = true;
+    return true;
+  }
+  if (text.compare(index, 5u, "false") == 0) {
+    value = false;
+    return true;
+  }
+  return false;
+}
+
+bool TryExtractJsonStringArrayField(const std::string &text,
+                                    const std::string &field,
+                                    std::vector<std::string> &values) {
+  std::size_t index = 0;
+  if (!TryFindJsonFieldValueStart(text, field, index) || text[index] != '[') {
+    return false;
+  }
+  ++index;
+  SkipJsonWhitespace(text, index);
+  std::vector<std::string> parsed;
+  while (index < text.size() && text[index] != ']') {
+    if (text[index] != '"') {
+      return false;
+    }
+    ++index;
+    std::string decoded;
+    while (index < text.size()) {
+      const char ch = text[index++];
+      if (ch == '\\') {
+        if (index >= text.size()) {
+          return false;
+        }
+        decoded.push_back(text[index++]);
+        continue;
+      }
+      if (ch == '"') {
+        break;
+      }
+      decoded.push_back(ch);
+    }
+    parsed.push_back(decoded);
+    SkipJsonWhitespace(text, index);
+    if (index < text.size() && text[index] == ',') {
+      ++index;
+      SkipJsonWhitespace(text, index);
+    }
+  }
+  if (index >= text.size() || text[index] != ']') {
+    return false;
+  }
+  values = parsed;
+  return true;
 }
 
 }  // namespace
@@ -1685,6 +1807,175 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
       << EscapeJsonString(inputs.public_conformance_schema_id) << "\",\n"
       << "  \"report_artifact\": \""
       << EscapeJsonString(inputs.report_artifact_relative_path) << "\",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3ConformanceClaimValidationArtifact(
+    const Objc3ConformanceClaimValidationArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.report_artifact_path.empty() || inputs.publication_artifact_path.empty()) {
+    error = "conformance validation artifact inputs are incomplete";
+    return false;
+  }
+
+  std::string report_schema_id;
+  std::string report_contract_id;
+  std::string effective_compatibility_mode;
+  std::string runtime_capability_contract_id;
+  std::string public_conformance_schema_id;
+  bool migration_assist_enabled = false;
+  std::string publication_schema_id;
+  std::string publication_contract_id;
+  std::string selected_profile;
+  bool selected_profile_supported = false;
+  std::vector<std::string> supported_profile_ids;
+  std::vector<std::string> rejected_profile_ids;
+  std::string publication_surface_kind;
+  std::string report_artifact_relative_path;
+
+  if (!TryExtractJsonStringField(report_json, "schema_id", report_schema_id) ||
+      report_schema_id != "objc3c-versioned-conformance-report-v1") {
+    error = "invalid conformance report schema_id";
+    return false;
+  }
+  if (!TryExtractJsonStringField(report_json, "contract_id", report_contract_id) ||
+      report_contract_id != "objc3c-versioned-conformance-report-lowering/m264-c001-v1") {
+    error = "invalid conformance report contract_id";
+    return false;
+  }
+  if (!TryExtractJsonStringField(report_json, "effective_compatibility_mode",
+                                 effective_compatibility_mode)) {
+    error = "missing effective_compatibility_mode in conformance report";
+    return false;
+  }
+  if (!TryExtractJsonBoolField(report_json, "migration_assist_enabled",
+                               migration_assist_enabled)) {
+    error = "missing migration_assist_enabled in conformance report";
+    return false;
+  }
+  if (report_json.find("\"runtime_capability_report\"") == std::string::npos ||
+      report_json.find(
+          "\"contract_id\":\"objc3c-runtime-capability-reporting/m264-c002-v1\"") ==
+          std::string::npos) {
+    error = "runtime_capability_report payload is missing or drifted";
+    return false;
+  }
+  runtime_capability_contract_id =
+      "objc3c-runtime-capability-reporting/m264-c002-v1";
+  if (report_json.find("\"public_conformance_report\"") == std::string::npos ||
+      report_json.find("\"schema_id\":\"objc3-conformance-report/v1\"") ==
+          std::string::npos) {
+    error = "public_conformance_report payload is missing or drifted";
+    return false;
+  }
+  public_conformance_schema_id = "objc3-conformance-report/v1";
+
+  if (!TryExtractJsonStringField(publication_json, "schema_id",
+                                 publication_schema_id) ||
+      publication_schema_id != "objc3c-driver-conformance-publication-v1") {
+    error = "invalid conformance publication schema_id";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "contract_id",
+                                 publication_contract_id) ||
+      publication_contract_id !=
+          "objc3c-driver-conformance-report-publication/m264-d001-v1") {
+    error = "invalid conformance publication contract_id";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "selected_profile",
+                                 selected_profile) ||
+      selected_profile != "core") {
+    error = "selected_profile must remain core";
+    return false;
+  }
+  if (!TryExtractJsonBoolField(publication_json, "selected_profile_supported",
+                               selected_profile_supported) ||
+      !selected_profile_supported) {
+    error = "selected_profile_supported must remain true";
+    return false;
+  }
+  if (!TryExtractJsonStringArrayField(publication_json, "supported_profile_ids",
+                                      supported_profile_ids) ||
+      supported_profile_ids.size() != 1u ||
+      supported_profile_ids[0] != "core") {
+    error = "supported_profile_ids must remain [core]";
+    return false;
+  }
+  if (!TryExtractJsonStringArrayField(publication_json, "rejected_profile_ids",
+                                      rejected_profile_ids) ||
+      rejected_profile_ids.size() != 3u) {
+    error = "rejected_profile_ids must remain the three known non-runnable profiles";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "publication_surface_kind",
+                                 publication_surface_kind)) {
+    error = "missing publication_surface_kind in conformance publication";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "report_artifact",
+                                 report_artifact_relative_path) ||
+      report_artifact_relative_path !=
+          std::filesystem::path(inputs.report_artifact_path).filename().string()) {
+    error = "publication report_artifact does not match the validated report path";
+    return false;
+  }
+  if (publication_json.find(
+          "\"fail_closed_diagnostic_model\": \"core-profile-live-other-known-profiles-fail-closed-before-publication\"") ==
+      std::string::npos) {
+    error = "publication fail_closed_diagnostic_model drifted";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
+      << "\",\n"
+      << "  \"schema_id\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimValidationSchemaId)
+      << "\",\n"
+      << "  \"validation_model\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimValidationModel)
+      << "\",\n"
+      << "  \"consumption_model\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimConsumptionModel)
+      << "\",\n"
+      << "  \"format\": \"json\",\n"
+      << "  \"validated_report_artifact\": \""
+      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
+      << "  \"validated_publication_artifact\": \""
+      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
+      << "  \"report_schema_id\": \"" << EscapeJsonString(report_schema_id)
+      << "\",\n"
+      << "  \"report_contract_id\": \"" << EscapeJsonString(report_contract_id)
+      << "\",\n"
+      << "  \"runtime_capability_contract_id\": \""
+      << EscapeJsonString(runtime_capability_contract_id) << "\",\n"
+      << "  \"public_conformance_schema_id\": \""
+      << EscapeJsonString(public_conformance_schema_id) << "\",\n"
+      << "  \"selected_profile\": \"" << EscapeJsonString(selected_profile)
+      << "\",\n"
+      << "  \"selected_profile_supported\": true,\n"
+      << "  \"supported_profile_ids\": "
+      << BuildIndentedStringArrayJson(supported_profile_ids, "    ") << ",\n"
+      << "  \"rejected_profile_ids\": "
+      << BuildIndentedStringArrayJson(rejected_profile_ids, "    ") << ",\n"
+      << "  \"effective_compatibility_mode\": \""
+      << EscapeJsonString(effective_compatibility_mode) << "\",\n"
+      << "  \"migration_assist_enabled\": "
+      << (migration_assist_enabled ? "true" : "false") << ",\n"
+      << "  \"publication_surface_kind\": \""
+      << EscapeJsonString(publication_surface_kind) << "\",\n"
       << "  \"ready\": true\n"
       << "}\n";
   artifact_json = out.str();

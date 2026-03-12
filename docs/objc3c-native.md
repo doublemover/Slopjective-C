@@ -12530,6 +12530,42 @@ The publication artifact records:
 - both paths preserve the same truthful runnable/source-only/unsupported claim
   surface
 
+## CLI/toolchain conformance-claim operations (M264-D002)
+
+`M264-D002` turns the already-emitted conformance sidecars into a real operator
+surface instead of leaving them as passive files.
+
+Current live operations:
+
+- `--emit-objc3-conformance`
+  keeps the JSON conformance sidecar/publication pair explicit on the native
+  compile path
+- `--emit-objc3-conformance-format json`
+  is the only currently runnable format
+- `--emit-objc3-conformance-format yaml`
+  fails closed
+- `--validate-objc3-conformance <report.json>`
+  consumes an emitted `module.objc3-conformance-report.json` plus its sibling
+  `module.objc3-conformance-publication.json` and writes
+  `module.objc3-conformance-validation.json`
+
+The validation artifact records:
+
+- the D002 operator contract and validation schema ids
+- validated report/publication artifact names
+- report/publication contract ids
+- selected/supported/rejected profile ids
+- effective compatibility mode and migration-assist state
+- publication surface kind
+
+Truth boundary:
+
+- only JSON is currently supported
+- profile `core` remains the only live selected profile
+- strictness and strict concurrency remain fail-closed and unclaimed
+- validation consumes the already-emitted truthful sidecars rather than
+  synthesizing a richer claim surface
+
 ## Canonical interface and feature-macro truthfulness (M264-B003)
 
 `M264-B003` closes the remaining sema-owned truth gap around separate compilation.

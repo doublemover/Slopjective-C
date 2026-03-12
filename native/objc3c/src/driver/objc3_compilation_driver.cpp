@@ -9,6 +9,10 @@
 #include "driver/objc3_objc3_path.h"
 
 int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
+  if (cli_options.command_mode == Objc3CliCommandMode::kValidateConformance) {
+    return RunObjc3ConformanceValidationPath(cli_options);
+  }
+
   const Objc3DriverInputKind input_kind = ClassifyObjc3DriverInput(cli_options.input);
   std::string shell_error;
   if (!ValidateObjc3DriverShellInputs(cli_options, input_kind, shell_error)) {
