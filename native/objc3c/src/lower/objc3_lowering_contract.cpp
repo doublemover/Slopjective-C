@@ -1903,6 +1903,28 @@ std::string Objc3VersionedConformanceReportLoweringContractSummary() {
   return out.str();
 }
 
+std::string Objc3RuntimeCapabilityReportingContractSummary() {
+  std::ostringstream out;
+  // M264-C002 capability-reporting anchor: lane-C must publish one truthful
+  // machine-readable runtime/public capability payload that mirrors the
+  // lowered conformance truth surface instead of deriving product claims from
+  // release notes, docs, or ad hoc driver state.
+  out << "contract=" << kObjc3RuntimeCapabilityReportingContractId
+      << ";schema_id=" << kObjc3RuntimeCapabilityReportingSchemaId
+      << ";surface_path=" << kObjc3RuntimeCapabilityReportingSurfacePath
+      << ";profile_model=" << kObjc3RuntimeCapabilityReportingProfileModel
+      << ";optional_feature_model="
+      << kObjc3RuntimeCapabilityReportingOptionalFeatureModel
+      << ";version_model=" << kObjc3RuntimeCapabilityReportingVersionModel
+      << ";public_schema_id=" << kObjc3RuntimeCapabilityPublicSchemaId
+      << ";strictness_mode=" << kObjc3RuntimeCapabilityStrictnessMode
+      << ";concurrency_mode=" << kObjc3RuntimeCapabilityConcurrencyMode
+      << ";target_triple=" << kObjc3RuntimeCapabilityTargetTriple
+      << ";language_version=" << kObjc3RuntimeCapabilityLanguageVersion
+      << ";non_goals=no-strictness-promotion-or-runtime-capability-overclaim";
+  return out.str();
+}
+
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section) {
   return MapRuntimeMetadataSectionForObjectFormat(object_format, logical_section);

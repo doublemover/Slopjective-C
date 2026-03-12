@@ -5176,6 +5176,34 @@ Validation proves:
 - canonical native hello emits the lowered sidecar next to the manifest, IR,
   and object outputs
 - the frontend runner emits the same lowered sidecar on the manifest-only path
+
+## Runtime capability reporting (M264-C002)
+
+`M264-C002` extends the emitted conformance sidecar with two truthful,
+machine-readable payloads:
+
+- `runtime_capability_report`
+- `public_conformance_report`
+
+These payloads are still sourced from the same frontend truth packets as the
+versioned conformance sidecar. They do not introduce a second authority.
+
+The current published state is intentionally narrow:
+
+- claimed profile: `core`
+- not-claimed profiles: `strict`, `strict-concurrency`, `strict-system`
+- strictness mode: `permissive`
+- concurrency mode: `off`
+- not-claimed optional features: `throws`, `async-await`, `actors`, `blocks`,
+  `arc`
+
+Validation proves:
+
+- the native hello path emits both nested payloads alongside the existing
+  conformance sidecar
+- the frontend runner emits the same machine-readable capability payload on the
+  manifest-only path
+- the public conformance report stays deterministic for replay and closeout
 - both paths preserve the same truthful runnable/source-only/unsupported claim
   surface
 

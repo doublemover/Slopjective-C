@@ -6262,6 +6262,14 @@ class Objc3IREmitter {
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
+      // M264-C002 capability-reporting anchor: the emitted IR advertises the
+      // truthful runtime/public capability payload boundary carried by the
+      // conformance sidecar so later publication paths never reconstruct it.
+      out << "; runtime_capability_reporting = "
+          << Objc3RuntimeCapabilityReportingContractSummary()
+          << ";replay_key="
+          << frontend_metadata_.versioned_conformance_report_lowering_replay_key
+          << "\n";
     }
     if (ShouldEmitRuntimeBootstrapLowering()) {
       out << "; runtime_bootstrap_ctor_init_emission = "

@@ -347,6 +347,28 @@ That lowering boundary must keep the current state explicit:
 - strictness, strict concurrency, and feature-macro publication remain
   unsupported until they become executable end to end
 
+## M264 machine-readable runtime capability reporting (implementation note)
+
+The lowered conformance sidecar must also carry truthful machine-readable
+runtime/public capability payloads:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_runtime_capability_report`
+- sidecar payload `runtime_capability_report`
+- sidecar payload `public_conformance_report`
+
+Current required truth:
+
+- profile `core` is claimed
+- profiles `strict`, `strict-concurrency`, and `strict-system` are
+  not-claimed
+- mode `strictness=permissive`
+- mode `concurrency=off`
+- optional features `throws`, `async-await`, `actors`, `blocks`, and `arc`
+  remain not-claimed
+- the public report remains replay-stable until a later publication lane owns
+  wall-clock stamping
+
 ## M264 accepted unsupported-source rejection gate (implementation note)
 
 The same semantic legality packet must also fail closed when the live frontend

@@ -246,6 +246,34 @@ support based on parser/sema or contract-only progress.
 
 ---
 
+## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
+
+**Decision:** The native `objc3c` pipeline shall publish machine-readable
+`runtime_capability_report` and `public_conformance_report` payloads as a
+direct projection of the lowered conformance-report truth surface rather than
+introducing an independent release or CLI-owned claim model.
+
+The current public claim set shall stay explicit:
+
+- profile `core` is claimed,
+- profiles `strict`, `strict-concurrency`, and `strict-system` are
+  not-claimed,
+- `strictness=permissive`,
+- `concurrency=off`,
+- optional features `throws`, `async-await`, `actors`, `blocks`, and `arc`
+  remain not-claimed,
+- replay-oriented publication remains deterministic until a later driver lane
+  owns outward-facing timestamping and selection UX.
+
+**Rationale:** The emitted capability report has value only if it is grounded in
+the same truthful surface already enforced by the compiler. Splitting the claim
+surface would recreate the over-claim problem `M264` is intended to remove.
+
+**Spec impact:** [Part 12](#part-12) conformance publication semantics and
+[D](#d) module/runtime metadata documentation.
+
+---
+
 ## D-020: Canonical interface and feature-macro claims stay bounded by shipped surfaces {#decisions-d-020}
 
 **Decision:** Until the native toolchain ships a standalone textual interface
