@@ -1,0 +1,13 @@
+module typedKeyPathInvalidComponent;
+
+@interface Person
+@property (readonly) id name;
+@end
+
+@implementation Person
+@end
+
+fn main() -> i32 {
+  let path = @keypath(Person, missing);
+  return 0;
+}

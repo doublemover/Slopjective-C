@@ -29,12 +29,16 @@ Current implementation note:
 - Optional sends fail closed for non-ObjC-reference receivers, ordinary sends
   now fail closed for nullable receivers unless they have been proven nonnull,
   and `guard let` / `guard var` `else` bodies must exit the current scope.
-- Typed key-path roots still fail closed unless they resolve to `self` or an
-  in-scope identifier.
+- Typed key-path roots now fail closed unless they resolve to `self`, a known
+  class type, or an ObjC-reference-compatible identifier; class-root
+  single-component paths fail closed unless the component names a readable
+  property on that root.
+- Generic Objective-C method declarations written as `- <T> ...` remain
+  reserved in v1 and now diagnose explicitly.
 - Only optional-member access written as `?.` remains fail-closed at the
   current boundary.
-- Executable typed key-path behavior and the broader Part 3 surface remain
-  future work.
+- Multi-component typed key-path member chains, executable typed key-path
+  behavior, and the broader Part 3 surface remain future work.
 
 ### AM.0.1 Normative anchor map {#am-0-1}
 

@@ -17,6 +17,18 @@ static std::string MakeDiag(unsigned line, unsigned column, const std::string &c
   return out.str();
 }
 
+static std::string JoinStringVector(const std::vector<std::string> &items,
+                                    const std::string &separator) {
+  std::ostringstream out;
+  for (std::size_t index = 0; index < items.size(); ++index) {
+    if (index != 0u) {
+      out << separator;
+    }
+    out << items[index];
+  }
+  return out.str();
+}
+
 static const char *TypeName(ValueType type) {
   switch (type) {
     case ValueType::I32:
@@ -67,6 +79,9 @@ struct SemanticTypeInfo {
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
+
+static SemanticTypeInfo ScopeLookupType(
+    const std::vector<SemanticScope> &scopes, const std::string &name);
 
 static SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
   SemanticTypeInfo info;
@@ -1577,6 +1592,107 @@ struct Objc3ResolvedMessageSendMethod {
   bool missing_base = false;
   bool cycle_detected = false;
 };
+
+static const Objc3PropertyInfo *FindTypedKeyPathPropertyOnOwner(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &property_name) {
+  auto merge_it = surface.category_merge_surfaces.find(owner_name);
+  if (merge_it != surface.category_merge_surfaces.end()) {
+    auto property_it = merge_it->second.merged_properties.find(property_name);
+    if (property_it != merge_it->second.merged_properties.end()) {
+      return &property_it->second;
+    }
+  }
+  auto interface_it = surface.interfaces.find(owner_name);
+  if (interface_it != surface.interfaces.end()) {
+    auto property_it = interface_it->second.properties.find(property_name);
+    if (property_it != interface_it->second.properties.end()) {
+      return &property_it->second;
+    }
+  }
+  auto implementation_it = surface.implementations.find(owner_name);
+  if (implementation_it != surface.implementations.end()) {
+    auto property_it = implementation_it->second.properties.find(property_name);
+    if (property_it != implementation_it->second.properties.end()) {
+      return &property_it->second;
+    }
+  }
+  return nullptr;
+}
+
+static bool ResolveTypedKeyPathClassRootOwner(
+    const std::string &root_name,
+    const Objc3MessageSendResolutionContext &context,
+    std::string &owner_name) {
+  if (context.surface == nullptr || root_name.empty()) {
+    return false;
+  }
+  if (context.surface->interfaces.find(root_name) !=
+      context.surface->interfaces.end()) {
+    owner_name = root_name;
+    return true;
+  }
+  if (context.surface->implementations.find(root_name) !=
+      context.surface->implementations.end()) {
+    owner_name = root_name;
+    return true;
+  }
+  return false;
+}
+
+static bool TryResolveTypedKeyPathValidatedOwner(
+    const Expr &expr,
+    const std::vector<SemanticScope> &scopes,
+    const std::unordered_map<std::string, ValueType> &globals,
+    const std::unordered_map<std::string, FunctionInfo> &functions,
+    const Objc3MessageSendResolutionContext &context,
+    std::string &owner_name,
+    bool &is_class_root) {
+  owner_name.clear();
+  is_class_root = false;
+  if (expr.kind != Expr::Kind::Identifier ||
+      !expr.typed_keypath_literal_enabled) {
+    return false;
+  }
+  if (expr.typed_keypath_root_is_self) {
+    if (context.inside_method &&
+        !context.current_implementation_name.empty()) {
+      owner_name = context.current_implementation_name;
+    }
+    return true;
+  }
+
+  const SemanticTypeInfo local_type =
+      ScopeLookupType(scopes, expr.typed_keypath_root_name);
+  if (!IsUnknownSemanticType(local_type)) {
+    return IsObjCReferenceSemanticType(local_type);
+  }
+
+  auto global_it = globals.find(expr.typed_keypath_root_name);
+  if (global_it != globals.end()) {
+    if (global_it->second == ValueType::ObjCClass &&
+        ResolveTypedKeyPathClassRootOwner(expr.typed_keypath_root_name, context,
+                                          owner_name)) {
+      is_class_root = true;
+      return true;
+    }
+    return IsObjCReferenceSemanticType(
+        MakeSemanticTypeFromGlobal(global_it->second));
+  }
+
+  if (functions.find(expr.typed_keypath_root_name) != functions.end()) {
+    return false;
+  }
+
+  if (ResolveTypedKeyPathClassRootOwner(expr.typed_keypath_root_name, context,
+                                        owner_name)) {
+    is_class_root = true;
+    return true;
+  }
+
+  return false;
+}
 
 static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
     const Expr &expr,
@@ -4026,16 +4142,38 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                                          "type mismatch: typed key-path literal normalization failed"));
           return MakeScalarSemanticType(ValueType::Unknown);
         }
-        if (!expr->typed_keypath_root_is_self &&
-            IsUnknownSemanticType(ScopeLookupType(scopes, expr->typed_keypath_root_name)) &&
-            globals.find(expr->typed_keypath_root_name) == globals.end() &&
-            functions.find(expr->typed_keypath_root_name) == functions.end()) {
+        std::string validated_owner_name;
+        bool is_class_root = false;
+        if (!TryResolveTypedKeyPathValidatedOwner(
+                *expr, scopes, globals, functions, message_send_context,
+                validated_owner_name, is_class_root)) {
           diagnostics.push_back(MakeDiag(
               expr->line, expr->column, "O3S206",
               "type mismatch: typed key-path root '" +
                   expr->typed_keypath_root_name +
-                  "' must resolve to 'self' or an in-scope identifier"));
+                  "' must resolve to 'self', a known class type, or an ObjC-reference-compatible identifier"));
           return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        if (is_class_root) {
+          if (expr->typed_keypath_components.size() != 1u) {
+            diagnostics.push_back(MakeDiag(
+                expr->line, expr->column, "O3S206",
+                "type mismatch: typed key-path member chain '" +
+                    JoinStringVector(expr->typed_keypath_components, ".") +
+                    "' is unsupported until executable typed key-path lowering is enabled"));
+            return MakeScalarSemanticType(ValueType::Unknown);
+          }
+          const std::string &component = expr->typed_keypath_components.front();
+          if (FindTypedKeyPathPropertyOnOwner(
+                  *message_send_context.surface, validated_owner_name,
+                  component) == nullptr) {
+            diagnostics.push_back(MakeDiag(
+                expr->line, expr->column, "O3S206",
+                "type mismatch: typed key-path component '" + component +
+                    "' is not a readable property on root '" +
+                    validated_owner_name + "'"));
+            return MakeScalarSemanticType(ValueType::Unknown);
+          }
         }
         return MakeScalarSemanticType(ValueType::ObjCId);
       }
@@ -5282,6 +5420,14 @@ static void CollectPart3TypeSemanticExprSites(
     if (expr->typed_keypath_root_is_self) {
       ++summary.typed_keypath_self_root_sites;
     }
+    std::string validated_owner_name;
+    bool is_class_root = false;
+    const bool root_is_legal = TryResolveTypedKeyPathValidatedOwner(
+        *expr, scopes, globals, functions, message_send_context,
+        validated_owner_name, is_class_root);
+    if (is_class_root) {
+      ++summary.typed_keypath_class_root_sites;
+    }
     const bool has_valid_shape =
         expr->typed_keypath_literal_is_normalized &&
         !expr->typed_keypath_root_name.empty() &&
@@ -5290,6 +5436,17 @@ static void CollectPart3TypeSemanticExprSites(
                     expr->typed_keypath_components.end(),
                     [](const std::string &component) { return !component.empty(); });
     if (!has_valid_shape) {
+      ++summary.typed_keypath_contract_violation_sites;
+    }
+    if (!root_is_legal) {
+      ++summary.typed_keypath_root_legality_violation_sites;
+      ++summary.typed_keypath_contract_violation_sites;
+    } else if (is_class_root &&
+               (expr->typed_keypath_components.size() != 1u ||
+                FindTypedKeyPathPropertyOnOwner(
+                    *message_send_context.surface, validated_owner_name,
+                    expr->typed_keypath_components.front()) == nullptr)) {
+      ++summary.typed_keypath_member_path_contract_violation_sites;
       ++summary.typed_keypath_contract_violation_sites;
     }
   }
@@ -5546,14 +5703,22 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       surface.generic_metadata_abi_summary.generic_metadata_abi_sites;
   summary.nullability_semantic_sites =
       surface.nullability_flow_warning_precision_summary.nullability_flow_sites;
+  std::unordered_map<std::string, ValueType> body_globals = surface.globals;
+  for (const auto &interface_decl : ast.interfaces) {
+    body_globals.try_emplace(interface_decl.name, ValueType::ObjCClass);
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    body_globals.try_emplace(implementation_decl.name, ValueType::ObjCClass);
+  }
   for (const auto &function : ast.functions) {
     std::vector<SemanticScope> scopes;
     scopes.push_back({});
     for (const auto &param : function.params) {
       scopes.back().emplace(param.name, MakeSemanticTypeFromParam(param));
     }
-    const Objc3MessageSendResolutionContext context;
-    CollectPart3TypeSemanticStmtSitesFromList(function.body, scopes, surface.globals,
+    Objc3MessageSendResolutionContext context;
+    context.surface = &surface;
+    CollectPart3TypeSemanticStmtSitesFromList(function.body, scopes, body_globals,
                                               surface.functions,
                                               max_message_send_args, context,
                                               summary);
@@ -5578,9 +5743,10 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       }
       Objc3MessageSendResolutionContext context;
       context.inside_method = true;
+      context.surface = &surface;
       context.current_implementation_name = implementation.name;
       context.current_super_name = super_name;
-      CollectPart3TypeSemanticStmtSitesFromList(method.body, scopes, surface.globals,
+      CollectPart3TypeSemanticStmtSitesFromList(method.body, scopes, body_globals,
                                                 surface.functions,
                                                 max_message_send_args, context,
                                                 summary);
@@ -5593,9 +5759,14 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       summary.optional_flow_contract_violation_sites <=
           (summary.optional_flow_refinement_sites +
            summary.guard_binding_exit_enforcement_sites) &&
+      summary.typed_keypath_root_legality_violation_sites <=
+          summary.typed_keypath_literal_sites &&
+      summary.typed_keypath_member_path_contract_violation_sites <=
+          summary.typed_keypath_literal_sites &&
       summary.typed_keypath_contract_violation_sites <=
           summary.typed_keypath_literal_sites &&
       summary.typed_keypath_self_root_sites <= summary.typed_keypath_literal_sites &&
+      summary.typed_keypath_class_root_sites <= summary.typed_keypath_literal_sites &&
       summary.optional_propagation_sites == summary.nil_coalescing_sites &&
       summary.guard_binding_exit_enforcement_sites <=
           summary.guard_binding_sites;
@@ -5611,11 +5782,16 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       << ";guard-exit=" << summary.guard_binding_exit_enforcement_sites
       << ";keypaths=" << summary.typed_keypath_literal_sites
       << ";keypath-self=" << summary.typed_keypath_self_root_sites
+      << ";keypath-class=" << summary.typed_keypath_class_root_sites
       << ";generic-erasure=" << summary.generic_erasure_semantic_sites
       << ";nullability=" << summary.nullability_semantic_sites
       << ";binding-violations=" << summary.optional_binding_contract_violation_sites
       << ";optional-send-violations=" << summary.optional_send_contract_violation_sites
       << ";flow-violations=" << summary.optional_flow_contract_violation_sites
+      << ";keypath-root-violations="
+      << summary.typed_keypath_root_legality_violation_sites
+      << ";keypath-member-violations="
+      << summary.typed_keypath_member_path_contract_violation_sites
       << ";keypath-violations=" << summary.typed_keypath_contract_violation_sites;
   summary.replay_key = out.str();
   return summary;

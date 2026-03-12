@@ -55,7 +55,7 @@ Implementations may treat the following as aliases with identical semantics:
 
 ### B.2.2.1 Current Part 3 type-surface boundary (implementation note) {#b-2-2-1}
 
-Current implementation status (`M265-B002`):
+Current implementation status (`M265-B003`):
 
 - protocol `@required` / `@optional` partitions are live in the frontend
 - object-pointer nullability and pragmatic generic suffix carriers are live in
@@ -72,7 +72,11 @@ Current implementation status (`M265-B002`):
 - `guard let` / `guard var` `else` blocks now fail closed unless they exit the
   current scope
 - typed key-path literals such as `@keypath(...)` are admitted as parser-owned
-  source forms and now fail closed on unresolved roots
+  source forms and now fail closed on unresolved or non-ObjC-compatible roots
+- class-root key paths such as `@keypath(Person, name)` now fail closed unless
+  the named component is a readable property on the root type
+- generic Objective-C method declarations written as `- <T> ...` remain
+  reserved for a future revision and now diagnose explicitly
 - optional-member access `?.` is still fail-closed
 
 ### B.2.3 ARC source-surface and current mode boundary (implementation note) {#b-2-3}

@@ -22,7 +22,7 @@ Objective‑C 3.0 improves type safety without abandoning Objective‑C’s mode
 
 This part defines **syntax**, **static semantics**, **dynamic semantics**, and **required diagnostics** for these features.
 
-Implementation note (`M265-B002`):
+Implementation note (`M265-B003`):
 
 - The live compiler now publishes a sema-owned Part 3 packet for optional
   bindings, optional-flow refinement, optional sends, pragmatic
@@ -34,8 +34,14 @@ Implementation note (`M265-B002`):
 - `guard let` / `guard var` `else` bodies now fail closed unless they exit the
   current scope.
 - Nil-coalescing `??` now lowers as a real short-circuit path.
-- Typed key-path roots currently fail closed unless they resolve to `self` or
-  an in-scope identifier.
+- Typed key-path roots currently fail closed unless they resolve to `self`, a
+  known class type, or an ObjC-reference-compatible identifier.
+- Single-component class-root key paths now fail closed unless the named
+  component is a readable property on the root type.
+- Generic Objective-C method declarations written as `- <T> ...` remain
+  reserved in v1 and now diagnose explicitly.
+- Multi-component typed key-path member chains still fail closed until later
+  executable key-path lowering work.
 - `?.` optional-member access remains outside the admitted surface.
 
 ---

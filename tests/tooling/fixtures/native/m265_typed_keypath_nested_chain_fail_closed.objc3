@@ -1,0 +1,13 @@
+module typedKeyPathNestedChain;
+
+@interface Person
+@property (readonly) id address;
+@end
+
+@implementation Person
+@end
+
+fn main() -> i32 {
+  let path = @keypath(Person, address.street);
+  return 0;
+}

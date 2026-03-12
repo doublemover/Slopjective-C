@@ -374,11 +374,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             SnippetCheck("M265-B002-AM-02", "Optional sends fail closed for non-ObjC-reference receivers, ordinary sends"),
         ]),
         (SPEC_ATTR, [
-            SnippetCheck("M265-B002-ATTR-01", "Current implementation status (`M265-B002`)"),
+            SnippetCheck("M265-B002-ATTR-01", "Current implementation status (`M265-B003`)"),
             SnippetCheck("M265-B002-ATTR-02", "guard let` / `guard var` `else` blocks now fail closed unless they exit the"),
         ]),
         (SPEC_PART3, [
-            SnippetCheck("M265-B002-PART3-01", "Implementation note (`M265-B002`)"),
+            SnippetCheck("M265-B002-PART3-01", "Implementation note (`M265-B003`)"),
             SnippetCheck("M265-B002-PART3-02", "Nil-coalescing `??` now lowers as a real short-circuit path."),
         ]),
         (SEMA_CONTRACT_H, [

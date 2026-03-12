@@ -7407,6 +7407,26 @@ class Objc3Parser {
     method.line = method_marker.line;
     method.column = method_marker.column;
 
+    if (At(TokenKind::Less)) {
+      const Token generic_clause = Advance();
+      int depth = 1;
+      while (depth > 0 && !At(TokenKind::Eof)) {
+        if (Match(TokenKind::Less)) {
+          ++depth;
+          continue;
+        }
+        if (Match(TokenKind::Greater)) {
+          --depth;
+          continue;
+        }
+        (void)Advance();
+      }
+      diagnostics_.push_back(MakeDiag(
+          generic_clause.line, generic_clause.column, "O3P114",
+          "generic Objective-C method declarations are reserved for a future Objective-C 3 revision"));
+      return false;
+    }
+
     if (!Match(TokenKind::LParen)) {
       const Token &token = Peek();
       diagnostics_.push_back(

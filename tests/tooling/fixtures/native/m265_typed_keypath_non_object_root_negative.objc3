@@ -1,0 +1,6 @@
+module typedKeyPathNonObjectRoot;
+
+fn main(count: i32) -> i32 {
+  let path = @keypath(count, value);
+  return 0;
+}

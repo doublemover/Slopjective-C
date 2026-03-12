@@ -1,0 +1,9 @@
+module genericMethodReserved;
+
+@interface Person
+- <T> (T)coerce:(id)value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

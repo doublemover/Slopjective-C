@@ -367,6 +367,8 @@ std::string BuildPart3TypeSemanticModelSummaryJson(
       << summary.typed_keypath_literal_sites
       << ",\"typed_keypath_self_root_sites\":"
       << summary.typed_keypath_self_root_sites
+      << ",\"typed_keypath_class_root_sites\":"
+      << summary.typed_keypath_class_root_sites
       << ",\"generic_erasure_semantic_sites\":"
       << summary.generic_erasure_semantic_sites
       << ",\"nullability_semantic_sites\":"
@@ -377,6 +379,10 @@ std::string BuildPart3TypeSemanticModelSummaryJson(
       << summary.optional_send_contract_violation_sites
       << ",\"optional_flow_contract_violation_sites\":"
       << summary.optional_flow_contract_violation_sites
+      << ",\"typed_keypath_root_legality_violation_sites\":"
+      << summary.typed_keypath_root_legality_violation_sites
+      << ",\"typed_keypath_member_path_contract_violation_sites\":"
+      << summary.typed_keypath_member_path_contract_violation_sites
       << ",\"typed_keypath_contract_violation_sites\":"
       << summary.typed_keypath_contract_violation_sites
       << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")

@@ -342,15 +342,20 @@ Currently live:
 - optional sends now fail closed for non-ObjC-reference receivers
 - ordinary sends now fail closed for nullable receivers unless the receiver has
   been proven nonnull or optional-send syntax is used
-- typed key-path roots now fail closed unless they resolve to `self` or an
-  in-scope identifier
+- typed key-path roots now fail closed unless they resolve to `self`, a known
+  class type, or an ObjC-reference-compatible identifier
+- single-component class-root key paths such as `@keypath(Person, name)` now
+  fail closed unless the component names a readable property on the root
+- generic Objective-C method declarations written as `- <T> ...` remain
+  reserved for a future revision and now diagnose explicitly
 - pragmatic generic-erasure and nullability site counts are published through
   the semantic surface
 
 Current fail-closed boundary:
 
 - `?.` optional-member access remains fail closed
-- typed key-path literals are still admitted as semantic-model sites only
+- multi-component typed key-path member chains still fail closed until later
+  executable key-path lowering work
 - broader Part 3 lowering/runtime work still remains in later `M265` / `M266`
   milestones
 

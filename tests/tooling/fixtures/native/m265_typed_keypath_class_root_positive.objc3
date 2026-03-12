@@ -1,0 +1,13 @@
+module typedKeyPathClassRoot;
+
+@interface Person
+@property (readonly) id name;
+@end
+
+@implementation Person
+@end
+
+fn main() -> i32 {
+  let path = @keypath(Person, name);
+  return 0;
+}
