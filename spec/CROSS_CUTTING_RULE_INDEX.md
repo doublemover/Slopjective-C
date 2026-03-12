@@ -51,6 +51,18 @@ Current Part 5 lowering note:
 - current fail-closed lowering probes terminate deterministically with
   `O3L300`.
 
+Current Part 5 cleanup/unwind runtime note:
+
+- `M266-D001` freezes the current toolchain/runtime boundary for runnable
+  cleanup execution
+- executable proofs consume the emitted linker-response sidecar plus the
+  runtime support archive path
+- runtime cleanup helpers remain private:
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+- no public cleanup/unwind runtime ABI widens in this freeze
+
 Current Part 5 exhaustiveness note:
 
 - admitted `match` statements must now be exhaustive for the supported surface

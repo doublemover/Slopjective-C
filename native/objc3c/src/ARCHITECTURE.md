@@ -52,6 +52,10 @@ Current-state note:
   and lexical `defer` cleanup insertion now lower directly in native IR, while
   statement-form `match` remains the only admitted Part 5 lowering surface that
   still fails closed.
+- `M266-D001` freezes the current runtime/toolchain boundary for that runnable
+  cleanup slice: native probes consume the emitted linker-response/runtime-
+  archive sidecars, while the runtime-owned cleanup carrier remains the private
+  autoreleasepool push/pop plus memory-state snapshot surface.
 - Parser/sema boundaries are enforced through explicit contracts in
   `parse/objc3_parser_contract.h`, `parse/objc3_ast_builder_contract.h`, and
   `sema/objc3_sema_contract.h`.

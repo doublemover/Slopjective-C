@@ -1452,6 +1452,9 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     error = "cross-module runtime link-plan artifact inputs are incomplete";
     return false;
   }
+  // M266-D001 cleanup-unwind integration anchor: runnable cleanup/unwind
+  // proofs stay toolchain-visible through the linker-response sidecar plus the
+  // emitted runtime-support archive path that native executable probes consume.
   if (inputs.direct_import_surface_artifact_paths.size() !=
       inputs.imported_inputs.size()) {
     error =

@@ -418,6 +418,29 @@ Recommended semantic contract check:
 
 - `python scripts/check_m266_b001_control_flow_and_pattern_semantic_model_contract_and_architecture_freeze.py`
 
+## M266 cleanup and unwind integration contract
+
+`M266-D001` freezes the current runtime/toolchain boundary for the runnable
+Part 5 cleanup slice without pretending that a broader public unwind runtime
+API already exists.
+
+- native `defer` cleanup execution currently rides through the existing
+  `M266-C002` lowering path into ordinary native objects and executables
+- executable probes consume the emitted linker-response sidecar plus the
+  runtime archive path recorded in the registration/link artifacts
+- the runtime side remains intentionally private:
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+- this issue does not claim a new public cleanup-stack ABI, exception runtime,
+  or generalized unwind personality surface
+- `M266-D002` is the next issue that widens runnable cleanup/unwind execution
+  evidence beyond this frozen boundary
+
+Recommended runtime contract check:
+
+- `python scripts/check_m266_d001_cleanup_and_unwind_integration_contract_and_architecture_freeze.py`
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member

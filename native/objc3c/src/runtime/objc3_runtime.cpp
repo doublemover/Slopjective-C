@@ -4432,6 +4432,9 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
 // M260-D002 runtime-memory-management implementation anchor: autoreleasepool
 // scopes are now private runtime-owned stack frames that retain queued values
 // until pop-time LIFO drain, while public ABI widening remains deferred.
+// M266-D001 cleanup-unwind integration anchor: current Part 5 cleanup/unwind
+// execution proofs reuse this private pool-frame drain path and the paired
+// memory-management snapshots as the runtime-owned cleanup carrier.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
 }

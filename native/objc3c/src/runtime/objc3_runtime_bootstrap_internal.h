@@ -406,6 +406,10 @@ void objc3_runtime_clear_current_property_context_for_testing(void);
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice
 // links and executes through.
+// M266-D001 cleanup-unwind integration anchor: the current runnable Part 5
+// cleanup/unwind proof still reuses these same private autoreleasepool hooks
+// plus the memory-management snapshot surface instead of widening the public
+// runtime ABI with a standalone cleanup stack API.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
 int objc3_runtime_retain_i32(int value);

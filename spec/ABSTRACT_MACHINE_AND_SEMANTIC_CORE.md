@@ -422,6 +422,15 @@ M266-C001 lowering note:
 - M266-C002 lowering note: native IR now executes `guard` short-circuit control flow and lexical `defer` cleanup insertion directly, while statement-form `match` remains the only Part 5 lowering surface still fail-closed.
 - native LLVM lowering still fail-closes these surfaces with deterministic `O3L300` diagnostics until later runnable lowering/runtime work lands.
 
+M266-D001 runtime/toolchain note:
+
+- the current runnable cleanup/unwind boundary does not add a public runtime cleanup ABI
+- native `defer` execution is presently proven through:
+  - emitted native object/executable artifacts from the existing `M266-C002` lowering slice
+  - the emitted linker-response/runtime-archive sidecars used to link those executables
+  - the private autoreleasepool push/pop and memory-state snapshot hooks that remain the runtime-owned cleanup carrier
+- broader cleanup/unwind runtime execution remains the follow-on `M266-D002` implementation target
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

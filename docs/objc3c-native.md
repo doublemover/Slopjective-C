@@ -442,11 +442,7 @@ admits more real syntax than the initial `M266-A001` freeze.
   - binding patterns `let name` / `var name`
   - result-case patterns such as `.Ok(let value)` and `.Err(let error)`
 - source-only `defer { ... }` statements are now admitted as a frontend/sema-owned Part 5 control-flow surface
-- native emit paths now lower runnable `defer` cleanup insertion and boolean-clause `guard` short-circuit control flow through `M266-C002`
-- native emit paths now also lower literal/default/wildcard/binding `match`
-  arms through `M266-C003`
-- result-case `match` arms remain explicitly fail-closed in native lowering
-  until a runtime `Result` payload ABI lands
+- native emit paths still fail closed for runnable `defer` lowering with `O3S221` until later lane-C/lane-D work lands
 - expression-form `match` arms using `=>`, guarded patterns using `where`, and
   type-test patterns using contextual `is` still fail closed with targeted
   parser diagnostics
@@ -477,21 +473,46 @@ at `frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model`.
   - live bool/result-case exhaustiveness plus catch-all exhaustiveness
   - `break` / `continue` legality restrictions
 - still deferred today:
+  - runnable guard short-circuit lowering
   - runnable statement-form `match` dispatch lowering
+  - runnable `defer` cleanup lowering/runtime execution
   - result payload typing beyond the current binding-scope surface
 
 M266-C001 lowering note:
 
 - the frontend now publishes `frontend.pipeline.semantic_surface.objc_part5_control_flow_safety_lowering_contract`
-- this packet is now a historical freeze for the original lowering boundary:
-  - `M266-C002` upgrades native IR lowering to live short-circuit `guard` execution
-  - `M266-C002` upgrades native IR lowering to live lexical `defer` cleanup insertion on ordinary and non-local scope exit
-  - statement-form `match` remains admitted in frontend/sema and still fails closed in native IR lowering
-- current implementation proof bundle: `objc3c-part5-defer-guard-lowering-implementation/m266-c002-v1`
+- this packet truthfully freezes the current lowering boundary:
+  - `guard` is admitted in frontend/sema and remains fail-closed in native IR lowering
+  - statement-form `match` is admitted in frontend/sema and remains fail-closed in native IR lowering
+  - source-only `defer { ... }` is admitted in frontend/sema and remains fail-closed in native IR lowering
+- current native fail-closed probes terminate with deterministic `O3L300` lowering diagnostics instead of silently widening the runnable surface
 
 Recommended semantic contract check:
 
 - `python scripts/check_m266_b001_control_flow_and_pattern_semantic_model_contract_and_architecture_freeze.py`
+
+## M266 cleanup and unwind integration contract
+
+`M266-D001` freezes the current runtime/toolchain boundary for the runnable
+Part 5 cleanup slice without pretending that a broader public unwind runtime
+API already exists.
+
+- native `defer` cleanup execution currently rides through the existing
+  `M266-C002` lowering path into ordinary native objects and executables
+- executable probes consume the emitted linker-response sidecar plus the
+  runtime archive path recorded in the registration/link artifacts
+- the runtime side remains intentionally private:
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+- this issue does not claim a new public cleanup-stack ABI, exception runtime,
+  or generalized unwind personality surface
+- `M266-D002` is the next issue that widens runnable cleanup/unwind execution
+  evidence beyond this frozen boundary
+
+Recommended runtime contract check:
+
+- `python scripts/check_m266_d001_cleanup_and_unwind_integration_contract_and_architecture_freeze.py`
 
 ## M151 frontend symbol graph and scope-resolution parser surface
 
