@@ -229,19 +229,25 @@ Currently live in the frontend:
 
 Current fail-closed boundary:
 
-- `?.` optional-member access is not admitted yet
+- typed key-path literals remain source-only and still fail closed on the
+  native lowering path
 
 Deterministic current behavior:
 
-- `?.` fails in the lexer on `.` with `O3L001`
+- contiguous `?.` now tokenizes as one punctuator and lowers by desugaring
+  into the same optional-send/nil-short-circuit path used by bracketed
+  optional sends
 - `if let` / `guard let` are parser-owned source forms in this lane and lower
   into deterministic frontend control-flow scaffolding for later `M265` sema
   and lowering work
 - optional sends are admitted as parser-owned message-send forms and published
   through the frontend semantic surface
+- optional-member access is admitted as parser-owned sugar and published
+  truthfully through the frontend semantic surface
 - `??` and `@keypath(...)` are admitted as parser-owned source forms and
   published through the frontend semantic surface
-- only `?.` remains fail-closed in the current frontend boundary
+- typed key-path literals still remain fail-closed on the native path in the
+  current frontend boundary
 
 Recommended frontend contract checks:
 
@@ -258,6 +264,8 @@ Current implementation status (`M265-C001`):
   single-evaluation control-flow model
 - optional sends now lower natively with single-evaluation nil short-circuit
   behavior; selector arguments are not evaluated on the nil arm
+- `?.` optional-member access now lowers natively by desugaring into the same
+  optional-send/nil-short-circuit path
 - nil-coalescing `??` now lowers natively under the same single-evaluation
   short-circuit model
 - ordinary sends still fail closed for nullable receivers unless the receiver
@@ -271,7 +279,6 @@ Current implementation status (`M265-C001`):
 
 Current fail-closed boundary:
 
-- `?.` optional-member access remains fail closed
 - typed key-path literals such as `@keypath(...)` remain fail closed on the
   native lowering path
 - multi-component typed key-path member chains still fail closed until later

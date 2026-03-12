@@ -2046,14 +2046,15 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary();
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary();
 std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3RunnableBlockExecutionMatrixSummary();
-// M265-C001 Part 3 lowering freeze anchor: native lowering now truthfully
-// freezes the live optional binding/send/coalescing path with single-evaluation
-// nil short-circuit semantics while keeping typed key-path artifact emission
-// deferred and fail closed until M265-C003.
+// M265-C001/C002 Part 3 lowering freeze anchor: native lowering now
+// truthfully freezes the live optional binding/send/optional-member-access/
+// coalescing path with single-evaluation nil short-circuit semantics while
+// keeping typed key-path artifact emission deferred and fail closed until
+// M265-C003.
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringContractId =
     "objc3c-part3-optional-keypath-lowering/m265-c001-v1";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringOptionalModel =
-    "optional-bindings-sends-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
+    "optional-bindings-sends-optional-member-access-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringTypedKeypathModel =
     "typed-keypath-literals-remain-source-and-semantic-surfaces-and-fail-closed-before-m265-c003";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringAuthorityModel =

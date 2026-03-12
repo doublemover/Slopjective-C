@@ -36,6 +36,9 @@ Implementation note (`M265-C001`):
 - `guard let` / `guard var` `else` bodies now fail closed unless they exit the
   current scope.
 - Nil-coalescing `??` now lowers as a real short-circuit path.
+- `?.` optional-member access now lowers natively by desugaring into the same
+  optional-send/nil-short-circuit machinery already used for bracketed
+  optional sends.
 - Typed key-path roots currently fail closed unless they resolve to `self`, a
   known class type, or an ObjC-reference-compatible identifier.
 - Typed key-path literals remain deferred from native IR/object lowering and
@@ -46,7 +49,8 @@ Implementation note (`M265-C001`):
   reserved in v1 and now diagnose explicitly.
 - Multi-component typed key-path member chains still fail closed until later
   executable key-path lowering work.
-- `?.` optional-member access remains outside the admitted surface.
+- `?.` optional-member access now lowers natively through the same
+  single-evaluation nil-short-circuit path used by bracketed optional sends.
 
 ---
 

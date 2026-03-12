@@ -1188,6 +1188,10 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
 
 std::string Objc3Part3OptionalKeypathLoweringSummary() {
   std::ostringstream out;
+  // M265-C002 optional chaining lowering anchor: `?.member` now desugars onto
+  // the same optional-send ABI and nil-short-circuit path already used by
+  // bracketed optional sends, so the live lowering packet truthfully covers
+  // optional-member access without widening typed key-path execution.
   out << "contract_id=" << kObjc3Part3OptionalKeypathLoweringContractId
       << ";optional_model="
       << kObjc3Part3OptionalKeypathLoweringOptionalModel

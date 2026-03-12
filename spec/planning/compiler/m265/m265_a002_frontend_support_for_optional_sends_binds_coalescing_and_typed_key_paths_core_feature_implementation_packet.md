@@ -4,7 +4,7 @@ Issue: `M265-A002`
 
 Objective:
 
-- promote the Part 3 lane-A frontend boundary from pure fail-closed scaffolding into a truthful parser-owned source surface for optional bindings, optional sends, nil-coalescing, and typed key-path literals while keeping `?.` fail-closed
+- promote the Part 3 lane-A frontend boundary from pure fail-closed scaffolding into a truthful parser-owned source surface for optional bindings, optional sends, optional-member-access sugar, nil-coalescing, and typed key-path literals
 
 Code anchors:
 
@@ -28,7 +28,7 @@ Acceptance detail:
 - manifest publishes `frontend.pipeline.semantic_surface.objc_part3_type_source_closure`
 - the positive fixture proves parser-owned admission for `if let` / `guard let`, optional sends, `??`, and `@keypath(...)`
 - the manifest truthfully publishes `optional_send_sites`, `nil_coalescing_sites`, and `typed_keypath_literal_sites`
-- unsupported claims shrink to `?.` optional-member access only
+- optional-member access no longer remains outside the admitted frontend surface
 - deterministic evidence lands under `tmp/reports/m265/M265-A002/`
 
 Non-goals:
@@ -36,4 +36,4 @@ Non-goals:
 - no runnable optional-flow lowering yet
 - no truthful post-`guard let` scope realization yet
 - no executable typed key-path runtime yet
-- no support for `?.` optional-member access yet
+- no executable typed key-path runtime yet

@@ -41,7 +41,7 @@ EXPECTED_SOURCE_ONLY = [
     "source-only:nil-coalescing",
     "source-only:typed-keypath-literals",
 ]
-EXPECTED_UNSUPPORTED = ["unsupported:optional-member-access"]
+EXPECTED_UNSUPPORTED: list[str] = []
 
 
 @dataclass(frozen=True)
@@ -133,8 +133,8 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
     scalar_expectations: list[tuple[str, str, Any]] = [
         ("M265-A002-PAYLOAD-01", "contract_id", CONTRACT_ID),
         ("M265-A002-PAYLOAD-02", "frontend_surface_path", "frontend.pipeline.semantic_surface.objc_part3_type_source_closure"),
-        ("M265-A002-PAYLOAD-03", "source_model", "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces"),
-        ("M265-A002-PAYLOAD-04", "failure_model", "optional-member-access-remains-fail-closed-until-later-m265-issues"),
+        ("M265-A002-PAYLOAD-03", "source_model", "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces"),
+        ("M265-A002-PAYLOAD-04", "failure_model", "typed-keypath-literals-remain-source-sema-surfaces-and-fail-closed-on-native-lowering-until-later-m265-issues"),
     ]
     for check_id, field, expected in scalar_expectations:
         checks_total += 1
@@ -151,13 +151,13 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         ("M265-A002-PAYLOAD-11", "optional_send_source_supported"),
         ("M265-A002-PAYLOAD-12", "nil_coalescing_source_supported"),
         ("M265-A002-PAYLOAD-13", "typed_keypath_literal_source_supported"),
-        ("M265-A002-PAYLOAD-14", "optional_member_access_fail_closed"),
-        ("M265-A002-PAYLOAD-15", "deterministic_handoff"),
-        ("M265-A002-PAYLOAD-16", "ready_for_semantic_expansion"),
+        ("M265-A002-PAYLOAD-14", "deterministic_handoff"),
+        ("M265-A002-PAYLOAD-15", "ready_for_semantic_expansion"),
     ]:
         checks_total += 1
         checks_passed += require(payload.get(field) is True, artifact, check_id, f"{field} must be true", failures)
     for check_id, field in [
+        ("M265-A002-PAYLOAD-16", "optional_member_access_fail_closed"),
         ("M265-A002-PAYLOAD-17", "nil_coalescing_fail_closed"),
         ("M265-A002-PAYLOAD-18", "typed_keypath_literal_fail_closed"),
     ]:
@@ -234,33 +234,10 @@ def run_dynamic_probes(args: argparse.Namespace, failures: list[Finding]) -> tup
         checks_total += sub_total
         checks_passed += sub_passed
 
-    negative_out = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "m265" / "a002" / "optional-member-access"
-    negative_out.mkdir(parents=True, exist_ok=True)
-    negative = run_command([
-        str(args.runner_exe),
-        str(OPTIONAL_ACCESS_FIXTURE),
-        "--out-dir",
-        str(negative_out),
-        "--emit-prefix",
-        "module",
-        "--no-emit-ir",
-        "--no-emit-object",
-    ])
-    negative_text = (negative.stdout or "") + (negative.stderr or "")
-    checks_total += 1
-    checks_passed += require(negative.returncode != 0, display_path(OPTIONAL_ACCESS_FIXTURE), "M265-A002-DYN-10", "optional-member-access fixture unexpectedly succeeded", failures)
-    checks_total += 1
-    checks_passed += require("unexpected character '.' [O3L001]" in negative_text, display_path(OPTIONAL_ACCESS_FIXTURE), "M265-A002-DYN-11", "optional-member-access fail-closed diagnostic drifted", failures)
-
     dynamic = {
         "positive_fixture": display_path(POSITIVE_FIXTURE),
         "positive_manifest": display_path(manifest_path),
         "part3_type_source_closure": payload,
-        "negative_case": {
-            "fixture": display_path(OPTIONAL_ACCESS_FIXTURE),
-            "returncode": negative.returncode,
-            "expected_snippet": "unexpected character '.' [O3L001]",
-        },
     }
     return checks_total, checks_passed, dynamic
 
@@ -277,13 +254,13 @@ def main(argv: Sequence[str]) -> int:
             SnippetCheck("M265-A002-EXP-02", f"Contract ID: `{CONTRACT_ID}`"),
             SnippetCheck("M265-A002-EXP-03", "[receiver? selector]"),
             SnippetCheck("M265-A002-EXP-04", "@keypath(self, title)"),
-            SnippetCheck("M265-A002-EXP-05", "optional-member access: `unexpected character '.' [O3L001]`"),
+            SnippetCheck("M265-A002-EXP-05", "optional-member access now lowers through the same nil-short-circuit path"),
         ],
         PACKET_DOC: [
             SnippetCheck("M265-A002-PKT-01", "# M265-A002 Packet"),
             SnippetCheck("M265-A002-PKT-02", "`native/objc3c/src/parse/objc3_parser.cpp`"),
             SnippetCheck("M265-A002-PKT-03", "the positive fixture proves parser-owned admission for `if let` / `guard let`, optional sends, `??`, and `@keypath(...)`"),
-            SnippetCheck("M265-A002-PKT-04", "optional-member access only"),
+            SnippetCheck("M265-A002-PKT-04", "optional-member access no longer remains outside the admitted frontend surface"),
         ],
         AST_HEADER: [
             SnippetCheck("M265-A002-AST-01", "optional_send_enabled"),
@@ -297,13 +274,13 @@ def main(argv: Sequence[str]) -> int:
         LEXER_CPP: [
             SnippetCheck("M265-A002-LEX-01", "TokenKind::QuestionQuestion"),
             SnippetCheck("M265-A002-LEX-02", '"@keypath"'),
-            SnippetCheck("M265-A002-LEX-03", "unexpected character '.'"),
+            SnippetCheck("M265-A002-LEX-03", "TokenKind::QuestionDot"),
         ],
         PARSER_CPP: [
             SnippetCheck("M265-A002-PARSE-01", "ParseOptionalBindingClauses"),
             SnippetCheck("M265-A002-PARSE-02", "ParseNilCoalescing"),
             SnippetCheck("M265-A002-PARSE-03", "BuildTypedKeyPathLiteralProfile"),
-            SnippetCheck("M265-A002-PARSE-04", "optional_send_enabled = true"),
+            SnippetCheck("M265-A002-PARSE-04", "optional_member_access_enabled = true"),
         ],
         SEMA_CPP: [
             SnippetCheck("M265-A002-SEMA-01", 'expr->op == "??"'),
@@ -314,12 +291,14 @@ def main(argv: Sequence[str]) -> int:
             SnippetCheck("M265-A002-TYP-02", "optional_binding_source_supported"),
             SnippetCheck("M265-A002-TYP-03", "optional_send_source_supported"),
             SnippetCheck("M265-A002-TYP-04", "typed_keypath_literal_source_supported"),
+            SnippetCheck("M265-A002-TYP-05", "optional_member_access_fail_closed = false"),
         ],
         FRONTEND_PIPELINE: [
             SnippetCheck("M265-A002-PIPE-01", "CollectPart3TypeSourceClosureExprSites"),
             SnippetCheck("M265-A002-PIPE-02", "summary.optional_send_sites"),
             SnippetCheck("M265-A002-PIPE-03", "summary.nil_coalescing_sites"),
             SnippetCheck("M265-A002-PIPE-04", "summary.typed_keypath_literal_sites"),
+            SnippetCheck("M265-A002-PIPE-05", "summary.optional_member_access_sites"),
         ],
         FRONTEND_ARTIFACTS: [
             SnippetCheck("M265-A002-ART-01", "optional_send_sites"),
@@ -328,16 +307,16 @@ def main(argv: Sequence[str]) -> int:
         DOC_NATIVE: [
             SnippetCheck("M265-A002-DOC-01", "optional binding forms `if let`, `if var`, `guard let`, and `guard var`"),
             SnippetCheck("M265-A002-DOC-02", "optional sends written as `[receiver? selector]`"),
-            SnippetCheck("M265-A002-DOC-03", "optional-member access is not admitted yet"),
+            SnippetCheck("M265-A002-DOC-03", "`?.` optional-member access now lowers natively"),
         ],
         SPEC_AM: [
             SnippetCheck("M265-A002-AM-01", "parser-owned optional binding, optional-send,"),
-            SnippetCheck("M265-A002-AM-02", "Only optional-member access written as `?.` remains fail-closed"),
+            SnippetCheck("M265-A002-AM-02", "Optional-member access written as `?.` now lowers"),
         ],
         SPEC_ATTR: [
             SnippetCheck("M265-A002-ATTR-01", "Current implementation status (`M265-C001`):"),
             SnippetCheck("M265-A002-ATTR-02", "nil-coalescing `??` is admitted as a parser-owned source form"),
-            SnippetCheck("M265-A002-ATTR-03", "optional-member access `?.` is still fail-closed"),
+            SnippetCheck("M265-A002-ATTR-03", "optional-member access `?.` now lowers natively"),
         ],
         PACKAGE_JSON: [
             SnippetCheck("M265-A002-PKG-01", '"check:objc3c:m265-a002-frontend-support-for-optional-sends-binds-coalescing-and-typed-key-paths-core-feature-implementation"'),

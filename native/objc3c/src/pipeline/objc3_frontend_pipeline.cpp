@@ -4282,7 +4282,7 @@ std::string BuildPart3TypeSourceClosureReplayKey(
       << summary.optional_binding_sites << ":" << summary.guard_binding_sites << ":"
       << summary.optional_send_sites << ":" << summary.nil_coalescing_sites << ":"
       << summary.typed_keypath_literal_sites
-      << ";unsupported_sites=" << summary.optional_member_access_sites
+      << ";optional_member_access_sites=" << summary.optional_member_access_sites
       << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
   return out.str();
 }
@@ -4297,6 +4297,10 @@ void CollectPart3TypeSourceClosureExprSites(
   }
   if (expr->kind == Expr::Kind::MessageSend && expr->optional_send_enabled) {
     ++summary.optional_send_sites;
+  }
+  if (expr->kind == Expr::Kind::MessageSend &&
+      expr->optional_member_access_enabled) {
+    ++summary.optional_member_access_sites;
   }
   if (expr->typed_keypath_literal_enabled) {
     ++summary.typed_keypath_literal_sites;
@@ -4473,7 +4477,7 @@ Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
   summary.optional_send_source_supported = true;
   summary.nil_coalescing_source_supported = true;
   summary.typed_keypath_literal_source_supported = true;
-  summary.optional_member_access_fail_closed = true;
+  summary.optional_member_access_fail_closed = false;
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
       CollectPart3TypeSourceClosureStmtSites(stmt.get(), summary);

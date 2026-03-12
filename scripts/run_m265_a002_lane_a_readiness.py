@@ -16,7 +16,7 @@ def run(command: list[str]) -> None:
 
 
 def main() -> int:
-    print("[info] dependency continuity token: M265-A001 + M265-A002 (Part 3 lane-A now admits parser-owned optional bindings, sends, nil-coalescing, and typed key paths while keeping `?.` fail-closed)")
+    print("[info] dependency continuity token: M265-A001 + M265-A002 (Part 3 lane-A now admits parser-owned optional bindings, sends, optional-member-access sugar, nil-coalescing, and typed key paths)")
     run([
         "python",
         "scripts/check_m265_a002_frontend_support_for_optional_sends_binds_coalescing_and_typed_key_paths_core_feature_implementation.py",

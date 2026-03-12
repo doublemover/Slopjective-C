@@ -331,8 +331,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           break;
         }
         if (MatchChar('.')) {
-          diagnostics.push_back(
-              MakeDiag(token_line, token_column + 1u, "O3L001", "unexpected character '.'"));
+          tokens.push_back(Token{TokenKind::QuestionDot, "?.", token_line, token_column});
           break;
         }
         tokens.push_back(Token{TokenKind::Question, "?", token_line, token_column});

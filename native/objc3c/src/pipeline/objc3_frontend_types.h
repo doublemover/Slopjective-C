@@ -1236,9 +1236,9 @@ inline constexpr const char *kObjc3Part3TypeSourceClosureContractId =
 inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part3_type_source_closure";
 inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
-    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
+    "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
-    "optional-member-access-remains-fail-closed-until-later-m265-issues";
+    "typed-keypath-literals-remain-source-sema-surfaces-and-fail-closed-on-native-lowering-until-later-m265-issues";
 inline constexpr const char *kObjc3Part3TypeSemanticModelContractId =
     "objc3c-part3-type-semantic-model/m265-b001-v1";
 inline constexpr const char *kObjc3Part3TypeSemanticModelSurfacePath =
@@ -1260,9 +1260,7 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
       kObjc3SourceOnlyFeatureClaimNilCoalescing,
       kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals,
   };
-  std::vector<std::string> unsupported_claim_ids = {
-      kObjc3UnsupportedFeatureClaimOptionalMemberAccess,
-  };
+  std::vector<std::string> unsupported_claim_ids = {};
   std::size_t protocol_required_method_count = 0;
   std::size_t protocol_optional_method_count = 0;
   std::size_t protocol_required_property_count = 0;
@@ -1284,7 +1282,7 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
   bool optional_send_source_supported = false;
   bool nil_coalescing_source_supported = false;
   bool typed_keypath_literal_source_supported = false;
-  bool optional_member_access_fail_closed = true;
+  bool optional_member_access_fail_closed = false;
   bool nil_coalescing_fail_closed = false;
   bool typed_keypath_literal_fail_closed = false;
   bool deterministic_handoff = false;
@@ -4318,9 +4316,7 @@ inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
              kObjc3SourceOnlyFeatureClaimNilCoalescing &&
          summary.source_only_claim_ids[6] ==
              kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals &&
-         summary.unsupported_claim_ids.size() == 1 &&
-         summary.unsupported_claim_ids[0] ==
-             kObjc3UnsupportedFeatureClaimOptionalMemberAccess &&
+         summary.unsupported_claim_ids.empty() &&
          summary.protocol_optional_partition_source_supported &&
          summary.object_pointer_nullability_source_supported &&
          summary.pragmatic_generic_suffix_source_supported &&
@@ -4328,7 +4324,7 @@ inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
          summary.optional_send_source_supported &&
          summary.nil_coalescing_source_supported &&
          summary.typed_keypath_literal_source_supported &&
-         summary.optional_member_access_fail_closed &&
+         !summary.optional_member_access_fail_closed &&
          summary.deterministic_handoff &&
          summary.ready_for_semantic_expansion &&
          !summary.replay_key.empty() && summary.failure_reason.empty();

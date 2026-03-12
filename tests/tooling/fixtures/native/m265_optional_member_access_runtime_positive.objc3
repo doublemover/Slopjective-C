@@ -1,0 +1,22 @@
+module optionalMemberAccessLowering;
+
+@interface Box
+- (id) next;
+- (i32) token;
+@end
+
+@implementation Box
+- (id) next {
+  return self;
+}
+
+- (i32) token {
+  return 9;
+}
+@end
+
+fn main() -> i32 {
+  let live = [[Box alloc] init];
+  let missing = nil;
+  return live?.next?.token + missing?.next?.token;
+}

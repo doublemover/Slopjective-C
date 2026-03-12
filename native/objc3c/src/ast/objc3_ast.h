@@ -293,6 +293,7 @@ struct Expr {
   MessageSendForm message_send_form = MessageSendForm::None;
   std::string message_send_form_symbol;
   bool optional_send_enabled = false;
+  bool optional_member_access_enabled = false;
   std::string optional_send_symbol;
   bool optional_send_is_normalized = false;
   std::vector<MessageSendSelectorPiece> selector_lowering_pieces;

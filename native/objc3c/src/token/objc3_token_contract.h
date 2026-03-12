@@ -88,6 +88,7 @@ enum class Objc3LexTokenKind {
   AndAnd,
   OrOr,
   Question,
+  QuestionDot,
   QuestionQuestion,
   Tilde,
   Plus,
@@ -158,10 +159,11 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimProperties =
     "source-only:property-declarations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerSurface =
     "source-only:object-pointer-nullability-generics";
-// M265-A001 Part 3 source-closure anchor: the current frontend only admits
-// protocol optional partitions and object-pointer nullability/generic suffix
-// carriers; optional-member access, nil-coalescing, and typed key-path
-// literals remain explicitly fail-closed until later M265 issues land.
+// M265 Part 3 source-closure anchor: the frontend now admits protocol
+// optional partitions, object-pointer nullability/generic suffix carriers,
+// optional bindings/sends/member-access/coalescing, and typed key-path
+// literals as explicit source surfaces. Typed key-path execution still remains
+// deferred.
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions =
     "source-only:protocol-optional-partitions";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes =

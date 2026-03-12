@@ -39,8 +39,8 @@ Current implementation note:
   property on that root.
 - Generic Objective-C method declarations written as `- <T> ...` remain
   reserved in v1 and now diagnose explicitly.
-- Only optional-member access written as `?.` remains fail-closed at the
-  current boundary.
+- Optional-member access written as `?.` now lowers through the same live
+  nil-short-circuit path as bracketed optional sends.
 - Typed key-path literals remain truthful source/sema surfaces but still fail
   closed on the native lowering path.
 - Multi-component typed key-path member chains, executable typed key-path

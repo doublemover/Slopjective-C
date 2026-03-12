@@ -78,7 +78,8 @@ Current implementation status (`M265-C001`):
   the named component is a readable property on the root type
 - generic Objective-C method declarations written as `- <T> ...` remain
   reserved for a future revision and now diagnose explicitly
-- optional-member access `?.` is still fail-closed
+- optional-member access `?.` now lowers natively through the optional-send
+  nil-short-circuit path
 
 ### B.2.3 ARC source-surface and current mode boundary (implementation note) {#b-2-3}
 
