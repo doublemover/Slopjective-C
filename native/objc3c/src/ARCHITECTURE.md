@@ -8789,6 +8789,15 @@ Part 3 executable slice:
 surface while adding the first private runtime-owned key-path registry support
 for validated single-component handles:
 
+## M265 cross-module type-surface preservation hardening (D003)
+
+`M265-D003` keeps the runtime topology from `M265-D002`, but it hardens the
+imported artifact path. Provider import surfaces now publish the same optional/
+key-path lowering and runtime-helper packets that the local manifest carries,
+the imported semantic summary aggregates those packets, and the cross-module
+orchestration summary preserves the resulting counts and readiness facts without
+claiming a new public ABI.
+
 - `objc3_runtime_registration_table` now carries
   `keypath_descriptor_root`
 - image registration validates and consumes retained

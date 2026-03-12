@@ -8409,3 +8409,11 @@ Smoke model:
 
 Failure model:
 `fail-closed-on-runnable-arc-closeout-drift-or-runbook-mismatch`
+## M265-D003 cross-module type-surface preservation anchor
+
+Runtime import surfaces may now carry both
+`objc_part3_optional_keypath_lowering_contract` and
+`objc_part3_optional_keypath_runtime_helper_contract`. Imported semantic
+summaries and cross-module orchestration summaries aggregate those packets so
+separate-compilation proofs can validate that optional/key-path runtime support
+survives module boundaries without widening the public runtime ABI.

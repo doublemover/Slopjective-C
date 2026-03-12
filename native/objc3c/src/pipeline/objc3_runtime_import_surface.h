@@ -12,6 +12,17 @@ struct Objc3ImportedRuntimeModuleSurface {
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   std::vector<std::string> reused_module_names_lexicographic;
   bool uses_serialized_runtime_metadata_payload = false;
+  bool part3_optional_keypath_lowering_contract_present = false;
+  std::size_t part3_optional_send_sites = 0;
+  std::size_t part3_typed_keypath_literal_sites = 0;
+  std::size_t part3_live_optional_lowering_sites = 0;
+  std::size_t part3_live_typed_keypath_artifact_sites = 0;
+  bool part3_ready_for_native_optional_lowering = false;
+  bool part3_optional_send_runtime_ready = false;
+  bool part3_typed_keypath_descriptor_handles_ready = false;
+  bool part3_typed_keypath_runtime_execution_helper_landed = false;
+  std::string part3_optional_keypath_lowering_replay_key;
+  std::string part3_optional_keypath_runtime_helper_replay_key;
 };
 
 struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {

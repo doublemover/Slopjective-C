@@ -176,6 +176,11 @@ live typed key-path runtime support for the runnable Part 3 tranche:
 - validated single-component typed key-path literals now contribute stable
   descriptor handles and retained `objc3.runtime.keypath_descriptors` payloads
   to a private runtime registry
+
+`M265-D003` extends that proof across imported runtime surfaces: cross-module
+link plans and imported semantic summaries must preserve the same optional/
+key-path runtime packets so multi-image programs keep imported typed key-path
+metadata visible after startup registration.
 - private helper/probe entrypoints now expose validated key-path component
   counts and root-kind queries without widening the public runtime header
 - full multi-component key-path evaluation remains intentionally deferred to

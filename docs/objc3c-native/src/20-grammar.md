@@ -309,6 +309,16 @@ Current runtime-helper boundary (`M265-D002`):
 - unsupported typed key-path shapes and non-ObjC optional-member access remain
   compile-time fail-closed diagnostics rather than runtime fallbacks
 
+Current cross-module preservation boundary (`M265-D003`):
+
+- provider `module.runtime-import-surface.json` artifacts preserve both the
+  lowering packet and the runtime-helper packet for the runnable optional/
+  key-path subset
+- imported manifests aggregate those facts into the imported semantic-rules and
+  cross-module orchestration summaries
+- linked multi-image programs keep imported typed key-path runtime metadata
+  visible after import-surface ingestion and startup registration
+
 Recommended lowering contract check:
 
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`

@@ -344,3 +344,11 @@ At minimum, matrix coverage shall include diagnostics for:
 - potentially suspending operations used without `await`;
 - invalid optional postfix propagation carrier context;
 - optional chaining/send restrictions from [Part 3](#part-3) (including scalar/struct restriction).
+## M265 cross-module optional and key-path preservation
+
+Imported runtime surfaces now preserve the live optional/key-path boundary
+rather than collapsing that information into generic metadata-only summaries.
+Separate compilation therefore keeps the runnable Part 3 contract truthful: the
+consumer module can observe that the provider landed native optional lowering,
+retained typed key-path descriptors, and the runtime helper boundary required
+to materialize those descriptors after startup registration.

@@ -602,6 +602,10 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // and runtime-link sidecars because the runtime now consumes those
   // descriptors into a private keypath registry while optional sends keep
   // executing through the public lookup/dispatch path.
+  // M265-D003 cross-module type-surface preservation anchor: imported runtime
+  // surfaces now preserve the same optional/key-path packets, so the cross-
+  // module link-plan path must carry those artifacts forward without silently
+  // degrading them into generic metadata-only packaging.
   // backend may not drop, pool, or reshape those member records opportunistically.
   const int llc_status =
       RunProcess(llc_path.string(), {"-filetype=obj", "-o", object_out.string(), ir_path.string()});

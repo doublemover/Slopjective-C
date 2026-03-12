@@ -3399,6 +3399,10 @@ int objc3_runtime_copy_selector_lookup_entry_for_testing(
 // descriptor handles into a private runtime registry plus narrow probe helpers.
 // Optional sends stay on public lookup/dispatch; full multi-component key-path
 // evaluation remains deferred.
+// M265-D003 cross-module type-surface preservation anchor: when multiple images
+// register through imported runtime surfaces, the same registry path remains
+// authoritative so imported typed key-path descriptors survive startup
+// registration without changing handle semantics.
 int objc3_runtime_copy_keypath_registry_state_for_testing(
     objc3_runtime_keypath_registry_state_snapshot *snapshot) {
   if (snapshot == nullptr) {

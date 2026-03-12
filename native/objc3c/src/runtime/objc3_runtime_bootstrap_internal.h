@@ -375,6 +375,10 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 // registry, publishes query/state snapshots for probes, and exposes narrow
 // helper entrypoints for validated single-component handle execution without
 // widening the stable public runtime header yet.
+// M265-D003 cross-module type-surface preservation anchor: imported runtime
+// surfaces must preserve the same typed key-path/runtime-helper packets so
+// multi-image registration keeps provider metadata truthful without inventing a
+// second key-path registry model.
 int objc3_runtime_keypath_component_count_for_testing(int keypath_handle);
 int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle);
 // M260-C002 ownership runtime hook emission anchor: lowering-generated

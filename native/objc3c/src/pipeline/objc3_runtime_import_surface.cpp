@@ -685,6 +685,83 @@ bool PopulateFrontendClosureSummary(const JsonValue::Object &root,
   return true;
 }
 
+bool PopulateImportedPart3OptionalKeypathSurface(
+    const JsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *lowering_value =
+      FindMember(root, "objc_part3_optional_keypath_lowering_contract");
+  const JsonValue *runtime_value =
+      FindMember(root, "objc_part3_optional_keypath_runtime_helper_contract");
+  if (lowering_value == nullptr && runtime_value == nullptr) {
+    return true;
+  }
+  if (lowering_value == nullptr || runtime_value == nullptr) {
+    error =
+        "runtime import surface must publish both optional/keypath lowering and runtime helper contracts together";
+    return false;
+  }
+
+  const JsonValue::Object *lowering_object = AsObject(*lowering_value);
+  const JsonValue::Object *runtime_object = AsObject(*runtime_value);
+  if (lowering_object == nullptr || runtime_object == nullptr) {
+    error =
+        "optional/keypath imported contract members must both be JSON objects";
+    return false;
+  }
+
+  std::string lowering_contract_id;
+  std::string lowering_replay_key;
+  std::string runtime_contract_id;
+  std::string runtime_replay_key;
+  if (!ReadStringMember(*lowering_object, "contract_id", lowering_contract_id,
+                        error) ||
+      !ReadSizeMember(*lowering_object, "optional_send_sites",
+                      surface.part3_optional_send_sites, error) ||
+      !ReadSizeMember(*lowering_object, "typed_keypath_literal_sites",
+                      surface.part3_typed_keypath_literal_sites, error) ||
+      !ReadSizeMember(*lowering_object, "live_optional_lowering_sites",
+                      surface.part3_live_optional_lowering_sites, error) ||
+      !ReadSizeMember(*lowering_object, "live_typed_keypath_artifact_sites",
+                      surface.part3_live_typed_keypath_artifact_sites, error) ||
+      !ReadBoolMember(*lowering_object, "ready_for_native_optional_lowering",
+                      surface.part3_ready_for_native_optional_lowering, error) ||
+      !ReadStringMember(*lowering_object, "replay_key", lowering_replay_key,
+                        error) ||
+      !ReadStringMember(*runtime_object, "contract_id", runtime_contract_id,
+                        error) ||
+      !ReadBoolMember(*runtime_object, "optional_send_runtime_ready",
+                      surface.part3_optional_send_runtime_ready, error) ||
+      !ReadBoolMember(*runtime_object, "typed_keypath_descriptor_handles_ready",
+                      surface.part3_typed_keypath_descriptor_handles_ready,
+                      error) ||
+      !ReadBoolMember(*runtime_object,
+                      "typed_keypath_runtime_execution_helper_landed",
+                      surface.part3_typed_keypath_runtime_execution_helper_landed,
+                      error) ||
+      !ReadStringMember(*runtime_object, "replay_key", runtime_replay_key,
+                        error)) {
+    return false;
+  }
+
+  if (lowering_contract_id != kObjc3Part3OptionalKeypathLoweringContractId) {
+    error = "unexpected optional/keypath lowering contract id in import surface";
+    return false;
+  }
+  if (runtime_contract_id != kObjc3Part3OptionalKeypathRuntimeHelperContractId) {
+    error =
+        "unexpected optional/keypath runtime helper contract id in import surface";
+    return false;
+  }
+
+  surface.part3_optional_keypath_lowering_contract_present = true;
+  surface.part3_optional_keypath_lowering_replay_key =
+      std::move(lowering_replay_key);
+  surface.part3_optional_keypath_runtime_helper_replay_key =
+      std::move(runtime_replay_key);
+  return true;
+}
+
 bool ParseRuntimeMetadataSourceRecordSet(
     const JsonValue::Object &root, const std::string &declarations_name,
     Objc3RuntimeMetadataSourceRecordSet &record_set, std::string &error) {
@@ -852,6 +929,9 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   if (!PopulateFrontendClosureSummary(root,
                                       surface.frontend_closure_summary,
                                       error)) {
+    return false;
+  }
+  if (!PopulateImportedPart3OptionalKeypathSurface(root, surface, error)) {
     return false;
   }
   Objc3RuntimeMetadataSourceRecordSet local_runtime_metadata_source_records;

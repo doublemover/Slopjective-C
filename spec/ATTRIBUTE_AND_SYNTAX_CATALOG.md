@@ -488,3 +488,10 @@ Objective‑C 3.0 reserves (at minimum) the following tokens as keywords:
 - `let`, `var`
 
 Additional reserved keywords may be added by other parts.
+## M265 imported Part 3 packets
+
+Cross-module imports preserve optional/key-path runtime packets alongside the
+runtime-owned declaration inventory. This keeps optional sends, optional-member
+access, and validated typed key-path literals attached to explicit imported
+semantic packets instead of relying on implicit recovery from unrelated
+metadata-section counts.

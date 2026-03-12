@@ -1618,6 +1618,13 @@ struct Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary {
   std::size_t property_attribute_profile_count = 0;
   std::size_t ownership_effect_profile_count = 0;
   std::size_t executable_binding_trait_count = 0;
+  std::size_t optional_send_site_count = 0;
+  std::size_t typed_keypath_literal_site_count = 0;
+  std::size_t live_optional_lowering_site_count = 0;
+  std::size_t live_typed_keypath_artifact_site_count = 0;
+  std::size_t imported_part3_optional_keypath_module_count = 0;
+  std::size_t imported_optional_runtime_ready_module_count = 0;
+  std::size_t imported_typed_keypath_runtime_ready_module_count = 0;
   bool fail_closed = false;
   bool source_frontend_closure_ready = false;
   bool runtime_metadata_source_records_ready = false;
@@ -1626,6 +1633,9 @@ struct Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary {
   bool imported_dispatch_traits_landed = false;
   bool imported_effect_traits_landed = false;
   bool imported_runtime_metadata_semantics_landed = false;
+  bool imported_part3_type_surface_landed = false;
+  bool imported_optional_runtime_semantics_landed = false;
+  bool imported_typed_keypath_runtime_semantics_landed = false;
   bool ready_for_imported_metadata_semantic_rules = false;
   bool ready_for_cross_module_dispatch_equivalence = false;
   std::string source_frontend_closure_replay_key;
@@ -1709,6 +1719,13 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   std::size_t property_attribute_profile_count = 0;
   std::size_t ownership_effect_profile_count = 0;
   std::size_t executable_binding_trait_count = 0;
+  std::size_t optional_send_site_count = 0;
+  std::size_t typed_keypath_literal_site_count = 0;
+  std::size_t live_optional_lowering_site_count = 0;
+  std::size_t live_typed_keypath_artifact_site_count = 0;
+  std::size_t imported_part3_optional_keypath_module_count = 0;
+  std::size_t imported_optional_runtime_ready_module_count = 0;
+  std::size_t imported_typed_keypath_runtime_ready_module_count = 0;
   bool fail_closed = false;
   bool source_semantic_preservation_contract_ready = false;
   bool semantic_surface_published = false;
@@ -1718,6 +1735,9 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   bool imported_dispatch_traits_landed = false;
   bool imported_effect_traits_landed = false;
   bool imported_runtime_metadata_semantics_landed = false;
+  bool imported_part3_type_surface_landed = false;
+  bool imported_optional_runtime_semantics_landed = false;
+  bool imported_typed_keypath_runtime_semantics_landed = false;
   bool ready_for_imported_metadata_semantic_rules = false;
   bool ready_for_cross_module_dispatch_equivalence = false;
   std::string replay_key;
@@ -1913,6 +1933,8 @@ struct Objc3CrossModuleBuildRuntimeOrchestrationSummary {
       kObjc3SerializedRuntimeMetadataArtifactReuseContractId;
   std::string source_local_registration_manifest_contract_id =
       kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
+  std::string source_imported_runtime_metadata_semantic_rules_contract_id =
+      kObjc3ImportedRuntimeMetadataSemanticRulesContractId;
   std::string frontend_surface_path =
       kObjc3CrossModuleBuildRuntimeOrchestrationSurfacePath;
   std::string import_artifact_relative_path =
@@ -1938,11 +1960,19 @@ struct Objc3CrossModuleBuildRuntimeOrchestrationSummary {
   std::size_t local_total_descriptor_count = 0;
   std::size_t transitive_runtime_owned_declaration_count = 0;
   std::size_t transitive_metadata_reference_count = 0;
+  std::size_t imported_optional_send_site_count = 0;
+  std::size_t imported_typed_keypath_literal_site_count = 0;
+  std::size_t imported_live_optional_lowering_site_count = 0;
+  std::size_t imported_live_typed_keypath_artifact_site_count = 0;
   bool fail_closed = false;
   bool source_serialized_runtime_metadata_artifact_reuse_ready = false;
   bool source_local_registration_manifest_ready = false;
+  bool source_imported_runtime_metadata_semantic_rules_ready = false;
   bool semantic_surface_published = false;
   bool local_registration_manifest_emitted = false;
+  bool imported_part3_type_surface_landed = false;
+  bool imported_optional_runtime_semantics_landed = false;
+  bool imported_typed_keypath_runtime_semantics_landed = false;
   bool cross_module_link_plan_artifact_landed = false;
   bool imported_registration_manifest_loading_landed = false;
   bool runtime_archive_aggregation_landed = false;
@@ -1952,6 +1982,7 @@ struct Objc3CrossModuleBuildRuntimeOrchestrationSummary {
   bool ready_for_packaging_and_runtime_registration_impl = false;
   std::string source_serialized_runtime_metadata_replay_key;
   std::string source_local_registration_manifest_replay_key;
+  std::string source_imported_runtime_metadata_semantic_rules_replay_key;
   std::string replay_key;
   std::string failure_reason;
 };

@@ -1220,6 +1220,15 @@ std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
       << summary.ownership_effect_profile_count
       << ";executable_binding_trait_count="
       << summary.executable_binding_trait_count
+      << ";optional_send_site_count=" << summary.optional_send_site_count
+      << ";typed_keypath_literal_site_count="
+      << summary.typed_keypath_literal_site_count
+      << ";live_optional_lowering_site_count="
+      << summary.live_optional_lowering_site_count
+      << ";live_typed_keypath_artifact_site_count="
+      << summary.live_typed_keypath_artifact_site_count
+      << ";imported_part3_optional_keypath_module_count="
+      << summary.imported_part3_optional_keypath_module_count
       << ";modules=";
   for (std::size_t i = 0; i < summary.imported_module_names_lexicographic.size();
        ++i) {
@@ -1324,6 +1333,23 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
         ++summary.executable_binding_trait_count;
       }
     }
+    if (surface.part3_optional_keypath_lowering_contract_present) {
+      ++summary.imported_part3_optional_keypath_module_count;
+      summary.optional_send_site_count += surface.part3_optional_send_sites;
+      summary.typed_keypath_literal_site_count +=
+          surface.part3_typed_keypath_literal_sites;
+      summary.live_optional_lowering_site_count +=
+          surface.part3_live_optional_lowering_sites;
+      summary.live_typed_keypath_artifact_site_count +=
+          surface.part3_live_typed_keypath_artifact_sites;
+      if (surface.part3_optional_send_runtime_ready) {
+        ++summary.imported_optional_runtime_ready_module_count;
+      }
+      if (surface.part3_typed_keypath_descriptor_handles_ready &&
+          surface.part3_typed_keypath_runtime_execution_helper_landed) {
+        ++summary.imported_typed_keypath_runtime_ready_module_count;
+      }
+    }
   }
 
   std::sort(summary.imported_module_names_lexicographic.begin(),
@@ -1340,6 +1366,17 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
       summary.source_semantic_preservation_contract_ready;
   summary.imported_runtime_metadata_semantics_landed =
       summary.source_semantic_preservation_contract_ready;
+  summary.imported_part3_type_surface_landed =
+      summary.imported_part3_optional_keypath_module_count > 0u
+          ? summary.imported_part3_optional_keypath_module_count ==
+                summary.imported_optional_runtime_ready_module_count
+          : true;
+  summary.imported_optional_runtime_semantics_landed =
+      summary.optional_send_site_count == 0u ||
+      summary.imported_optional_runtime_ready_module_count > 0u;
+  summary.imported_typed_keypath_runtime_semantics_landed =
+      summary.typed_keypath_literal_site_count == 0u ||
+      summary.imported_typed_keypath_runtime_ready_module_count > 0u;
   summary.ready_for_imported_metadata_semantic_rules =
       summary.source_semantic_preservation_contract_ready &&
       summary.imported_runtime_surface_inputs_loaded;
@@ -1411,6 +1448,19 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
       << summary.ownership_effect_profile_count
       << ",\"executable_binding_trait_count\":"
       << summary.executable_binding_trait_count
+      << ",\"optional_send_site_count\":" << summary.optional_send_site_count
+      << ",\"typed_keypath_literal_site_count\":"
+      << summary.typed_keypath_literal_site_count
+      << ",\"live_optional_lowering_site_count\":"
+      << summary.live_optional_lowering_site_count
+      << ",\"live_typed_keypath_artifact_site_count\":"
+      << summary.live_typed_keypath_artifact_site_count
+      << ",\"imported_part3_optional_keypath_module_count\":"
+      << summary.imported_part3_optional_keypath_module_count
+      << ",\"imported_optional_runtime_ready_module_count\":"
+      << summary.imported_optional_runtime_ready_module_count
+      << ",\"imported_typed_keypath_runtime_ready_module_count\":"
+      << summary.imported_typed_keypath_runtime_ready_module_count
       << ",\"ready\":"
       << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
               ? "true"
@@ -1433,7 +1483,15 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
       << (summary.imported_effect_traits_landed ? "true" : "false")
       << ",\"imported_runtime_metadata_semantics_landed\":"
       << (summary.imported_runtime_metadata_semantics_landed ? "true"
+                                                            : "false")
+      << ",\"imported_part3_type_surface_landed\":"
+      << (summary.imported_part3_type_surface_landed ? "true" : "false")
+      << ",\"imported_optional_runtime_semantics_landed\":"
+      << (summary.imported_optional_runtime_semantics_landed ? "true"
                                                              : "false")
+      << ",\"imported_typed_keypath_runtime_semantics_landed\":"
+      << (summary.imported_typed_keypath_runtime_semantics_landed ? "true"
+                                                                  : "false")
       << ",\"ready_for_imported_metadata_semantic_rules\":"
       << (summary.ready_for_imported_metadata_semantic_rules ? "true"
                                                              : "false")
@@ -1883,6 +1941,8 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationReplayKey(
              .source_serialized_runtime_metadata_artifact_reuse_contract_id
       << ";local_manifest_contract="
       << summary.source_local_registration_manifest_contract_id
+      << ";imported_runtime_semantic_rules_contract="
+      << summary.source_imported_runtime_metadata_semantic_rules_contract_id
       << ";module_image_count=" << summary.module_image_count
       << ";direct_import_input_count=" << summary.direct_import_input_count
       << ";local_total_descriptor_count="
@@ -1890,7 +1950,11 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationReplayKey(
       << ";transitive_runtime_owned_declaration_count="
       << summary.transitive_runtime_owned_declaration_count
       << ";transitive_metadata_reference_count="
-      << summary.transitive_metadata_reference_count << ";modules=";
+      << summary.transitive_metadata_reference_count
+      << ";imported_optional_send_site_count="
+      << summary.imported_optional_send_site_count
+      << ";imported_typed_keypath_literal_site_count="
+      << summary.imported_typed_keypath_literal_site_count << ";modules=";
   for (std::size_t i = 0; i < summary.module_names_lexicographic.size(); ++i) {
     if (i != 0u) {
       out << ",";
@@ -1904,6 +1968,8 @@ Objc3CrossModuleBuildRuntimeOrchestrationSummary
 BuildCrossModuleBuildRuntimeOrchestrationSummary(
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary
+        &imported_runtime_metadata_semantic_rules,
     const Objc3RuntimeTranslationUnitRegistrationManifestSummary
         &local_runtime_registration_manifest,
     std::size_t direct_import_input_count) {
@@ -1930,10 +1996,22 @@ BuildCrossModuleBuildRuntimeOrchestrationSummary(
           .runtime_owned_declaration_count;
   summary.transitive_metadata_reference_count =
       serialized_runtime_metadata_artifact_reuse.metadata_reference_count;
+  summary.imported_optional_send_site_count =
+      imported_runtime_metadata_semantic_rules.optional_send_site_count;
+  summary.imported_typed_keypath_literal_site_count =
+      imported_runtime_metadata_semantic_rules.typed_keypath_literal_site_count;
+  summary.imported_live_optional_lowering_site_count =
+      imported_runtime_metadata_semantic_rules.live_optional_lowering_site_count;
+  summary.imported_live_typed_keypath_artifact_site_count =
+      imported_runtime_metadata_semantic_rules
+          .live_typed_keypath_artifact_site_count;
   summary.fail_closed = true;
   summary.source_serialized_runtime_metadata_artifact_reuse_ready =
       IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(
           serialized_runtime_metadata_artifact_reuse);
+  summary.source_imported_runtime_metadata_semantic_rules_ready =
+      IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
+          imported_runtime_metadata_semantic_rules);
   summary.source_local_registration_manifest_ready =
       IsReadyObjc3RuntimeTranslationUnitRegistrationManifestSummary(
           local_runtime_registration_manifest);
@@ -1941,11 +2019,22 @@ BuildCrossModuleBuildRuntimeOrchestrationSummary(
   summary.local_registration_manifest_emitted =
       local_runtime_registration_manifest
           .runtime_registration_artifact_emitted_by_driver;
+  summary.imported_part3_type_surface_landed =
+      imported_runtime_metadata_semantic_rules.imported_part3_type_surface_landed;
+  summary.imported_optional_runtime_semantics_landed =
+      imported_runtime_metadata_semantic_rules
+          .imported_optional_runtime_semantics_landed;
+  summary.imported_typed_keypath_runtime_semantics_landed =
+      imported_runtime_metadata_semantic_rules
+          .imported_typed_keypath_runtime_semantics_landed;
   summary.source_serialized_runtime_metadata_replay_key =
       serialized_runtime_metadata_artifact_reuse.replay_key;
   summary.source_local_registration_manifest_replay_key =
       local_runtime_registration_manifest.replay_key;
+  summary.source_imported_runtime_metadata_semantic_rules_replay_key =
+      imported_runtime_metadata_semantic_rules.replay_key;
   if (summary.source_serialized_runtime_metadata_artifact_reuse_ready &&
+      summary.source_imported_runtime_metadata_semantic_rules_ready &&
       summary.source_local_registration_manifest_ready) {
     summary.replay_key =
         BuildCrossModuleBuildRuntimeOrchestrationReplayKey(summary);
@@ -1973,6 +2062,9 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
       << "\",\"source_local_registration_manifest_contract_id\":\""
       << EscapeJsonString(
              summary.source_local_registration_manifest_contract_id)
+      << "\",\"source_imported_runtime_metadata_semantic_rules_contract_id\":\""
+      << EscapeJsonString(
+             summary.source_imported_runtime_metadata_semantic_rules_contract_id)
       << "\",\"frontend_surface_path\":\""
       << EscapeJsonString(summary.frontend_surface_path)
       << "\",\"import_artifact_relative_path\":\""
@@ -2007,6 +2099,14 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
       << summary.transitive_runtime_owned_declaration_count
       << ",\"transitive_metadata_reference_count\":"
       << summary.transitive_metadata_reference_count
+      << ",\"imported_optional_send_site_count\":"
+      << summary.imported_optional_send_site_count
+      << ",\"imported_typed_keypath_literal_site_count\":"
+      << summary.imported_typed_keypath_literal_site_count
+      << ",\"imported_live_optional_lowering_site_count\":"
+      << summary.imported_live_optional_lowering_site_count
+      << ",\"imported_live_typed_keypath_artifact_site_count\":"
+      << summary.imported_live_typed_keypath_artifact_site_count
       << ",\"ready\":"
       << (IsReadyObjc3CrossModuleBuildRuntimeOrchestrationSummary(summary)
               ? "true"
@@ -2018,10 +2118,21 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
               : "false")
       << ",\"source_local_registration_manifest_ready\":"
       << (summary.source_local_registration_manifest_ready ? "true" : "false")
+      << ",\"source_imported_runtime_metadata_semantic_rules_ready\":"
+      << (summary.source_imported_runtime_metadata_semantic_rules_ready ? "true"
+                                                                        : "false")
       << ",\"semantic_surface_published\":"
       << (summary.semantic_surface_published ? "true" : "false")
       << ",\"local_registration_manifest_emitted\":"
       << (summary.local_registration_manifest_emitted ? "true" : "false")
+      << ",\"imported_part3_type_surface_landed\":"
+      << (summary.imported_part3_type_surface_landed ? "true" : "false")
+      << ",\"imported_optional_runtime_semantics_landed\":"
+      << (summary.imported_optional_runtime_semantics_landed ? "true"
+                                                             : "false")
+      << ",\"imported_typed_keypath_runtime_semantics_landed\":"
+      << (summary.imported_typed_keypath_runtime_semantics_landed ? "true"
+                                                                  : "false")
       << ",\"cross_module_link_plan_artifact_landed\":"
       << (summary.cross_module_link_plan_artifact_landed ? "true" : "false")
       << ",\"imported_registration_manifest_loading_landed\":"
@@ -2045,6 +2156,9 @@ std::string BuildCrossModuleBuildRuntimeOrchestrationSummaryJson(
              summary.source_serialized_runtime_metadata_replay_key)
       << "\",\"source_local_registration_manifest_replay_key\":\""
       << EscapeJsonString(summary.source_local_registration_manifest_replay_key)
+      << "\",\"source_imported_runtime_metadata_semantic_rules_replay_key\":\""
+      << EscapeJsonString(
+             summary.source_imported_runtime_metadata_semantic_rules_replay_key)
       << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\",\"failure_reason\":\""
       << EscapeJsonString(summary.failure_reason) << "\"}";
@@ -2325,6 +2439,8 @@ std::string BuildSerializedRuntimeMetadataReusePayloadJson(
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
+    const std::string &part3_optional_keypath_lowering_contract_json,
+    const std::string &part3_optional_keypath_runtime_helper_contract_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
     const Objc3RuntimeMetadataSourceRecordSet
@@ -2401,6 +2517,10 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << "  \"metadata_references\": "
       << BuildRuntimeMetadataReferencesJson(runtime_metadata_source_records)
       << ",\n"
+      << "  \"objc_part3_optional_keypath_lowering_contract\": "
+      << part3_optional_keypath_lowering_contract_json << ",\n"
+      << "  \"objc_part3_optional_keypath_runtime_helper_contract\": "
+      << part3_optional_keypath_runtime_helper_contract_json << ",\n"
       << "  \""
       << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
       << "\": "
@@ -9954,6 +10074,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       cross_module_build_runtime_orchestration =
           BuildCrossModuleBuildRuntimeOrchestrationSummary(
               serialized_runtime_metadata_artifact_reuse,
+              imported_runtime_metadata_semantic_rules,
               runtime_translation_unit_registration_manifest,
               options.imported_runtime_surface_paths.size());
   if (post_pipeline_failure_code.empty() &&
@@ -15090,6 +15211,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         BuildRuntimeAwareImportModuleArtifactJson(
             runtime_aware_import_module_frontend_closure,
             runtime_metadata_source_records,
+            BuildPart3OptionalKeypathLoweringContractJson(
+                part3_optional_keypath_lowering_contract,
+                part3_type_semantic_model_summary,
+                part3_type_semantic_model_summary.replay_key,
+                message_send_selector_lowering_replay_key,
+                dispatch_abi_marshalling_replay_key,
+                nil_receiver_semantics_foldability_replay_key,
+                part3_optional_keypath_lowering_replay_key),
+            BuildPart3OptionalKeypathRuntimeHelperContractJson(
+                part3_optional_keypath_lowering_contract,
+                runtime_support_library_link_wiring,
+                part3_optional_keypath_lowering_replay_key),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
   }
