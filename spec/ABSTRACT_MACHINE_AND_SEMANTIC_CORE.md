@@ -41,10 +41,12 @@ Current implementation note:
   reserved in v1 and now diagnose explicitly.
 - Optional-member access written as `?.` now lowers through the same live
   nil-short-circuit path as bracketed optional sends.
-- Typed key-path literals remain truthful source/sema surfaces but still fail
-  closed on the native lowering path.
-- Multi-component typed key-path member chains, executable typed key-path
-  behavior, and the broader Part 3 surface remain future work.
+- Typed key-path literals remain truthful source/sema surfaces, and the
+  validated single-component subset now lowers natively into retained
+  descriptor handles.
+- Multi-component typed key-path member chains, full typed key-path
+  application/runtime behavior, and the broader Part 3 surface remain future
+  work.
 
 ### AM.0.1 Normative anchor map {#am-0-1}
 

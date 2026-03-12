@@ -2355,6 +2355,15 @@ class Objc3IREmitter {
     std::string promoted_handle_ptr;
   };
 
+  struct TypedKeyPathArtifact {
+    std::size_t ordinal = 0;
+    bool root_is_self = false;
+    std::string root_name;
+    std::string component_path;
+    std::string profile;
+    std::string descriptor_symbol;
+  };
+
   struct PendingBlockDisposeCall {
     std::string helper_symbol;
     std::string storage_ptr;
@@ -2498,6 +2507,18 @@ class Objc3IREmitter {
         continue;
       }
       out << static_cast<char>(c);
+    }
+    return out.str();
+  }
+
+  static std::string JoinStringParts(const std::vector<std::string> &parts,
+                                     const std::string &delimiter) {
+    std::ostringstream out;
+    for (std::size_t i = 0; i < parts.size(); ++i) {
+      if (i != 0) {
+        out << delimiter;
+      }
+      out << parts[i];
     }
     return out.str();
   }
@@ -5519,9 +5540,50 @@ class Objc3IREmitter {
     }
   }
 
+  void RegisterTypedKeyPathLiteral(const Expr &expr) {
+    if (!expr.typed_keypath_literal_enabled ||
+        !expr.typed_keypath_literal_is_normalized ||
+        expr.typed_keypath_components.empty()) {
+      return;
+    }
+    const std::string profile =
+        expr.typed_keypath_literal_profile.empty()
+            ? std::string("typed-keypath:root=") + expr.typed_keypath_root_name
+            : expr.typed_keypath_literal_profile;
+    if (typed_keypath_artifacts_.find(profile) != typed_keypath_artifacts_.end()) {
+      return;
+    }
+    TypedKeyPathArtifact artifact;
+    artifact.root_is_self = expr.typed_keypath_root_is_self;
+    artifact.root_name = expr.typed_keypath_root_name;
+    artifact.component_path = JoinStringParts(expr.typed_keypath_components, ".");
+    artifact.profile = profile;
+    typed_keypath_artifacts_.emplace(profile, std::move(artifact));
+    RegisterRuntimeStringLiteral(expr.typed_keypath_root_name);
+    RegisterRuntimeStringLiteral(JoinStringParts(expr.typed_keypath_components, "."));
+    RegisterRuntimeStringLiteral(profile);
+    if (!frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()) {
+      RegisterRuntimeStringLiteral(
+          frontend_metadata_.lowering_generic_metadata_abi_replay_key);
+    }
+  }
+
+  void AssignTypedKeyPathArtifactOrdinals() {
+    std::size_t ordinal = 0;
+    for (auto &entry : typed_keypath_artifacts_) {
+      entry.second.ordinal = ordinal;
+      entry.second.descriptor_symbol =
+          "@__objc3_keypath_desc_" + FormatRuntimeMetadataDescriptorOrdinal(ordinal);
+      ++ordinal;
+    }
+  }
+
   void CollectSelectorExpr(const Expr *expr) {
     if (expr == nullptr) {
       return;
+    }
+    if (expr->typed_keypath_literal_enabled) {
+      RegisterTypedKeyPathLiteral(*expr);
     }
     switch (expr->kind) {
       case Expr::Kind::MessageSend:
@@ -5711,6 +5773,7 @@ class Objc3IREmitter {
     }
     CollectRuntimeMetadataPoolLiterals();
     AssignCanonicalPoolGlobalNames();
+    AssignTypedKeyPathArtifactOrdinals();
   }
 
   static bool IsNameBoundInScopes(const std::vector<std::unordered_set<std::string>> &scopes,
@@ -6633,6 +6696,20 @@ class Objc3IREmitter {
           << ";string_section="
           << Objc3RuntimeMetadataHostSectionForLogicalName(
                  kObjc3RuntimeStringPoolLogicalSection)
+          << "\n";
+    }
+    if (!typed_keypath_artifacts_.empty()) {
+      out << "; typed_keypath_artifact_emission = "
+          << "contract=objc3c-part3-typed-keypath-artifact-emission/m265-c003-v1"
+          << ";keypath_count=" << typed_keypath_artifacts_.size()
+          << ";section="
+          << Objc3RuntimeMetadataHostSectionForLogicalName(
+                 kObjc3RuntimeKeypathDescriptorLogicalSection)
+          << ";aggregate_symbol=@__objc3_sec_keypath_descriptors"
+          << ";generic_metadata_abi_replay_key="
+          << (frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()
+                  ? "none"
+                  : frontend_metadata_.lowering_generic_metadata_abi_replay_key)
           << "\n";
     }
     out << "; runtime_metadata_binary_inspection_harness = "
@@ -8298,6 +8375,59 @@ class Objc3IREmitter {
                                   kObjc3RuntimeStringPoolLogicalSection);
     }
 
+    const bool emit_typed_keypath_artifacts = !typed_keypath_artifacts_.empty();
+    if (emit_typed_keypath_artifacts) {
+      const std::string emitted_section_name =
+          Objc3RuntimeMetadataHostSectionForLogicalName(
+              kObjc3RuntimeKeypathDescriptorLogicalSection);
+      const std::string generic_metadata_replay_key_symbol =
+          frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()
+              ? "null"
+              : runtime_string_pool_globals_.find(
+                        frontend_metadata_.lowering_generic_metadata_abi_replay_key)
+                        ->second;
+      std::vector<std::string> descriptor_symbols;
+      descriptor_symbols.reserve(typed_keypath_artifacts_.size());
+      for (const auto &entry : typed_keypath_artifacts_) {
+        const TypedKeyPathArtifact &artifact = entry.second;
+        const auto root_it = runtime_string_pool_globals_.find(artifact.root_name);
+        const auto component_it =
+            runtime_string_pool_globals_.find(artifact.component_path);
+        const auto profile_it = runtime_string_pool_globals_.find(artifact.profile);
+        if (root_it == runtime_string_pool_globals_.end() ||
+            component_it == runtime_string_pool_globals_.end() ||
+            profile_it == runtime_string_pool_globals_.end()) {
+          if (!fail_open_fallback_triggered_) {
+            fail_open_fallback_triggered_ = true;
+            fail_open_fallback_reason_ =
+                "typed key-path artifact string-pool registration failed";
+          }
+          return;
+        }
+        descriptor_symbols.push_back(artifact.descriptor_symbol);
+        out << artifact.descriptor_symbol
+            << " = private global { i64, ptr, ptr, ptr, ptr, i1 } { i64 "
+            << static_cast<unsigned long long>(artifact.ordinal + 1u)
+            << ", ptr " << root_it->second << ", ptr " << component_it->second
+            << ", ptr " << profile_it->second << ", ptr "
+            << generic_metadata_replay_key_symbol << ", i1 "
+            << (artifact.root_is_self ? 1 : 0) << " }, section \""
+            << emitted_section_name << "\", align 8\n";
+      }
+      out << "@__objc3_sec_keypath_descriptors = internal global { i64, ["
+          << descriptor_symbols.size() << " x ptr] } { i64 "
+          << descriptor_symbols.size() << ", [" << descriptor_symbols.size()
+          << " x ptr] [";
+      for (std::size_t i = 0; i < descriptor_symbols.size(); ++i) {
+        if (i != 0) {
+          out << ", ";
+        }
+        out << "ptr " << descriptor_symbols[i];
+      }
+      out << "] }, section \"" << emitted_section_name << "\", align 8\n";
+      emit_retained("@__objc3_sec_keypath_descriptors");
+    }
+
     std::vector<std::string> discovery_root_targets;
     discovery_root_targets.reserve(layout_policy.families.size() + 3);
     discovery_root_targets.push_back(image_info_symbol);
@@ -8307,6 +8437,9 @@ class Objc3IREmitter {
     if (emit_selector_string_pools) {
       discovery_root_targets.push_back("@__objc3_sec_selector_pool");
       discovery_root_targets.push_back("@__objc3_sec_string_pool");
+    }
+    if (emit_typed_keypath_artifacts) {
+      discovery_root_targets.push_back("@__objc3_sec_keypath_descriptors");
     }
 
     const std::string discovery_root_symbol =
@@ -8935,6 +9068,21 @@ class Objc3IREmitter {
       return std::to_string(immediate_it->second);
     }
     return EmitUnsupportedI32Value("unresolved identifier '" + name + "' during IR lowering");
+  }
+
+  std::string EmitTypedKeyPathLiteralValue(const Expr &expr) const {
+    const std::string profile =
+        expr.typed_keypath_literal_profile.empty()
+            ? std::string("typed-keypath:root=") + expr.typed_keypath_root_name
+            : expr.typed_keypath_literal_profile;
+    const auto artifact_it = typed_keypath_artifacts_.find(profile);
+    if (artifact_it == typed_keypath_artifacts_.end()) {
+      return EmitUnsupportedI32Value(
+          "typed key-path artifact '" + profile +
+          "' was not registered before IR lowering");
+    }
+    return std::to_string(
+        static_cast<unsigned long long>(artifact_it->second.ordinal + 1u));
   }
 
   void EmitBlockInvokeThunk(const Expr &expr) const {
@@ -10223,6 +10371,9 @@ class Objc3IREmitter {
         return EmitUnsupportedI32Value(
             "block literal values must be bound to a local name before use");
       case Expr::Kind::Identifier: {
+        if (expr->typed_keypath_literal_enabled) {
+          return EmitTypedKeyPathLiteralValue(*expr);
+        }
         return EmitIdentifierValue(expr->ident, ctx);
       }
       case Expr::Kind::Binary: {
@@ -11403,6 +11554,7 @@ class Objc3IREmitter {
   std::map<std::string, LoweredFunctionSignature> function_signatures_;
   std::map<std::string, std::string> selector_pool_globals_;
   std::map<std::string, std::string> runtime_string_pool_globals_;
+  std::map<std::string, TypedKeyPathArtifact> typed_keypath_artifacts_;
   std::unordered_map<std::string, int> class_receiver_constants_;
   std::size_t vector_signature_function_count_ = 0;
   mutable std::vector<std::string> block_function_definitions_;

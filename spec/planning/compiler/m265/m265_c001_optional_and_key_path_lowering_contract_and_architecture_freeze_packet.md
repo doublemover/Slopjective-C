@@ -6,8 +6,9 @@ Issue: `#7249`
 
 Freeze the first lowering-owned Part 3 packet so the live compiler publishes one
 deterministic native-lowering contract for optional bindings, optional sends,
-and nil-coalescing while typed key-path literals remain truthful deferred
-surfaces.
+and nil-coalescing while validated typed key-path literals now lower into
+retained descriptor handles and broader key-path runtime behavior remains
+deferred.
 
 ## Dependencies
 
@@ -25,8 +26,8 @@ surfaces.
 - emit an explicit IR boundary comment for the Part 3 lowering contract
 - lower optional sends without evaluating selector arguments on the nil-receiver
   arm
-- keep typed key-path literals deferred from native IR/object lowering and fail
-  closed with deterministic diagnostics on the native path
+- lower validated typed key-path literals into retained native descriptor
+  artifacts and stable nonzero handles
 
 ## Dynamic proof shape
 
@@ -36,14 +37,15 @@ surfaces.
   - nil-coalescing
 - native executable proof for optional-send argument short-circuit on a nil
   receiver
-- source-only positive probe for a typed key-path literal that proves the
-  deferred packet is published truthfully
-- native fail-closed probe for the same typed key-path literal proving native IR
-  lowering still rejects unresolved `__objc3_keypath_literal`
+- source-only positive probe for a typed key-path literal that proves the live
+  artifact packet is published truthfully
+- native positive probe for the same typed key-path literal proving native IR
+  emits retained key-path descriptors and preserves generic-metadata evidence
 
 ## Notes
 
-- This issue is the lowering freeze, not executable typed key-path support.
-- `?.` optional-member access remains outside the admitted lowering surface.
+- This issue is the lowering freeze, not full executable typed key-path
+  application/runtime support.
+- `?.` optional-member access is now inside the admitted lowering surface.
 - Later issues in `M265` are expected to convert the deferred typed key-path
-  surface into live lowering/runtime behavior.
+  surface into full runtime behavior.

@@ -73,7 +73,8 @@ Current implementation status (`M265-C001`):
 - `guard let` / `guard var` `else` blocks now fail closed unless they exit the
   current scope
 - typed key-path literals such as `@keypath(...)` are admitted as parser-owned
-  source forms and still fail closed on the native lowering path
+  source forms and the validated single-component subset now lowers on the
+  native path into retained descriptor handles
 - class-root key paths such as `@keypath(Person, name)` now fail closed unless
   the named component is a readable property on the root type
 - generic Objective-C method declarations written as `- <T> ...` remain

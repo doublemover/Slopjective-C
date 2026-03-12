@@ -300,10 +300,12 @@ Currently live in the frontend:
 - nil-coalescing expressions written with `??`
 - typed key-path literals such as `@keypath(self, title)`
 
-Current fail-closed boundary:
+Current native lowering boundary:
 
-- typed key-path literals remain source-only and still fail closed on the
-  native lowering path
+- validated single-component typed key-path literals now lower into retained
+  descriptor artifacts and stable nonzero handles on the native path
+- broader typed key-path application/runtime behavior still remains deferred to
+  later `M265` lane-D work
 
 Deterministic current behavior:
 
@@ -319,8 +321,8 @@ Deterministic current behavior:
   truthfully through the frontend semantic surface
 - `??` and `@keypath(...)` are admitted as parser-owned source forms and
   published through the frontend semantic surface
-- typed key-path literals still remain fail-closed on the native path in the
-  current frontend boundary
+- typed key-path literals now remain source/sema surfaces while the validated
+  single-component subset also lowers natively as retained descriptor handles
 
 Recommended frontend contract checks:
 
@@ -343,17 +345,19 @@ Current implementation status (`M265-C001`):
   short-circuit model
 - ordinary sends still fail closed for nullable receivers unless the receiver
   has been proven nonnull or optional-send syntax is used
-- typed key-path literals remain source/sema surfaces and are published
-  truthfully as deferred-from-native-lowering packets
-- native IR/object emission still fails closed on typed key-path literals until
-  later executable key-path lowering work lands
+- typed key-path literals now lower natively for the validated
+  single-component subset by emitting retained descriptor artifacts and stable
+  runtime handles
+- generic-metadata replay evidence now survives alongside those emitted
+  key-path artifacts so erased type-surface proof remains visible in manifests
+  and object artifacts
 - generic Objective-C method declarations written as `- <T> ...` remain
   reserved for a future revision and continue to diagnose explicitly
 
 Current fail-closed boundary:
 
-- typed key-path literals such as `@keypath(...)` remain fail closed on the
-  native lowering path
+- typed key-path application/runtime evaluation still remains deferred to later
+  `M265` lane-D work
 - multi-component typed key-path member chains still fail closed until later
   executable key-path lowering work
 - broader Part 3 lowering/runtime work still remains in later `M265` / `M266`

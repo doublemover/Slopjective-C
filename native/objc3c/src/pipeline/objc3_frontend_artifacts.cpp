@@ -407,10 +407,13 @@ std::string BuildPart3OptionalKeypathLoweringContractJson(
   std::ostringstream out;
   const bool source_semantic_model_ready = semantic_summary.deterministic;
   const bool typed_keypath_artifact_emission_deferred =
-      contract.deferred_typed_keypath_sites ==
-      contract.typed_keypath_literal_sites;
+      contract.deferred_typed_keypath_sites != 0;
   const bool ready_for_native_optional_lowering =
       contract.deterministic && contract.contract_violation_sites == 0;
+  const bool ready_for_typed_keypath_artifact_emission =
+      contract.deterministic && contract.contract_violation_sites == 0 &&
+      contract.live_typed_keypath_artifact_sites ==
+          contract.typed_keypath_literal_sites;
   out << "{"
       << "\"contract_id\":\""
       << EscapeJsonString(kObjc3Part3OptionalKeypathLoweringContractId)
@@ -442,6 +445,8 @@ std::string BuildPart3OptionalKeypathLoweringContractJson(
       << contract.live_optional_lowering_sites
       << ",\"single_evaluation_nil_short_circuit_sites\":"
       << contract.single_evaluation_nil_short_circuit_sites
+      << ",\"live_typed_keypath_artifact_sites\":"
+      << contract.live_typed_keypath_artifact_sites
       << ",\"deferred_typed_keypath_sites\":"
       << contract.deferred_typed_keypath_sites
       << ",\"contract_violation_sites\":"
@@ -462,7 +467,8 @@ std::string BuildPart3OptionalKeypathLoweringContractJson(
       << (typed_keypath_artifact_emission_deferred ? "true" : "false")
       << ",\"ready_for_native_optional_lowering\":"
       << (ready_for_native_optional_lowering ? "true" : "false")
-      << ",\"ready_for_typed_keypath_artifact_emission\":false"
+      << ",\"ready_for_typed_keypath_artifact_emission\":"
+      << (ready_for_typed_keypath_artifact_emission ? "true" : "false")
       << ",\"semantic_summary_replay_key\":\""
       << EscapeJsonString(semantic_summary_replay_key)
       << "\",\"message_send_selector_lowering_replay_key\":\""
@@ -8272,14 +8278,17 @@ BuildPart3OptionalKeypathLoweringContract(
   contract.single_evaluation_nil_short_circuit_sites =
       summary.optional_binding_clause_sites + summary.optional_send_sites +
       summary.nil_coalescing_sites;
-  contract.deferred_typed_keypath_sites = summary.typed_keypath_literal_sites;
+  contract.live_typed_keypath_artifact_sites =
+      summary.typed_keypath_literal_sites;
+  contract.deferred_typed_keypath_sites = 0;
   contract.contract_violation_sites =
       summary.optional_binding_contract_violation_sites +
       summary.optional_send_contract_violation_sites +
       summary.optional_flow_contract_violation_sites;
   contract.deterministic =
       summary.deterministic && contract.contract_violation_sites == 0 &&
-      contract.deferred_typed_keypath_sites ==
+      contract.live_typed_keypath_artifact_sites +
+              contract.deferred_typed_keypath_sites ==
           contract.typed_keypath_literal_sites;
   return contract;
 }

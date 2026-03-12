@@ -4,8 +4,8 @@ Contract ID: `objc3c-part3-optional-keypath-lowering/m265-c001-v1`
 
 Scope: Freeze the first lowering-owned Part 3 packet so optional bindings,
 optional sends, and nil-coalescing have one deterministic native lowering
-boundary while typed key-path literals remain truthful source/semantic surfaces
-until later executable key-path work.
+boundary while validated typed key-path literals now lower into retained
+descriptor handles and broader key-path runtime behavior remains later work.
 
 Required anchors:
 - `native/objc3c/src/lower/objc3_lowering_contract.h`
@@ -26,12 +26,12 @@ The packet must prove:
   counted deterministically
 - native lowering publishes one single-evaluation nil-short-circuit model for
   optional bindings, optional sends, and `??`
-- typed key-path literals remain deferred from native IR/object lowering and
-  are reported truthfully as source/semantic-only surfaces
+- validated typed key-path literals lower into retained native descriptor
+  artifacts and stable nonzero handles
 - the native optional-send happy path no longer evaluates arguments on the nil
   receiver arm
-- typed key-path literals still fail closed in native IR with deterministic
-  diagnostics until later lowering work lands
+- generic-metadata replay evidence remains visible alongside the emitted
+  key-path artifacts
 
 Validation:
 - `python scripts/check_m265_c001_optional_and_key_path_lowering_contract_and_architecture_freeze.py`

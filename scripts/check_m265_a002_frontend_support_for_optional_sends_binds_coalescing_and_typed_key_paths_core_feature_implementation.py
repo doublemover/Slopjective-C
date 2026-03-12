@@ -134,7 +134,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         ("M265-A002-PAYLOAD-01", "contract_id", CONTRACT_ID),
         ("M265-A002-PAYLOAD-02", "frontend_surface_path", "frontend.pipeline.semantic_surface.objc_part3_type_source_closure"),
         ("M265-A002-PAYLOAD-03", "source_model", "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces"),
-        ("M265-A002-PAYLOAD-04", "failure_model", "typed-keypath-literals-remain-source-sema-surfaces-and-fail-closed-on-native-lowering-until-later-m265-issues"),
+        ("M265-A002-PAYLOAD-04", "failure_model", "typed-keypath-literals-remain-source-sema-surfaces-while-native-lowering-now-emits-stable-descriptor-handles-for-the-validated-single-component-subset"),
     ]
     for check_id, field, expected in scalar_expectations:
         checks_total += 1

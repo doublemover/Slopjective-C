@@ -379,6 +379,8 @@ inline constexpr const char *kObjc3RuntimeSelectorPoolLogicalSection =
     "objc3.runtime.selector_pool";
 inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
     "objc3.runtime.string_pool";
+inline constexpr const char *kObjc3RuntimeKeypathDescriptorLogicalSection =
+    "objc3.runtime.keypath_descriptors";
 // M256-C001 executable object artifact lowering freeze anchor: lane-C now
 // freezes the current binding surface where realized class/category metadata
 // records consume owner-scoped method-list refs and implementation-backed
@@ -1722,6 +1724,7 @@ struct Objc3Part3OptionalKeypathLoweringContract {
   std::size_t typed_keypath_class_root_sites = 0;
   std::size_t live_optional_lowering_sites = 0;
   std::size_t single_evaluation_nil_short_circuit_sites = 0;
+  std::size_t live_typed_keypath_artifact_sites = 0;
   std::size_t deferred_typed_keypath_sites = 0;
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
@@ -2048,19 +2051,20 @@ std::string Objc3RunnableBlockRuntimeGateSummary();
 std::string Objc3RunnableBlockExecutionMatrixSummary();
 // M265-C001/C002 Part 3 lowering freeze anchor: native lowering now
 // truthfully freezes the live optional binding/send/optional-member-access/
-// coalescing path with single-evaluation nil short-circuit semantics while
-// keeping typed key-path artifact emission deferred and fail closed until
-// M265-C003.
+// coalescing path with single-evaluation nil short-circuit semantics and, as
+// of M265-C003, lowers validated typed key-path literals into retained native
+// descriptor artifacts with stable runtime handles while broader key-path
+// execution remains a later runtime milestone.
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringContractId =
     "objc3c-part3-optional-keypath-lowering/m265-c001-v1";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringOptionalModel =
     "optional-bindings-sends-optional-member-access-and-coalescing-lower-natively-with-single-evaluation-and-nil-short-circuit";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringTypedKeypathModel =
-    "typed-keypath-literals-remain-source-and-semantic-surfaces-and-fail-closed-before-m265-c003";
+    "validated-single-component-typed-keypath-literals-lower-to-canonical-runtime-descriptor-handles-with-generic-metadata-preservation";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringAuthorityModel =
     "part3-semantic-summary-plus-message-send-selector-dispatch-and-nil-receiver-lowering-contracts";
 inline constexpr const char *kObjc3Part3OptionalKeypathLoweringFailClosedModel =
-    "native-lowering-fails-closed-on-typed-keypath-ir-emission-and-on-optional-lowering-contract-drift";
+    "native-lowering-fails-closed-on-lowering-contract-drift-and-on-semantically-unsupported-typed-keypath-shapes";
 std::string Objc3Part3OptionalKeypathLoweringSummary();
 std::string Objc3ArcSourceModeBoundarySummary();
 std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled);

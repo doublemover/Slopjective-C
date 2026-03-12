@@ -1191,7 +1191,9 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
   // M265-C002 optional chaining lowering anchor: `?.member` now desugars onto
   // the same optional-send ABI and nil-short-circuit path already used by
   // bracketed optional sends, so the live lowering packet truthfully covers
-  // optional-member access without widening typed key-path execution.
+  // optional-member access. M265-C003 now widens the same packet to cover
+  // validated typed key-path descriptor emission and stable runtime handles
+  // without claiming full key-path application/runtime evaluation yet.
   out << "contract_id=" << kObjc3Part3OptionalKeypathLoweringContractId
       << ";optional_model="
       << kObjc3Part3OptionalKeypathLoweringOptionalModel
@@ -3034,12 +3036,15 @@ bool IsValidObjc3Part3OptionalKeypathLoweringContract(
           contract.nil_coalescing_sites) {
     return false;
   }
-  if (contract.deferred_typed_keypath_sites !=
+  if (contract.live_typed_keypath_artifact_sites +
+          contract.deferred_typed_keypath_sites !=
       contract.typed_keypath_literal_sites) {
     return false;
   }
   if (contract.contract_violation_sites >
-      contract.live_optional_lowering_sites + contract.deferred_typed_keypath_sites) {
+      contract.live_optional_lowering_sites +
+          contract.live_typed_keypath_artifact_sites +
+          contract.deferred_typed_keypath_sites) {
     return false;
   }
   if (contract.contract_violation_sites > 0 && contract.deterministic) {
@@ -3068,6 +3073,8 @@ std::string Objc3Part3OptionalKeypathLoweringReplayKey(
          std::to_string(contract.live_optional_lowering_sites) +
          ";single_evaluation_nil_short_circuit_sites=" +
          std::to_string(contract.single_evaluation_nil_short_circuit_sites) +
+         ";live_typed_keypath_artifact_sites=" +
+         std::to_string(contract.live_typed_keypath_artifact_sites) +
          ";deferred_typed_keypath_sites=" +
          std::to_string(contract.deferred_typed_keypath_sites) +
          ";contract_violation_sites=" +

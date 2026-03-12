@@ -41,8 +41,9 @@ Implementation note (`M265-C001`):
   optional sends.
 - Typed key-path roots currently fail closed unless they resolve to `self`, a
   known class type, or an ObjC-reference-compatible identifier.
-- Typed key-path literals remain deferred from native IR/object lowering and
-  still fail closed on that path until later executable key-path work lands.
+- Typed key-path literals now lower on the native path for the validated
+  single-component subset by emitting retained descriptor handles; full
+  key-path application/runtime behavior remains later work.
 - Single-component class-root key paths now fail closed unless the named
   component is a readable property on the root type.
 - Generic Objective-C method declarations written as `- <T> ...` remain

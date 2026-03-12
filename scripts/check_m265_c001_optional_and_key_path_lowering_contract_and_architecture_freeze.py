@@ -129,7 +129,7 @@ def validate_packet(packet: dict[str, Any], artifact: str, expected: dict[str, A
         "contract_id": CONTRACT_ID,
         "surface_path": SURFACE_PATH,
         "ready_for_native_optional_lowering": True,
-        "ready_for_typed_keypath_artifact_emission": False,
+        "ready_for_typed_keypath_artifact_emission": True,
         "contract_violation_sites": 0,
     }
     for key, value in {**shared, **expected}.items():
@@ -273,13 +273,15 @@ def run_dynamic_probes(args: argparse.Namespace, failures: list[Finding]) -> tup
             "typed_keypath_class_root_sites": 1,
             "live_optional_lowering_sites": 0,
             "single_evaluation_nil_short_circuit_sites": 0,
-            "deferred_typed_keypath_sites": 1,
+            "live_typed_keypath_artifact_sites": 1,
+            "deferred_typed_keypath_sites": 0,
         }, failures)
         checks_total += sub_total
         checks_passed += sub_passed
         evidence["typed_keypath_source_packet"] = {k: keypath_packet[k] for k in [
             "typed_keypath_literal_sites",
             "typed_keypath_class_root_sites",
+            "live_typed_keypath_artifact_sites",
             "deferred_typed_keypath_sites",
             "ready_for_typed_keypath_artifact_emission",
         ]}
@@ -288,23 +290,48 @@ def run_dynamic_probes(args: argparse.Namespace, failures: list[Finding]) -> tup
     keypath_native_out.mkdir(parents=True, exist_ok=True)
     keypath_native = run_command([str(args.native_exe), str(KEYPATH_FIXTURE), "--out-dir", str(keypath_native_out), "--emit-prefix", "module"])
     checks_total += 1
-    checks_passed += require(keypath_native.returncode != 0, display_path(KEYPATH_FIXTURE), "M265-C001-DYN-keypath-native-rc", "native keypath probe unexpectedly succeeded", failures)
+    checks_passed += require(keypath_native.returncode == 0, display_path(KEYPATH_FIXTURE), "M265-C001-DYN-keypath-native-rc", f"native keypath probe failed: {keypath_native.stderr or keypath_native.stdout}", failures)
+    keypath_native_manifest = keypath_native_out / "module.manifest.json"
+    keypath_native_ir = keypath_native_out / "module.ll"
+    keypath_native_obj = keypath_native_out / "module.obj"
     keypath_native_diag = keypath_native_out / "module.diagnostics.json"
-    checks_total += 1
-    checks_passed += require(keypath_native_diag.exists(), display_path(keypath_native_diag), "M265-C001-DYN-keypath-native-diag", "native keypath diagnostics missing", failures)
     if keypath_native_diag.exists():
-        payload = load_json(keypath_native_diag)
-        diagnostics = payload.get("diagnostics", [])
-        messages = [entry.get("message", "") for entry in diagnostics if isinstance(entry, dict)]
-        joined = "\n".join(messages)
+        sub_total, sub_passed = validate_empty_diagnostics(keypath_native_diag, failures)
+        checks_total += sub_total
+        checks_passed += sub_passed
+    checks_total += 1
+    checks_passed += require(keypath_native_ir.exists(), display_path(keypath_native_ir), "M265-C001-DYN-keypath-native-ir", "native keypath IR missing", failures)
+    if keypath_native_ir.exists():
+        ir_text = keypath_native_ir.read_text(encoding="utf-8")
         checks_total += 1
-        checks_passed += require("O3L300" in json.dumps(payload), display_path(keypath_native_diag), "M265-C001-DYN-keypath-native-o3l300", "expected O3L300 diagnostic", failures)
+        checks_passed += require("@__objc3_sec_keypath_descriptors" in ir_text, display_path(keypath_native_ir), "M265-C001-DYN-keypath-native-section", "keypath descriptor aggregate missing", failures)
         checks_total += 1
-        checks_passed += require("__objc3_keypath_literal" in joined, display_path(keypath_native_diag), "M265-C001-DYN-keypath-native-symbol", "expected unresolved __objc3_keypath_literal diagnostic", failures)
-        evidence["typed_keypath_native_fail_closed"] = {
-            "returncode": keypath_native.returncode,
-            "messages": messages,
-        }
+        checks_passed += require("typed_keypath_artifact_emission = " in ir_text, display_path(keypath_native_ir), "M265-C001-DYN-keypath-native-comment", "typed keypath artifact emission comment missing", failures)
+    checks_total += 1
+    checks_passed += require(keypath_native_obj.exists(), display_path(keypath_native_obj), "M265-C001-DYN-keypath-native-obj", "native keypath object missing", failures)
+    if keypath_native_manifest.exists():
+        keypath_packet = packet_from_manifest(keypath_native_manifest)
+        sub_total, sub_passed = validate_packet(keypath_packet, display_path(keypath_native_manifest), {
+            "optional_binding_sites": 0,
+            "optional_binding_clause_sites": 0,
+            "optional_send_sites": 0,
+            "nil_coalescing_sites": 0,
+            "typed_keypath_literal_sites": 1,
+            "typed_keypath_self_root_sites": 0,
+            "typed_keypath_class_root_sites": 1,
+            "live_optional_lowering_sites": 0,
+            "single_evaluation_nil_short_circuit_sites": 0,
+            "live_typed_keypath_artifact_sites": 1,
+            "deferred_typed_keypath_sites": 0,
+        }, failures)
+        checks_total += sub_total
+        checks_passed += sub_passed
+    evidence["typed_keypath_native_artifact_emission"] = {
+        "returncode": keypath_native.returncode,
+        "manifest": display_path(keypath_native_manifest),
+        "ir": display_path(keypath_native_ir),
+        "object": display_path(keypath_native_obj),
+    }
 
     return checks_total, checks_passed, evidence
 
@@ -324,7 +351,7 @@ def main(argv: Sequence[str]) -> int:
         PACKET_DOC: [
             SnippetCheck("M265-C001-PACKET-01", "# M265-C001 - Optional and key-path lowering contract"),
             SnippetCheck("M265-C001-PACKET-02", "optional-send argument short-circuit on a nil"),
-            SnippetCheck("M265-C001-PACKET-03", "typed key-path literals remain truthful deferred"),
+            SnippetCheck("M265-C001-PACKET-03", "validated typed key-path literals now lower into"),
         ],
         LOWERING_CONTRACT_H: [
             SnippetCheck("M265-C001-H-01", "kObjc3Part3OptionalKeypathLoweringContractId"),
@@ -333,7 +360,7 @@ def main(argv: Sequence[str]) -> int:
         ],
         LOWERING_CONTRACT_CPP: [
             SnippetCheck("M265-C001-CPP-01", "Objc3Part3OptionalKeypathLoweringSummary"),
-            SnippetCheck("M265-C001-CPP-02", "contract.deferred_typed_keypath_sites !="),
+            SnippetCheck("M265-C001-CPP-02", "contract.live_typed_keypath_artifact_sites +"),
             SnippetCheck("M265-C001-CPP-03", "single_evaluation_nil_short_circuit_sites"),
         ],
         IR_EMITTER_CPP: [
@@ -349,7 +376,7 @@ def main(argv: Sequence[str]) -> int:
         DOC_SOURCE: [
             SnippetCheck("M265-C001-DOCSRC-01", "Current implementation status (`M265-C001`)"),
             SnippetCheck("M265-C001-DOCSRC-02", "optional sends now lower natively with single-evaluation nil"),
-            SnippetCheck("M265-C001-DOCSRC-03", "typed key-path literals remain source/sema surfaces"),
+            SnippetCheck("M265-C001-DOCSRC-03", "typed key-path literals now lower natively for the validated"),
         ],
         SPEC_AM: [
             SnippetCheck("M265-C001-SPECAM-01", "Lane C now carries the first lowering-owned Part 3 packet"),
@@ -361,7 +388,7 @@ def main(argv: Sequence[str]) -> int:
         ],
         SPEC_PART3: [
             SnippetCheck("M265-C001-SPECP3-01", "Implementation note (`M265-C001`)"),
-            SnippetCheck("M265-C001-SPECP3-02", "Typed key-path literals remain deferred"),
+            SnippetCheck("M265-C001-SPECP3-02", "Typed key-path literals now lower on the native path"),
         ],
         PACKAGE_JSON: [
             SnippetCheck("M265-C001-PKG-01", "check:objc3c:m265-c001-optional-and-key-path-lowering-contract-and-architecture-freeze"),

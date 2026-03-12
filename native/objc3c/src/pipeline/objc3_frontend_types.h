@@ -1238,7 +1238,7 @@ inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
 inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
     "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
 inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
-    "typed-keypath-literals-remain-source-sema-surfaces-and-fail-closed-on-native-lowering-until-later-m265-issues";
+    "typed-keypath-literals-remain-source-sema-surfaces-while-native-lowering-now-emits-stable-descriptor-handles-for-the-validated-single-component-subset";
 inline constexpr const char *kObjc3Part3TypeSemanticModelContractId =
     "objc3c-part3-type-semantic-model/m265-b001-v1";
 inline constexpr const char *kObjc3Part3TypeSemanticModelSurfacePath =
