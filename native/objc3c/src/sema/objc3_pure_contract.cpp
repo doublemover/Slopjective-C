@@ -259,6 +259,7 @@ static void CollectPureContractEffectStmt(const Stmt *stmt, std::vector<std::uno
       scopes.pop_back();
       return;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       if (stmt->block_stmt == nullptr) {
         return;
       }
@@ -475,3 +476,4 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
                                        std::to_string(cause.detail_column) + ")"));
   }
 }
+

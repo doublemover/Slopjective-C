@@ -1,0 +1,13 @@
+module m266DeferBreakNegative;
+
+fn main(flag: bool) -> i32 {
+  while (flag) {
+    defer {
+      break;
+    }
+
+    return 1;
+  }
+
+  return 0;
+}

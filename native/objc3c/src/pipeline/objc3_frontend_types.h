@@ -1296,9 +1296,9 @@ inline constexpr const char *kObjc3Part5ControlFlowSourceClosureContractId =
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSourceModel =
-    "guard-condition-lists-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-defer-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
+    "guard-condition-lists-defer-statements-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureFailureModel =
-    "defer-remains-reserved-match-is-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-m266-sema-lowering-and-runtime-work";
+    "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-m266-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3Part5ControlFlowSourceClosureContractId;
@@ -1310,6 +1310,7 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
       kObjc3Part5SourceSurfaceGuardBindings,
       kObjc3Part5SourceSurfaceGuardConditionLists,
       kObjc3Part5SourceSurfaceSwitchCasePatterns,
+      kObjc3Part5SourceSurfaceDeferStatements,
       kObjc3Part5SourceSurfaceMatchStatement,
       kObjc3Part5SourceSurfaceMatchWildcardPatterns,
       kObjc3Part5SourceSurfaceMatchLiteralPatterns,
@@ -1317,7 +1318,6 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
       kObjc3Part5SourceSurfaceMatchResultCasePatterns,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3Part5FailClosedConstructDefer,
       kObjc3Part5FailClosedConstructMatchExpression,
       kObjc3Part5FailClosedConstructGuardedPatterns,
       kObjc3Part5FailClosedConstructMatchTypeTestPatterns,
@@ -1343,6 +1343,7 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   bool match_literal_pattern_source_supported = false;
   bool match_binding_pattern_source_supported = false;
   bool match_result_case_pattern_source_supported = false;
+  bool defer_statement_source_supported = false;
   bool defer_keyword_reserved = false;
   bool defer_fail_closed = false;
   bool match_expression_fail_closed = false;
@@ -4440,33 +4441,34 @@ inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
          summary.supported_construct_ids[2] ==
              kObjc3Part5SourceSurfaceSwitchCasePatterns &&
          summary.supported_construct_ids[3] ==
-             kObjc3Part5SourceSurfaceMatchStatement &&
+             kObjc3Part5SourceSurfaceDeferStatements &&
          summary.supported_construct_ids[4] ==
-             kObjc3Part5SourceSurfaceMatchWildcardPatterns &&
+             kObjc3Part5SourceSurfaceMatchStatement &&
          summary.supported_construct_ids[5] ==
-             kObjc3Part5SourceSurfaceMatchLiteralPatterns &&
+             kObjc3Part5SourceSurfaceMatchWildcardPatterns &&
          summary.supported_construct_ids[6] ==
-             kObjc3Part5SourceSurfaceMatchBindingPatterns &&
+             kObjc3Part5SourceSurfaceMatchLiteralPatterns &&
          summary.supported_construct_ids[7] ==
+             kObjc3Part5SourceSurfaceMatchBindingPatterns &&
+         summary.supported_construct_ids[8] ==
              kObjc3Part5SourceSurfaceMatchResultCasePatterns &&
-         summary.fail_closed_construct_ids.size() == 4 &&
+         summary.fail_closed_construct_ids.size() == 3 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3Part5FailClosedConstructDefer &&
-         summary.fail_closed_construct_ids[1] ==
              kObjc3Part5FailClosedConstructMatchExpression &&
-         summary.fail_closed_construct_ids[2] ==
+         summary.fail_closed_construct_ids[1] ==
              kObjc3Part5FailClosedConstructGuardedPatterns &&
-         summary.fail_closed_construct_ids[3] ==
+         summary.fail_closed_construct_ids[2] ==
              kObjc3Part5FailClosedConstructMatchTypeTestPatterns &&
          summary.guard_binding_source_supported &&
          summary.guard_condition_list_source_supported &&
          summary.switch_case_pattern_source_supported &&
+         summary.defer_statement_source_supported &&
          summary.match_statement_source_supported &&
          summary.match_wildcard_pattern_source_supported &&
          summary.match_literal_pattern_source_supported &&
          summary.match_binding_pattern_source_supported &&
          summary.match_result_case_pattern_source_supported &&
-         summary.defer_keyword_reserved && summary.defer_fail_closed &&
+         summary.defer_keyword_reserved && !summary.defer_fail_closed &&
          summary.match_expression_fail_closed &&
          summary.guarded_pattern_fail_closed &&
          summary.type_test_pattern_fail_closed &&

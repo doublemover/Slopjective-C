@@ -441,7 +441,8 @@ admits more real syntax than the initial `M266-A001` freeze.
   - literal integer, `true`, `false`, and `nil`
   - binding patterns `let name` / `var name`
   - result-case patterns such as `.Ok(let value)` and `.Err(let error)`
-- `defer` still fails closed with a targeted parser diagnostic
+- source-only `defer { ... }` statements are now admitted as a frontend/sema-owned Part 5 control-flow surface
+- native emit paths still fail closed for runnable `defer` lowering with `O3S221` until later lane-C/lane-D work lands
 - expression-form `match` arms using `=>`, guarded patterns using `where`, and
   type-test patterns using contextual `is` still fail closed with targeted
   parser diagnostics

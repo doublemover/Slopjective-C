@@ -427,7 +427,22 @@ struct BlockStmt;
 struct ExprStmt;
 
 struct Stmt {
-  enum class Kind { Let, Assign, Return, If, DoWhile, For, Switch, While, Break, Continue, Empty, Block, Expr };
+  enum class Kind {
+    Let,
+    Assign,
+    Return,
+    If,
+    DoWhile,
+    For,
+    Switch,
+    While,
+    Break,
+    Continue,
+    Empty,
+    Block,
+    Defer,
+    Expr
+  };
   Kind kind = Kind::Expr;
   std::unique_ptr<LetStmt> let_stmt;
   std::unique_ptr<AssignStmt> assign_stmt;

@@ -1079,6 +1079,7 @@ static void CollectResultLikeStmtProfile(const Stmt *stmt, Objc3ResultLikeProfil
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
         CollectResultLikeStmtProfile(body_stmt.get(), profile);
@@ -1281,7 +1282,8 @@ static std::size_t CountFailableCallSitesInStmt(const Stmt *stmt) {
     }
     return count;
   }
-  case Stmt::Kind::Block: {
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer: {
     if (stmt->block_stmt == nullptr) {
       return 0;
     }
@@ -1574,6 +1576,7 @@ static void CollectPointerArithmeticStmtSites(const Stmt *stmt, std::size_t &sit
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -1897,6 +1900,7 @@ static void CollectInlineAsmIntrinsicStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -2233,6 +2237,7 @@ static void CollectUnwindCleanupStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -2589,6 +2594,7 @@ static void CollectErrorDiagnosticsRecoveryStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -3010,6 +3016,7 @@ static void CollectAsyncContinuationStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -3385,6 +3392,7 @@ static void CollectAwaitSuspensionStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -3740,6 +3748,7 @@ static void CollectActorIsolationSendabilityStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -4097,6 +4106,7 @@ static void CollectTaskRuntimeCancellationStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -4473,6 +4483,7 @@ static void CollectConcurrencyReplayRaceGuardStmtSites(
     }
     return;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return;
     }
@@ -9393,12 +9404,24 @@ class Objc3Parser {
 
     if (Match(TokenKind::KwDefer)) {
       const Token &token = Previous();
-      // M266-A001 source-closure anchor: reserve defer syntax in the parser so
-      // diagnostics and manifest truth stay deterministic until runnable defer
-      // lowering exists.
-      diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P154", "unsupported 'defer' statement"));
-      return nullptr;
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Defer;
+      stmt->block_stmt = std::make_unique<BlockStmt>();
+      stmt->line = token.line;
+      stmt->column = token.column;
+      stmt->block_stmt->line = token.line;
+      stmt->block_stmt->column = token.column;
+      if (Peek().kind != TokenKind::LBrace) {
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P110", "defer requires braced body"));
+        return nullptr;
+      }
+      stmt->block_stmt->body = ParseBlock();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      return stmt;
     }
 
     if (Match(TokenKind::KwDo)) {
@@ -10833,6 +10856,7 @@ class Objc3Parser {
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         for (const auto &body_stmt : stmt->block_stmt->body) {
           CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
@@ -11016,6 +11040,7 @@ class Objc3Parser {
         }
         return;
       case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
         if (stmt->block_stmt != nullptr) {
           for (const auto &body_stmt : stmt->block_stmt->body) {
             CollectBlockLiteralMutatedIdentifiersFromStatement(
@@ -11728,3 +11753,5 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
   return result;
 }
+
+

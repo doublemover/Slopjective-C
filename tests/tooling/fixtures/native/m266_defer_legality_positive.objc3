@@ -1,0 +1,17 @@
+module m266DeferLegalityPositive;
+
+fn classify(flag: bool) -> i32 {
+  defer {
+    while (false) {
+      continue;
+    }
+
+    flag;
+  }
+
+  return 0;
+}
+
+fn main(flag: bool) -> i32 {
+  return classify(flag);
+}

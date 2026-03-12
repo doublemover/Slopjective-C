@@ -245,6 +245,8 @@ static bool StatementReturnsOrFallsThroughToNextCase(const Stmt *stmt, const Sta
         return false;
       }
       return BlockReturnsOrFallsThroughToNextCase(stmt->block_stmt->body, bindings);
+    case Stmt::Kind::Defer:
+      return true;
     case Stmt::Kind::If: {
       if (stmt->if_stmt == nullptr) {
         return false;
@@ -364,6 +366,9 @@ bool StatementAlwaysReturns(const Stmt *stmt, const StaticScalarBindings *bindin
   if (stmt->kind == Stmt::Kind::Block && stmt->block_stmt != nullptr) {
     return BlockAlwaysReturns(stmt->block_stmt->body, bindings);
   }
+  if (stmt->kind == Stmt::Kind::Defer) {
+    return false;
+  }
   if (stmt->kind == Stmt::Kind::If && stmt->if_stmt != nullptr) {
     const IfStmt *if_stmt = stmt->if_stmt.get();
     if (ExprIsStaticallyTrue(if_stmt->condition.get(), bindings)) {
@@ -412,4 +417,3 @@ bool BlockAlwaysReturns(const std::vector<std::unique_ptr<Stmt>> &statements,
   }
   return false;
 }
-

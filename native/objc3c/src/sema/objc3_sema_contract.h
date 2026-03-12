@@ -318,13 +318,13 @@ inline constexpr const char *kObjc3Part5ControlFlowSemanticModelContractId =
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelRule =
-    "guard-refinement-and-statement-match-binding-plus-exhaustiveness-semantics-are-live-while-defer-cleanup-order-remains-deferred-or-fail-closed";
+    "guard-refinement-plus-statement-match-exhaustiveness-and-defer-legality-semantics-are-live-while-defer-cleanup-lowering-remains-a-later-lane-c-runtime-step";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelDeferRule =
-    "defer-cleanup-order-and-defer-mediated-nonlocal-exit-remain-frontloaded-fail-closed-until-later-m266-lowering-and-runtime-work";
+    "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-m266-lowering-and-runtime-work";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelMatchRule =
     "statement-match-enforces-catch-all-bool-and-result-case-exhaustiveness-with-case-local-binding-scopes-while-result-payload-typing-remains-deferred";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelExitRule =
-    "break-and-continue-restrictions-are-live-while-defer-mediated-nonlocal-exit-semantics-remain-deferred";
+    "break-and-continue-restrictions-plus-defer-body-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred";
 
 struct Objc3Part5ControlFlowSemanticModelSummary {
   std::string contract_id = kObjc3Part5ControlFlowSemanticModelContractId;
@@ -352,6 +352,9 @@ struct Objc3Part5ControlFlowSemanticModelSummary {
   std::size_t match_result_case_exhaustive_sites = 0;
   std::size_t match_non_exhaustive_diagnostic_sites = 0;
   std::size_t match_exhaustiveness_deferred_sites = 0;
+  std::size_t defer_statement_semantic_sites = 0;
+  std::size_t defer_scope_cleanup_order_sites = 0;
+  std::size_t defer_nonlocal_exit_diagnostic_sites = 0;
   std::size_t break_statement_sites = 0;
   std::size_t continue_statement_sites = 0;
   std::size_t break_restriction_diagnostic_sites = 0;
@@ -363,6 +366,8 @@ struct Objc3Part5ControlFlowSemanticModelSummary {
   bool match_result_case_scope_semantics_landed = false;
   bool match_exhaustiveness_semantics_landed = false;
   bool match_exhaustiveness_deferred = false;
+  bool defer_cleanup_order_semantics_landed = false;
+  bool defer_nonlocal_exit_semantics_landed = false;
   bool defer_cleanup_order_deferred = false;
   bool defer_nonlocal_exit_deferred = false;
   bool non_local_exit_restrictions_landed = false;
@@ -386,8 +391,10 @@ inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
          summary.match_result_case_scope_semantics_landed &&
          summary.match_exhaustiveness_semantics_landed &&
          !summary.match_exhaustiveness_deferred &&
-         summary.defer_cleanup_order_deferred &&
-         summary.defer_nonlocal_exit_deferred &&
+         summary.defer_cleanup_order_semantics_landed &&
+         summary.defer_nonlocal_exit_semantics_landed &&
+         !summary.defer_cleanup_order_deferred &&
+         !summary.defer_nonlocal_exit_deferred &&
          summary.non_local_exit_restrictions_landed &&
          summary.deterministic && summary.ready_for_lowering_and_runtime &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
@@ -2182,6 +2189,7 @@ struct Objc3SemanticTypeMetadataHandoff {
 struct Objc3SemanticValidationOptions {
   std::size_t max_message_send_args = 4;
   bool allow_source_only_block_literals = false;
+  bool allow_source_only_defer_statements = false;
   bool arc_mode_enabled = false;
 };
 

@@ -145,7 +145,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         (
             "M266-B001-PAYLOAD-05",
             "defer_model",
-            "defer-cleanup-order-and-defer-mediated-nonlocal-exit-remain-frontloaded-fail-closed-until-later-m266-lowering-and-runtime-work",
+            "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-m266-lowering-and-runtime-work",
             "defer model drifted",
         ),
         (
@@ -157,7 +157,7 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         (
             "M266-B001-PAYLOAD-07",
             "non_local_exit_model",
-            "break-and-continue-restrictions-are-live-while-defer-mediated-nonlocal-exit-semantics-remain-deferred",
+            "break-and-continue-restrictions-plus-defer-body-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred",
             "non-local exit model drifted",
         ),
         ("M266-B001-PAYLOAD-08", "guard_binding_semantic_sites", 1, "guard binding semantic count mismatch"),
@@ -189,14 +189,17 @@ def validate_summary_payload(payload: dict[str, Any], artifact: str, failures: l
         ("M266-B001-PAYLOAD-28", "guard_exit_enforcement_landed"),
         ("M266-B001-PAYLOAD-29", "match_binding_scope_semantics_landed"),
         ("M266-B001-PAYLOAD-30", "match_result_case_scope_semantics_landed"),
-        ("M266-B001-PAYLOAD-32", "defer_cleanup_order_deferred"),
-        ("M266-B001-PAYLOAD-33", "defer_nonlocal_exit_deferred"),
+        
         ("M266-B001-PAYLOAD-34", "non_local_exit_restrictions_landed"),
         ("M266-B001-PAYLOAD-35", "deterministic"),
         ("M266-B001-PAYLOAD-36", "ready_for_lowering_and_runtime"),
     ]:
         checks_total += 1
         checks_passed += require(payload.get(field) is True, artifact, check_id, f"{field} must stay true", failures)
+
+    checks_total += 2
+    checks_passed += require(payload.get("defer_cleanup_order_deferred") is False, artifact, "M266-B001-PAYLOAD-32", "defer_cleanup_order_deferred must stay false", failures)
+    checks_passed += require(payload.get("defer_nonlocal_exit_deferred") is False, artifact, "M266-B001-PAYLOAD-33", "defer_nonlocal_exit_deferred must stay false", failures)
 
     checks_total += 1
     checks_passed += require(

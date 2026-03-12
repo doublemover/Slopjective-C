@@ -181,17 +181,19 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimNilCoalescing =
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
 
-// M266-A001 control-flow source-closure anchor: the frontend now owns the
-// Part 5 keyword reservation boundary directly. Guard bindings stay admitted
-// through the existing runnable/syntactic slice, switch/case remains the only
-// supported pattern carrier today, and defer/match are promoted to explicit
-// fail-closed keywords instead of drifting as ordinary identifiers.
+// M266-A001/B003 control-flow source+semantic surface anchor: the frontend now
+// owns the Part 5 keyword classification boundary directly. Guard bindings,
+// defer statements, and statement-form match stay explicit parser-owned
+// surfaces while match-expression / guarded-pattern / type-test-pattern
+// families remain fail-closed instead of drifting as ordinary identifiers.
 inline constexpr const char *kObjc3Part5SourceSurfaceGuardBindings =
     "part5-source:guard-bindings";
 inline constexpr const char *kObjc3Part5SourceSurfaceGuardConditionLists =
     "part5-source:guard-condition-lists";
 inline constexpr const char *kObjc3Part5SourceSurfaceSwitchCasePatterns =
     "part5-source:switch-case-patterns";
+inline constexpr const char *kObjc3Part5SourceSurfaceDeferStatements =
+    "part5-source:defer-statements";
 inline constexpr const char *kObjc3Part5SourceSurfaceMatchStatement =
     "part5-source:match-statement";
 inline constexpr const char *kObjc3Part5SourceSurfaceMatchWildcardPatterns =
@@ -202,8 +204,6 @@ inline constexpr const char *kObjc3Part5SourceSurfaceMatchBindingPatterns =
     "part5-source:match-binding-patterns";
 inline constexpr const char *kObjc3Part5SourceSurfaceMatchResultCasePatterns =
     "part5-source:match-result-case-patterns";
-inline constexpr const char *kObjc3Part5FailClosedConstructDefer =
-    "part5-fail-closed:defer-statement";
 inline constexpr const char *kObjc3Part5FailClosedConstructMatchExpression =
     "part5-fail-closed:match-expression";
 inline constexpr const char *kObjc3Part5FailClosedConstructGuardedPatterns =

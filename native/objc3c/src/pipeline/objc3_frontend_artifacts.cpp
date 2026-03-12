@@ -385,6 +385,8 @@ std::string BuildPart5ControlFlowSourceClosureSummaryJson(
       << (summary.guard_condition_list_source_supported ? "true" : "false")
       << ",\"switch_case_pattern_source_supported\":"
       << (summary.switch_case_pattern_source_supported ? "true" : "false")
+      << ",\"defer_statement_source_supported\":"
+      << (summary.defer_statement_source_supported ? "true" : "false")
       << ",\"match_statement_source_supported\":"
       << (summary.match_statement_source_supported ? "true" : "false")
       << ",\"match_wildcard_pattern_source_supported\":"
@@ -509,6 +511,12 @@ std::string BuildPart5ControlFlowSemanticModelSummaryJson(
       << summary.match_non_exhaustive_diagnostic_sites
       << ",\"match_exhaustiveness_deferred_sites\":"
       << summary.match_exhaustiveness_deferred_sites
+      << ",\"defer_statement_semantic_sites\":"
+      << summary.defer_statement_semantic_sites
+      << ",\"defer_scope_cleanup_order_sites\":"
+      << summary.defer_scope_cleanup_order_sites
+      << ",\"defer_nonlocal_exit_diagnostic_sites\":"
+      << summary.defer_nonlocal_exit_diagnostic_sites
       << ",\"break_statement_sites\":" << summary.break_statement_sites
       << ",\"continue_statement_sites\":"
       << summary.continue_statement_sites
@@ -530,6 +538,10 @@ std::string BuildPart5ControlFlowSemanticModelSummaryJson(
       << (summary.match_exhaustiveness_semantics_landed ? "true" : "false")
       << ",\"match_exhaustiveness_deferred\":"
       << (summary.match_exhaustiveness_deferred ? "true" : "false")
+      << ",\"defer_cleanup_order_semantics_landed\":"
+      << (summary.defer_cleanup_order_semantics_landed ? "true" : "false")
+      << ",\"defer_nonlocal_exit_semantics_landed\":"
+      << (summary.defer_nonlocal_exit_semantics_landed ? "true" : "false")
       << ",\"defer_cleanup_order_deferred\":"
       << (summary.defer_cleanup_order_deferred ? "true" : "false")
       << ",\"defer_nonlocal_exit_deferred\":"
@@ -7431,6 +7443,7 @@ void AccumulateMessageSendSelectorLoweringStmt(
       }
       return;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       if (stmt->block_stmt == nullptr) {
         return;
       }
@@ -7518,6 +7531,7 @@ void AccumulateDispatchSurfaceClassificationStmt(
       }
       return;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       for (const auto &nested : stmt->block_stmt->body) {
         AccumulateDispatchSurfaceClassificationStmt(nested.get(), contract);
       }
@@ -7786,6 +7800,7 @@ void AccumulateDispatchAbiMarshallingStmt(
       }
       return;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       if (stmt->block_stmt == nullptr) {
         return;
       }
@@ -8159,6 +8174,7 @@ void AccumulateBlockSourceModelCompletionFromStmt(
       }
       break;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         for (const auto &child : stmt->block_stmt->body) {
           AccumulateBlockSourceModelCompletionFromStmt(child.get(), contract);
@@ -8433,6 +8449,7 @@ void AccumulateBlockSourceStorageAnnotationFromStmt(
       }
       return;
     case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
       for (const auto &body_stmt : stmt->block_stmt->body) {
         AccumulateBlockSourceStorageAnnotationFromStmt(body_stmt.get(), contract);
       }
@@ -17735,3 +17752,4 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   return bundle;
 }
+

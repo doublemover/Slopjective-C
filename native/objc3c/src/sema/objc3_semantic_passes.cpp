@@ -634,6 +634,7 @@ struct Objc3UnsupportedFeatureClaimContext {
   std::size_t owned_runtime_backed_object_property_sites = 0;
   bool has_owned_runtime_backed_object_storage = false;
   bool allow_source_only_block_literals = false;
+  bool allow_source_only_defer_statements = false;
   bool arc_mode_enabled = false;
 };
 
@@ -653,6 +654,7 @@ static bool IsOwnedRuntimeBackedObjectProperty(const Objc3PropertyDecl &property
 static Objc3UnsupportedFeatureClaimContext
 BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
                                     bool allow_source_only_block_literals,
+                                    bool allow_source_only_defer_statements,
                                     bool arc_mode_enabled) {
   Objc3UnsupportedFeatureClaimContext context;
   std::unordered_set<std::string> seen_owned_storage_sites;
@@ -679,6 +681,7 @@ BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
   context.has_owned_runtime_backed_object_storage =
       context.owned_runtime_backed_object_property_sites > 0u;
   context.allow_source_only_block_literals = allow_source_only_block_literals;
+  context.allow_source_only_defer_statements = allow_source_only_defer_statements;
   context.arc_mode_enabled = arc_mode_enabled;
   return context;
 }
@@ -953,6 +956,7 @@ static bool StmtContainsBlockLiteral(const Stmt *stmt) {
       }
       return false;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt == nullptr) {
         return false;
       }
@@ -1125,6 +1129,25 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       // M260-E002 ownership-smoke closeout anchor: the runnable closeout matrix
       // consumes this admitted ownership-sensitive autoreleasepool slice
       // unchanged and may not widen it during M260 closeout.
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      DiagnoseUnsupportedFeatureClaimsInStmt(
+          body_stmt.get(), diagnostics, stats, context);
+    }
+    return;
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    if (!context.allow_source_only_defer_statements) {
+      diagnostics.push_back(MakeDiag(
+          stmt->line,
+          stmt->column,
+          "O3S221",
+          "unsupported feature claim: defer statements are not yet runnable in Objective-C 3 native mode"));
+      ++stats.live_unsupported_feature_site_count;
+      ++stats.live_unsupported_feature_diagnostic_count;
+      return;
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
@@ -1326,6 +1349,7 @@ static bool StmtContainsRunnableBlockLiteral(const Stmt *stmt) {
     }
     return false;
   case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
     if (stmt->block_stmt == nullptr) {
       return false;
     }
@@ -1529,6 +1553,7 @@ static Objc3UnsupportedFeatureClaimEnforcementStats
 DiagnoseUnsupportedFeatureClaimSources(
     const Objc3Program &ast,
     bool allow_source_only_block_literals,
+    bool allow_source_only_defer_statements,
     bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
@@ -1538,6 +1563,7 @@ DiagnoseUnsupportedFeatureClaimSources(
   const Objc3UnsupportedFeatureClaimContext context =
       BuildUnsupportedFeatureClaimContext(ast,
                                           allow_source_only_block_literals,
+                                          allow_source_only_defer_statements,
                                           arc_mode_enabled);
   for (const auto &fn : ast.functions) {
     DiagnoseUnsupportedFunctionFeatureClaims(fn, diagnostics, stats, context);
@@ -1564,6 +1590,14 @@ DiagnoseUnsupportedFeatureClaimSources(
     ++stats.live_unsupported_feature_family_count;
   }
   if (stats.arc_source_rejection_site_count > 0u) {
+    ++stats.live_unsupported_feature_family_count;
+  }
+  const std::size_t categorized_unsupported_site_count =
+      stats.throws_source_rejection_site_count +
+      stats.blocks_source_rejection_site_count +
+      stats.arc_source_rejection_site_count;
+  if (stats.live_unsupported_feature_site_count >
+      categorized_unsupported_site_count) {
     ++stats.live_unsupported_feature_family_count;
   }
   return stats;
@@ -4723,6 +4757,8 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                                const std::unordered_map<std::string, FunctionInfo> &functions,
                                const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
+                               int defer_loop_base_depth, int defer_switch_base_depth,
+                               bool inside_defer_body,
                                std::size_t max_message_send_args,
                                const Objc3MessageSendResolutionContext &message_send_context);
 
@@ -4732,7 +4768,9 @@ static void ValidateStatement(
     const std::unordered_map<std::string, FunctionInfo> &functions,
     const SemanticTypeInfo &expected_return_type,
     const std::string &function_name, std::vector<std::string> &diagnostics,
-    int loop_depth, int switch_depth, std::size_t max_message_send_args,
+    int loop_depth, int switch_depth, int defer_loop_base_depth,
+    int defer_switch_base_depth, bool inside_defer_body,
+    std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context);
 
 static void ValidateStatementsFromIndex(
@@ -4742,12 +4780,16 @@ static void ValidateStatementsFromIndex(
     const std::unordered_map<std::string, FunctionInfo> &functions,
     const SemanticTypeInfo &expected_return_type, const std::string &function_name,
     std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
+    int defer_loop_base_depth, int defer_switch_base_depth,
+    bool inside_defer_body,
     std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context) {
   for (std::size_t index = start_index; index < statements.size(); ++index) {
     ValidateStatement(statements[index].get(), scopes, globals, functions,
                       expected_return_type, function_name, diagnostics,
-                      loop_depth, switch_depth, max_message_send_args,
+                      loop_depth, switch_depth, defer_loop_base_depth,
+                      defer_switch_base_depth, inside_defer_body,
+                      max_message_send_args,
                       message_send_context);
   }
 }
@@ -4898,6 +4940,7 @@ static void CollectAtomicMemoryOrderMappingsInStatement(const Stmt *stmt,
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         CollectAtomicMemoryOrderMappingsInStatements(stmt->block_stmt->body, summary);
       }
@@ -4941,6 +4984,8 @@ static bool StatementDefinitelyExitsScope(const Stmt *stmt) {
     case Stmt::Kind::Block:
       return stmt->block_stmt != nullptr &&
              StatementListDefinitelyExitsScope(stmt->block_stmt->body);
+    case Stmt::Kind::Defer:
+      return false;
     case Stmt::Kind::If:
       return stmt->if_stmt != nullptr &&
              StatementListDefinitelyExitsScope(stmt->if_stmt->then_body) &&
@@ -5061,6 +5106,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                               const std::unordered_map<std::string, FunctionInfo> &functions,
                               const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                               std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
+                              int defer_loop_base_depth, int defer_switch_base_depth,
+                              bool inside_defer_body,
                               std::size_t max_message_send_args,
                               const Objc3MessageSendResolutionContext &message_send_context) {
   if (stmt == nullptr) {
@@ -5164,6 +5211,19 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
         const ReturnStmt *ret = stmt->return_stmt.get();
+        if (inside_defer_body) {
+          diagnostics.push_back(MakeDiag(
+              ret->line,
+              ret->column,
+              "O3S222",
+              "control-flow misuse: 'return' is not allowed inside defer body"));
+          if (ret->value != nullptr) {
+            (void)ValidateExpr(ret->value.get(), scopes, globals, functions,
+                               diagnostics, max_message_send_args,
+                               message_send_context);
+          }
+          return;
+        }
         if (ret->value == nullptr) {
           if (!(IsScalarSemanticType(expected_return_type) && expected_return_type.type == ValueType::Void)) {
             diagnostics.push_back(MakeDiag(ret->line, ret->column, "O3S211",
@@ -5260,12 +5320,16 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         ValidateStatementsFromIndex(if_stmt->then_body, binding_count, scopes, globals,
                                     functions, expected_return_type, function_name,
                                     diagnostics, loop_depth, switch_depth,
+                                    defer_loop_base_depth, defer_switch_base_depth,
+                                    inside_defer_body,
                                     max_message_send_args, message_send_context);
         scopes.pop_back();
         scopes.push_back({});
         ValidateStatements(if_stmt->else_body, scopes, globals, functions,
                            expected_return_type, function_name, diagnostics,
-                           loop_depth, switch_depth, max_message_send_args,
+                           loop_depth, switch_depth, defer_loop_base_depth,
+                           defer_switch_base_depth, inside_defer_body,
+                           max_message_send_args,
                            message_send_context);
         scopes.pop_back();
         if (if_stmt->guard_binding_surface_enabled) {
@@ -5295,7 +5359,9 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         scopes.push_back({});
         ValidateStatements(if_stmt->else_body, scopes, globals, functions,
                            expected_return_type, function_name, diagnostics,
-                           loop_depth, switch_depth, max_message_send_args,
+                           loop_depth, switch_depth, defer_loop_base_depth,
+                           defer_switch_base_depth, inside_defer_body,
+                           max_message_send_args,
                            message_send_context);
         scopes.pop_back();
         if (!StatementListDefinitelyExitsScope(if_stmt->else_body)) {
@@ -5318,6 +5384,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                                       scopes, scopes.back());
         ValidateStatements(if_stmt->then_body, scopes, globals, functions, expected_return_type, function_name,
                            diagnostics, loop_depth, switch_depth,
+                           defer_loop_base_depth, defer_switch_base_depth,
+                           inside_defer_body,
                            max_message_send_args, message_send_context);
         scopes.pop_back();
         scopes.push_back({});
@@ -5325,6 +5393,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                                       scopes, scopes.back());
         ValidateStatements(if_stmt->else_body, scopes, globals, functions, expected_return_type, function_name,
                            diagnostics, loop_depth, switch_depth,
+                           defer_loop_base_depth, defer_switch_base_depth,
+                           inside_defer_body,
                            max_message_send_args, message_send_context);
         scopes.pop_back();
         return;
@@ -5339,6 +5409,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       scopes.push_back({});
       ValidateStatements(do_while_stmt->body, scopes, globals, functions, expected_return_type, function_name,
                          diagnostics, loop_depth + 1, switch_depth,
+                         defer_loop_base_depth, defer_switch_base_depth,
+                         inside_defer_body,
                          max_message_send_args, message_send_context);
       scopes.pop_back();
 
@@ -5370,7 +5442,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       validate_for_clause(for_stmt->step);
       scopes.push_back({});
       ValidateStatements(for_stmt->body, scopes, globals, functions, expected_return_type, function_name, diagnostics,
-                         loop_depth + 1, switch_depth,
+                         loop_depth + 1, switch_depth, defer_loop_base_depth,
+                         defer_switch_base_depth, inside_defer_body,
                          max_message_send_args, message_send_context);
       scopes.pop_back();
       scopes.pop_back();
@@ -5402,6 +5475,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
           ValidateStatements(case_stmt.body, scopes, globals, functions,
                              expected_return_type, function_name, diagnostics,
                              loop_depth, switch_depth + 1,
+                             defer_loop_base_depth, defer_switch_base_depth,
+                             inside_defer_body,
                              max_message_send_args, message_send_context);
           scopes.pop_back();
         }
@@ -5431,6 +5506,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         scopes.push_back({});
         ValidateStatements(case_stmt.body, scopes, globals, functions, expected_return_type, function_name,
                            diagnostics, loop_depth, switch_depth + 1,
+                           defer_loop_base_depth, defer_switch_base_depth,
+                           inside_defer_body,
                            max_message_send_args, message_send_context);
         scopes.pop_back();
       }
@@ -5451,11 +5528,14 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       scopes.push_back({});
       ValidateStatements(while_stmt->body, scopes, globals, functions, expected_return_type, function_name,
                          diagnostics, loop_depth + 1, switch_depth,
+                         defer_loop_base_depth, defer_switch_base_depth,
+                         inside_defer_body,
                          max_message_send_args, message_send_context);
       scopes.pop_back();
       return;
     }
-    case Stmt::Kind::Block: {
+    case Stmt::Kind::Block:
+    {
       const BlockStmt *block_stmt = stmt->block_stmt.get();
       if (block_stmt == nullptr) {
         return;
@@ -5463,16 +5543,48 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
       scopes.push_back({});
       ValidateStatements(block_stmt->body, scopes, globals, functions, expected_return_type, function_name,
                          diagnostics, loop_depth, switch_depth,
+                         defer_loop_base_depth, defer_switch_base_depth,
+                         inside_defer_body,
                          max_message_send_args, message_send_context);
       scopes.pop_back();
       return;
     }
+    case Stmt::Kind::Defer: {
+      const BlockStmt *block_stmt = stmt->block_stmt.get();
+      if (block_stmt == nullptr) {
+        return;
+      }
+      scopes.push_back({});
+      ValidateStatements(block_stmt->body, scopes, globals, functions,
+                         expected_return_type, function_name, diagnostics,
+                         loop_depth, switch_depth, loop_depth, switch_depth,
+                         true, max_message_send_args, message_send_context);
+      scopes.pop_back();
+      return;
+    }
     case Stmt::Kind::Break:
+      if (inside_defer_body && loop_depth <= defer_loop_base_depth &&
+          switch_depth <= defer_switch_base_depth) {
+        diagnostics.push_back(MakeDiag(
+            stmt->line,
+            stmt->column,
+            "O3S222",
+            "control-flow misuse: 'break' may not exit a defer body"));
+        return;
+      }
       if (loop_depth <= 0 && switch_depth <= 0) {
         diagnostics.push_back(MakeDiag(stmt->line, stmt->column, "O3S212", "loop-control misuse: 'break' outside loop"));
       }
       return;
     case Stmt::Kind::Continue:
+      if (inside_defer_body && loop_depth <= defer_loop_base_depth) {
+        diagnostics.push_back(MakeDiag(
+            stmt->line,
+            stmt->column,
+            "O3S222",
+            "control-flow misuse: 'continue' may not exit a defer body"));
+        return;
+      }
       if (loop_depth <= 0) {
         diagnostics.push_back(
             MakeDiag(stmt->line, stmt->column, "O3S213", "loop-control misuse: 'continue' outside loop"));
@@ -5489,11 +5601,15 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
                                const std::unordered_map<std::string, FunctionInfo> &functions,
                                const SemanticTypeInfo &expected_return_type, const std::string &function_name,
                                std::vector<std::string> &diagnostics, int loop_depth, int switch_depth,
+                               int defer_loop_base_depth, int defer_switch_base_depth,
+                               bool inside_defer_body,
                                std::size_t max_message_send_args,
                                const Objc3MessageSendResolutionContext &message_send_context) {
   for (const auto &stmt : statements) {
     ValidateStatement(stmt.get(), scopes, globals, functions, expected_return_type, function_name, diagnostics,
-                      loop_depth, switch_depth, max_message_send_args,
+                      loop_depth, switch_depth, defer_loop_base_depth,
+                      defer_switch_base_depth, inside_defer_body,
+                      max_message_send_args,
                       message_send_context);
   }
 }
@@ -5780,6 +5896,7 @@ static void CollectPart3TypeSemanticStmtSites(
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         scopes.push_back({});
         CollectPart3TypeSemanticStmtSitesFromList(stmt->block_stmt->body, scopes,
@@ -5900,10 +6017,14 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
 
 static void CollectPart5ControlFlowSemanticStmtSitesFromList(
     const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
-    int switch_depth, Objc3Part5ControlFlowSemanticModelSummary &summary);
+    int switch_depth, int defer_loop_base_depth, int defer_switch_base_depth,
+    bool inside_defer_body,
+    Objc3Part5ControlFlowSemanticModelSummary &summary);
 
 static void CollectPart5ControlFlowSemanticStmtSites(
     const Stmt *stmt, int loop_depth, int switch_depth,
+    int defer_loop_base_depth, int defer_switch_base_depth,
+    bool inside_defer_body,
     Objc3Part5ControlFlowSemanticModelSummary &summary) {
   if (stmt == nullptr) {
     return;
@@ -5928,21 +6049,27 @@ static void CollectPart5ControlFlowSemanticStmtSites(
         ++summary.guard_exit_enforcement_sites;
       }
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          if_stmt->then_body, loop_depth, switch_depth, summary);
+          if_stmt->then_body, loop_depth, switch_depth, defer_loop_base_depth,
+          defer_switch_base_depth, inside_defer_body, summary);
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          if_stmt->else_body, loop_depth, switch_depth, summary);
+          if_stmt->else_body, loop_depth, switch_depth, defer_loop_base_depth,
+          defer_switch_base_depth, inside_defer_body, summary);
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          stmt->do_while_stmt->body, loop_depth + 1, switch_depth, summary);
+          stmt->do_while_stmt->body, loop_depth + 1, switch_depth,
+          defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
+          summary);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          stmt->for_stmt->body, loop_depth + 1, switch_depth, summary);
+          stmt->for_stmt->body, loop_depth + 1, switch_depth,
+          defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
+          summary);
     }
     return;
   case Stmt::Kind::Switch:
@@ -5991,55 +6118,86 @@ static void CollectPart5ControlFlowSemanticStmtSites(
             }
           }
           CollectPart5ControlFlowSemanticStmtSitesFromList(
-              case_stmt.body, loop_depth, switch_depth + 1, summary);
+              case_stmt.body, loop_depth, switch_depth + 1,
+              defer_loop_base_depth, defer_switch_base_depth,
+              inside_defer_body, summary);
         }
         return;
       }
       for (const auto &case_stmt : switch_stmt->cases) {
         CollectPart5ControlFlowSemanticStmtSitesFromList(
-            case_stmt.body, loop_depth, switch_depth + 1, summary);
+            case_stmt.body, loop_depth, switch_depth + 1,
+            defer_loop_base_depth, defer_switch_base_depth,
+            inside_defer_body, summary);
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          stmt->while_stmt->body, loop_depth + 1, switch_depth, summary);
+          stmt->while_stmt->body, loop_depth + 1, switch_depth,
+          defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
+          summary);
     }
     return;
   case Stmt::Kind::Block:
     if (stmt->block_stmt != nullptr) {
       CollectPart5ControlFlowSemanticStmtSitesFromList(
-          stmt->block_stmt->body, loop_depth, switch_depth, summary);
+          stmt->block_stmt->body, loop_depth, switch_depth,
+          defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
+          summary);
+    }
+    return;
+  case Stmt::Kind::Defer:
+    ++summary.defer_statement_semantic_sites;
+    ++summary.defer_scope_cleanup_order_sites;
+    if (stmt->block_stmt != nullptr) {
+      CollectPart5ControlFlowSemanticStmtSitesFromList(
+          stmt->block_stmt->body, loop_depth, switch_depth, loop_depth,
+          switch_depth, true, summary);
     }
     return;
   case Stmt::Kind::Break:
     ++summary.break_statement_sites;
-    if (loop_depth <= 0 && switch_depth <= 0) {
+    if (inside_defer_body && loop_depth <= defer_loop_base_depth &&
+        switch_depth <= defer_switch_base_depth) {
+      ++summary.defer_nonlocal_exit_diagnostic_sites;
+    } else if (loop_depth <= 0 && switch_depth <= 0) {
       ++summary.break_restriction_diagnostic_sites;
     }
     return;
   case Stmt::Kind::Continue:
     ++summary.continue_statement_sites;
-    if (loop_depth <= 0) {
+    if (inside_defer_body && loop_depth <= defer_loop_base_depth) {
+      ++summary.defer_nonlocal_exit_diagnostic_sites;
+    } else if (loop_depth <= 0) {
       ++summary.continue_restriction_diagnostic_sites;
     }
     return;
   case Stmt::Kind::Let:
   case Stmt::Kind::Assign:
-  case Stmt::Kind::Return:
   case Stmt::Kind::Expr:
   case Stmt::Kind::Empty:
+    return;
+  case Stmt::Kind::Return:
+    if (inside_defer_body) {
+      ++summary.defer_nonlocal_exit_diagnostic_sites;
+    }
     return;
   }
 }
 
 static void CollectPart5ControlFlowSemanticStmtSitesFromList(
     const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
-    int switch_depth, Objc3Part5ControlFlowSemanticModelSummary &summary) {
+    int switch_depth, int defer_loop_base_depth, int defer_switch_base_depth,
+    bool inside_defer_body,
+    Objc3Part5ControlFlowSemanticModelSummary &summary) {
   for (const auto &stmt : statements) {
     CollectPart5ControlFlowSemanticStmtSites(stmt.get(), loop_depth,
-                                             switch_depth, summary);
+                                             switch_depth,
+                                             defer_loop_base_depth,
+                                             defer_switch_base_depth,
+                                             inside_defer_body, summary);
   }
 }
 
@@ -6047,13 +6205,13 @@ Objc3Part5ControlFlowSemanticModelSummary
 BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
   Objc3Part5ControlFlowSemanticModelSummary summary;
   for (const auto &function : ast.functions) {
-    CollectPart5ControlFlowSemanticStmtSitesFromList(function.body, 0, 0,
-                                                     summary);
+    CollectPart5ControlFlowSemanticStmtSitesFromList(function.body, 0, 0, 0, 0,
+                                                     false, summary);
   }
   for (const auto &implementation : ast.implementations) {
     for (const auto &method : implementation.methods) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(method.body, 0, 0,
-                                                       summary);
+      CollectPart5ControlFlowSemanticStmtSitesFromList(method.body, 0, 0, 0, 0,
+                                                       false, summary);
     }
   }
 
@@ -6077,8 +6235,10 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
           summary.match_non_exhaustive_diagnostic_sites;
   summary.match_exhaustiveness_deferred =
       summary.match_exhaustiveness_deferred_sites != 0;
-  summary.defer_cleanup_order_deferred = true;
-  summary.defer_nonlocal_exit_deferred = true;
+  summary.defer_cleanup_order_semantics_landed = true;
+  summary.defer_nonlocal_exit_semantics_landed = true;
+  summary.defer_cleanup_order_deferred = false;
+  summary.defer_nonlocal_exit_deferred = false;
   summary.non_local_exit_restrictions_landed =
       summary.break_restriction_diagnostic_sites <=
           summary.break_statement_sites &&
@@ -6108,6 +6268,12 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
       summary.match_exhaustiveness_deferred_sites == 0 &&
       summary.match_exhaustiveness_semantics_landed &&
       !summary.match_exhaustiveness_deferred &&
+      summary.defer_scope_cleanup_order_sites <=
+          summary.defer_statement_semantic_sites &&
+      !summary.defer_cleanup_order_deferred &&
+      !summary.defer_nonlocal_exit_deferred &&
+      summary.defer_cleanup_order_semantics_landed &&
+      summary.defer_nonlocal_exit_semantics_landed &&
       summary.non_local_exit_restrictions_landed &&
       summary.guard_refinement_semantics_landed &&
       summary.guard_exit_enforcement_landed &&
@@ -6115,8 +6281,11 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
       summary.match_result_case_scope_semantics_landed;
   summary.ready_for_lowering_and_runtime =
       summary.source_dependency_required &&
-      summary.defer_cleanup_order_deferred &&
-      summary.defer_nonlocal_exit_deferred && summary.deterministic;
+      summary.defer_cleanup_order_semantics_landed &&
+      summary.defer_nonlocal_exit_semantics_landed &&
+      !summary.defer_cleanup_order_deferred &&
+      !summary.defer_nonlocal_exit_deferred &&
+      summary.deterministic;
 
   std::ostringstream out;
   out << summary.contract_id
@@ -6144,6 +6313,11 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
       << summary.match_non_exhaustive_diagnostic_sites
       << ";match-exhaustiveness-deferred="
       << summary.match_exhaustiveness_deferred_sites
+      << ";defer-sites=" << summary.defer_statement_semantic_sites
+      << ";defer-cleanup-order-sites="
+      << summary.defer_scope_cleanup_order_sites
+      << ";defer-nonlocal-exit-diagnostics="
+      << summary.defer_nonlocal_exit_diagnostic_sites
       << ";break-sites=" << summary.break_statement_sites
       << ";continue-sites=" << summary.continue_statement_sites
       << ";break-diagnostics=" << summary.break_restriction_diagnostic_sites
@@ -6168,6 +6342,7 @@ static void CollectAssignedIdentifiersFromStmt(const Stmt *stmt, std::unordered_
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         CollectAssignedIdentifiers(stmt->block_stmt->body, assigned);
       }
@@ -6233,6 +6408,7 @@ static void CollectNonTopLevelLetNamesFromStmt(const Stmt *stmt, bool is_top_lev
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         CollectNonTopLevelLetNames(stmt->block_stmt->body, false, names);
       }
@@ -6300,6 +6476,7 @@ static void CollectSwitchConditionIdentifierNamesFromStmt(const Stmt *stmt, std:
       }
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         CollectSwitchConditionIdentifierNames(stmt->block_stmt->body, names);
       }
@@ -10175,6 +10352,7 @@ static void CollectBlockLiteralCaptureSiteMetadataFromStatement(
       CollectBlockLiteralCaptureSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectBlockLiteralCaptureSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -10375,6 +10553,7 @@ static void CollectBlockAbiInvokeTrampolineSiteMetadataFromStatement(
       CollectBlockAbiInvokeTrampolineSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectBlockAbiInvokeTrampolineSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -10645,6 +10824,7 @@ static void CollectBlockStorageEscapeSiteMetadataFromStatement(
       CollectBlockStorageEscapeSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectBlockStorageEscapeSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -10965,6 +11145,7 @@ static void CollectBlockCopyDisposeSiteMetadataFromStatement(
       CollectBlockCopyDisposeSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectBlockCopyDisposeSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -11204,6 +11385,7 @@ static void CollectBlockDeterminismPerfBaselineSiteMetadataFromStatement(
       CollectBlockDeterminismPerfBaselineSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectBlockDeterminismPerfBaselineSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -11498,6 +11680,7 @@ static void CollectMessageSendSelectorLoweringSiteMetadataFromStatement(
       CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       CollectMessageSendSelectorLoweringSiteMetadataFromStatements(stmt->block_stmt->body, sites);
       return;
     case Stmt::Kind::Expr:
@@ -11678,6 +11861,7 @@ static void CollectAutoreleasePoolScopeSiteMetadataFromStatement(
       CollectAutoreleasePoolScopeSiteMetadataFromStatements(stmt->while_stmt->body, sites);
       return;
     case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
       if (stmt->block_stmt->is_autoreleasepool_scope) {
         sites.push_back(BuildAutoreleasePoolScopeSiteMetadata(*stmt->block_stmt));
       }
@@ -13473,6 +13657,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     bool legacy_compatibility_mode,
     bool migration_assist_enabled,
     bool allow_source_only_block_literals,
+    bool allow_source_only_defer_statements,
     bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
@@ -14628,7 +14813,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   const Objc3UnsupportedFeatureClaimEnforcementStats
       unsupported_feature_enforcement =
           DiagnoseUnsupportedFeatureClaimSources(
-              ast, allow_source_only_block_literals, arc_mode_enabled, diagnostics);
+              ast,
+              allow_source_only_block_literals,
+              allow_source_only_defer_statements,
+              arc_mode_enabled,
+              diagnostics);
   // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed
   // legality summary that classifies live compatibility/migration selections,
   // source-only claim downgrades, and unsupported strictness/macro claim
@@ -18693,7 +18882,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       Objc3MessageSendResolutionContext message_send_context;
       message_send_context.surface = &surface;
       ValidateStatements(fn.body, scopes, body_globals, surface.functions, expected_return_type, fn.name, diagnostics,
-                         0, 0, options.max_message_send_args,
+                         0, 0, 0, 0, false, options.max_message_send_args,
                          message_send_context);
       // Legacy extraction anchor retained for contract tests:
       // ValidateStatements(fn.body, scopes, surface.globals, surface.functions, fn.return_type, fn.name, diagnostics,
@@ -18742,7 +18931,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         message_send_context.current_super_name = interface_it->second.super_name;
       }
       ValidateStatements(method.body, scopes, body_globals, surface.functions, expected_return_type, method_context,
-                         diagnostics, 0, 0, options.max_message_send_args,
+                         diagnostics, 0, 0, 0, 0, false,
+                         options.max_message_send_args,
                          message_send_context);
       if (!(expected_return_type.type == ValueType::Void && !expected_return_type.is_vector) &&
           !BlockAlwaysReturns(method.body, &global_static_bindings)) {
@@ -18762,3 +18952,4 @@ void RefreshSemanticIntegrationSurfaceAfterBodyValidation(
   surface.block_copy_dispose_semantics_summary =
       BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface(surface);
 }
+

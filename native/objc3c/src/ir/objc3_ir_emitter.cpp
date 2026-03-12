@@ -5692,6 +5692,7 @@ class Objc3IREmitter {
         }
         return;
       case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
         if (stmt->block_stmt == nullptr) {
           return;
         }
@@ -5891,6 +5892,7 @@ class Objc3IREmitter {
         scopes.pop_back();
         return;
       case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
         if (stmt->block_stmt == nullptr) {
           return;
         }
@@ -6095,6 +6097,7 @@ class Objc3IREmitter {
         scopes.pop_back();
         return;
       case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
         if (stmt->block_stmt == nullptr) {
           return;
         }
@@ -10129,6 +10132,7 @@ class Objc3IREmitter {
         }
         return true;
       case Stmt::Kind::Block:
+      case Stmt::Kind::Defer:
         if (stmt->block_stmt == nullptr) {
           return true;
         }
@@ -10715,7 +10719,8 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Empty:
         return;
-      case Stmt::Kind::Block: {
+      case Stmt::Kind::Block:
+      case Stmt::Kind::Defer: {
         const BlockStmt *block_stmt = stmt->block_stmt.get();
         if (block_stmt == nullptr) {
           return;
@@ -11584,3 +11589,4 @@ bool EmitObjc3IRText(const Objc3Program &program,
   Objc3IREmitter emitter(program, lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }
+
