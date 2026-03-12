@@ -445,6 +445,16 @@ M266-E001 execution gate note:
   cleanup/unwind ABI, and broader result-payload runtime semantics remain out
   of scope until later milestones
 
+M266-E002 closeout note:
+
+- `M266-E002` publishes the runnable Part 5 closeout matrix for the exact
+  supported defer/guard/match slice frozen by `M266-E001`
+- closeout rows consume the already-proven `M266-D002` executable cleanup
+  evidence plus the `M266-E001` integrated guard/match/defer probe
+- the closeout matrix is documentary and evidentiary only; it does not widen
+  the supported language or runtime boundary
+- `M267-A001` is the next issue
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

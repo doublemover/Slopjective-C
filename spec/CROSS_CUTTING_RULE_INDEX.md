@@ -78,6 +78,15 @@ Current Part 5 execution-gate note:
 - expression-form `match`, guarded patterns, type-test patterns, and a public
   cleanup/unwind runtime ABI remain deferred
 
+Current Part 5 closeout-matrix note:
+
+- `M266-E002` publishes the runnable closeout matrix for the exact Part 5 slice
+  already frozen by `M266-E001`
+- the closeout matrix consumes `M266-D002` cleanup/unwind executable evidence
+  and the `M266-E001` integrated guard/match/defer probe
+- the closeout matrix does not widen unsupported Part 5 forms or the private
+  cleanup/unwind runtime boundary
+
 Current Part 5 exhaustiveness note:
 
 - admitted `match` statements must now be exhaustive for the supported surface

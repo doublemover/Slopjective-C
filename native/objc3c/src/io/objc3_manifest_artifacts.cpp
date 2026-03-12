@@ -13,6 +13,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // M266-E001 control-flow execution gate anchor: lane-E consumes the emitted
   // manifest plus the matching IR/object artifacts as one canonical proof
   // surface for the currently runnable Part 5 control-flow slice.
+  // M266-E002 runnable control-flow matrix anchor: the closeout matrix keeps
+  // consuming this same manifest artifact rather than inventing a separate
+  // publication channel for Part 5 runnable evidence.
   // M265-E001 type-surface executable gate anchor: the emitted manifest
   // remains the authoritative published semantic packet surface consumed by
   // the lane-E executable Part 3 gate.

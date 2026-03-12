@@ -28,6 +28,9 @@ struct objc3c_frontend_context {
   // keep surfacing manifest/IR/object publication paths unchanged so lane-E
   // can validate the same native artifact triplet without a synthetic proof
   // channel.
+  // M266-E002 runnable control-flow matrix anchor: the closeout matrix relies
+  // on the same surfaced native artifact triplet instead of a second
+  // publication mechanism.
   std::string manifest_path;
   std::string runtime_metadata_binary_path;
   std::string ir_path;

@@ -126,6 +126,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // emitted manifest/IR/object triplet from this native CLI path as the
       // truthful integrated proof surface for the currently runnable Part 5
       // slice.
+      // M266-E002 runnable control-flow matrix anchor: the milestone closeout
+      // matrix continues to consume the same emitted native artifact triplet
+      // rather than widening into a synthetic reporting path.
       // M251-C001 freeze: manifest emission remains the authoritative published
       // metadata-section ABI surface until later object-section emission lands.
       // M251-C002 scaffold: manifest emission mirrors the live runtime-metadata

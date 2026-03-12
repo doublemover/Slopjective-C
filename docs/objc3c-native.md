@@ -548,6 +548,28 @@ instead of widening the language with a synthetic closeout matrix.
     boundary
 - `M266-E002` is the next issue
 
+## M266 runnable control-flow matrix and docs (E002)
+
+`objc3c-part5-runnable-control-flow-matrix/m266-e002-v1`
+
+The milestone closeout matrix now publishes the exact runnable Part 5 evidence
+slice without widening it. Closeout rows consume the same native artifact and
+runtime evidence already proven by `M266-D002` and `M266-E001`.
+
+- published runnable rows cover:
+  - ordinary lexical `defer` cleanup execution
+  - guard-mediated early return cleanup execution
+  - nested-scope return unwind ordering
+  - one integrated native `guard` + supported statement-form `match` + `defer`
+    program
+- this remains a closeout matrix and docs sync only
+- unsupported forms remain unsupported:
+  - expression-form `match`
+  - guarded patterns using `where`
+  - type-test patterns
+  - public cleanup/unwind ABI widening
+- `M267-A001` is the next issue
+
 ## M151 frontend symbol graph and scope-resolution parser surface
 
 Frontend parser/AST now emits deterministic scope-owner and scope-path symbol metadata for Objective-C container/member
