@@ -5113,6 +5113,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part5_control_flow_semantic_model_summary =
       BuildPart5ControlFlowSemanticModelSummary(
           Objc3ParsedProgramAst(result.program));
+  result.part6_error_semantic_model_summary =
+      BuildPart6ErrorSemanticModelSummary(
+          result.part6_error_source_closure_summary, result.integration_surface);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

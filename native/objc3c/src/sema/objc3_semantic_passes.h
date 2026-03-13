@@ -4,6 +4,8 @@
 
 #include "sema/objc3_sema_contract.h"
 
+struct Objc3FrontendPart6ErrorSourceClosureSummary;
+
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
                                                                 bool migration_assist_enabled,
@@ -19,6 +21,9 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
     std::size_t max_message_send_args);
 Objc3Part5ControlFlowSemanticModelSummary BuildPart5ControlFlowSemanticModelSummary(
     const Objc3Program &ast);
+Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
+    const Objc3FrontendPart6ErrorSourceClosureSummary &source_summary,
+    const Objc3SemanticIntegrationSurface &surface);
 Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const Objc3ParsedProgram &program);
 Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3SemanticIntegrationSurface &surface);
 void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,

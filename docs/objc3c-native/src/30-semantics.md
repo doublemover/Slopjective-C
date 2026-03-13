@@ -4136,3 +4136,25 @@ Deterministic sema intent:
 Recommended M192 sema contract check:
 
 - `python -m pytest tests/tooling/test_objc3c_m192_sema_inline_asm_intrinsic_contract.py -q`
+
+## M267 current Part 6 semantic boundary
+
+The semantic layer now publishes one truthful Part 6 packet at
+`frontend.pipeline.semantic_surface.objc_part6_error_semantic_model`.
+
+Current live semantic carriage:
+
+- `throws` declarations
+- deterministic result-like profile carriage
+- deterministic `NSError` bridging profile carriage
+- deterministic canonical bridge-marker carriage
+
+Current deferred behavior:
+
+- `try`, `throw`, and `do/catch` execution
+- postfix propagation
+- status-to-error execution
+- native thrown-error ABI
+
+The older throws/unwind shard summaries are still carried only as placeholder
+semantic packets. They do not yet claim runnable propagation semantics.

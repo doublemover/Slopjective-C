@@ -47,6 +47,25 @@ This part defines:
 
 This error system is designed to be implementable without relying on Objective‑C exceptions (`@throw/@try/@catch`), which remain separate.
 
+## M267 current implementation semantic boundary
+
+Current implementation status (`M267-B001`):
+
+- the compiler now publishes one truthful Part 6 semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part6_error_semantic_model`
+- currently live semantic carriage:
+  - `throws` declarations
+  - result-like carrier profiles
+  - `NSError` bridging profiles
+  - canonical `objc_nserror` / `objc_status_code(...)` bridge markers
+- currently deferred runnable behavior:
+  - `try`, `throw`, and `do/catch`
+  - postfix propagation
+  - status-to-error execution
+  - native thrown-error ABI
+- older throws/unwind summaries are still emitted only as placeholder sema packets;
+  they are not yet the runnable Part 6 propagation model
+
 ---
 
 ## 6.1 Lexical and grammar additions {#part-6-1}

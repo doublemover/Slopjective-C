@@ -517,6 +517,25 @@ Current implementation status (`M267-A002`):
 - malformed `objc_status_code(...)` payloads fail closed in the parser
 - runnable bridge execution, `try` lowering, and native thrown-error ABI remain
   deferred to later `M267` issues
+
+## M267 current Part 6 semantic boundary
+
+Current implementation status (`M267-B001`):
+
+- sema now publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_error_semantic_model`
+- live today:
+  - throws declaration carriage
+  - deterministic result-like profile carriage
+  - deterministic `NSError` bridging profile carriage
+  - deterministic canonical bridge-marker carriage
+- still deferred:
+  - `try`, `throw`, and `do/catch` execution semantics
+  - postfix propagation `?`
+  - status-to-error runtime execution
+  - native thrown-error ABI
+- legacy throws/unwind shard summaries remain carried only as placeholder packets;
+  they do not claim runnable propagation semantics
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

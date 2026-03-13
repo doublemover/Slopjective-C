@@ -4836,6 +4836,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary
       part5_control_flow_semantic_model_summary;
+  Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;

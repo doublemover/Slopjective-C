@@ -476,6 +476,16 @@ M267-A002 source-closure note:
 - runtime status-to-error execution and thrown-error propagation remain deferred
   to later `M267` issues
 
+M267-B001 semantic-boundary note:
+
+- the semantic boundary is now explicit:
+  - throws declarations are carried as deterministic sema state
+  - result-like profiles remain carried as deterministic sema state
+  - `NSError` bridging and canonical bridge markers remain carried as deterministic sema state
+- `try`, `throw`, and `do/catch` remain parser-owned fail-closed boundaries
+- postfix propagation, status-to-error execution, and native thrown-error ABI remain deferred
+- inherited throws/unwind shard summaries are still carried only as placeholder sema packets, not runnable propagation semantics
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
