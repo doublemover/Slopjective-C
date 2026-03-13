@@ -1410,6 +1410,35 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
   return out.str();
 }
 
+std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
+  std::ostringstream out;
+  // M267-C001 Part 6 lowering freeze anchor: lane-C now truthfully publishes
+  // the current native lowering boundary as a deterministic composition of the
+  // throws-propagation, result-like, NSError-bridging, and unwind-cleanup
+  // replay contracts, while runnable throw/try/do-catch transfer and the
+  // general thrown-error object ABI remain deferred to the next lane-C issue.
+  out << "contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+      << ";source_model="
+      << kObjc3Part6ThrowsAbiPropagationLoweringSourceModel
+      << ";abi_model=" << kObjc3Part6ThrowsAbiPropagationLoweringAbiModel
+      << ";part6_semantic_contract="
+      << kObjc3Part6ErrorSemanticModelContractId
+      << ";part6_try_semantic_contract="
+      << kObjc3Part6TryDoCatchSemanticSummaryContractId
+      << ";part6_bridge_legality_contract="
+      << kObjc3Part6ErrorBridgeLegalitySummaryContractId
+      << ";throws_lane=" << kObjc3ThrowsPropagationLoweringLaneContract
+      << ";result_like_lane=" << kObjc3ResultLikeLoweringLaneContract
+      << ";ns_error_lane=" << kObjc3NSErrorBridgingLoweringLaneContract
+      << ";unwind_lane=" << kObjc3UnwindCleanupLoweringLaneContract
+      << ";fail_closed_model="
+      << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
+      << ";non_goal_model="
+      << kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel
+      << ";next_issue=M267-C002";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

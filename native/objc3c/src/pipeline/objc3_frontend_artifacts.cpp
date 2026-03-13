@@ -9461,6 +9461,156 @@ BuildThrowsPropagationLoweringContract(
   return contract;
 }
 
+Objc3ResultLikeLoweringContract BuildResultLikeLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3ResultLikeLoweringContract contract;
+  const std::size_t raw_sites =
+      sema_parity_surface.result_like_lowering_sites_total;
+  const std::size_t raw_success_sites =
+      sema_parity_surface.result_like_lowering_result_success_sites_total;
+  const std::size_t raw_failure_sites =
+      sema_parity_surface.result_like_lowering_result_failure_sites_total;
+  const std::size_t raw_branch_sites =
+      sema_parity_surface.result_like_lowering_result_branch_sites_total;
+  const std::size_t raw_payload_sites =
+      sema_parity_surface.result_like_lowering_result_payload_sites_total;
+  const std::size_t raw_normalized_sites =
+      sema_parity_surface.result_like_lowering_normalized_sites_total;
+  const std::size_t raw_branch_merge_sites =
+      sema_parity_surface.result_like_lowering_branch_merge_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.result_like_lowering_contract_violation_sites_total;
+
+  contract.result_like_sites =
+      std::max({raw_sites, raw_success_sites, raw_failure_sites,
+                raw_branch_sites, raw_payload_sites, raw_normalized_sites,
+                raw_branch_merge_sites, raw_violation_sites});
+  contract.result_success_sites =
+      std::min(raw_success_sites, contract.result_like_sites);
+  contract.result_failure_sites =
+      std::min(raw_failure_sites, contract.result_like_sites);
+  contract.result_branch_sites =
+      std::min(raw_branch_sites, contract.result_like_sites);
+  contract.result_payload_sites =
+      std::min(raw_payload_sites, contract.result_like_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.result_like_sites);
+  const std::size_t normalized_budget =
+      (contract.result_like_sites >= contract.normalized_sites)
+          ? (contract.result_like_sites - contract.normalized_sites)
+          : 0;
+  contract.branch_merge_sites =
+      std::min(raw_branch_merge_sites, normalized_budget);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.result_like_sites);
+  contract.deterministic =
+      sema_parity_surface.deterministic_result_like_lowering_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_sites + contract.branch_merge_sites ==
+          contract.result_like_sites;
+  return contract;
+}
+
+Objc3NSErrorBridgingLoweringContract BuildNSErrorBridgingLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3NSErrorBridgingLoweringContract contract;
+  const std::size_t raw_sites = sema_parity_surface.ns_error_bridging_sites_total;
+  const std::size_t raw_parameter_sites =
+      sema_parity_surface.ns_error_bridging_ns_error_parameter_sites_total;
+  const std::size_t raw_out_parameter_sites =
+      sema_parity_surface.ns_error_bridging_ns_error_out_parameter_sites_total;
+  const std::size_t raw_bridge_path_sites =
+      sema_parity_surface.ns_error_bridging_ns_error_bridge_path_sites_total;
+  const std::size_t raw_failable_call_sites =
+      sema_parity_surface.ns_error_bridging_failable_call_sites_total;
+  const std::size_t raw_normalized_sites =
+      sema_parity_surface.ns_error_bridging_normalized_sites_total;
+  const std::size_t raw_bridge_boundary_sites =
+      sema_parity_surface.ns_error_bridging_bridge_boundary_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.ns_error_bridging_contract_violation_sites_total;
+
+  contract.ns_error_bridging_sites =
+      std::max({raw_sites, raw_parameter_sites, raw_out_parameter_sites,
+                raw_bridge_path_sites, raw_failable_call_sites,
+                raw_normalized_sites, raw_bridge_boundary_sites,
+                raw_violation_sites});
+  contract.ns_error_parameter_sites =
+      std::min(raw_parameter_sites, contract.ns_error_bridging_sites);
+  contract.ns_error_out_parameter_sites =
+      std::min(raw_out_parameter_sites, contract.ns_error_parameter_sites);
+  contract.ns_error_bridge_path_sites =
+      std::min(raw_bridge_path_sites, contract.ns_error_out_parameter_sites);
+  contract.failable_call_sites =
+      std::min(raw_failable_call_sites, contract.ns_error_bridging_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.ns_error_bridging_sites);
+  const std::size_t normalized_budget =
+      (contract.ns_error_bridging_sites >= contract.normalized_sites)
+          ? (contract.ns_error_bridging_sites - contract.normalized_sites)
+          : 0;
+  contract.bridge_boundary_sites =
+      std::min(raw_bridge_boundary_sites, normalized_budget);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.ns_error_bridging_sites);
+  contract.deterministic =
+      sema_parity_surface.deterministic_ns_error_bridging_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_sites + contract.bridge_boundary_sites ==
+          contract.ns_error_bridging_sites;
+  return contract;
+}
+
+Objc3UnwindCleanupLoweringContract BuildUnwindCleanupLoweringContract(
+    const Objc3SemaParityContractSurface &sema_parity_surface) {
+  Objc3UnwindCleanupLoweringContract contract;
+  const std::size_t raw_sites = sema_parity_surface.unwind_cleanup_sites_total;
+  const std::size_t raw_exceptional_exit_sites =
+      sema_parity_surface.unwind_cleanup_exceptional_exit_sites_total;
+  const std::size_t raw_action_sites =
+      sema_parity_surface.unwind_cleanup_action_sites_total;
+  const std::size_t raw_scope_sites =
+      sema_parity_surface.unwind_cleanup_scope_sites_total;
+  const std::size_t raw_resume_sites =
+      sema_parity_surface.unwind_cleanup_resume_sites_total;
+  const std::size_t raw_normalized_sites =
+      sema_parity_surface.unwind_cleanup_normalized_sites_total;
+  const std::size_t raw_fail_closed_sites =
+      sema_parity_surface.unwind_cleanup_fail_closed_sites_total;
+  const std::size_t raw_violation_sites =
+      sema_parity_surface.unwind_cleanup_contract_violation_sites_total;
+
+  contract.unwind_cleanup_sites =
+      std::max({raw_sites, raw_exceptional_exit_sites, raw_action_sites,
+                raw_scope_sites, raw_resume_sites, raw_normalized_sites,
+                raw_fail_closed_sites, raw_violation_sites});
+  contract.unwind_edge_sites =
+      std::min(raw_exceptional_exit_sites, contract.unwind_cleanup_sites);
+  contract.cleanup_scope_sites =
+      std::min(raw_scope_sites, contract.unwind_cleanup_sites);
+  contract.cleanup_emit_sites =
+      std::min(raw_action_sites, contract.cleanup_scope_sites);
+  contract.landing_pad_sites = 0;
+  contract.cleanup_resume_sites =
+      std::min(raw_resume_sites, contract.unwind_cleanup_sites);
+  contract.normalized_sites =
+      std::min(raw_normalized_sites, contract.unwind_cleanup_sites);
+  const std::size_t normalized_budget =
+      (contract.unwind_cleanup_sites >= contract.normalized_sites)
+          ? (contract.unwind_cleanup_sites - contract.normalized_sites)
+          : 0;
+  contract.guard_blocked_sites =
+      std::min(raw_fail_closed_sites, normalized_budget);
+  contract.contract_violation_sites =
+      std::min(raw_violation_sites, contract.unwind_cleanup_sites);
+  contract.deterministic =
+      sema_parity_surface.deterministic_unwind_cleanup_handoff &&
+      contract.contract_violation_sites == 0 &&
+      contract.normalized_sites + contract.guard_blocked_sites ==
+          contract.unwind_cleanup_sites;
+  return contract;
+}
+
 }  // namespace
 
 Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::path &input_path,
@@ -10694,6 +10844,53 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string throws_propagation_lowering_replay_key =
       Objc3ThrowsPropagationLoweringReplayKey(
           throws_propagation_lowering_contract);
+  const Objc3ResultLikeLoweringContract result_like_lowering_contract =
+      BuildResultLikeLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3ResultLikeLoweringContract(
+          result_like_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid result-like lowering contract");
+  }
+  const std::string result_like_lowering_replay_key =
+      Objc3ResultLikeLoweringReplayKey(result_like_lowering_contract);
+  const Objc3NSErrorBridgingLoweringContract
+      ns_error_bridging_lowering_contract =
+          BuildNSErrorBridgingLoweringContract(
+              pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3NSErrorBridgingLoweringContract(
+          ns_error_bridging_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid NSError bridging lowering contract");
+  }
+  const std::string ns_error_bridging_lowering_replay_key =
+      Objc3NSErrorBridgingLoweringReplayKey(
+          ns_error_bridging_lowering_contract);
+  const Objc3UnwindCleanupLoweringContract unwind_cleanup_lowering_contract =
+      BuildUnwindCleanupLoweringContract(pipeline_result.sema_parity_surface);
+  if (!IsValidObjc3UnwindCleanupLoweringContract(
+          unwind_cleanup_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid unwind cleanup lowering contract");
+  }
+  const std::string unwind_cleanup_lowering_replay_key =
+      Objc3UnwindCleanupLoweringReplayKey(unwind_cleanup_lowering_contract);
+  const bool deterministic_part6_throws_abi_propagation_lowering =
+      result_like_lowering_contract.deterministic &&
+      throws_propagation_lowering_contract.deterministic &&
+      ns_error_bridging_lowering_contract.deterministic &&
+      unwind_cleanup_lowering_contract.deterministic;
+  const std::string part6_throws_abi_propagation_lowering_replay_key =
+      Objc3Part6ThrowsAbiPropagationLoweringSummary() +
+      ";throws_replay_key=" + throws_propagation_lowering_replay_key +
+      ";result_like_replay_key=" + result_like_lowering_replay_key +
+      ";ns_error_replay_key=" + ns_error_bridging_lowering_replay_key +
+      ";unwind_replay_key=" + unwind_cleanup_lowering_replay_key +
+      ";deterministic=" +
+      (deterministic_part6_throws_abi_propagation_lowering ? "true" : "false") +
+      ";ready_for_runtime_execution=false";
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -15294,6 +15491,94 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
+           << ",\"objc_result_like_lowering_surface\":{\"result_like_sites\":"
+           << result_like_lowering_contract.result_like_sites
+           << ",\"result_success_sites\":"
+           << result_like_lowering_contract.result_success_sites
+           << ",\"result_failure_sites\":"
+           << result_like_lowering_contract.result_failure_sites
+           << ",\"result_branch_sites\":"
+           << result_like_lowering_contract.result_branch_sites
+           << ",\"result_payload_sites\":"
+           << result_like_lowering_contract.result_payload_sites
+           << ",\"normalized_sites\":"
+           << result_like_lowering_contract.normalized_sites
+           << ",\"branch_merge_sites\":"
+           << result_like_lowering_contract.branch_merge_sites
+           << ",\"contract_violation_sites\":"
+           << result_like_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << result_like_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (result_like_lowering_contract.deterministic ? "true" : "false")
+           << "}"
+           << ",\"objc_ns_error_bridging_lowering_surface\":{\"ns_error_bridging_sites\":"
+           << ns_error_bridging_lowering_contract.ns_error_bridging_sites
+           << ",\"ns_error_parameter_sites\":"
+           << ns_error_bridging_lowering_contract.ns_error_parameter_sites
+           << ",\"ns_error_out_parameter_sites\":"
+           << ns_error_bridging_lowering_contract.ns_error_out_parameter_sites
+           << ",\"ns_error_bridge_path_sites\":"
+           << ns_error_bridging_lowering_contract.ns_error_bridge_path_sites
+           << ",\"failable_call_sites\":"
+           << ns_error_bridging_lowering_contract.failable_call_sites
+           << ",\"normalized_sites\":"
+           << ns_error_bridging_lowering_contract.normalized_sites
+           << ",\"bridge_boundary_sites\":"
+           << ns_error_bridging_lowering_contract.bridge_boundary_sites
+           << ",\"contract_violation_sites\":"
+           << ns_error_bridging_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << ns_error_bridging_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (ns_error_bridging_lowering_contract.deterministic ? "true"
+                                                                 : "false")
+           << "}"
+           << ",\"objc_unwind_cleanup_lowering_surface\":{\"unwind_cleanup_sites\":"
+           << unwind_cleanup_lowering_contract.unwind_cleanup_sites
+           << ",\"unwind_edge_sites\":"
+           << unwind_cleanup_lowering_contract.unwind_edge_sites
+           << ",\"cleanup_scope_sites\":"
+           << unwind_cleanup_lowering_contract.cleanup_scope_sites
+           << ",\"cleanup_emit_sites\":"
+           << unwind_cleanup_lowering_contract.cleanup_emit_sites
+           << ",\"landing_pad_sites\":"
+           << unwind_cleanup_lowering_contract.landing_pad_sites
+           << ",\"cleanup_resume_sites\":"
+           << unwind_cleanup_lowering_contract.cleanup_resume_sites
+           << ",\"normalized_sites\":"
+           << unwind_cleanup_lowering_contract.normalized_sites
+           << ",\"guard_blocked_sites\":"
+           << unwind_cleanup_lowering_contract.guard_blocked_sites
+           << ",\"contract_violation_sites\":"
+           << unwind_cleanup_lowering_contract.contract_violation_sites
+           << ",\"replay_key\":\""
+           << unwind_cleanup_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (unwind_cleanup_lowering_contract.deterministic ? "true"
+                                                              : "false")
+           << "}"
+           << ",\"objc_part6_throws_abi_propagation_lowering\":{\"contract_id\":\""
+           << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+           << "\",\"source_model\":\""
+           << kObjc3Part6ThrowsAbiPropagationLoweringSourceModel
+           << "\",\"abi_model\":\""
+           << kObjc3Part6ThrowsAbiPropagationLoweringAbiModel
+           << "\",\"throws_replay_key\":\""
+           << throws_propagation_lowering_replay_key
+           << "\",\"result_like_replay_key\":\""
+           << result_like_lowering_replay_key
+           << "\",\"ns_error_replay_key\":\""
+           << ns_error_bridging_lowering_replay_key
+           << "\",\"unwind_replay_key\":\""
+           << unwind_cleanup_lowering_replay_key
+           << "\",\"deterministic_handoff\":"
+           << (deterministic_part6_throws_abi_propagation_lowering ? "true"
+                                                                   : "false")
+           << ",\"ready_for_runtime_execution\":false"
+           << ",\"fail_closed_model\":\""
+           << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
+           << "\",\"next_issue\":\"M267-C002\"}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -15599,6 +15884,38 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "},\n";
+  manifest << "  \"lowering_result_like\":{\"replay_key\":\""
+           << result_like_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3ResultLikeLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (result_like_lowering_contract.deterministic ? "true" : "false")
+           << "},\n";
+  manifest << "  \"lowering_ns_error_bridging\":{\"replay_key\":\""
+           << ns_error_bridging_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3NSErrorBridgingLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (ns_error_bridging_lowering_contract.deterministic ? "true"
+                                                                 : "false")
+           << "},\n";
+  manifest << "  \"lowering_unwind_cleanup\":{\"replay_key\":\""
+           << unwind_cleanup_lowering_replay_key
+           << "\",\"lane_contract\":\""
+           << kObjc3UnwindCleanupLoweringLaneContract
+           << "\",\"deterministic_handoff\":"
+           << (unwind_cleanup_lowering_contract.deterministic ? "true"
+                                                              : "false")
+           << "},\n";
+  manifest
+      << "  \"lowering_part6_throws_abi_propagation\":{\"replay_key\":\""
+      << part6_throws_abi_propagation_lowering_replay_key
+      << "\",\"contract_id\":\""
+      << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+      << "\",\"deterministic_handoff\":"
+      << (deterministic_part6_throws_abi_propagation_lowering ? "true"
+                                                              : "false")
+      << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
     manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]
@@ -16549,6 +16866,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       cross_module_conformance_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_throws_propagation_replay_key =
       throws_propagation_lowering_replay_key;
+  ir_frontend_metadata.lowering_part6_throws_abi_propagation_replay_key =
+      part6_throws_abi_propagation_lowering_replay_key;
+  ir_frontend_metadata.lowering_result_like_replay_key =
+      result_like_lowering_replay_key;
+  ir_frontend_metadata.deterministic_result_like_lowering_handoff =
+      result_like_lowering_contract.deterministic;
   ir_frontend_metadata.throws_propagation_lowering_sites =
       throws_propagation_lowering_contract.throws_propagation_sites;
   ir_frontend_metadata.throws_propagation_lowering_namespace_segment_sites =
@@ -16569,6 +16892,48 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       throws_propagation_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_throws_propagation_lowering_handoff =
       throws_propagation_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_ns_error_bridging_replay_key =
+      ns_error_bridging_lowering_replay_key;
+  ir_frontend_metadata.ns_error_bridging_lowering_sites =
+      ns_error_bridging_lowering_contract.ns_error_bridging_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_ns_error_parameter_sites =
+      ns_error_bridging_lowering_contract.ns_error_parameter_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_ns_error_out_parameter_sites =
+      ns_error_bridging_lowering_contract.ns_error_out_parameter_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_ns_error_bridge_path_sites =
+      ns_error_bridging_lowering_contract.ns_error_bridge_path_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_failable_call_sites =
+      ns_error_bridging_lowering_contract.failable_call_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_normalized_sites =
+      ns_error_bridging_lowering_contract.normalized_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_bridge_boundary_sites =
+      ns_error_bridging_lowering_contract.bridge_boundary_sites;
+  ir_frontend_metadata.ns_error_bridging_lowering_contract_violation_sites =
+      ns_error_bridging_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_ns_error_bridging_lowering_handoff =
+      ns_error_bridging_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_unwind_cleanup_replay_key =
+      unwind_cleanup_lowering_replay_key;
+  ir_frontend_metadata.unwind_cleanup_lowering_sites =
+      unwind_cleanup_lowering_contract.unwind_cleanup_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_unwind_edge_sites =
+      unwind_cleanup_lowering_contract.unwind_edge_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_cleanup_scope_sites =
+      unwind_cleanup_lowering_contract.cleanup_scope_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_cleanup_emit_sites =
+      unwind_cleanup_lowering_contract.cleanup_emit_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_landing_pad_sites =
+      unwind_cleanup_lowering_contract.landing_pad_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_cleanup_resume_sites =
+      unwind_cleanup_lowering_contract.cleanup_resume_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_normalized_sites =
+      unwind_cleanup_lowering_contract.normalized_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_guard_blocked_sites =
+      unwind_cleanup_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata.unwind_cleanup_lowering_contract_violation_sites =
+      unwind_cleanup_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_unwind_cleanup_lowering_handoff =
+      unwind_cleanup_lowering_contract.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

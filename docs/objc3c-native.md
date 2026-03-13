@@ -7572,6 +7572,39 @@ Current deferred behavior:
 - runnable bridge lowering/runtime support
 - native thrown-error ABI
 - any claim that bridge legality is runnable in native mode
+
+## M267 Part 6 throws ABI and propagation lowering boundary (M267-C001)
+
+Lane C now freezes the current native lowering boundary for Part 6 without
+claiming runnable `throw`, `try`, or `do/catch` transfer yet.
+
+Current implementation status (`M267-C001`):
+
+- lowering now publishes one canonical contract:
+  - `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
+- the frozen boundary is defined as:
+  - Part 6 semantic packets from `M267-B001`, `M267-B002`, and `M267-B003`
+  - deterministic throws-propagation replay
+  - deterministic result-like replay
+  - deterministic `NSError` bridging replay
+  - deterministic unwind-cleanup replay
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- the current boundary truthfully publishes:
+  - native out-error and propagation carrier lowering contracts
+  - fail-closed status for runnable `throw` / `try` / `do/catch` execution
+
+Still explicitly deferred:
+
+- runnable thrown-error object transfer
+- runnable catch dispatch
+- generalized native error-object ABI
+
+Recommended M267 lane-C freeze check:
+
+- `python scripts/check_m267_c001_throws_abi_and_propagation_lowering_contract_and_architecture_freeze.py`
+- `M267-C002` is the next issue.
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

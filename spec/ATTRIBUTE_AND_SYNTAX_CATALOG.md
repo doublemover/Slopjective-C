@@ -571,6 +571,25 @@ Current implementation status (`M267-B003`):
   - native status-to-error execution
   - runnable bridge lowering/runtime support
   - native thrown-error ABI
+
+## M267 current Part 6 lowering boundary
+
+Current implementation status (`M267-C001`):
+
+- lowering now publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_throws_abi_propagation_lowering`
+- live today:
+  - deterministic throws-propagation replay
+  - deterministic result-like replay
+  - deterministic `NSError` bridging replay
+  - deterministic unwind-cleanup replay
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- still deferred:
+  - runnable `throw` transfer
+  - runnable `try` / `do/catch` transfer
+  - generalized native thrown-error object ABI
+
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

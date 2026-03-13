@@ -753,7 +753,10 @@ struct Objc3IRFrontendMetadata {
   std::size_t cross_module_conformance_lowering_cache_invalidation_candidate_sites = 0;
   std::size_t cross_module_conformance_lowering_contract_violation_sites = 0;
   bool deterministic_cross_module_conformance_lowering_handoff = false;
+  std::string lowering_part6_throws_abi_propagation_replay_key;
   std::string lowering_throws_propagation_replay_key;
+  std::string lowering_result_like_replay_key;
+  bool deterministic_result_like_lowering_handoff = false;
   std::size_t throws_propagation_lowering_sites = 0;
   std::size_t throws_propagation_lowering_namespace_segment_sites = 0;
   std::size_t throws_propagation_lowering_import_edge_candidate_sites = 0;

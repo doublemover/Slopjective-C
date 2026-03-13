@@ -724,6 +724,13 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_cross_module_conformance_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_part6_throws_abi_propagation_replay_key.empty()) {
+      out << "; part6_throws_abi_propagation_lowering = "
+          << frontend_metadata_
+                 .lowering_part6_throws_abi_propagation_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2890,6 +2897,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_public_private_api_partition_lowering = !{!31}\n";
     out << "!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}\n";
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
+    out << "!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4421,6 +4429,39 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeArcDebugInstrumentationContractId)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateFailClosedModel)
+        << "\"}\n";
+    out << "!87 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringAbiModel)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.lowering_throws_propagation_replay_key)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.lowering_result_like_replay_key)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.lowering_ns_error_bridging_replay_key)
+        << "\", !\""
+        << EscapeCStringLiteral(frontend_metadata_.lowering_unwind_cleanup_replay_key)
+        << "\", i1 "
+        << (frontend_metadata_.deterministic_throws_propagation_lowering_handoff
+                    ? 1
+                    : 0)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_result_like_lowering_handoff ? 1
+                                                                          : 0)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_ns_error_bridging_lowering_handoff
+                    ? 1
+                    : 0)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_unwind_cleanup_lowering_handoff
+                    ? 1
+                    : 0)
+        << ", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

@@ -1943,6 +1943,27 @@ A `try` call should lower to:
 
 `try?` and `try!` should be implemented as specified in [Part 6](#part-6), using the same underlying error value.
 
+## M267 Part 6 throws ABI and propagation lowering boundary (C001)
+
+`M267-C001` freezes the truthful lane-C lowering boundary that exists today for
+Part 6 before runnable propagation transfer lands.
+
+- canonical contract id:
+  `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
+- canonical lowering model:
+  - Part 6 semantic packets from `M267-B001`, `M267-B002`, and `M267-B003`
+    feed deterministic throws-propagation, result-like, `NSError` bridging,
+    and unwind-cleanup replay publication
+  - emitted IR carries
+    `; part6_throws_abi_propagation_lowering = ...`
+  - emitted IR carries
+    `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- explicit current non-goals:
+  - no runnable `throw` transfer yet
+  - no runnable `try` / `do/catch` transfer yet
+  - no generalized native thrown-error object ABI claim yet
+- `M267-C002` is the next issue
+
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}
 
 ### C.5.1 Coroutine model (normative for implementations) {#c-5-1}
