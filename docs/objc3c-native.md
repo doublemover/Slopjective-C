@@ -7521,13 +7521,35 @@ Current live semantic carriage:
 
 Current deferred behavior:
 
-- `try`, `throw`, and `do/catch` execution
 - postfix propagation
 - status-to-error execution
 - native thrown-error ABI
 
 The older throws/unwind shard summaries are still carried only as placeholder
 semantic packets. They do not yet claim runnable propagation semantics.
+
+## M267 current Part 6 try/do/catch semantic boundary
+
+The semantic layer now also publishes one truthful source-only packet at
+`frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics`.
+
+Current live source-only semantics:
+
+- `try`, `try?`, and `try!` parse and normalize
+- `throw` statements parse and undergo semantic legality checking
+- `do { ... } catch ...` parses and undergoes deterministic catch-order and
+  catch-binding legality checking
+- propagating `try` requires a `throws` callable or an enclosing `do/catch`
+- `try` operands must resolve to throwing or `NSError`-bridged call surfaces
+- `throw` requires a `throws` callable or catch body
+
+Current deferred behavior:
+
+- native IR/object/executable lowering for `try`, `throw`, and `do/catch`
+- runnable catch transfer
+- native thrown-error ABI
+- postfix propagation
+- status-to-error execution
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

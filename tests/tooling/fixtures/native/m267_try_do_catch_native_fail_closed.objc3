@@ -1,0 +1,13 @@
+module m267_try_do_catch_native_fail_closed;
+
+extern fn bridgeMapping(status: i32) -> NSError;
+extern fn bridge(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: bridgeMapping)));
+
+fn main() -> i32 {
+  do {
+    return try? bridge(1, 0);
+  } catch {
+    return 0;
+  }
+  return 1;
+}

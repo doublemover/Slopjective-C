@@ -1,0 +1,5 @@
+module m267_try_requires_throwing_or_bridged_operand_negative;
+
+fn recover() throws -> i32 {
+  return try 1;
+}

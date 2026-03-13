@@ -1,0 +1,23 @@
+module m267_try_do_catch_semantics_positive;
+
+extern fn risky(value: i32) throws -> i32;
+extern fn bridgeMapping(status: i32) -> NSError;
+extern fn bridge(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: bridgeMapping)));
+
+fn recover() throws -> i32 {
+  let propagated = try risky(1);
+  let maybeValue = try? bridge(2, 0);
+  let forced = try! risky(3);
+  do {
+    throw propagated;
+  } catch (NSError* error) {
+    return forced;
+  } catch {
+    return maybeValue;
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return 0;
+}

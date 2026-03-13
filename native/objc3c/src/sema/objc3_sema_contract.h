@@ -453,6 +453,51 @@ struct Objc3Part6ErrorSemanticModelSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId =
+    "objc3c-part6-error-semantic-model/m267-b001-v1";
+inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryContractId =
+    "objc3c-part6-try-throw-do-catch-semantics/m267-b002-v1";
+inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics";
+inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryRule =
+    "try-throw-and-do-catch-parse-and-undergo-deterministic-legality-checking-in-source-only-native-validation-while-lowering-and-runtime-integration-remain-later-lane-work";
+inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDeferredRule =
+    "native-ir-object-execution-lowering-catch-transfer-and-thrown-error-abi-remain-deferred-to-lanes-c-and-d";
+
+struct Objc3Part6TryDoCatchSemanticSummary {
+  std::string contract_id = kObjc3Part6TryDoCatchSemanticSummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId;
+  std::string surface_path = kObjc3Part6TryDoCatchSemanticSummarySurfacePath;
+  std::string semantic_model = kObjc3Part6TryDoCatchSemanticSummaryRule;
+  std::string deferred_model = kObjc3Part6TryDoCatchSemanticSummaryDeferredRule;
+  std::size_t try_expression_sites = 0;
+  std::size_t try_propagating_sites = 0;
+  std::size_t try_optional_sites = 0;
+  std::size_t try_forced_sites = 0;
+  std::size_t throw_statement_sites = 0;
+  std::size_t do_catch_sites = 0;
+  std::size_t catch_clause_sites = 0;
+  std::size_t catch_binding_sites = 0;
+  std::size_t catch_all_sites = 0;
+  std::size_t throwing_callable_try_sites = 0;
+  std::size_t bridged_callable_try_sites = 0;
+  std::size_t caller_propagation_sites = 0;
+  std::size_t local_handler_sites = 0;
+  std::size_t rethrow_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool source_dependency_required = true;
+  bool try_surface_landed = false;
+  bool throw_surface_landed = false;
+  bool do_catch_surface_landed = false;
+  bool throwing_context_legality_enforced = false;
+  bool native_emit_remains_fail_closed = true;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = true;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3ModuleImportGraphSummary {
   std::size_t module_import_graph_sites = 0;
   std::size_t import_edge_candidate_sites = 0;

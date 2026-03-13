@@ -9344,6 +9344,95 @@ class Objc3Parser {
     return body;
   }
 
+  static const char *TryOperatorKindSpelling(Expr::TryOperatorKind kind) {
+    switch (kind) {
+    case Expr::TryOperatorKind::Propagate:
+      return "try";
+    case Expr::TryOperatorKind::Optional:
+      return "try?";
+    case Expr::TryOperatorKind::Forced:
+      return "try!";
+    case Expr::TryOperatorKind::None:
+    default:
+      return "none";
+    }
+  }
+
+  std::string BuildTryExpressionProfile(const Expr &expr) {
+    std::ostringstream out;
+    out << "try-expression:kind="
+        << TryOperatorKindSpelling(expr.try_operator_kind)
+        << ";requires_throwing_context="
+        << (expr.try_expression_requires_throwing_context ? "true" : "false")
+        << ";normalized=" << (expr.try_expression_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  std::string BuildThrowStatementProfile(const Expr &expr) {
+    std::ostringstream out;
+    out << "throw-statement:normalized="
+        << (expr.throw_statement_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  std::string BuildDoCatchProfile(const BlockStmt &block) {
+    std::ostringstream out;
+    out << "do-catch:clauses=" << block.catch_clauses.size()
+        << ";catch_all_sites=";
+    std::size_t catch_all_sites = 0;
+    for (const auto &clause : block.catch_clauses) {
+      if (clause.catch_all) {
+        ++catch_all_sites;
+      }
+    }
+    out << catch_all_sites
+        << ";normalized=" << (block.do_catch_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  bool ParseCatchClause(BlockStmt::CatchClause &clause) {
+    const Token catch_token = Previous();
+    clause.line = catch_token.line;
+    clause.column = catch_token.column;
+    if (Match(TokenKind::LParen)) {
+      std::vector<std::string> pattern_tokens;
+      while (!At(TokenKind::RParen) && !At(TokenKind::Eof)) {
+        pattern_tokens.push_back(Advance().text);
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109",
+                                        "missing ')' after catch pattern"));
+        return false;
+      }
+      if (pattern_tokens.empty()) {
+        diagnostics_.push_back(MakeDiag(catch_token.line, catch_token.column,
+                                        "O3P103",
+                                        "empty catch pattern is not allowed"));
+        return false;
+      }
+      clause.catch_all = false;
+      clause.has_binding = true;
+      clause.binding_name = pattern_tokens.back();
+      if (pattern_tokens.size() > 1u) {
+        std::ostringstream type_out;
+        for (std::size_t index = 0; index + 1u < pattern_tokens.size(); ++index) {
+          if (index != 0u) {
+            type_out << ' ';
+          }
+          type_out << pattern_tokens[index];
+        }
+        clause.binding_type_spelling = type_out.str();
+      }
+    }
+    clause.body = ParseControlBody();
+    if (block_failed_) {
+      block_failed_ = false;
+      return false;
+    }
+    return true;
+  }
+
   void SynchronizeTopLevel() {
     while (!At(TokenKind::Eof)) {
       if (Match(TokenKind::Semicolon)) {
@@ -9676,34 +9765,79 @@ class Objc3Parser {
 
     if (Match(TokenKind::KwThrow)) {
       const Token &token = Previous();
-      diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P267",
-                   "unsupported 'throw' statement"));
-      return nullptr;
+      auto payload = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (payload == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &semicolon_token = Peek();
+        diagnostics_.push_back(MakeDiag(semicolon_token.line,
+                                        semicolon_token.column, "O3P104",
+                                        "missing ';' after throw statement"));
+        return nullptr;
+      }
+      auto call = std::make_unique<Expr>();
+      call->kind = Expr::Kind::Call;
+      call->ident = "__objc3_throw_stmt";
+      call->line = token.line;
+      call->column = token.column;
+      call->throw_statement_enabled = true;
+      call->throw_statement_is_normalized = true;
+      call->args.push_back(std::move(payload));
+      call->throw_statement_profile = BuildThrowStatementProfile(*call);
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Expr;
+      stmt->line = token.line;
+      stmt->column = token.column;
+      stmt->expr_stmt = std::make_unique<ExprStmt>();
+      stmt->expr_stmt->line = token.line;
+      stmt->expr_stmt->column = token.column;
+      stmt->expr_stmt->value = std::move(call);
+      return stmt;
     }
 
     if (Match(TokenKind::KwDo)) {
-      auto stmt = std::make_unique<Stmt>();
-      stmt->kind = Stmt::Kind::DoWhile;
-      stmt->do_while_stmt = std::make_unique<DoWhileStmt>();
-      stmt->line = Previous().line;
-      stmt->column = Previous().column;
-      stmt->do_while_stmt->line = Previous().line;
-      stmt->do_while_stmt->column = Previous().column;
-
-      stmt->do_while_stmt->body = ParseControlBody();
+      const Token do_token = Previous();
+      auto body = ParseControlBody();
       if (block_failed_) {
         block_failed_ = false;
         return nullptr;
       }
 
       if (Match(TokenKind::KwCatch)) {
-        const Token &token = Previous();
-        diagnostics_.push_back(
-            MakeDiag(token.line, token.column, "O3P269",
-                     "unsupported 'do/catch' statement"));
-        return nullptr;
+        auto stmt = std::make_unique<Stmt>();
+        stmt->kind = Stmt::Kind::Block;
+        stmt->block_stmt = std::make_unique<BlockStmt>();
+        stmt->line = do_token.line;
+        stmt->column = do_token.column;
+        stmt->block_stmt->line = do_token.line;
+        stmt->block_stmt->column = do_token.column;
+        stmt->block_stmt->is_do_catch_scope = true;
+        stmt->block_stmt->body = std::move(body);
+        do {
+          BlockStmt::CatchClause clause;
+          if (!ParseCatchClause(clause)) {
+            return nullptr;
+          }
+          stmt->block_stmt->catch_clauses.push_back(std::move(clause));
+        } while (Match(TokenKind::KwCatch));
+        stmt->block_stmt->do_catch_is_normalized =
+            !stmt->block_stmt->catch_clauses.empty();
+        stmt->block_stmt->do_catch_profile =
+            BuildDoCatchProfile(*stmt->block_stmt);
+        return stmt;
       }
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::DoWhile;
+      stmt->do_while_stmt = std::make_unique<DoWhileStmt>();
+      stmt->line = do_token.line;
+      stmt->column = do_token.column;
+      stmt->do_while_stmt->line = do_token.line;
+      stmt->do_while_stmt->column = do_token.column;
+      stmt->do_while_stmt->body = std::move(body);
 
       if (!Match(TokenKind::KwWhile)) {
         const Token &token = Peek();
@@ -10803,6 +10937,35 @@ class Objc3Parser {
   }
 
   std::unique_ptr<Expr> ParseUnary() {
+    if (Match(TokenKind::KwTry)) {
+      const Token try_token = Previous();
+      Expr::TryOperatorKind try_kind = Expr::TryOperatorKind::Propagate;
+      bool requires_throwing_context = true;
+      if (Match(TokenKind::Question)) {
+        try_kind = Expr::TryOperatorKind::Optional;
+        requires_throwing_context = false;
+      } else if (Match(TokenKind::Bang)) {
+        try_kind = Expr::TryOperatorKind::Forced;
+        requires_throwing_context = false;
+      }
+      auto rhs = ParseUnary();
+      if (rhs == nullptr) {
+        return nullptr;
+      }
+      auto expr = std::make_unique<Expr>();
+      expr->kind = Expr::Kind::Call;
+      expr->ident = "__objc3_try_expr";
+      expr->line = try_token.line;
+      expr->column = try_token.column;
+      expr->try_expression_enabled = true;
+      expr->try_operator_kind = try_kind;
+      expr->try_expression_requires_throwing_context =
+          requires_throwing_context;
+      expr->try_expression_is_normalized = true;
+      expr->args.push_back(std::move(rhs));
+      expr->try_expression_profile = BuildTryExpressionProfile(*expr);
+      return expr;
+    }
     if (Match(TokenKind::Bang)) {
       const Token op = Previous();
       auto rhs = ParseUnary();
@@ -11641,13 +11804,6 @@ class Objc3Parser {
   }
 
   std::unique_ptr<Expr> ParsePrimary() {
-    if (Match(TokenKind::KwTry)) {
-      const Token &token = Previous();
-      diagnostics_.push_back(
-          MakeDiag(token.line, token.column, "O3P268",
-                   "unsupported 'try' expression"));
-      return nullptr;
-    }
     if (Match(TokenKind::Number)) {
       auto expr = std::make_unique<Expr>();
       expr->kind = Expr::Kind::Number;

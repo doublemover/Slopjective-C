@@ -1,0 +1,7 @@
+module m267_try_requires_throwing_context_negative;
+
+extern fn risky(value: i32) throws -> i32;
+
+fn main() -> i32 {
+  return try risky(1);
+}

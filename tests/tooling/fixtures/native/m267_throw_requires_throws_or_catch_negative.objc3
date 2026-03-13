@@ -1,0 +1,5 @@
+module m267_throw_requires_throws_or_catch_negative;
+
+fn main() -> void {
+  throw 1;
+}

@@ -5116,6 +5116,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part6_error_semantic_model_summary =
       BuildPart6ErrorSemanticModelSummary(
           result.part6_error_source_closure_summary, result.integration_surface);
+  result.part6_try_do_catch_semantic_summary =
+      BuildPart6TryDoCatchSemanticSummary(
+          Objc3ParsedProgramAst(result.program),
+          result.integration_surface,
+          !options.emit_ir && !options.emit_object,
+          result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

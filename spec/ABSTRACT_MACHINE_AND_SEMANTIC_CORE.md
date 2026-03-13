@@ -461,8 +461,8 @@ M267-A001 source-closure note:
   - `throws` declarations are live source-only frontend surfaces
   - result-like carrier profiling remains live frontend metadata
   - `NSError` bridging profiles remain live frontend metadata
-- `try`, `throw`, and `do/catch` are reserved fail-closed parser constructs in
-  the current native implementation
+- `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
+  current native implementation; A001 does not claim runnable semantics for them
 - runnable error propagation, catch dispatch, and native thrown-error ABI remain
   deferred to later `M267` issues
 
@@ -482,9 +482,18 @@ M267-B001 semantic-boundary note:
   - throws declarations are carried as deterministic sema state
   - result-like profiles remain carried as deterministic sema state
   - `NSError` bridging and canonical bridge markers remain carried as deterministic sema state
-- `try`, `throw`, and `do/catch` remain parser-owned fail-closed boundaries
 - postfix propagation, status-to-error execution, and native thrown-error ABI remain deferred
 - inherited throws/unwind shard summaries are still carried only as placeholder sema packets, not runnable propagation semantics
+
+M267-B002 try/do/catch semantic note:
+
+- `try`, `try?`, `try!`, `throw`, and `do/catch` are now admitted as
+  source-only semantic surfaces
+- propagating `try` requires a `throws` callable or an enclosing `do/catch`
+- `try` operands must resolve to throwing or `NSError`-bridged call surfaces
+- `throw` requires a `throws` callable or catch body
+- native IR/object/executable behavior, runnable catch transfer, and native
+  thrown-error ABI remain deferred to later `M267` issues
 
 M266-B002 implementation note:
 

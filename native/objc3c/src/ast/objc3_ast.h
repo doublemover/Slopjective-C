@@ -267,6 +267,7 @@ struct Expr {
     BlockLiteral
   };
   enum class MessageSendForm { None, Unary, Keyword };
+  enum class TryOperatorKind { None, Propagate, Optional, Forced };
   enum class DispatchSurfaceKind {
     Unclassified,
     Instance,
@@ -404,6 +405,14 @@ struct Expr {
   std::vector<std::string> typed_keypath_components;
   std::string typed_keypath_literal_profile;
   bool typed_keypath_literal_is_normalized = false;
+  bool try_expression_enabled = false;
+  TryOperatorKind try_operator_kind = TryOperatorKind::None;
+  bool try_expression_requires_throwing_context = false;
+  bool try_expression_is_normalized = false;
+  std::string try_expression_profile;
+  bool throw_statement_enabled = false;
+  bool throw_statement_is_normalized = false;
+  std::string throw_statement_profile;
   std::vector<std::unique_ptr<Stmt>> block_body;
   std::string op = "+";
   std::unique_ptr<Expr> receiver;
@@ -560,8 +569,21 @@ struct WhileStmt {
 };
 
 struct BlockStmt {
+  struct CatchClause {
+    bool catch_all = true;
+    bool has_binding = false;
+    std::string binding_name;
+    std::string binding_type_spelling = "id<Error>";
+    std::vector<std::unique_ptr<Stmt>> body;
+    unsigned line = 1;
+    unsigned column = 1;
+  };
   std::vector<std::unique_ptr<Stmt>> body;
   bool is_autoreleasepool_scope = false;
+  bool is_do_catch_scope = false;
+  bool do_catch_is_normalized = false;
+  std::vector<CatchClause> catch_clauses;
+  std::string do_catch_profile;
   std::string autoreleasepool_scope_symbol;
   unsigned autoreleasepool_scope_depth = 0;
   unsigned line = 1;

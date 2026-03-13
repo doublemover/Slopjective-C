@@ -499,8 +499,8 @@ Current implementation status (`M267-A001`):
   method declarations
 - deterministic `NSError` bridging profiling remains attached to function and
   method declarations
-- `try`, `throw`, and `do/catch` are reserved parser-owned fail-closed
-  constructs in the current native implementation
+- `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
+  current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred
   to later `M267` issues
 
@@ -530,12 +530,31 @@ Current implementation status (`M267-B001`):
   - deterministic `NSError` bridging profile carriage
   - deterministic canonical bridge-marker carriage
 - still deferred:
-  - `try`, `throw`, and `do/catch` execution semantics
   - postfix propagation `?`
   - status-to-error runtime execution
   - native thrown-error ABI
 - legacy throws/unwind shard summaries remain carried only as placeholder packets;
-  they do not claim runnable propagation semantics
+  they are not yet the runnable Part 6 propagation model
+
+## M267 current Part 6 try/do/catch semantic boundary
+
+Current implementation status (`M267-B002`):
+
+- sema now publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics`
+- live today:
+  - `try`, `try?`, and `try!` semantic normalization
+  - `throw` statement legality checking
+  - `do/catch` catch-order and catch-binding legality checking
+  - propagating-try context enforcement
+  - throwing/bridged operand enforcement
+- still deferred:
+  - native IR/object/executable behavior for `try`, `throw`, and `do/catch`
+  - runnable catch transfer
+  - postfix propagation `?`
+  - status-to-error runtime execution
+  - native thrown-error ABI
+- the older throws/unwind summaries still do not claim runnable propagation semantics
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

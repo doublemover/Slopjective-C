@@ -59,12 +59,29 @@ Current implementation status (`M267-B001`):
   - `NSError` bridging profiles
   - canonical `objc_nserror` / `objc_status_code(...)` bridge markers
 - currently deferred runnable behavior:
-  - `try`, `throw`, and `do/catch`
   - postfix propagation
   - status-to-error execution
   - native thrown-error ABI
 - older throws/unwind summaries are still emitted only as placeholder sema packets;
   they are not yet the runnable Part 6 propagation model
+
+Current implementation status (`M267-B002`):
+
+- the compiler now also publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics`
+- currently live source-only semantics:
+  - `try`, `try?`, and `try!`
+  - `throw`
+  - `do/catch`
+  - propagating-try context legality
+  - throwing/bridged operand legality
+  - catch-order legality
+- currently deferred runnable behavior:
+  - native IR/object/executable lowering for `try`, `throw`, and `do/catch`
+  - runnable catch transfer
+  - postfix propagation
+  - status-to-error execution
+  - native thrown-error ABI
 
 ---
 

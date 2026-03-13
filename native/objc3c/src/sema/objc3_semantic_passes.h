@@ -24,6 +24,11 @@ Objc3Part5ControlFlowSemanticModelSummary BuildPart5ControlFlowSemanticModelSumm
 Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
     const Objc3FrontendPart6ErrorSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
+    const Objc3Program &program,
+    const Objc3SemanticIntegrationSurface &surface,
+    bool allow_source_only_error_runtime_surface,
+    std::vector<std::string> &diagnostics);
 Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const Objc3ParsedProgram &program);
 Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3SemanticIntegrationSurface &surface);
 void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
