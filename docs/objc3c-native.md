@@ -7550,6 +7550,28 @@ Current deferred behavior:
 - native thrown-error ABI
 - postfix propagation
 - status-to-error execution
+
+## M267 current Part 6 bridge legality boundary
+
+The semantic layer now also publishes one truthful source-only packet at
+`frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality`.
+
+Current live source-only legality:
+
+- canonical `objc_nserror` and `objc_status_code(...)` markers are validated on
+  functions and Objective-C methods
+- only semantically valid bridge call surfaces qualify for `try`
+- bridge markers must resolve coherent return, out-parameter, and mapping-shape
+  combinations before they count as bridged call sites
+- unsupported bridge combinations fail closed deterministically in the semantic
+  layer
+
+Current deferred behavior:
+
+- native status-to-error execution
+- runnable bridge lowering/runtime support
+- native thrown-error ABI
+- any claim that bridge legality is runnable in native mode
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

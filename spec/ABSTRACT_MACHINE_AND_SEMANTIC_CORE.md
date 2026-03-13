@@ -495,6 +495,14 @@ M267-B002 try/do/catch semantic note:
 - native IR/object/executable behavior, runnable catch transfer, and native
   thrown-error ABI remain deferred to later `M267` issues
 
+M267-B003 bridge legality note:
+
+- canonical `objc_nserror` / `objc_status_code(...)` markers are now filtered by
+  semantic legality rather than counted blindly
+- only semantically valid bridge call surfaces qualify for `try`
+- unsupported bridge combinations remain compile-time fail-closed and do not yet
+  widen runnable native behavior
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

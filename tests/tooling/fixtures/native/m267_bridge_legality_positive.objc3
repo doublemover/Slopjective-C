@@ -1,0 +1,7 @@
+module m267_bridge_legality_positive;
+extern fn wrapNSError(payload: id, outError: NSError*) -> BOOL __attribute__((objc_nserror));
+extern fn mapStatus(status: i32) -> NSError;
+extern fn decodeStatus(payload: id, outError: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+fn main() throws -> i32 {
+  return try decodeStatus(nil, nil);
+}

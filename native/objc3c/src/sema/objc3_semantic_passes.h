@@ -29,6 +29,10 @@ Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
     const Objc3SemanticIntegrationSurface &surface,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics);
+Objc3Part6ErrorBridgeLegalitySummary BuildPart6ErrorBridgeLegalitySummary(
+    const Objc3Program &program,
+    bool allow_source_only_error_runtime_surface,
+    std::vector<std::string> &diagnostics);
 Objc3AtomicMemoryOrderMappingSummary BuildAtomicMemoryOrderMappingSummary(const Objc3ParsedProgram &program);
 Objc3VectorTypeLoweringSummary BuildVectorTypeLoweringSummary(const Objc3SemanticIntegrationSurface &surface);
 void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,

@@ -555,6 +555,22 @@ Current implementation status (`M267-B002`):
   - status-to-error runtime execution
   - native thrown-error ABI
 - the older throws/unwind summaries still do not claim runnable propagation semantics
+
+## M267 current Part 6 bridge legality boundary
+
+Current implementation status (`M267-B003`):
+
+- sema now publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality`
+- live today:
+  - legality filtering for `__attribute__((objc_nserror))`
+  - legality filtering for `__attribute__((objc_status_code(...)))`
+  - deterministic out-parameter, return-shape, `error_type`, and mapping checks
+  - only semantically valid bridge call surfaces qualify for `try`
+- still deferred:
+  - native status-to-error execution
+  - runnable bridge lowering/runtime support
+  - native thrown-error ABI
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

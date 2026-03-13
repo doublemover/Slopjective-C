@@ -1,0 +1,3 @@
+module m267_bridge_legality_nserror_missing_out;
+extern fn bad(payload: id) -> BOOL __attribute__((objc_nserror));
+fn main() -> i32 { return 0; }

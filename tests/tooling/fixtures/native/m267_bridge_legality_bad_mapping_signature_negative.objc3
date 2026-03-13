@@ -1,0 +1,4 @@
+module m267_bridge_legality_bad_mapping_signature;
+extern fn mapStatus(status: i32, extra: i32) -> NSError;
+extern fn bad(payload: id, outError: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+fn main() -> i32 { return 0; }

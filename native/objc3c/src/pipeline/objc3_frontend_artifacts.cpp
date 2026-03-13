@@ -753,6 +753,66 @@ std::string BuildPart6TryDoCatchSemanticSummaryJson(
   return out.str();
 }
 
+std::string BuildPart6ErrorBridgeLegalitySummaryJson(
+    const Objc3Part6ErrorBridgeLegalitySummary &summary) {
+  // Semantic-surface key literal: "objc_part6_error_bridge_legality":
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\""
+      << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(summary.deferred_model)
+      << "\",\"bridge_callable_sites\":" << summary.bridge_callable_sites
+      << ",\"objc_nserror_callable_sites\":"
+      << summary.objc_nserror_callable_sites
+      << ",\"objc_status_code_callable_sites\":"
+      << summary.objc_status_code_callable_sites
+      << ",\"semantically_valid_bridge_callable_sites\":"
+      << summary.semantically_valid_bridge_callable_sites
+      << ",\"try_eligible_bridge_callable_sites\":"
+      << summary.try_eligible_bridge_callable_sites
+      << ",\"missing_error_out_parameter_sites\":"
+      << summary.missing_error_out_parameter_sites
+      << ",\"invalid_nserror_return_sites\":"
+      << summary.invalid_nserror_return_sites
+      << ",\"invalid_status_return_sites\":"
+      << summary.invalid_status_return_sites
+      << ",\"invalid_error_type_sites\":"
+      << summary.invalid_error_type_sites
+      << ",\"missing_mapping_symbol_sites\":"
+      << summary.missing_mapping_symbol_sites
+      << ",\"invalid_mapping_signature_sites\":"
+      << summary.invalid_mapping_signature_sites
+      << ",\"throws_bridge_conflict_sites\":"
+      << summary.throws_bridge_conflict_sites
+      << ",\"marker_conflict_sites\":" << summary.marker_conflict_sites
+      << ",\"unsupported_combination_sites\":"
+      << summary.unsupported_combination_sites
+      << ",\"contract_violation_sites\":"
+      << summary.contract_violation_sites
+      << ",\"source_dependency_required\":"
+      << (summary.source_dependency_required ? "true" : "false")
+      << ",\"bridge_legality_landed\":"
+      << (summary.bridge_legality_landed ? "true" : "false")
+      << ",\"try_bridge_filter_landed\":"
+      << (summary.try_bridge_filter_landed ? "true" : "false")
+      << ",\"unsupported_combinations_fail_closed\":"
+      << (summary.unsupported_combinations_fail_closed ? "true" : "false")
+      << ",\"native_emit_remains_fail_closed\":"
+      << (summary.native_emit_remains_fail_closed ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart5ControlFlowSafetyLoweringContractJson(
     const Objc3Part5ControlFlowSafetyLoweringContract &contract,
     const Objc3Part5ControlFlowSemanticModelSummary &semantic_summary,
@@ -9894,6 +9954,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part6TryDoCatchSemanticSummary
       &part6_try_do_catch_semantic_summary =
           pipeline_result.part6_try_do_catch_semantic_summary;
+  const Objc3Part6ErrorBridgeLegalitySummary
+      &part6_error_bridge_legality_summary =
+          pipeline_result.part6_error_bridge_legality_summary;
   const Objc3Part3TypeSemanticModelSummary part3_type_semantic_model_summary =
       BuildPart3TypeSemanticModelSummary(
           pipeline_result.program.ast, pipeline_result.integration_surface, 4u);
@@ -14118,6 +14181,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_try_do_catch_semantics\":"
            << BuildPart6TryDoCatchSemanticSummaryJson(
                   part6_try_do_catch_semantic_summary)
+           << ",\"objc_part6_error_bridge_legality\":"
+           << BuildPart6ErrorBridgeLegalitySummaryJson(
+                  part6_error_bridge_legality_summary)
            << ",\"objc_part5_control_flow_semantic_model\":"
            << BuildPart5ControlFlowSemanticModelSummaryJson(
                   part5_control_flow_semantic_model_summary)
@@ -15264,6 +15330,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_try_do_catch_semantics\":"
            << BuildPart6TryDoCatchSemanticSummaryJson(
                   part6_try_do_catch_semantic_summary)
+           << ",\"objc_part6_error_bridge_legality\":"
+           << BuildPart6ErrorBridgeLegalitySummaryJson(
+                  part6_error_bridge_legality_summary)
            << ",\"objc_part5_control_flow_semantic_model\":"
            << BuildPart5ControlFlowSemanticModelSummaryJson(
                   part5_control_flow_semantic_model_summary)

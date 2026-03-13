@@ -83,6 +83,20 @@ Current implementation status (`M267-B002`):
   - status-to-error execution
   - native thrown-error ABI
 
+Current implementation status (`M267-B003`):
+
+- the compiler now also publishes one truthful Part 6 packet at
+  `frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality`
+- currently live source-only bridge legality:
+  - canonical `objc_nserror` and `objc_status_code(...)` marker validation
+  - deterministic out-parameter, return-shape, `error_type`, and mapping checks
+  - only semantically valid bridge call surfaces qualify for `try`
+  - unsupported bridge combinations fail closed semantically
+- currently deferred runnable behavior:
+  - native status-to-error execution
+  - runnable bridge lowering/runtime support
+  - native thrown-error ABI
+
 ---
 
 ## 6.1 Lexical and grammar additions {#part-6-1}

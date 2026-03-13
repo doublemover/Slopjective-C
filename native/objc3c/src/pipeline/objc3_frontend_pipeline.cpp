@@ -5122,6 +5122,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.integration_surface,
           !options.emit_ir && !options.emit_object,
           result.stage_diagnostics.semantic);
+  result.part6_error_bridge_legality_summary =
+      BuildPart6ErrorBridgeLegalitySummary(
+          Objc3ParsedProgramAst(result.program),
+          !options.emit_ir && !options.emit_object,
+          result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

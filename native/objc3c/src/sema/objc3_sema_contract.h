@@ -498,6 +498,50 @@ struct Objc3Part6TryDoCatchSemanticSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryDependencyContractId =
+    "objc3c-part6-try-throw-do-catch-semantics/m267-b002-v1";
+inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryContractId =
+    "objc3c-part6-error-bridge-legality/m267-b003-v1";
+inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality";
+inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryRule =
+    "nserror-and-status-bridge-markers-undergo-deterministic-semantic-legality-checking-before-lowering-and-only-semantically-valid-bridge-surfaces-qualify-for-try";
+inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryDeferredRule =
+    "status-to-error-execution-bridge-temporaries-native-error-abi-and-runnable-bridge-lowering-remain-deferred-to-lanes-c-and-d";
+
+struct Objc3Part6ErrorBridgeLegalitySummary {
+  std::string contract_id = kObjc3Part6ErrorBridgeLegalitySummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part6ErrorBridgeLegalitySummaryDependencyContractId;
+  std::string surface_path = kObjc3Part6ErrorBridgeLegalitySummarySurfacePath;
+  std::string semantic_model = kObjc3Part6ErrorBridgeLegalitySummaryRule;
+  std::string deferred_model = kObjc3Part6ErrorBridgeLegalitySummaryDeferredRule;
+  std::size_t bridge_callable_sites = 0;
+  std::size_t objc_nserror_callable_sites = 0;
+  std::size_t objc_status_code_callable_sites = 0;
+  std::size_t semantically_valid_bridge_callable_sites = 0;
+  std::size_t try_eligible_bridge_callable_sites = 0;
+  std::size_t missing_error_out_parameter_sites = 0;
+  std::size_t invalid_nserror_return_sites = 0;
+  std::size_t invalid_status_return_sites = 0;
+  std::size_t invalid_error_type_sites = 0;
+  std::size_t missing_mapping_symbol_sites = 0;
+  std::size_t invalid_mapping_signature_sites = 0;
+  std::size_t throws_bridge_conflict_sites = 0;
+  std::size_t marker_conflict_sites = 0;
+  std::size_t unsupported_combination_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool source_dependency_required = true;
+  bool bridge_legality_landed = false;
+  bool try_bridge_filter_landed = false;
+  bool unsupported_combinations_fail_closed = false;
+  bool native_emit_remains_fail_closed = true;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3ModuleImportGraphSummary {
   std::size_t module_import_graph_sites = 0;
   std::size_t import_edge_candidate_sites = 0;
