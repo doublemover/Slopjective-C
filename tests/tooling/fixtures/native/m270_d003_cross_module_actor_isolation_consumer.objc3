@@ -1,0 +1,8 @@
+module M270D003Consumer;
+
+fn localConsumer(seed: i32) -> i32 {
+  if (seed > 0) {
+    return seed + 1;
+  }
+  return 0;
+}

@@ -4379,6 +4379,10 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
   // M270-D001 actor-runtime/executor-binding anchor: lane-D freezes the
   // private actor runtime proof surface on this snapshot rather than claiming
   // a wider public mailbox runtime ABI.
+  // M270-D003 cross-module isolation-metadata hardening anchor: mixed-module
+  // import/link-plan validation now preserves replay facts for this same
+  // private snapshot-backed actor runtime slice without widening the public
+  // runtime header.
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }

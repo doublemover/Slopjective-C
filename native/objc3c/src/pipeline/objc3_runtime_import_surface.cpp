@@ -825,6 +825,60 @@ bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
   return true;
 }
 
+bool PopulateImportedPart7ActorMailboxRuntimeImport(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *runtime_value = FindMember(
+      root, "objc_part7_actor_mailbox_and_isolation_runtime_import_surface");
+  if (runtime_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *runtime_object = AsObject(*runtime_value);
+  if (runtime_object == nullptr) {
+    error = "part7 actor mailbox runtime import surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  if (!ReadStringMember(*runtime_object, "contract_id", contract_id, error) ||
+      !ReadStringMember(*runtime_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadBoolMember(*runtime_object, "actor_mailbox_runtime_ready",
+                      surface.part7_actor_mailbox_runtime_ready, error) ||
+      !ReadBoolMember(*runtime_object, "deterministic",
+                      surface.part7_actor_mailbox_runtime_deterministic,
+                      error) ||
+      !ReadStringMember(*runtime_object, "replay_key",
+                        surface.part7_actor_mailbox_runtime_replay_key,
+                        error) ||
+      !ReadStringMember(*runtime_object, "actor_lowering_replay_key",
+                        surface.part7_actor_lowering_replay_key, error) ||
+      !ReadStringMember(*runtime_object, "actor_isolation_lowering_replay_key",
+                        surface.part7_actor_isolation_lowering_replay_key,
+                        error)) {
+    return false;
+  }
+
+  if (contract_id !=
+      "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1") {
+    error = "unexpected Part 7 actor mailbox runtime import contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1") {
+    error = "unexpected Part 7 actor mailbox runtime source contract id in import surface";
+    return false;
+  }
+
+  surface.part7_actor_mailbox_runtime_import_present = true;
+  surface.part7_actor_mailbox_runtime_contract_id = std::move(contract_id);
+  surface.part7_actor_mailbox_runtime_source_contract_id =
+      std::move(source_contract_id);
+  return true;
+}
+
 bool ParseRuntimeMetadataSourceRecordSet(
     const JsonValue::Object &root, const std::string &declarations_name,
     Objc3RuntimeMetadataSourceRecordSet &record_set, std::string &error) {
@@ -999,6 +1053,9 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
   if (!PopulateImportedPart6ResultAndBridgingArtifactReplay(root, surface,
                                                             error)) {
+    return false;
+  }
+  if (!PopulateImportedPart7ActorMailboxRuntimeImport(root, surface, error)) {
     return false;
   }
   Objc3RuntimeMetadataSourceRecordSet local_runtime_metadata_source_records;

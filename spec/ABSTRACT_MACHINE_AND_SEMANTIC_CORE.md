@@ -911,6 +911,15 @@ M270-D002 live-runtime note:
 - mixed-module actor helper execution still remains bound to the packaged
   runtime archive path rather than a separate actor-runtime distribution
 
+M270-D003 cross-module preservation note:
+
+- actor-bearing runtime-import-surface artifacts now preserve mailbox/isolation
+  replay facts for mixed-module consumers
+- cross-module link-plan construction fail-closes when imported actor mailbox
+  runtime contracts or replay keys drift
+- mixed-module actor helper execution still remains bound to the packaged
+  runtime archive path rather than a separate actor-runtime distribution
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

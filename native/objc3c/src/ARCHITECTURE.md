@@ -11225,3 +11225,18 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - mixed-module actor helper traffic still remains bound to the packaged
   runtime archive path `artifacts/lib/objc3_runtime.lib`
 - the next issue is `M270-D003`
+
+## M270 Part 7 Cross-Module Actor Isolation Metadata Hardening (D003)
+
+- `M270-D003` preserves the actor mailbox/isolation replay facts from the
+  private D002 runtime slice across imported runtime surfaces and mixed-module
+  link plans
+- actor-bearing import surfaces now publish:
+  - `objc_part7_actor_mailbox_and_isolation_runtime_import_surface`
+- mixed-module link plans now preserve and validate:
+  - `expected_part7_actor_contract_id`
+  - `expected_part7_actor_source_contract_id`
+  - `part7_actor_mailbox_runtime_replay_key`
+  - `part7_actor_lowering_replay_key`
+  - `part7_actor_isolation_lowering_replay_key`
+- the next issue is `M270-E001`

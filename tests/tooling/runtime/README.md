@@ -600,6 +600,20 @@ the public runtime header.
   - `objc3_runtime_actor_mailbox_drain_next_i32`
   - `objc3_runtime_copy_actor_runtime_state_for_testing`
 
+## M270 cross-module actor isolation preservation
+
+`M270-D003` proves that actor mailbox/isolation replay facts survive imported
+runtime surfaces and mixed-module link-plan construction.
+
+- provider fixture:
+  `tests/tooling/fixtures/native/m270_d003_cross_module_actor_isolation_provider.objc3`
+- consumer fixture:
+  `tests/tooling/fixtures/native/m270_d003_cross_module_actor_isolation_consumer.objc3`
+- proof checks:
+  - actor-bearing `module.runtime-import-surface.json` carries the Part 7 actor import packet
+  - `module.cross-module-runtime-link-plan.json` preserves the imported actor replay keys
+  - a tampered imported runtime surface fails closed
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the

@@ -3475,6 +3475,18 @@ small runnable mailbox slice.
 - mixed-module actor helper traffic still remains tied to the packaged runtime
   archive path `artifacts/lib/objc3_runtime.lib`
 
+## M270 cross-module actor isolation metadata hardening
+
+`M270-D003` preserves the actor mailbox/isolation replay facts that `M270-D002`
+made runnable across imported runtime surfaces and mixed-module link plans.
+
+- actor-bearing `module.runtime-import-surface.json` artifacts now carry a
+  dedicated actor mailbox/isolation import packet
+- `module.cross-module-runtime-link-plan.json` now preserves imported actor
+  replay facts and fails closed on contract drift
+- mixed-module actor helper traffic still remains tied to the packaged runtime
+  archive path `artifacts/lib/objc3_runtime.lib`
+
 ## M268 frontend async semantic packet
 
 The frontend now publishes a dedicated Part 7 source packet at

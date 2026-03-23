@@ -831,6 +831,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3Part6ResultAndBridgingArtifactReplayContractId;
           link_plan_inputs.expected_part6_source_contract_id =
               kObjc3Part6ThrowsAbiPropagationLoweringContractId;
+          link_plan_inputs.expected_part7_actor_contract_id =
+              "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
+          link_plan_inputs.expected_part7_actor_source_contract_id =
+              "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
           for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
             link_plan_inputs.direct_import_surface_artifact_paths.push_back(
                 imported_surfaces[index].source_path.generic_string());
@@ -885,6 +889,22 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 imported_surface.part6_ns_error_replay_key;
             imported_input.part6_unwind_replay_key =
                 imported_surface.part6_unwind_replay_key;
+            imported_input.part7_actor_mailbox_runtime_import_present =
+                imported_surface.part7_actor_mailbox_runtime_import_present;
+            imported_input.part7_actor_mailbox_runtime_ready =
+                imported_surface.part7_actor_mailbox_runtime_ready;
+            imported_input.part7_actor_mailbox_runtime_deterministic =
+                imported_surface.part7_actor_mailbox_runtime_deterministic;
+            imported_input.part7_actor_contract_id =
+                imported_surface.part7_actor_mailbox_runtime_contract_id;
+            imported_input.part7_actor_source_contract_id =
+                imported_surface.part7_actor_mailbox_runtime_source_contract_id;
+            imported_input.part7_actor_mailbox_runtime_replay_key =
+                imported_surface.part7_actor_mailbox_runtime_replay_key;
+            imported_input.part7_actor_lowering_replay_key =
+                imported_surface.part7_actor_lowering_replay_key;
+            imported_input.part7_actor_isolation_lowering_replay_key =
+                imported_surface.part7_actor_isolation_lowering_replay_key;
             link_plan_inputs.imported_inputs.push_back(std::move(imported_input));
           }
 

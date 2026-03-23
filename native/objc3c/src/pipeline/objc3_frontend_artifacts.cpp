@@ -126,6 +126,15 @@ inline constexpr const char *kObjc3Part7ActorLoweringMetadataModel =
     "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
     "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
+inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportContractId =
+    "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
+inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_actor_mailbox_and_isolation_runtime_import_surface";
+inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportSourceModel =
+    "runtime-import-surface-preserves-actor-lowering-and-isolation-replay-facts-for-cross-module-runtime-link-planning";
+inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportFailClosedModel =
+    "missing-or-drifted-actor-mailbox-runtime-import-packets-disable-cross-module-actor-runtime-preservation-claims";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionContractId =
     "objc3c-part7-task-runtime-abi-completion/m269-c003-v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionSurfacePath =
@@ -4396,12 +4405,79 @@ std::string BuildSerializedRuntimeMetadataReusePayloadJson(
   return out.str();
 }
 
+struct Objc3Part7ActorMailboxRuntimeImportSummary {
+  std::string contract_id = kObjc3Part7ActorMailboxRuntimeImportContractId;
+  std::string source_contract_id = kObjc3Part7ActorLoweringMetadataContractId;
+  std::string surface_path = kObjc3Part7ActorMailboxRuntimeImportSurfacePath;
+  std::string source_model = kObjc3Part7ActorMailboxRuntimeImportSourceModel;
+  std::string fail_closed_model =
+      kObjc3Part7ActorMailboxRuntimeImportFailClosedModel;
+  bool actor_mailbox_runtime_ready = false;
+  bool deterministic = false;
+  std::string replay_key;
+  std::string actor_lowering_replay_key;
+  std::string actor_isolation_lowering_replay_key;
+};
+
+Objc3Part7ActorMailboxRuntimeImportSummary
+BuildPart7ActorMailboxRuntimeImportSummary(
+    const Objc3ActorLoweringMetadataContract &actor_contract,
+    const std::string &actor_lowering_replay_key,
+    const std::string &actor_isolation_lowering_replay_key) {
+  Objc3Part7ActorMailboxRuntimeImportSummary summary;
+  summary.actor_lowering_replay_key = actor_lowering_replay_key;
+  summary.actor_isolation_lowering_replay_key =
+      actor_isolation_lowering_replay_key;
+  const bool actor_sites_present = actor_contract.actor_interface_sites != 0u ||
+                                   actor_contract.actor_method_sites != 0u;
+  summary.actor_mailbox_runtime_ready =
+      actor_sites_present && IsValidObjc3ActorLoweringMetadataContract(actor_contract) &&
+      !actor_lowering_replay_key.empty() &&
+      !actor_isolation_lowering_replay_key.empty();
+  summary.deterministic = actor_contract.deterministic;
+  std::ostringstream replay_key;
+  replay_key << summary.contract_id
+             << ";source_contract_id=" << summary.source_contract_id
+             << ";actor_mailbox_runtime_ready="
+             << (summary.actor_mailbox_runtime_ready ? "true" : "false")
+             << ";deterministic=" << (summary.deterministic ? "true" : "false")
+             << ";actor_lowering_replay_key=" << actor_lowering_replay_key
+             << ";actor_isolation_lowering_replay_key="
+             << actor_isolation_lowering_replay_key;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+std::string BuildPart7ActorMailboxRuntimeImportSummaryJson(
+    const Objc3Part7ActorMailboxRuntimeImportSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"actor_mailbox_runtime_ready\":"
+      << (summary.actor_mailbox_runtime_ready ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"actor_lowering_replay_key\":\""
+      << EscapeJsonString(summary.actor_lowering_replay_key)
+      << "\",\"actor_isolation_lowering_replay_key\":\""
+      << EscapeJsonString(summary.actor_isolation_lowering_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
     const std::string &part3_optional_keypath_lowering_contract_json,
     const std::string &part3_optional_keypath_runtime_helper_contract_json,
     const std::string &part6_result_and_bridging_artifact_replay_json,
+    const std::string &part7_actor_mailbox_runtime_import_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
     const Objc3RuntimeMetadataSourceRecordSet
@@ -4484,6 +4560,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part3_optional_keypath_runtime_helper_contract_json << ",\n"
       << "  \"objc_part6_result_and_bridging_artifact_replay\": "
       << part6_result_and_bridging_artifact_replay_json << ",\n"
+      << "  \"objc_part7_actor_mailbox_and_isolation_runtime_import_surface\": "
+      << part7_actor_mailbox_runtime_import_json << ",\n"
       << "  \""
       << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
       << "\": "
@@ -17946,6 +18024,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 part3_optional_keypath_lowering_replay_key),
             BuildPart6ResultAndBridgingArtifactReplaySummaryJson(
                 part6_result_and_bridging_artifact_replay_summary),
+            BuildPart7ActorMailboxRuntimeImportSummaryJson(
+                BuildPart7ActorMailboxRuntimeImportSummary(
+                    part7_actor_lowering_metadata_contract,
+                    part7_actor_lowering_metadata_replay_key,
+                    part7_actor_isolation_sendability_lowering_replay_key)),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
   }

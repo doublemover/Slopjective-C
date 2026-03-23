@@ -277,6 +277,15 @@ M270-D002 live-runtime note:
 - broader cross-module isolation metadata hardening remains later
   `M270-D003` work
 
+M270-D003 cross-module preservation note:
+
+- lane D now preserves actor mailbox/isolation replay facts through
+  `module.runtime-import-surface.json` and
+  `module.cross-module-runtime-link-plan.json`
+- mixed-module actor helper traffic still remains bound to
+  `artifacts/lib/objc3_runtime.lib`
+- lane-E closeout remains later `M270-E001` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

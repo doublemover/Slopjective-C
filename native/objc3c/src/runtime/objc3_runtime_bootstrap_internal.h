@@ -371,6 +371,9 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
 // M270-D002 actor-mailbox/isolation-runtime anchor: live mailbox binding,
 // enqueue, and drain helpers also remain inside that same private snapshot-
 // backed runtime slice rather than claiming a public actor runtime ABI.
+// M270-D003 cross-module isolation-metadata hardening anchor: imported modules
+// now preserve the replay facts that describe this same private actor mailbox
+// runtime slice across runtime-import surfaces and mixed-module link plans.
 
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume

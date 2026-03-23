@@ -1465,6 +1465,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.local_translation_unit_registration_order_ordinal == 0 ||
       inputs.expected_part6_contract_id.empty() ||
       inputs.expected_part6_source_contract_id.empty() ||
+      inputs.expected_part7_actor_contract_id.empty() ||
+      inputs.expected_part7_actor_source_contract_id.empty() ||
       inputs.local_driver_linker_flags.empty() ||
       inputs.direct_import_surface_artifact_paths.empty() ||
       inputs.imported_inputs.empty()) {
@@ -1504,9 +1506,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::string> seen_driver_linker_flags;
   std::unordered_set<std::string> seen_direct_import_surface_paths;
   std::unordered_set<std::string> seen_part6_replay_keys;
+  std::unordered_set<std::string> seen_part7_actor_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
   std::vector<std::string> imported_part6_module_names;
+  std::vector<std::string> imported_part7_actor_module_names;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
   std::sort(direct_import_surface_artifact_paths.begin(),
@@ -1661,6 +1665,45 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part6_module_names.push_back(imported_input.module_name);
     }
+    if (imported_input.part7_actor_mailbox_runtime_import_present) {
+      // M270-D003 actor cross-module isolation-metadata hardening anchor:
+      // imported actor-runtime surfaces must preserve one canonical private
+      // mailbox/isolation replay contract and may not drift on contract ids or
+      // replay keys across mixed-module link plans.
+      if (imported_input.part7_actor_contract_id !=
+          inputs.expected_part7_actor_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 7 actor contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part7_actor_source_contract_id !=
+          inputs.expected_part7_actor_source_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 7 actor source contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!imported_input.part7_actor_mailbox_runtime_ready ||
+          !imported_input.part7_actor_mailbox_runtime_deterministic ||
+          imported_input.part7_actor_mailbox_runtime_replay_key.empty() ||
+          imported_input.part7_actor_lowering_replay_key.empty() ||
+          imported_input.part7_actor_isolation_lowering_replay_key.empty()) {
+        error =
+            "cross-module runtime link-plan Part 7 actor replay surface incomplete for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!seen_part7_actor_replay_keys
+               .insert(imported_input.part7_actor_mailbox_runtime_replay_key)
+               .second) {
+        error =
+            "cross-module runtime link-plan duplicate imported Part 7 actor replay key: " +
+            imported_input.part7_actor_mailbox_runtime_replay_key;
+        return false;
+      }
+      imported_part7_actor_module_names.push_back(imported_input.module_name);
+    }
     ordered_link_inputs.push_back(
         {imported_input.translation_unit_registration_order_ordinal,
          imported_input.translation_unit_identity_key,
@@ -1784,6 +1827,34 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "      \"unwind_replay_key\": \""
         << EscapeJsonString(imported_input.part6_unwind_replay_key)
         << "\",\n"
+        << "      \"part7_actor_mailbox_runtime_import_present\": "
+        << (imported_input.part7_actor_mailbox_runtime_import_present ? "true"
+                                                                      : "false")
+        << ",\n"
+        << "      \"part7_actor_mailbox_runtime_ready\": "
+        << (imported_input.part7_actor_mailbox_runtime_ready ? "true"
+                                                             : "false")
+        << ",\n"
+        << "      \"part7_actor_mailbox_runtime_deterministic\": "
+        << (imported_input.part7_actor_mailbox_runtime_deterministic ? "true"
+                                                                     : "false")
+        << ",\n"
+        << "      \"part7_actor_contract_id\": \""
+        << EscapeJsonString(imported_input.part7_actor_contract_id)
+        << "\",\n"
+        << "      \"part7_actor_source_contract_id\": \""
+        << EscapeJsonString(imported_input.part7_actor_source_contract_id)
+        << "\",\n"
+        << "      \"part7_actor_mailbox_runtime_replay_key\": \""
+        << EscapeJsonString(imported_input.part7_actor_mailbox_runtime_replay_key)
+        << "\",\n"
+        << "      \"part7_actor_lowering_replay_key\": \""
+        << EscapeJsonString(imported_input.part7_actor_lowering_replay_key)
+        << "\",\n"
+        << "      \"part7_actor_isolation_lowering_replay_key\": \""
+        << EscapeJsonString(
+               imported_input.part7_actor_isolation_lowering_replay_key)
+        << "\",\n"
         << "      \"driver_linker_flags\": "
         << BuildIndentedStringArrayJson(imported_input.driver_linker_flags,
                                         "        ");
@@ -1795,6 +1866,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   }
   imported_modules_json << "  ]";
   std::sort(imported_part6_module_names.begin(), imported_part6_module_names.end());
+  std::sort(imported_part7_actor_module_names.begin(),
+            imported_part7_actor_module_names.end());
 
   std::ostringstream out;
   out << "{\n"
@@ -1826,6 +1899,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << EscapeJsonString(inputs.expected_part6_contract_id) << "\",\n"
       << "  \"expected_part6_source_contract_id\": \""
       << EscapeJsonString(inputs.expected_part6_source_contract_id) << "\",\n"
+      << "  \"expected_part7_actor_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part7_actor_contract_id) << "\",\n"
+      << "  \"expected_part7_actor_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part7_actor_source_contract_id)
+      << "\",\n"
       << "  \"module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(module_names_lexicographic, "    ")
       << ",\n"
@@ -1835,6 +1913,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << direct_import_surface_artifact_paths.size() << ",\n"
       << "  \"part6_imported_module_count\": "
       << imported_part6_module_names.size() << ",\n"
+      << "  \"part7_actor_imported_module_count\": "
+      << imported_part7_actor_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
       << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
                                       "    ")
@@ -1842,8 +1922,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"part6_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part6_module_names, "    ")
       << ",\n"
+      << "  \"part7_actor_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_part7_actor_module_names, "    ")
+      << ",\n"
       << "  \"part6_cross_module_preservation_ready\": "
       << (!imported_part6_module_names.empty() ? "true" : "false") << ",\n"
+      << "  \"part7_actor_cross_module_isolation_ready\": "
+      << (!imported_part7_actor_module_names.empty() ? "true" : "false")
+      << ",\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""

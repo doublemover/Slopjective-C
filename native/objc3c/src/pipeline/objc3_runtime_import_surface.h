@@ -14,6 +14,7 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool uses_serialized_runtime_metadata_payload = false;
   bool part3_optional_keypath_lowering_contract_present = false;
   bool part6_result_and_bridging_artifact_replay_present = false;
+  bool part7_actor_mailbox_runtime_import_present = false;
   std::size_t part3_optional_send_sites = 0;
   std::size_t part3_typed_keypath_literal_sites = 0;
   std::size_t part3_live_optional_lowering_sites = 0;
@@ -36,6 +37,13 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string part6_result_like_replay_key;
   std::string part6_ns_error_replay_key;
   std::string part6_unwind_replay_key;
+  bool part7_actor_mailbox_runtime_ready = false;
+  bool part7_actor_mailbox_runtime_deterministic = false;
+  std::string part7_actor_mailbox_runtime_contract_id;
+  std::string part7_actor_mailbox_runtime_source_contract_id;
+  std::string part7_actor_mailbox_runtime_replay_key;
+  std::string part7_actor_lowering_replay_key;
+  std::string part7_actor_isolation_lowering_replay_key;
 };
 
 struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {

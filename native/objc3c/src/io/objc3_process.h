@@ -178,6 +178,14 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string part6_result_like_replay_key;
   std::string part6_ns_error_replay_key;
   std::string part6_unwind_replay_key;
+  bool part7_actor_mailbox_runtime_import_present = false;
+  bool part7_actor_mailbox_runtime_ready = false;
+  bool part7_actor_mailbox_runtime_deterministic = false;
+  std::string part7_actor_contract_id;
+  std::string part7_actor_source_contract_id;
+  std::string part7_actor_mailbox_runtime_replay_key;
+  std::string part7_actor_lowering_replay_key;
+  std::string part7_actor_isolation_lowering_replay_key;
 };
 
 struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
@@ -204,6 +212,8 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::vector<std::string> local_driver_linker_flags;
   std::string expected_part6_contract_id;
   std::string expected_part6_source_contract_id;
+  std::string expected_part7_actor_contract_id;
+  std::string expected_part7_actor_source_contract_id;
   std::vector<std::string> direct_import_surface_artifact_paths;
   std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs;
 };
