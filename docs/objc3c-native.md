@@ -3388,6 +3388,17 @@ Current implementation status:
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`
+
+## M268 frontend async semantic packet
+
+The frontend now publishes a dedicated Part 7 source packet at
+`frontend.pipeline.semantic_surface.objc_part7_async_source_closure`.
+
+- the packet counts parser-owned `async` declaration sites
+- the packet counts parser-owned `await` expression sites
+- the packet records canonical `objc_executor(...)` attribute use
+- the packet remains source-only and does not claim runnable continuation or
+  executor runtime behavior
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

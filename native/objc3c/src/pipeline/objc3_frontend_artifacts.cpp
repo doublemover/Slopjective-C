@@ -644,6 +644,42 @@ std::string BuildPart6ErrorSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart7AsyncSourceClosureSummaryJson(
+    const Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"async_keyword_sites\":" << summary.async_keyword_sites
+      << ",\"async_function_sites\":" << summary.async_function_sites
+      << ",\"async_method_sites\":" << summary.async_method_sites
+      << ",\"await_keyword_sites\":" << summary.await_keyword_sites
+      << ",\"await_expression_sites\":" << summary.await_expression_sites
+      << ",\"executor_attribute_sites\":" << summary.executor_attribute_sites
+      << ",\"executor_main_sites\":" << summary.executor_main_sites
+      << ",\"executor_global_sites\":" << summary.executor_global_sites
+      << ",\"executor_named_sites\":" << summary.executor_named_sites
+      << ",\"async_function_source_supported\":"
+      << (summary.async_function_source_supported ? "true" : "false")
+      << ",\"async_method_source_supported\":"
+      << (summary.async_method_source_supported ? "true" : "false")
+      << ",\"await_expression_source_supported\":"
+      << (summary.await_expression_source_supported ? "true" : "false")
+      << ",\"executor_attribute_source_supported\":"
+      << (summary.executor_attribute_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart3TypeSemanticModelSummaryJson(
     const Objc3Part3TypeSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -10257,6 +10293,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart6ErrorSourceClosureSummary
       &part6_error_source_closure_summary =
           pipeline_result.part6_error_source_closure_summary;
+  const Objc3FrontendPart7AsyncSourceClosureSummary
+      &part7_async_source_closure_summary =
+          pipeline_result.part7_async_source_closure_summary;
   const Objc3Part6ErrorSemanticModelSummary
       &part6_error_semantic_model_summary =
           pipeline_result.part6_error_semantic_model_summary;
@@ -14550,6 +14589,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_error_source_closure\":"
            << BuildPart6ErrorSourceClosureSummaryJson(
                   part6_error_source_closure_summary)
+           << ",\"objc_part7_async_source_closure\":"
+           << BuildPart7AsyncSourceClosureSummaryJson(
+                  part7_async_source_closure_summary)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)
@@ -15790,6 +15832,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_error_source_closure\":"
            << BuildPart6ErrorSourceClosureSummaryJson(
                   part6_error_source_closure_summary)
+           << ",\"objc_part7_async_source_closure\":"
+           << BuildPart7AsyncSourceClosureSummaryJson(
+                  part7_async_source_closure_summary)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)

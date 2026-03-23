@@ -511,6 +511,13 @@ Current implementation status (`M268-A001`):
   `objc_executor(global)`, and `objc_executor(named("..."))` attributes
 - continuation lowering, executor binding, and runnable suspension semantics
   remain later `M268` work
+
+Current implementation status (`M268-A002`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_async_source_closure`
+- that packet records parser-owned `async`, `await`, and executor-affinity
+  attribute usage deterministically
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

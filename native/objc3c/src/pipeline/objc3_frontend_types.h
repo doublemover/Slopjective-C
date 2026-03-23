@@ -1413,6 +1413,44 @@ struct Objc3FrontendPart6ErrorSourceClosureSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part7AsyncSourceClosureContractId =
+    "objc3c-part7-async-source-closure/m268-a002-v1";
+inline constexpr const char *kObjc3Part7AsyncSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_async_source_closure";
+inline constexpr const char *kObjc3Part7AsyncSourceClosureSourceModel =
+    "async-entry-await-expression-and-executor-affinity-syntax-are-live-frontend-owned-source-surfaces-while-continuation-lowering-suspension-cleanup-and-runtime-scheduling-remain-later-m268-work";
+inline constexpr const char *kObjc3Part7AsyncSourceClosureFailureModel =
+    "frontend-source-closure-does-not-yet-claim-runnable-continuation-abi-suspension-cleanup-or-executor-runtime-behavior";
+
+struct Objc3FrontendPart7AsyncSourceClosureSummary {
+  std::string contract_id = kObjc3Part7AsyncSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3Part7AsyncSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part7AsyncSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part7AsyncSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimAsyncDeclarations,
+      kObjc3SourceOnlyFeatureClaimAwaitExpressions,
+      kObjc3SourceOnlyFeatureClaimExecutorAffinityAttributes,
+  };
+  std::size_t async_keyword_sites = 0;
+  std::size_t async_function_sites = 0;
+  std::size_t async_method_sites = 0;
+  std::size_t await_keyword_sites = 0;
+  std::size_t await_expression_sites = 0;
+  std::size_t executor_attribute_sites = 0;
+  std::size_t executor_main_sites = 0;
+  std::size_t executor_global_sites = 0;
+  std::size_t executor_named_sites = 0;
+  bool async_function_source_supported = false;
+  bool async_method_source_supported = false;
+  bool await_expression_source_supported = false;
+  bool executor_attribute_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -4834,6 +4872,7 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPart5ControlFlowSourceClosureSummary
       part5_control_flow_source_closure_summary;
   Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
+  Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary
       part5_control_flow_semantic_model_summary;
   Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;

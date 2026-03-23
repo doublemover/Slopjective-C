@@ -4334,6 +4334,121 @@ std::string BuildPart6ErrorSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart7AsyncSourceClosureReplayKey(
+    const Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";async_sites=" << summary.async_keyword_sites << ":"
+      << summary.async_function_sites << ":" << summary.async_method_sites
+      << ";await_sites=" << summary.await_keyword_sites << ":"
+      << summary.await_expression_sites
+      << ";executor_sites=" << summary.executor_attribute_sites << ":"
+      << summary.executor_main_sites << ":" << summary.executor_global_sites
+      << ":" << summary.executor_named_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
+void CollectPart7AsyncSourceClosureExprSites(
+    const Expr *expr, Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->await_expression_enabled) {
+    ++summary.await_expression_sites;
+  }
+  CollectPart7AsyncSourceClosureExprSites(expr->receiver.get(), summary);
+  CollectPart7AsyncSourceClosureExprSites(expr->left.get(), summary);
+  CollectPart7AsyncSourceClosureExprSites(expr->right.get(), summary);
+  CollectPart7AsyncSourceClosureExprSites(expr->third.get(), summary);
+  for (const auto &arg : expr->args) {
+    CollectPart7AsyncSourceClosureExprSites(arg.get(), summary);
+  }
+}
+
+void CollectPart7AsyncSourceClosureStmtSites(
+    const Stmt *stmt, Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        CollectPart7AsyncSourceClosureStmtSites(then_stmt.get(), summary);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        CollectPart7AsyncSourceClosureStmtSites(else_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+      }
+      CollectPart7AsyncSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
+      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
+      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          CollectPart7AsyncSourceClosureStmtSites(case_stmt.get(), summary);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart7AsyncSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
 void CollectPart3TypeSourceClosureExprSites(
     const Expr *expr, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
   if (expr == nullptr) {
@@ -4831,6 +4946,111 @@ BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
   return summary;
 }
 
+Objc3FrontendPart7AsyncSourceClosureSummary
+BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
+                                    const std::vector<Objc3LexToken> &tokens) {
+  Objc3FrontendPart7AsyncSourceClosureSummary summary;
+  bool async_profiles_normalized = true;
+  bool await_profiles_normalized = true;
+
+  for (const auto &token : tokens) {
+    if (token.kind == Objc3LexTokenKind::KwAsync) {
+      ++summary.async_keyword_sites;
+    } else if (token.kind == Objc3LexTokenKind::KwAwait) {
+      ++summary.await_keyword_sites;
+    }
+  }
+
+  for (const auto &fn : program.functions) {
+    if (fn.async_declared) {
+      ++summary.async_function_sites;
+    }
+    if (fn.executor_affinity_declared) {
+      ++summary.executor_attribute_sites;
+      if (fn.executor_affinity_kind == "main") {
+        ++summary.executor_main_sites;
+      } else if (fn.executor_affinity_kind == "global") {
+        ++summary.executor_global_sites;
+      } else if (fn.executor_affinity_named) {
+        ++summary.executor_named_sites;
+      }
+    }
+    async_profiles_normalized =
+        async_profiles_normalized && fn.async_continuation_profile_is_normalized;
+    await_profiles_normalized =
+        await_profiles_normalized && fn.await_suspension_profile_is_normalized;
+    for (const auto &stmt : fn.body) {
+      CollectPart7AsyncSourceClosureStmtSites(stmt.get(), summary);
+    }
+  }
+
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      if (method.async_declared) {
+        ++summary.async_method_sites;
+      }
+      if (method.executor_affinity_declared) {
+        ++summary.executor_attribute_sites;
+        if (method.executor_affinity_kind == "main") {
+          ++summary.executor_main_sites;
+        } else if (method.executor_affinity_kind == "global") {
+          ++summary.executor_global_sites;
+        } else if (method.executor_affinity_named) {
+          ++summary.executor_named_sites;
+        }
+      }
+      async_profiles_normalized =
+          async_profiles_normalized &&
+          method.async_continuation_profile_is_normalized;
+      await_profiles_normalized =
+          await_profiles_normalized &&
+          method.await_suspension_profile_is_normalized;
+    }
+  }
+
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      if (method.async_declared) {
+        ++summary.async_method_sites;
+      }
+      if (method.executor_affinity_declared) {
+        ++summary.executor_attribute_sites;
+        if (method.executor_affinity_kind == "main") {
+          ++summary.executor_main_sites;
+        } else if (method.executor_affinity_kind == "global") {
+          ++summary.executor_global_sites;
+        } else if (method.executor_affinity_named) {
+          ++summary.executor_named_sites;
+        }
+      }
+      async_profiles_normalized =
+          async_profiles_normalized &&
+          method.async_continuation_profile_is_normalized;
+      await_profiles_normalized =
+          await_profiles_normalized &&
+          method.await_suspension_profile_is_normalized;
+      for (const auto &stmt : method.body) {
+        CollectPart7AsyncSourceClosureStmtSites(stmt.get(), summary);
+      }
+    }
+  }
+
+  summary.async_function_source_supported = true;
+  summary.async_method_source_supported = true;
+  summary.await_expression_source_supported = true;
+  summary.executor_attribute_source_supported = true;
+  summary.deterministic_handoff =
+      async_profiles_normalized && await_profiles_normalized &&
+      summary.async_function_sites <= summary.async_keyword_sites &&
+      summary.await_expression_sites <= summary.await_keyword_sites &&
+      summary.executor_main_sites + summary.executor_global_sites +
+              summary.executor_named_sites <=
+          summary.executor_attribute_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key = BuildPart7AsyncSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -5042,6 +5262,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program), tokens);
   result.part6_error_source_closure_summary =
       BuildPart6ErrorSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program), tokens);
+  result.part7_async_source_closure_summary =
+      BuildPart7AsyncSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
