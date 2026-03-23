@@ -1451,6 +1451,42 @@ struct Objc3FrontendPart7AsyncSourceClosureSummary {
   std::string failure_reason;
 };
 
+inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_task_group_and_cancellation_source_closure";
+inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSourceModel =
+    "task-creation-task-group-and-cancellation-call-surfaces-are-live-frontend-owned-source-surfaces-while-runnable-task-allocation-executor-hops-and-scheduler-execution-remain-later-m269-work";
+inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureFailureModel =
+    "frontend-source-closure-does-not-yet-claim-runnable-task-allocation-task-group-execution-or-scheduler-backed-cancellation-runtime-behavior";
+
+struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary {
+  std::string contract_id = kObjc3Part7TaskGroupCancellationSourceClosureContractId;
+  std::string frontend_surface_path =
+      kObjc3Part7TaskGroupCancellationSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part7TaskGroupCancellationSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part7TaskGroupCancellationSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimTaskCreationSites,
+      kObjc3SourceOnlyFeatureClaimSupportedTaskGroupSurface,
+      kObjc3SourceOnlyFeatureClaimTaskExecutorCancellationProfiles,
+  };
+  std::size_t async_callable_sites = 0;
+  std::size_t executor_attribute_sites = 0;
+  std::size_t task_creation_sites = 0;
+  std::size_t task_group_scope_sites = 0;
+  std::size_t task_group_add_task_sites = 0;
+  std::size_t task_group_wait_next_sites = 0;
+  std::size_t task_group_cancel_all_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  bool task_creation_source_supported = false;
+  bool task_group_source_supported = false;
+  bool cancellation_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendSymbolGraphScopeResolutionSummary {
   std::size_t global_symbol_nodes = 0;
   std::size_t function_symbol_nodes = 0;
@@ -4873,6 +4909,8 @@ struct Objc3FrontendPipelineResult {
       part5_control_flow_source_closure_summary;
   Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
   Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
+  Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+      part7_task_group_cancellation_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary
       part5_control_flow_semantic_model_summary;
   Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;

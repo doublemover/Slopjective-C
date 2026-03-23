@@ -3947,6 +3947,12 @@ static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
   // they must continue to preserve this identifier-driven source boundary.
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("task_runtime") != std::string::npos ||
+         lowered.find("task_group") != std::string::npos ||
+         lowered.find("group_task") != std::string::npos ||
+         lowered.find("task_spawn") != std::string::npos ||
+         lowered.find("spawn_task") != std::string::npos ||
+         lowered.find("detached_task") != std::string::npos ||
+         lowered.find("task_detach") != std::string::npos ||
          lowered.find("runtime_task") != std::string::npos ||
          lowered.find("executor") != std::string::npos;
 }
@@ -3977,6 +3983,7 @@ static bool IsSuspensionPointSymbol(const std::string &symbol) {
   }
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("await") != std::string::npos ||
+         lowered.find("wait_next") != std::string::npos ||
          lowered.find("suspend") != std::string::npos ||
          lowered.find("yield") != std::string::npos;
 }

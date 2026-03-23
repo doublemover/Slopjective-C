@@ -722,6 +722,16 @@ M269-A001 task/executor/cancellation source-closure note:
 - the proof surface is frontend-only and does not widen the abstract machine
   into runnable task allocation, scheduler hops, or live cancellation execution
 
+M269-A002 frontend task-group/cancellation packet note:
+
+- the frontend now publishes one dedicated source packet for task creation,
+  supported task-group call sites, and cancellation-oriented call sites
+- the packet remains a source-owned handoff surface; it does not claim runnable
+  task allocation, scheduler-backed executor hops, or live cancellation
+  execution
+- later `M269` lanes must consume this packet rather than widening the source
+  contract again
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

@@ -3435,6 +3435,20 @@ Current implementation status:
 - runnable task creation, executor hops, scheduler ownership, and cancellation
   execution semantics remain later `M269` work
 
+## M269 frontend task-group and cancellation packet
+
+The frontend now publishes a dedicated task-runtime source packet at
+`frontend.pipeline.semantic_surface.objc_part7_task_group_and_cancellation_source_closure`.
+
+- the packet counts task creation call sites admitted by the current frontend
+  source model
+- the packet counts the supported task-group scope, add-task, wait-next, and
+  cancel-all call surface
+- the packet counts cancellation checks and cancellation handlers carried by the
+  same callable source surface
+- the packet remains source-only and does not claim runnable task allocation,
+  scheduler execution, or live cancellation runtime behavior
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

@@ -1,6 +1,7 @@
 #include "pipeline/objc3_frontend_pipeline.h"
 
 #include <algorithm>
+#include <cctype>
 #include <sstream>
 #include <tuple>
 #include <type_traits>
@@ -4349,6 +4350,100 @@ std::string BuildPart7AsyncSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart7TaskGroupCancellationSourceClosureReplayKey(
+    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";async_callable_sites=" << summary.async_callable_sites
+      << ";executor_sites=" << summary.executor_attribute_sites
+      << ";task_creation_sites=" << summary.task_creation_sites
+      << ";task_group_sites=" << summary.task_group_scope_sites << ":"
+      << summary.task_group_add_task_sites << ":"
+      << summary.task_group_wait_next_sites << ":"
+      << summary.task_group_cancel_all_sites
+      << ";cancellation_sites=" << summary.cancellation_check_sites << ":"
+      << summary.cancellation_handler_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
+std::string BuildPart7LowercaseProfileToken(std::string token) {
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char value) {
+                   return static_cast<char>(std::tolower(value));
+                 });
+  return token;
+}
+
+bool IsPart7TaskCreationSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("task_spawn") != std::string::npos ||
+         lowered.find("spawn_task") != std::string::npos ||
+         lowered.find("detached_task") != std::string::npos ||
+         lowered.find("task_detach") != std::string::npos;
+}
+
+bool IsPart7TaskGroupScopeSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("with_task_group") != std::string::npos ||
+         lowered.find("task_group_scope") != std::string::npos;
+}
+
+bool IsPart7TaskGroupAddTaskSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("task_group_add_task") != std::string::npos ||
+         lowered.find("group_add_task") != std::string::npos;
+}
+
+bool IsPart7TaskGroupWaitNextSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("task_group_wait_next") != std::string::npos ||
+         lowered.find("group_wait_next") != std::string::npos ||
+         lowered.find("wait_next") != std::string::npos;
+}
+
+bool IsPart7TaskGroupCancelAllSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("task_group_cancel_all") != std::string::npos ||
+         lowered.find("group_cancel_all") != std::string::npos ||
+         lowered.find("cancel_all") != std::string::npos;
+}
+
+bool IsPart7CancellationCheckSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("cancelled") != std::string::npos ||
+         lowered.find("is_cancelled") != std::string::npos ||
+         lowered.find("cancellation") != std::string::npos;
+}
+
+bool IsPart7CancellationHandlerSymbol(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  return lowered.find("on_cancel") != std::string::npos ||
+         lowered.find("cancel_handler") != std::string::npos ||
+         lowered.find("with_cancellation_handler") != std::string::npos;
+}
+
 void CollectPart7AsyncSourceClosureExprSites(
     const Expr *expr, Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
   if (expr == nullptr) {
@@ -4440,6 +4535,150 @@ void CollectPart7AsyncSourceClosureStmtSites(
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
       CollectPart7AsyncSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+void CollectPart7TaskGroupCancellationExprSites(
+    const Expr *expr,
+    Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+  if (expr == nullptr) {
+    return;
+  }
+  const auto collect_symbol = [&summary](const std::string &symbol) {
+    if (IsPart7TaskCreationSymbol(symbol)) {
+      ++summary.task_creation_sites;
+    }
+    if (IsPart7TaskGroupScopeSymbol(symbol)) {
+      ++summary.task_group_scope_sites;
+    }
+    if (IsPart7TaskGroupAddTaskSymbol(symbol)) {
+      ++summary.task_group_add_task_sites;
+    }
+    if (IsPart7TaskGroupWaitNextSymbol(symbol)) {
+      ++summary.task_group_wait_next_sites;
+    }
+    if (IsPart7TaskGroupCancelAllSymbol(symbol)) {
+      ++summary.task_group_cancel_all_sites;
+    }
+    if (IsPart7CancellationCheckSymbol(symbol)) {
+      ++summary.cancellation_check_sites;
+    }
+    if (IsPart7CancellationHandlerSymbol(symbol)) {
+      ++summary.cancellation_handler_sites;
+    }
+  };
+
+  switch (expr->kind) {
+  case Expr::Kind::Call:
+    collect_symbol(expr->ident);
+    break;
+  case Expr::Kind::MessageSend:
+    collect_symbol(expr->selector);
+    break;
+  default:
+    break;
+  }
+
+  CollectPart7TaskGroupCancellationExprSites(expr->receiver.get(), summary);
+  CollectPart7TaskGroupCancellationExprSites(expr->left.get(), summary);
+  CollectPart7TaskGroupCancellationExprSites(expr->right.get(), summary);
+  CollectPart7TaskGroupCancellationExprSites(expr->third.get(), summary);
+  for (const auto &arg : expr->args) {
+    CollectPart7TaskGroupCancellationExprSites(arg.get(), summary);
+  }
+}
+
+void CollectPart7TaskGroupCancellationStmtSites(
+    const Stmt *stmt,
+    Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->let_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->return_stmt->value.get(), summary);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->if_stmt->condition.get(), summary);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        CollectPart7TaskGroupCancellationStmtSites(then_stmt.get(), summary);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        CollectPart7TaskGroupCancellationStmtSites(else_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+      }
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->do_while_stmt->condition.get(), summary);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->for_stmt->init.value.get(), summary);
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->for_stmt->condition.get(), summary);
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->for_stmt->step.value.get(), summary);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->switch_stmt->condition.get(), summary);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          CollectPart7TaskGroupCancellationStmtSites(case_stmt.get(), summary);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->while_stmt->condition.get(), summary);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart7TaskGroupCancellationExprSites(
+          stmt->expr_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Break:
@@ -5051,6 +5290,60 @@ BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
   return summary;
 }
 
+Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+BuildPart7TaskGroupCancellationSourceClosureSummary(
+    const Objc3Program &program) {
+  Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary summary;
+
+  for (const auto &fn : program.functions) {
+    if (fn.async_declared) {
+      ++summary.async_callable_sites;
+    }
+    if (fn.executor_affinity_declared) {
+      ++summary.executor_attribute_sites;
+    }
+    for (const auto &stmt : fn.body) {
+      CollectPart7TaskGroupCancellationStmtSites(stmt.get(), summary);
+    }
+  }
+
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      if (method.async_declared) {
+        ++summary.async_callable_sites;
+      }
+      if (method.executor_affinity_declared) {
+        ++summary.executor_attribute_sites;
+      }
+      for (const auto &stmt : method.body) {
+        CollectPart7TaskGroupCancellationStmtSites(stmt.get(), summary);
+      }
+    }
+  }
+
+  summary.task_creation_source_supported = true;
+  summary.task_group_source_supported = true;
+  summary.cancellation_source_supported = true;
+  summary.deterministic_handoff =
+      summary.task_group_add_task_sites <=
+          summary.task_group_scope_sites + summary.task_group_add_task_sites +
+              summary.task_group_wait_next_sites +
+              summary.task_group_cancel_all_sites &&
+      summary.task_group_wait_next_sites <=
+          summary.task_group_scope_sites + summary.task_group_add_task_sites +
+              summary.task_group_wait_next_sites +
+              summary.task_group_cancel_all_sites &&
+      summary.task_group_cancel_all_sites <=
+          summary.task_group_scope_sites + summary.task_group_add_task_sites +
+              summary.task_group_wait_next_sites +
+              summary.task_group_cancel_all_sites &&
+      summary.cancellation_handler_sites <= summary.cancellation_check_sites + 1u;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart7TaskGroupCancellationSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -5266,6 +5559,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part7_async_source_closure_summary =
       BuildPart7AsyncSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
+  result.part7_task_group_cancellation_source_closure_summary =
+      BuildPart7TaskGroupCancellationSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program));
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,

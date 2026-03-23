@@ -735,6 +735,40 @@ std::string BuildPart7AsyncSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
+    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"async_callable_sites\":" << summary.async_callable_sites
+      << ",\"executor_attribute_sites\":" << summary.executor_attribute_sites
+      << ",\"task_creation_sites\":" << summary.task_creation_sites
+      << ",\"task_group_scope_sites\":" << summary.task_group_scope_sites
+      << ",\"task_group_add_task_sites\":" << summary.task_group_add_task_sites
+      << ",\"task_group_wait_next_sites\":" << summary.task_group_wait_next_sites
+      << ",\"task_group_cancel_all_sites\":" << summary.task_group_cancel_all_sites
+      << ",\"cancellation_check_sites\":" << summary.cancellation_check_sites
+      << ",\"cancellation_handler_sites\":" << summary.cancellation_handler_sites
+      << ",\"task_creation_source_supported\":"
+      << (summary.task_creation_source_supported ? "true" : "false")
+      << ",\"task_group_source_supported\":"
+      << (summary.task_group_source_supported ? "true" : "false")
+      << ",\"cancellation_source_supported\":"
+      << (summary.cancellation_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart3TypeSemanticModelSummaryJson(
     const Objc3Part3TypeSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -10811,6 +10845,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart7AsyncSourceClosureSummary
       &part7_async_source_closure_summary =
           pipeline_result.part7_async_source_closure_summary;
+  const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+      &part7_task_group_cancellation_source_closure_summary =
+          pipeline_result.part7_task_group_cancellation_source_closure_summary;
   const Objc3Part6ErrorSemanticModelSummary
       &part6_error_semantic_model_summary =
           pipeline_result.part6_error_semantic_model_summary;
@@ -15143,6 +15180,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_async_source_closure\":"
            << BuildPart7AsyncSourceClosureSummaryJson(
                   part7_async_source_closure_summary)
+           << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
+           << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
+                  part7_task_group_cancellation_source_closure_summary)
            << ",\"objc_part7_async_effect_and_suspension_semantic_model\":"
            << BuildPart7AsyncEffectSuspensionSemanticModelSummaryJson(
                   part7_async_effect_suspension_semantic_model_summary)
@@ -16418,6 +16458,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_async_source_closure\":"
            << BuildPart7AsyncSourceClosureSummaryJson(
                   part7_async_source_closure_summary)
+           << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
+           << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
+                  part7_task_group_cancellation_source_closure_summary)
            << ",\"objc_part7_async_effect_and_suspension_semantic_model\":"
            << BuildPart7AsyncEffectSuspensionSemanticModelSummaryJson(
                   part7_async_effect_suspension_semantic_model_summary)

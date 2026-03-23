@@ -84,9 +84,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // truth packet must keep those surfaces fail-closed and unadvertised.
   // M269-A001 source-closure note: task/executor/cancellation work does not
   // add dedicated lexer keywords yet; do not add dedicated lexer keywords yet.
-  // The admitted source surface remains the
-  // existing async/await tokens plus parser-owned identifier profiles and
-  // canonical `objc_executor(...)` attribute payloads.
+  // The admitted source surface remains the existing async/await tokens plus
+  // parser-owned identifier profiles and canonical `objc_executor(...)`
+  // attribute payloads, including the later M269-A002 task-group/task-creation
+  // callable source completion.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

@@ -136,6 +136,12 @@ inline constexpr const char *kObjc3TaskExecutorCancellationSourceClosureContract
     "objc3c-part7-task-executor-cancellation-source-closure/m269-a001-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskExecutorCancellationProfiles =
     "source-only:task-executor-cancellation-profiles";
+inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureContractId =
+    "objc3c-part7-task-group-cancellation-source-closure/m269-a002-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskCreationSites =
+    "source-only:task-creation-sites";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimSupportedTaskGroupSurface =
+    "source-only:supported-task-group-surface";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

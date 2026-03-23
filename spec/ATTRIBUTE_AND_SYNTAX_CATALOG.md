@@ -567,6 +567,17 @@ Current implementation status (`M269-A001`):
 - runnable task creation, executor hops, cancellation execution, and scheduler
   ownership remain later `M269` work
 
+Current implementation status (`M269-A002`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_task_group_and_cancellation_source_closure`
+- task creation call sites are currently admitted through callable identifiers
+  such as `task_spawn...` and `...detached_task...`
+- the supported task-group surface is currently the callable-source subset that
+  maps to scope, add-task, wait-next, and cancel-all identifiers
+- the packet remains source-only and still defers runnable task/runtime behavior
+  to later `M269` issues
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes
