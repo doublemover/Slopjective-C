@@ -553,6 +553,20 @@ Current implementation status (`M268-B003`):
 - runnable async frame layout, async error propagation, and executor runtime
   behavior remain deferred to later `M268` issues
 
+## M269 task/runtime cancellation source boundary (implementation note)
+
+Current implementation status (`M269-A001`):
+
+- no dedicated `task` or `cancel` keyword is claimed by the current frontend
+  surface
+- task-runtime hooks, cancellation checks, cancellation handlers, and
+  suspension-point identifiers are currently admitted through parser-owned
+  callable symbol profiling on top of the existing async source forms
+- canonical executor spellings remain `objc_executor(global)` and
+  `objc_executor(named("..."))` for the proven happy path here
+- runnable task creation, executor hops, cancellation execution, and scheduler
+  ownership remain later `M269` work
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

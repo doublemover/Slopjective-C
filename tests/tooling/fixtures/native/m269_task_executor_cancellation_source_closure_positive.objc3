@@ -1,0 +1,16 @@
+module M269A001;
+
+extern fn task_runtime_cancelled_value() -> i32;
+extern fn task_runtime_on_cancel() -> i32;
+extern fn task_runtime_suspend_now() -> i32;
+
+async fn task_runtime_cancel_handler_probe() -> i32 __attribute__((objc_executor(named("com.example.worker")))) {
+  if (task_runtime_cancelled_value()) {
+    return task_runtime_on_cancel();
+  }
+  return await task_runtime_suspend_now();
+}
+
+async fn executor_runtime_global_probe() -> i32 __attribute__((objc_executor(global))) {
+  return await task_runtime_suspend_now();
+}

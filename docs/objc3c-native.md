@@ -3415,6 +3415,26 @@ The semantic pipeline now publishes a dedicated Part 7 semantic packet at
   does not claim runnable async frame lowering, suspension cleanup, or executor
   runtime execution behavior
 
+## M269 task, executor, and cancellation source closure
+
+The frontend now freezes one truthful source boundary for task-runtime and
+cancellation-oriented callable code.
+
+- no dedicated `task` or `cancel` keyword is claimed by this issue
+- the admitted source surface remains existing `async fn`, `await <expr>`, and
+  canonical `objc_executor(...)` callable attributes
+- parser-owned symbol profiling now serves as the deterministic source contract
+  for task-runtime hooks, cancellation checks, cancellation handlers, and
+  suspension-point identifiers
+- the happy path is proven through the frontend C API runner with
+  `--no-emit-ir --no-emit-object`, not through runnable task scheduling yet
+
+Current implementation status:
+
+- this issue freezes source closure only
+- runnable task creation, executor hops, scheduler ownership, and cancellation
+  execution semantics remain later `M269` work
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

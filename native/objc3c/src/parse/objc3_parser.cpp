@@ -3941,6 +3941,10 @@ static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
+  // M269-A001 source-closure anchor: task/executor source ownership remains a
+  // deterministic parser-side symbol-profile contract instead of dedicated
+  // contextual keywords. Later M269 lanes may widen runnable semantics, but
+  // they must continue to preserve this identifier-driven source boundary.
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("task_runtime") != std::string::npos ||
          lowered.find("runtime_task") != std::string::npos ||

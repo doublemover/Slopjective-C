@@ -126,6 +126,17 @@ inline constexpr const char *kObjc3BootstrapRegistrationDescriptorPragmaName =
 inline constexpr const char *kObjc3BootstrapImageRootPragmaName =
     "objc_image_root";
 
+// M269-A001 source-closure truth anchor: task/executor/cancellation source
+// admission remains identifier-profile driven on top of the existing async
+// token surface. This tranche does not reserve new `task`/`cancel` keywords;
+// it freezes one deterministic source contract around async entry points,
+// canonical `objc_executor(...)` attributes, and parser-owned task-runtime /
+// cancellation symbol profiling.
+inline constexpr const char *kObjc3TaskExecutorCancellationSourceClosureContractId =
+    "objc3c-part7-task-executor-cancellation-source-closure/m269-a001-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskExecutorCancellationProfiles =
+    "source-only:task-executor-cancellation-profiles";
+
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,
 // source-only, and fail-closed unsupported surfaces.

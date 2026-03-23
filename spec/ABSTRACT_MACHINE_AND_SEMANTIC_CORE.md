@@ -711,6 +711,17 @@ M268-E002 runnable async closeout note:
   scheduling semantics
 - `M269-A001` is the next issue
 
+M269-A001 task/executor/cancellation source-closure note:
+
+- this issue freezes the callable source boundary that later task-runtime work
+  must preserve
+- no dedicated `task` or `cancel` keyword is claimed yet; source ownership
+  remains the existing async/await syntax plus parser-owned identifier profiles
+  for task-runtime hooks, cancellation checks, cancellation handlers, and
+  suspension-point symbols
+- the proof surface is frontend-only and does not widen the abstract machine
+  into runnable task allocation, scheduler hops, or live cancellation execution
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
