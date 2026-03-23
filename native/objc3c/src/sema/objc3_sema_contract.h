@@ -1086,6 +1086,73 @@ inline bool IsReadyObjc3Part7ActorIsolationSendableSemanticModelSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendabilityEnforcementDependencyContractId =
+        kObjc3Part7ActorIsolationSendableSemanticModelContractId;
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendabilityEnforcementContractId =
+        "objc3c-part7-actor-isolation-sendability-enforcement/m270-b002-v1";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendabilityEnforcementSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendability_enforcement";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendabilityEnforcementRule =
+        "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-and-non-sendable-crossings-while-runnable-actor-mailbox-runtime-remains-later-m270-work";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendabilityEnforcementDeferredRule =
+        "full-cross-module-actor-runtime-mailboxes-race-hazard-closure-and-runnable-strict-concurrency-scheduling-remain-deferred-to-later-m270-lanes";
+
+struct Objc3Part7ActorIsolationSendabilityEnforcementSummary {
+  std::string contract_id =
+      kObjc3Part7ActorIsolationSendabilityEnforcementContractId;
+  std::string dependency_contract_id =
+      kObjc3Part7ActorIsolationSendabilityEnforcementDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7ActorIsolationSendabilityEnforcementSurfacePath;
+  std::string semantic_model =
+      kObjc3Part7ActorIsolationSendabilityEnforcementRule;
+  std::string deferred_model =
+      kObjc3Part7ActorIsolationSendabilityEnforcementDeferredRule;
+  std::size_t actor_interface_sites = 0;
+  std::size_t actor_method_sites = 0;
+  std::size_t objc_nonisolated_annotation_sites = 0;
+  std::size_t actor_member_executor_annotation_sites = 0;
+  std::size_t actor_async_method_sites = 0;
+  std::size_t actor_hop_sites = 0;
+  std::size_t non_sendable_crossing_sites = 0;
+  std::size_t total_nonisolated_method_sites = 0;
+  std::size_t illegal_non_actor_nonisolated_sites = 0;
+  std::size_t illegal_nonisolated_async_sites = 0;
+  std::size_t illegal_nonisolated_executor_sites = 0;
+  std::size_t illegal_actor_hop_without_async_sites = 0;
+  std::size_t illegal_non_sendable_crossing_sites = 0;
+  bool dependency_required = false;
+  bool non_actor_nonisolated_fail_closed = false;
+  bool nonisolated_combination_fail_closed = false;
+  bool actor_hop_async_boundary_enforced = false;
+  bool non_sendable_crossing_fail_closed = false;
+  bool runnable_lowering_deferred = false;
+  bool actor_runtime_deferred = false;
+  bool executor_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string failure_reason;
+  std::string replay_key;
+};
+
+inline bool IsReadyObjc3Part7ActorIsolationSendabilityEnforcementSummary(
+    const Objc3Part7ActorIsolationSendabilityEnforcementSummary &summary) {
+  return summary.dependency_required &&
+         summary.non_actor_nonisolated_fail_closed &&
+         summary.nonisolated_combination_fail_closed &&
+         summary.actor_hop_async_boundary_enforced &&
+         summary.non_sendable_crossing_fail_closed &&
+         summary.runnable_lowering_deferred && summary.actor_runtime_deferred &&
+         summary.executor_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3TaskRuntimeCancellationSummary {
   std::size_t task_runtime_interop_sites = 0;
   std::size_t runtime_hook_sites = 0;

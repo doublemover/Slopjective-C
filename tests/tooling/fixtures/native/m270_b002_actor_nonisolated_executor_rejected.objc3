@@ -1,0 +1,11 @@
+module M270B002NonisolatedExecutor;
+
+actor class M270Mailbox
+- (i32)run __attribute__((objc_nonisolated)) __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)run __attribute__((objc_nonisolated)) __attribute__((objc_executor(main))) {
+  return 0;
+}
+@end

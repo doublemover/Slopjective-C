@@ -1,0 +1,14 @@
+module M270B002NonSendable;
+
+fn cross_actor_non_sendable() -> i32 { return 1; }
+
+actor class M270Mailbox
+- (i32)run async __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)run async __attribute__((objc_executor(main))) {
+  cross_actor_non_sendable();
+  return 0;
+}
+@end

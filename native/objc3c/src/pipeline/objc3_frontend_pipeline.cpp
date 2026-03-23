@@ -5699,6 +5699,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPart7ActorIsolationSendableSemanticModelSummary(
           result.part7_actor_member_isolation_source_closure_summary,
           result.integration_surface);
+  result.part7_actor_isolation_sendability_enforcement_summary =
+      BuildPart7ActorIsolationSendabilityEnforcementSummary(
+          Objc3ParsedProgramAst(result.program),
+          result.part7_actor_isolation_sendable_semantic_model_summary,
+          result.stage_diagnostics.semantic);
   result.part7_task_executor_cancellation_semantic_model_summary =
       BuildPart7TaskExecutorCancellationSemanticModelSummary(
           result.part7_task_group_cancellation_source_closure_summary,

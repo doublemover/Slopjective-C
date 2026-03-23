@@ -215,6 +215,16 @@ M270-B001 implementation note:
   work still owns dedicated actor-isolation diagnostics, sendability
   enforcement, and runnable actor runtime behavior
 
+M270-B002 enforcement note:
+
+- lane B now also publishes
+  `frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendability_enforcement`
+- the current live enforcement slice covers actor-method legality only:
+  non-actor `objc_nonisolated`, invalid `objc_nonisolated` combinations,
+  non-async actor hops, and non-sendable crossings in actor methods
+- runnable actor runtime, mailbox scheduling, and broader race-hazard closure
+  remain later `M270` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

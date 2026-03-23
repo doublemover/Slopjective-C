@@ -1,0 +1,11 @@
+module M270B002NonisolatedAsync;
+
+actor class M270Mailbox
+- (i32)run async __attribute__((objc_nonisolated));
+@end
+
+@implementation M270Mailbox
+- (i32)run async __attribute__((objc_nonisolated)) {
+  return 0;
+}
+@end

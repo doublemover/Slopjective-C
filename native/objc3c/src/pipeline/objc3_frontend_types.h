@@ -4950,6 +4950,8 @@ struct Objc3FrontendPipelineResult {
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary
       part7_actor_isolation_sendable_semantic_model_summary;
+  Objc3Part7ActorIsolationSendabilityEnforcementSummary
+      part7_actor_isolation_sendability_enforcement_summary;
   Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
       part7_task_group_cancellation_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary

@@ -1,0 +1,23 @@
+module M270B002;
+
+fn actor_isolated_step() -> i32 { return 1; }
+fn hop_to_worker() -> i32 { return 2; }
+fn sendable_marker() -> i32 { return 3; }
+
+actor class M270Mailbox
+- (i32)cachedToken __attribute__((objc_nonisolated));
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)cachedToken {
+  return 0;
+}
+
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  actor_isolated_step();
+  hop_to_worker();
+  sendable_marker();
+  return seed;
+}
+@end

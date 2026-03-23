@@ -2108,6 +2108,222 @@ static void DiagnosePart7ExecutorAffinityCompletion(
   }
 }
 
+static bool IsActorInterfaceOwner(
+    const std::unordered_map<std::string, const Objc3InterfaceDecl *> &actors,
+    const std::string &name) {
+  return actors.find(name) != actors.end();
+}
+
+struct Objc3Part7ActorMethodBodyProfile {
+  std::size_t actor_hop_sites = 0;
+  std::size_t non_sendable_crossing_sites = 0;
+};
+
+static std::string BuildPart7LowercaseProfileToken(const std::string &symbol) {
+  std::string lowered(symbol);
+  std::transform(lowered.begin(), lowered.end(), lowered.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  return lowered;
+}
+
+static void CollectPart7ActorMethodBodyProfileFromSymbol(
+    const std::string &symbol, Objc3Part7ActorMethodBodyProfile &profile) {
+  if (symbol.empty()) {
+    return;
+  }
+  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  if (lowered.find("hop_to") != std::string::npos ||
+      lowered.find("enqueue") != std::string::npos ||
+      lowered.find("executor") != std::string::npos) {
+    ++profile.actor_hop_sites;
+  }
+  if (lowered.find("non_sendable") != std::string::npos ||
+      lowered.find("unsafe_sendable") != std::string::npos ||
+      lowered.find("cross_actor") != std::string::npos) {
+    ++profile.non_sendable_crossing_sites;
+  }
+}
+
+static void CollectPart7ActorMethodBodyProfileExpr(
+    const Expr *expr, Objc3Part7ActorMethodBodyProfile &profile) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+  case Expr::Kind::Call:
+    CollectPart7ActorMethodBodyProfileFromSymbol(expr->ident, profile);
+    for (const auto &arg : expr->args) {
+      CollectPart7ActorMethodBodyProfileExpr(arg.get(), profile);
+    }
+    return;
+  case Expr::Kind::MessageSend:
+    CollectPart7ActorMethodBodyProfileFromSymbol(expr->selector, profile);
+    CollectPart7ActorMethodBodyProfileExpr(expr->receiver.get(), profile);
+    for (const auto &arg : expr->args) {
+      CollectPart7ActorMethodBodyProfileExpr(arg.get(), profile);
+    }
+    return;
+  case Expr::Kind::Binary:
+    CollectPart7ActorMethodBodyProfileExpr(expr->left.get(), profile);
+    CollectPart7ActorMethodBodyProfileExpr(expr->right.get(), profile);
+    return;
+  case Expr::Kind::Conditional:
+    CollectPart7ActorMethodBodyProfileExpr(expr->left.get(), profile);
+    CollectPart7ActorMethodBodyProfileExpr(expr->right.get(), profile);
+    CollectPart7ActorMethodBodyProfileExpr(expr->third.get(), profile);
+    return;
+  default:
+    return;
+  }
+}
+
+static void CollectPart7ActorMethodBodyProfileStmt(
+    const Stmt *stmt, Objc3Part7ActorMethodBodyProfile &profile) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectPart7ActorMethodBodyProfileExpr(stmt->let_stmt->value.get(),
+                                             profile);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectPart7ActorMethodBodyProfileExpr(stmt->assign_stmt->value.get(),
+                                             profile);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart7ActorMethodBodyProfileExpr(stmt->return_stmt->value.get(),
+                                             profile);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt == nullptr) {
+      return;
+    }
+    CollectPart7ActorMethodBodyProfileExpr(stmt->if_stmt->condition.get(),
+                                           profile);
+    for (const auto &then_stmt : stmt->if_stmt->then_body) {
+      CollectPart7ActorMethodBodyProfileStmt(then_stmt.get(), profile);
+    }
+    for (const auto &else_stmt : stmt->if_stmt->else_body) {
+      CollectPart7ActorMethodBodyProfileStmt(else_stmt.get(), profile);
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->do_while_stmt->body) {
+      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+    }
+    CollectPart7ActorMethodBodyProfileExpr(
+        stmt->do_while_stmt->condition.get(), profile);
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt == nullptr) {
+      return;
+    }
+    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->init.value.get(),
+                                           profile);
+    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->condition.get(),
+                                           profile);
+    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->step.value.get(),
+                                           profile);
+    for (const auto &body_stmt : stmt->for_stmt->body) {
+      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt == nullptr) {
+      return;
+    }
+    CollectPart7ActorMethodBodyProfileExpr(stmt->switch_stmt->condition.get(),
+                                           profile);
+    for (const auto &switch_case : stmt->switch_stmt->cases) {
+      for (const auto &case_stmt : switch_case.body) {
+        CollectPart7ActorMethodBodyProfileStmt(case_stmt.get(), profile);
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt == nullptr) {
+      return;
+    }
+    CollectPart7ActorMethodBodyProfileExpr(stmt->while_stmt->condition.get(),
+                                           profile);
+    for (const auto &body_stmt : stmt->while_stmt->body) {
+      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt == nullptr) {
+      return;
+    }
+    for (const auto &body_stmt : stmt->block_stmt->body) {
+      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart7ActorMethodBodyProfileExpr(stmt->expr_stmt->value.get(),
+                                             profile);
+    }
+    return;
+  default:
+    return;
+  }
+}
+
+static Objc3Part7ActorMethodBodyProfile BuildPart7ActorMethodBodyProfile(
+    const Objc3MethodDecl &method) {
+  Objc3Part7ActorMethodBodyProfile profile;
+  for (const auto &stmt : method.body) {
+    CollectPart7ActorMethodBodyProfileStmt(stmt.get(), profile);
+  }
+  return profile;
+}
+
+static void DiagnosePart7ActorMethodIsolationRules(
+    const Objc3MethodDecl &method, bool owner_is_actor, unsigned line,
+    unsigned column, std::vector<std::string> &diagnostics) {
+  if (method.objc_nonisolated_declared && !owner_is_actor) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S286",
+        "actor isolation semantics failed: objc_nonisolated is only valid on actor methods"));
+  }
+  if (!owner_is_actor) {
+    return;
+  }
+  const Objc3Part7ActorMethodBodyProfile body_profile =
+      BuildPart7ActorMethodBodyProfile(method);
+  if (method.objc_nonisolated_declared && method.async_declared) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S287",
+        "actor isolation semantics failed: objc_nonisolated actor methods cannot also be async"));
+  }
+  if (method.objc_nonisolated_declared && method.executor_affinity_declared) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S288",
+        "actor isolation semantics failed: objc_nonisolated actor methods cannot declare objc_executor affinity"));
+  }
+  if (body_profile.actor_hop_sites > 0u && !method.async_declared) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S289",
+        "actor isolation semantics failed: actor hop sites require an async actor method"));
+  }
+  if (body_profile.non_sendable_crossing_sites > 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S290",
+        "actor sendability semantics failed: non-sendable cross-actor crossings remain unsupported in actor methods"));
+  }
+}
+
 static const Objc3PropertyInfo *FindTypedKeyPathPropertyOnOwner(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &owner_name,
@@ -7288,6 +7504,101 @@ BuildPart7ActorIsolationSendableSemanticModelSummary(
       << ";normalized-sites=" << summary.normalized_sites
       << ";gate-blocked-sites=" << summary.gate_blocked_sites
       << ";contract-violation-sites=" << summary.contract_violation_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part7ActorIsolationSendabilityEnforcementSummary
+BuildPart7ActorIsolationSendabilityEnforcementSummary(
+    const Objc3Program &ast,
+    const Objc3Part7ActorIsolationSendableSemanticModelSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7ActorIsolationSendabilityEnforcementSummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
+          return diag.find(code) != std::string::npos;
+        }));
+  };
+
+  summary.actor_interface_sites = dependency_summary.actor_interface_sites;
+  summary.actor_method_sites = dependency_summary.actor_method_sites;
+  summary.objc_nonisolated_annotation_sites =
+      dependency_summary.objc_nonisolated_annotation_sites;
+  summary.actor_member_executor_annotation_sites =
+      dependency_summary.actor_member_executor_annotation_sites;
+  summary.actor_async_method_sites = dependency_summary.actor_async_method_sites;
+
+  for (const auto &interface_decl : ast.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      if (method.objc_nonisolated_declared) {
+        ++summary.total_nonisolated_method_sites;
+      }
+    }
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (method.objc_nonisolated_declared) {
+        ++summary.total_nonisolated_method_sites;
+      }
+      const Objc3Part7ActorMethodBodyProfile body_profile =
+          BuildPart7ActorMethodBodyProfile(method);
+      summary.actor_hop_sites += body_profile.actor_hop_sites;
+      summary.non_sendable_crossing_sites +=
+          body_profile.non_sendable_crossing_sites;
+    }
+  }
+
+  summary.illegal_non_actor_nonisolated_sites =
+      count_diagnostic_code("O3S286");
+  summary.illegal_nonisolated_async_sites = count_diagnostic_code("O3S287");
+  summary.illegal_nonisolated_executor_sites = count_diagnostic_code("O3S288");
+  summary.illegal_actor_hop_without_async_sites =
+      count_diagnostic_code("O3S289");
+  summary.illegal_non_sendable_crossing_sites =
+      count_diagnostic_code("O3S290");
+
+  summary.dependency_required = true;
+  summary.non_actor_nonisolated_fail_closed =
+      summary.illegal_non_actor_nonisolated_sites <=
+      summary.total_nonisolated_method_sites;
+  summary.nonisolated_combination_fail_closed =
+      summary.illegal_nonisolated_async_sites <=
+          summary.actor_async_method_sites &&
+      summary.illegal_nonisolated_executor_sites <=
+          summary.actor_member_executor_annotation_sites;
+  summary.actor_hop_async_boundary_enforced =
+      summary.illegal_actor_hop_without_async_sites <= summary.actor_hop_sites;
+  summary.non_sendable_crossing_fail_closed =
+      summary.illegal_non_sendable_crossing_sites <=
+      summary.non_sendable_crossing_sites;
+  summary.runnable_lowering_deferred = true;
+  summary.actor_runtime_deferred = true;
+  summary.executor_runtime_deferred = true;
+  summary.deterministic =
+      dependency_summary.deterministic &&
+      summary.non_actor_nonisolated_fail_closed &&
+      summary.nonisolated_combination_fail_closed &&
+      summary.actor_hop_async_boundary_enforced &&
+      summary.non_sendable_crossing_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "actor isolation/sendability enforcement diagnostics and dependency packet must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";actor-methods=" << summary.actor_method_sites
+      << ";nonisolated-sites=" << summary.total_nonisolated_method_sites
+      << ";illegal-sites=" << summary.illegal_non_actor_nonisolated_sites << ":"
+      << summary.illegal_nonisolated_async_sites << ":"
+      << summary.illegal_nonisolated_executor_sites << ":"
+      << summary.illegal_actor_hop_without_async_sites << ":"
+      << summary.illegal_non_sendable_crossing_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -20801,6 +21112,12 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::unordered_map<std::string, const Objc3InterfaceDecl *> actor_interfaces;
+  for (const auto &interface_decl : ast.interfaces) {
+    if (interface_decl.is_actor) {
+      actor_interfaces.emplace(interface_decl.name, &interface_decl);
+    }
+  }
   std::unordered_map<std::string, ValueType> body_globals = surface.globals;
   for (const auto &interface_decl : ast.interfaces) {
     body_globals.try_emplace(interface_decl.name, ValueType::ObjCClass);
@@ -20890,6 +21207,9 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
+      DiagnosePart7ActorMethodIsolationRules(
+          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+          method.line, method.column, diagnostics);
       if (method.executor_affinity_declared && !method.async_declared) {
         diagnostics.push_back(MakeDiag(
             method.line, method.column, "O3S224",
@@ -20952,6 +21272,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         diagnostics.push_back(MakeDiag(method.line, method.column, "O3S205",
                                        "missing return path in " + method_context));
       }
+    }
+  }
+
+  for (const auto &interface_decl : ast.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      DiagnosePart7ActorMethodIsolationRules(method, interface_decl.is_actor,
+                                             method.line, method.column,
+                                             diagnostics);
     }
   }
 }

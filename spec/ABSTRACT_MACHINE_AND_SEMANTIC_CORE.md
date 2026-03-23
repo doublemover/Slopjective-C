@@ -850,6 +850,15 @@ M270-B001 actor/sendability semantic-model note:
   than a full actor runtime, broad cross-actor legality checker, or live
   strict-concurrency implementation
 
+M270-B002 actor enforcement note:
+
+- sema now fails closed for unsupported actor-method combinations:
+  non-actor `objc_nonisolated`, `objc_nonisolated` plus `async`,
+  `objc_nonisolated` plus `objc_executor(...)`, non-async actor hops, and
+  non-sendable crossings in actor methods
+- this is still narrower than a complete strict-concurrency system; runnable
+  actor runtime and broader race-hazard closure remain later `M270` work
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

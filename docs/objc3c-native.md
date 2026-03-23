@@ -3385,6 +3385,20 @@ The frontend now owns one truthful Part 7 source boundary for async syntax.
 
 Current implementation status:
 
+## M270-B002 actor isolation/sendability enforcement
+
+Lane B now publishes a second actor packet at
+`frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendability_enforcement`.
+
+- sema now fails closed for:
+  - `objc_nonisolated` on non-actor methods
+  - `objc_nonisolated` actor methods combined with `async`
+  - `objc_nonisolated` actor methods combined with `objc_executor(...)`
+  - actor hop sites in non-async actor methods
+  - non-sendable crossings in actor methods
+- this remains a compiler-semantic slice only; runnable actor mailbox/runtime
+  behavior and broader race-hazard completion remain later `M270` work
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

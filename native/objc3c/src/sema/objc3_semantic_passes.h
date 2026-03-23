@@ -36,6 +36,12 @@ BuildPart7ActorIsolationSendableSemanticModelSummary(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part7ActorIsolationSendabilityEnforcementSummary
+BuildPart7ActorIsolationSendabilityEnforcementSummary(
+    const Objc3Program &ast,
+    const Objc3Part7ActorIsolationSendableSemanticModelSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7TaskExecutorCancellationSemanticModelSummary
 BuildPart7TaskExecutorCancellationSemanticModelSummary(
     const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary

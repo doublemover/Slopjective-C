@@ -1,0 +1,14 @@
+module M270B002ActorHop;
+
+fn hop_to_worker() -> i32 { return 1; }
+
+actor class M270Mailbox
+- (i32)run;
+@end
+
+@implementation M270Mailbox
+- (i32)run {
+  hop_to_worker();
+  return 0;
+}
+@end

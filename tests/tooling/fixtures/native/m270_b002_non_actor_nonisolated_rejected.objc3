@@ -1,0 +1,11 @@
+module M270B002NonActor;
+
+@interface M270PlainBox
+- (i32)token __attribute__((objc_nonisolated));
+@end
+
+@implementation M270PlainBox
+- (i32)token {
+  return 0;
+}
+@end
