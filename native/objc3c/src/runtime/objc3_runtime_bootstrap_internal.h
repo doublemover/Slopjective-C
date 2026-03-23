@@ -311,6 +311,30 @@ typedef struct objc3_runtime_async_continuation_state_snapshot {
   int last_resume_return_value;
 } objc3_runtime_async_continuation_state_snapshot;
 
+typedef struct objc3_runtime_task_runtime_state_snapshot {
+  uint64_t spawn_call_count;
+  uint64_t scope_call_count;
+  uint64_t add_task_call_count;
+  uint64_t wait_next_call_count;
+  uint64_t cancel_all_call_count;
+  uint64_t cancellation_poll_call_count;
+  uint64_t on_cancel_call_count;
+  uint64_t executor_hop_call_count;
+  int last_spawn_kind;
+  int last_spawn_executor_tag;
+  int last_scope_executor_tag;
+  int last_add_task_executor_tag;
+  int last_wait_next_executor_tag;
+  int last_cancel_all_executor_tag;
+  int last_cancellation_poll_executor_tag;
+  int last_on_cancel_executor_tag;
+  int last_executor_hop_executor_tag;
+  int last_executor_hop_value;
+  int last_wait_next_result;
+  int last_cancel_all_result;
+  int last_cancellation_poll_result;
+} objc3_runtime_task_runtime_state_snapshot;
+
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
 // the emitted `module.objc3-conformance-report.json` plus the sibling
@@ -474,6 +498,19 @@ int objc3_runtime_handoff_async_continuation_to_executor_i32(
     int continuation_handle, int executor_tag);
 int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
                                                 int result_value);
+// M269-C002 task-runtime lowering anchor: the IR emitter now rewrites the
+// supported task/executor/cancellation symbol-profile family onto this private
+// helper cluster so task creation, task-group operations, cancellation polls,
+// and executor-handoff proof points become real runnable runtime traffic
+// without widening the public runtime header.
+int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag);
+int objc3_runtime_enter_task_group_scope_i32(int executor_tag);
+int objc3_runtime_add_task_group_task_i32(int executor_tag);
+int objc3_runtime_wait_task_group_next_i32(int executor_tag);
+int objc3_runtime_cancel_task_group_i32(int executor_tag);
+int objc3_runtime_task_is_cancelled_i32(int executor_tag);
+int objc3_runtime_task_on_cancel_i32(int executor_tag);
+int objc3_runtime_executor_hop_i32(int value, int executor_tag);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
@@ -517,6 +554,8 @@ int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot);
 int objc3_runtime_copy_async_continuation_state_for_testing(
     objc3_runtime_async_continuation_state_snapshot *snapshot);
+int objc3_runtime_copy_task_runtime_state_for_testing(
+    objc3_runtime_task_runtime_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

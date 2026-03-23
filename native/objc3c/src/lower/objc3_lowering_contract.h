@@ -644,6 +644,22 @@ inline constexpr const char
         "objc3_runtime_handoff_async_continuation_to_executor_i32";
 inline constexpr const char *kObjc3RuntimeResumeAsyncContinuationI32Symbol =
     "objc3_runtime_resume_async_continuation_i32";
+inline constexpr const char *kObjc3RuntimeSpawnTaskI32Symbol =
+    "objc3_runtime_spawn_task_i32";
+inline constexpr const char *kObjc3RuntimeEnterTaskGroupScopeI32Symbol =
+    "objc3_runtime_enter_task_group_scope_i32";
+inline constexpr const char *kObjc3RuntimeAddTaskGroupTaskI32Symbol =
+    "objc3_runtime_add_task_group_task_i32";
+inline constexpr const char *kObjc3RuntimeWaitTaskGroupNextI32Symbol =
+    "objc3_runtime_wait_task_group_next_i32";
+inline constexpr const char *kObjc3RuntimeCancelTaskGroupI32Symbol =
+    "objc3_runtime_cancel_task_group_i32";
+inline constexpr const char *kObjc3RuntimeTaskIsCancelledI32Symbol =
+    "objc3_runtime_task_is_cancelled_i32";
+inline constexpr const char *kObjc3RuntimeTaskOnCancelI32Symbol =
+    "objc3_runtime_task_on_cancel_i32";
+inline constexpr const char *kObjc3RuntimeExecutorHopI32Symbol =
+    "objc3_runtime_executor_hop_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =

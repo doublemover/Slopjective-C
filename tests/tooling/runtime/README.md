@@ -453,3 +453,23 @@ library and proves the helper surface from `M267-D001` is live:
   replay keys
 - a tampered imported runtime surface must fail closed during cross-module
   link-plan construction before mixed-module executable claims are made
+
+## M269 task-runtime lowering probe
+
+`M269-C002` adds a helper-backed runtime probe for the supported task-runtime
+lowering slice:
+
+- contract id `objc3c-part7-task-runtime-lowering-implementation/m269-c002-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m269_c002_task_runtime_lowering_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m269_c002_task_runtime_lowering_probe.cpp`
+- helper traffic proven by the linked probe:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`

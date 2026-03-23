@@ -111,6 +111,8 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringTaskModel =
     "task-creation-cancellation-polls-and-task-group-artifacts-now-lower-through-explicit-replay-stable-lane-contracts";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringExecutorModel =
     "executor-affinity-and-detached-hop-boundaries-now-lower-through-explicit-actor-and-task-runtime-profile-handoffs";
+// M269-C002 implementation anchor: this lowering packet now maps to live
+// helper-backed IR rewrites for the supported task-runtime symbol family.
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringDeferredModel =

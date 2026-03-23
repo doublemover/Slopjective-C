@@ -11016,3 +11016,35 @@ Truthful status:
   executor scheduler claim is made here
 
 - the next issue is `M268-D003`
+
+## M269 Part 7 Task Runtime Lowering Implementation (C002)
+
+`M269-C002` widens the retained `M269-C001` lowering packet into a live
+helper-backed IR rewrite for the supported task-runtime symbol family.
+
+Canonical lowering/runtime boundary:
+
+- recognized task symbols now lower through private runtime helpers in
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- helper symbols:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+- helper traffic is snapshotted through:
+  - `objc3_runtime_copy_task_runtime_state_for_testing`
+
+Truthful status:
+
+- the IR emitter now has a real rewrite point for the supported task-runtime
+  symbol family instead of a summary-only placeholder
+- the runtime helper cluster is real and probeable
+- some native end-to-end fixture shapes are still blocked earlier by retained
+  `O3S260` / `O3L300` front-door gates, so issue-local proof focuses on the
+  helper-backed execution boundary directly
+
+- the next issue is `M269-C003`

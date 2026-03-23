@@ -776,6 +776,19 @@ M269-C001 task-runtime lowering note:
 - native task spawn/hop/cancel runtime entrypoints and task-group ABI
   completion remain later `M269` lane-C work
 
+M269-C002 task-runtime lowering implementation note:
+
+- the retained `M269-C001` lowering packet now maps to a live helper-backed IR
+  rewrite for the recognized task-runtime symbol family
+- supported task creation, task-group, cancellation-poll, and cancel-handler
+  calls lower through private runtime helpers with stable executor tags
+- awaited `task_group_wait_next` sites also lower through
+  `objc3_runtime_executor_hop_i32` before the existing continuation helper
+  resume path
+- full native end-to-end proof for the issue remains partially blocked by the
+  older `O3S260` / `O3L300` front-door gates, so the issue-local runtime probe
+  proves the helper-backed execution boundary directly
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

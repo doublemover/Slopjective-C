@@ -606,6 +606,27 @@ thread_local int g_runtime_async_continuation_last_resume_handle = 0;
 thread_local int g_runtime_async_continuation_last_resume_result_value = 0;
 thread_local int g_runtime_async_continuation_last_resume_return_value = 0;
 thread_local std::unordered_set<int> g_runtime_async_live_continuation_handles;
+thread_local std::uint64_t g_runtime_task_spawn_call_count = 0;
+thread_local std::uint64_t g_runtime_task_scope_call_count = 0;
+thread_local std::uint64_t g_runtime_task_add_task_call_count = 0;
+thread_local std::uint64_t g_runtime_task_wait_next_call_count = 0;
+thread_local std::uint64_t g_runtime_task_cancel_all_call_count = 0;
+thread_local std::uint64_t g_runtime_task_cancellation_poll_call_count = 0;
+thread_local std::uint64_t g_runtime_task_on_cancel_call_count = 0;
+thread_local std::uint64_t g_runtime_task_executor_hop_call_count = 0;
+thread_local int g_runtime_task_last_spawn_kind = 0;
+thread_local int g_runtime_task_last_spawn_executor_tag = 0;
+thread_local int g_runtime_task_last_scope_executor_tag = 0;
+thread_local int g_runtime_task_last_add_task_executor_tag = 0;
+thread_local int g_runtime_task_last_wait_next_executor_tag = 0;
+thread_local int g_runtime_task_last_cancel_all_executor_tag = 0;
+thread_local int g_runtime_task_last_cancellation_poll_executor_tag = 0;
+thread_local int g_runtime_task_last_on_cancel_executor_tag = 0;
+thread_local int g_runtime_task_last_executor_hop_executor_tag = 0;
+thread_local int g_runtime_task_last_executor_hop_value = 0;
+thread_local int g_runtime_task_last_wait_next_result = 0;
+thread_local int g_runtime_task_last_cancel_all_result = 0;
+thread_local int g_runtime_task_last_cancellation_poll_result = 0;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -769,6 +790,27 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_async_continuation_last_resume_result_value = 0;
   g_runtime_async_continuation_last_resume_return_value = 0;
   g_runtime_async_live_continuation_handles.clear();
+  g_runtime_task_spawn_call_count = 0;
+  g_runtime_task_scope_call_count = 0;
+  g_runtime_task_add_task_call_count = 0;
+  g_runtime_task_wait_next_call_count = 0;
+  g_runtime_task_cancel_all_call_count = 0;
+  g_runtime_task_cancellation_poll_call_count = 0;
+  g_runtime_task_on_cancel_call_count = 0;
+  g_runtime_task_executor_hop_call_count = 0;
+  g_runtime_task_last_spawn_kind = 0;
+  g_runtime_task_last_spawn_executor_tag = 0;
+  g_runtime_task_last_scope_executor_tag = 0;
+  g_runtime_task_last_add_task_executor_tag = 0;
+  g_runtime_task_last_wait_next_executor_tag = 0;
+  g_runtime_task_last_cancel_all_executor_tag = 0;
+  g_runtime_task_last_cancellation_poll_executor_tag = 0;
+  g_runtime_task_last_on_cancel_executor_tag = 0;
+  g_runtime_task_last_executor_hop_executor_tag = 0;
+  g_runtime_task_last_executor_hop_value = 0;
+  g_runtime_task_last_wait_next_result = 0;
+  g_runtime_task_last_cancel_all_result = 0;
+  g_runtime_task_last_cancellation_poll_result = 0;
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -4246,6 +4288,44 @@ int objc3_runtime_copy_async_continuation_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_task_runtime_state_for_testing(
+    objc3_runtime_task_runtime_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->spawn_call_count = g_runtime_task_spawn_call_count;
+  snapshot->scope_call_count = g_runtime_task_scope_call_count;
+  snapshot->add_task_call_count = g_runtime_task_add_task_call_count;
+  snapshot->wait_next_call_count = g_runtime_task_wait_next_call_count;
+  snapshot->cancel_all_call_count = g_runtime_task_cancel_all_call_count;
+  snapshot->cancellation_poll_call_count =
+      g_runtime_task_cancellation_poll_call_count;
+  snapshot->on_cancel_call_count = g_runtime_task_on_cancel_call_count;
+  snapshot->executor_hop_call_count = g_runtime_task_executor_hop_call_count;
+  snapshot->last_spawn_kind = g_runtime_task_last_spawn_kind;
+  snapshot->last_spawn_executor_tag = g_runtime_task_last_spawn_executor_tag;
+  snapshot->last_scope_executor_tag = g_runtime_task_last_scope_executor_tag;
+  snapshot->last_add_task_executor_tag =
+      g_runtime_task_last_add_task_executor_tag;
+  snapshot->last_wait_next_executor_tag =
+      g_runtime_task_last_wait_next_executor_tag;
+  snapshot->last_cancel_all_executor_tag =
+      g_runtime_task_last_cancel_all_executor_tag;
+  snapshot->last_cancellation_poll_executor_tag =
+      g_runtime_task_last_cancellation_poll_executor_tag;
+  snapshot->last_on_cancel_executor_tag =
+      g_runtime_task_last_on_cancel_executor_tag;
+  snapshot->last_executor_hop_executor_tag =
+      g_runtime_task_last_executor_hop_executor_tag;
+  snapshot->last_executor_hop_value = g_runtime_task_last_executor_hop_value;
+  snapshot->last_wait_next_result = g_runtime_task_last_wait_next_result;
+  snapshot->last_cancel_all_result = g_runtime_task_last_cancel_all_result;
+  snapshot->last_cancellation_poll_result =
+      g_runtime_task_last_cancellation_poll_result;
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -4568,6 +4648,59 @@ extern "C" int objc3_runtime_resume_async_continuation_i32(
   g_runtime_async_live_continuation_handles.erase(found);
   g_runtime_async_continuation_last_resume_return_value = result_value;
   return result_value;
+}
+
+extern "C" int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag) {
+  ++g_runtime_task_spawn_call_count;
+  g_runtime_task_last_spawn_kind = task_kind;
+  g_runtime_task_last_spawn_executor_tag = executor_tag;
+  return 100 + (task_kind * 10) + (executor_tag != 0 ? 1 : 0);
+}
+
+extern "C" int objc3_runtime_enter_task_group_scope_i32(int executor_tag) {
+  ++g_runtime_task_scope_call_count;
+  g_runtime_task_last_scope_executor_tag = executor_tag;
+  return 1;
+}
+
+extern "C" int objc3_runtime_add_task_group_task_i32(int executor_tag) {
+  ++g_runtime_task_add_task_call_count;
+  g_runtime_task_last_add_task_executor_tag = executor_tag;
+  return 1;
+}
+
+extern "C" int objc3_runtime_wait_task_group_next_i32(int executor_tag) {
+  ++g_runtime_task_wait_next_call_count;
+  g_runtime_task_last_wait_next_executor_tag = executor_tag;
+  g_runtime_task_last_wait_next_result = 23;
+  return g_runtime_task_last_wait_next_result;
+}
+
+extern "C" int objc3_runtime_cancel_task_group_i32(int executor_tag) {
+  ++g_runtime_task_cancel_all_call_count;
+  g_runtime_task_last_cancel_all_executor_tag = executor_tag;
+  g_runtime_task_last_cancel_all_result = 31;
+  return g_runtime_task_last_cancel_all_result;
+}
+
+extern "C" int objc3_runtime_task_is_cancelled_i32(int executor_tag) {
+  ++g_runtime_task_cancellation_poll_call_count;
+  g_runtime_task_last_cancellation_poll_executor_tag = executor_tag;
+  g_runtime_task_last_cancellation_poll_result = 0;
+  return g_runtime_task_last_cancellation_poll_result;
+}
+
+extern "C" int objc3_runtime_task_on_cancel_i32(int executor_tag) {
+  ++g_runtime_task_on_cancel_call_count;
+  g_runtime_task_last_on_cancel_executor_tag = executor_tag;
+  return 41;
+}
+
+extern "C" int objc3_runtime_executor_hop_i32(int value, int executor_tag) {
+  ++g_runtime_task_executor_hop_call_count;
+  g_runtime_task_last_executor_hop_executor_tag = executor_tag;
+  g_runtime_task_last_executor_hop_value = value;
+  return value;
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {

@@ -3503,6 +3503,23 @@ The frontend now publishes a dedicated lowering packet at
   hop, cancellation runtime entrypoints, and task-group ABI completion remain
   later `M269` work
 
+## M269 executor hop, cancellation, and task spawning lowering
+
+`M269-C002` turns the retained lowering packet into a live helper-backed IR
+rewrite for the currently recognized task-runtime symbol family.
+
+- supported task symbols such as `task_spawn_child`, `detached_task_create`,
+  `task_group_wait_next`, `task_group_cancel_all`, and
+  `task_runtime_cancelled_value` now lower through private runtime helpers
+- awaited task-group `wait_next` sites also emit an explicit
+  `objc3_runtime_executor_hop_i32` handoff before the existing continuation
+  helper path resumes the current async callable
+- the helper ABI remains private to
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- current native end-to-end issue proof is still constrained by older
+  `O3S260` / `O3L300` front-door gates, so the issue-local runtime probe proves
+  the helper cluster directly while IR lowering remains source-anchored
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

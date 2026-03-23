@@ -2538,6 +2538,80 @@ class Objc3IREmitter {
     return StablePositiveAsyncTag("resume-entry:method:" + method_def.symbol);
   }
 
+  bool TryEmitPart7TaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
+                                           std::string &result_out) const {
+    if (expr == nullptr || !ctx.async_runtime_helper_enabled) {
+      return false;
+    }
+
+    const std::string lowered = LowercaseAscii(expr->ident);
+    const auto emit_unary_runtime_call = [&](const char *symbol) {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(symbol) + "(i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+    };
+
+    if (lowered == "task_spawn_child" || lowered == "spawn_task") {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(kObjc3RuntimeSpawnTaskI32Symbol) +
+                               "(i32 1, i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "detached_task_create") {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(kObjc3RuntimeSpawnTaskI32Symbol) +
+                               "(i32 2, i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "with_task_group_scope") {
+      emit_unary_runtime_call(kObjc3RuntimeEnterTaskGroupScopeI32Symbol);
+      return true;
+    }
+    if (lowered == "task_group_add_task") {
+      emit_unary_runtime_call(kObjc3RuntimeAddTaskGroupTaskI32Symbol);
+      return true;
+    }
+    if (lowered == "task_group_cancel_all") {
+      emit_unary_runtime_call(kObjc3RuntimeCancelTaskGroupI32Symbol);
+      return true;
+    }
+    if (lowered == "task_runtime_cancelled_value") {
+      emit_unary_runtime_call(kObjc3RuntimeTaskIsCancelledI32Symbol);
+      return true;
+    }
+    if (lowered == "task_runtime_on_cancel") {
+      emit_unary_runtime_call(kObjc3RuntimeTaskOnCancelI32Symbol);
+      return true;
+    }
+    if (lowered == "task_group_wait_next" || lowered == "wait_next") {
+      const std::string waited = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + waited + " = call i32 @" +
+                               std::string(kObjc3RuntimeWaitTaskGroupNextI32Symbol) +
+                               "(i32 " + std::to_string(ctx.async_executor_tag) +
+                               ")");
+      const std::string hopped = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + hopped + " = call i32 @" +
+                               std::string(kObjc3RuntimeExecutorHopI32Symbol) +
+                               "(i32 " + waited + ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = hopped;
+      return true;
+    }
+    return false;
+  }
+
   static bool IsNSErrorOutParameterSite(const FuncParam &param) {
     if (!param.object_pointer_type_spelling) {
       return false;
@@ -9882,7 +9956,11 @@ class Objc3IREmitter {
     const bool call_may_have_global_side_effects =
         FunctionMayHaveGlobalSideEffects(expr->ident);
     std::string out = "0";
-    if (return_type == ValueType::Void) {
+    if (TryEmitPart7TaskRuntimeLoweringCall(expr, ctx, out)) {
+      // M269-C002 lowering anchor: supported task/executor/cancellation
+      // symbols now route through the private Part 7 runtime helper cluster
+      // rather than remaining ordinary extern-call placeholders.
+    } else if (return_type == ValueType::Void) {
       ctx.code_lines.push_back("  call " + llvm_return_type + " @" + expr->ident +
                                "(" + arglist.str() + ")");
     } else {
@@ -12095,6 +12173,41 @@ class Objc3IREmitter {
                             "declare i32 @" +
                                 std::string(
                                     kObjc3RuntimeResumeAsyncContinuationI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeSpawnTaskI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeSpawnTaskI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeEnterTaskGroupScopeI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeEnterTaskGroupScopeI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeAddTaskGroupTaskI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeAddTaskGroupTaskI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeWaitTaskGroupNextI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeWaitTaskGroupNextI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeCancelTaskGroupI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeCancelTaskGroupI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeTaskIsCancelledI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeTaskIsCancelledI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeTaskOnCancelI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeTaskOnCancelI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeExecutorHopI32Symbol,
+                            "declare i32 @" +
+                                std::string(kObjc3RuntimeExecutorHopI32Symbol) +
                                 "(i32, i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +

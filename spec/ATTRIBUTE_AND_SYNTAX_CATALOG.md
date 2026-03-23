@@ -625,6 +625,18 @@ Current implementation status (`M269-C001`):
 - native task spawn, executor hop, cancellation runtime entrypoints, and
   task-group ABI completion remain later `M269` issues
 
+Current implementation status (`M269-C002`):
+
+- the retained `M269-C001` lowering packet now drives live helper-backed IR
+  rewrites for the recognized task-runtime symbol family
+- supported task creation, task-group, cancellation-poll, and cancel-handler
+  calls lower through private runtime helpers carrying stable executor tags
+- awaited `task_group_wait_next` sites also emit
+  `objc3_runtime_executor_hop_i32` before the continuation helper resume path
+- current issue-local executable proof is runtime-helper focused because older
+  `O3S260` / `O3L300` front-door gates still block some native end-to-end
+  fixture shapes before IR/object emission
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes
