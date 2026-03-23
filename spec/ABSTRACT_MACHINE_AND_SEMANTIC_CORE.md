@@ -702,6 +702,15 @@ M268-E001 async executable conformance gate note:
   async slice; this issue does not widen the abstract machine beyond that
   executable boundary
 
+M268-E002 runnable async closeout note:
+
+- the milestone closeout matrix freezes the implemented runnable Part 7 slice by
+  replaying the `M268-A002` through `M268-E001` proof chain
+- matrix rows remain tied to the current non-suspending direct-call async model
+  and do not widen the abstract machine into suspension-frame or executor
+  scheduling semantics
+- `M269-A001` is the next issue
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

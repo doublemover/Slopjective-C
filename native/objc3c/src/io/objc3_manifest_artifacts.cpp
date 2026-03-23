@@ -28,6 +28,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // M268-E001 async executable conformance gate anchor: lane-E keeps consuming
   // the same manifest sidecar and its paired IR/object artifacts instead of a
   // separate Part 7 publication surface.
+  // M268-E002 runnable async closeout matrix anchor: the milestone closeout
+  // keeps consuming this same manifest sidecar and its paired IR/object
+  // artifacts instead of a matrix-only reporting surface.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

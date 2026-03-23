@@ -636,6 +636,19 @@ Current implementation status (`M268-E001`):
   `tests/tooling/fixtures/native/m268_d002_live_continuation_runtime_integration_positive.objc3`
 - matrix expansion and broader runnable async claims remain deferred to
   `M268-E002`
+
+Current implementation status (`M268-E002`):
+
+- the runnable Part 7 closeout matrix now consumes:
+  - `M268-A002`
+  - `M268-B003`
+  - `M268-C003`
+  - `M268-D002`
+  - `M268-E001`
+- closeout rows remain tied to the current direct-call, non-suspending async
+  slice and its existing emitted manifest/IR/object evidence
+- this closeout does not claim suspension frames, async state machines, general
+  executor scheduling, or cross-module runnable async execution
   issues
 
 ## M267 current canonical error bridge-marker frontend boundary

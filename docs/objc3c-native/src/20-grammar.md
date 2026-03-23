@@ -3486,3 +3486,27 @@ Current implementation status:
   non-suspending path
 - matrix expansion and broader suspension/runtime claims are deferred to
   `M268-E002`
+
+## M268 runnable async and await matrix closeout (M268-E002)
+
+The milestone closeout matrix now publishes the exact runnable Part 7 evidence
+surface for the currently supported async/await slice.
+
+Current implementation status:
+
+- the closeout consumes the canonical proof chain from:
+  - `M268-A002`
+  - `M268-B003`
+  - `M268-C003`
+  - `M268-D002`
+  - `M268-E001`
+- matrix rows stay bound to the already-landed fixtures and evidence; this issue
+  does not introduce a second runtime probe family
+- the current runnable rows cover:
+  - async function entry on the direct-call slice
+  - async Objective-C method entry on the direct-call slice
+  - await lowering on the non-suspending path
+  - cleanup integration through the existing autoreleasepool/defer lowering
+  - live continuation helper allocation, handoff, and resume traffic
+- broader suspension-frame, state-machine, executor-runtime, and cross-module
+  runnable async claims remain later work beyond this closeout

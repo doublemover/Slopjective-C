@@ -50,6 +50,9 @@ struct objc3c_frontend_context {
 // M268-E001 async executable conformance gate anchor: lane-E consumes those
 // same publication paths for the runnable Part 7 slice instead of inventing a
 // second frontend async proof channel.
+// M268-E002 runnable async closeout matrix anchor: milestone closeout keeps
+// consuming those same publication paths instead of inventing a second
+// frontend matrix-only reporting path.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

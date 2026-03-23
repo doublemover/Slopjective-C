@@ -46,6 +46,9 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // M268-E001 async executable conformance gate anchor: lane-E must keep
 // consuming this same emitted manifest/IR/object triplet for the runnable Part
 // 7 slice instead of introducing an async-only publication channel.
+// M268-E002 runnable async closeout matrix anchor: milestone closeout rows must
+// keep consuming this same emitted manifest/IR/object triplet for the current
+// Part 7 slice instead of a synthetic matrix-only publication path.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {
