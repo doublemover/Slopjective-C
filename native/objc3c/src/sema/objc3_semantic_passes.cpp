@@ -1619,6 +1619,103 @@ struct Objc3MessageSendResolutionContext {
   bool inside_async_context = false;
 };
 
+std::string BuildPart7TaskLowercaseProfileToken(std::string token) {
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char value) {
+                   return static_cast<char>(std::tolower(value));
+                 });
+  return token;
+}
+
+bool IsPart7TaskCreationSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("task_spawn") != std::string::npos ||
+         lowered.find("spawn_task") != std::string::npos ||
+         lowered.find("detached_task") != std::string::npos ||
+         lowered.find("task_detach") != std::string::npos;
+}
+
+bool IsPart7DetachedTaskCreationSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("detached_task") != std::string::npos ||
+         lowered.find("task_detach") != std::string::npos;
+}
+
+bool IsPart7TaskGroupScopeSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("with_task_group") != std::string::npos ||
+         lowered.find("task_group_scope") != std::string::npos;
+}
+
+bool IsPart7TaskGroupAddTaskSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("task_group_add_task") != std::string::npos ||
+         lowered.find("group_add_task") != std::string::npos;
+}
+
+bool IsPart7TaskGroupWaitNextSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("task_group_wait_next") != std::string::npos ||
+         lowered.find("group_wait_next") != std::string::npos ||
+         lowered.find("wait_next") != std::string::npos;
+}
+
+bool IsPart7TaskGroupCancelAllSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("task_group_cancel_all") != std::string::npos ||
+         lowered.find("group_cancel_all") != std::string::npos ||
+         lowered.find("cancel_all") != std::string::npos;
+}
+
+bool IsPart7CancellationCheckSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("cancelled") != std::string::npos ||
+         lowered.find("is_cancelled") != std::string::npos ||
+         lowered.find("cancellation") != std::string::npos;
+}
+
+bool IsPart7CancellationHandlerSymbolForSema(const std::string &symbol) {
+  if (symbol.empty()) {
+    return false;
+  }
+  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  return lowered.find("on_cancel") != std::string::npos ||
+         lowered.find("cancel_handler") != std::string::npos ||
+         lowered.find("with_cancellation_handler") != std::string::npos;
+}
+
+struct Objc3Part7TaskCallableLegalityProfile {
+  std::size_t task_creation_sites = 0;
+  std::size_t detached_task_creation_sites = 0;
+  std::size_t task_group_scope_sites = 0;
+  std::size_t task_group_add_task_sites = 0;
+  std::size_t task_group_wait_next_sites = 0;
+  std::size_t task_group_cancel_all_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+};
+
 struct Objc3ResolvedMessageSendMethod {
   enum class Status {
     DynamicFallback,
@@ -1634,6 +1731,346 @@ struct Objc3ResolvedMessageSendMethod {
   bool missing_base = false;
   bool cycle_detected = false;
 };
+
+static void CollectPart7TaskCallableLegalityExprSites(
+    const Expr *expr, Objc3Part7TaskCallableLegalityProfile &profile) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::Call) {
+    if (IsPart7TaskCreationSymbolForSema(expr->ident)) {
+      ++profile.task_creation_sites;
+    }
+    if (IsPart7DetachedTaskCreationSymbolForSema(expr->ident)) {
+      ++profile.detached_task_creation_sites;
+    }
+    if (IsPart7TaskGroupScopeSymbolForSema(expr->ident)) {
+      ++profile.task_group_scope_sites;
+    }
+    if (IsPart7TaskGroupAddTaskSymbolForSema(expr->ident)) {
+      ++profile.task_group_add_task_sites;
+    }
+    if (IsPart7TaskGroupWaitNextSymbolForSema(expr->ident)) {
+      ++profile.task_group_wait_next_sites;
+    }
+    if (IsPart7TaskGroupCancelAllSymbolForSema(expr->ident)) {
+      ++profile.task_group_cancel_all_sites;
+    }
+    if (IsPart7CancellationCheckSymbolForSema(expr->ident)) {
+      ++profile.cancellation_check_sites;
+    }
+    if (IsPart7CancellationHandlerSymbolForSema(expr->ident)) {
+      ++profile.cancellation_handler_sites;
+    }
+  }
+  CollectPart7TaskCallableLegalityExprSites(expr->receiver.get(), profile);
+  CollectPart7TaskCallableLegalityExprSites(expr->left.get(), profile);
+  CollectPart7TaskCallableLegalityExprSites(expr->right.get(), profile);
+  CollectPart7TaskCallableLegalityExprSites(expr->third.get(), profile);
+  for (const auto &arg : expr->args) {
+    CollectPart7TaskCallableLegalityExprSites(arg.get(), profile);
+  }
+}
+
+static void CollectPart7TaskCallableLegalityStmtSites(
+    const Stmt *stmt, Objc3Part7TaskCallableLegalityProfile &profile) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(stmt->let_stmt->value.get(),
+                                                profile);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->assign_stmt->value.get(), profile);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(stmt->return_stmt->value.get(),
+                                                profile);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->if_stmt->condition.get(), profile);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        CollectPart7TaskCallableLegalityStmtSites(then_stmt.get(), profile);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        CollectPart7TaskCallableLegalityStmtSites(else_stmt.get(), profile);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+      }
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->do_while_stmt->condition.get(), profile);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(stmt->for_stmt->init.value.get(),
+                                                profile);
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->for_stmt->condition.get(), profile);
+      CollectPart7TaskCallableLegalityExprSites(stmt->for_stmt->step.value.get(),
+                                                profile);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->switch_stmt->condition.get(), profile);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          CollectPart7TaskCallableLegalityStmtSites(case_stmt.get(), profile);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(
+          stmt->while_stmt->condition.get(), profile);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+      }
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+      }
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart7TaskCallableLegalityExprSites(stmt->expr_stmt->value.get(),
+                                                profile);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static void DiagnosePart7TaskCallableLegalityExpr(
+    const Expr *expr, const Objc3Part7TaskCallableLegalityProfile &profile,
+    bool inside_async_context, std::vector<std::string> &diagnostics) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::Call) {
+    const bool task_creation = IsPart7TaskCreationSymbolForSema(expr->ident);
+    const bool detached_task_creation =
+        IsPart7DetachedTaskCreationSymbolForSema(expr->ident);
+    const bool task_group_scope =
+        IsPart7TaskGroupScopeSymbolForSema(expr->ident);
+    const bool task_group_add =
+        IsPart7TaskGroupAddTaskSymbolForSema(expr->ident);
+    const bool task_group_wait =
+        IsPart7TaskGroupWaitNextSymbolForSema(expr->ident);
+    const bool task_group_cancel =
+        IsPart7TaskGroupCancelAllSymbolForSema(expr->ident);
+    const bool cancellation_check =
+        IsPart7CancellationCheckSymbolForSema(expr->ident);
+    const bool cancellation_handler =
+        IsPart7CancellationHandlerSymbolForSema(expr->ident);
+    const bool task_related = task_creation || task_group_scope || task_group_add ||
+                              task_group_wait || task_group_cancel ||
+                              cancellation_check || cancellation_handler;
+
+    if (task_related && !inside_async_context) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S227",
+          "task semantics failed: task runtime, task-group, and cancellation calls require an async function or method"));
+    } else if (task_group_add || task_group_wait || task_group_cancel) {
+      if (profile.task_group_scope_sites == 0u) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S228",
+            "task semantics failed: task-group add, wait-next, and cancel-all calls require a task-group scope in the same async function or method"));
+      }
+      if (task_group_cancel && profile.cancellation_check_sites == 0u) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S230",
+            "task semantics failed: cancellation handlers and cancel-all calls require a cancellation check in the same async function or method"));
+      }
+    } else if (detached_task_creation) {
+      if (profile.task_group_scope_sites > 0u ||
+          profile.task_group_add_task_sites > 0u ||
+          profile.task_group_wait_next_sites > 0u ||
+          profile.task_group_cancel_all_sites > 0u) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S229",
+            "task semantics failed: detached task creation cannot share a structured task-group callable"));
+      }
+    } else if (cancellation_handler && profile.cancellation_check_sites == 0u) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S230",
+          "task semantics failed: cancellation handlers and cancel-all calls require a cancellation check in the same async function or method"));
+    }
+  }
+
+  DiagnosePart7TaskCallableLegalityExpr(expr->receiver.get(), profile,
+                                        inside_async_context, diagnostics);
+  DiagnosePart7TaskCallableLegalityExpr(expr->left.get(), profile,
+                                        inside_async_context, diagnostics);
+  DiagnosePart7TaskCallableLegalityExpr(expr->right.get(), profile,
+                                        inside_async_context, diagnostics);
+  DiagnosePart7TaskCallableLegalityExpr(expr->third.get(), profile,
+                                        inside_async_context, diagnostics);
+  for (const auto &arg : expr->args) {
+    DiagnosePart7TaskCallableLegalityExpr(arg.get(), profile,
+                                          inside_async_context, diagnostics);
+  }
+}
+
+static void DiagnosePart7TaskCallableLegalityStmt(
+    const Stmt *stmt, const Objc3Part7TaskCallableLegalityProfile &profile,
+    bool inside_async_context, std::vector<std::string> &diagnostics) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(stmt->let_stmt->value.get(), profile,
+                                            inside_async_context, diagnostics);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->assign_stmt->value.get(), profile, inside_async_context,
+          diagnostics);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->return_stmt->value.get(), profile, inside_async_context,
+          diagnostics);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->if_stmt->condition.get(), profile, inside_async_context,
+          diagnostics);
+      for (const auto &then_stmt : stmt->if_stmt->then_body) {
+        DiagnosePart7TaskCallableLegalityStmt(then_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+      for (const auto &else_stmt : stmt->if_stmt->else_body) {
+        DiagnosePart7TaskCallableLegalityStmt(else_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->do_while_stmt->condition.get(), profile, inside_async_context,
+          diagnostics);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->init.value.get(),
+                                            profile, inside_async_context,
+                                            diagnostics);
+      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->condition.get(),
+                                            profile, inside_async_context,
+                                            diagnostics);
+      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->step.value.get(),
+                                            profile, inside_async_context,
+                                            diagnostics);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->switch_stmt->condition.get(), profile, inside_async_context,
+          diagnostics);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &case_stmt : switch_case.body) {
+          DiagnosePart7TaskCallableLegalityStmt(case_stmt.get(), profile,
+                                                inside_async_context,
+                                                diagnostics);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(
+          stmt->while_stmt->condition.get(), profile, inside_async_context,
+          diagnostics);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+                                              inside_async_context, diagnostics);
+      }
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      DiagnosePart7TaskCallableLegalityExpr(stmt->expr_stmt->value.get(), profile,
+                                            inside_async_context, diagnostics);
+    }
+    return;
+  case Stmt::Kind::Break:
+  case Stmt::Kind::Continue:
+  case Stmt::Kind::Empty:
+    return;
+  }
+}
+
+static void DiagnosePart7TaskCallableLegality(
+    const std::vector<std::unique_ptr<Stmt>> &body, bool inside_async_context,
+    std::vector<std::string> &diagnostics) {
+  Objc3Part7TaskCallableLegalityProfile profile;
+  for (const auto &stmt : body) {
+    CollectPart7TaskCallableLegalityStmtSites(stmt.get(), profile);
+  }
+  for (const auto &stmt : body) {
+    DiagnosePart7TaskCallableLegalityStmt(stmt.get(), profile,
+                                          inside_async_context, diagnostics);
+  }
+}
 
 static const Objc3PropertyInfo *FindTypedKeyPathPropertyOnOwner(
     const Objc3SemanticIntegrationSurface &surface,
@@ -6730,6 +7167,94 @@ BuildPart7TaskExecutorCancellationSemanticModelSummary(
       << summary.cancellation_handler_sites << ":"
       << summary.suspension_point_sites << ":"
       << summary.cancellation_propagation_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part7StructuredTaskCancellationSemanticSummary
+BuildPart7StructuredTaskCancellationSemanticSummary(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7StructuredTaskCancellationSemanticSummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
+          return diag.find(code) != std::string::npos;
+        }));
+  };
+
+  const std::size_t task_related_sites =
+      dependency_summary.task_creation_sites +
+      dependency_summary.task_group_scope_sites +
+      dependency_summary.task_group_add_task_sites +
+      dependency_summary.task_group_wait_next_sites +
+      dependency_summary.task_group_cancel_all_sites +
+      dependency_summary.cancellation_check_sites +
+      dependency_summary.cancellation_handler_sites;
+
+  summary.async_callable_sites = dependency_summary.async_callable_sites;
+  summary.task_creation_sites = dependency_summary.task_creation_sites;
+  summary.task_group_scope_sites = dependency_summary.task_group_scope_sites;
+  summary.task_group_add_task_sites =
+      dependency_summary.task_group_add_task_sites;
+  summary.task_group_wait_next_sites =
+      dependency_summary.task_group_wait_next_sites;
+  summary.task_group_cancel_all_sites =
+      dependency_summary.task_group_cancel_all_sites;
+  summary.cancellation_check_sites =
+      dependency_summary.cancellation_check_sites;
+  summary.cancellation_handler_sites =
+      dependency_summary.cancellation_handler_sites;
+  summary.illegal_non_async_task_sites = count_diagnostic_code("O3S227");
+  summary.illegal_task_group_scope_sites = count_diagnostic_code("O3S228");
+  summary.illegal_task_hierarchy_sites = count_diagnostic_code("O3S229");
+  summary.illegal_cancellation_usage_sites =
+      count_diagnostic_code("O3S230");
+
+  summary.source_dependency_required = true;
+  summary.async_task_boundary_enforced =
+      dependency_summary.ready_for_lowering_and_runtime &&
+      summary.illegal_non_async_task_sites <= task_related_sites;
+  summary.structured_task_scope_enforced =
+      dependency_summary.structured_task_legality_semantics_landed &&
+      summary.illegal_task_group_scope_sites <=
+          summary.task_group_add_task_sites +
+              summary.task_group_wait_next_sites +
+              summary.task_group_cancel_all_sites;
+  summary.task_hierarchy_enforced =
+      dependency_summary.task_lifetime_semantics_landed &&
+      summary.illegal_task_hierarchy_sites <= summary.task_creation_sites;
+  summary.cancellation_usage_enforced =
+      dependency_summary.cancellation_observation_semantics_landed &&
+      summary.illegal_cancellation_usage_sites <=
+          summary.cancellation_handler_sites +
+              summary.task_group_cancel_all_sites;
+  summary.runnable_lowering_deferred = true;
+  summary.executor_runtime_deferred = true;
+  summary.scheduler_runtime_deferred = true;
+  summary.deterministic =
+      dependency_summary.deterministic && summary.async_task_boundary_enforced &&
+      summary.structured_task_scope_enforced &&
+      summary.task_hierarchy_enforced &&
+      summary.cancellation_usage_enforced;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";task-sites=" << summary.task_creation_sites << ":"
+      << summary.task_group_scope_sites << ":"
+      << summary.task_group_add_task_sites << ":"
+      << summary.task_group_wait_next_sites << ":"
+      << summary.task_group_cancel_all_sites
+      << ";cancellation-sites=" << summary.cancellation_check_sites << ":"
+      << summary.cancellation_handler_sites
+      << ";illegal-sites=" << summary.illegal_non_async_task_sites << ":"
+      << summary.illegal_task_group_scope_sites << ":"
+      << summary.illegal_task_hierarchy_sites << ":"
+      << summary.illegal_cancellation_usage_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -20151,6 +20676,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
 
     if (!fn.is_prototype) {
+      DiagnosePart7TaskCallableLegality(fn.body, fn.async_declared, diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
@@ -20203,6 +20729,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         }
       }
 
+      DiagnosePart7TaskCallableLegality(method.body, method.async_declared,
+                                        diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
@@ -20238,4 +20766,3 @@ void RefreshSemanticIntegrationSurfaceAfterBodyValidation(
   surface.block_copy_dispose_semantics_summary =
       BuildBlockCopyDisposeSemanticsSummaryFromIntegrationSurface(surface);
 }
-

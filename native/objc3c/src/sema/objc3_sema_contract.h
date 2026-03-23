@@ -618,6 +618,77 @@ inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
          summary.failure_reason.empty();
 }
 
+inline constexpr const char
+    *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
+        "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
+inline constexpr const char
+    *kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId =
+        "objc3c-part7-structured-task-cancellation-semantics/m269-b002-v1";
+inline constexpr const char
+    *kObjc3Part7StructuredTaskCancellationSemanticSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics";
+inline constexpr const char
+    *kObjc3Part7StructuredTaskCancellationSemanticSummaryRule =
+        "structured-task-scope-task-hierarchy-and-cancellation-usage-semantics-are-live-in-sema-while-runnable-task-lowering-and-scheduler-execution-remain-later-m269-work";
+inline constexpr const char
+    *kObjc3Part7StructuredTaskCancellationSemanticSummaryDeferredRule =
+        "task-allocation-executor-hop-task-group-runtime-and-scheduler-backed-cancellation-remain-deferred-to-later-m269-lanes";
+
+struct Objc3Part7StructuredTaskCancellationSemanticSummary {
+  std::string contract_id =
+      kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7StructuredTaskCancellationSemanticSummarySurfacePath;
+  std::string semantic_model =
+      kObjc3Part7StructuredTaskCancellationSemanticSummaryRule;
+  std::string deferred_model =
+      kObjc3Part7StructuredTaskCancellationSemanticSummaryDeferredRule;
+  std::size_t async_callable_sites = 0;
+  std::size_t task_creation_sites = 0;
+  std::size_t task_group_scope_sites = 0;
+  std::size_t task_group_add_task_sites = 0;
+  std::size_t task_group_wait_next_sites = 0;
+  std::size_t task_group_cancel_all_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t illegal_non_async_task_sites = 0;
+  std::size_t illegal_task_group_scope_sites = 0;
+  std::size_t illegal_task_hierarchy_sites = 0;
+  std::size_t illegal_cancellation_usage_sites = 0;
+  bool source_dependency_required = false;
+  bool async_task_boundary_enforced = false;
+  bool structured_task_scope_enforced = false;
+  bool task_hierarchy_enforced = false;
+  bool cancellation_usage_enforced = false;
+  bool runnable_lowering_deferred = false;
+  bool executor_runtime_deferred = false;
+  bool scheduler_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part7StructuredTaskCancellationSemanticSummary(
+    const Objc3Part7StructuredTaskCancellationSemanticSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.async_task_boundary_enforced &&
+         summary.structured_task_scope_enforced &&
+         summary.task_hierarchy_enforced &&
+         summary.cancellation_usage_enforced &&
+         summary.runnable_lowering_deferred &&
+         summary.executor_runtime_deferred &&
+         summary.scheduler_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
     "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =

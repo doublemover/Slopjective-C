@@ -742,6 +742,18 @@ M269-B001 task/executor/cancellation semantic-model note:
 - runnable lowering, executor runtime behavior, and scheduler runtime behavior
   remain deferred to later `M269` lanes
 
+M269-B002 structured-task/cancellation enforcement note:
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics`
+- non-async task-runtime/task-group/cancellation calls fail closed with
+  `O3S227`
+- task-group add/wait/cancel calls without scope fail closed with `O3S228`
+- detached task creation mixed into a structured task-group callable fails
+  closed with `O3S229`
+- cancellation handlers and cancel-all calls without a cancellation check fail
+  closed with `O3S230`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

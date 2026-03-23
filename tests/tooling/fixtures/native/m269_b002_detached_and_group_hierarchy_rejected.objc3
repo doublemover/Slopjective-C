@@ -1,0 +1,12 @@
+module M269B002Hierarchy;
+
+extern fn with_task_group_scope() -> i32;
+extern fn task_group_add_task() -> i32;
+extern fn detached_task_create() -> i32;
+
+async fn illegal_hierarchy() -> i32 {
+  with_task_group_scope();
+  detached_task_create();
+  task_group_add_task();
+  return 0;
+}

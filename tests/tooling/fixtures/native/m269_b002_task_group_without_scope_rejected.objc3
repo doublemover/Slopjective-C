@@ -1,0 +1,9 @@
+module M269B002NoScope;
+
+extern fn task_group_add_task() -> i32;
+extern fn task_group_wait_next() -> i32;
+
+async fn missing_scope() -> i32 {
+  task_group_add_task();
+  return await task_group_wait_next();
+}

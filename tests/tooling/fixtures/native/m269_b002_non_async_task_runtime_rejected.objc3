@@ -1,0 +1,8 @@
+module M269B002NonAsync;
+
+extern fn task_spawn_child() -> i32;
+
+fn illegal_sync_task_site() -> i32 {
+  task_spawn_child();
+  return 0;
+}

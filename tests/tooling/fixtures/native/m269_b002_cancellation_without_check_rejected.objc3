@@ -1,0 +1,8 @@
+module M269B002Cancellation;
+
+extern fn task_runtime_on_cancel() -> i32;
+
+async fn missing_check() -> i32 {
+  task_runtime_on_cancel();
+  return 0;
+}

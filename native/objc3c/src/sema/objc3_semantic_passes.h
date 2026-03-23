@@ -35,6 +35,11 @@ BuildPart7TaskExecutorCancellationSemanticModelSummary(
     const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part7StructuredTaskCancellationSemanticSummary
+BuildPart7StructuredTaskCancellationSemanticSummary(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7AwaitSuspensionResumeSemanticSummary
 BuildPart7AwaitSuspensionResumeSemanticSummary(
     const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,

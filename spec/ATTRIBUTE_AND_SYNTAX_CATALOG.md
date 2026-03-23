@@ -590,6 +590,19 @@ Current implementation status (`M269-B001`):
 - runnable lowering, executor runtime behavior, and scheduler runtime behavior
   remain deferred to later `M269` issues
 
+Current implementation status (`M269-B002`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics`
+- non-async task-runtime/task-group/cancellation calls fail closed with
+  diagnostic `O3S227`
+- task-group add, wait-next, and cancel-all calls without scope fail closed
+  with diagnostic `O3S228`
+- detached task creation mixed into a structured task-group callable fails
+  closed with diagnostic `O3S229`
+- cancellation handlers and cancel-all calls without a cancellation check fail
+  closed with diagnostic `O3S230`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

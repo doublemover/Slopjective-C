@@ -3389,6 +3389,20 @@ The frontend now publishes a dedicated semantic packet at
 - runnable lowering, executor runtime behavior, and scheduler runtime behavior
   remain deferred to later `M269` issues
 
+## M269 structured task and cancellation semantics
+
+The frontend now publishes a dedicated semantic packet at
+`frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics`.
+
+- task-runtime, task-group, and cancellation calls now fail closed outside async
+  functions and methods with `O3S227`
+- task-group add, wait-next, and cancel-all calls now fail closed without a
+  task-group scope in the same async callable with `O3S228`
+- detached task creation now fails closed when mixed with structured task-group
+  callables in the same async callable with `O3S229`
+- cancellation handlers and cancel-all calls now fail closed without a
+  cancellation check in the same async callable with `O3S230`
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and
