@@ -574,20 +574,22 @@ Current implementation status (`M267-B003`):
 
 ## M267 current Part 6 lowering boundary
 
-Current implementation status (`M267-C001`):
+Current implementation status (`M267-C002`):
 
 - lowering now publishes one truthful Part 6 packet at
   `frontend.pipeline.semantic_surface.objc_part6_throws_abi_propagation_lowering`
 - live today:
-  - deterministic throws-propagation replay
-  - deterministic result-like replay
-  - deterministic `NSError` bridging replay
-  - deterministic unwind-cleanup replay
+  - hidden error-out ABI lowering for throwing call targets
+  - native `throw` propagation
+  - `try`, `try?`, and `try!` lowering
+  - `do/catch` dispatch
+  - status-code / `NSError` bridge propagation
   - `; part6_throws_abi_propagation_lowering = ...`
   - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+  - `ready_for_runtime_execution=true`
 - still deferred:
-  - runnable `throw` transfer
-  - runnable `try` / `do/catch` transfer
+  - replay/inspection completion for separate compilation
+  - broader cross-module preservation claims
   - generalized native thrown-error object ABI
 
 ## M265 imported Part 3 packets

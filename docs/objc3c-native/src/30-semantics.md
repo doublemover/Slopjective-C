@@ -4203,35 +4203,39 @@ Current deferred behavior:
 - native thrown-error ABI
 - any claim that bridge legality is runnable in native mode
 
-## M267 Part 6 throws ABI and propagation lowering boundary (M267-C001)
+## M267 Part 6 runnable error-out ABI and propagation lowering (M267-C002)
 
-Lane C now freezes the current native lowering boundary for Part 6 without
-claiming runnable `throw`, `try`, or `do/catch` transfer yet.
+Lane C now lowers the Part 6 error surface into a runnable native path.
 
-Current implementation status (`M267-C001`):
+Current implementation status (`M267-C002`):
 
 - lowering now publishes one canonical contract:
-  - `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
-- the frozen boundary is defined as:
-  - Part 6 semantic packets from `M267-B001`, `M267-B002`, and `M267-B003`
-  - deterministic throws-propagation replay
-  - deterministic result-like replay
-  - deterministic `NSError` bridging replay
-  - deterministic unwind-cleanup replay
+  - `objc3c-part6-throws-abi-propagation-lowering/m267-c002-v1`
+- live native behavior now includes:
+  - hidden trailing error-out parameters for throwing functions and methods
+  - native `throw` propagation through the current function error slot
+  - `try`, `try?`, and `try!` lowering over direct throwing and bridged calls
+  - `do/catch` dispatch with typed and catch-all handlers
+  - status-code to `NSError` bridge propagation through the same lowering path
 - emitted IR now carries:
   - `; part6_throws_abi_propagation_lowering = ...`
   - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
-- the current boundary truthfully publishes:
-  - native out-error and propagation carrier lowering contracts
-  - fail-closed status for runnable `throw` / `try` / `do/catch` execution
+- the lowering packet now truthfully publishes:
+  - `ready_for_runtime_execution=true`
+  - the live throws, result-like, `NSError`, and unwind replay keys that feed the emitted code
+- the positive native proof now exercises:
+  - `try?` bridge suppression
+  - `try!` success-path lowering
+  - inner `do/catch` bridge handling
+  - outer propagated catch handling
 
 Still explicitly deferred:
 
-- runnable thrown-error object transfer
-- runnable catch dispatch
-- generalized native error-object ABI
+- replay/inspection completion for separate compilation
+- broader cross-module preservation claims
+- generalized foreign error-object ABI
 
-Recommended M267 lane-C freeze check:
+Recommended M267 lane-C implementation check:
 
-- `python scripts/check_m267_c001_throws_abi_and_propagation_lowering_contract_and_architecture_freeze.py`
-- `M267-C002` is the next issue.
+- `python scripts/check_m267_c002_error_out_abi_and_propagation_lowering_core_feature_implementation.py`
+- `M267-C003` is the next issue.

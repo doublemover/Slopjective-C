@@ -1412,11 +1412,10 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
 
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
   std::ostringstream out;
-  // M267-C001 Part 6 lowering freeze anchor: lane-C now truthfully publishes
-  // the current native lowering boundary as a deterministic composition of the
-  // throws-propagation, result-like, NSError-bridging, and unwind-cleanup
-  // replay contracts, while runnable throw/try/do-catch transfer and the
-  // general thrown-error object ABI remain deferred to the next lane-C issue.
+  // M267-C002 Part 6 lowering implementation anchor: lane-C now materializes
+  // the runnable hidden error-out ABI, propagation operators, status/NSError
+  // bridge propagation, and do/catch control-flow in real native IR/object
+  // artifacts while deferring the replay-completion tranche to M267-C003.
   out << "contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
       << ";source_model="
       << kObjc3Part6ThrowsAbiPropagationLoweringSourceModel
@@ -1435,7 +1434,7 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
       << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
       << ";non_goal_model="
       << kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel
-      << ";next_issue=M267-C002";
+      << ";next_issue=M267-C003";
   return out.str();
 }
 

@@ -97,21 +97,23 @@ Current implementation status (`M267-B003`):
   - runnable bridge lowering/runtime support
   - native thrown-error ABI
 
-Current implementation status (`M267-C001`):
+Current implementation status (`M267-C002`):
 
 - the compiler now also publishes one truthful Part 6 lowering packet at
   `frontend.pipeline.semantic_surface.objc_part6_throws_abi_propagation_lowering`
 - this packet now carries:
-  - deterministic throws-propagation replay
-  - deterministic result-like replay
-  - deterministic `NSError` bridging replay
-  - deterministic unwind-cleanup replay
+  - hidden error-out ABI lowering
+  - native `throw` propagation
+  - `try`, `try?`, and `try!` lowering
+  - `do/catch` dispatch
+  - status-to-`NSError` bridge propagation
 - emitted IR now carries:
   - `; part6_throws_abi_propagation_lowering = ...`
   - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+  - `ready_for_runtime_execution=true`
 - currently deferred runnable behavior:
-  - runnable `throw` transfer
-  - runnable `try` / `do/catch` transfer
+  - separate-compilation replay completion
+  - broader cross-module preservation
   - generalized native thrown-error object ABI
 
 ---

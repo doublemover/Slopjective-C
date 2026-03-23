@@ -2336,6 +2336,12 @@ class Objc3IREmitter {
   struct LoweredFunctionSignature {
     ValueType return_type = ValueType::I32;
     std::vector<ValueType> param_types;
+    bool throws_declared = false;
+    bool objc_nserror_declared = false;
+    bool objc_status_code_declared = false;
+    std::size_t ns_error_out_param_index = std::numeric_limits<std::size_t>::max();
+    int objc_status_code_success_literal = 0;
+    std::string objc_status_code_mapping_symbol;
   };
 
   struct FunctionEffectInfo {
@@ -2403,6 +2409,16 @@ class Objc3IREmitter {
     std::vector<std::string> arc_owned_cleanup_ptrs;
     std::unordered_set<std::string> arc_owned_cleanup_ptr_set;
     std::unordered_set<std::string> arc_owned_storage_ptrs;
+    struct ErrorHandlerFrame {
+      std::string error_slot_ptr;
+      std::string dispatch_label;
+      std::size_t scope_depth = 0;
+      std::size_t autoreleasepool_depth = 0;
+      std::size_t pending_block_dispose_depth = 0;
+      std::size_t arc_cleanup_depth = 0;
+    };
+    std::vector<ErrorHandlerFrame> error_handler_stack;
+    std::string function_error_out_param;
     ValueType return_type = ValueType::I32;
     int temp_counter = 0;
     int label_counter = 0;
@@ -2435,6 +2451,27 @@ class Objc3IREmitter {
   static bool IsArcExecutableObjectReturn(const Objc3MethodDecl &method) {
     return method.return_id_spelling || method.return_instancetype_spelling ||
            method.return_object_pointer_type_spelling;
+  }
+
+  static std::string LowercaseAscii(std::string text) {
+    std::transform(text.begin(), text.end(), text.begin(),
+                   [](unsigned char ch) {
+                     return static_cast<char>(std::tolower(ch));
+                   });
+    return text;
+  }
+
+  static bool IsNSErrorOutParameterSite(const FuncParam &param) {
+    if (!param.object_pointer_type_spelling) {
+      return false;
+    }
+    const std::string lowered_type = LowercaseAscii(param.object_pointer_type_name);
+    if (lowered_type != "nserror") {
+      return false;
+    }
+    const std::string lowered_name = LowercaseAscii(param.name);
+    return param.has_pointer_declarator ||
+           lowered_name.find("error") != std::string::npos;
   }
 
   static bool EffectiveArcParamInsertRetain(const FuncParam &param,
@@ -2479,9 +2516,27 @@ class Objc3IREmitter {
     for (const auto &fn : program.functions) {
       LoweredFunctionSignature signature;
       signature.return_type = fn.return_type;
+      signature.throws_declared = fn.throws_declared;
+      signature.objc_nserror_declared = fn.objc_nserror_declared;
+      signature.objc_status_code_declared = fn.objc_status_code_declared;
+      signature.objc_status_code_mapping_symbol = fn.objc_status_code_mapping_symbol;
+      if (!fn.objc_status_code_success_literal.empty()) {
+        try {
+          signature.objc_status_code_success_literal =
+              std::stoi(fn.objc_status_code_success_literal);
+        } catch (...) {
+          signature.objc_status_code_success_literal = 0;
+        }
+      }
       signature.param_types.reserve(fn.params.size());
-      for (const auto &param : fn.params) {
+      for (std::size_t param_index = 0; param_index < fn.params.size(); ++param_index) {
+        const auto &param = fn.params[param_index];
         signature.param_types.push_back(param.type);
+        if (signature.ns_error_out_param_index ==
+                std::numeric_limits<std::size_t>::max() &&
+            IsNSErrorOutParameterSite(param)) {
+          signature.ns_error_out_param_index = param_index;
+        }
       }
       auto existing = signatures.find(fn.name);
       if (existing == signatures.end()) {
@@ -9514,6 +9569,153 @@ class Objc3IREmitter {
     return &signature_it->second;
   }
 
+  std::string BuildThrowsErrorSlotAlloca(FunctionContext &ctx,
+                                         const std::string &prefix) const {
+    const std::string slot = "%" + prefix + ".error.addr." +
+                             std::to_string(ctx.temp_counter++);
+    ctx.entry_lines.push_back("  " + slot + " = alloca i32, align 4");
+    return slot;
+  }
+
+  void EmitStoreThrownError(const std::string &error_value,
+                            const std::string &slot,
+                            FunctionContext &ctx) const {
+    if (slot.empty()) {
+      return;
+    }
+    ctx.code_lines.push_back("  store i32 " + error_value + ", ptr " + slot +
+                             ", align 4");
+  }
+
+  void EmitPropagateThrownError(const std::string &error_value,
+                                FunctionContext &ctx) const {
+    if (!ctx.error_handler_stack.empty()) {
+      const auto &handler = ctx.error_handler_stack.back();
+      EmitStoreThrownError(error_value, handler.error_slot_ptr, ctx);
+      EmitTerminalCleanupToDepth(ctx, handler.scope_depth,
+                                 handler.autoreleasepool_depth,
+                                 handler.pending_block_dispose_depth,
+                                 handler.arc_cleanup_depth);
+      ctx.code_lines.push_back("  br label %" + handler.dispatch_label);
+      ctx.terminated = true;
+      return;
+    }
+    if (!ctx.function_error_out_param.empty()) {
+      EmitStoreThrownError(error_value, ctx.function_error_out_param, ctx);
+      EmitTypedReturn("0", ctx);
+      ctx.terminated = true;
+      return;
+    }
+    ctx.code_lines.push_back("  call void @abort()");
+    ctx.code_lines.push_back("  unreachable");
+    ctx.terminated = true;
+  }
+
+  std::string EmitDirectFunctionCall(const Expr *expr,
+                                     const LoweredFunctionSignature *signature,
+                                     FunctionContext &ctx,
+                                     const std::string &throws_error_slot_ptr,
+                                     bool *bridge_failed_out = nullptr,
+                                     std::string *bridge_error_value_out = nullptr) const {
+    std::vector<std::string> args;
+    args.reserve(expr->args.size() + (signature != nullptr && signature->throws_declared ? 1u : 0u));
+    for (std::size_t i = 0; i < expr->args.size(); ++i) {
+      const std::string arg_i32 = EmitExpr(expr->args[i].get(), ctx);
+      const ValueType expected_type =
+          signature != nullptr && i < signature->param_types.size() ? signature->param_types[i] : ValueType::I32;
+      AppendLoweredCallArg(args, arg_i32, expected_type, ctx);
+    }
+    if (signature != nullptr && signature->throws_declared) {
+      args.push_back("ptr " + throws_error_slot_ptr);
+    }
+    std::ostringstream arglist;
+    for (std::size_t i = 0; i < args.size(); ++i) {
+      if (i != 0) {
+        arglist << ", ";
+      }
+      arglist << args[i];
+    }
+    const ValueType return_type =
+        signature != nullptr ? signature->return_type : ValueType::I32;
+    const std::string llvm_return_type = LLVMScalarType(return_type);
+    const bool call_may_have_global_side_effects =
+        FunctionMayHaveGlobalSideEffects(expr->ident);
+    std::string out = "0";
+    if (return_type == ValueType::Void) {
+      ctx.code_lines.push_back("  call " + llvm_return_type + " @" + expr->ident +
+                               "(" + arglist.str() + ")");
+    } else {
+      const std::string tmp = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + tmp + " = call " + llvm_return_type + " @" +
+                               expr->ident + "(" + arglist.str() + ")");
+      out = CoerceValueToI32(tmp, return_type, ctx);
+    }
+    if (call_may_have_global_side_effects) {
+      InvalidateGlobalProofState(ctx);
+    }
+
+    if (bridge_failed_out != nullptr) {
+      *bridge_failed_out = false;
+    }
+    if (bridge_error_value_out != nullptr) {
+      *bridge_error_value_out = "0";
+    }
+
+    if (signature != nullptr && signature->objc_status_code_declared) {
+      const std::string is_success = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + is_success + " = icmp eq i32 " + out +
+                               ", " +
+                               std::to_string(signature->objc_status_code_success_literal));
+      const std::string bridge_failed = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + bridge_failed + " = xor i1 " + is_success +
+                               ", true");
+      if (bridge_failed_out != nullptr) {
+        *bridge_failed_out = true;
+      }
+      if (bridge_error_value_out != nullptr) {
+        if (!signature->objc_status_code_mapping_symbol.empty()) {
+          const LoweredFunctionSignature *mapping_signature =
+              LookupFunctionSignature(signature->objc_status_code_mapping_symbol);
+          std::string mapping_result = "0";
+          if (mapping_signature != nullptr && mapping_signature->return_type == ValueType::Void) {
+            ctx.code_lines.push_back("  call void @" +
+                                     signature->objc_status_code_mapping_symbol +
+                                     "(i32 " + out + ")");
+          } else {
+            const std::string mapped = NewTemp(ctx);
+            ctx.code_lines.push_back("  " + mapped + " = call i32 @" +
+                                     signature->objc_status_code_mapping_symbol +
+                                     "(i32 " + out + ")");
+            mapping_result = mapped;
+          }
+          *bridge_error_value_out = mapping_result;
+        } else {
+          *bridge_error_value_out = out;
+        }
+      }
+      return out + "|" + bridge_failed;
+    }
+
+    if (signature != nullptr && signature->objc_nserror_declared) {
+      const std::string is_success = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + is_success + " = icmp ne i32 " + out + ", 0");
+      const std::string bridge_failed = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + bridge_failed + " = xor i1 " + is_success + ", true");
+      if (bridge_failed_out != nullptr) {
+        *bridge_failed_out = true;
+      }
+      if (bridge_error_value_out != nullptr) {
+        if (signature->ns_error_out_param_index < expr->args.size()) {
+          *bridge_error_value_out = EmitExpr(expr->args[signature->ns_error_out_param_index].get(), ctx);
+        } else {
+          *bridge_error_value_out = "1";
+        }
+      }
+      return out + "|" + bridge_failed;
+    }
+    return out;
+  }
+
   void AppendLoweredCallArg(std::vector<std::string> &args, const std::string &arg_i32, ValueType expected_type,
                             FunctionContext &ctx) const {
     if (expected_type == ValueType::Bool) {
@@ -9638,6 +9840,9 @@ class Objc3IREmitter {
         return;
       }
       const std::string value = EmitExpr(value_expr, ctx);
+      if (ctx.terminated) {
+        return;
+      }
       if (ctx.arc_owned_storage_ptrs.find(ptr) != ctx.arc_owned_storage_ptrs.end()) {
         const std::string retained_value = NewTemp(ctx);
         const std::string previous_value = NewTemp(ctx);
@@ -9675,6 +9880,9 @@ class Objc3IREmitter {
     std::string binary_opcode;
     if (!TryGetCompoundAssignmentBinaryOpcode(op, binary_opcode)) {
       const std::string value = EmitExpr(value_expr, ctx);
+      if (ctx.terminated) {
+        return;
+      }
       ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
       return;
     }
@@ -9682,6 +9890,9 @@ class Objc3IREmitter {
     const std::string lhs = NewTemp(ctx);
     ctx.code_lines.push_back("  " + lhs + " = load i32, ptr " + ptr + ", align 4");
     const std::string rhs = EmitExpr(value_expr, ctx);
+    if (ctx.terminated) {
+      return;
+    }
     const std::string out = NewTemp(ctx);
     ctx.code_lines.push_back("  " + out + " = " + binary_opcode + " i32 " + lhs + ", " + rhs);
     ctx.code_lines.push_back("  store i32 " + out + ", ptr " + ptr + ", align 4");
@@ -9711,6 +9922,9 @@ class Objc3IREmitter {
           return;
         }
         const std::string value = EmitExpr(clause.value.get(), ctx);
+        if (ctx.terminated) {
+          return;
+        }
         const std::string ptr = "%" + clause.name + ".addr." + std::to_string(ctx.temp_counter++);
         int clause_const_value = 0;
         const bool has_clause_const_value = TryGetCompileTimeI32ExprInContext(clause.value.get(), ctx, clause_const_value);
@@ -9736,6 +9950,9 @@ class Objc3IREmitter {
                                   FunctionContext &ctx,
                                   bool mark_runtime_nonnull) const {
     const std::string value = EmitExpr(value_expr, ctx);
+    if (ctx.terminated) {
+      return value;
+    }
     int const_value = 0;
     const bool has_const_value =
         TryGetCompileTimeI32ExprInContext(value_expr, ctx, const_value);
@@ -10685,44 +10902,109 @@ class Objc3IREmitter {
         return out_value;
       }
       case Expr::Kind::Call: {
+        if (expr->ident == "__objc3_throw_stmt") {
+          const std::string error_value =
+              expr->args.empty() ? "1" : EmitExpr(expr->args.front().get(), ctx);
+          EmitPropagateThrownError(error_value, ctx);
+          return "0";
+        }
+        if (expr->ident == "__objc3_try_expr") {
+          const Expr *operand =
+              !expr->args.empty() ? expr->args.front().get() : expr->left.get();
+          if (operand == nullptr || operand->kind != Expr::Kind::Call) {
+            return EmitUnsupportedI32Value(
+                "try lowering expected callable operand");
+          }
+          const LoweredFunctionSignature *operand_signature =
+              LookupFunctionSignature(operand->ident);
+          if (operand_signature == nullptr) {
+            return EmitUnsupportedI32Value(
+                "try lowering requires declared callable signature");
+          }
+          const std::string result_ptr =
+              "%try.result.addr." + std::to_string(ctx.temp_counter++);
+          const std::string error_slot =
+              BuildThrowsErrorSlotAlloca(ctx, "try");
+          ctx.entry_lines.push_back("  " + result_ptr + " = alloca i32, align 4");
+          const std::string merged_label = NewLabel(ctx, "try_merge_");
+          const std::string failure_label = NewLabel(ctx, "try_fail_");
+          const std::string success_label = NewLabel(ctx, "try_success_");
+          ctx.code_lines.push_back("  store i32 0, ptr " + error_slot + ", align 4");
+          bool bridge_failed = false;
+          std::string bridge_error_value = "0";
+          std::string result = EmitDirectFunctionCall(
+              operand, operand_signature, ctx, error_slot,
+              &bridge_failed, &bridge_error_value);
+          std::string actual_result = result;
+          std::string failure_cond;
+          if (bridge_failed) {
+            const std::size_t marker = result.rfind('|');
+            actual_result = result.substr(0, marker);
+            failure_cond = result.substr(marker + 1);
+          } else if (operand_signature->throws_declared) {
+            const std::string loaded_error = NewTemp(ctx);
+            const std::string has_error = NewTemp(ctx);
+            ctx.code_lines.push_back("  " + loaded_error + " = load i32, ptr " +
+                                     error_slot + ", align 4");
+            ctx.code_lines.push_back("  " + has_error + " = icmp ne i32 " +
+                                     loaded_error + ", 0");
+            failure_cond = has_error;
+            bridge_error_value = loaded_error;
+          } else {
+            return EmitUnsupportedI32Value(
+                "try lowering requires throwing or bridged operand");
+          }
+          ctx.code_lines.push_back("  br i1 " + failure_cond + ", label %" +
+                                   failure_label + ", label %" + success_label);
+          ctx.code_lines.push_back(success_label + ":");
+          ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
+                                   result_ptr + ", align 4");
+          ctx.code_lines.push_back("  br label %" + merged_label);
+          ctx.code_lines.push_back(failure_label + ":");
+          switch (expr->try_operator_kind) {
+          case Expr::TryOperatorKind::Optional:
+            ctx.code_lines.push_back("  store i32 0, ptr " + result_ptr +
+                                     ", align 4");
+            ctx.code_lines.push_back("  br label %" + merged_label);
+            break;
+          case Expr::TryOperatorKind::Forced:
+            ctx.code_lines.push_back("  call void @abort()");
+            ctx.code_lines.push_back("  unreachable");
+            break;
+          case Expr::TryOperatorKind::Propagate:
+            EmitPropagateThrownError(bridge_error_value, ctx);
+            break;
+          case Expr::TryOperatorKind::None:
+            ctx.code_lines.push_back("  store i32 " + actual_result + ", ptr " +
+                                     result_ptr + ", align 4");
+            ctx.code_lines.push_back("  br label %" + merged_label);
+            break;
+          }
+          if (expr->try_operator_kind == Expr::TryOperatorKind::Forced ||
+              expr->try_operator_kind == Expr::TryOperatorKind::Propagate) {
+            // The failure arm terminates, but the success arm still flows
+            // through the merged result block.
+            ctx.terminated = false;
+          }
+          ctx.code_lines.push_back(merged_label + ":");
+          const std::string loaded = NewTemp(ctx);
+          ctx.code_lines.push_back("  " + loaded + " = load i32, ptr " +
+                                   result_ptr + ", align 4");
+          return loaded;
+        }
         const auto local_block_it = ctx.block_bindings.find(expr->ident);
         if (local_block_it != ctx.block_bindings.end()) {
           return EmitBlockInvokeCall(local_block_it->second, expr, ctx);
         }
         const LoweredFunctionSignature *signature = LookupFunctionSignature(expr->ident);
-        std::vector<std::string> args;
-        args.reserve(expr->args.size());
-        for (std::size_t i = 0; i < expr->args.size(); ++i) {
-          const std::string arg_i32 = EmitExpr(expr->args[i].get(), ctx);
-          const ValueType expected_type =
-              signature != nullptr && i < signature->param_types.size() ? signature->param_types[i] : ValueType::I32;
-          AppendLoweredCallArg(args, arg_i32, expected_type, ctx);
+        if (signature != nullptr && signature->throws_declared) {
+          const std::string ignored_error_slot =
+              BuildThrowsErrorSlotAlloca(ctx, "ignored");
+          ctx.code_lines.push_back("  store i32 0, ptr " + ignored_error_slot +
+                                   ", align 4");
+          return EmitDirectFunctionCall(expr, signature, ctx, ignored_error_slot);
         }
-        std::ostringstream arglist;
-        for (std::size_t i = 0; i < args.size(); ++i) {
-          if (i != 0) {
-            arglist << ", ";
-          }
-          arglist << args[i];
-        }
-        const ValueType return_type = signature != nullptr ? signature->return_type : ValueType::I32;
-        const std::string llvm_return_type = LLVMScalarType(return_type);
-        const bool call_may_have_global_side_effects = FunctionMayHaveGlobalSideEffects(expr->ident);
-        if (return_type == ValueType::Void) {
-          ctx.code_lines.push_back("  call " + llvm_return_type + " @" + expr->ident + "(" + arglist.str() + ")");
-          if (call_may_have_global_side_effects) {
-            InvalidateGlobalProofState(ctx);
-          }
-          return "0";
-        }
-        const std::string tmp = NewTemp(ctx);
-        ctx.code_lines.push_back("  " + tmp + " = call " + llvm_return_type + " @" + expr->ident + "(" +
-                                 arglist.str() + ")");
-        const std::string out = CoerceValueToI32(tmp, return_type, ctx);
-        if (call_may_have_global_side_effects) {
-          InvalidateGlobalProofState(ctx);
-        }
-        return out;
+        return EmitDirectFunctionCall(expr, signature, ctx, "");
       }
       case Expr::Kind::MessageSend: {
         return EmitMessageSendExpr(expr, ctx);
@@ -10770,6 +11052,9 @@ class Objc3IREmitter {
         // Evaluate the initializer against the currently visible scope first so
         // shadowing declarations can read the previous binding deterministically.
         const std::string value = EmitExpr(let->value.get(), ctx);
+        if (ctx.terminated) {
+          return;
+        }
         int let_const_value = 0;
         const bool has_let_const_value = TryGetCompileTimeI32ExprInContext(let->value.get(), ctx, let_const_value);
         const bool has_let_nil_value = IsCompileTimeNilReceiverExprInContext(let->value.get(), ctx);
@@ -10798,6 +11083,9 @@ class Objc3IREmitter {
           EmitTypedReturn("0", ctx);
         } else {
           const std::string value = EmitExpr(ret->value.get(), ctx);
+          if (ctx.terminated) {
+            return;
+          }
           EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
           EmitTypedReturn(value, ctx);
         }
@@ -10867,6 +11155,77 @@ class Objc3IREmitter {
       case Stmt::Kind::Block: {
         const BlockStmt *block_stmt = stmt->block_stmt.get();
         if (block_stmt == nullptr) {
+          return;
+        }
+        if (block_stmt->is_do_catch_scope) {
+          const std::size_t autoreleasepool_depth =
+              ctx.autoreleasepool_scope_symbols.size();
+          const std::string dispatch_label =
+              NewLabel(ctx, "do_catch_dispatch_");
+          const std::string merge_label = NewLabel(ctx, "do_catch_end_");
+          const std::string error_slot =
+              BuildThrowsErrorSlotAlloca(ctx, "do_catch");
+          ctx.code_lines.push_back("  store i32 0, ptr " + error_slot +
+                                   ", align 4");
+          PushScope(ctx);
+          ctx.error_handler_stack.push_back({error_slot,
+                                             dispatch_label,
+                                             ctx.scopes.size() - 1u,
+                                             ctx.autoreleasepool_scope_symbols.size(),
+                                             ctx.pending_block_dispose_calls.size(),
+                                             ctx.arc_owned_cleanup_ptrs.size()});
+          for (const auto &nested_stmt : block_stmt->body) {
+            EmitStatement(nested_stmt.get(), ctx);
+            if (ctx.terminated) {
+              break;
+            }
+          }
+          const bool body_terminated = ctx.terminated;
+          ctx.error_handler_stack.pop_back();
+          PopScope(ctx, !body_terminated);
+          if (!body_terminated) {
+            EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
+            ctx.code_lines.push_back("  br label %" + merge_label);
+          }
+          ctx.code_lines.push_back(dispatch_label + ":");
+          const std::string loaded_error = NewTemp(ctx);
+          ctx.code_lines.push_back("  " + loaded_error + " = load i32, ptr " +
+                                   error_slot + ", align 4");
+          for (std::size_t clause_index = 0;
+               clause_index < block_stmt->catch_clauses.size(); ++clause_index) {
+            const auto &clause = block_stmt->catch_clauses[clause_index];
+            const std::string catch_label =
+                NewLabel(ctx, clause.catch_all ? "catch_all_" : "catch_");
+            ctx.code_lines.push_back("  br label %" + catch_label);
+            ctx.code_lines.push_back(catch_label + ":");
+            PushScope(ctx);
+            if (clause.has_binding && !clause.binding_name.empty()) {
+              const std::string ptr =
+                  "%" + clause.binding_name + ".addr." +
+                  std::to_string(ctx.temp_counter++);
+              ctx.entry_lines.push_back("  " + ptr + " = alloca i32, align 4");
+              ctx.code_lines.push_back("  store i32 " + loaded_error + ", ptr " +
+                                       ptr + ", align 4");
+              ctx.scopes.back()[clause.binding_name] = ptr;
+            }
+            ctx.terminated = false;
+            for (const auto &catch_stmt : clause.body) {
+              EmitStatement(catch_stmt.get(), ctx);
+              if (ctx.terminated) {
+                break;
+              }
+            }
+            const bool catch_terminated = ctx.terminated;
+            PopScope(ctx, !catch_terminated);
+            if (!catch_terminated) {
+              ctx.code_lines.push_back("  br label %" + merge_label);
+            }
+            if (catch_terminated) {
+              break;
+            }
+          }
+          ctx.code_lines.push_back(merge_label + ":");
+          ctx.terminated = false;
           return;
         }
         const std::size_t autoreleasepool_depth =
@@ -11340,6 +11699,7 @@ class Objc3IREmitter {
           emitted = true;
           return true;
         };
+    emit_declaration_once("abort", "declare void @abort()\n");
     if (ShouldEmitRuntimeBootstrapLowering()) {
       emit_declaration_once(
           kObjc3RuntimeBootstrapStageRegistrationTableSymbol,
@@ -11353,7 +11713,6 @@ class Objc3IREmitter {
               frontend_metadata_
                   .runtime_bootstrap_lowering_registration_entrypoint_symbol +
               "(ptr)\n");
-      emit_declaration_once("abort", "declare void @abort()\n");
     }
     if (!selector_pool_globals_.empty()) {
       const auto emit_runtime_dispatch_declaration =
@@ -11452,6 +11811,12 @@ class Objc3IREmitter {
         }
         params << LLVMScalarType(signature.param_types[i]);
       }
+      if (signature.throws_declared) {
+        if (!signature.param_types.empty()) {
+          params << ", ";
+        }
+        params << "ptr";
+      }
       out << "declare " << LLVMScalarType(signature.return_type) << " @" << entry.first << "(" << params.str()
           << ")\n";
       emitted = true;
@@ -11520,12 +11885,21 @@ class Objc3IREmitter {
       }
       signature << LLVMScalarType(fn.params[i].type) << " %arg" << i;
     }
+    if (fn.throws_declared) {
+      if (!fn.params.empty()) {
+        signature << ", ";
+      }
+      signature << "ptr %error_out";
+    }
 
     out << "define " << LLVMScalarType(fn.return_type) << " @" << fn.name << "(" << signature.str() << ") {\n";
     out << "entry:\n";
 
     FunctionContext ctx;
     ctx.return_type = fn.return_type;
+    if (fn.throws_declared) {
+      ctx.function_error_out_param = "%error_out";
+    }
     ctx.arc_return_insert_retain =
         EffectiveArcReturnInsertRetain(fn, frontend_metadata_.arc_mode_enabled);
     ctx.arc_return_insert_autorelease =
@@ -11577,6 +11951,12 @@ class Objc3IREmitter {
       }
       signature << LLVMScalarType(method.params[i].type) << " %arg" << i;
     }
+    if (method.throws_declared) {
+      if (!method.params.empty()) {
+        signature << ", ";
+      }
+      signature << "ptr %error_out";
+    }
 
     out << "define " << LLVMScalarType(method.return_type) << " @"
         << method_def.symbol << "(" << signature.str() << ") {\n";
@@ -11584,6 +11964,9 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = method.return_type;
+    if (method.throws_declared) {
+      ctx.function_error_out_param = "%error_out";
+    }
     ctx.arc_return_insert_retain = EffectiveArcReturnInsertRetain(
         method, frontend_metadata_.arc_mode_enabled);
     ctx.arc_return_insert_autorelease =
@@ -11750,11 +12133,26 @@ class Objc3IREmitter {
       if (main_signature != nullptr) {
         main_return_type = main_signature->return_type;
       }
+      const bool main_throws =
+          main_signature != nullptr && main_signature->throws_declared;
+      if (main_throws) {
+        out << "  %main.error.addr = alloca i32, align 4\n";
+        out << "  store i32 0, ptr %main.error.addr, align 4\n";
+      }
       if (main_return_type == ValueType::Void) {
-        out << "  call void @main()\n";
+        out << "  call void @main(";
+        if (main_throws) {
+          out << "ptr %main.error.addr";
+        }
+        out << ")\n";
         out << "  ret i32 0\n";
       } else {
-        out << "  %call_main = call " << LLVMScalarType(main_return_type) << " @main()\n";
+        out << "  %call_main = call " << LLVMScalarType(main_return_type)
+            << " @main(";
+        if (main_throws) {
+          out << "ptr %main.error.addr";
+        }
+        out << ")\n";
         if (main_return_type == ValueType::Bool) {
           out << "  %call_main_i32 = zext i1 %call_main to i32\n";
           out << "  ret i32 %call_main_i32\n";

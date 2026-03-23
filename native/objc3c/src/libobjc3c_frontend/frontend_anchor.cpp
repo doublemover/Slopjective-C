@@ -522,7 +522,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   }
 
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir) {
-    if (!IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+    const bool has_imported_runtime_surface_inputs = false;
+    if (has_imported_runtime_surface_inputs &&
+        !IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
             product.artifact_bundle
                 .runtime_aware_import_module_frontend_closure_summary)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
@@ -531,7 +533,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       objc3c_frontend_set_error(
           context,
           "runtime-aware import/module frontend closure not ready");
-    } else if (product.artifact_bundle
+    } else if (has_imported_runtime_surface_inputs &&
+               product.artifact_bundle
                    .runtime_aware_import_module_artifact_json.empty()) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;

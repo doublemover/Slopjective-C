@@ -1943,25 +1943,27 @@ A `try` call should lower to:
 
 `try?` and `try!` should be implemented as specified in [Part 6](#part-6), using the same underlying error value.
 
-## M267 Part 6 throws ABI and propagation lowering boundary (C001)
+## M267 Part 6 runnable error-out ABI and propagation lowering (C002)
 
-`M267-C001` freezes the truthful lane-C lowering boundary that exists today for
-Part 6 before runnable propagation transfer lands.
+`M267-C002` promotes the Part 6 lane-C lowering surface into a runnable native
+capability.
 
 - canonical contract id:
-  `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
+  `objc3c-part6-throws-abi-propagation-lowering/m267-c002-v1`
 - canonical lowering model:
   - Part 6 semantic packets from `M267-B001`, `M267-B002`, and `M267-B003`
-    feed deterministic throws-propagation, result-like, `NSError` bridging,
-    and unwind-cleanup replay publication
+    now feed real hidden error-out ABI emission, direct propagation lowering,
+    `try` operator control-flow, `do/catch` dispatch, and status-to-`NSError`
+    bridge propagation
   - emitted IR carries
     `; part6_throws_abi_propagation_lowering = ...`
   - emitted IR carries
     `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+  - the lowering packet now publishes `ready_for_runtime_execution=true`
 - explicit current non-goals:
-  - no runnable `throw` transfer yet
-  - no runnable `try` / `do/catch` transfer yet
-  - no generalized native thrown-error object ABI claim yet
+  - no separate-compilation replay completion yet
+  - no broader cross-module preservation claim yet
+  - no generalized foreign error-object ABI claim yet
 - `M267-C002` is the next issue
 
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}

@@ -747,15 +747,15 @@ inline constexpr const char *kObjc3ArcLoweringAbiCleanupModelNonGoalModel =
     "no-full-arc-automation-no-exception-cleanup-widening-no-objc-runtime-abi-parity-claim";
 std::string Objc3ArcLoweringAbiCleanupModelSummary();
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringContractId =
-    "objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1";
+    "objc3c-part6-throws-abi-propagation-lowering/m267-c002-v1";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringSourceModel =
-    "part6-semantic-packets-feed-throws-result-like-nserror-and-unwind-lowering-replay-boundary";
+    "part6-semantic-packets-feed-runnable-error-out-abi-propagation-and-catch-dispatch-lowering";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringAbiModel =
-    "native-lowering-currently-publishes-propagation-carrier-and-out-error-boundaries-through-deterministic-replay-contracts";
+    "native-lowering-emits-hidden-error-out-abi-propagation-operators-and-do-catch-control-flow-through-real-ir-and-object-artifacts";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel =
-    "native-throw-try-do-catch-execution-and-general-error-object-abi-remain-fail-closed-until-m267-c002";
+    "result-bridge-replay-completion-and-separate-compilation-proof-remain-deferred-to-m267-c003";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel =
-    "no-runnable-throw-transfer-no-catch-dispatch-no-generalized-error-object-runtime-abi-claim-yet";
+    "no-generalized-foreign-exception-abi-no-stable-cross-module-replay-claim-yet";
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";

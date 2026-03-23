@@ -503,19 +503,19 @@ M267-B003 bridge legality note:
 - unsupported bridge combinations remain compile-time fail-closed and do not yet
   widen runnable native behavior
 
-M267-C001 lowering-boundary note:
+M267-C002 lowering implementation note:
 
-- the native lowering boundary is now explicit:
-  - throws-propagation replay is carried into native IR
-  - result-like replay is carried into the combined Part 6 lowering boundary
-  - `NSError` bridging replay is carried into native IR
-  - unwind-cleanup replay is carried into native IR
+- the native lowering path is now live:
+  - hidden error-out ABI is emitted for throwing call targets
+  - `throw` stores into the current error slot and exits the current frame
+  - `try`, `try?`, and `try!` branch over success and propagated-error paths
+  - `do/catch` dispatch selects typed and catch-all handlers from the lowered
+    error slot
 - emitted IR now carries:
   - `; part6_throws_abi_propagation_lowering = ...`
   - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
-- runnable `throw`, `try`, and `do/catch` transfer remain deferred to
-  `M267-C002`; this issue freezes the truthful current boundary rather than
-  claiming that runtime behavior already exists
+- remaining work moves to `M267-C003`, which is the replay and separate-
+  compilation completion tranche rather than the initial runnable lowering step
 
 M266-B002 implementation note:
 

@@ -159,19 +159,25 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       return 1;
     }
 
-    if (!IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+    const bool has_imported_runtime_surface_inputs =
+        !cli_options.imported_runtime_surface_paths.empty();
+    if (has_imported_runtime_surface_inputs &&
+        !IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
             artifacts.runtime_aware_import_module_frontend_closure_summary)) {
       std::cerr << "runtime-aware import/module frontend closure not ready\n";
       return 125;
     }
-    if (artifacts.runtime_aware_import_module_artifact_json.empty()) {
+    if (has_imported_runtime_surface_inputs &&
+        artifacts.runtime_aware_import_module_artifact_json.empty()) {
       std::cerr << "runtime-aware import/module artifact payload missing\n";
       return 125;
     }
-    WriteRuntimeAwareImportModuleArtifact(
-        cli_options.out_dir,
-        cli_options.emit_prefix,
-        artifacts.runtime_aware_import_module_artifact_json);
+    if (has_imported_runtime_surface_inputs) {
+      WriteRuntimeAwareImportModuleArtifact(
+          cli_options.out_dir,
+          cli_options.emit_prefix,
+          artifacts.runtime_aware_import_module_artifact_json);
+    }
     if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
             artifacts.versioned_conformance_report_lowering_summary)) {
       std::cerr << "versioned conformance-report lowering summary not ready\n";

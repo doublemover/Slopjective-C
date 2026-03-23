@@ -5055,6 +5055,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                              result.sema_type_metadata_handoff);
+  const bool allow_part6_error_runtime_surface = true;
   if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
     NormalizeProgramDispatchSurfaceClassification(
         MutableObjc3ParsedProgramAst(result.program));
@@ -5072,7 +5073,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     // the IR path rather than keeping defer as a source-only semantic claim.
     semantic_options.allow_source_only_defer_statements = true;
     semantic_options.allow_source_only_error_runtime_surface =
-        !options.emit_ir && !options.emit_object;
+        allow_part6_error_runtime_surface;
     semantic_options.arc_mode_enabled =
         options.arc_mode == Objc3FrontendArcMode::kEnabled;
 
@@ -5120,12 +5121,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPart6TryDoCatchSemanticSummary(
           Objc3ParsedProgramAst(result.program),
           result.integration_surface,
-          !options.emit_ir && !options.emit_object,
+          allow_part6_error_runtime_surface,
           result.stage_diagnostics.semantic);
   result.part6_error_bridge_legality_summary =
       BuildPart6ErrorBridgeLegalitySummary(
           Objc3ParsedProgramAst(result.program),
-          !options.emit_ir && !options.emit_object,
+          allow_part6_error_runtime_surface,
           result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));

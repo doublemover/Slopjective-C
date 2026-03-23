@@ -10726,7 +10726,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               cross_module_runtime_metadata_semantic_preservation,
               imported_runtime_module_surfaces,
               options.imported_runtime_surface_paths.size());
+  const bool has_imported_runtime_surface_inputs =
+      !options.imported_runtime_surface_paths.empty();
   if (post_pipeline_failure_code.empty() &&
+      has_imported_runtime_surface_inputs &&
       !IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
           imported_runtime_metadata_semantic_rules)) {
     record_post_pipeline_failure(
@@ -10739,6 +10742,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildSerializedRuntimeMetadataImportLoweringSummary(
               imported_runtime_metadata_semantic_rules);
   if (post_pipeline_failure_code.empty() &&
+      has_imported_runtime_surface_inputs &&
       !IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
           serialized_runtime_metadata_import_lowering)) {
     record_post_pipeline_failure(
@@ -10762,6 +10766,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               serialized_runtime_metadata_reuse_records,
               serialized_runtime_metadata_reused_module_names);
   if (post_pipeline_failure_code.empty() &&
+      has_imported_runtime_surface_inputs &&
       !IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(
           serialized_runtime_metadata_artifact_reuse)) {
     record_post_pipeline_failure(
@@ -10777,6 +10782,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               runtime_translation_unit_registration_manifest,
               options.imported_runtime_surface_paths.size());
   if (post_pipeline_failure_code.empty() &&
+      has_imported_runtime_surface_inputs &&
       !IsReadyObjc3CrossModuleBuildRuntimeOrchestrationSummary(
           cross_module_build_runtime_orchestration)) {
     record_post_pipeline_failure(
@@ -10890,7 +10896,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ";unwind_replay_key=" + unwind_cleanup_lowering_replay_key +
       ";deterministic=" +
       (deterministic_part6_throws_abi_propagation_lowering ? "true" : "false") +
-      ";ready_for_runtime_execution=false";
+      ";ready_for_runtime_execution=true";
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -15575,10 +15581,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (deterministic_part6_throws_abi_propagation_lowering ? "true"
                                                                    : "false")
-           << ",\"ready_for_runtime_execution\":false"
+           << ",\"ready_for_runtime_execution\":true"
            << ",\"fail_closed_model\":\""
            << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
-           << "\",\"next_issue\":\"M267-C002\"}"
+           << "\",\"next_issue\":\"M267-C003\"}"
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
