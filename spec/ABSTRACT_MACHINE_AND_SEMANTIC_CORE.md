@@ -789,6 +789,16 @@ M269-C002 task-runtime lowering implementation note:
   older `O3S260` / `O3L300` front-door gates, so the issue-local runtime probe
   proves the helper-backed execution boundary directly
 
+M269-C003 task-runtime ABI completion note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_task_group_and_runtime_abi_completion`
+- this packet preserves the helper-backed task-runtime ABI surface emitted by
+  `M269-C002`, including task-group helper count and the private runtime
+  snapshot symbol
+- emitted IR now carries `; part7_task_runtime_abi_completion = ...` and
+  `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

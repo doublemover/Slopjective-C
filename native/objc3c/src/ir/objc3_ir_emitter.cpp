@@ -762,6 +762,15 @@ class Objc3IREmitter {
     // prove the direct-call await path now executes through the helper cluster.
     out << "; part7_live_continuation_runtime_integration = "
         << Objc3Part7LiveContinuationRuntimeIntegrationSummary() << "\n";
+    // M269-C003 ABI/artifact completion anchor: publish the dedicated Part 7
+    // task-group/runtime ABI packet so later runtime freeze work consumes a
+    // stable helper list and scheduler-visible proof surface.
+    out << "; part7_task_runtime_abi_completion = contract="
+        << kObjc3Part7TaskRuntimeAbiCompletionContractId
+        << ";surface=" << kObjc3Part7TaskRuntimeAbiCompletionSurfacePath
+        << ";helper_count=8;task_group_helper_count=4;runtime_snapshot="
+        << "objc3_runtime_copy_task_runtime_state_for_testing"
+        << ";next_issue=M269-D001\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -3109,6 +3118,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part6_live_error_runtime_integration = !{!90}\n";
     out << "!objc3.objc_part7_continuation_runtime_helper = !{!91}\n";
     out << "!objc3.objc_part7_live_continuation_runtime_integration = !{!92}\n";
+    out << "!objc3.objc_part7_task_runtime_abi_completion = !{!93}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4800,6 +4810,30 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel)
+        << "\"}\n";
+    out << "!93 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeAbiCompletionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeAbiCompletionSurfacePath)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeSpawnTaskI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeEnterTaskGroupScopeI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAddTaskGroupTaskI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeWaitTaskGroupNextI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeCancelTaskGroupI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeTaskIsCancelledI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeTaskOnCancelI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeExecutorHopI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               "objc3_runtime_copy_task_runtime_state_for_testing")
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

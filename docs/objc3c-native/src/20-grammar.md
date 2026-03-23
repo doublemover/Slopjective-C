@@ -3447,6 +3447,21 @@ rewrite for the currently recognized task-runtime symbol family.
   `O3S260` / `O3L300` front-door gates, so the issue-local runtime probe proves
   the helper cluster directly while IR lowering remains source-anchored
 
+## M269 task-group and runtime ABI completion
+
+`M269-C003` publishes the dedicated ABI/artifact packet for the helper-backed
+Part 7 task-runtime slice.
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_task_group_and_runtime_abi_completion`
+- emitted IR now carries:
+  - `; part7_task_runtime_abi_completion = ...`
+  - `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
+- the packet preserves the helper list, task-group helper count, and the
+  private runtime snapshot symbol
+- the runtime proof surface remains private and continues to use
+  `objc3_runtime_copy_task_runtime_state_for_testing`
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

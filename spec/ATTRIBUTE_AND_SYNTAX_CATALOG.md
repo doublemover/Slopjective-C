@@ -637,6 +637,15 @@ Current implementation status (`M269-C002`):
   `O3S260` / `O3L300` front-door gates still block some native end-to-end
   fixture shapes before IR/object emission
 
+Current implementation status (`M269-C003`):
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_task_group_and_runtime_abi_completion`
+- the ABI packet preserves the helper list, task-group helper count, and the
+  private runtime snapshot symbol introduced by `M269-C002`
+- emitted IR now carries `; part7_task_runtime_abi_completion = ...` plus
+  `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

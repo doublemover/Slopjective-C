@@ -473,3 +473,14 @@ lowering slice:
   - `objc3_runtime_task_is_cancelled_i32`
   - `objc3_runtime_task_on_cancel_i32`
   - `objc3_runtime_executor_hop_i32`
+
+## M269 task-runtime ABI completion probe
+
+`M269-C003` reuses the same private runtime helper boundary but adds an
+artifact-level ABI packet and IR metadata marker for it:
+
+- contract id `objc3c-part7-task-runtime-abi-completion/m269-c003-v1`
+- probe:
+  `tests/tooling/runtime/m269_c003_task_runtime_abi_completion_probe.cpp`
+- private runtime snapshot symbol:
+  - `objc3_runtime_copy_task_runtime_state_for_testing`

@@ -117,6 +117,15 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringDeferredModel =
     "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-m269-work";
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionContractId =
+    "objc3c-part7-task-runtime-abi-completion/m269-c003-v1";
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_task_group_and_runtime_abi_completion";
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionArtifactModel =
+    "helper-backed-task-runtime-lowering-now-publishes-a-dedicated-abi-and-runtime-proof-packet";
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionProofModel =
+    "scheduler-visible-runtime-proof-remains-private-and-snapshotted-through-objc3_runtime_copy_task_runtime_state_for_testing";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1355,6 +1364,49 @@ std::string BuildPart7TaskRuntimeLoweringContractJson(
       << ",\"ready_for_ir_emission\":"
       << (deterministic_handoff ? "true" : "false")
       << "}";
+  return out.str();
+}
+
+std::string BuildPart7TaskRuntimeAbiCompletionJson(
+    const std::string &task_runtime_replay_key,
+    const std::string &concurrency_replay_key) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeAbiCompletionContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeAbiCompletionSurfacePath)
+      << "\",\"lowering_contract_id\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringContractId)
+      << "\",\"artifact_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeAbiCompletionArtifactModel)
+      << "\",\"runtime_proof_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeAbiCompletionProofModel)
+      << "\",\"task_runtime_replay_key\":\""
+      << EscapeJsonString(task_runtime_replay_key)
+      << "\",\"concurrency_replay_key\":\""
+      << EscapeJsonString(concurrency_replay_key)
+      << "\",\"helper_symbol_count\":8"
+      << ",\"task_group_helper_count\":4"
+      << ",\"scheduler_visible_runtime_proof\":true"
+      << ",\"runtime_snapshot_symbol\":\""
+      << EscapeJsonString("objc3_runtime_copy_task_runtime_state_for_testing")
+      << "\",\"helper_symbols\":["
+      << "\"" << EscapeJsonString(kObjc3RuntimeSpawnTaskI32Symbol) << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeEnterTaskGroupScopeI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeAddTaskGroupTaskI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeWaitTaskGroupNextI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeCancelTaskGroupI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeTaskIsCancelledI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeTaskOnCancelI32Symbol)
+      << "\","
+      << "\"" << EscapeJsonString(kObjc3RuntimeExecutorHopI32Symbol) << "\""
+      << "]}";
   return out.str();
 }
 
@@ -15644,6 +15696,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_task_runtime_interop_cancellation_lowering_replay_key,
                   part7_concurrency_replay_race_guard_lowering_contract,
                   part7_concurrency_replay_race_guard_lowering_replay_key)
+           << ",\"objc_part7_task_group_and_runtime_abi_completion\":"
+           << BuildPart7TaskRuntimeAbiCompletionJson(
+                  part7_task_runtime_interop_cancellation_lowering_replay_key,
+                  part7_concurrency_replay_race_guard_lowering_replay_key)
            << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
            << BuildPart7AsyncDirectCallLoweringJson(
                   part7_async_source_closure_summary,
@@ -16941,6 +16997,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_task_runtime_interop_cancellation_lowering_contract,
                   part7_task_runtime_interop_cancellation_lowering_replay_key,
                   part7_concurrency_replay_race_guard_lowering_contract,
+                  part7_concurrency_replay_race_guard_lowering_replay_key)
+           << ",\"objc_part7_task_group_and_runtime_abi_completion\":"
+           << BuildPart7TaskRuntimeAbiCompletionJson(
+                  part7_task_runtime_interop_cancellation_lowering_replay_key,
                   part7_concurrency_replay_race_guard_lowering_replay_key)
            << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
            << BuildPart7AsyncDirectCallLoweringJson(

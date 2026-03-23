@@ -11048,3 +11048,29 @@ Truthful status:
   helper-backed execution boundary directly
 
 - the next issue is `M269-C003`
+
+## M269 Part 7 Task Runtime ABI Completion (C003)
+
+`M269-C003` publishes the dedicated ABI/artifact packet for the helper-backed
+task-runtime slice landed in `M269-C002`.
+
+Canonical artifact boundary:
+
+- semantic-surface packet:
+  - `frontend.pipeline.semantic_surface.objc_part7_task_group_and_runtime_abi_completion`
+- emitted IR boundary:
+  - `; part7_task_runtime_abi_completion = ...`
+  - `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
+- preserved helper/runtime proof surface:
+  - helper count `8`
+  - task-group helper count `4`
+  - private runtime snapshot symbol
+    `objc3_runtime_copy_task_runtime_state_for_testing`
+
+Truthful status:
+
+- the helper ABI is now preserved in both manifest and IR artifact channels
+- the runtime proof surface remains private
+- broader task-runtime freeze and scheduler semantics remain later `M269` work
+
+- the next issue is `M269-D001`

@@ -1448,6 +1448,15 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringContractId =
     "objc3c-part7-task-runtime-lowering-contract/m269-c001-v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract";
+// M269-C003 ABI/artifact completion anchor: the supported Part 7 helper-backed
+// lowering slice now also publishes a dedicated runtime-ABI packet and IR
+// boundary so later lane-D runtime freezes consume a stable artifact surface
+// instead of rediscovering helper names ad hoc.
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionContractId =
+    "objc3c-part7-task-runtime-abi-completion/m269-c003-v1";
+inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_task_group_and_runtime_abi_completion";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "m191-unsafe-pointer-extension-gating-lowering-v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
