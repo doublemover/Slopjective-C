@@ -537,6 +537,21 @@ runtime boundary.
   - `objc3_runtime_push_autoreleasepool_scope`
   - `objc3_runtime_pop_autoreleasepool_scope`
 
+## M270 actor lowering runtime probe
+
+`M270-C002` adds the first live helper-backed actor lowering proof slice.
+
+- contract id `objc3c-part7-actor-thunk-hop-and-isolation-lowering/m270-c002-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m270_c002_actor_lowering_runtime_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m270_c002_actor_lowering_runtime_probe.cpp`
+- helper traffic proven by the probe:
+  - `objc3_runtime_actor_enter_isolation_thunk_i32`
+  - `objc3_runtime_actor_enter_nonisolated_i32`
+  - `objc3_runtime_actor_hop_to_executor_i32`
+  - `objc3_runtime_copy_actor_runtime_state_for_testing`
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the

@@ -3351,6 +3351,20 @@ Lane C now also publishes
 - live thunk bodies, mailbox runtime entrypoints, and runnable cross-actor
   scheduling remain later `M270-C002` and `M270-C003` work
 
+## M270 actor thunk, hop, and isolation lowering
+
+`M270-C002` turns the narrow helper-backed actor lowering slice live.
+
+- actor methods can now lower `actor_enter_isolation_thunk()` through
+  `objc3_runtime_actor_enter_isolation_thunk_i32`
+- actor methods marked `objc_nonisolated` can now lower
+  `actor_nonisolated_entry(value)` through
+  `objc3_runtime_actor_enter_nonisolated_i32`
+- actor methods can now lower `actor_hop_to_executor(value)` through
+  `objc3_runtime_actor_hop_to_executor_i32`
+- this remains a private lowering/runtime slice rather than a public actor
+  runtime ABI
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

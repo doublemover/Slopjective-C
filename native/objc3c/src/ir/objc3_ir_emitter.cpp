@@ -2516,6 +2516,8 @@ class Objc3IREmitter {
     std::string function_error_out_param;
     ValueType return_type = ValueType::I32;
     bool async_runtime_helper_enabled = false;
+    bool actor_runtime_helper_enabled = false;
+    bool actor_nonisolated_entry_enabled = false;
     int async_resume_entry_tag = 0;
     int async_executor_tag = 0;
     int temp_counter = 0;
@@ -2602,6 +2604,18 @@ class Objc3IREmitter {
     return StablePositiveAsyncTag("resume-entry:method:" + method_def.symbol);
   }
 
+  bool IsActorImplementation(const std::string &name) const {
+    if (name.empty()) {
+      return false;
+    }
+    for (const auto &interface_decl : program_.interfaces) {
+      if (!interface_decl.has_category && interface_decl.name == name) {
+        return interface_decl.is_actor;
+      }
+    }
+    return false;
+  }
+
   bool TryEmitPart7TaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
                                            std::string &result_out) const {
     if (expr == nullptr || !ctx.async_runtime_helper_enabled) {
@@ -2673,6 +2687,54 @@ class Objc3IREmitter {
       result_out = hopped;
       return true;
     }
+    return false;
+  }
+
+  bool TryEmitPart7ActorLoweringCall(const Expr *expr, FunctionContext &ctx,
+                                     std::string &result_out) const {
+    if (expr == nullptr || !ctx.actor_runtime_helper_enabled) {
+      return false;
+    }
+
+    const std::string lowered = LowercaseAscii(expr->ident);
+    if (lowered == "actor_enter_isolation_thunk") {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorEnterIsolationThunkI32Symbol) +
+                               "(i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "actor_nonisolated_entry" &&
+        ctx.actor_nonisolated_entry_enabled) {
+      const std::string value =
+          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorEnterNonisolatedI32Symbol) +
+                               "(i32 " + value + ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "actor_hop_to_executor") {
+      const std::string value =
+          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(kObjc3RuntimeActorHopToExecutorI32Symbol) +
+                               "(i32 " + value + ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+
     return false;
   }
 
@@ -10180,7 +10242,11 @@ class Objc3IREmitter {
     const bool call_may_have_global_side_effects =
         FunctionMayHaveGlobalSideEffects(expr->ident);
     std::string out = "0";
-    if (TryEmitPart7TaskRuntimeLoweringCall(expr, ctx, out)) {
+    if (TryEmitPart7ActorLoweringCall(expr, ctx, out)) {
+      // M270-C002 lowering anchor: actor helper spellings inside actor methods
+      // now lower through the private runtime helper slice rather than staying
+      // as ordinary direct-call placeholders.
+    } else if (TryEmitPart7TaskRuntimeLoweringCall(expr, ctx, out)) {
       // M269-C002 lowering anchor: supported task/executor/cancellation
       // symbols now route through the private Part 7 runtime helper cluster
       // rather than remaining ordinary extern-call placeholders.
@@ -12433,6 +12499,21 @@ class Objc3IREmitter {
                             "declare i32 @" +
                                 std::string(kObjc3RuntimeExecutorHopI32Symbol) +
                                 "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorEnterIsolationThunkI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorEnterIsolationThunkI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorEnterNonisolatedI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorEnterNonisolatedI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorHopToExecutorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorHopToExecutorI32Symbol) +
+                                "(i32, i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(
@@ -12648,6 +12729,10 @@ class Objc3IREmitter {
     ctx.return_type = method.return_type;
     ctx.async_runtime_helper_enabled =
         method.async_declared && ExecutorAffinityTag(method) != 0;
+    ctx.actor_runtime_helper_enabled =
+        IsActorImplementation(method_def.implementation_name);
+    ctx.actor_nonisolated_entry_enabled =
+        ctx.actor_runtime_helper_enabled && method.objc_nonisolated_declared;
     ctx.async_resume_entry_tag = AsyncResumeEntryTag(method_def);
     ctx.async_executor_tag = ExecutorAffinityTag(method);
     if (method.throws_declared) {

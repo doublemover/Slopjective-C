@@ -877,6 +877,15 @@ M270-C001 actor lowering note:
 - live thunk bodies, mailbox runtime entrypoints, and runnable cross-actor
   scheduling remain later `M270-C002` and `M270-C003` work
 
+M270-C002 actor lowering implementation note:
+
+- actor methods now lower the narrow helper-backed actor slice through:
+  - `objc3_runtime_actor_enter_isolation_thunk_i32`
+  - `objc3_runtime_actor_enter_nonisolated_i32`
+  - `objc3_runtime_actor_hop_to_executor_i32`
+- this remains a private lowering/runtime boundary rather than a public actor
+  runtime ABI
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

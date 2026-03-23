@@ -18280,6 +18280,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_actor_isolation_sendability_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_actor_lowering_metadata_replay_key =
       part7_actor_lowering_metadata_replay_key;
+  // M270-C002 implementation anchor: the deterministic actor-lowering
+  // contract now feeds helper-backed actor thunk/hop/nonisolated rewrites in
+  // IR rather than staying metadata-only.
   ir_frontend_metadata.actor_lowering_metadata_actor_interface_sites =
       part7_actor_lowering_metadata_contract.actor_interface_sites;
   ir_frontend_metadata.actor_lowering_metadata_actor_method_sites =

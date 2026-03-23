@@ -614,6 +614,9 @@ thread_local std::uint64_t g_runtime_task_cancel_all_call_count = 0;
 thread_local std::uint64_t g_runtime_task_cancellation_poll_call_count = 0;
 thread_local std::uint64_t g_runtime_task_on_cancel_call_count = 0;
 thread_local std::uint64_t g_runtime_task_executor_hop_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_isolation_thunk_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_nonisolated_entry_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_hop_to_executor_call_count = 0;
 thread_local int g_runtime_task_last_spawn_kind = 0;
 thread_local int g_runtime_task_last_spawn_executor_tag = 0;
 thread_local int g_runtime_task_last_scope_executor_tag = 0;
@@ -627,6 +630,12 @@ thread_local int g_runtime_task_last_executor_hop_value = 0;
 thread_local int g_runtime_task_last_wait_next_result = 0;
 thread_local int g_runtime_task_last_cancel_all_result = 0;
 thread_local int g_runtime_task_last_cancellation_poll_result = 0;
+thread_local int g_runtime_actor_last_isolation_executor_tag = 0;
+thread_local int g_runtime_actor_last_nonisolated_value = 0;
+thread_local int g_runtime_actor_last_nonisolated_executor_tag = 0;
+thread_local int g_runtime_actor_last_hop_value = 0;
+thread_local int g_runtime_actor_last_hop_executor_tag = 0;
+thread_local int g_runtime_actor_last_hop_result = 0;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -798,6 +807,9 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_task_cancellation_poll_call_count = 0;
   g_runtime_task_on_cancel_call_count = 0;
   g_runtime_task_executor_hop_call_count = 0;
+  g_runtime_actor_isolation_thunk_call_count = 0;
+  g_runtime_actor_nonisolated_entry_call_count = 0;
+  g_runtime_actor_hop_to_executor_call_count = 0;
   g_runtime_task_last_spawn_kind = 0;
   g_runtime_task_last_spawn_executor_tag = 0;
   g_runtime_task_last_scope_executor_tag = 0;
@@ -811,6 +823,12 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_task_last_wait_next_result = 0;
   g_runtime_task_last_cancel_all_result = 0;
   g_runtime_task_last_cancellation_poll_result = 0;
+  g_runtime_actor_last_isolation_executor_tag = 0;
+  g_runtime_actor_last_nonisolated_value = 0;
+  g_runtime_actor_last_nonisolated_executor_tag = 0;
+  g_runtime_actor_last_hop_value = 0;
+  g_runtime_actor_last_hop_executor_tag = 0;
+  g_runtime_actor_last_hop_result = 0;
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -4326,6 +4344,29 @@ int objc3_runtime_copy_task_runtime_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_actor_runtime_state_for_testing(
+    objc3_runtime_actor_runtime_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->isolation_thunk_call_count =
+      g_runtime_actor_isolation_thunk_call_count;
+  snapshot->nonisolated_entry_call_count =
+      g_runtime_actor_nonisolated_entry_call_count;
+  snapshot->hop_to_executor_call_count =
+      g_runtime_actor_hop_to_executor_call_count;
+  snapshot->last_isolation_executor_tag =
+      g_runtime_actor_last_isolation_executor_tag;
+  snapshot->last_nonisolated_value = g_runtime_actor_last_nonisolated_value;
+  snapshot->last_nonisolated_executor_tag =
+      g_runtime_actor_last_nonisolated_executor_tag;
+  snapshot->last_hop_value = g_runtime_actor_last_hop_value;
+  snapshot->last_hop_executor_tag = g_runtime_actor_last_hop_executor_tag;
+  snapshot->last_hop_result = g_runtime_actor_last_hop_result;
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -4703,6 +4744,31 @@ extern "C" int objc3_runtime_executor_hop_i32(int value, int executor_tag) {
   ++g_runtime_task_executor_hop_call_count;
   g_runtime_task_last_executor_hop_executor_tag = executor_tag;
   g_runtime_task_last_executor_hop_value = value;
+  return value;
+}
+
+extern "C" int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag) {
+  // M270-C002 actor lowering/runtime anchor: helper-backed actor lowering now
+  // reaches the runtime through this private thunk/hop/nonisolated cluster.
+  ++g_runtime_actor_isolation_thunk_call_count;
+  g_runtime_actor_last_isolation_executor_tag = executor_tag;
+  return executor_tag;
+}
+
+extern "C" int objc3_runtime_actor_enter_nonisolated_i32(int value,
+                                                         int executor_tag) {
+  ++g_runtime_actor_nonisolated_entry_call_count;
+  g_runtime_actor_last_nonisolated_value = value;
+  g_runtime_actor_last_nonisolated_executor_tag = executor_tag;
+  return value;
+}
+
+extern "C" int objc3_runtime_actor_hop_to_executor_i32(int value,
+                                                       int executor_tag) {
+  ++g_runtime_actor_hop_to_executor_call_count;
+  g_runtime_actor_last_hop_value = value;
+  g_runtime_actor_last_hop_executor_tag = executor_tag;
+  g_runtime_actor_last_hop_result = value;
   return value;
 }
 

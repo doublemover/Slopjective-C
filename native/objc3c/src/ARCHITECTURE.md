@@ -11171,3 +11171,17 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - the closeout does not widen the surface beyond the current helper-backed
   task/runtime slice
 - the next issue is `M270-A001`
+
+## M270 Part 7 Actor Lowering Runtime Slice (C002)
+
+- `M270-C002` turns the narrow actor lowering slice live in
+  `ir/objc3_ir_emitter.cpp`
+- actor methods now rewrite:
+  - `actor_enter_isolation_thunk()`
+  - `actor_nonisolated_entry(...)`
+  - `actor_hop_to_executor(...)`
+  through the private runtime helpers declared in
+  `runtime/objc3_runtime_bootstrap_internal.h`
+- the runtime side remains private and test-only through
+  `objc3_runtime_copy_actor_runtime_state_for_testing`
+- the next issue is `M270-C003`

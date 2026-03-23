@@ -660,6 +660,12 @@ inline constexpr const char *kObjc3RuntimeTaskOnCancelI32Symbol =
     "objc3_runtime_task_on_cancel_i32";
 inline constexpr const char *kObjc3RuntimeExecutorHopI32Symbol =
     "objc3_runtime_executor_hop_i32";
+inline constexpr const char *kObjc3RuntimeActorEnterIsolationThunkI32Symbol =
+    "objc3_runtime_actor_enter_isolation_thunk_i32";
+inline constexpr const char *kObjc3RuntimeActorEnterNonisolatedI32Symbol =
+    "objc3_runtime_actor_enter_nonisolated_i32";
+inline constexpr const char *kObjc3RuntimeActorHopToExecutorI32Symbol =
+    "objc3_runtime_actor_hop_to_executor_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =

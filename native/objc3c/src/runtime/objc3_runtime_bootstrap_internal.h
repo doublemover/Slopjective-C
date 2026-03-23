@@ -335,6 +335,22 @@ typedef struct objc3_runtime_task_runtime_state_snapshot {
   int last_cancellation_poll_result;
 } objc3_runtime_task_runtime_state_snapshot;
 
+typedef struct objc3_runtime_actor_runtime_state_snapshot {
+  uint64_t isolation_thunk_call_count;
+  uint64_t nonisolated_entry_call_count;
+  uint64_t hop_to_executor_call_count;
+  int last_isolation_executor_tag;
+  int last_nonisolated_value;
+  int last_nonisolated_executor_tag;
+  int last_hop_value;
+  int last_hop_executor_tag;
+  int last_hop_result;
+} objc3_runtime_actor_runtime_state_snapshot;
+
+// M270-C002 actor lowering/runtime anchor: actor thunk, nonisolated entry,
+// and executor-hop lowering remain private runtime helpers with a private
+// testing snapshot rather than a public actor runtime ABI.
+
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
 // the emitted `module.objc3-conformance-report.json` plus the sibling
@@ -518,6 +534,9 @@ int objc3_runtime_cancel_task_group_i32(int executor_tag);
 int objc3_runtime_task_is_cancelled_i32(int executor_tag);
 int objc3_runtime_task_on_cancel_i32(int executor_tag);
 int objc3_runtime_executor_hop_i32(int value, int executor_tag);
+int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag);
+int objc3_runtime_actor_enter_nonisolated_i32(int value, int executor_tag);
+int objc3_runtime_actor_hop_to_executor_i32(int value, int executor_tag);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
@@ -570,6 +589,8 @@ int objc3_runtime_copy_async_continuation_state_for_testing(
     objc3_runtime_async_continuation_state_snapshot *snapshot);
 int objc3_runtime_copy_task_runtime_state_for_testing(
     objc3_runtime_task_runtime_state_snapshot *snapshot);
+int objc3_runtime_copy_actor_runtime_state_for_testing(
+    objc3_runtime_actor_runtime_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }
