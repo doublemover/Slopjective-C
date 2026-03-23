@@ -286,6 +286,15 @@ M270-D003 cross-module preservation note:
   `artifacts/lib/objc3_runtime.lib`
 - lane-E closeout remains later `M270-E001` work
 
+M270-E001 strict concurrency conformance gate note:
+
+- lane E now freezes the current runnable actor/isolation/sendability slice
+  above `M270-A002`, `M270-B003`, `M270-C003`, and `M270-D003`
+- the gate stays truthful by reusing the `M270-D002` live mailbox runtime probe
+  and the `M270-D003` imported actor replay artifacts instead of widening
+  front-door publication claims
+- the next issue is `M270-E002`
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

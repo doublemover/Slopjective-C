@@ -3414,6 +3414,21 @@ made runnable across imported runtime surfaces and mixed-module link plans.
 - mixed-module actor helper traffic still remains tied to the packaged runtime
   archive path `artifacts/lib/objc3_runtime.lib`
 
+## M270 strict concurrency conformance gate
+
+`M270-E001` freezes the runnable actor/isolation milestone gate on top of the
+already-landed actor source, sema, lowering, live mailbox runtime, and
+cross-module preservation slices.
+
+- the gate consumes `M270-A002`, `M270-B003`, `M270-C003`, and `M270-D003`
+  directly as its summary chain
+- the truthful runnable proof remains the `M270-D002` live mailbox runtime probe
+  plus the `M270-D003` imported actor replay artifacts
+- lane-E keeps the driver, manifest, and frontend publication anchors explicit
+  so the current fail-closed front-door actor publication behavior remains
+  visible to operators
+- the next issue is `M270-E002`
+
 ## M268 frontend async semantic packet
 
 The frontend now publishes a dedicated Part 7 source packet at

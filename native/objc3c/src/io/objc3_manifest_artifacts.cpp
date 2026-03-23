@@ -37,6 +37,12 @@ std::filesystem::path BuildManifestArtifactPath(
   // M269-E002 runnable task/executor closeout matrix anchor: the milestone
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only reporting surface for the current Part 7 task/runtime slice.
+  // M270-E001 strict concurrency conformance gate anchor: lane-E keeps
+  // consuming the same manifest sidecar and paired driver artifacts while the
+  // broader front-door actor publication path remains intentionally fail-closed.
+  // M270-E002 runnable actor/isolation closeout matrix anchor: the milestone
+  // closeout keeps consuming this same manifest sidecar instead of inventing a
+  // matrix-only reporting surface for the current Part 7 actor/runtime slice.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

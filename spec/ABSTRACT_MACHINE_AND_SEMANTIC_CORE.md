@@ -920,6 +920,16 @@ M270-D003 cross-module preservation note:
 - mixed-module actor helper execution still remains bound to the packaged
   runtime archive path rather than a separate actor-runtime distribution
 
+M270-E001 strict concurrency conformance gate note:
+
+- the lane-E gate freezes the current runnable Part 7 actor/runtime slice above
+  `M270-A002`, `M270-B003`, `M270-C003`, and `M270-D003`
+- it does not widen the abstract machine; it republishes the already-landed
+  `M270-D002` live mailbox runtime probe and the `M270-D003` cross-module
+  preservation artifacts while keeping broader front-door publication truthfully
+  fail-closed
+- the next issue is `M270-E002`
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

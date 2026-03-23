@@ -55,6 +55,12 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // M269-E002 runnable task/executor closeout matrix anchor: milestone closeout
 // rows keep consuming this same driver artifact surface instead of inventing a
 // matrix-only publication path for the current Part 7 task/runtime slice.
+// M270-E001 strict concurrency conformance gate anchor: lane-E freezes the
+// current runnable actor/isolation slice by consuming this same published
+// driver artifact surface while the broader front-door actor publication path remains fail-closed.
+// M270-E002 runnable actor/isolation closeout matrix anchor: milestone
+// closeout rows keep consuming this same driver artifact surface instead of
+// inventing a matrix-only publication path for the current Part 7 actor slice.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

@@ -59,6 +59,13 @@ struct objc3c_frontend_context {
 // M269-E002 runnable task/executor closeout matrix anchor: milestone closeout
 // keeps consuming those same surfaced publication paths instead of inventing a
 // second frontend matrix-only reporting path.
+// M270-E001 strict concurrency conformance gate anchor: lane-E keeps consuming
+// the same surfaced publication paths while using the D002 mailbox runtime
+// proof plus the D003 cross-module preservation artifacts as the truthful
+// runnable actor/isolation capability anchor.
+// M270-E002 runnable actor/isolation closeout matrix anchor: milestone
+// closeout keeps consuming those same surfaced publication paths instead of
+// inventing a second frontend matrix-only reporting path.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

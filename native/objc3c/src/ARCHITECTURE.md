@@ -11236,7 +11236,24 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - mixed-module link plans now preserve and validate:
   - `expected_part7_actor_contract_id`
   - `expected_part7_actor_source_contract_id`
-  - `part7_actor_mailbox_runtime_replay_key`
-  - `part7_actor_lowering_replay_key`
-  - `part7_actor_isolation_lowering_replay_key`
+- `part7_actor_mailbox_runtime_replay_key`
+- `part7_actor_lowering_replay_key`
+- `part7_actor_isolation_lowering_replay_key`
 - the next issue is `M270-E001`
+
+## M270 Part 7 Strict Concurrency Conformance Gate (E001)
+
+- `M270-E001` freezes the milestone gate for the runnable actor/isolation slice
+  on top of the already-landed source, sema, lowering, live mailbox runtime,
+  and cross-module preservation evidence
+- the gate consumes:
+  - `M270-A002`
+  - `M270-B003`
+  - `M270-C003`
+  - `M270-D003`
+- the truthful runnable proof remains the `M270-D002` live mailbox runtime
+  probe together with the `M270-D003` cross-module preservation artifacts
+- driver, manifest, and frontend publication anchors stay explicit so the
+  current front-door fail-closed actor publication boundary remains visible to
+  operators
+- the next issue is `M270-E002`

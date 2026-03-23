@@ -614,6 +614,13 @@ runtime surfaces and mixed-module link-plan construction.
   - `module.cross-module-runtime-link-plan.json` preserves the imported actor replay keys
   - a tampered imported runtime surface fails closed
 
+## M270 strict concurrency conformance gate
+
+`M270-E001` does not add a new runtime probe. It freezes lane-E on top of the
+existing `M270-D002` live mailbox runtime proof, the `M270-D003` imported actor
+replay artifacts, and the upstream `M270-A002` through `M270-D003` summary
+chain.
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the
