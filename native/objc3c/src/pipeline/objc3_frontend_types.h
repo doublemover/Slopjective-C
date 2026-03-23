@@ -1495,6 +1495,45 @@ inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSource
 inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-task-allocation-task-group-execution-or-scheduler-backed-cancellation-runtime-behavior";
 
+inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part8_resource_borrowed_and_capture_list_source_closure";
+inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSourceModel =
+    "resource-let-attributes-borrowed-pointer-qualifiers-borrowed-return-relations-and-explicit-block-capture-lists-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-lifetime-enforcement-remain-later-m271-work";
+inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureFailureModel =
+    "frontend-source-closure-does-not-yet-claim-resource-cleanup-lowering-borrowed-escape-enforcement-or-runnable-capture-ownership-runtime-behavior";
+
+struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
+  std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3Part8SystemExtensionSourceClosureSurfacePath;
+  std::string source_model = kObjc3Part8SystemExtensionSourceClosureSourceModel;
+  std::string failure_model = kObjc3Part8SystemExtensionSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations,
+      kObjc3SourceOnlyFeatureClaimBorrowedPointerAnnotations,
+      kObjc3SourceOnlyFeatureClaimBorrowedReturnRelations,
+      kObjc3SourceOnlyFeatureClaimExplicitBlockCaptureLists,
+  };
+  std::size_t resource_attribute_sites = 0;
+  std::size_t resource_close_clause_sites = 0;
+  std::size_t resource_invalid_clause_sites = 0;
+  std::size_t borrowed_pointer_sites = 0;
+  std::size_t returns_borrowed_attribute_sites = 0;
+  std::size_t explicit_capture_list_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t explicit_capture_weak_sites = 0;
+  std::size_t explicit_capture_unowned_sites = 0;
+  std::size_t explicit_capture_move_sites = 0;
+  std::size_t explicit_capture_plain_sites = 0;
+  bool resource_attribute_source_supported = false;
+  bool borrowed_pointer_source_supported = false;
+  bool returns_borrowed_source_supported = false;
+  bool explicit_capture_list_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary {
   std::string contract_id = kObjc3Part7TaskGroupCancellationSourceClosureContractId;
   std::string frontend_surface_path =
@@ -4946,6 +4985,8 @@ struct Objc3FrontendPipelineResult {
       part5_control_flow_source_closure_summary;
   Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
   Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
+  Objc3FrontendPart8SystemExtensionSourceClosureSummary
+      part8_system_extension_source_closure_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

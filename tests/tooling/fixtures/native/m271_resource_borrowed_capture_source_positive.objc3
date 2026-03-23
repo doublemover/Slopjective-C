@@ -1,0 +1,7 @@
+module m271a001;
+
+fn borrowIt(value: borrowed id *) -> borrowed id * __attribute__((objc_returns_borrowed(owner_index=0))) {
+  __attribute__((objc_resource(close=CloseFd, invalid=-1))) let fd = 3;
+  let block = ^[weak value, move fd] (i32 x) { return x; };
+  return value;
+}

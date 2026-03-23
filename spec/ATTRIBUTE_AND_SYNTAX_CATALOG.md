@@ -279,6 +279,12 @@ Canonical attribute:
 
 ```c
 __attribute__((objc_nonisolated))
+
+M271-A001 source closure:
+- `__attribute__((objc_resource(close=CloseFn, invalid=Expr))) let name = value;`
+- `borrowed T *`
+- `__attribute__((objc_returns_borrowed(owner_index=N)))`
+- `^[weak x, unowned y, move z] { ... }`
 ```
 
 This attribute may be applied to:

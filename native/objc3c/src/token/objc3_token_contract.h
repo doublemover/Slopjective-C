@@ -156,6 +156,16 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskCreationSites =
     "source-only:task-creation-sites";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimSupportedTaskGroupSurface =
     "source-only:supported-task-group-surface";
+inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureContractId =
+    "objc3c-part8-resource-borrowed-capture-source-closure/m271-a001-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations =
+    "source-only:resource-handle-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimBorrowedPointerAnnotations =
+    "source-only:borrowed-pointer-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimBorrowedReturnRelations =
+    "source-only:borrowed-return-relations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimExplicitBlockCaptureLists =
+    "source-only:explicit-block-capture-lists";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

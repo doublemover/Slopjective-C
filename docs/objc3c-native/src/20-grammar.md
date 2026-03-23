@@ -3538,6 +3538,20 @@ it under
 - actor interfaces now carry methods and properties through the normal
   interface source closure
 - callable `__attribute__((objc_nonisolated))` is admitted on actor methods
+
+## M271 resource, borrowed pointer, and capture-list source closure
+
+- `__attribute__((objc_resource(close=CloseFn, invalid=Expr))) let name = value;`
+  is admitted as the current parser-owned local resource surface
+- `borrowed` is admitted as a contextual callable-signature qualifier for
+  pointer-bearing parameter and return spellings
+- callable `__attribute__((objc_returns_borrowed(owner_index=N)))` is admitted
+  on functions and Objective-C methods
+- explicit block capture lists are admitted in the form
+  `^[weak x, unowned y, move z] { ... }`
+- this lane only freezes the frontend/source-model contract; cleanup lowering,
+  borrowed escape enforcement, and runtime capture ownership behavior remain
+  later `M271` work
 - actor methods continue to carry existing `async` and
   `__attribute__((objc_executor(...)))` spellings
 - the emitted semantic packet publishes deterministic counts for actor

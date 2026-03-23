@@ -286,6 +286,10 @@ struct Expr {
     std::string name;
     ValueType type = ValueType::Unknown;
   };
+  struct ExplicitBlockCaptureItem {
+    std::string name;
+    std::string mode;
+  };
   Kind kind = Kind::Number;
   int number = 0;
   bool bool_value = false;
@@ -346,6 +350,15 @@ struct Expr {
   std::vector<std::string> block_capture_inventory_entries_lexicographic;
   std::size_t block_byvalue_readonly_capture_count = 0;
   std::string block_capture_inventory_profile;
+  bool block_has_explicit_capture_list = false;
+  std::vector<ExplicitBlockCaptureItem> block_explicit_capture_items_source_order;
+  std::vector<std::string> block_explicit_capture_names_lexicographic;
+  std::size_t block_explicit_capture_count = 0;
+  std::size_t block_explicit_capture_move_count = 0;
+  std::size_t block_explicit_capture_weak_count = 0;
+  std::size_t block_explicit_capture_unowned_count = 0;
+  std::size_t block_explicit_capture_plain_count = 0;
+  std::string block_explicit_capture_profile;
   std::vector<std::string> block_mutated_capture_names_lexicographic;
   std::size_t block_mutated_capture_count = 0;
   std::vector<std::string> block_byref_capture_names_lexicographic;
@@ -471,6 +484,11 @@ struct Stmt {
 struct LetStmt {
   std::string name;
   std::unique_ptr<Expr> value;
+  bool resource_attribute_declared = false;
+  std::string resource_close_symbol;
+  std::string resource_invalid_expression;
+  bool resource_profile_is_normalized = false;
+  std::string resource_profile;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -656,6 +674,8 @@ struct FuncParam {
   bool ownership_arc_fixit_available = false;
   std::string ownership_arc_diagnostic_profile;
   std::string ownership_arc_fixit_hint;
+  bool borrowed_pointer_qualified = false;
+  std::string borrowed_pointer_profile;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -1264,6 +1284,10 @@ struct Objc3MethodDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_returns_borrowed_declared = false;
+  std::size_t objc_returns_borrowed_owner_index = 0;
+  bool return_borrowed_pointer_qualified = false;
+  std::string returns_borrowed_profile;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
@@ -1671,6 +1695,10 @@ struct FunctionDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_returns_borrowed_declared = false;
+  std::size_t objc_returns_borrowed_owner_index = 0;
+  bool return_borrowed_pointer_qualified = false;
+  std::string returns_borrowed_profile;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;

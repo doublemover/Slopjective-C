@@ -97,6 +97,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // contextual rather than promoting it to a reserved token; `actor class`
   // and `objc_nonisolated` are parser-owned surfaces built on this same token
   // stream.
+  // M271-A001 source-surface note: `borrowed`, `weak`, `unowned`, and `move`
+  // remain contextual rather than promoting them to reserved tokens; Part 8
+  // resource attributes, borrowed-pointer qualifiers, and explicit block
+  // capture lists are parser-owned surfaces built on this same token stream.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

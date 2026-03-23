@@ -834,6 +834,12 @@ M270-A002 actor-member/isolation-annotation source note:
 
 - the frontend now admits contextual `actor class` declarations and
   `objc_nonisolated` callable annotations without reserving new lexer tokens
+
+M271-A001 system-extension source note:
+- the frontend now admits `objc_resource(...)` local annotations, `borrowed`
+  callable-signature qualifiers, `objc_returns_borrowed(owner_index=N)`, and
+  explicit block capture lists as parser-owned source surfaces without claiming
+  cleanup lowering, borrowed escape enforcement, or runtime capture ownership
 - actor interfaces now publish deterministic source counts for actor members,
   executor annotations, async actor methods, and actor member metadata sites
 - this remains a frontend/source-model claim; actor-member legality,

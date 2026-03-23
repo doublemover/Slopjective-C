@@ -777,6 +777,44 @@ std::string BuildPart7AsyncSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart8SystemExtensionSourceClosureSummaryJson(
+    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"resource_attribute_sites\":" << summary.resource_attribute_sites
+      << ",\"resource_close_clause_sites\":" << summary.resource_close_clause_sites
+      << ",\"resource_invalid_clause_sites\":" << summary.resource_invalid_clause_sites
+      << ",\"borrowed_pointer_sites\":" << summary.borrowed_pointer_sites
+      << ",\"returns_borrowed_attribute_sites\":" << summary.returns_borrowed_attribute_sites
+      << ",\"explicit_capture_list_sites\":" << summary.explicit_capture_list_sites
+      << ",\"explicit_capture_item_sites\":" << summary.explicit_capture_item_sites
+      << ",\"explicit_capture_weak_sites\":" << summary.explicit_capture_weak_sites
+      << ",\"explicit_capture_unowned_sites\":" << summary.explicit_capture_unowned_sites
+      << ",\"explicit_capture_move_sites\":" << summary.explicit_capture_move_sites
+      << ",\"explicit_capture_plain_sites\":" << summary.explicit_capture_plain_sites
+      << ",\"resource_attribute_source_supported\":"
+      << (summary.resource_attribute_source_supported ? "true" : "false")
+      << ",\"borrowed_pointer_source_supported\":"
+      << (summary.borrowed_pointer_source_supported ? "true" : "false")
+      << ",\"returns_borrowed_source_supported\":"
+      << (summary.returns_borrowed_source_supported ? "true" : "false")
+      << ",\"explicit_capture_list_source_supported\":"
+      << (summary.explicit_capture_list_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -11661,6 +11699,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart7AsyncSourceClosureSummary
       &part7_async_source_closure_summary =
           pipeline_result.part7_async_source_closure_summary;
+  const Objc3FrontendPart8SystemExtensionSourceClosureSummary
+      &part8_system_extension_source_closure_summary =
+          pipeline_result.part8_system_extension_source_closure_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16073,12 +16114,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_error_source_closure\":"
            << BuildPart6ErrorSourceClosureSummaryJson(
                   part6_error_source_closure_summary)
-           << ",\"objc_part7_async_source_closure\":"
-           << BuildPart7AsyncSourceClosureSummaryJson(
-                  part7_async_source_closure_summary)
-           << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
-           << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
-                  part7_actor_member_isolation_source_closure_summary)
+            << ",\"objc_part7_async_source_closure\":"
+            << BuildPart7AsyncSourceClosureSummaryJson(
+                   part7_async_source_closure_summary)
+            << ",\"objc_part8_resource_borrowed_and_capture_list_source_closure\":"
+            << BuildPart8SystemExtensionSourceClosureSummaryJson(
+                   part8_system_extension_source_closure_summary)
+            << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
+            << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
+                   part7_actor_member_isolation_source_closure_summary)
            << ",\"objc_part7_actor_isolation_and_sendable_semantic_model\":"
            << BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
                   part7_actor_isolation_sendable_semantic_model_summary)
@@ -17394,12 +17438,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part6_error_source_closure\":"
            << BuildPart6ErrorSourceClosureSummaryJson(
                   part6_error_source_closure_summary)
-           << ",\"objc_part7_async_source_closure\":"
-           << BuildPart7AsyncSourceClosureSummaryJson(
-                  part7_async_source_closure_summary)
-           << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
-           << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
-                  part7_actor_member_isolation_source_closure_summary)
+            << ",\"objc_part7_async_source_closure\":"
+            << BuildPart7AsyncSourceClosureSummaryJson(
+                   part7_async_source_closure_summary)
+            << ",\"objc_part8_resource_borrowed_and_capture_list_source_closure\":"
+            << BuildPart8SystemExtensionSourceClosureSummaryJson(
+                   part8_system_extension_source_closure_summary)
+            << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
+            << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
+                   part7_actor_member_isolation_source_closure_summary)
            << ",\"objc_part7_actor_isolation_and_sendable_semantic_model\":"
            << BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
                   part7_actor_isolation_sendable_semantic_model_summary)

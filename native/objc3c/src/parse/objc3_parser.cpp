@@ -6100,6 +6100,10 @@ class Objc3Parser {
     target.return_ownership_arc_fixit_available = source.return_ownership_arc_fixit_available;
     target.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
     target.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
+    target.return_borrowed_pointer_qualified = source.return_borrowed_pointer_qualified;
+    target.objc_returns_borrowed_declared = source.objc_returns_borrowed_declared;
+    target.objc_returns_borrowed_owner_index = source.objc_returns_borrowed_owner_index;
+    target.returns_borrowed_profile = source.returns_borrowed_profile;
     target.throws_declared = source.throws_declared;
     target.throws_declaration_profile_is_normalized =
         source.throws_declaration_profile_is_normalized;
@@ -6526,6 +6530,173 @@ class Objc3Parser {
     return text;
   }
 
+  bool IsBorrowedQualifierSpelling(const std::string &text) const {
+    return text == "borrowed";
+  }
+
+  std::string BuildReturnsBorrowedProfile(bool declared,
+                                          std::size_t owner_index,
+                                          bool return_borrowed_pointer_qualified) {
+    std::ostringstream out;
+    out << "returns-borrowed:declared=" << (declared ? "true" : "false")
+        << ";owner_index=" << owner_index
+        << ";return_borrowed=" << (return_borrowed_pointer_qualified ? "true" : "false");
+    return out.str();
+  }
+
+  std::string BuildResourceAttributeProfile(bool declared,
+                                            const std::string &close_symbol,
+                                            const std::string &invalid_expression) {
+    std::ostringstream out;
+    out << "resource:declared=" << (declared ? "true" : "false")
+        << ";close=" << close_symbol
+        << ";invalid=" << invalid_expression;
+    return out.str();
+  }
+
+  template <typename TCallableDecl>
+  bool ParseReturnsBorrowedAttributePayload(TCallableDecl &decl) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P296",
+          "missing '(' after objc_returns_borrowed attribute"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier) || Peek().text != "owner_index") {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P297",
+          "objc_returns_borrowed requires owner_index clause"));
+      return false;
+    }
+    Advance();
+    if (!Match(TokenKind::Equal)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P298",
+          "missing '=' after owner_index in objc_returns_borrowed"));
+      return false;
+    }
+    if (!At(TokenKind::Number)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P299",
+          "objc_returns_borrowed owner_index requires integer literal"));
+      return false;
+    }
+    decl.objc_returns_borrowed_owner_index =
+        static_cast<std::size_t>(std::max(0, std::stoi(Advance().text)));
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P300",
+          "missing ')' after objc_returns_borrowed payload"));
+      return false;
+    }
+    decl.objc_returns_borrowed_declared = true;
+    return true;
+  }
+
+  bool ParseLocalResourceAttribute(LetStmt &stmt) {
+    if (!Match(TokenKind::LParen) || !Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P301",
+          "malformed __attribute__ local annotation"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier) || Peek().text != "objc_resource") {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P302",
+          "only objc_resource is supported on local let bindings in this tranche"));
+      return false;
+    }
+    const Token attribute_name = Advance();
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P303",
+          "missing '(' after objc_resource"));
+      return false;
+    }
+    bool saw_close = false;
+    bool saw_invalid = false;
+    while (!At(TokenKind::Eof) && !At(TokenKind::RParen)) {
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P304",
+            "invalid objc_resource clause label"));
+        return false;
+      }
+      const Token clause = Advance();
+      if (!Match(TokenKind::Equal)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P305",
+            "missing '=' after objc_resource clause label"));
+        return false;
+      }
+      const std::string value_text = ParseAttributeArgumentText();
+      if (value_text.empty()) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P306",
+            "objc_resource clause value must not be empty"));
+        return false;
+      }
+      if (clause.text == "close") {
+        if (saw_close) {
+          diagnostics_.push_back(MakeDiag(
+              clause.line, clause.column, "O3P307",
+              "duplicate objc_resource close clause"));
+          return false;
+        }
+        stmt.resource_close_symbol = value_text;
+        saw_close = true;
+      } else if (clause.text == "invalid") {
+        if (saw_invalid) {
+          diagnostics_.push_back(MakeDiag(
+              clause.line, clause.column, "O3P308",
+              "duplicate objc_resource invalid clause"));
+          return false;
+        }
+        stmt.resource_invalid_expression = value_text;
+        saw_invalid = true;
+      } else {
+        diagnostics_.push_back(MakeDiag(
+            clause.line, clause.column, "O3P309",
+            "unsupported objc_resource clause '" + clause.text + "'"));
+        return false;
+      }
+      if (At(TokenKind::Comma)) {
+        Advance();
+      } else {
+        break;
+      }
+    }
+    if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P310",
+          "missing ')))' after objc_resource local annotation"));
+      return false;
+    }
+    if (!saw_close || !saw_invalid) {
+      diagnostics_.push_back(MakeDiag(
+          attribute_name.line, attribute_name.column, "O3P311",
+          "objc_resource requires close and invalid clauses"));
+      return false;
+    }
+    stmt.resource_attribute_declared = true;
+    stmt.resource_profile_is_normalized = true;
+    stmt.resource_profile = BuildResourceAttributeProfile(
+        true, stmt.resource_close_symbol, stmt.resource_invalid_expression);
+    return true;
+  }
+
   template <typename TCallableDecl>
   bool ParseStatusCodeBridgeAttributePayload(TCallableDecl &decl,
                                              const Token &attribute_token) {
@@ -6674,6 +6845,15 @@ class Objc3Parser {
       }
       decl.objc_nonisolated_declared = true;
       return true;
+    }
+    if (attribute_name.text == "objc_returns_borrowed") {
+      if (decl.objc_returns_borrowed_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P312",
+                     "duplicate objc_returns_borrowed attribute"));
+        return false;
+      }
+      return ParseReturnsBorrowedAttributePayload(decl);
     }
 
     diagnostics_.push_back(MakeDiag(
@@ -7931,6 +8111,10 @@ class Objc3Parser {
     if (!ParseOptionalCallableBridgeAttributes(method)) {
       return false;
     }
+    method.returns_borrowed_profile = BuildReturnsBorrowedProfile(
+        method.objc_returns_borrowed_declared,
+        method.objc_returns_borrowed_owner_index,
+        method.return_borrowed_pointer_qualified);
 
     if (Match(TokenKind::Semicolon)) {
       method.has_body = false;
@@ -8756,6 +8940,10 @@ class Objc3Parser {
       SynchronizeTopLevel();
       return nullptr;
     }
+    fn->returns_borrowed_profile = BuildReturnsBorrowedProfile(
+        fn->objc_returns_borrowed_declared,
+        fn->objc_returns_borrowed_owner_index,
+        fn->return_borrowed_pointer_qualified);
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
@@ -8945,6 +9133,7 @@ class Objc3Parser {
     fn.return_ownership_arc_fixit_available = false;
     fn.return_ownership_arc_diagnostic_profile.clear();
     fn.return_ownership_arc_fixit_hint.clear();
+    fn.return_borrowed_pointer_qualified = false;
 
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
@@ -8962,6 +9151,10 @@ class Objc3Parser {
       fn.return_ownership_qualifier_spelling = qualifier.text;
       fn.return_ownership_qualifier_tokens.push_back(
           MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
+    }
+    if (At(TokenKind::Identifier) && IsBorrowedQualifierSpelling(Peek().text)) {
+      Advance();
+      fn.return_borrowed_pointer_qualified = true;
     }
 
     if (Match(TokenKind::KwI32)) {
@@ -9243,6 +9436,10 @@ class Objc3Parser {
             fn.has_return_pointer_declarator,
             fn.return_generic_suffix_text,
             fn.return_object_pointer_type_name);
+    fn.returns_borrowed_profile = BuildReturnsBorrowedProfile(
+        fn.objc_returns_borrowed_declared,
+        fn.objc_returns_borrowed_owner_index,
+        fn.return_borrowed_pointer_qualified);
 
     return true;
   }
@@ -9304,6 +9501,8 @@ class Objc3Parser {
     param.ownership_arc_fixit_available = false;
     param.ownership_arc_diagnostic_profile.clear();
     param.ownership_arc_fixit_hint.clear();
+    param.borrowed_pointer_qualified = false;
+    param.borrowed_pointer_profile.clear();
     if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
       const std::string message =
@@ -9320,6 +9519,10 @@ class Objc3Parser {
       param.ownership_qualifier_spelling = qualifier.text;
       param.ownership_qualifier_tokens.push_back(
           MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
+    }
+    if (At(TokenKind::Identifier) && IsBorrowedQualifierSpelling(Peek().text)) {
+      Advance();
+      param.borrowed_pointer_qualified = true;
     }
 
     if (Match(TokenKind::KwI32)) {
@@ -9558,6 +9761,9 @@ class Objc3Parser {
             param.has_pointer_declarator,
             param.generic_suffix_text,
             param.object_pointer_type_name);
+    param.borrowed_pointer_profile = std::string("borrowed-pointer:qualified=") +
+                                     (param.borrowed_pointer_qualified ? "true" : "false") +
+                                     ";pointer=" + (param.has_pointer_declarator ? "true" : "false");
 
     return true;
   }
@@ -9873,6 +10079,16 @@ class Objc3Parser {
       return stmt;
     }
 
+    bool saw_local_resource_attribute = false;
+    LetStmt local_resource_attribute;
+    if (AtIdentifierText("__attribute__")) {
+      Advance();
+      if (!ParseLocalResourceAttribute(local_resource_attribute)) {
+        return nullptr;
+      }
+      saw_local_resource_attribute = true;
+    }
+
     if (Match(TokenKind::KwLet)) {
       auto stmt = std::make_unique<Stmt>();
       stmt->kind = Stmt::Kind::Let;
@@ -9886,6 +10102,18 @@ class Objc3Parser {
       stmt->let_stmt->name = Previous().text;
       stmt->let_stmt->line = Previous().line;
       stmt->let_stmt->column = Previous().column;
+      if (saw_local_resource_attribute) {
+        stmt->let_stmt->resource_attribute_declared =
+            local_resource_attribute.resource_attribute_declared;
+        stmt->let_stmt->resource_close_symbol =
+            local_resource_attribute.resource_close_symbol;
+        stmt->let_stmt->resource_invalid_expression =
+            local_resource_attribute.resource_invalid_expression;
+        stmt->let_stmt->resource_profile_is_normalized =
+            local_resource_attribute.resource_profile_is_normalized;
+        stmt->let_stmt->resource_profile =
+            local_resource_attribute.resource_profile;
+      }
       stmt->line = Previous().line;
       stmt->column = Previous().column;
 
@@ -11855,6 +12083,37 @@ class Objc3Parser {
     block->line = caret.line;
     block->column = caret.column;
 
+    if (Match(TokenKind::LBracket)) {
+      block->block_has_explicit_capture_list = true;
+      while (!At(TokenKind::Eof) && !At(TokenKind::RBracket)) {
+        Expr::ExplicitBlockCaptureItem item;
+        item.mode = "plain";
+        if (At(TokenKind::Identifier) &&
+            (Peek().text == "weak" || Peek().text == "unowned" || Peek().text == "move")) {
+          item.mode = Advance().text;
+        }
+        if (!At(TokenKind::Identifier)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(
+              token.line, token.column, "O3P313",
+              "expected capture identifier in explicit block capture list"));
+          return nullptr;
+        }
+        item.name = Advance().text;
+        block->block_explicit_capture_items_source_order.push_back(std::move(item));
+        if (!Match(TokenKind::Comma)) {
+          break;
+        }
+      }
+      if (!Match(TokenKind::RBracket)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P314",
+            "missing ']' after explicit block capture list"));
+        return nullptr;
+      }
+    }
+
     std::vector<ParsedBlockParameterSourceModel> parameters;
     if (Match(TokenKind::LParen)) {
       if (!At(TokenKind::RParen)) {
@@ -11952,6 +12211,33 @@ class Objc3Parser {
     block->block_capture_inventory_entries_lexicographic =
         BuildBlockCaptureInventoryEntriesLexicographic(
             block->block_capture_names_lexicographic);
+    for (const auto &item : block->block_explicit_capture_items_source_order) {
+      block->block_explicit_capture_names_lexicographic.push_back(item.name);
+      if (item.mode == "weak") {
+        ++block->block_explicit_capture_weak_count;
+      } else if (item.mode == "unowned") {
+        ++block->block_explicit_capture_unowned_count;
+      } else if (item.mode == "move") {
+        ++block->block_explicit_capture_move_count;
+      } else {
+        ++block->block_explicit_capture_plain_count;
+      }
+    }
+    block->block_explicit_capture_names_lexicographic =
+        BuildSortedUniqueStrings(block->block_explicit_capture_names_lexicographic);
+    block->block_explicit_capture_count =
+        block->block_explicit_capture_items_source_order.size();
+    {
+      std::ostringstream out;
+      out << "explicit-captures:present="
+          << (block->block_has_explicit_capture_list ? "true" : "false")
+          << ";count=" << block->block_explicit_capture_count
+          << ";weak=" << block->block_explicit_capture_weak_count
+          << ";unowned=" << block->block_explicit_capture_unowned_count
+          << ";move=" << block->block_explicit_capture_move_count
+          << ";plain=" << block->block_explicit_capture_plain_count;
+      block->block_explicit_capture_profile = out.str();
+    }
     block->block_byvalue_readonly_capture_count =
         block->block_capture_count;
     block->block_mutated_capture_names_lexicographic =
