@@ -2887,6 +2887,603 @@ static void CollectPart8ResourceMoveExprSites(const Expr *expr,
   }
 }
 
+struct Part8BorrowedBindingState {
+  bool borrowed = false;
+};
+
+using Part8BorrowedScope =
+    std::unordered_map<std::string, Part8BorrowedBindingState>;
+
+struct Part8BorrowedCallableContract {
+  std::vector<bool> param_borrowed;
+  bool return_borrowed = false;
+};
+
+struct Part8BorrowedReturnContract {
+  bool valid = false;
+};
+
+static Part8BorrowedBindingState *LookupPart8BorrowedBinding(
+    std::vector<Part8BorrowedScope> &scopes, const std::string &name) {
+  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
+    auto found = it->find(name);
+    if (found != it->end()) {
+      return &found->second;
+    }
+  }
+  return nullptr;
+}
+
+static const Part8BorrowedBindingState *LookupPart8BorrowedBinding(
+    const std::vector<Part8BorrowedScope> &scopes, const std::string &name) {
+  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
+    auto found = it->find(name);
+    if (found != it->end()) {
+      return &found->second;
+    }
+  }
+  return nullptr;
+}
+
+static void MergePart8BorrowedState(
+    std::vector<Part8BorrowedScope> &target_scopes,
+    const std::vector<Part8BorrowedScope> &branch_scopes) {
+  const std::size_t scope_count =
+      std::min(target_scopes.size(), branch_scopes.size());
+  for (std::size_t scope_index = 0; scope_index < scope_count; ++scope_index) {
+    for (auto &[name, target_state] : target_scopes[scope_index]) {
+      auto branch_it = branch_scopes[scope_index].find(name);
+      if (branch_it == branch_scopes[scope_index].end()) {
+        continue;
+      }
+      target_state.borrowed = target_state.borrowed || branch_it->second.borrowed;
+    }
+  }
+}
+
+static Part8BorrowedCallableContract BuildPart8BorrowedCallableContract(
+    const FunctionDecl &fn) {
+  Part8BorrowedCallableContract contract;
+  contract.param_borrowed.reserve(fn.params.size());
+  for (const auto &param : fn.params) {
+    contract.param_borrowed.push_back(param.borrowed_pointer_qualified);
+  }
+  contract.return_borrowed =
+      fn.return_borrowed_pointer_qualified || fn.objc_returns_borrowed_declared;
+  return contract;
+}
+
+static std::unordered_map<std::string, Part8BorrowedCallableContract>
+BuildPart8BorrowedCallableContracts(const Objc3Program &program) {
+  std::unordered_map<std::string, Part8BorrowedCallableContract> contracts;
+  for (const auto &fn : program.functions) {
+    contracts.emplace(fn.name, BuildPart8BorrowedCallableContract(fn));
+  }
+  return contracts;
+}
+
+static Part8BorrowedReturnContract BuildPart8BorrowedReturnContract(
+    const FunctionDecl &fn) {
+  Part8BorrowedReturnContract contract;
+  contract.valid = fn.return_borrowed_pointer_qualified &&
+                   fn.objc_returns_borrowed_declared &&
+                   fn.objc_returns_borrowed_owner_index < fn.params.size();
+  return contract;
+}
+
+static Part8BorrowedReturnContract BuildPart8BorrowedReturnContract(
+    const Objc3MethodDecl &method) {
+  Part8BorrowedReturnContract contract;
+  contract.valid = method.return_borrowed_pointer_qualified &&
+                   method.objc_returns_borrowed_declared &&
+                   method.objc_returns_borrowed_owner_index < method.params.size();
+  return contract;
+}
+
+static bool IsPart8BorrowedExpr(
+    const Expr *expr, const std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts) {
+  if (expr == nullptr) {
+    return false;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::Identifier: {
+      const auto *binding = LookupPart8BorrowedBinding(scopes, expr->ident);
+      return binding != nullptr && binding->borrowed;
+    }
+    case Expr::Kind::Call: {
+      auto contract_it = callable_contracts.find(expr->ident);
+      return contract_it != callable_contracts.end() &&
+             contract_it->second.return_borrowed;
+    }
+    case Expr::Kind::Conditional:
+      return IsPart8BorrowedExpr(expr->right.get(), scopes, callable_contracts) ||
+             IsPart8BorrowedExpr(expr->third.get(), scopes, callable_contracts);
+    default:
+      return false;
+  }
+}
+
+static void DiagnosePart8BorrowedEscapeExpr(
+    const Expr *expr, std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    std::vector<std::string> &diagnostics);
+
+static void DiagnosePart8BorrowedEscapeStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    const Part8BorrowedReturnContract &return_contract,
+    std::vector<std::string> &diagnostics);
+
+static void DiagnosePart8BorrowedEscapeExpr(
+    const Expr *expr, std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    std::vector<std::string> &diagnostics) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::BlockLiteral: {
+      for (const auto &arg : expr->args) {
+        DiagnosePart8BorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
+                                        diagnostics);
+      }
+      const bool escaping_block =
+          expr->block_storage_escape_to_heap ||
+          expr->block_escape_shape_promotes_to_heap_candidate;
+      if (!escaping_block) {
+        return;
+      }
+      for (const auto &capture_name : expr->block_capture_names_lexicographic) {
+        const auto *binding = LookupPart8BorrowedBinding(scopes, capture_name);
+        if (binding != nullptr && binding->borrowed) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S299",
+              "borrowed pointer cannot be captured by an escaping block; copy to owned storage, extend owner lifetime, or mark explicitly unsafe"));
+          break;
+        }
+      }
+      return;
+    }
+    case Expr::Kind::Call: {
+      DiagnosePart8BorrowedEscapeExpr(expr->receiver.get(), scopes,
+                                      callable_contracts, diagnostics);
+      auto contract_it = callable_contracts.find(expr->ident);
+      for (std::size_t index = 0; index < expr->args.size(); ++index) {
+        const Expr *arg = expr->args[index].get();
+        DiagnosePart8BorrowedEscapeExpr(arg, scopes, callable_contracts,
+                                        diagnostics);
+        if (!IsPart8BorrowedExpr(arg, scopes, callable_contracts)) {
+          continue;
+        }
+        const bool borrowed_boundary_proven =
+            contract_it != callable_contracts.end() &&
+            index < contract_it->second.param_borrowed.size() &&
+            contract_it->second.param_borrowed[index];
+        if (!borrowed_boundary_proven) {
+          diagnostics.push_back(MakeDiag(
+              arg->line, arg->column, "O3S298",
+              "borrowed pointer passed to parameter not proven non-escaping; copy to owned storage, extend owner lifetime, or mark explicitly unsafe"));
+        }
+      }
+      return;
+    }
+    case Expr::Kind::MessageSend:
+      DiagnosePart8BorrowedEscapeExpr(expr->receiver.get(), scopes,
+                                      callable_contracts, diagnostics);
+      for (const auto &arg : expr->args) {
+        DiagnosePart8BorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
+                                        diagnostics);
+      }
+      return;
+    case Expr::Kind::Binary:
+      DiagnosePart8BorrowedEscapeExpr(expr->left.get(), scopes,
+                                      callable_contracts, diagnostics);
+      DiagnosePart8BorrowedEscapeExpr(expr->right.get(), scopes,
+                                      callable_contracts, diagnostics);
+      return;
+    case Expr::Kind::Conditional:
+      DiagnosePart8BorrowedEscapeExpr(expr->left.get(), scopes,
+                                      callable_contracts, diagnostics);
+      DiagnosePart8BorrowedEscapeExpr(expr->right.get(), scopes,
+                                      callable_contracts, diagnostics);
+      DiagnosePart8BorrowedEscapeExpr(expr->third.get(), scopes,
+                                      callable_contracts, diagnostics);
+      return;
+    case Expr::Kind::Identifier:
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+      return;
+  }
+}
+
+static void DiagnosePart8BorrowedEscapeForClause(
+    const ForClause &clause, std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    std::vector<std::string> &diagnostics) {
+  switch (clause.kind) {
+    case ForClause::Kind::None:
+      return;
+    case ForClause::Kind::Expr:
+      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+                                      callable_contracts, diagnostics);
+      return;
+    case ForClause::Kind::Let: {
+      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+                                      callable_contracts, diagnostics);
+      if (!scopes.empty()) {
+        scopes.back()[clause.name] = {IsPart8BorrowedExpr(
+            clause.value.get(), scopes, callable_contracts)};
+      }
+      return;
+    }
+    case ForClause::Kind::Assign: {
+      const bool value_is_borrowed =
+          IsPart8BorrowedExpr(clause.value.get(), scopes, callable_contracts);
+      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+                                      callable_contracts, diagnostics);
+      if (auto *binding = LookupPart8BorrowedBinding(scopes, clause.name)) {
+        binding->borrowed = value_is_borrowed;
+      }
+      return;
+    }
+  }
+}
+
+static void DiagnosePart8BorrowedEscapeStatement(
+    const Stmt *stmt, std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    const Part8BorrowedReturnContract &return_contract,
+    std::vector<std::string> &diagnostics) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let: {
+      const LetStmt *let = stmt->let_stmt.get();
+      if (let == nullptr || scopes.empty()) {
+        return;
+      }
+      const bool borrowed =
+          IsPart8BorrowedExpr(let->value.get(), scopes, callable_contracts);
+      DiagnosePart8BorrowedEscapeExpr(let->value.get(), scopes,
+                                      callable_contracts, diagnostics);
+      scopes.back()[let->name] = {borrowed};
+      return;
+    }
+    case Stmt::Kind::Assign: {
+      const AssignStmt *assign = stmt->assign_stmt.get();
+      if (assign == nullptr) {
+        return;
+      }
+      const bool borrowed =
+          IsPart8BorrowedExpr(assign->value.get(), scopes, callable_contracts);
+      DiagnosePart8BorrowedEscapeExpr(assign->value.get(), scopes,
+                                      callable_contracts, diagnostics);
+      if (auto *binding = LookupPart8BorrowedBinding(scopes, assign->name)) {
+        binding->borrowed = borrowed;
+      }
+      return;
+    }
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        const Expr *value = stmt->return_stmt->value.get();
+        const bool borrowed =
+            IsPart8BorrowedExpr(value, scopes, callable_contracts);
+        DiagnosePart8BorrowedEscapeExpr(value, scopes, callable_contracts,
+                                        diagnostics);
+        if (borrowed && !return_contract.valid) {
+          diagnostics.push_back(MakeDiag(
+              stmt->return_stmt->line, stmt->return_stmt->column, "O3S300",
+              "borrowed return requires objc_returns_borrowed(owner_index=...) naming a valid owner parameter"));
+        }
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        DiagnosePart8BorrowedEscapeExpr(stmt->expr_stmt->value.get(), scopes,
+                                        callable_contracts, diagnostics);
+      }
+      return;
+    case Stmt::Kind::If: {
+      const IfStmt *if_stmt = stmt->if_stmt.get();
+      if (if_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8BorrowedEscapeExpr(if_stmt->condition.get(), scopes,
+                                      callable_contracts, diagnostics);
+      auto then_scopes = scopes;
+      then_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeStatements(if_stmt->then_body, then_scopes,
+                                            callable_contracts,
+                                            return_contract, diagnostics);
+      auto else_scopes = scopes;
+      else_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeStatements(if_stmt->else_body, else_scopes,
+                                            callable_contracts,
+                                            return_contract, diagnostics);
+      MergePart8BorrowedState(scopes, then_scopes);
+      MergePart8BorrowedState(scopes, else_scopes);
+      return;
+    }
+    case Stmt::Kind::DoWhile: {
+      const DoWhileStmt *do_while_stmt = stmt->do_while_stmt.get();
+      if (do_while_stmt == nullptr) {
+        return;
+      }
+      auto body_scopes = scopes;
+      body_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeStatements(do_while_stmt->body, body_scopes,
+                                            callable_contracts,
+                                            return_contract, diagnostics);
+      MergePart8BorrowedState(scopes, body_scopes);
+      DiagnosePart8BorrowedEscapeExpr(do_while_stmt->condition.get(), scopes,
+                                      callable_contracts, diagnostics);
+      return;
+    }
+    case Stmt::Kind::For: {
+      const ForStmt *for_stmt = stmt->for_stmt.get();
+      if (for_stmt == nullptr) {
+        return;
+      }
+      auto loop_scopes = scopes;
+      loop_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeForClause(for_stmt->init, loop_scopes,
+                                           callable_contracts, diagnostics);
+      DiagnosePart8BorrowedEscapeExpr(for_stmt->condition.get(), loop_scopes,
+                                      callable_contracts, diagnostics);
+      DiagnosePart8BorrowedEscapeForClause(for_stmt->step, loop_scopes,
+                                           callable_contracts, diagnostics);
+      loop_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeStatements(for_stmt->body, loop_scopes,
+                                            callable_contracts,
+                                            return_contract, diagnostics);
+      MergePart8BorrowedState(scopes, loop_scopes);
+      return;
+    }
+    case Stmt::Kind::Switch: {
+      const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
+      if (switch_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8BorrowedEscapeExpr(switch_stmt->condition.get(), scopes,
+                                      callable_contracts, diagnostics);
+      for (const auto &case_stmt : switch_stmt->cases) {
+        auto case_scopes = scopes;
+        case_scopes.push_back({});
+        DiagnosePart8BorrowedEscapeStatements(case_stmt.body, case_scopes,
+                                              callable_contracts,
+                                              return_contract, diagnostics);
+        MergePart8BorrowedState(scopes, case_scopes);
+      }
+      return;
+    }
+    case Stmt::Kind::While: {
+      const WhileStmt *while_stmt = stmt->while_stmt.get();
+      if (while_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8BorrowedEscapeExpr(while_stmt->condition.get(), scopes,
+                                      callable_contracts, diagnostics);
+      auto body_scopes = scopes;
+      body_scopes.push_back({});
+      DiagnosePart8BorrowedEscapeStatements(while_stmt->body, body_scopes,
+                                            callable_contracts,
+                                            return_contract, diagnostics);
+      MergePart8BorrowedState(scopes, body_scopes);
+      return;
+    }
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        auto block_scopes = scopes;
+        block_scopes.push_back({});
+        DiagnosePart8BorrowedEscapeStatements(stmt->block_stmt->body,
+                                              block_scopes, callable_contracts,
+                                              return_contract, diagnostics);
+        MergePart8BorrowedState(scopes, block_scopes);
+      }
+      return;
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt != nullptr) {
+        auto defer_scopes = scopes;
+        defer_scopes.push_back({});
+        DiagnosePart8BorrowedEscapeStatements(stmt->block_stmt->body,
+                                              defer_scopes, callable_contracts,
+                                              return_contract, diagnostics);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void DiagnosePart8BorrowedEscapeStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Part8BorrowedScope> &scopes,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    const Part8BorrowedReturnContract &return_contract,
+    std::vector<std::string> &diagnostics) {
+  for (const auto &stmt : statements) {
+    DiagnosePart8BorrowedEscapeStatement(stmt.get(), scopes, callable_contracts,
+                                         return_contract, diagnostics);
+  }
+}
+
+static void DiagnosePart8BorrowedPointerEscapeSemantics(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    const std::vector<SemanticScope> &semantic_scopes,
+    const std::unordered_set<std::string> &borrowed_parameter_names,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    const Part8BorrowedReturnContract &return_contract,
+    std::vector<std::string> &diagnostics) {
+  std::vector<Part8BorrowedScope> scopes;
+  scopes.reserve(semantic_scopes.size());
+  for (const auto &semantic_scope : semantic_scopes) {
+    Part8BorrowedScope scope;
+    for (const auto &[name, _] : semantic_scope) {
+      Part8BorrowedBindingState state;
+      state.borrowed = borrowed_parameter_names.find(name) !=
+                       borrowed_parameter_names.end();
+      scope[name] = state;
+    }
+    scopes.push_back(std::move(scope));
+  }
+  DiagnosePart8BorrowedEscapeStatements(statements, scopes, callable_contracts,
+                                        return_contract, diagnostics);
+}
+
+struct Part8BorrowedEscapeSiteProfile {
+  std::size_t borrowed_parameter_sites = 0;
+  std::size_t borrowed_return_callable_sites = 0;
+};
+
+static void CollectPart8BorrowedEscapeExprSites(
+    const Expr *expr, const std::unordered_map<std::string, Part8BorrowedCallableContract> &callable_contracts,
+    Part8BorrowedEscapeSiteProfile &profile) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::Call) {
+    auto contract_it = callable_contracts.find(expr->ident);
+    if (contract_it != callable_contracts.end() &&
+        contract_it->second.return_borrowed) {
+      ++profile.borrowed_return_callable_sites;
+    }
+  }
+  CollectPart8BorrowedEscapeExprSites(expr->receiver.get(), callable_contracts,
+                                      profile);
+  CollectPart8BorrowedEscapeExprSites(expr->left.get(), callable_contracts,
+                                      profile);
+  CollectPart8BorrowedEscapeExprSites(expr->right.get(), callable_contracts,
+                                      profile);
+  CollectPart8BorrowedEscapeExprSites(expr->third.get(), callable_contracts,
+                                      profile);
+  for (const auto &arg : expr->args) {
+    CollectPart8BorrowedEscapeExprSites(arg.get(), callable_contracts, profile);
+  }
+}
+
+static void CollectPart8BorrowedEscapeStmtSites(
+    const Stmt *stmt,
+    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+        &callable_contracts,
+    Part8BorrowedEscapeSiteProfile &profile) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->let_stmt->value.get(),
+                                            callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->assign_stmt->value.get(),
+                                            callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->return_stmt->value.get(),
+                                            callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->if_stmt->condition.get(),
+                                            callable_contracts, profile);
+        for (const auto &body_stmt : stmt->if_stmt->then_body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
+                                              profile);
+        }
+        for (const auto &body_stmt : stmt->if_stmt->else_body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
+                                              profile);
+        }
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->do_while_stmt->body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+                                              callable_contracts, profile);
+        }
+        CollectPart8BorrowedEscapeExprSites(stmt->do_while_stmt->condition.get(),
+                                            callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->init.value.get(),
+                                            callable_contracts, profile);
+        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->condition.get(),
+                                            callable_contracts, profile);
+        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->step.value.get(),
+                                            callable_contracts, profile);
+        for (const auto &body_stmt : stmt->for_stmt->body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+                                              callable_contracts, profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->switch_stmt->condition.get(),
+                                            callable_contracts, profile);
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          for (const auto &body_stmt : case_stmt.body) {
+            CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+                                                callable_contracts, profile);
+          }
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->while_stmt->condition.get(),
+                                            callable_contracts, profile);
+        for (const auto &body_stmt : stmt->while_stmt->body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+                                              callable_contracts, profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Block:
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->block_stmt->body) {
+          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+                                              callable_contracts, profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        CollectPart8BorrowedEscapeExprSites(stmt->expr_stmt->value.get(),
+                                            callable_contracts, profile);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
 static const Objc3PropertyInfo *FindTypedKeyPathPropertyOnOwner(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &owner_name,
@@ -8404,6 +9001,97 @@ BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
       << ";illegal-sites=" << summary.illegal_non_resource_move_sites << ":"
       << summary.illegal_use_after_move_sites << ":"
       << summary.illegal_duplicate_move_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part8BorrowedPointerEscapeAnalysisSummary
+BuildPart8BorrowedPointerEscapeAnalysisSummary(
+    const Objc3Program &program,
+    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part8BorrowedPointerEscapeAnalysisSummary summary;
+  Part8BorrowedEscapeSiteProfile profile;
+  const auto callable_contracts = BuildPart8BorrowedCallableContracts(program);
+
+  for (const auto &fn : program.functions) {
+    for (const auto &param : fn.params) {
+      if (param.borrowed_pointer_qualified) {
+        ++summary.borrowed_parameter_sites;
+      }
+    }
+    for (const auto &stmt : fn.body) {
+      CollectPart8BorrowedEscapeStmtSites(stmt.get(), callable_contracts,
+                                          profile);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      for (const auto &param : method.params) {
+        if (param.borrowed_pointer_qualified) {
+          ++summary.borrowed_parameter_sites;
+        }
+      }
+      if (!method.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method.body) {
+        CollectPart8BorrowedEscapeStmtSites(stmt.get(), callable_contracts,
+                                            profile);
+      }
+    }
+  }
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) { return entry.find(code) != std::string::npos; });
+  };
+
+  summary.borrowed_return_callable_sites = profile.borrowed_return_callable_sites;
+  summary.illegal_unproven_call_escape_sites =
+      count_diagnostic_code("O3S298");
+  summary.illegal_escaping_block_capture_sites =
+      count_diagnostic_code("O3S299");
+  summary.illegal_borrowed_return_sites =
+      count_diagnostic_code("O3S300");
+  summary.borrowed_escape_candidate_sites =
+      summary.illegal_unproven_call_escape_sites +
+      summary.illegal_escaping_block_capture_sites +
+      summary.illegal_borrowed_return_sites;
+
+  const bool dependency_surface_present =
+      !dependency_summary.contract_id.empty() &&
+      !dependency_summary.surface_path.empty();
+  summary.dependency_required = true;
+  summary.borrowed_call_boundary_enforced =
+      dependency_surface_present && summary.borrowed_parameter_sites > 0u;
+  summary.escaping_block_capture_fail_closed = dependency_surface_present;
+  summary.borrowed_return_contract_enforced = dependency_surface_present;
+  summary.retainable_family_legality_deferred = true;
+  summary.lowering_runtime_deferred = true;
+  summary.deterministic =
+      dependency_surface_present &&
+      summary.borrowed_call_boundary_enforced &&
+      summary.escaping_block_capture_fail_closed &&
+      summary.borrowed_return_contract_enforced;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "borrowed pointer escape analysis must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";borrowed-params=" << summary.borrowed_parameter_sites
+      << ";borrowed-return-callables="
+      << summary.borrowed_return_callable_sites
+      << ";illegal-sites=" << summary.illegal_unproven_call_escape_sites << ":"
+      << summary.illegal_escaping_block_capture_sites << ":"
+      << summary.illegal_borrowed_return_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -21917,6 +22605,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  const auto borrowed_callable_contracts =
+      BuildPart8BorrowedCallableContracts(ast);
   std::unordered_map<std::string, const Objc3InterfaceDecl *> actor_interfaces;
   for (const auto &interface_decl : ast.interfaces) {
     if (interface_decl.is_actor) {
@@ -21993,6 +22683,15 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
           fn.column, diagnostics);
       DiagnosePart8ResourceMoveSemantics(fn.body, scopes, diagnostics);
+      std::unordered_set<std::string> borrowed_parameter_names;
+      for (const auto &param : fn.params) {
+        if (param.borrowed_pointer_qualified) {
+          borrowed_parameter_names.insert(param.name);
+        }
+      }
+      DiagnosePart8BorrowedPointerEscapeSemantics(
+          fn.body, scopes, borrowed_parameter_names, borrowed_callable_contracts,
+          BuildPart8BorrowedReturnContract(fn), diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
@@ -22060,6 +22759,16 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           method.executor_affinity_declared, method.executor_affinity_kind,
           method.line, method.column, diagnostics);
       DiagnosePart8ResourceMoveSemantics(method.body, scopes, diagnostics);
+      std::unordered_set<std::string> borrowed_parameter_names;
+      for (const auto &param : method.params) {
+        if (param.borrowed_pointer_qualified) {
+          borrowed_parameter_names.insert(param.name);
+        }
+      }
+      DiagnosePart8BorrowedPointerEscapeSemantics(
+          method.body, scopes, borrowed_parameter_names,
+          borrowed_callable_contracts,
+          BuildPart8BorrowedReturnContract(method), diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";

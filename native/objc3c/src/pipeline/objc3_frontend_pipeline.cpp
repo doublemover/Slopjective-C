@@ -6244,6 +6244,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program),
           result.part8_system_extension_semantic_model_summary,
           result.stage_diagnostics.semantic);
+  result.part8_borrowed_pointer_escape_analysis_summary =
+      BuildPart8BorrowedPointerEscapeAnalysisSummary(
+          Objc3ParsedProgramAst(result.program),
+          result.part8_resource_move_use_after_move_semantics_summary,
+          result.stage_diagnostics.semantic);
   result.part7_structured_task_cancellation_semantic_summary =
       BuildPart7StructuredTaskCancellationSemanticSummary(
           result.part7_task_executor_cancellation_semantic_model_summary,

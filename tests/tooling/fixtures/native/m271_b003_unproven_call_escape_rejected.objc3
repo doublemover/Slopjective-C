@@ -1,0 +1,8 @@
+module m271b003bad1;
+
+extern fn StoreForLater(bytes: id *) -> void;
+
+fn invalidCall(bytes: borrowed id *) -> i32 {
+  StoreForLater(bytes);
+  return 0;
+}

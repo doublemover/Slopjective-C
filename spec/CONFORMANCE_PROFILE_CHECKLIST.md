@@ -230,6 +230,14 @@ M271-B002 implementation note:
   cleanup/resource-backed locals, and duplicate cleanup transfer before later
   `M271` escape, legality, lowering, and runtime work
 
+M271-B003 implementation note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis`
+- live sema now fails closed on borrowed pointers passed to parameters not
+  proven non-escaping and borrowed returns without a valid
+  `objc_returns_borrowed(owner_index=...)` contract before later `M271`
+  retainable-family, lowering, and runtime work
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

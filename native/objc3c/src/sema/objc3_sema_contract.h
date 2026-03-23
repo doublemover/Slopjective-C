@@ -740,6 +740,66 @@ inline bool IsReadyObjc3Part8ResourceMoveUseAfterMoveSemanticsSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part8BorrowedPointerEscapeAnalysisDependencyContractId =
+        "objc3c-part8-resource-move-use-after-move-semantics/m271-b002-v1";
+inline constexpr const char
+    *kObjc3Part8BorrowedPointerEscapeAnalysisContractId =
+        "objc3c-part8-borrowed-pointer-escape-analysis/m271-b003-v1";
+inline constexpr const char
+    *kObjc3Part8BorrowedPointerEscapeAnalysisSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis";
+inline constexpr const char
+    *kObjc3Part8BorrowedPointerEscapeAnalysisRule =
+        "borrowed-pointer-bindings-now-fail-closed-on-unproven-call-boundaries-escaping-block-capture-and-invalid-borrowed-return-contracts-while-retainable-family-legality-lowering-and-runtime-remain-later-m271-work";
+inline constexpr const char
+    *kObjc3Part8BorrowedPointerEscapeAnalysisDeferredRule =
+        "retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-m271-lanes";
+
+struct Objc3Part8BorrowedPointerEscapeAnalysisSummary {
+  std::string contract_id =
+      kObjc3Part8BorrowedPointerEscapeAnalysisContractId;
+  std::string dependency_contract_id =
+      kObjc3Part8BorrowedPointerEscapeAnalysisDependencyContractId;
+  std::string surface_path =
+      kObjc3Part8BorrowedPointerEscapeAnalysisSurfacePath;
+  std::string semantic_model =
+      kObjc3Part8BorrowedPointerEscapeAnalysisRule;
+  std::string deferred_model =
+      kObjc3Part8BorrowedPointerEscapeAnalysisDeferredRule;
+  std::size_t borrowed_parameter_sites = 0;
+  std::size_t borrowed_return_callable_sites = 0;
+  std::size_t borrowed_escape_candidate_sites = 0;
+  std::size_t illegal_unproven_call_escape_sites = 0;
+  std::size_t illegal_escaping_block_capture_sites = 0;
+  std::size_t illegal_borrowed_return_sites = 0;
+  bool dependency_required = false;
+  bool borrowed_call_boundary_enforced = false;
+  bool escaping_block_capture_fail_closed = false;
+  bool borrowed_return_contract_enforced = false;
+  bool retainable_family_legality_deferred = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part8BorrowedPointerEscapeAnalysisSummary(
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.borrowed_call_boundary_enforced &&
+         summary.escaping_block_capture_fail_closed &&
+         summary.borrowed_return_contract_enforced &&
+         summary.retainable_family_legality_deferred &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

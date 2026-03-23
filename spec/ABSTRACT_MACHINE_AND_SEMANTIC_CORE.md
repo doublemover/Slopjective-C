@@ -884,6 +884,19 @@ M271-B002 resource-move semantic note:
 - borrowed escape legality, retainable-family legality, lowering, and runtime
   behavior remain later `M271` work
 
+M271-B003 borrowed-escape semantic note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis`
+- borrowed pointers now cross call boundaries only when the callee parameter is
+  explicitly marked `borrowed`
+- live sema rejects borrowed pointers passed to parameters not proven
+  non-escaping and borrowed returns without a valid
+  `objc_returns_borrowed(owner_index=...)` contract
+- escaping-block capture diagnostics are wired on the same borrowed binding
+  analysis path
+- retainable-family legality, lowering, and runtime behavior remain later
+  `M271` work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

@@ -1317,6 +1317,48 @@ std::string BuildPart8ResourceMoveUseAfterMoveSemanticsSummaryJson(
   return out.str();
 }
 
+std::string BuildPart8BorrowedPointerEscapeAnalysisSummaryJson(
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"borrowed_parameter_sites\":" << summary.borrowed_parameter_sites
+      << ",\"borrowed_return_callable_sites\":"
+      << summary.borrowed_return_callable_sites
+      << ",\"borrowed_escape_candidate_sites\":"
+      << summary.borrowed_escape_candidate_sites
+      << ",\"illegal_unproven_call_escape_sites\":"
+      << summary.illegal_unproven_call_escape_sites
+      << ",\"illegal_escaping_block_capture_sites\":"
+      << summary.illegal_escaping_block_capture_sites
+      << ",\"illegal_borrowed_return_sites\":"
+      << summary.illegal_borrowed_return_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"borrowed_call_boundary_enforced\":"
+      << (summary.borrowed_call_boundary_enforced ? "true" : "false")
+      << ",\"escaping_block_capture_fail_closed\":"
+      << (summary.escaping_block_capture_fail_closed ? "true" : "false")
+      << ",\"borrowed_return_contract_enforced\":"
+      << (summary.borrowed_return_contract_enforced ? "true" : "false")
+      << ",\"retainable_family_legality_deferred\":"
+      << (summary.retainable_family_legality_deferred ? "true" : "false")
+      << ",\"lowering_runtime_deferred\":"
+      << (summary.lowering_runtime_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
     const Objc3Part7ActorIsolationSendableSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -11901,6 +11943,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
       &part8_resource_move_use_after_move_semantics_summary =
           pipeline_result.part8_resource_move_use_after_move_semantics_summary;
+  const Objc3Part8BorrowedPointerEscapeAnalysisSummary
+      &part8_borrowed_pointer_escape_analysis_summary =
+          pipeline_result.part8_borrowed_pointer_escape_analysis_summary;
   const Objc3Part7StructuredTaskCancellationSemanticSummary
       &part7_structured_task_cancellation_semantic_summary =
           pipeline_result.part7_structured_task_cancellation_semantic_summary;
@@ -16338,6 +16383,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part8_resource_move_and_use_after_move_semantics\":"
            << BuildPart8ResourceMoveUseAfterMoveSemanticsSummaryJson(
                   part8_resource_move_use_after_move_semantics_summary)
+           << ",\"objc_part8_borrowed_pointer_escape_analysis\":"
+           << BuildPart8BorrowedPointerEscapeAnalysisSummaryJson(
+                  part8_borrowed_pointer_escape_analysis_summary)
            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
                   part7_structured_task_cancellation_semantic_summary)
@@ -17674,6 +17722,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part8_resource_move_and_use_after_move_semantics\":"
            << BuildPart8ResourceMoveUseAfterMoveSemanticsSummaryJson(
                   part8_resource_move_use_after_move_semantics_summary)
+           << ",\"objc_part8_borrowed_pointer_escape_analysis\":"
+           << BuildPart8BorrowedPointerEscapeAnalysisSummaryJson(
+                  part8_borrowed_pointer_escape_analysis_summary)
            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
                   part7_structured_task_cancellation_semantic_summary)

@@ -314,6 +314,13 @@ M271-B002 semantic note:
   cleanup/resource-backed locals
 - live sema rejects non-resource `move` capture, later use after move, and
   duplicate cleanup transfer
+
+M271-B003 semantic note:
+- `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis`
+- borrowed pointers now cross call boundaries only when the callee parameter is
+  explicitly marked `borrowed`
+- live sema rejects unproven borrowed call escapes and invalid borrowed-return
+  contracts
 ```
 
 This attribute may be applied to:

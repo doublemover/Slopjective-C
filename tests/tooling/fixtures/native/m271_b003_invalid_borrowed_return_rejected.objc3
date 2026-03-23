@@ -1,0 +1,5 @@
+module m271b003bad2;
+
+fn invalidBorrowedReturn(bytes: borrowed id *) -> borrowed id * {
+  return bytes;
+}
