@@ -1017,6 +1017,75 @@ struct Objc3ActorIsolationSendabilitySummary {
   bool deterministic = true;
 };
 
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendableSemanticModelDependencyContractId =
+        kObjc3ActorMemberIsolationSourceClosureContractId;
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendableSemanticModelContractId =
+        "objc3c-part7-actor-isolation-sendable-semantic-model/m270-b001-v1";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendableSemanticModelSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendableSemanticModelRule =
+        "actor-member-source-closure-and-parser-owned-actor-sendability-profiles-now-publish-one-deterministic-sema-packet-while-cross-actor-legality-sendable-enforcement-and-runnable-actor-runtime-behavior-remain-later-m270-work";
+inline constexpr const char
+    *kObjc3Part7ActorIsolationSendableSemanticModelDeferredRule =
+        "dedicated-actor-isolation-diagnostics-cross-actor-sendable-enforcement-executor-scheduling-and-runnable-actor-runtime-behavior-remain-deferred-to-later-m270-lanes";
+
+struct Objc3Part7ActorIsolationSendableSemanticModelSummary {
+  std::string contract_id =
+      kObjc3Part7ActorIsolationSendableSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part7ActorIsolationSendableSemanticModelDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7ActorIsolationSendableSemanticModelSurfacePath;
+  std::string semantic_model =
+      kObjc3Part7ActorIsolationSendableSemanticModelRule;
+  std::string deferred_model =
+      kObjc3Part7ActorIsolationSendableSemanticModelDeferredRule;
+  std::size_t actor_interface_sites = 0;
+  std::size_t actor_method_sites = 0;
+  std::size_t actor_property_sites = 0;
+  std::size_t objc_nonisolated_annotation_sites = 0;
+  std::size_t actor_member_executor_annotation_sites = 0;
+  std::size_t actor_async_method_sites = 0;
+  std::size_t actor_member_metadata_sites = 0;
+  std::size_t actor_isolation_sendability_sites = 0;
+  std::size_t actor_isolation_decl_sites = 0;
+  std::size_t actor_hop_sites = 0;
+  std::size_t sendable_annotation_sites = 0;
+  std::size_t non_sendable_crossing_sites = 0;
+  std::size_t isolation_boundary_sites = 0;
+  std::size_t normalized_sites = 0;
+  std::size_t gate_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool source_dependency_required = false;
+  bool actor_member_source_supported = false;
+  bool actor_isolation_sendability_profile_normalized = false;
+  bool strict_concurrency_selection_fail_closed = false;
+  bool actor_runtime_deferred = false;
+  bool executor_runtime_deferred = false;
+  bool cross_actor_enforcement_deferred = false;
+  bool deterministic = false;
+  bool ready_for_semantic_expansion = false;
+  std::string failure_reason;
+  std::string replay_key;
+};
+
+inline bool IsReadyObjc3Part7ActorIsolationSendableSemanticModelSummary(
+    const Objc3Part7ActorIsolationSendableSemanticModelSummary &summary) {
+  return summary.source_dependency_required &&
+         summary.actor_member_source_supported &&
+         summary.actor_isolation_sendability_profile_normalized &&
+         summary.strict_concurrency_selection_fail_closed &&
+         summary.actor_runtime_deferred &&
+         summary.executor_runtime_deferred &&
+         summary.cross_actor_enforcement_deferred &&
+         summary.deterministic && summary.ready_for_semantic_expansion &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3TaskRuntimeCancellationSummary {
   std::size_t task_runtime_interop_sites = 0;
   std::size_t runtime_hook_sites = 0;

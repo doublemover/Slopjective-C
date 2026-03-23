@@ -1095,6 +1095,67 @@ std::string BuildPart7TaskExecutorCancellationSemanticModelSummaryJson(
   return out.str();
 }
 
+std::string BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
+    const Objc3Part7ActorIsolationSendableSemanticModelSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_dependency_contract_id\":\""
+      << EscapeJsonString(summary.frontend_dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"actor_interface_sites\":" << summary.actor_interface_sites
+      << ",\"actor_method_sites\":" << summary.actor_method_sites
+      << ",\"actor_property_sites\":" << summary.actor_property_sites
+      << ",\"objc_nonisolated_annotation_sites\":"
+      << summary.objc_nonisolated_annotation_sites
+      << ",\"actor_member_executor_annotation_sites\":"
+      << summary.actor_member_executor_annotation_sites
+      << ",\"actor_async_method_sites\":"
+      << summary.actor_async_method_sites
+      << ",\"actor_member_metadata_sites\":"
+      << summary.actor_member_metadata_sites
+      << ",\"actor_isolation_sendability_sites\":"
+      << summary.actor_isolation_sendability_sites
+      << ",\"actor_isolation_decl_sites\":"
+      << summary.actor_isolation_decl_sites
+      << ",\"actor_hop_sites\":" << summary.actor_hop_sites
+      << ",\"sendable_annotation_sites\":"
+      << summary.sendable_annotation_sites
+      << ",\"non_sendable_crossing_sites\":"
+      << summary.non_sendable_crossing_sites
+      << ",\"isolation_boundary_sites\":"
+      << summary.isolation_boundary_sites
+      << ",\"normalized_sites\":" << summary.normalized_sites
+      << ",\"gate_blocked_sites\":" << summary.gate_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << summary.contract_violation_sites
+      << ",\"source_dependency_required\":"
+      << (summary.source_dependency_required ? "true" : "false")
+      << ",\"actor_member_source_supported\":"
+      << (summary.actor_member_source_supported ? "true" : "false")
+      << ",\"actor_isolation_sendability_profile_normalized\":"
+      << (summary.actor_isolation_sendability_profile_normalized ? "true"
+                                                                 : "false")
+      << ",\"strict_concurrency_selection_fail_closed\":"
+      << (summary.strict_concurrency_selection_fail_closed ? "true" : "false")
+      << ",\"actor_runtime_deferred\":"
+      << (summary.actor_runtime_deferred ? "true" : "false")
+      << ",\"executor_runtime_deferred\":"
+      << (summary.executor_runtime_deferred ? "true" : "false")
+      << ",\"cross_actor_enforcement_deferred\":"
+      << (summary.cross_actor_enforcement_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7StructuredTaskCancellationSemanticSummaryJson(
     const Objc3Part7StructuredTaskCancellationSemanticSummary &summary) {
   std::ostringstream out;
@@ -11310,6 +11371,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
+  const Objc3Part7ActorIsolationSendableSemanticModelSummary
+      &part7_actor_isolation_sendable_semantic_model_summary =
+          pipeline_result.part7_actor_isolation_sendable_semantic_model_summary;
   const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
       &part7_task_group_cancellation_source_closure_summary =
           pipeline_result.part7_task_group_cancellation_source_closure_summary;
@@ -15701,6 +15765,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
            << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                   part7_actor_member_isolation_source_closure_summary)
+           << ",\"objc_part7_actor_isolation_and_sendable_semantic_model\":"
+           << BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
+                  part7_actor_isolation_sendable_semantic_model_summary)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)
@@ -17006,6 +17073,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
            << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                   part7_actor_member_isolation_source_closure_summary)
+           << ",\"objc_part7_actor_isolation_and_sendable_semantic_model\":"
+           << BuildPart7ActorIsolationSendableSemanticModelSummaryJson(
+                  part7_actor_isolation_sendable_semantic_model_summary)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)

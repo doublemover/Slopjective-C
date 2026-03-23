@@ -3421,6 +3421,26 @@ Current implementation status:
 - actor-member legality, cross-actor diagnostics, sendability enforcement, and
   runnable actor runtime behavior remain later `M270` work
 
+## M270 actor isolation and sendable semantic model
+
+The semantic pipeline now publishes a dedicated packet at
+`frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model`.
+
+- the packet consumes the existing `M270-A002` actor-member source packet and
+  the already-live aggregated actor/sendability sema counters
+- the packet freezes one truthful sema model for:
+  - actor-member source dependency
+  - parser-owned actor-isolation/sendability profile normalization
+  - fail-closed strict-concurrency selection/reporting
+- current support remains a deterministic sema/accounting boundary rather than
+  a full actor runtime or broad cross-actor legality implementation
+
+Current implementation status:
+
+- this issue freezes one dedicated actor/sendability sema packet
+- dedicated actor-isolation diagnostics, sendability enforcement, and runnable
+  actor/executor runtime behavior remain later `M270` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

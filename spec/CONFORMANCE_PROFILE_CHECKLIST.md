@@ -205,6 +205,16 @@ M270-A002 implementation note:
 - actor-member legality, cross-actor diagnostics, sendability enforcement, and
   runnable actor runtime behavior remain later `M270` work
 
+M270-B001 implementation note:
+
+- the semantic pipeline now publishes one dedicated actor/sendability packet at
+  `frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model`
+- the truthful lane-B proof consumes the `M270-A002` actor-member source packet
+  and the already-landed aggregated actor/sendability sema counters
+- strict-concurrency selection/reporting remains fail-closed and later `M270`
+  work still owns dedicated actor-isolation diagnostics, sendability
+  enforcement, and runnable actor runtime behavior
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

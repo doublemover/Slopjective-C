@@ -840,6 +840,16 @@ M270-A002 actor-member/isolation-annotation source note:
   cross-actor diagnostics, sendability enforcement, and runnable actor runtime
   behavior remain later `M270` work
 
+M270-B001 actor/sendability semantic-model note:
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model`
+- the packet consumes the `M270-A002` actor-member source closure together with
+  the already-landed aggregated actor/sendability sema counters
+- the current claim is still a deterministic sema/accounting boundary rather
+  than a full actor runtime, broad cross-actor legality checker, or live
+  strict-concurrency implementation
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper
