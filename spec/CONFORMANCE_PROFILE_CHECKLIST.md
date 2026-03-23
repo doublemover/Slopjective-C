@@ -235,6 +235,15 @@ M270-B003 hazard note:
 - runnable actor runtime and broader strict-concurrency closure remain later
   `M270` work
 
+M270-C001 lowering note:
+
+- lane C now also publishes
+  `frontend.pipeline.semantic_surface.objc_part7_actor_lowering_and_metadata_contract`
+- the current lowering freeze covers actor metadata record planning,
+  actor isolation-thunk planning, and actor hop-artifact planning
+- runnable actor runtime and live thunk bodies remain later `M270-C002` and
+  `M270-C003` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

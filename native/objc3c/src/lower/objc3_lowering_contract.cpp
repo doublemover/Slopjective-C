@@ -4162,8 +4162,55 @@ std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-         ";lane_contract=" +
-         kObjc3ActorIsolationSendabilityLoweringLaneContract;
+          ";lane_contract=" +
+          kObjc3ActorIsolationSendabilityLoweringLaneContract;
+}
+
+bool IsValidObjc3ActorLoweringMetadataContract(
+    const Objc3ActorLoweringMetadataContract &contract) {
+  if (contract.actor_method_sites < contract.nonisolated_entry_sites ||
+      contract.actor_method_sites < contract.executor_affinity_sites ||
+      contract.actor_method_sites < contract.actor_hop_artifact_sites ||
+      contract.actor_method_sites < contract.actor_isolation_thunk_sites ||
+      contract.actor_method_sites < contract.guard_blocked_sites ||
+      contract.actor_method_sites < contract.contract_violation_sites ||
+      contract.actor_metadata_record_sites < contract.actor_interface_sites ||
+      contract.task_handoff_sites < contract.actor_hop_artifact_sites ||
+      contract.task_handoff_sites < contract.actor_isolation_thunk_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ActorLoweringMetadataReplayKey(
+    const Objc3ActorLoweringMetadataContract &contract) {
+  return std::string("actor_interface_sites=") +
+             std::to_string(contract.actor_interface_sites) +
+         ";actor_method_sites=" + std::to_string(contract.actor_method_sites) +
+         ";actor_metadata_record_sites=" +
+             std::to_string(contract.actor_metadata_record_sites) +
+         ";nonisolated_entry_sites=" +
+             std::to_string(contract.nonisolated_entry_sites) +
+         ";executor_affinity_sites=" +
+             std::to_string(contract.executor_affinity_sites) +
+         ";actor_hop_artifact_sites=" +
+             std::to_string(contract.actor_hop_artifact_sites) +
+         ";actor_isolation_thunk_sites=" +
+             std::to_string(contract.actor_isolation_thunk_sites) +
+         ";replay_proof_dependency_sites=" +
+             std::to_string(contract.replay_proof_dependency_sites) +
+         ";race_guard_dependency_sites=" +
+             std::to_string(contract.race_guard_dependency_sites) +
+         ";task_handoff_sites=" + std::to_string(contract.task_handoff_sites) +
+         ";guard_blocked_sites=" +
+             std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+             std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3Part7ActorLoweringMetadataLaneContract;
 }
 
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(

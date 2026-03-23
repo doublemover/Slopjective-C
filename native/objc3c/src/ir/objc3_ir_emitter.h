@@ -849,6 +849,20 @@ struct Objc3IRFrontendMetadata {
   std::size_t actor_isolation_sendability_lowering_guard_blocked_sites = 0;
   std::size_t actor_isolation_sendability_lowering_contract_violation_sites = 0;
   bool deterministic_actor_isolation_sendability_lowering_handoff = false;
+  std::string lowering_actor_lowering_metadata_replay_key;
+  std::size_t actor_lowering_metadata_actor_interface_sites = 0;
+  std::size_t actor_lowering_metadata_actor_method_sites = 0;
+  std::size_t actor_lowering_metadata_actor_metadata_record_sites = 0;
+  std::size_t actor_lowering_metadata_nonisolated_entry_sites = 0;
+  std::size_t actor_lowering_metadata_executor_affinity_sites = 0;
+  std::size_t actor_lowering_metadata_actor_hop_artifact_sites = 0;
+  std::size_t actor_lowering_metadata_actor_isolation_thunk_sites = 0;
+  std::size_t actor_lowering_metadata_replay_proof_dependency_sites = 0;
+  std::size_t actor_lowering_metadata_race_guard_dependency_sites = 0;
+  std::size_t actor_lowering_metadata_task_handoff_sites = 0;
+  std::size_t actor_lowering_metadata_guard_blocked_sites = 0;
+  std::size_t actor_lowering_metadata_contract_violation_sites = 0;
+  bool deterministic_actor_lowering_metadata_handoff = false;
   std::string lowering_task_runtime_interop_cancellation_replay_key;
   std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
   std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =

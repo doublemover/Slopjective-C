@@ -117,6 +117,15 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringDeferredModel =
     "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-m269-work";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataContractId =
+    "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_actor_lowering_and_metadata_contract";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataModel =
+    "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
+    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionContractId =
     "objc3c-part7-task-runtime-abi-completion/m269-c003-v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionSurfacePath =
@@ -1386,6 +1395,104 @@ BuildPart7ActorIsolationSendabilityLoweringContract(
       contract.actor_isolation_sites ==
           contract.isolation_boundary_sites + contract.guard_blocked_sites;
   return contract;
+}
+
+Objc3ActorLoweringMetadataContract BuildPart7ActorLoweringMetadataContract(
+    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+        &source_summary,
+    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+        &enforcement_summary,
+    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &hazard_summary) {
+  Objc3ActorLoweringMetadataContract contract;
+  contract.actor_interface_sites = source_summary.actor_interface_sites;
+  contract.actor_method_sites = enforcement_summary.actor_method_sites;
+  contract.actor_metadata_record_sites =
+      source_summary.actor_interface_sites +
+      source_summary.actor_member_metadata_sites;
+  contract.nonisolated_entry_sites =
+      enforcement_summary.total_nonisolated_method_sites;
+  contract.executor_affinity_sites =
+      enforcement_summary.actor_member_executor_annotation_sites;
+  contract.actor_hop_artifact_sites = enforcement_summary.actor_hop_sites;
+  contract.actor_isolation_thunk_sites = hazard_summary.task_handoff_sites;
+  contract.replay_proof_dependency_sites = hazard_summary.replay_proof_sites;
+  contract.race_guard_dependency_sites = hazard_summary.race_guard_sites;
+  contract.task_handoff_sites = hazard_summary.task_handoff_sites;
+  contract.guard_blocked_sites =
+      enforcement_summary.illegal_non_actor_nonisolated_sites +
+      enforcement_summary.illegal_nonisolated_async_sites +
+      enforcement_summary.illegal_nonisolated_executor_sites +
+      enforcement_summary.illegal_actor_hop_without_async_sites +
+      enforcement_summary.illegal_non_sendable_crossing_sites +
+      hazard_summary.illegal_missing_race_guard_sites +
+      hazard_summary.illegal_missing_replay_proof_sites +
+      hazard_summary.illegal_missing_actor_isolation_sites +
+      hazard_summary.illegal_escaping_block_literal_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      source_summary.deterministic_handoff &&
+      source_summary.ready_for_semantic_expansion &&
+      enforcement_summary.deterministic &&
+      enforcement_summary.ready_for_lowering_and_runtime &&
+      hazard_summary.deterministic &&
+      hazard_summary.ready_for_lowering_and_runtime;
+  return contract;
+}
+
+std::string BuildPart7ActorLoweringMetadataContractJson(
+    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+        &source_summary,
+    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+        &enforcement_summary,
+    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &hazard_summary,
+    const Objc3ActorLoweringMetadataContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3ActorLoweringMetadataContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7ActorLoweringMetadataContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7ActorLoweringMetadataSurfacePath)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(source_summary.contract_id)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(enforcement_summary.contract_id)
+      << "\",\"hazard_contract_id\":\""
+      << EscapeJsonString(hazard_summary.contract_id)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3Part7ActorLoweringMetadataLaneContract)
+      << "\",\"metadata_model\":\""
+      << EscapeJsonString(kObjc3Part7ActorLoweringMetadataModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part7ActorLoweringMetadataDeferredModel)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"actor_interface_sites\":" << contract.actor_interface_sites
+      << ",\"actor_method_sites\":" << contract.actor_method_sites
+      << ",\"actor_metadata_record_sites\":"
+      << contract.actor_metadata_record_sites
+      << ",\"nonisolated_entry_sites\":" << contract.nonisolated_entry_sites
+      << ",\"executor_affinity_sites\":" << contract.executor_affinity_sites
+      << ",\"actor_hop_artifact_sites\":"
+      << contract.actor_hop_artifact_sites
+      << ",\"actor_isolation_thunk_sites\":"
+      << contract.actor_isolation_thunk_sites
+      << ",\"replay_proof_dependency_sites\":"
+      << contract.replay_proof_dependency_sites
+      << ",\"race_guard_dependency_sites\":"
+      << contract.race_guard_dependency_sites
+      << ",\"task_handoff_sites\":" << contract.task_handoff_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
 }
 
 Objc3TaskRuntimeInteropCancellationLoweringContract
@@ -11552,6 +11659,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part7_actor_isolation_sendability_lowering_replay_key =
       Objc3ActorIsolationSendabilityLoweringReplayKey(
           part7_actor_isolation_sendability_lowering_contract);
+  const Objc3ActorLoweringMetadataContract
+      part7_actor_lowering_metadata_contract =
+          BuildPart7ActorLoweringMetadataContract(
+              part7_actor_member_isolation_source_closure_summary,
+              part7_actor_isolation_sendability_enforcement_summary,
+              part7_actor_race_hazard_escape_diagnostics_summary);
+  if (!IsValidObjc3ActorLoweringMetadataContract(
+          part7_actor_lowering_metadata_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid actor lowering metadata contract");
+  }
+  const std::string part7_actor_lowering_metadata_replay_key =
+      Objc3ActorLoweringMetadataReplayKey(
+          part7_actor_lowering_metadata_contract);
   const Objc3TaskRuntimeInteropCancellationLoweringContract
       part7_task_runtime_interop_cancellation_lowering_contract =
           BuildPart7TaskRuntimeInteropCancellationLoweringContract(
@@ -15888,6 +16010,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_race_hazard_and_escape_diagnostics\":"
            << BuildPart7ActorRaceHazardEscapeDiagnosticsSummaryJson(
                   part7_actor_race_hazard_escape_diagnostics_summary)
+           << ",\"objc_part7_actor_lowering_and_metadata_contract\":"
+           << BuildPart7ActorLoweringMetadataContractJson(
+                  part7_actor_member_isolation_source_closure_summary,
+                  part7_actor_isolation_sendability_enforcement_summary,
+                  part7_actor_race_hazard_escape_diagnostics_summary,
+                  part7_actor_lowering_metadata_contract,
+                  part7_actor_lowering_metadata_replay_key)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)
@@ -17202,6 +17331,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_race_hazard_and_escape_diagnostics\":"
            << BuildPart7ActorRaceHazardEscapeDiagnosticsSummaryJson(
                   part7_actor_race_hazard_escape_diagnostics_summary)
+           << ",\"objc_part7_actor_lowering_and_metadata_contract\":"
+           << BuildPart7ActorLoweringMetadataContractJson(
+                  part7_actor_member_isolation_source_closure_summary,
+                  part7_actor_isolation_sendability_enforcement_summary,
+                  part7_actor_race_hazard_escape_diagnostics_summary,
+                  part7_actor_lowering_metadata_contract,
+                  part7_actor_lowering_metadata_replay_key)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)
@@ -18142,6 +18278,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .contract_violation_sites;
   ir_frontend_metadata.deterministic_actor_isolation_sendability_lowering_handoff =
       part7_actor_isolation_sendability_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_actor_lowering_metadata_replay_key =
+      part7_actor_lowering_metadata_replay_key;
+  ir_frontend_metadata.actor_lowering_metadata_actor_interface_sites =
+      part7_actor_lowering_metadata_contract.actor_interface_sites;
+  ir_frontend_metadata.actor_lowering_metadata_actor_method_sites =
+      part7_actor_lowering_metadata_contract.actor_method_sites;
+  ir_frontend_metadata.actor_lowering_metadata_actor_metadata_record_sites =
+      part7_actor_lowering_metadata_contract.actor_metadata_record_sites;
+  ir_frontend_metadata.actor_lowering_metadata_nonisolated_entry_sites =
+      part7_actor_lowering_metadata_contract.nonisolated_entry_sites;
+  ir_frontend_metadata.actor_lowering_metadata_executor_affinity_sites =
+      part7_actor_lowering_metadata_contract.executor_affinity_sites;
+  ir_frontend_metadata.actor_lowering_metadata_actor_hop_artifact_sites =
+      part7_actor_lowering_metadata_contract.actor_hop_artifact_sites;
+  ir_frontend_metadata.actor_lowering_metadata_actor_isolation_thunk_sites =
+      part7_actor_lowering_metadata_contract.actor_isolation_thunk_sites;
+  ir_frontend_metadata.actor_lowering_metadata_replay_proof_dependency_sites =
+      part7_actor_lowering_metadata_contract.replay_proof_dependency_sites;
+  ir_frontend_metadata.actor_lowering_metadata_race_guard_dependency_sites =
+      part7_actor_lowering_metadata_contract.race_guard_dependency_sites;
+  ir_frontend_metadata.actor_lowering_metadata_task_handoff_sites =
+      part7_actor_lowering_metadata_contract.task_handoff_sites;
+  ir_frontend_metadata.actor_lowering_metadata_guard_blocked_sites =
+      part7_actor_lowering_metadata_contract.guard_blocked_sites;
+  ir_frontend_metadata.actor_lowering_metadata_contract_violation_sites =
+      part7_actor_lowering_metadata_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_actor_lowering_metadata_handoff =
+      part7_actor_lowering_metadata_contract.deterministic;
   ir_frontend_metadata.lowering_task_runtime_interop_cancellation_replay_key =
       part7_task_runtime_interop_cancellation_lowering_replay_key;
   ir_frontend_metadata.task_runtime_interop_cancellation_lowering_sites =

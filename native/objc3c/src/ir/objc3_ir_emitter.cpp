@@ -825,6 +825,12 @@ class Objc3IREmitter {
                  .lowering_actor_isolation_sendability_replay_key
           << "\n";
     }
+    if (!frontend_metadata_.lowering_actor_lowering_metadata_replay_key
+             .empty()) {
+      out << "; actor_lowering_metadata_contract = "
+          << frontend_metadata_.lowering_actor_lowering_metadata_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
       out << "; task_runtime_interop_cancellation_lowering = "
@@ -2215,6 +2221,38 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_actor_lowering_metadata_profile = actor_interface_sites="
+        << frontend_metadata_.actor_lowering_metadata_actor_interface_sites
+        << ", actor_method_sites="
+        << frontend_metadata_.actor_lowering_metadata_actor_method_sites
+        << ", actor_metadata_record_sites="
+        << frontend_metadata_
+               .actor_lowering_metadata_actor_metadata_record_sites
+        << ", nonisolated_entry_sites="
+        << frontend_metadata_.actor_lowering_metadata_nonisolated_entry_sites
+        << ", executor_affinity_sites="
+        << frontend_metadata_.actor_lowering_metadata_executor_affinity_sites
+        << ", actor_hop_artifact_sites="
+        << frontend_metadata_.actor_lowering_metadata_actor_hop_artifact_sites
+        << ", actor_isolation_thunk_sites="
+        << frontend_metadata_.actor_lowering_metadata_actor_isolation_thunk_sites
+        << ", replay_proof_dependency_sites="
+        << frontend_metadata_
+               .actor_lowering_metadata_replay_proof_dependency_sites
+        << ", race_guard_dependency_sites="
+        << frontend_metadata_
+               .actor_lowering_metadata_race_guard_dependency_sites
+        << ", task_handoff_sites="
+        << frontend_metadata_.actor_lowering_metadata_task_handoff_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.actor_lowering_metadata_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.actor_lowering_metadata_contract_violation_sites
+        << ", deterministic_actor_lowering_metadata_handoff="
+        << (frontend_metadata_.deterministic_actor_lowering_metadata_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_task_runtime_interop_cancellation_lowering_profile = task_runtime_sites="
         << frontend_metadata_.task_runtime_interop_cancellation_lowering_sites
         << ", task_runtime_interop_sites="
@@ -3139,6 +3177,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}\n";
     out << "!objc3.objc_part7_live_task_runtime_integration = !{!95}\n";
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
+    out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -5916,6 +5955,47 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_actor_isolation_sendability_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!97 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_actor_interface_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_actor_method_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_actor_metadata_record_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_nonisolated_entry_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_executor_affinity_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_actor_hop_artifact_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_actor_isolation_thunk_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_replay_proof_dependency_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_race_guard_dependency_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_task_handoff_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.actor_lowering_metadata_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .actor_lowering_metadata_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_actor_lowering_metadata_handoff
                 ? 1
                 : 0)
         << "}\n\n";

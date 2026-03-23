@@ -3337,6 +3337,20 @@ Lane B now also publishes
   - actor isolation coverage
 - escaping block literals remain unsupported in that actor-method hazard slice
 
+## M270 actor lowering and metadata contract
+
+Lane C now also publishes
+`frontend.pipeline.semantic_surface.objc_part7_actor_lowering_and_metadata_contract`.
+
+- the current lowering freeze ties the already-live actor source, enforcement,
+  and hazard packets into one deterministic actor lowering handoff
+- the emitted contract covers:
+  - actor metadata record planning
+  - actor isolation-thunk planning
+  - actor hop-artifact planning
+- live thunk bodies, mailbox runtime entrypoints, and runnable cross-actor
+  scheduling remain later `M270-C002` and `M270-C003` work
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

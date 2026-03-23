@@ -867,6 +867,16 @@ M270-B003 actor hazard note:
 - runnable actor runtime and broader strict-concurrency closure remain later
   `M270` work
 
+M270-C001 actor lowering note:
+
+- lane C now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_actor_lowering_and_metadata_contract`
+- the current lowering freeze carries one deterministic contract for actor
+  metadata records, actor isolation-thunk planning, and actor hop-artifact
+  planning
+- live thunk bodies, mailbox runtime entrypoints, and runnable cross-actor
+  scheduling remain later `M270-C002` and `M270-C003` work
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

@@ -1483,6 +1483,22 @@ inline constexpr const char
 // into real suspension-frame cleanup and executor resume behavior.
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
+// M270-C001 lowering-freeze anchor: Part 7 actor lowering now freezes one
+// dedicated emitted contract for actor metadata carriage, isolation-thunk
+// planning, and hop-artifact planning. Live thunk bodies and runtime entrypoints
+// remain later C002/C003 work, but this packet is the canonical lowering
+// handoff for actor-focused IR metadata and manifest truth.
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataContractId =
+    "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_actor_lowering_and_metadata_contract";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataModel =
+    "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
+    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
+inline constexpr const char *kObjc3Part7ActorLoweringMetadataLaneContract =
+    "m270-actor-lowering-metadata-contract-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
@@ -2147,6 +2163,22 @@ struct Objc3ActorIsolationSendabilityLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3ActorLoweringMetadataContract {
+  std::size_t actor_interface_sites = 0;
+  std::size_t actor_method_sites = 0;
+  std::size_t actor_metadata_record_sites = 0;
+  std::size_t nonisolated_entry_sites = 0;
+  std::size_t executor_affinity_sites = 0;
+  std::size_t actor_hop_artifact_sites = 0;
+  std::size_t actor_isolation_thunk_sites = 0;
+  std::size_t replay_proof_dependency_sites = 0;
+  std::size_t race_guard_dependency_sites = 0;
+  std::size_t task_handoff_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -2504,6 +2536,10 @@ bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
     const Objc3ActorIsolationSendabilityLoweringContract &contract);
 std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
     const Objc3ActorIsolationSendabilityLoweringContract &contract);
+bool IsValidObjc3ActorLoweringMetadataContract(
+    const Objc3ActorLoweringMetadataContract &contract);
+std::string Objc3ActorLoweringMetadataReplayKey(
+    const Objc3ActorLoweringMetadataContract &contract);
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
