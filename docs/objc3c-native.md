@@ -3614,6 +3614,22 @@ already-landed source, sema, lowering, ABI, and hardened runtime slices.
   current fail-closed front-door behavior stays visible to operators
 - the next issue is `M269-E002`
 
+## M269 runnable task and executor matrix closeout (M269-E002)
+
+`M269-E002` closes the current task/executor milestone truthfully by replaying
+`M269-A002` through `M269-E001` and publishing one explicit runnable matrix for
+the already-landed Part 7 task/runtime slice.
+
+- the closeout rows are:
+  - task creation source closure
+  - executor-affinity legality
+  - task runtime ABI/helper publication
+  - hardened cancellation/autorelease replay
+  - lane-E conformance gate
+- the matrix does not widen the supported surface beyond the current helper-
+  backed task/runtime slice
+- the next issue is `M270-A001`
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

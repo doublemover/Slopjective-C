@@ -11155,3 +11155,19 @@ autoreleasepool boundaries, and reset-stable replay determinism.
   current front-door fail-closed publication boundary remains visible to
   operators
 - the next issue is `M269-E002`
+
+## M269 Part 7 Runnable Task And Executor Matrix Closeout (E002)
+
+`M269-E002` closes the milestone by replaying the published `M269-A002`
+through `M269-E001` proof chain and freezing one explicit runnable matrix for
+ the already-landed task/runtime slice.
+
+- supported closeout rows cover:
+  - task creation source closure
+  - executor-affinity legality
+  - task runtime ABI/helper publication
+  - hardened cancellation/autorelease replay
+  - lane-E conformance gate
+- the closeout does not widen the surface beyond the current helper-backed
+  task/runtime slice
+- the next issue is `M270-A001`

@@ -854,6 +854,14 @@ M269-E001 task and executor conformance gate note:
   fail-closed where broader metadata export is still blocked
 - the next issue is `M269-E002`
 
+M269-E002 runnable task/executor closeout note:
+
+- the closeout replays the published `M269-A002` through `M269-E001` proof
+  chain and freezes one explicit runnable matrix for the current task/runtime
+  slice
+- it does not widen the abstract machine; it republishes the already-landed
+  helper-backed task/runtime evidence and hands off to `M270-A001`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

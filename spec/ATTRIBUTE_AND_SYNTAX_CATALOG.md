@@ -708,6 +708,17 @@ Current implementation status (`M269-E001`):
   not widened by this gate
 - the next issue is `M269-E002`
 
+Current implementation status (`M269-E002`):
+
+- the runnable task/executor closeout now replays `M269-A002` through
+  `M269-E001` as one explicit matrix for the current Part 7 task/runtime slice
+- supported rows cover task creation source closure, executor-affinity
+  legality, task runtime ABI/helper publication, hardened cancellation/
+  autorelease replay, and the lane-E conformance gate
+- this closeout does not widen the surface beyond the already-landed
+  helper-backed task/runtime slice
+- the next issue is `M270-A001`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

@@ -34,6 +34,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // M269-E001 task/executor conformance gate anchor: lane-E keeps consuming
   // the same manifest sidecar and paired driver artifacts while the wider
   // front-door task publication path remains intentionally fail-closed.
+  // M269-E002 runnable task/executor closeout matrix anchor: the milestone
+  // closeout keeps consuming this same manifest sidecar instead of inventing a
+  // matrix-only reporting surface for the current Part 7 task/runtime slice.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 
