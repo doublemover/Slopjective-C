@@ -2734,6 +2734,28 @@ class Objc3IREmitter {
       result_out = out;
       return true;
     }
+    if (lowered == "replay_proof_step") {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorRecordReplayProofI32Symbol) +
+                               "(i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "race_guard_lock") {
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorRecordRaceGuardI32Symbol) +
+                               "(i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
 
     return false;
   }
@@ -12514,6 +12536,16 @@ class Objc3IREmitter {
                                 std::string(
                                     kObjc3RuntimeActorHopToExecutorI32Symbol) +
                                 "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorRecordReplayProofI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorRecordReplayProofI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorRecordRaceGuardI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorRecordRaceGuardI32Symbol) +
+                                "(i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(

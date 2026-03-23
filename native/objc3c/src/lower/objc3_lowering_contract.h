@@ -666,6 +666,10 @@ inline constexpr const char *kObjc3RuntimeActorEnterNonisolatedI32Symbol =
     "objc3_runtime_actor_enter_nonisolated_i32";
 inline constexpr const char *kObjc3RuntimeActorHopToExecutorI32Symbol =
     "objc3_runtime_actor_hop_to_executor_i32";
+inline constexpr const char *kObjc3RuntimeActorRecordReplayProofI32Symbol =
+    "objc3_runtime_actor_record_replay_proof_i32";
+inline constexpr const char *kObjc3RuntimeActorRecordRaceGuardI32Symbol =
+    "objc3_runtime_actor_record_race_guard_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =

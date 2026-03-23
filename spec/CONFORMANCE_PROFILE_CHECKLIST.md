@@ -252,6 +252,14 @@ M270-C002 lowering implementation note:
   - `actor_hop_to_executor(...)`
 - broader mailbox/runtime closure still remains later `M270-C003` work
 
+M270-C003 artifact-integration note:
+
+- actor lowering now carries runnable replay-proof and race-guard helper
+  traffic through:
+  - `objc3_runtime_actor_record_replay_proof_i32`
+  - `objc3_runtime_actor_record_race_guard_i32`
+- broader lane-D actor runtime closure still remains later `M270-D001` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

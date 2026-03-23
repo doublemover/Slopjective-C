@@ -1,0 +1,32 @@
+module M270C003;
+
+extern fn replay_proof_step() -> i32;
+extern fn race_guard_lock() -> i32;
+extern fn task_handoff_ready() -> i32;
+extern fn actor_isolated_step() -> i32;
+extern fn actor_enter_isolation_thunk() -> i32;
+extern fn actor_nonisolated_entry(value: i32) -> i32;
+extern fn actor_hop_to_executor(value: i32) -> i32;
+
+actor class M270ReplayMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+- (i32)token:(i32)seed __attribute__((objc_nonisolated));
+@end
+
+@implementation M270ReplayMailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  replay_proof_step();
+  race_guard_lock();
+  task_handoff_ready();
+  actor_isolated_step();
+  let isolate = actor_enter_isolation_thunk();
+  let hopped = actor_hop_to_executor(seed);
+  return isolate + hopped;
+}
+
+- (i32)token:(i32)seed __attribute__((objc_nonisolated)) {
+  replay_proof_step();
+  race_guard_lock();
+  return actor_nonisolated_entry(seed);
+}
+@end

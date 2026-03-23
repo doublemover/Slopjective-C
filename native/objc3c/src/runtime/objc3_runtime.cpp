@@ -617,6 +617,8 @@ thread_local std::uint64_t g_runtime_task_executor_hop_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_isolation_thunk_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_nonisolated_entry_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_hop_to_executor_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_replay_proof_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_race_guard_call_count = 0;
 thread_local int g_runtime_task_last_spawn_kind = 0;
 thread_local int g_runtime_task_last_spawn_executor_tag = 0;
 thread_local int g_runtime_task_last_scope_executor_tag = 0;
@@ -636,6 +638,8 @@ thread_local int g_runtime_actor_last_nonisolated_executor_tag = 0;
 thread_local int g_runtime_actor_last_hop_value = 0;
 thread_local int g_runtime_actor_last_hop_executor_tag = 0;
 thread_local int g_runtime_actor_last_hop_result = 0;
+thread_local int g_runtime_actor_last_replay_proof_executor_tag = 0;
+thread_local int g_runtime_actor_last_race_guard_executor_tag = 0;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -810,6 +814,8 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_actor_isolation_thunk_call_count = 0;
   g_runtime_actor_nonisolated_entry_call_count = 0;
   g_runtime_actor_hop_to_executor_call_count = 0;
+  g_runtime_actor_replay_proof_call_count = 0;
+  g_runtime_actor_race_guard_call_count = 0;
   g_runtime_task_last_spawn_kind = 0;
   g_runtime_task_last_spawn_executor_tag = 0;
   g_runtime_task_last_scope_executor_tag = 0;
@@ -829,6 +835,8 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_actor_last_hop_value = 0;
   g_runtime_actor_last_hop_executor_tag = 0;
   g_runtime_actor_last_hop_result = 0;
+  g_runtime_actor_last_replay_proof_executor_tag = 0;
+  g_runtime_actor_last_race_guard_executor_tag = 0;
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -4356,6 +4364,8 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
       g_runtime_actor_nonisolated_entry_call_count;
   snapshot->hop_to_executor_call_count =
       g_runtime_actor_hop_to_executor_call_count;
+  snapshot->replay_proof_call_count = g_runtime_actor_replay_proof_call_count;
+  snapshot->race_guard_call_count = g_runtime_actor_race_guard_call_count;
   snapshot->last_isolation_executor_tag =
       g_runtime_actor_last_isolation_executor_tag;
   snapshot->last_nonisolated_value = g_runtime_actor_last_nonisolated_value;
@@ -4364,6 +4374,10 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
   snapshot->last_hop_value = g_runtime_actor_last_hop_value;
   snapshot->last_hop_executor_tag = g_runtime_actor_last_hop_executor_tag;
   snapshot->last_hop_result = g_runtime_actor_last_hop_result;
+  snapshot->last_replay_proof_executor_tag =
+      g_runtime_actor_last_replay_proof_executor_tag;
+  snapshot->last_race_guard_executor_tag =
+      g_runtime_actor_last_race_guard_executor_tag;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -4770,6 +4784,18 @@ extern "C" int objc3_runtime_actor_hop_to_executor_i32(int value,
   g_runtime_actor_last_hop_executor_tag = executor_tag;
   g_runtime_actor_last_hop_result = value;
   return value;
+}
+
+extern "C" int objc3_runtime_actor_record_replay_proof_i32(int executor_tag) {
+  ++g_runtime_actor_replay_proof_call_count;
+  g_runtime_actor_last_replay_proof_executor_tag = executor_tag;
+  return executor_tag;
+}
+
+extern "C" int objc3_runtime_actor_record_race_guard_i32(int executor_tag) {
+  ++g_runtime_actor_race_guard_call_count;
+  g_runtime_actor_last_race_guard_executor_tag = executor_tag;
+  return executor_tag;
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {

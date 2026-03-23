@@ -11185,3 +11185,17 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - the runtime side remains private and test-only through
   `objc3_runtime_copy_actor_runtime_state_for_testing`
 - the next issue is `M270-C003`
+
+## M270 Part 7 Actor Replay/Race Artifact Integration (C003)
+
+- `M270-C003` extends the live actor-lowering slice with helper-backed
+  replay-proof and race-guard artifacts
+- actor methods now rewrite:
+  - `replay_proof_step()`
+  - `race_guard_lock()`
+  through private runtime helpers that remain internal to
+  `runtime/objc3_runtime_bootstrap_internal.h`
+- helper symbols:
+  - `objc3_runtime_actor_record_replay_proof_i32`
+  - `objc3_runtime_actor_record_race_guard_i32`
+- the next issue is `M270-D001`

@@ -886,6 +886,14 @@ M270-C002 actor lowering implementation note:
 - this remains a private lowering/runtime boundary rather than a public actor
   runtime ABI
 
+M270-C003 artifact-integration note:
+
+- the runnable actor lowering path now also lowers:
+  - `replay_proof_step()` through `objc3_runtime_actor_record_replay_proof_i32`
+  - `race_guard_lock()` through `objc3_runtime_actor_record_race_guard_i32`
+- emitted IR now carries both actor lowering and concurrency replay/race-guard
+  lowering on the same runnable path
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

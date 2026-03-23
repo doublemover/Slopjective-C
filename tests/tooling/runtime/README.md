@@ -552,6 +552,21 @@ runtime boundary.
   - `objc3_runtime_actor_hop_to_executor_i32`
   - `objc3_runtime_copy_actor_runtime_state_for_testing`
 
+## M270 actor replay/race artifact probe
+
+`M270-C003` extends the same private actor runtime snapshot with the
+strict-concurrency replay-proof and race-guard artifact slice.
+
+- contract id `objc3c-part7-actor-replay-proof-and-race-guard-integration/m270-c003-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m270_c003_actor_replay_race_guard_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m270_c003_actor_replay_race_guard_probe.cpp`
+- helper traffic proven by the probe:
+  - `objc3_runtime_actor_record_replay_proof_i32`
+  - `objc3_runtime_actor_record_race_guard_i32`
+  - `objc3_runtime_copy_actor_runtime_state_for_testing`
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the

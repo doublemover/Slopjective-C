@@ -339,12 +339,16 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   uint64_t isolation_thunk_call_count;
   uint64_t nonisolated_entry_call_count;
   uint64_t hop_to_executor_call_count;
+  uint64_t replay_proof_call_count;
+  uint64_t race_guard_call_count;
   int last_isolation_executor_tag;
   int last_nonisolated_value;
   int last_nonisolated_executor_tag;
   int last_hop_value;
   int last_hop_executor_tag;
   int last_hop_result;
+  int last_replay_proof_executor_tag;
+  int last_race_guard_executor_tag;
 } objc3_runtime_actor_runtime_state_snapshot;
 
 // M270-C002 actor lowering/runtime anchor: actor thunk, nonisolated entry,
@@ -537,6 +541,8 @@ int objc3_runtime_executor_hop_i32(int value, int executor_tag);
 int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag);
 int objc3_runtime_actor_enter_nonisolated_i32(int value, int executor_tag);
 int objc3_runtime_actor_hop_to_executor_i32(int value, int executor_tag);
+int objc3_runtime_actor_record_replay_proof_i32(int executor_tag);
+int objc3_runtime_actor_record_race_guard_i32(int executor_tag);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);

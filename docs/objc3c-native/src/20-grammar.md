@@ -3365,6 +3365,18 @@ Lane C now also publishes
 - this remains a private lowering/runtime slice rather than a public actor
   runtime ABI
 
+## M270 replay-proof and race-guard artifact integration
+
+`M270-C003` extends that same actor lowering slice with the strict-concurrency
+artifact helpers the actor pipeline already depends on semantically.
+
+- actor-method `replay_proof_step()` now lowers through
+  `objc3_runtime_actor_record_replay_proof_i32`
+- actor-method `race_guard_lock()` now lowers through
+  `objc3_runtime_actor_record_race_guard_i32`
+- emitted IR now proves actor lowering and
+  `concurrency_replay_race_guard_lowering` together on the same runnable path
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

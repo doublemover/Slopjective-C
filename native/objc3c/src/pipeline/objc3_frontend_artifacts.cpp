@@ -18350,6 +18350,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_task_runtime_interop_cancellation_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_concurrency_replay_race_guard_replay_key =
       part7_concurrency_replay_race_guard_lowering_replay_key;
+  // M270-C003 implementation anchor: the runnable actor pipeline now carries
+  // the strict-concurrency replay/race-guard lowering packet beside the actor
+  // lowering contract so helper-backed actor runtime rewrites can prove both
+  // artifact families together.
   ir_frontend_metadata.concurrency_replay_race_guard_lowering_sites =
       part7_concurrency_replay_race_guard_lowering_contract
           .concurrency_replay_sites;
