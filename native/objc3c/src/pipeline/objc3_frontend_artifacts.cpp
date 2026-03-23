@@ -815,6 +815,47 @@ std::string BuildPart8SystemExtensionSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart8CleanupResourceCaptureSourceCompletionSummaryJson(
+    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"cleanup_attribute_sites\":" << summary.cleanup_attribute_sites
+      << ",\"cleanup_sugar_sites\":" << summary.cleanup_sugar_sites
+      << ",\"resource_attribute_sites\":" << summary.resource_attribute_sites
+      << ",\"resource_sugar_sites\":" << summary.resource_sugar_sites
+      << ",\"resource_close_clause_sites\":"
+      << summary.resource_close_clause_sites
+      << ",\"resource_invalid_clause_sites\":"
+      << summary.resource_invalid_clause_sites
+      << ",\"explicit_capture_list_sites\":" << summary.explicit_capture_list_sites
+      << ",\"explicit_capture_item_sites\":" << summary.explicit_capture_item_sites
+      << ",\"explicit_capture_weak_sites\":" << summary.explicit_capture_weak_sites
+      << ",\"explicit_capture_unowned_sites\":"
+      << summary.explicit_capture_unowned_sites
+      << ",\"explicit_capture_move_sites\":" << summary.explicit_capture_move_sites
+      << ",\"explicit_capture_plain_sites\":" << summary.explicit_capture_plain_sites
+      << ",\"cleanup_attribute_source_supported\":"
+      << (summary.cleanup_attribute_source_supported ? "true" : "false")
+      << ",\"resource_sugar_source_supported\":"
+      << (summary.resource_sugar_source_supported ? "true" : "false")
+      << ",\"explicit_capture_list_source_supported\":"
+      << (summary.explicit_capture_list_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -11702,6 +11743,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart8SystemExtensionSourceClosureSummary
       &part8_system_extension_source_closure_summary =
           pipeline_result.part8_system_extension_source_closure_summary;
+  const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+      &part8_cleanup_resource_capture_source_completion_summary =
+          pipeline_result.part8_cleanup_resource_capture_source_completion_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16120,6 +16164,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part8_resource_borrowed_and_capture_list_source_closure\":"
             << BuildPart8SystemExtensionSourceClosureSummaryJson(
                    part8_system_extension_source_closure_summary)
+            << ",\"objc_part8_cleanup_resource_and_capture_source_completion\":"
+            << BuildPart8CleanupResourceCaptureSourceCompletionSummaryJson(
+                   part8_cleanup_resource_capture_source_completion_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -17444,6 +17491,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part8_resource_borrowed_and_capture_list_source_closure\":"
             << BuildPart8SystemExtensionSourceClosureSummaryJson(
                    part8_system_extension_source_closure_summary)
+            << ",\"objc_part8_cleanup_resource_and_capture_source_completion\":"
+            << BuildPart8CleanupResourceCaptureSourceCompletionSummaryJson(
+                   part8_cleanup_resource_capture_source_completion_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)

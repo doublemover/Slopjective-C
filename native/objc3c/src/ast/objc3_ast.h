@@ -484,9 +484,15 @@ struct Stmt {
 struct LetStmt {
   std::string name;
   std::unique_ptr<Expr> value;
+  bool cleanup_attribute_declared = false;
+  bool cleanup_sugar_declared = false;
+  std::string cleanup_function_symbol;
   bool resource_attribute_declared = false;
+  bool resource_sugar_declared = false;
   std::string resource_close_symbol;
   std::string resource_invalid_expression;
+  bool cleanup_profile_is_normalized = false;
+  std::string cleanup_profile;
   bool resource_profile_is_normalized = false;
   std::string resource_profile;
   unsigned line = 1;

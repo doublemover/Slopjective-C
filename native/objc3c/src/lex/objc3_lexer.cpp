@@ -101,6 +101,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // remain contextual rather than promoting them to reserved tokens; Part 8
   // resource attributes, borrowed-pointer qualifiers, and explicit block
   // capture lists are parser-owned surfaces built on this same token stream.
+  // M271-A002 source-surface note: `@cleanup` and `@resource` are admitted as
+  // local storage-annotation directives without claiming cleanup lowering or
+  // runtime resource behavior yet.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {
@@ -151,6 +154,14 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         }
         if (directive == "keypath") {
           tokens.push_back(Token{TokenKind::KwAtKeypath, "@keypath", token_line, token_column});
+          continue;
+        }
+        if (directive == "cleanup") {
+          tokens.push_back(Token{TokenKind::KwAtCleanup, "@cleanup", token_line, token_column});
+          continue;
+        }
+        if (directive == "resource") {
+          tokens.push_back(Token{TokenKind::KwAtResource, "@resource", token_line, token_column});
           continue;
         }
         if (directive == "end") {

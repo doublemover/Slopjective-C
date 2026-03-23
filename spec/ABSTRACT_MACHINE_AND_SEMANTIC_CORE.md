@@ -840,6 +840,15 @@ M271-A001 system-extension source note:
   callable-signature qualifiers, `objc_returns_borrowed(owner_index=N)`, and
   explicit block capture lists as parser-owned source surfaces without claiming
   cleanup lowering, borrowed escape enforcement, or runtime capture ownership
+- this remains a frontend/source-model claim only
+
+M271-A002 frontend completion note:
+- the frontend now admits local `cleanup` hook attributes, `@cleanup` sugar,
+  and `@resource` sugar as real Part 8 source surfaces
+- the emitted frontend packet now preserves all explicit block capture item
+  modes: plain, `weak`, `unowned`, and `move`
+- cleanup lowering, resource runtime behavior, and borrowed-pointer legality
+  remain later `M271` work
 - actor interfaces now publish deterministic source counts for actor members,
   executor annotations, async actor methods, and actor member metadata sites
 - this remains a frontend/source-model claim; actor-member legality,

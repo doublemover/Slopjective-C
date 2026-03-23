@@ -285,6 +285,12 @@ M271-A001 source closure:
 - `borrowed T *`
 - `__attribute__((objc_returns_borrowed(owner_index=N)))`
 - `^[weak x, unowned y, move z] { ... }`
+
+M271-A002 frontend completion:
+- `__attribute__((cleanup(CleanupFn))) let name = value;`
+- `@cleanup(CleanupFn)` and `@resource(CloseFn, invalid: Expr)`
+- explicit block capture lists now preserve plain, `weak`, `unowned`, and
+  `move` item modes in the emitted frontend packet
 ```
 
 This attribute may be applied to:

@@ -204,11 +204,11 @@ M271-A001 implementation note:
   pointer qualifiers, borrowed-return relation attributes, and explicit block
   capture lists as real parser/frontend capability before later `M271` legality
   and lowering lanes
-- the truthful lane-A proof is still frontend-only and preserves deterministic
-  counts for actor interfaces, actor members, async actor methods,
-  `objc_nonisolated` annotations, executor annotations on actor members, and
-  actor member metadata sites
-- actor-member legality, cross-actor diagnostics, sendability enforcement, and
+
+M271-A002 implementation note:
+- the frontend now admits cleanup-hook locals, local resource sugar, and all
+  explicit block capture item modes before later `M271` semantic and lowering
+  work
   runnable actor runtime behavior remain later `M270` work
 
 M270-B001 implementation note:

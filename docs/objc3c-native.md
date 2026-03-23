@@ -3625,18 +3625,18 @@ it under
 - this lane only freezes the frontend/source-model contract; cleanup lowering,
   borrowed escape enforcement, and runtime capture ownership behavior remain
   later `M271` work
-- actor methods continue to carry existing `async` and
-  `__attribute__((objc_executor(...)))` spellings
-- the emitted semantic packet publishes deterministic counts for actor
-  interfaces, actor methods, actor properties, nonisolated annotations,
-  executor annotations on actor members, async actor methods, and actor member
-  metadata sites
 
-Current implementation status:
+## M271 frontend cleanup, resource, and capture surface completion
 
-- this issue completes the frontend/source-model surface only
-- actor-member legality, cross-actor diagnostics, sendability enforcement, and
-  runnable actor runtime behavior remain later `M270` work
+- `__attribute__((cleanup(CleanupFn))) let name = value;` is admitted as a
+  local cleanup-hook surface
+- `@cleanup(CleanupFn) let name = value;` is admitted as local cleanup sugar
+- `@resource(CloseFn, invalid: Expr) let name = value;` is admitted as local
+  resource sugar
+- explicit block capture lists now preserve all item modes in the frontend
+  packet: plain, `weak`, `unowned`, and `move`
+- this lane still remains parser/frontend only; cleanup lowering, resource
+  runtime behavior, and borrowed-pointer legality remain later `M271` work
 
 ## M270 actor isolation and sendable semantic model
 

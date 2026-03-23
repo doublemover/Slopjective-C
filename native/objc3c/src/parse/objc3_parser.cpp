@@ -6554,6 +6554,14 @@ class Objc3Parser {
     return out.str();
   }
 
+  std::string BuildCleanupAttributeProfile(bool declared,
+                                           const std::string &cleanup_symbol) {
+    std::ostringstream out;
+    out << "cleanup:declared=" << (declared ? "true" : "false")
+        << ";symbol=" << cleanup_symbol;
+    return out.str();
+  }
+
   template <typename TCallableDecl>
   bool ParseReturnsBorrowedAttributePayload(TCallableDecl &decl) {
     if (!Match(TokenKind::LParen)) {
@@ -6598,26 +6606,41 @@ class Objc3Parser {
     return true;
   }
 
-  bool ParseLocalResourceAttribute(LetStmt &stmt) {
-    if (!Match(TokenKind::LParen) || !Match(TokenKind::LParen)) {
-      const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(
-          token.line, token.column, "O3P301",
-          "malformed __attribute__ local annotation"));
-      return false;
-    }
-    if (!At(TokenKind::Identifier) || Peek().text != "objc_resource") {
-      const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(
-          token.line, token.column, "O3P302",
-          "only objc_resource is supported on local let bindings in this tranche"));
-      return false;
-    }
-    const Token attribute_name = Advance();
+  bool ParseLocalCleanupAttribute(LetStmt &stmt, const Token &) {
     if (!Match(TokenKind::LParen)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P301",
+          "missing '(' after cleanup"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P302",
+          "cleanup requires cleanup function identifier"));
+      return false;
+    }
+    stmt.cleanup_function_symbol = Advance().text;
+    if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
           token.line, token.column, "O3P303",
+          "missing ')))' after cleanup local annotation"));
+      return false;
+    }
+    stmt.cleanup_attribute_declared = true;
+    stmt.cleanup_profile_is_normalized = true;
+    stmt.cleanup_profile =
+        BuildCleanupAttributeProfile(true, stmt.cleanup_function_symbol);
+    return true;
+  }
+
+  bool ParseLocalResourceAttribute(LetStmt &stmt, const Token &attribute_name) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P304",
           "missing '(' after objc_resource"));
       return false;
     }
@@ -6627,7 +6650,7 @@ class Objc3Parser {
       if (!At(TokenKind::Identifier)) {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(
-            token.line, token.column, "O3P304",
+            token.line, token.column, "O3P305",
             "invalid objc_resource clause label"));
         return false;
       }
@@ -6635,7 +6658,7 @@ class Objc3Parser {
       if (!Match(TokenKind::Equal)) {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(
-            token.line, token.column, "O3P305",
+            token.line, token.column, "O3P306",
             "missing '=' after objc_resource clause label"));
         return false;
       }
@@ -6643,14 +6666,14 @@ class Objc3Parser {
       if (value_text.empty()) {
         const Token &token = Peek();
         diagnostics_.push_back(MakeDiag(
-            token.line, token.column, "O3P306",
+            token.line, token.column, "O3P307",
             "objc_resource clause value must not be empty"));
         return false;
       }
       if (clause.text == "close") {
         if (saw_close) {
           diagnostics_.push_back(MakeDiag(
-              clause.line, clause.column, "O3P307",
+              clause.line, clause.column, "O3P308",
               "duplicate objc_resource close clause"));
           return false;
         }
@@ -6659,7 +6682,7 @@ class Objc3Parser {
       } else if (clause.text == "invalid") {
         if (saw_invalid) {
           diagnostics_.push_back(MakeDiag(
-              clause.line, clause.column, "O3P308",
+              clause.line, clause.column, "O3P309",
               "duplicate objc_resource invalid clause"));
           return false;
         }
@@ -6667,7 +6690,7 @@ class Objc3Parser {
         saw_invalid = true;
       } else {
         diagnostics_.push_back(MakeDiag(
-            clause.line, clause.column, "O3P309",
+            clause.line, clause.column, "O3P310",
             "unsupported objc_resource clause '" + clause.text + "'"));
         return false;
       }
@@ -6680,13 +6703,13 @@ class Objc3Parser {
     if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(
-          token.line, token.column, "O3P310",
+          token.line, token.column, "O3P311",
           "missing ')))' after objc_resource local annotation"));
       return false;
     }
     if (!saw_close || !saw_invalid) {
       diagnostics_.push_back(MakeDiag(
-          attribute_name.line, attribute_name.column, "O3P311",
+          attribute_name.line, attribute_name.column, "O3P312",
           "objc_resource requires close and invalid clauses"));
       return false;
     }
@@ -6695,6 +6718,129 @@ class Objc3Parser {
     stmt.resource_profile = BuildResourceAttributeProfile(
         true, stmt.resource_close_symbol, stmt.resource_invalid_expression);
     return true;
+  }
+
+  bool ParseLocalStorageAttribute(LetStmt &stmt) {
+    if (!Match(TokenKind::LParen) || !Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P314",
+          "malformed __attribute__ local annotation"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P315",
+          "missing local annotation name after __attribute__(("));
+      return false;
+    }
+    const Token attribute_name = Advance();
+    if (attribute_name.text == "cleanup") {
+      return ParseLocalCleanupAttribute(stmt, attribute_name);
+    }
+    if (attribute_name.text == "objc_resource") {
+      return ParseLocalResourceAttribute(stmt, attribute_name);
+    }
+    diagnostics_.push_back(MakeDiag(
+        attribute_name.line, attribute_name.column, "O3P316",
+        "only cleanup and objc_resource are supported on local let bindings in this tranche"));
+    return false;
+  }
+
+  bool ParseLocalStorageSugar(LetStmt &stmt) {
+    if (Match(TokenKind::KwAtCleanup)) {
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P317",
+            "missing '(' after @cleanup"));
+        return false;
+      }
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P318",
+            "@cleanup requires cleanup function identifier"));
+        return false;
+      }
+      stmt.cleanup_function_symbol = Advance().text;
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P319",
+            "missing ')' after @cleanup payload"));
+        return false;
+      }
+      stmt.cleanup_attribute_declared = true;
+      stmt.cleanup_sugar_declared = true;
+      stmt.cleanup_profile_is_normalized = true;
+      stmt.cleanup_profile =
+          BuildCleanupAttributeProfile(true, stmt.cleanup_function_symbol);
+      return true;
+    }
+    if (Match(TokenKind::KwAtResource)) {
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P320",
+            "missing '(' after @resource"));
+        return false;
+      }
+      if (!At(TokenKind::Identifier)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P321",
+            "@resource requires cleanup function identifier"));
+        return false;
+      }
+      stmt.resource_close_symbol = Advance().text;
+      if (!Match(TokenKind::Comma)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P322",
+            "missing ',' after @resource cleanup function"));
+        return false;
+      }
+      if (!At(TokenKind::Identifier) || Peek().text != "invalid") {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P323",
+            "@resource requires invalid clause"));
+        return false;
+      }
+      Advance();
+      if (!Match(TokenKind::Colon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P324",
+            "missing ':' after invalid in @resource"));
+        return false;
+      }
+      const std::string invalid_expression = ParseAttributeArgumentText();
+      if (invalid_expression.empty()) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P325",
+            "@resource invalid expression must not be empty"));
+        return false;
+      }
+      stmt.resource_invalid_expression = invalid_expression;
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P326",
+            "missing ')' after @resource payload"));
+        return false;
+      }
+      stmt.resource_attribute_declared = true;
+      stmt.resource_sugar_declared = true;
+      stmt.resource_profile_is_normalized = true;
+      stmt.resource_profile = BuildResourceAttributeProfile(
+          true, stmt.resource_close_symbol, stmt.resource_invalid_expression);
+      return true;
+    }
+    return false;
   }
 
   template <typename TCallableDecl>
@@ -10079,14 +10225,19 @@ class Objc3Parser {
       return stmt;
     }
 
-    bool saw_local_resource_attribute = false;
-    LetStmt local_resource_attribute;
+    bool saw_local_storage_annotation = false;
+    LetStmt local_storage_annotation;
     if (AtIdentifierText("__attribute__")) {
       Advance();
-      if (!ParseLocalResourceAttribute(local_resource_attribute)) {
+      if (!ParseLocalStorageAttribute(local_storage_annotation)) {
         return nullptr;
       }
-      saw_local_resource_attribute = true;
+      saw_local_storage_annotation = true;
+    } else if (At(TokenKind::KwAtCleanup) || At(TokenKind::KwAtResource)) {
+      if (!ParseLocalStorageSugar(local_storage_annotation)) {
+        return nullptr;
+      }
+      saw_local_storage_annotation = true;
     }
 
     if (Match(TokenKind::KwLet)) {
@@ -10102,17 +10253,29 @@ class Objc3Parser {
       stmt->let_stmt->name = Previous().text;
       stmt->let_stmt->line = Previous().line;
       stmt->let_stmt->column = Previous().column;
-      if (saw_local_resource_attribute) {
+      if (saw_local_storage_annotation) {
+        stmt->let_stmt->cleanup_attribute_declared =
+            local_storage_annotation.cleanup_attribute_declared;
+        stmt->let_stmt->cleanup_sugar_declared =
+            local_storage_annotation.cleanup_sugar_declared;
+        stmt->let_stmt->cleanup_function_symbol =
+            local_storage_annotation.cleanup_function_symbol;
+        stmt->let_stmt->cleanup_profile_is_normalized =
+            local_storage_annotation.cleanup_profile_is_normalized;
+        stmt->let_stmt->cleanup_profile =
+            local_storage_annotation.cleanup_profile;
         stmt->let_stmt->resource_attribute_declared =
-            local_resource_attribute.resource_attribute_declared;
+            local_storage_annotation.resource_attribute_declared;
+        stmt->let_stmt->resource_sugar_declared =
+            local_storage_annotation.resource_sugar_declared;
         stmt->let_stmt->resource_close_symbol =
-            local_resource_attribute.resource_close_symbol;
+            local_storage_annotation.resource_close_symbol;
         stmt->let_stmt->resource_invalid_expression =
-            local_resource_attribute.resource_invalid_expression;
+            local_storage_annotation.resource_invalid_expression;
         stmt->let_stmt->resource_profile_is_normalized =
-            local_resource_attribute.resource_profile_is_normalized;
+            local_storage_annotation.resource_profile_is_normalized;
         stmt->let_stmt->resource_profile =
-            local_resource_attribute.resource_profile;
+            local_storage_annotation.resource_profile;
       }
       stmt->line = Previous().line;
       stmt->column = Previous().column;

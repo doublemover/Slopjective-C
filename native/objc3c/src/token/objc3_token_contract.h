@@ -56,6 +56,8 @@ enum class Objc3LexTokenKind {
   KwAtOptional,
   KwAtProperty,
   KwAtKeypath,
+  KwAtCleanup,
+  KwAtResource,
   KwAtEnd,
   KwAtAutoreleasePool,
   LParen,
@@ -166,6 +168,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimBorrowedReturnRelations
     "source-only:borrowed-return-relations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimExplicitBlockCaptureLists =
     "source-only:explicit-block-capture-lists";
+inline constexpr const char *kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId =
+    "objc3c-part8-cleanup-resource-capture-source-closure/m271-a002-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupHookAnnotations =
+    "source-only:cleanup-hook-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupResourceSugar =
+    "source-only:cleanup-resource-sugar";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

@@ -4400,6 +4400,27 @@ std::string BuildPart8SystemExtensionSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(
+    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";cleanup_sites=" << summary.cleanup_attribute_sites << ":"
+      << summary.cleanup_sugar_sites
+      << ";resource_sites=" << summary.resource_attribute_sites << ":"
+      << summary.resource_sugar_sites << ":"
+      << summary.resource_close_clause_sites << ":"
+      << summary.resource_invalid_clause_sites
+      << ";capture_sites=" << summary.explicit_capture_list_sites << ":"
+      << summary.explicit_capture_item_sites << ":"
+      << summary.explicit_capture_weak_sites << ":"
+      << summary.explicit_capture_unowned_sites << ":"
+      << summary.explicit_capture_move_sites << ":"
+      << summary.explicit_capture_plain_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -5422,6 +5443,9 @@ BuildPart7TaskGroupCancellationSourceClosureSummary(
 static void CollectPart8SystemExtensionStmtSites(
     const Stmt *stmt,
     Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary);
+static void CollectPart8CleanupResourceCaptureStmtSites(
+    const Stmt *stmt,
+    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary);
 
 static void CollectPart8SystemExtensionExprSites(
     const Expr *expr,
@@ -5623,6 +5647,200 @@ BuildPart8SystemExtensionSourceClosureSummary(const Objc3Program &program) {
           summary.explicit_capture_item_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key = BuildPart8SystemExtensionSourceClosureReplayKey(summary);
+  return summary;
+}
+
+static void CollectPart8CleanupResourceCaptureExprSites(
+    const Expr *expr,
+    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+  case Expr::Kind::BlockLiteral:
+    if (expr->block_has_explicit_capture_list) {
+      ++summary.explicit_capture_list_sites;
+      summary.explicit_capture_item_sites += expr->block_explicit_capture_count;
+      summary.explicit_capture_weak_sites += expr->block_explicit_capture_weak_count;
+      summary.explicit_capture_unowned_sites += expr->block_explicit_capture_unowned_count;
+      summary.explicit_capture_move_sites += expr->block_explicit_capture_move_count;
+      summary.explicit_capture_plain_sites += expr->block_explicit_capture_plain_count;
+    }
+    for (const auto &stmt : expr->block_body) {
+      if (stmt != nullptr) {
+        CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+      }
+    }
+    return;
+  case Expr::Kind::Call:
+  case Expr::Kind::MessageSend:
+    CollectPart8CleanupResourceCaptureExprSites(expr->receiver.get(), summary);
+    CollectPart8CleanupResourceCaptureExprSites(expr->left.get(), summary);
+    CollectPart8CleanupResourceCaptureExprSites(expr->right.get(), summary);
+    CollectPart8CleanupResourceCaptureExprSites(expr->third.get(), summary);
+    for (const auto &arg : expr->args) {
+      CollectPart8CleanupResourceCaptureExprSites(arg.get(), summary);
+    }
+    return;
+  case Expr::Kind::Binary:
+  case Expr::Kind::Conditional:
+    CollectPart8CleanupResourceCaptureExprSites(expr->left.get(), summary);
+    CollectPart8CleanupResourceCaptureExprSites(expr->right.get(), summary);
+    CollectPart8CleanupResourceCaptureExprSites(expr->third.get(), summary);
+    return;
+  default:
+    return;
+  }
+}
+
+static void CollectPart8CleanupResourceCaptureStmtSites(
+    const Stmt *stmt,
+    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+  case Stmt::Kind::Let:
+    if (stmt->let_stmt != nullptr) {
+      if (stmt->let_stmt->cleanup_attribute_declared) {
+        ++summary.cleanup_attribute_sites;
+        if (stmt->let_stmt->cleanup_sugar_declared) {
+          ++summary.cleanup_sugar_sites;
+        }
+      }
+      if (stmt->let_stmt->resource_attribute_declared) {
+        ++summary.resource_attribute_sites;
+        if (stmt->let_stmt->resource_sugar_declared) {
+          ++summary.resource_sugar_sites;
+        }
+        if (!stmt->let_stmt->resource_close_symbol.empty()) {
+          ++summary.resource_close_clause_sites;
+        }
+        if (!stmt->let_stmt->resource_invalid_expression.empty()) {
+          ++summary.resource_invalid_clause_sites;
+        }
+      }
+      CollectPart8CleanupResourceCaptureExprSites(stmt->let_stmt->value.get(),
+                                                  summary);
+    }
+    return;
+  case Stmt::Kind::Assign:
+    if (stmt->assign_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(stmt->assign_stmt->value.get(),
+                                                  summary);
+    }
+    return;
+  case Stmt::Kind::Return:
+    if (stmt->return_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(stmt->return_stmt->value.get(),
+                                                  summary);
+    }
+    return;
+  case Stmt::Kind::If:
+    if (stmt->if_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(stmt->if_stmt->condition.get(),
+                                                  summary);
+      for (const auto &body_stmt : stmt->if_stmt->then_body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+      for (const auto &body_stmt : stmt->if_stmt->else_body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::DoWhile:
+    if (stmt->do_while_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->do_while_stmt->body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+      CollectPart8CleanupResourceCaptureExprSites(
+          stmt->do_while_stmt->condition.get(), summary);
+    }
+    return;
+  case Stmt::Kind::For:
+    if (stmt->for_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(stmt->for_stmt->init.value.get(),
+                                                  summary);
+      CollectPart8CleanupResourceCaptureExprSites(
+          stmt->for_stmt->condition.get(), summary);
+      CollectPart8CleanupResourceCaptureExprSites(stmt->for_stmt->step.value.get(),
+                                                  summary);
+      for (const auto &body_stmt : stmt->for_stmt->body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Switch:
+    if (stmt->switch_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(
+          stmt->switch_stmt->condition.get(), summary);
+      for (const auto &switch_case : stmt->switch_stmt->cases) {
+        for (const auto &body_stmt : switch_case.body) {
+          CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        }
+      }
+    }
+    return;
+  case Stmt::Kind::While:
+    if (stmt->while_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(
+          stmt->while_stmt->condition.get(), summary);
+      for (const auto &body_stmt : stmt->while_stmt->body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Block:
+  case Stmt::Kind::Defer:
+    if (stmt->block_stmt != nullptr) {
+      for (const auto &body_stmt : stmt->block_stmt->body) {
+        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+      }
+    }
+    return;
+  case Stmt::Kind::Expr:
+    if (stmt->expr_stmt != nullptr) {
+      CollectPart8CleanupResourceCaptureExprSites(stmt->expr_stmt->value.get(),
+                                                  summary);
+    }
+    return;
+  default:
+    return;
+  }
+}
+
+Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+BuildPart8CleanupResourceCaptureSourceCompletionSummary(
+    const Objc3Program &program) {
+  Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary summary;
+
+  for (const auto &fn : program.functions) {
+    for (const auto &stmt : fn.body) {
+      CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      for (const auto &stmt : method.body) {
+        CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+      }
+    }
+  }
+
+  summary.cleanup_attribute_source_supported = true;
+  summary.resource_sugar_source_supported = true;
+  summary.explicit_capture_list_source_supported = true;
+  summary.deterministic_handoff =
+      summary.cleanup_sugar_sites <= summary.cleanup_attribute_sites &&
+      summary.resource_sugar_sites <= summary.resource_attribute_sites &&
+      summary.resource_close_clause_sites <= summary.resource_attribute_sites &&
+      summary.resource_invalid_clause_sites <= summary.resource_attribute_sites &&
+      summary.explicit_capture_weak_sites + summary.explicit_capture_unowned_sites +
+              summary.explicit_capture_move_sites + summary.explicit_capture_plain_sites <=
+          summary.explicit_capture_item_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(summary);
   return summary;
 }
 
@@ -5843,6 +6061,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program), tokens);
   result.part8_system_extension_source_closure_summary =
       BuildPart8SystemExtensionSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part8_cleanup_resource_capture_source_completion_summary =
+      BuildPart8CleanupResourceCaptureSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

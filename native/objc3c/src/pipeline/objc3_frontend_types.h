@@ -1501,6 +1501,12 @@ inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSourceModel 
     "resource-let-attributes-borrowed-pointer-qualifiers-borrowed-return-relations-and-explicit-block-capture-lists-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-lifetime-enforcement-remain-later-m271-work";
 inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-resource-cleanup-lowering-borrowed-escape-enforcement-or-runnable-capture-ownership-runtime-behavior";
+inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part8_cleanup_resource_and_capture_source_completion";
+inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSourceModel =
+    "cleanup-hooks-resource-sugar-and-explicit-block-capture-surface-forms-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-resource-ownership-remain-later-m271-work";
+inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel =
+    "frontend-source-completion-does-not-yet-claim-cleanup-lowering-resource-runtime-behavior-or-borrowed-pointer-semantic-enforcement";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1527,6 +1533,42 @@ struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   bool resource_attribute_source_supported = false;
   bool borrowed_pointer_source_supported = false;
   bool returns_borrowed_source_supported = false;
+  bool explicit_capture_list_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary {
+  std::string contract_id =
+      kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part8CleanupResourceCaptureSourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part8CleanupResourceCaptureSourceCompletionSourceModel;
+  std::string failure_model =
+      kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimCleanupHookAnnotations,
+      kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations,
+      kObjc3SourceOnlyFeatureClaimCleanupResourceSugar,
+      kObjc3SourceOnlyFeatureClaimExplicitBlockCaptureLists,
+  };
+  std::size_t cleanup_attribute_sites = 0;
+  std::size_t cleanup_sugar_sites = 0;
+  std::size_t resource_attribute_sites = 0;
+  std::size_t resource_sugar_sites = 0;
+  std::size_t resource_close_clause_sites = 0;
+  std::size_t resource_invalid_clause_sites = 0;
+  std::size_t explicit_capture_list_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t explicit_capture_weak_sites = 0;
+  std::size_t explicit_capture_unowned_sites = 0;
+  std::size_t explicit_capture_move_sites = 0;
+  std::size_t explicit_capture_plain_sites = 0;
+  bool cleanup_attribute_source_supported = false;
+  bool resource_sugar_source_supported = false;
   bool explicit_capture_list_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
@@ -4987,6 +5029,8 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
   Objc3FrontendPart8SystemExtensionSourceClosureSummary
       part8_system_extension_source_closure_summary;
+  Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+      part8_cleanup_resource_capture_source_completion_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary
