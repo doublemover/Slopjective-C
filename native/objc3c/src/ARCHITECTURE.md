@@ -10853,3 +10853,32 @@ Truth boundary:
   preservation
 - neither step claims a generalized foreign exception ABI or a broader
   cross-module runtime helper contract before `M267-D001`
+
+## M267 Part 6 Error Runtime And Bridge-Helper Contract (D001)
+
+`M267-D001` freezes the first truthful private runtime helper ABI above the
+current runnable Part 6 lowering surface.
+
+Canonical `M267-D001` helper surfaces:
+
+- private runtime header:
+  - `objc3_runtime_bootstrap_internal.h`
+- private testing snapshot:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+- helper entrypoints:
+  - `objc3_runtime_store_thrown_error_i32`
+  - `objc3_runtime_load_thrown_error_i32`
+  - `objc3_runtime_bridge_status_error_i32`
+  - `objc3_runtime_bridge_nserror_error_i32`
+  - `objc3_runtime_catch_matches_error_i32`
+- emitted IR anchors:
+  - `; part6_error_runtime_bridge_helper = ...`
+  - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
+
+Truth boundary:
+
+- the helper ABI remains bootstrap-internal and is not public runtime ABI
+- the current supported catch-kind model only claims the runnable `NSError` /
+  `id<Error>` slice
+- generalized foreign exception ABI remains deferred
+- the next issue is `M267-D002`

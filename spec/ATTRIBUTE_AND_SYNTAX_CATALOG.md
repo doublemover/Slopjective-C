@@ -611,6 +611,25 @@ Current implementation status (`M267-C003`):
   - broader cross-module preservation claims
   - generalized native thrown-error object ABI
 
+Current implementation status (`M267-D001`):
+
+- lane D now freezes one truthful private runtime helper contract:
+  `objc3c-part6-error-runtime-and-bridge-helper-api/m267-d001-v1`
+- runnable Part 6 lowering now routes:
+  - thrown-error slot store/load
+  - status-code bridge normalization
+  - `NSError` bridge normalization
+  - catch-kind matching
+  through private runtime helpers instead of raw local-slot traffic
+- emitted IR now carries:
+  - `; part6_error_runtime_bridge_helper = ...`
+  - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
+- the helper ABI remains private to `objc3_runtime_bootstrap_internal.h`
+- still deferred:
+  - public error-runtime headers
+  - generalized foreign exception ABI
+  - broader cross-module executable Part 6 claims
+
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

@@ -7649,6 +7649,39 @@ Recommended M267 lane-C replay check:
 
 - `python scripts/check_m267_c003_result_and_bridging_artifact_replay_completion_core_feature_expansion.py`
 - `M267-D001` is the next issue.
+
+## M267 Part 6 error runtime and bridge-helper contract (M267-D001)
+
+Lane D now freezes the first real private runtime helper boundary for the
+current runnable Part 6 slice.
+
+Current implementation status (`M267-D001`):
+
+- the runtime now publishes one canonical private helper contract:
+  - `objc3c-part6-error-runtime-and-bridge-helper-api/m267-d001-v1`
+- the helper boundary stays private to `objc3_runtime_bootstrap_internal.h`
+  and does not widen `objc3_runtime.h`
+- emitted IR now carries:
+  - `; part6_error_runtime_bridge_helper = ...`
+  - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
+- the current helper cluster covers:
+  - thrown-error slot store/load
+  - status-code bridge normalization
+  - `NSError` bridge normalization
+  - catch-kind matching for the supported `NSError` and `id<Error>` slice
+- the runtime also publishes one private testing snapshot:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+
+Still explicitly deferred:
+
+- generalized foreign exception ABI
+- public error-runtime helper headers
+- broader cross-module executable Part 6 claims
+
+Recommended M267 lane-D helper check:
+
+- `python scripts/check_m267_d001_error_runtime_and_bridge_helper_contract_and_architecture_freeze.py`
+- `M267-D002` is the next issue.
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

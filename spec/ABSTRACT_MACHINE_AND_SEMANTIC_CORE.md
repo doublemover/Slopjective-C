@@ -531,6 +531,20 @@ M267-C003 replay completion note:
 - remaining work moves to `M267-D001`, which is the runtime helper and helper
   ABI freeze tranche rather than another replay-only step
 
+M267-D001 runtime-helper note:
+
+- the current runnable Part 6 slice now routes thrown-error storage, bridge
+  normalization, and catch dispatch through one private runtime helper cluster
+- the helper ABI remains bootstrap-internal and still does not claim any public
+  error-runtime or foreign-exception header surface
+- emitted IR now carries:
+  - `; part6_error_runtime_bridge_helper = ...`
+  - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
+- the canonical runtime testing snapshot is
+  `objc3_runtime_copy_error_bridge_state_for_testing`
+- remaining work moves to `M267-D002`, which is the first broader live runtime
+  execution tranche above this helper boundary
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

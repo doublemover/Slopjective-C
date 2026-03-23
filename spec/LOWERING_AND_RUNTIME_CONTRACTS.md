@@ -2000,6 +2000,32 @@ compilation.
     execution behavior
 - `M267-D001` is the next issue
 
+## M267 Part 6 error runtime and bridge-helper contract (D001)
+
+`M267-D001` freezes the first truthful private runtime helper ABI used by the
+current runnable Part 6 lowering.
+
+- canonical contract id:
+  `objc3c-part6-error-runtime-and-bridge-helper-api/m267-d001-v1`
+- canonical runtime-helper model:
+  - the current runnable Part 6 lowering now routes thrown-error slot traffic
+    through `objc3_runtime_store_thrown_error_i32` and
+    `objc3_runtime_load_thrown_error_i32`
+  - status-code and `NSError` bridge failures now normalize through
+    `objc3_runtime_bridge_status_error_i32` and
+    `objc3_runtime_bridge_nserror_error_i32`
+  - `do/catch` dispatch now consults `objc3_runtime_catch_matches_error_i32`
+    instead of treating raw local-slot traffic as the runtime boundary
+  - emitted IR carries `; part6_error_runtime_bridge_helper = ...`
+  - emitted IR carries `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
+- canonical testing surface:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+- explicit current non-goals:
+  - no public error-runtime helper ABI
+  - no generalized foreign exception ABI
+  - no broader cross-module executable Part 6 claim yet
+- `M267-D002` is the next issue
+
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}
 
 ### C.5.1 Coroutine model (normative for implementations) {#c-5-1}

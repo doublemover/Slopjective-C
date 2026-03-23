@@ -371,3 +371,20 @@ Relevant paths:
   - `tmp/build-objc3c-native/compile_commands.json`
 - fingerprint
   - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
+
+## M267 error runtime and bridge-helper probe
+
+`M267-D001` adds the first private runtime helper cluster for the runnable Part
+6 error surface:
+
+- contract id `objc3c-part6-error-runtime-and-bridge-helper-api/m267-d001-v1`
+- probe:
+  `tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp`
+- private testing snapshot:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+- helper entrypoints exercised by the probe:
+  - `objc3_runtime_store_thrown_error_i32`
+  - `objc3_runtime_load_thrown_error_i32`
+  - `objc3_runtime_bridge_status_error_i32`
+  - `objc3_runtime_bridge_nserror_error_i32`
+  - `objc3_runtime_catch_matches_error_i32`

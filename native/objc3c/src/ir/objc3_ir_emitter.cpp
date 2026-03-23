@@ -738,6 +738,13 @@ class Objc3IREmitter {
                  .lowering_part6_result_and_bridging_artifact_replay_key
           << "\n";
     }
+    // M267-D001 error-runtime/bridge-helper anchor: publish the private
+    // runtime helper ABI boundary consumed by the current runnable Part 6
+    // lowering so the emitted IR truthfully advertises helper-backed storage,
+    // bridge normalization, and catch dispatch instead of raw local-slot
+    // traffic.
+    out << "; part6_error_runtime_bridge_helper = "
+        << Objc3Part6ErrorRuntimeBridgeHelperSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2961,6 +2968,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
     out << "!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}\n";
     out << "!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}\n";
+    out << "!objc3.objc_part6_error_runtime_bridge_helper = !{!89}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4566,6 +4574,26 @@ class Objc3IREmitter {
         << ", !\""
         << EscapeCStringLiteral(
                kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel)
+        << "\"}\n";
+    out << "!89 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperAbiModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreThrownErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadThrownErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeBridgeStatusErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeBridgeNSErrorErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -9632,8 +9660,21 @@ class Objc3IREmitter {
     if (slot.empty()) {
       return;
     }
-    ctx.code_lines.push_back("  store i32 " + error_value + ", ptr " + slot +
-                             ", align 4");
+    ctx.code_lines.push_back("  call void @" +
+                             std::string(kObjc3RuntimeStoreThrownErrorI32Symbol) +
+                             "(ptr " + slot + ", i32 " + error_value + ")");
+  }
+
+  std::string EmitLoadThrownError(const std::string &slot,
+                                  FunctionContext &ctx) const {
+    if (slot.empty()) {
+      return "0";
+    }
+    const std::string loaded = NewTemp(ctx);
+    ctx.code_lines.push_back("  " + loaded + " = call i32 @" +
+                             std::string(kObjc3RuntimeLoadThrownErrorI32Symbol) +
+                             "(ptr " + slot + ")");
+    return loaded;
   }
 
   void EmitPropagateThrownError(const std::string &error_value,
@@ -9658,6 +9699,25 @@ class Objc3IREmitter {
     ctx.code_lines.push_back("  call void @abort()");
     ctx.code_lines.push_back("  unreachable");
     ctx.terminated = true;
+  }
+
+  static int Part6CatchKindForTypeSpelling(const std::string &spelling) {
+    std::string normalized;
+    normalized.reserve(spelling.size());
+    for (unsigned char ch : spelling) {
+      if (!std::isspace(ch)) {
+        normalized.push_back(
+            static_cast<char>(std::tolower(static_cast<unsigned char>(ch))));
+      }
+    }
+    if (normalized == "nserror" || normalized == "nserror*" ||
+        normalized == "nserror**") {
+      return 1;
+    }
+    if (normalized == "id<error>" || normalized == "id<error>*") {
+      return 2;
+    }
+    return 0;
   }
 
   std::string EmitDirectFunctionCall(const Expr *expr,
@@ -9722,10 +9782,10 @@ class Objc3IREmitter {
         *bridge_failed_out = true;
       }
       if (bridge_error_value_out != nullptr) {
+        std::string raw_bridge_error = out;
         if (!signature->objc_status_code_mapping_symbol.empty()) {
           const LoweredFunctionSignature *mapping_signature =
               LookupFunctionSignature(signature->objc_status_code_mapping_symbol);
-          std::string mapping_result = "0";
           if (mapping_signature != nullptr && mapping_signature->return_type == ValueType::Void) {
             ctx.code_lines.push_back("  call void @" +
                                      signature->objc_status_code_mapping_symbol +
@@ -9735,12 +9795,14 @@ class Objc3IREmitter {
             ctx.code_lines.push_back("  " + mapped + " = call i32 @" +
                                      signature->objc_status_code_mapping_symbol +
                                      "(i32 " + out + ")");
-            mapping_result = mapped;
+            raw_bridge_error = mapped;
           }
-          *bridge_error_value_out = mapping_result;
-        } else {
-          *bridge_error_value_out = out;
         }
+        const std::string bridged_error = NewTemp(ctx);
+        ctx.code_lines.push_back("  " + bridged_error + " = call i32 @" +
+                                 std::string(kObjc3RuntimeBridgeStatusErrorI32Symbol) +
+                                 "(i32 " + out + ", i32 " + raw_bridge_error + ")");
+        *bridge_error_value_out = bridged_error;
       }
       return out + "|" + bridge_failed;
     }
@@ -9754,11 +9816,16 @@ class Objc3IREmitter {
         *bridge_failed_out = true;
       }
       if (bridge_error_value_out != nullptr) {
+        std::string raw_bridge_error = "1";
         if (signature->ns_error_out_param_index < expr->args.size()) {
-          *bridge_error_value_out = EmitExpr(expr->args[signature->ns_error_out_param_index].get(), ctx);
-        } else {
-          *bridge_error_value_out = "1";
+          raw_bridge_error =
+              EmitExpr(expr->args[signature->ns_error_out_param_index].get(), ctx);
         }
+        const std::string bridged_error = NewTemp(ctx);
+        ctx.code_lines.push_back("  " + bridged_error + " = call i32 @" +
+                                 std::string(kObjc3RuntimeBridgeNSErrorErrorI32Symbol) +
+                                 "(i32 " + raw_bridge_error + ")");
+        *bridge_error_value_out = bridged_error;
       }
       return out + "|" + bridge_failed;
     }
@@ -11237,15 +11304,31 @@ class Objc3IREmitter {
             ctx.code_lines.push_back("  br label %" + merge_label);
           }
           ctx.code_lines.push_back(dispatch_label + ":");
-          const std::string loaded_error = NewTemp(ctx);
-          ctx.code_lines.push_back("  " + loaded_error + " = load i32, ptr " +
-                                   error_slot + ", align 4");
+          const std::string loaded_error = EmitLoadThrownError(error_slot, ctx);
+          const std::string no_match_label =
+              NewLabel(ctx, "do_catch_no_match_");
           for (std::size_t clause_index = 0;
                clause_index < block_stmt->catch_clauses.size(); ++clause_index) {
             const auto &clause = block_stmt->catch_clauses[clause_index];
             const std::string catch_label =
                 NewLabel(ctx, clause.catch_all ? "catch_all_" : "catch_");
-            ctx.code_lines.push_back("  br label %" + catch_label);
+            const std::string next_label =
+                clause_index + 1u < block_stmt->catch_clauses.size()
+                    ? NewLabel(ctx, "catch_next_")
+                    : no_match_label;
+            const std::string catches = NewTemp(ctx);
+            const std::string catches_bool = NewTemp(ctx);
+            ctx.code_lines.push_back(
+                "  " + catches + " = call i32 @" +
+                std::string(kObjc3RuntimeCatchMatchesErrorI32Symbol) + "(i32 " +
+                loaded_error + ", i32 " +
+                std::to_string(Part6CatchKindForTypeSpelling(
+                    clause.binding_type_spelling)) +
+                ", i32 " + (clause.catch_all ? "1" : "0") + ")");
+            ctx.code_lines.push_back("  " + catches_bool + " = icmp ne i32 " +
+                                     catches + ", 0");
+            ctx.code_lines.push_back("  br i1 " + catches_bool + ", label %" +
+                                     catch_label + ", label %" + next_label);
             ctx.code_lines.push_back(catch_label + ":");
             PushScope(ctx);
             if (clause.has_binding && !clause.binding_name.empty()) {
@@ -11269,10 +11352,9 @@ class Objc3IREmitter {
             if (!catch_terminated) {
               ctx.code_lines.push_back("  br label %" + merge_label);
             }
-            if (catch_terminated) {
-              break;
-            }
+            ctx.code_lines.push_back(next_label + ":");
           }
+          EmitPropagateThrownError(loaded_error, ctx);
           ctx.code_lines.push_back(merge_label + ":");
           ctx.terminated = false;
           return;
@@ -11784,6 +11866,8 @@ class Objc3IREmitter {
     }
     if (synthesized_property_accessor_count_ > 0u ||
         requires_arc_helper_declarations() ||
+        !frontend_metadata_.lowering_part6_throws_abi_propagation_replay_key
+             .empty() ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
         frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites >
             0u ||
@@ -11804,6 +11888,31 @@ class Objc3IREmitter {
                                 std::string(
                                     kObjc3RuntimeExchangeCurrentPropertyI32Symbol) +
                                 "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeStoreThrownErrorI32Symbol,
+                            "declare void @" +
+                                std::string(
+                                    kObjc3RuntimeStoreThrownErrorI32Symbol) +
+                                "(ptr, i32)\n");
+      emit_declaration_once(kObjc3RuntimeLoadThrownErrorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeLoadThrownErrorI32Symbol) +
+                                "(ptr)\n");
+      emit_declaration_once(kObjc3RuntimeBridgeStatusErrorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeBridgeStatusErrorI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeBridgeNSErrorErrorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeBridgeNSErrorErrorI32Symbol) +
+                                "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeCatchMatchesErrorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeCatchMatchesErrorI32Symbol) +
+                                "(i32, i32, i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(

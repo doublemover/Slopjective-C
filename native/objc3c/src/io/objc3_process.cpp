@@ -1552,6 +1552,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
               imported_input.module_name;
       return false;
     }
+    // M267-D001 error-runtime/bridge-helper anchor: Part 6 lane-D still rides
+    // the same packaged runtime-support archive path as the rest of the native
+    // runtime helper cluster, so imported modules must agree on that archive
+    // before later cross-module Part 6 execution claims can become truthful.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =

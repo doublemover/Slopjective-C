@@ -627,6 +627,16 @@ inline constexpr const char *kObjc3RuntimeWriteCurrentPropertyI32Symbol =
     "objc3_runtime_write_current_property_i32";
 inline constexpr const char *kObjc3RuntimeExchangeCurrentPropertyI32Symbol =
     "objc3_runtime_exchange_current_property_i32";
+inline constexpr const char *kObjc3RuntimeStoreThrownErrorI32Symbol =
+    "objc3_runtime_store_thrown_error_i32";
+inline constexpr const char *kObjc3RuntimeLoadThrownErrorI32Symbol =
+    "objc3_runtime_load_thrown_error_i32";
+inline constexpr const char *kObjc3RuntimeBridgeStatusErrorI32Symbol =
+    "objc3_runtime_bridge_status_error_i32";
+inline constexpr const char *kObjc3RuntimeBridgeNSErrorErrorI32Symbol =
+    "objc3_runtime_bridge_nserror_error_i32";
+inline constexpr const char *kObjc3RuntimeCatchMatchesErrorI32Symbol =
+    "objc3_runtime_catch_matches_error_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =
@@ -772,6 +782,15 @@ inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayImportArt
 inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix =
     ".part6-error-replay.json";
 std::string Objc3Part6ResultAndBridgingArtifactReplaySummary();
+inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperContractId =
+    "objc3c-part6-error-runtime-and-bridge-helper-api/m267-d001-v1";
+inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperSourceModel =
+    "part6-lowering-routes-error-storage-bridge-normalization-and-catch-dispatch-through-private-runtime-helpers";
+inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperAbiModel =
+    "i32-backed-native-error-object-handles-and-catch-kind-matching-remain-private-bootstrap-internal-runtime-abi";
+inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel =
+    "no-public-part6-error-runtime-header-widening-no-generalized-foreign-exception-abi-yet";
+std::string Objc3Part6ErrorRuntimeBridgeHelperSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

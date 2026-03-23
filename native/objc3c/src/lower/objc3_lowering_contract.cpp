@@ -1464,6 +1464,29 @@ std::string Objc3Part6ResultAndBridgingArtifactReplaySummary() {
   return out.str();
 }
 
+std::string Objc3Part6ErrorRuntimeBridgeHelperSummary() {
+  std::ostringstream out;
+  // M267-D001 error-runtime/bridge-helper anchor: lane-D freezes the first
+  // real private runtime helper ABI consumed by the runnable Part 6 lowering
+  // so thrown-error storage, bridge normalization, and do/catch dispatch stop
+  // pretending raw local slots are the runtime boundary.
+  out << "contract=" << kObjc3Part6ErrorRuntimeBridgeHelperContractId
+      << ";source_contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+      << ";replay_contract="
+      << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+      << ";source_model=" << kObjc3Part6ErrorRuntimeBridgeHelperSourceModel
+      << ";abi_model=" << kObjc3Part6ErrorRuntimeBridgeHelperAbiModel
+      << ";store_symbol=" << kObjc3RuntimeStoreThrownErrorI32Symbol
+      << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
+      << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
+      << ";nserror_bridge_symbol=" << kObjc3RuntimeBridgeNSErrorErrorI32Symbol
+      << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
+      << ";fail_closed_model="
+      << kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel
+      << ";next_issue=M267-D002";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

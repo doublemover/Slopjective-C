@@ -278,6 +278,24 @@ typedef struct objc3_runtime_arc_debug_state_snapshot {
   const char *last_property_owner_identity;
 } objc3_runtime_arc_debug_state_snapshot;
 
+typedef struct objc3_runtime_error_bridge_state_snapshot {
+  uint64_t store_call_count;
+  uint64_t load_call_count;
+  uint64_t status_bridge_call_count;
+  uint64_t nserror_bridge_call_count;
+  uint64_t catch_match_call_count;
+  int last_stored_error_value;
+  int last_loaded_error_value;
+  int last_status_bridge_status_value;
+  int last_status_bridge_error_value;
+  int last_nserror_bridge_error_value;
+  int last_catch_match_error_value;
+  int last_catch_match_kind;
+  int last_catch_match_is_catch_all;
+  int last_catch_match_result;
+  const char *last_catch_kind_name;
+} objc3_runtime_error_bridge_state_snapshot;
+
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
 // the emitted `module.objc3-conformance-report.json` plus the sibling
@@ -412,6 +430,17 @@ void objc3_runtime_clear_current_property_context_for_testing(void);
 // runtime ABI with a standalone cleanup stack API.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
+// M267-D001 error-runtime/bridge-helper anchor: the supported runnable Part 6
+// slice now uses one narrow private helper ABI for thrown-error slot traffic,
+// bridge normalization, and catch-kind matching without widening the public
+// runtime header or claiming generalized foreign exception support.
+void objc3_runtime_store_thrown_error_i32(int *slot, int value);
+int objc3_runtime_load_thrown_error_i32(const int *slot);
+int objc3_runtime_bridge_status_error_i32(int status_value,
+                                          int mapped_error_value);
+int objc3_runtime_bridge_nserror_error_i32(int error_value);
+int objc3_runtime_catch_matches_error_i32(int error_value, int catch_kind,
+                                          int catch_all);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
@@ -449,6 +478,8 @@ int objc3_runtime_copy_memory_management_state_for_testing(
 // public runtime ABI.
 int objc3_runtime_copy_arc_debug_state_for_testing(
     objc3_runtime_arc_debug_state_snapshot *snapshot);
+int objc3_runtime_copy_error_bridge_state_for_testing(
+    objc3_runtime_error_bridge_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

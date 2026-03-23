@@ -578,6 +578,21 @@ thread_local int g_runtime_arc_debug_last_weak_stored_value = 0;
 thread_local int g_runtime_arc_debug_last_property_receiver = 0;
 thread_local std::string g_runtime_arc_debug_last_property_name;
 thread_local std::string g_runtime_arc_debug_last_property_owner_identity;
+thread_local std::uint64_t g_runtime_error_bridge_store_call_count = 0;
+thread_local std::uint64_t g_runtime_error_bridge_load_call_count = 0;
+thread_local std::uint64_t g_runtime_error_bridge_status_bridge_call_count = 0;
+thread_local std::uint64_t g_runtime_error_bridge_nserror_bridge_call_count = 0;
+thread_local std::uint64_t g_runtime_error_bridge_catch_match_call_count = 0;
+thread_local int g_runtime_error_bridge_last_stored_error_value = 0;
+thread_local int g_runtime_error_bridge_last_loaded_error_value = 0;
+thread_local int g_runtime_error_bridge_last_status_bridge_status_value = 0;
+thread_local int g_runtime_error_bridge_last_status_bridge_error_value = 0;
+thread_local int g_runtime_error_bridge_last_nserror_bridge_error_value = 0;
+thread_local int g_runtime_error_bridge_last_catch_match_error_value = 0;
+thread_local int g_runtime_error_bridge_last_catch_match_kind = 0;
+thread_local int g_runtime_error_bridge_last_catch_match_is_catch_all = 0;
+thread_local int g_runtime_error_bridge_last_catch_match_result = 0;
+thread_local std::string g_runtime_error_bridge_last_catch_kind_name;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -713,6 +728,21 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_arc_debug_last_property_receiver = 0;
   g_runtime_arc_debug_last_property_name.clear();
   g_runtime_arc_debug_last_property_owner_identity.clear();
+  g_runtime_error_bridge_store_call_count = 0;
+  g_runtime_error_bridge_load_call_count = 0;
+  g_runtime_error_bridge_status_bridge_call_count = 0;
+  g_runtime_error_bridge_nserror_bridge_call_count = 0;
+  g_runtime_error_bridge_catch_match_call_count = 0;
+  g_runtime_error_bridge_last_stored_error_value = 0;
+  g_runtime_error_bridge_last_loaded_error_value = 0;
+  g_runtime_error_bridge_last_status_bridge_status_value = 0;
+  g_runtime_error_bridge_last_status_bridge_error_value = 0;
+  g_runtime_error_bridge_last_nserror_bridge_error_value = 0;
+  g_runtime_error_bridge_last_catch_match_error_value = 0;
+  g_runtime_error_bridge_last_catch_match_kind = 0;
+  g_runtime_error_bridge_last_catch_match_is_catch_all = 0;
+  g_runtime_error_bridge_last_catch_match_result = 0;
+  g_runtime_error_bridge_last_catch_kind_name.clear();
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -737,6 +767,27 @@ void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
         descriptor.export_owner_identity;
   } else if (descriptor.owner_identity != nullptr) {
     g_runtime_arc_debug_last_property_owner_identity = descriptor.owner_identity;
+  }
+}
+
+const char *RuntimeErrorCatchKindName(int catch_kind) {
+  switch (catch_kind) {
+  case 1:
+    return "nserror";
+  case 2:
+    return "id<error>";
+  default:
+    return "unknown";
+  }
+}
+
+bool RuntimeErrorCatchKindMatches(int catch_kind) {
+  switch (catch_kind) {
+  case 1:
+  case 2:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -4099,6 +4150,44 @@ int objc3_runtime_copy_arc_debug_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_error_bridge_state_for_testing(
+    objc3_runtime_error_bridge_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->store_call_count = g_runtime_error_bridge_store_call_count;
+  snapshot->load_call_count = g_runtime_error_bridge_load_call_count;
+  snapshot->status_bridge_call_count =
+      g_runtime_error_bridge_status_bridge_call_count;
+  snapshot->nserror_bridge_call_count =
+      g_runtime_error_bridge_nserror_bridge_call_count;
+  snapshot->catch_match_call_count =
+      g_runtime_error_bridge_catch_match_call_count;
+  snapshot->last_stored_error_value =
+      g_runtime_error_bridge_last_stored_error_value;
+  snapshot->last_loaded_error_value =
+      g_runtime_error_bridge_last_loaded_error_value;
+  snapshot->last_status_bridge_status_value =
+      g_runtime_error_bridge_last_status_bridge_status_value;
+  snapshot->last_status_bridge_error_value =
+      g_runtime_error_bridge_last_status_bridge_error_value;
+  snapshot->last_nserror_bridge_error_value =
+      g_runtime_error_bridge_last_nserror_bridge_error_value;
+  snapshot->last_catch_match_error_value =
+      g_runtime_error_bridge_last_catch_match_error_value;
+  snapshot->last_catch_match_kind = g_runtime_error_bridge_last_catch_match_kind;
+  snapshot->last_catch_match_is_catch_all =
+      g_runtime_error_bridge_last_catch_match_is_catch_all;
+  snapshot->last_catch_match_result =
+      g_runtime_error_bridge_last_catch_match_result;
+  snapshot->last_catch_kind_name =
+      g_runtime_error_bridge_last_catch_kind_name.empty()
+          ? nullptr
+          : g_runtime_error_bridge_last_catch_kind_name.c_str();
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
@@ -4304,6 +4393,10 @@ extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
   g_runtime_has_testing_dispatch_frame = false;
 }
 
+// M267-D001 error-runtime/bridge-helper anchor: the current runnable Part 6
+// slice now routes thrown-error storage, bridge normalization, and catch-kind
+// matching through this same private bootstrap-internal helper cluster instead
+// of treating raw function-local slots as the runtime boundary.
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
   ++g_runtime_arc_debug_weak_current_property_load_count;
   const int result = objc3_runtime_read_current_property_i32();
@@ -4315,6 +4408,52 @@ extern "C" void objc3_runtime_store_weak_current_property_i32(int value) {
   ++g_runtime_arc_debug_weak_current_property_store_count;
   g_runtime_arc_debug_last_weak_stored_value = value;
   objc3_runtime_write_current_property_i32(value);
+}
+
+extern "C" void objc3_runtime_store_thrown_error_i32(int *slot, int value) {
+  ++g_runtime_error_bridge_store_call_count;
+  g_runtime_error_bridge_last_stored_error_value = value;
+  if (slot != nullptr) {
+    *slot = value;
+  }
+}
+
+extern "C" int objc3_runtime_load_thrown_error_i32(const int *slot) {
+  ++g_runtime_error_bridge_load_call_count;
+  const int value = slot != nullptr ? *slot : 0;
+  g_runtime_error_bridge_last_loaded_error_value = value;
+  return value;
+}
+
+extern "C" int objc3_runtime_bridge_status_error_i32(int status_value,
+                                                     int mapped_error_value) {
+  ++g_runtime_error_bridge_status_bridge_call_count;
+  g_runtime_error_bridge_last_status_bridge_status_value = status_value;
+  const int bridged_error =
+      mapped_error_value != 0 ? mapped_error_value : status_value;
+  g_runtime_error_bridge_last_status_bridge_error_value = bridged_error;
+  return bridged_error;
+}
+
+extern "C" int objc3_runtime_bridge_nserror_error_i32(int error_value) {
+  ++g_runtime_error_bridge_nserror_bridge_call_count;
+  g_runtime_error_bridge_last_nserror_bridge_error_value = error_value;
+  return error_value;
+}
+
+extern "C" int objc3_runtime_catch_matches_error_i32(int error_value,
+                                                     int catch_kind,
+                                                     int catch_all) {
+  ++g_runtime_error_bridge_catch_match_call_count;
+  g_runtime_error_bridge_last_catch_match_error_value = error_value;
+  g_runtime_error_bridge_last_catch_match_kind = catch_kind;
+  g_runtime_error_bridge_last_catch_match_is_catch_all = catch_all != 0 ? 1 : 0;
+  g_runtime_error_bridge_last_catch_kind_name =
+      RuntimeErrorCatchKindName(catch_kind);
+  const int matches =
+      catch_all != 0 ? 1 : ((error_value != 0) && RuntimeErrorCatchKindMatches(catch_kind) ? 1 : 0);
+  g_runtime_error_bridge_last_catch_match_result = matches;
+  return matches;
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {

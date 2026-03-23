@@ -78,6 +78,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // M262-D001 runtime-arc-helper-api-surface anchor: later ARC-specific runtime
 // helper freezing keeps that same rule in place, including autoreleasepool
 // hooks. No dedicated public ARC helper ABI is published here.
+// M267-D001 error-runtime/bridge-helper anchor: the first runnable Part 6
+// error-object storage, bridge normalization, and catch-dispatch helpers also
+// remain private bootstrap-internal runtime ABI. No public error helper or
+// foreign-exception header widening is published here.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary
