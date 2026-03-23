@@ -3450,6 +3450,18 @@ artifact helpers the actor pipeline already depends on semantically.
 - emitted IR now proves actor lowering and
   `concurrency_replay_race_guard_lowering` together on the same runnable path
 
+## M270 actor runtime and executor binding contract
+
+`M270-D001` freezes the private runtime surface consumed by the current actor
+lowering path.
+
+- the lane-D contract is the private actor helper cluster plus
+  `objc3_runtime_actor_runtime_state_snapshot`
+- mailbox/runtime proof stays private through
+  `objc3_runtime_copy_actor_runtime_state_for_testing`
+- mixed-module actor helper traffic remains tied to the packaged runtime
+  archive path `artifacts/lib/objc3_runtime.lib`
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

@@ -4354,6 +4354,9 @@ int objc3_runtime_copy_task_runtime_state_for_testing(
 
 int objc3_runtime_copy_actor_runtime_state_for_testing(
     objc3_runtime_actor_runtime_state_snapshot *snapshot) {
+  // M270-D001 actor-runtime/executor-binding anchor: lane-D freezes the
+  // private actor runtime proof surface on this snapshot rather than claiming
+  // a wider public mailbox runtime ABI.
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }

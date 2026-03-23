@@ -894,6 +894,14 @@ M270-C003 artifact-integration note:
 - emitted IR now carries both actor lowering and concurrency replay/race-guard
   lowering on the same runnable path
 
+M270-D001 runtime-contract note:
+
+- the truthful lane-D actor runtime contract is still private and currently
+  consists of the actor helper cluster plus
+  `objc3_runtime_actor_runtime_state_snapshot`
+- mixed-module actor helper execution remains bound to the packaged runtime
+  archive path rather than a separate actor-runtime distribution
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

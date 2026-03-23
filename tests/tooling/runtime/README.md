@@ -567,6 +567,23 @@ strict-concurrency replay-proof and race-guard artifact slice.
   - `objc3_runtime_actor_record_race_guard_i32`
   - `objc3_runtime_copy_actor_runtime_state_for_testing`
 
+## M270 actor runtime/executor contract probe
+
+`M270-D001` freezes the current private actor runtime contract.
+
+- contract id `objc3c-part7-actor-runtime-and-executor-binding/m270-d001-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m270_d001_actor_runtime_executor_contract_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m270_d001_actor_runtime_executor_contract_probe.cpp`
+- helper traffic proven by the probe:
+  - `objc3_runtime_actor_enter_isolation_thunk_i32`
+  - `objc3_runtime_actor_enter_nonisolated_i32`
+  - `objc3_runtime_actor_hop_to_executor_i32`
+  - `objc3_runtime_actor_record_replay_proof_i32`
+  - `objc3_runtime_actor_record_race_guard_i32`
+  - `objc3_runtime_copy_actor_runtime_state_for_testing`
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the

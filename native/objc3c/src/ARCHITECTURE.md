@@ -11199,3 +11199,14 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - `objc3_runtime_actor_record_replay_proof_i32`
   - `objc3_runtime_actor_record_race_guard_i32`
 - the next issue is `M270-D001`
+
+## M270 Part 7 Actor Runtime And Executor Binding Contract (D001)
+
+- `M270-D001` freezes the current private actor runtime proof surface around
+  actor-state, mailbox ownership, and executor-binding evidence
+- the canonical private lane-D surface is:
+  - `objc3_runtime_actor_runtime_state_snapshot`
+  - `objc3_runtime_copy_actor_runtime_state_for_testing`
+- mixed-module actor helper traffic remains bound to the packaged runtime
+  archive path `artifacts/lib/objc3_runtime.lib`
+- the next issue is `M270-D002`

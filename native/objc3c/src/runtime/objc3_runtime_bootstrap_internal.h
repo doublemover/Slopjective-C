@@ -354,6 +354,10 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
 // M270-C002 actor lowering/runtime anchor: actor thunk, nonisolated entry,
 // and executor-hop lowering remain private runtime helpers with a private
 // testing snapshot rather than a public actor runtime ABI.
+// M270-D001 actor-runtime/executor-binding anchor: the same private actor
+// helper cluster plus `objc3_runtime_actor_runtime_state_snapshot` is now the
+// canonical lane-D runtime contract for actor-state, mailbox-ownership, and
+// executor-binding proof without widening the public runtime header.
 
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume

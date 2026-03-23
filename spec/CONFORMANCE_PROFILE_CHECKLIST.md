@@ -260,6 +260,14 @@ M270-C003 artifact-integration note:
   - `objc3_runtime_actor_record_race_guard_i32`
 - broader lane-D actor runtime closure still remains later `M270-D001` work
 
+M270-D001 runtime-contract note:
+
+- lane D now freezes the private actor runtime proof surface on
+  `objc3_runtime_copy_actor_runtime_state_for_testing`
+- actor helper traffic remains bound to `artifacts/lib/objc3_runtime.lib`
+- live mailbox realization and broader lane-D execution closure remain later
+  `M270-D002` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

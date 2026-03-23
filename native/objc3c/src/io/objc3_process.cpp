@@ -1584,6 +1584,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // direct-call await slice now links and executes through that same archive,
     // so runnable Part 7 helper traffic still depends on this runtime archive
     // equality across mixed-module link plans.
+    // M270-D001 actor-runtime/executor-binding anchor: the private actor
+    // runtime helper cluster also rides that same packaged runtime archive, so
+    // actor-state/executor-binding claims cannot diverge on archive identity
+    // across mixed-module link plans.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =
