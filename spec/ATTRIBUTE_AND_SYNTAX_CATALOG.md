@@ -607,8 +607,22 @@ Current implementation status (`M268-D001`):
   `objc3_runtime_copy_async_continuation_state_for_testing`
   for deterministic probe coverage
 - the current runnable async lowering slice still does not consume this helper
-  cluster; live suspension/state-machine scheduling remains deferred to later
-  `M268` issues
+  cluster directly in compiled code; live executable integration is deferred to
+  `M268-D002`
+
+Current implementation status (`M268-D002`):
+
+- emitted IR now publishes
+  `; part7_live_continuation_runtime_integration = ...`
+  and `!objc3.objc_part7_live_continuation_runtime_integration = !{!92}`
+- the supported non-suspending `await` path now executes through the private
+  continuation helper cluster in native object code
+- runtime probes can observe deterministic allocation, handoff, resume, and
+  handle-retirement traffic through
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+- live suspension frames, async state machines, general executor scheduling,
+  and cross-module runnable async claims remain deferred to later `M268`
+  issues
 
 ## M267 current canonical error bridge-marker frontend boundary
 

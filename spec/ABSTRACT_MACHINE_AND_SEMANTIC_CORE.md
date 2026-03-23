@@ -679,6 +679,18 @@ M268-D001 runtime-helper note:
 - live suspension-frame materialization and executor scheduling remain later
   `M268` work
 
+M268-D002 runtime integration note:
+
+- emitted IR now publishes `; part7_live_continuation_runtime_integration = ...`
+  alongside `!objc3.objc_part7_live_continuation_runtime_integration = !{!92}`
+- the supported non-suspending direct-call await path now executes through the
+  private continuation helper cluster on live native object code
+- runtime probes can observe deterministic allocation, handoff, resume, and
+  handle-retirement traffic through
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+- this issue still does not claim suspension-frame materialization, async state
+  machine execution, or general executor scheduling
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

@@ -820,10 +820,21 @@ inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperSourceModel =
 inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperAbiModel =
     "i32-backed-logical-continuation-handles-resume-entry-tags-and-executor-tags-remain-bootstrap-internal-runtime-abi";
 inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperExecutionModel =
-    "runtime-helpers-now-materialize-deterministic-logical-continuation-handles-for-probes-while-direct-call-async-lowering-still-does-not-consume-them";
+    "runtime-helpers-materialize-deterministic-logical-continuation-handles-resume-traffic-and-executor-handoff-without-public-header-widening";
 inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperFailClosedModel =
     "no-public-async-runtime-header-no-suspension-state-machine-no-executor-runtime-scheduling-claim-yet";
 std::string Objc3Part7ContinuationRuntimeHelperSummary();
+inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationContractId =
+    "objc3c-part7-live-continuation-runtime-integration/m268-d002-v1";
+inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel =
+    "supported-direct-call-await-sites-now-execute-through-the-private-continuation-helper-cluster";
+inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationExecutionModel =
+    "non-suspending-async-functions-and-methods-allocate-handoff-and-resume-logical-continuations-through-runtime-owned-helpers";
+inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationPackagingModel =
+    "driver-emitted-object-artifacts-link-against-the-existing-runtime-support-archive-for-live-part7-helper-execution";
+inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel =
+    "no-suspension-state-machine-no-general-executor-runtime-no-cross-module-live-claim-yet";
+std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

@@ -3438,6 +3438,27 @@ Current implementation status:
 - the published testing snapshot entrypoint is
   `objc3_runtime_copy_async_continuation_state_for_testing`
 - compiled async code still uses the direct-call slice from `M268-C002` and
-  does not yet emit live continuation helper traffic
+  now has a dedicated helper ABI available for later live integration work
 - live suspension frames, state machines, and executor scheduling remain later
   `M268` work
+
+## M268 live continuation runtime integration
+
+The supported non-suspending async slice now publishes one executable runtime
+integration boundary through emitted IR:
+
+- `; part7_live_continuation_runtime_integration = ...`
+- `!objc3.objc_part7_live_continuation_runtime_integration = !{!92}`
+
+Current implementation status:
+
+- supported `await` sites in async functions and async Objective-C methods now
+  execute through:
+  - `objc3_runtime_allocate_async_continuation_i32`
+  - `objc3_runtime_handoff_async_continuation_to_executor_i32`
+  - `objc3_runtime_resume_async_continuation_i32`
+- the happy path is still non-suspending and direct-call-only
+- emitted object artifacts link against the existing runtime-support archive and
+  runtime probes can observe deterministic helper traffic
+- live suspension frames, executor scheduling, and cross-module runnable async
+  claims remain later `M268` work

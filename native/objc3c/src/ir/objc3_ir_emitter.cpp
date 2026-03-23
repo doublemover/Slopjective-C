@@ -757,6 +757,11 @@ class Objc3IREmitter {
     // without claiming live suspension or executor scheduling yet.
     out << "; part7_continuation_runtime_helper = "
         << Objc3Part7ContinuationRuntimeHelperSummary() << "\n";
+    // M268-D002 live continuation/runtime integration anchor: publish the
+    // runnable Part 7 helper-execution boundary so supported async fixtures can
+    // prove the direct-call await path now executes through the helper cluster.
+    out << "; part7_live_continuation_runtime_integration = "
+        << Objc3Part7LiveContinuationRuntimeIntegrationSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2446,6 +2451,9 @@ class Objc3IREmitter {
     std::vector<ErrorHandlerFrame> error_handler_stack;
     std::string function_error_out_param;
     ValueType return_type = ValueType::I32;
+    bool async_runtime_helper_enabled = false;
+    int async_resume_entry_tag = 0;
+    int async_executor_tag = 0;
     int temp_counter = 0;
     int label_counter = 0;
     bool terminated = false;
@@ -2485,6 +2493,49 @@ class Objc3IREmitter {
                      return static_cast<char>(std::tolower(ch));
                    });
     return text;
+  }
+
+  static int StablePositiveAsyncTag(const std::string &text) {
+    std::uint32_t hash = 2166136261u;
+    for (unsigned char ch : text) {
+      hash ^= static_cast<std::uint32_t>(ch);
+      hash *= 16777619u;
+    }
+    return static_cast<int>((hash % 2147483646u) + 1u);
+  }
+
+  static int ExecutorAffinityTag(const FunctionDecl &fn) {
+    if (!fn.executor_affinity_declared) {
+      return 0;
+    }
+    if (fn.executor_affinity_kind == "main") {
+      return 1;
+    }
+    if (fn.executor_affinity_named && !fn.executor_affinity_name.empty()) {
+      return StablePositiveAsyncTag("executor:" + fn.executor_affinity_name);
+    }
+    return StablePositiveAsyncTag("executor-kind:" + fn.executor_affinity_kind);
+  }
+
+  static int ExecutorAffinityTag(const Objc3MethodDecl &method) {
+    if (!method.executor_affinity_declared) {
+      return 0;
+    }
+    if (method.executor_affinity_kind == "main") {
+      return 1;
+    }
+    if (method.executor_affinity_named && !method.executor_affinity_name.empty()) {
+      return StablePositiveAsyncTag("executor:" + method.executor_affinity_name);
+    }
+    return StablePositiveAsyncTag("executor-kind:" + method.executor_affinity_kind);
+  }
+
+  static int AsyncResumeEntryTag(const FunctionDecl &fn) {
+    return StablePositiveAsyncTag("resume-entry:function:" + fn.name);
+  }
+
+  static int AsyncResumeEntryTag(const MethodDefinition &method_def) {
+    return StablePositiveAsyncTag("resume-entry:method:" + method_def.symbol);
   }
 
   static bool IsNSErrorOutParameterSite(const FuncParam &param) {
@@ -2983,6 +3034,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part6_error_runtime_bridge_helper = !{!89}\n";
     out << "!objc3.objc_part6_live_error_runtime_integration = !{!90}\n";
     out << "!objc3.objc_part7_continuation_runtime_helper = !{!91}\n";
+    out << "!objc3.objc_part7_live_continuation_runtime_integration = !{!92}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4651,6 +4703,29 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3Part7ContinuationRuntimeHelperFailClosedModel)
+        << "\"}\n";
+    out << "!92 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3Part7LiveContinuationRuntimeIntegrationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7LiveContinuationRuntimeIntegrationExecutionModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7LiveContinuationRuntimeIntegrationPackagingModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAllocateAsyncContinuationI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -9886,6 +9961,29 @@ class Objc3IREmitter {
       }
       return out + "|" + bridge_failed;
     }
+
+    if (expr != nullptr && expr->await_expression_enabled &&
+        ctx.async_runtime_helper_enabled) {
+      const std::string continuation_handle = NewTemp(ctx);
+      ctx.code_lines.push_back(
+          "  " + continuation_handle + " = call i32 @" +
+          std::string(kObjc3RuntimeAllocateAsyncContinuationI32Symbol) +
+          "(i32 " + std::to_string(ctx.async_resume_entry_tag) + ", i32 " +
+          std::to_string(ctx.async_executor_tag) + ")");
+      const std::string handed_off_handle = NewTemp(ctx);
+      ctx.code_lines.push_back(
+          "  " + handed_off_handle + " = call i32 @" +
+          std::string(kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol) +
+          "(i32 " + continuation_handle + ", i32 " +
+          std::to_string(ctx.async_executor_tag) + ")");
+      const std::string resumed_value = NewTemp(ctx);
+      ctx.code_lines.push_back(
+          "  " + resumed_value + " = call i32 @" +
+          std::string(kObjc3RuntimeResumeAsyncContinuationI32Symbol) +
+          "(i32 " + handed_off_handle + ", i32 " + out + ")");
+      InvalidateGlobalProofState(ctx);
+      return resumed_value;
+    }
     return out;
   }
 
@@ -12140,6 +12238,10 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = fn.return_type;
+    ctx.async_runtime_helper_enabled =
+        fn.async_declared && ExecutorAffinityTag(fn) != 0;
+    ctx.async_resume_entry_tag = AsyncResumeEntryTag(fn);
+    ctx.async_executor_tag = ExecutorAffinityTag(fn);
     if (fn.throws_declared) {
       ctx.function_error_out_param = "%error_out";
     }
@@ -12207,6 +12309,10 @@ class Objc3IREmitter {
 
     FunctionContext ctx;
     ctx.return_type = method.return_type;
+    ctx.async_runtime_helper_enabled =
+        method.async_declared && ExecutorAffinityTag(method) != 0;
+    ctx.async_resume_entry_tag = AsyncResumeEntryTag(method_def);
+    ctx.async_executor_tag = ExecutorAffinityTag(method);
     if (method.throws_declared) {
       ctx.function_error_out_param = "%error_out";
     }

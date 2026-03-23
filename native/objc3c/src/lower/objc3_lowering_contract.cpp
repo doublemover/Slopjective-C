@@ -1548,6 +1548,35 @@ std::string Objc3Part7ContinuationRuntimeHelperSummary() {
   return out.str();
 }
 
+std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
+  std::ostringstream out;
+  // M268-D002 live continuation/runtime integration anchor: the supported
+  // non-suspending async slice now executes through the private continuation
+  // helper cluster rather than merely advertising its ABI boundary in IR.
+  out << "contract=" << kObjc3Part7LiveContinuationRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
+      << ";direct_call_contract="
+      << "objc3c-part7-async-direct-call-lowering/m268-c002-v1"
+      << ";cleanup_contract="
+      << "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1"
+      << ";source_model="
+      << kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel
+      << ";execution_model="
+      << kObjc3Part7LiveContinuationRuntimeIntegrationExecutionModel
+      << ";packaging_model="
+      << kObjc3Part7LiveContinuationRuntimeIntegrationPackagingModel
+      << ";allocate_symbol="
+      << kObjc3RuntimeAllocateAsyncContinuationI32Symbol
+      << ";handoff_symbol="
+      << kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol
+      << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
+      << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel
+      << ";next_issue=M268-D003";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

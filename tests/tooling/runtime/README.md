@@ -158,6 +158,22 @@ This probe is intentionally narrower than later live async runtime work:
 - it does not claim compiled async functions suspend
 - it does not claim state-machine execution
 - it does not claim executor scheduling beyond deterministic helper traffic
+
+## M268 live continuation runtime integration probe
+
+`tests/tooling/runtime/m268_d002_live_continuation_runtime_integration_probe.cpp`
+links a compiled Part 7 object with the packaged runtime archive and proves the
+supported `await` happy path now executes through the private continuation
+helper cluster.
+
+The probe validates:
+
+- compiled async function and async method entrypoints return the expected
+  direct-call value
+- runtime snapshot traffic records deterministic allocation, handoff, and
+  resume counts from those compiled entrypoints
+- the current executable slice is still non-suspending and retires all logical
+  continuation handles before returning
 - public header `native/objc3c/src/runtime/objc3_runtime.h`
 - archive `artifacts/lib/objc3_runtime.lib`
 - preserved runtime entrypoints:

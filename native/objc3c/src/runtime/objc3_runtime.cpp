@@ -4464,8 +4464,11 @@ extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
 // M268-D001 continuation/runtime-helper anchor: the first Part 7 runtime
 // helper cluster now exposes deterministic logical continuation-handle
 // allocation, executor handoff, and resume behavior for probes, while the
-// current async lowering slice still remains direct-call-only and therefore
-// does not yet emit live helper traffic.
+// current async lowering slice remains the non-suspending direct-call model.
+// M268-D002 live continuation/runtime integration anchor: that same direct-call
+// slice now emits live helper traffic on supported await sites, so linked
+// native async fixtures execute through allocation, handoff, and resume before
+// returning their final value.
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
   ++g_runtime_arc_debug_weak_current_property_load_count;
   const int result = objc3_runtime_read_current_property_i32();

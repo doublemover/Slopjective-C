@@ -10988,3 +10988,31 @@ Truthful status:
   claim is made here
 
 - the next issue is `M268-D002`
+
+## M268 Part 7 Live Continuation Runtime Integration (D002)
+
+`M268-D002` turns the frozen Part 7 helper ABI into a live executable boundary
+for the current supported non-suspending async slice.
+
+Canonical runtime boundary:
+
+- supported await sites in async functions and async Objective-C methods now
+  execute through:
+  - `objc3_runtime_allocate_async_continuation_i32`
+  - `objc3_runtime_handoff_async_continuation_to_executor_i32`
+  - `objc3_runtime_resume_async_continuation_i32`
+- the same private testing snapshot remains the canonical proof surface:
+  - `objc3_runtime_copy_async_continuation_state_for_testing`
+- emitted IR publishes the executable boundary and named metadata:
+  - `; part7_live_continuation_runtime_integration = ...`
+  - `!objc3.objc_part7_live_continuation_runtime_integration = !{!92}`
+
+Truthful status:
+
+- the supported path is runnable and linked against the existing runtime
+  archive
+- the path is still non-suspending and direct-call-only
+- no suspension-frame materialization, async state machine, or general
+  executor scheduler claim is made here
+
+- the next issue is `M268-D003`

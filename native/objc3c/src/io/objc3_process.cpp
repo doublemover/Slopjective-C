@@ -1570,6 +1570,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // runtime-support archive path. Mixed-module async/runtime-helper claims
     // therefore may not diverge on the runtime archive even before live
     // suspension integration lands.
+    // M268-D002 live continuation/runtime integration anchor: the supported
+    // direct-call await slice now links and executes through that same archive,
+    // so runnable Part 7 helper traffic still depends on this runtime archive
+    // equality across mixed-module link plans.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =

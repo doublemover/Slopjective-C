@@ -86,6 +86,9 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // allocation, handoff, and resume helpers follow the same rule. They remain on
 // the bootstrap-internal private helper surface and do not widen this public
 // runtime header while async lowering is still in the non-suspending slice.
+// M268-D002 live continuation/runtime integration anchor: the supported
+// non-suspending async slice now executes through that same private helper
+// surface, but this public runtime header still does not widen.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary
