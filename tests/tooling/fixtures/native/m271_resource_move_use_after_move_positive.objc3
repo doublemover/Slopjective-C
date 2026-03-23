@@ -1,0 +1,8 @@
+module m271b002;
+
+fn moveSurface(value: id) -> i32 {
+  @cleanup(ReleaseTemp) let temp = 1;
+  @resource(CloseFd, invalid: -1) let fd = 3;
+  let block = ^[move temp, unowned fd, weak value] (i32 x) { return x + fd; };
+  return fd;
+}

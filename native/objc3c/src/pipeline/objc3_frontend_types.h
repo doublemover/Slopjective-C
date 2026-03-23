@@ -5083,6 +5083,8 @@ struct Objc3FrontendPipelineResult {
       part7_task_executor_cancellation_semantic_model_summary;
   Objc3Part8SystemExtensionSemanticModelSummary
       part8_system_extension_semantic_model_summary;
+  Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+      part8_resource_move_use_after_move_semantics_summary;
   Objc3Part7StructuredTaskCancellationSemanticSummary
       part7_structured_task_cancellation_semantic_summary;
   Objc3Part7ExecutorHopAffinityCompatibilitySummary

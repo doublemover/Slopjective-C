@@ -223,6 +223,13 @@ M271-B001 implementation note:
   runtime work
   runnable actor runtime behavior remain later `M270` work
 
+M271-B002 implementation note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
+- live sema now fails closed on non-resource `move` capture, use-after-move of
+  cleanup/resource-backed locals, and duplicate cleanup transfer before later
+  `M271` escape, legality, lowering, and runtime work
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

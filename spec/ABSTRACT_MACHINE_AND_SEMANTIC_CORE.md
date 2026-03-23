@@ -873,6 +873,17 @@ M271-B001 system-extension semantic-model note:
   cross-actor diagnostics, sendability enforcement, and runnable actor runtime
   behavior remain later `M270` work
 
+M271-B002 resource-move semantic note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
+- explicit `move` capture now transfers cleanup ownership only for
+  cleanup/resource-backed locals
+- live sema rejects non-resource `move` capture, later use of a moved
+  cleanup/resource-backed local, and duplicate cleanup transfer of the same
+  local
+- borrowed escape legality, retainable-family legality, lowering, and runtime
+  behavior remain later `M271` work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

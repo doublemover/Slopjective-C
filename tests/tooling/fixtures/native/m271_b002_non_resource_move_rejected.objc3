@@ -1,0 +1,7 @@
+module m271b002bad1;
+
+fn invalidMove() -> i32 {
+  let plain = 1;
+  let block = ^[move plain] (i32 x) { return x; };
+  return 0;
+}

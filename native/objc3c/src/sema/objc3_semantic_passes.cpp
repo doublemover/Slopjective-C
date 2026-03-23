@@ -81,6 +81,39 @@ struct SemanticTypeInfo {
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
 
+struct Part8ResourceMoveBindingState {
+  bool cleanup_owned = false;
+  bool moved = false;
+  unsigned move_line = 1;
+  unsigned move_column = 1;
+};
+
+using Part8ResourceMoveScope =
+    std::unordered_map<std::string, Part8ResourceMoveBindingState>;
+
+static Part8ResourceMoveBindingState *LookupPart8ResourceMoveBinding(
+    std::vector<Part8ResourceMoveScope> &scopes, const std::string &name) {
+  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
+    auto found = it->find(name);
+    if (found != it->end()) {
+      return &found->second;
+    }
+  }
+  return nullptr;
+}
+
+static const Part8ResourceMoveBindingState *LookupPart8ResourceMoveBinding(
+    const std::vector<Part8ResourceMoveScope> &scopes,
+    const std::string &name) {
+  for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
+    auto found = it->find(name);
+    if (found != it->end()) {
+      return &found->second;
+    }
+  }
+  return nullptr;
+}
+
 static SemanticTypeInfo ScopeLookupType(
     const std::vector<SemanticScope> &scopes, const std::string &name);
 
@@ -2391,6 +2424,466 @@ static void DiagnosePart7ActorRaceHazardRules(
     diagnostics.push_back(MakeDiag(
         line, column, "O3S294",
         "actor escape semantics failed: escaping block literals remain unsupported in actor methods that perform task handoff"));
+  }
+}
+
+static bool IsPart8CleanupOwnedLocal(const LetStmt &stmt) {
+  return stmt.cleanup_attribute_declared || stmt.cleanup_sugar_declared ||
+         stmt.resource_attribute_declared || stmt.resource_sugar_declared;
+}
+
+static void MergePart8ResourceMoveState(
+    std::vector<Part8ResourceMoveScope> &target_scopes,
+    const std::vector<Part8ResourceMoveScope> &branch_scopes) {
+  const std::size_t scope_count =
+      std::min(target_scopes.size(), branch_scopes.size());
+  for (std::size_t scope_index = 0; scope_index < scope_count; ++scope_index) {
+    for (auto &[name, target_state] : target_scopes[scope_index]) {
+      auto branch_it = branch_scopes[scope_index].find(name);
+      if (branch_it == branch_scopes[scope_index].end()) {
+        continue;
+      }
+      if (branch_it->second.moved) {
+        target_state.moved = true;
+        if (target_state.move_line == 1 && target_state.move_column == 1) {
+          target_state.move_line = branch_it->second.move_line;
+          target_state.move_column = branch_it->second.move_column;
+        }
+      }
+    }
+  }
+}
+
+static void DiagnosePart8ResourceMoveExpr(
+    const Expr *expr, std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics);
+
+static void DiagnosePart8ResourceMoveStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics);
+
+static void DiagnosePart8ResourceMoveExpr(
+    const Expr *expr, std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics) {
+  if (expr == nullptr) {
+    return;
+  }
+  switch (expr->kind) {
+    case Expr::Kind::Identifier: {
+      const auto *binding = LookupPart8ResourceMoveBinding(scopes, expr->ident);
+      if (binding != nullptr && binding->cleanup_owned && binding->moved) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S296",
+            "resource move semantics failed: cleanup-owned local '" +
+                expr->ident +
+                "' is used after move capture transferred cleanup ownership"));
+      }
+      return;
+    }
+    case Expr::Kind::BlockLiteral: {
+      std::unordered_set<std::string> moved_here;
+      for (const auto &item : expr->block_explicit_capture_items_source_order) {
+        auto *binding = LookupPart8ResourceMoveBinding(scopes, item.name);
+        if (item.mode == "move") {
+          if (binding == nullptr) {
+            continue;
+          }
+          if (!binding->cleanup_owned) {
+            diagnostics.push_back(MakeDiag(
+                expr->line, expr->column, "O3S295",
+                "resource move semantics failed: move capture requires a cleanup or resource-backed local '" +
+                    item.name + "'"));
+            continue;
+          }
+          if (binding->moved) {
+            diagnostics.push_back(MakeDiag(
+                expr->line, expr->column, "O3S297",
+                "resource move semantics failed: cleanup ownership for '" +
+                    item.name +
+                    "' was already transferred by an earlier move capture"));
+            continue;
+          }
+          moved_here.insert(item.name);
+          continue;
+        }
+        if (binding != nullptr && binding->cleanup_owned && binding->moved) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S296",
+              "resource move semantics failed: cleanup-owned local '" +
+                  item.name +
+                  "' is used after move capture transferred cleanup ownership"));
+        }
+      }
+      for (const auto &capture_name : expr->block_capture_names_lexicographic) {
+        if (moved_here.count(capture_name) != 0u) {
+          continue;
+        }
+        const auto *binding = LookupPart8ResourceMoveBinding(scopes, capture_name);
+        if (binding != nullptr && binding->cleanup_owned && binding->moved) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S296",
+              "resource move semantics failed: cleanup-owned local '" +
+                  capture_name +
+                  "' is used after move capture transferred cleanup ownership"));
+        }
+      }
+      for (const auto &capture_name : moved_here) {
+        if (auto *binding = LookupPart8ResourceMoveBinding(scopes, capture_name)) {
+          binding->moved = true;
+          binding->move_line = expr->line;
+          binding->move_column = expr->column;
+        }
+      }
+      return;
+    }
+    case Expr::Kind::Binary:
+      DiagnosePart8ResourceMoveExpr(expr->left.get(), scopes, diagnostics);
+      DiagnosePart8ResourceMoveExpr(expr->right.get(), scopes, diagnostics);
+      return;
+    case Expr::Kind::Conditional:
+      DiagnosePart8ResourceMoveExpr(expr->left.get(), scopes, diagnostics);
+      DiagnosePart8ResourceMoveExpr(expr->right.get(), scopes, diagnostics);
+      DiagnosePart8ResourceMoveExpr(expr->third.get(), scopes, diagnostics);
+      return;
+    case Expr::Kind::Call:
+    case Expr::Kind::MessageSend:
+      DiagnosePart8ResourceMoveExpr(expr->receiver.get(), scopes, diagnostics);
+      for (const auto &arg : expr->args) {
+        DiagnosePart8ResourceMoveExpr(arg.get(), scopes, diagnostics);
+      }
+      return;
+    case Expr::Kind::Number:
+    case Expr::Kind::BoolLiteral:
+    case Expr::Kind::NilLiteral:
+      return;
+  }
+}
+
+static void DiagnosePart8ResourceMoveForClause(
+    const ForClause &clause, std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics) {
+  switch (clause.kind) {
+    case ForClause::Kind::None:
+      return;
+    case ForClause::Kind::Expr:
+      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      return;
+    case ForClause::Kind::Let:
+      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      if (!scopes.empty()) {
+        scopes.back()[clause.name] = {};
+      }
+      return;
+    case ForClause::Kind::Assign: {
+      auto *binding = LookupPart8ResourceMoveBinding(scopes, clause.name);
+      if (binding != nullptr && binding->cleanup_owned && binding->moved) {
+        diagnostics.push_back(MakeDiag(
+            clause.line, clause.column, "O3S296",
+            "resource move semantics failed: cleanup-owned local '" +
+                clause.name +
+                "' is used after move capture transferred cleanup ownership"));
+      }
+      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      return;
+    }
+  }
+}
+
+static void DiagnosePart8ResourceMoveStatement(
+    const Stmt *stmt, std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let: {
+      const LetStmt *let = stmt->let_stmt.get();
+      if (let == nullptr || scopes.empty()) {
+        return;
+      }
+      DiagnosePart8ResourceMoveExpr(let->value.get(), scopes, diagnostics);
+      Part8ResourceMoveBindingState state;
+      state.cleanup_owned = IsPart8CleanupOwnedLocal(*let);
+      scopes.back()[let->name] = state;
+      return;
+    }
+    case Stmt::Kind::Assign: {
+      const AssignStmt *assign = stmt->assign_stmt.get();
+      if (assign == nullptr) {
+        return;
+      }
+      auto *binding = LookupPart8ResourceMoveBinding(scopes, assign->name);
+      if (binding != nullptr && binding->cleanup_owned && binding->moved) {
+        diagnostics.push_back(MakeDiag(
+            assign->line, assign->column, "O3S296",
+            "resource move semantics failed: cleanup-owned local '" +
+                assign->name +
+                "' is used after move capture transferred cleanup ownership"));
+      }
+      DiagnosePart8ResourceMoveExpr(assign->value.get(), scopes, diagnostics);
+      return;
+    }
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        DiagnosePart8ResourceMoveExpr(stmt->return_stmt->value.get(), scopes,
+                                      diagnostics);
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        DiagnosePart8ResourceMoveExpr(stmt->expr_stmt->value.get(), scopes,
+                                      diagnostics);
+      }
+      return;
+    case Stmt::Kind::If: {
+      const IfStmt *if_stmt = stmt->if_stmt.get();
+      if (if_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8ResourceMoveExpr(if_stmt->condition.get(), scopes,
+                                    diagnostics);
+      auto then_scopes = scopes;
+      then_scopes.push_back({});
+      DiagnosePart8ResourceMoveStatements(if_stmt->then_body, then_scopes,
+                                          diagnostics);
+      auto else_scopes = scopes;
+      else_scopes.push_back({});
+      DiagnosePart8ResourceMoveStatements(if_stmt->else_body, else_scopes,
+                                          diagnostics);
+      MergePart8ResourceMoveState(scopes, then_scopes);
+      MergePart8ResourceMoveState(scopes, else_scopes);
+      return;
+    }
+    case Stmt::Kind::DoWhile: {
+      const DoWhileStmt *do_while_stmt = stmt->do_while_stmt.get();
+      if (do_while_stmt == nullptr) {
+        return;
+      }
+      auto body_scopes = scopes;
+      body_scopes.push_back({});
+      DiagnosePart8ResourceMoveStatements(do_while_stmt->body, body_scopes,
+                                          diagnostics);
+      MergePart8ResourceMoveState(scopes, body_scopes);
+      DiagnosePart8ResourceMoveExpr(do_while_stmt->condition.get(), scopes,
+                                    diagnostics);
+      return;
+    }
+    case Stmt::Kind::For: {
+      const ForStmt *for_stmt = stmt->for_stmt.get();
+      if (for_stmt == nullptr) {
+        return;
+      }
+      auto loop_scopes = scopes;
+      loop_scopes.push_back({});
+      DiagnosePart8ResourceMoveForClause(for_stmt->init, loop_scopes,
+                                         diagnostics);
+      DiagnosePart8ResourceMoveExpr(for_stmt->condition.get(), loop_scopes,
+                                    diagnostics);
+      DiagnosePart8ResourceMoveForClause(for_stmt->step, loop_scopes,
+                                         diagnostics);
+      loop_scopes.push_back({});
+      DiagnosePart8ResourceMoveStatements(for_stmt->body, loop_scopes,
+                                          diagnostics);
+      MergePart8ResourceMoveState(scopes, loop_scopes);
+      return;
+    }
+    case Stmt::Kind::Switch: {
+      const SwitchStmt *switch_stmt = stmt->switch_stmt.get();
+      if (switch_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8ResourceMoveExpr(switch_stmt->condition.get(), scopes,
+                                    diagnostics);
+      for (const auto &case_stmt : switch_stmt->cases) {
+        auto case_scopes = scopes;
+        case_scopes.push_back({});
+        DiagnosePart8ResourceMoveStatements(case_stmt.body, case_scopes,
+                                            diagnostics);
+        MergePart8ResourceMoveState(scopes, case_scopes);
+      }
+      return;
+    }
+    case Stmt::Kind::While: {
+      const WhileStmt *while_stmt = stmt->while_stmt.get();
+      if (while_stmt == nullptr) {
+        return;
+      }
+      DiagnosePart8ResourceMoveExpr(while_stmt->condition.get(), scopes,
+                                    diagnostics);
+      auto body_scopes = scopes;
+      body_scopes.push_back({});
+      DiagnosePart8ResourceMoveStatements(while_stmt->body, body_scopes,
+                                          diagnostics);
+      MergePart8ResourceMoveState(scopes, body_scopes);
+      return;
+    }
+    case Stmt::Kind::Block:
+      if (stmt->block_stmt != nullptr) {
+        auto block_scopes = scopes;
+        block_scopes.push_back({});
+        DiagnosePart8ResourceMoveStatements(stmt->block_stmt->body, block_scopes,
+                                            diagnostics);
+        MergePart8ResourceMoveState(scopes, block_scopes);
+      }
+      return;
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt != nullptr) {
+        auto defer_scopes = scopes;
+        defer_scopes.push_back({});
+        DiagnosePart8ResourceMoveStatements(stmt->block_stmt->body, defer_scopes,
+                                            diagnostics);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void DiagnosePart8ResourceMoveStatements(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<std::string> &diagnostics) {
+  for (const auto &stmt : statements) {
+    DiagnosePart8ResourceMoveStatement(stmt.get(), scopes, diagnostics);
+  }
+}
+
+static void DiagnosePart8ResourceMoveSemantics(
+    const std::vector<std::unique_ptr<Stmt>> &statements,
+    const std::vector<SemanticScope> &semantic_scopes,
+    std::vector<std::string> &diagnostics) {
+  std::vector<Part8ResourceMoveScope> scopes;
+  scopes.reserve(semantic_scopes.size());
+  for (const auto &semantic_scope : semantic_scopes) {
+    Part8ResourceMoveScope scope;
+    for (const auto &[name, _] : semantic_scope) {
+      scope[name] = {};
+    }
+    scopes.push_back(std::move(scope));
+  }
+  DiagnosePart8ResourceMoveStatements(statements, scopes, diagnostics);
+}
+
+struct Part8ResourceMoveSiteProfile {
+  std::size_t cleanup_owned_local_sites = 0;
+  std::size_t resource_move_capture_sites = 0;
+};
+
+static void CollectPart8ResourceMoveExprSites(const Expr *expr,
+                                              Part8ResourceMoveSiteProfile &profile);
+
+static void CollectPart8ResourceMoveStmtSites(const Stmt *stmt,
+                                              Part8ResourceMoveSiteProfile &profile) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        if (IsPart8CleanupOwnedLocal(*stmt->let_stmt)) {
+          ++profile.cleanup_owned_local_sites;
+        }
+        CollectPart8ResourceMoveExprSites(stmt->let_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->assign_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->return_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->if_stmt->condition.get(), profile);
+        for (const auto &body_stmt : stmt->if_stmt->then_body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+        for (const auto &body_stmt : stmt->if_stmt->else_body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->do_while_stmt->body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+        CollectPart8ResourceMoveExprSites(stmt->do_while_stmt->condition.get(), profile);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->for_stmt->init.value.get(), profile);
+        CollectPart8ResourceMoveExprSites(stmt->for_stmt->condition.get(), profile);
+        CollectPart8ResourceMoveExprSites(stmt->for_stmt->step.value.get(), profile);
+        for (const auto &body_stmt : stmt->for_stmt->body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->switch_stmt->condition.get(), profile);
+        for (const auto &case_stmt : stmt->switch_stmt->cases) {
+          for (const auto &body_stmt : case_stmt.body) {
+            CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          }
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->while_stmt->condition.get(), profile);
+        for (const auto &body_stmt : stmt->while_stmt->body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Block:
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->block_stmt->body) {
+          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        CollectPart8ResourceMoveExprSites(stmt->expr_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void CollectPart8ResourceMoveExprSites(const Expr *expr,
+                                              Part8ResourceMoveSiteProfile &profile) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    for (const auto &item : expr->block_explicit_capture_items_source_order) {
+      if (item.mode == "move") {
+        ++profile.resource_move_capture_sites;
+      }
+    }
+  }
+  CollectPart8ResourceMoveExprSites(expr->receiver.get(), profile);
+  CollectPart8ResourceMoveExprSites(expr->left.get(), profile);
+  CollectPart8ResourceMoveExprSites(expr->right.get(), profile);
+  CollectPart8ResourceMoveExprSites(expr->third.get(), profile);
+  for (const auto &arg : expr->args) {
+    CollectPart8ResourceMoveExprSites(arg.get(), profile);
   }
 }
 
@@ -7832,6 +8325,85 @@ BuildPart8SystemExtensionSemanticModelSummary(
       << summary.explicit_capture_item_sites
       << ";retainable=" << summary.retainable_family_annotation_sites << ":"
       << summary.retainable_family_compatibility_alias_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+    const Objc3Program &program,
+    const Objc3Part8SystemExtensionSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary summary;
+  Part8ResourceMoveSiteProfile profile;
+  for (const auto &fn : program.functions) {
+    for (const auto &stmt : fn.body) {
+      CollectPart8ResourceMoveStmtSites(stmt.get(), profile);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (!method.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method.body) {
+        CollectPart8ResourceMoveStmtSites(stmt.get(), profile);
+      }
+    }
+  }
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) { return entry.find(code) != std::string::npos; });
+  };
+
+  summary.cleanup_owned_local_sites = profile.cleanup_owned_local_sites;
+  summary.resource_move_capture_sites = profile.resource_move_capture_sites;
+  summary.illegal_non_resource_move_sites =
+      count_diagnostic_code("O3S295");
+  summary.illegal_use_after_move_sites =
+      count_diagnostic_code("O3S296");
+  summary.illegal_duplicate_move_sites =
+      count_diagnostic_code("O3S297");
+
+  const bool dependency_surface_present =
+      !dependency_summary.contract_id.empty() &&
+      !dependency_summary.surface_path.empty();
+  summary.dependency_required = true;
+  summary.cleanup_ownership_transfer_enforced =
+      dependency_surface_present &&
+      summary.resource_move_capture_sites >=
+          summary.illegal_duplicate_move_sites;
+  summary.use_after_move_fail_closed =
+      summary.illegal_use_after_move_sites <=
+      summary.cleanup_owned_local_sites + summary.resource_move_capture_sites;
+  summary.duplicate_move_fail_closed =
+      summary.illegal_duplicate_move_sites <=
+      summary.resource_move_capture_sites;
+  summary.borrowed_escape_semantics_deferred = true;
+  summary.retainable_family_legality_deferred = true;
+  summary.lowering_runtime_deferred = true;
+  summary.deterministic =
+      dependency_surface_present &&
+      summary.cleanup_ownership_transfer_enforced &&
+      summary.use_after_move_fail_closed &&
+      summary.duplicate_move_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "resource move and use-after-move semantics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";cleanup-owned-locals=" << summary.cleanup_owned_local_sites
+      << ";resource-move-captures=" << summary.resource_move_capture_sites
+      << ";illegal-sites=" << summary.illegal_non_resource_move_sites << ":"
+      << summary.illegal_use_after_move_sites << ":"
+      << summary.illegal_duplicate_move_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -21420,6 +21992,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           task_legality_profile, fn.async_declared,
           fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
           fn.column, diagnostics);
+      DiagnosePart8ResourceMoveSemantics(fn.body, scopes, diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
@@ -21486,6 +22059,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           task_legality_profile, method.async_declared,
           method.executor_affinity_declared, method.executor_affinity_kind,
           method.line, method.column, diagnostics);
+      DiagnosePart8ResourceMoveSemantics(method.body, scopes, diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";

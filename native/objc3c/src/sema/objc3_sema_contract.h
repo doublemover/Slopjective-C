@@ -679,6 +679,67 @@ inline bool IsReadyObjc3Part8SystemExtensionSemanticModelSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDependencyContractId =
+        "objc3c-part8-system-extension-semantic-model/m271-b001-v1";
+inline constexpr const char
+    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsContractId =
+        "objc3c-part8-resource-move-use-after-move-semantics/m271-b002-v1";
+inline constexpr const char
+    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics";
+inline constexpr const char
+    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsRule =
+        "cleanup-owned-resource-locals-now-transfer-cleanup-ownership-through-explicit-move-captures-and-fail-closed-on-use-after-move-while-borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-later-m271-work";
+inline constexpr const char
+    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDeferredRule =
+        "borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-m271-lanes";
+
+struct Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary {
+  std::string contract_id =
+      kObjc3Part8ResourceMoveUseAfterMoveSemanticsContractId;
+  std::string dependency_contract_id =
+      kObjc3Part8ResourceMoveUseAfterMoveSemanticsDependencyContractId;
+  std::string surface_path =
+      kObjc3Part8ResourceMoveUseAfterMoveSemanticsSurfacePath;
+  std::string semantic_model =
+      kObjc3Part8ResourceMoveUseAfterMoveSemanticsRule;
+  std::string deferred_model =
+      kObjc3Part8ResourceMoveUseAfterMoveSemanticsDeferredRule;
+  std::size_t cleanup_owned_local_sites = 0;
+  std::size_t resource_move_capture_sites = 0;
+  std::size_t illegal_non_resource_move_sites = 0;
+  std::size_t illegal_use_after_move_sites = 0;
+  std::size_t illegal_duplicate_move_sites = 0;
+  bool dependency_required = false;
+  bool cleanup_ownership_transfer_enforced = false;
+  bool use_after_move_fail_closed = false;
+  bool duplicate_move_fail_closed = false;
+  bool borrowed_escape_semantics_deferred = false;
+  bool retainable_family_legality_deferred = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part8ResourceMoveUseAfterMoveSemanticsSummary(
+    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.cleanup_ownership_transfer_enforced &&
+         summary.use_after_move_fail_closed &&
+         summary.duplicate_move_fail_closed &&
+         summary.borrowed_escape_semantics_deferred &&
+         summary.retainable_family_legality_deferred &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

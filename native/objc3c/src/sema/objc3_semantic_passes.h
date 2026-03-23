@@ -64,6 +64,11 @@ BuildPart8SystemExtensionSemanticModelSummary(
         &completion_summary,
     const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
         &retainable_summary);
+Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+    const Objc3Program &program,
+    const Objc3Part8SystemExtensionSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7StructuredTaskCancellationSemanticSummary
 BuildPart7StructuredTaskCancellationSemanticSummary(
     const Objc3Part7TaskExecutorCancellationSemanticModelSummary

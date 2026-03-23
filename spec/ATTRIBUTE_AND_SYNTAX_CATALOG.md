@@ -307,6 +307,13 @@ M271-B001 semantic-model note:
   and retainable-family declarations now share one truthful sema packet
 - resource move legality, borrowed escape legality, retainable-family legality,
   lowering, and runtime behavior remain later `M271` work
+
+M271-B002 semantic note:
+- `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
+- explicit `move` capture now transfers cleanup ownership only for
+  cleanup/resource-backed locals
+- live sema rejects non-resource `move` capture, later use after move, and
+  duplicate cleanup transfer
 ```
 
 This attribute may be applied to:

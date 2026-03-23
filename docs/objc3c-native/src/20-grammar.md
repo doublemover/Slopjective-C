@@ -3970,3 +3970,20 @@ Current implementation status:
 - the packet remains sema/accounting only
 - resource move legality, borrowed escape legality, retainable-family legality,
   lowering, and runtime behavior remain later `M271` work
+
+## M271 resource move and use-after-move semantics
+
+The semantic pipeline now publishes one deterministic Part 8 packet at
+`frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`.
+
+Current implementation status:
+
+- the packet consumes the already-landed `M271-B001` sema surface
+- explicit `move` capture now transfers cleanup ownership only for
+  cleanup/resource-backed locals
+- live sema rejects:
+  - non-resource `move` capture
+  - later use of a moved cleanup/resource-backed local
+  - duplicate cleanup-ownership transfer of the same local
+- borrowed escape legality, retainable-family legality, lowering, and runtime
+  behavior remain later `M271` work
