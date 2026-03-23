@@ -2115,8 +2115,13 @@ static bool IsActorInterfaceOwner(
 }
 
 struct Objc3Part7ActorMethodBodyProfile {
+  std::size_t replay_proof_sites = 0;
+  std::size_t race_guard_sites = 0;
+  std::size_t task_handoff_sites = 0;
+  std::size_t actor_isolation_sites = 0;
   std::size_t actor_hop_sites = 0;
   std::size_t non_sendable_crossing_sites = 0;
+  std::size_t escaping_block_literal_sites = 0;
 };
 
 static std::string BuildPart7LowercaseProfileToken(const std::string &symbol) {
@@ -2132,6 +2137,26 @@ static void CollectPart7ActorMethodBodyProfileFromSymbol(
     return;
   }
   const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  if (lowered.find("replay") != std::string::npos ||
+      lowered.find("proof") != std::string::npos) {
+    ++profile.replay_proof_sites;
+  }
+  if (lowered.find("race") != std::string::npos ||
+      lowered.find("raceguard") != std::string::npos ||
+      lowered.find("race_guard") != std::string::npos ||
+      lowered.find("lock") != std::string::npos) {
+    ++profile.race_guard_sites;
+  }
+  if (lowered.find("handoff") != std::string::npos ||
+      lowered.find("await") != std::string::npos ||
+      lowered.find("task") != std::string::npos) {
+    ++profile.task_handoff_sites;
+  }
+  if (lowered.find("actor") != std::string::npos ||
+      lowered.find("isolation") != std::string::npos ||
+      lowered.find("isolated") != std::string::npos) {
+    ++profile.actor_isolation_sites;
+  }
   if (lowered.find("hop_to") != std::string::npos ||
       lowered.find("enqueue") != std::string::npos ||
       lowered.find("executor") != std::string::npos) {
@@ -2144,6 +2169,9 @@ static void CollectPart7ActorMethodBodyProfileFromSymbol(
   }
 }
 
+static void CollectPart7ActorMethodBodyProfileStmt(
+    const Stmt *stmt, Objc3Part7ActorMethodBodyProfile &profile);
+
 static void CollectPart7ActorMethodBodyProfileExpr(
     const Expr *expr, Objc3Part7ActorMethodBodyProfile &profile) {
   if (expr == nullptr) {
@@ -2154,6 +2182,15 @@ static void CollectPart7ActorMethodBodyProfileExpr(
     CollectPart7ActorMethodBodyProfileFromSymbol(expr->ident, profile);
     for (const auto &arg : expr->args) {
       CollectPart7ActorMethodBodyProfileExpr(arg.get(), profile);
+    }
+    return;
+  case Expr::Kind::BlockLiteral:
+    if (expr->block_storage_escape_to_heap ||
+        expr->block_escape_shape_promotes_to_heap_candidate) {
+      ++profile.escaping_block_literal_sites;
+    }
+    for (const auto &stmt : expr->block_body) {
+      CollectPart7ActorMethodBodyProfileStmt(stmt.get(), profile);
     }
     return;
   case Expr::Kind::MessageSend:
@@ -2321,6 +2358,39 @@ static void DiagnosePart7ActorMethodIsolationRules(
     diagnostics.push_back(MakeDiag(
         line, column, "O3S290",
         "actor sendability semantics failed: non-sendable cross-actor crossings remain unsupported in actor methods"));
+  }
+}
+
+static void DiagnosePart7ActorRaceHazardRules(
+    const Objc3MethodDecl &method, bool owner_is_actor, unsigned line,
+    unsigned column, std::vector<std::string> &diagnostics) {
+  if (!owner_is_actor) {
+    return;
+  }
+  const Objc3Part7ActorMethodBodyProfile body_profile =
+      BuildPart7ActorMethodBodyProfile(method);
+  if (body_profile.task_handoff_sites == 0u) {
+    return;
+  }
+  if (body_profile.race_guard_sites == 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S291",
+        "actor race-hazard semantics failed: task handoff in actor methods requires a race guard site"));
+  }
+  if (body_profile.replay_proof_sites == 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S292",
+        "actor race-hazard semantics failed: task handoff in actor methods requires replay proof coverage"));
+  }
+  if (body_profile.actor_isolation_sites == 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S293",
+        "actor race-hazard semantics failed: task handoff in actor methods requires actor isolation coverage"));
+  }
+  if (body_profile.escaping_block_literal_sites > 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S294",
+        "actor escape semantics failed: escaping block literals remain unsupported in actor methods that perform task handoff"));
   }
 }
 
@@ -7599,6 +7669,91 @@ BuildPart7ActorIsolationSendabilityEnforcementSummary(
       << summary.illegal_nonisolated_executor_sites << ":"
       << summary.illegal_actor_hop_without_async_sites << ":"
       << summary.illegal_non_sendable_crossing_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
+BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
+    const Objc3Program &ast,
+    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
+          return diag.find(code) != std::string::npos;
+        }));
+  };
+
+  summary.actor_method_sites = dependency_summary.actor_method_sites;
+  for (const auto &implementation_decl : ast.implementations) {
+    const bool owner_is_actor = std::any_of(
+        ast.interfaces.begin(), ast.interfaces.end(),
+        [&](const Objc3InterfaceDecl &interface_decl) {
+          return interface_decl.is_actor &&
+                 interface_decl.name == implementation_decl.name;
+        });
+    if (!owner_is_actor) {
+      continue;
+    }
+    for (const auto &method : implementation_decl.methods) {
+      const Objc3Part7ActorMethodBodyProfile body_profile =
+          BuildPart7ActorMethodBodyProfile(method);
+      summary.replay_proof_sites += body_profile.replay_proof_sites;
+      summary.race_guard_sites += body_profile.race_guard_sites;
+      summary.task_handoff_sites += body_profile.task_handoff_sites;
+      summary.actor_isolation_sites += body_profile.actor_isolation_sites;
+      summary.escaping_block_literal_sites +=
+          body_profile.escaping_block_literal_sites;
+    }
+  }
+
+  summary.illegal_missing_race_guard_sites = count_diagnostic_code("O3S291");
+  summary.illegal_missing_replay_proof_sites = count_diagnostic_code("O3S292");
+  summary.illegal_missing_actor_isolation_sites =
+      count_diagnostic_code("O3S293");
+  summary.illegal_escaping_block_literal_sites =
+      count_diagnostic_code("O3S294");
+
+  summary.dependency_required = true;
+  summary.race_guard_fail_closed =
+      summary.illegal_missing_race_guard_sites <= summary.task_handoff_sites;
+  summary.replay_proof_fail_closed =
+      summary.illegal_missing_replay_proof_sites <= summary.task_handoff_sites;
+  summary.actor_isolation_boundary_fail_closed =
+      summary.illegal_missing_actor_isolation_sites <=
+      summary.task_handoff_sites;
+  summary.escaping_block_fail_closed =
+      summary.illegal_escaping_block_literal_sites <=
+      summary.escaping_block_literal_sites;
+  summary.runnable_lowering_deferred = true;
+  summary.actor_runtime_deferred = true;
+  summary.deterministic =
+      dependency_summary.deterministic && summary.race_guard_fail_closed &&
+      summary.replay_proof_fail_closed &&
+      summary.actor_isolation_boundary_fail_closed &&
+      summary.escaping_block_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "actor race-hazard and escape diagnostics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";task-handoff=" << summary.task_handoff_sites
+      << ";race-guard=" << summary.race_guard_sites
+      << ";replay-proof=" << summary.replay_proof_sites
+      << ";actor-isolation=" << summary.actor_isolation_sites
+      << ";escaping-blocks=" << summary.escaping_block_literal_sites
+      << ";illegal-sites=" << summary.illegal_missing_race_guard_sites << ":"
+      << summary.illegal_missing_replay_proof_sites << ":"
+      << summary.illegal_missing_actor_isolation_sites << ":"
+      << summary.illegal_escaping_block_literal_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -21208,6 +21363,9 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
       DiagnosePart7ActorMethodIsolationRules(
+          method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
+          method.line, method.column, diagnostics);
+      DiagnosePart7ActorRaceHazardRules(
           method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
           method.line, method.column, diagnostics);
       if (method.executor_affinity_declared && !method.async_declared) {

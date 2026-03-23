@@ -225,6 +225,16 @@ M270-B002 enforcement note:
 - runnable actor runtime, mailbox scheduling, and broader race-hazard closure
   remain later `M270` work
 
+M270-B003 hazard note:
+
+- lane B now also publishes
+  `frontend.pipeline.semantic_surface.objc_part7_actor_race_hazard_and_escape_diagnostics`
+- the current live hazard slice covers actor-method task handoff without race
+  guard/replay-proof/actor-isolation coverage plus escaping block literals in
+  that same context
+- runnable actor runtime and broader strict-concurrency closure remain later
+  `M270` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

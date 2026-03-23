@@ -1215,6 +1215,55 @@ std::string BuildPart7ActorIsolationSendabilityEnforcementSummaryJson(
   return out.str();
 }
 
+std::string BuildPart7ActorRaceHazardEscapeDiagnosticsSummaryJson(
+    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"actor_method_sites\":" << summary.actor_method_sites
+      << ",\"replay_proof_sites\":" << summary.replay_proof_sites
+      << ",\"race_guard_sites\":" << summary.race_guard_sites
+      << ",\"task_handoff_sites\":" << summary.task_handoff_sites
+      << ",\"actor_isolation_sites\":" << summary.actor_isolation_sites
+      << ",\"escaping_block_literal_sites\":"
+      << summary.escaping_block_literal_sites
+      << ",\"illegal_missing_race_guard_sites\":"
+      << summary.illegal_missing_race_guard_sites
+      << ",\"illegal_missing_replay_proof_sites\":"
+      << summary.illegal_missing_replay_proof_sites
+      << ",\"illegal_missing_actor_isolation_sites\":"
+      << summary.illegal_missing_actor_isolation_sites
+      << ",\"illegal_escaping_block_literal_sites\":"
+      << summary.illegal_escaping_block_literal_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"race_guard_fail_closed\":"
+      << (summary.race_guard_fail_closed ? "true" : "false")
+      << ",\"replay_proof_fail_closed\":"
+      << (summary.replay_proof_fail_closed ? "true" : "false")
+      << ",\"actor_isolation_boundary_fail_closed\":"
+      << (summary.actor_isolation_boundary_fail_closed ? "true" : "false")
+      << ",\"escaping_block_fail_closed\":"
+      << (summary.escaping_block_fail_closed ? "true" : "false")
+      << ",\"runnable_lowering_deferred\":"
+      << (summary.runnable_lowering_deferred ? "true" : "false")
+      << ",\"actor_runtime_deferred\":"
+      << (summary.actor_runtime_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7StructuredTaskCancellationSemanticSummaryJson(
     const Objc3Part7StructuredTaskCancellationSemanticSummary &summary) {
   std::ostringstream out;
@@ -11436,6 +11485,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part7ActorIsolationSendabilityEnforcementSummary
       &part7_actor_isolation_sendability_enforcement_summary =
           pipeline_result.part7_actor_isolation_sendability_enforcement_summary;
+  const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
+      &part7_actor_race_hazard_escape_diagnostics_summary =
+          pipeline_result.part7_actor_race_hazard_escape_diagnostics_summary;
   const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
       &part7_task_group_cancellation_source_closure_summary =
           pipeline_result.part7_task_group_cancellation_source_closure_summary;
@@ -15833,6 +15885,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_isolation_and_sendability_enforcement\":"
            << BuildPart7ActorIsolationSendabilityEnforcementSummaryJson(
                   part7_actor_isolation_sendability_enforcement_summary)
+           << ",\"objc_part7_actor_race_hazard_and_escape_diagnostics\":"
+           << BuildPart7ActorRaceHazardEscapeDiagnosticsSummaryJson(
+                  part7_actor_race_hazard_escape_diagnostics_summary)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)
@@ -17144,6 +17199,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_actor_isolation_and_sendability_enforcement\":"
            << BuildPart7ActorIsolationSendabilityEnforcementSummaryJson(
                   part7_actor_isolation_sendability_enforcement_summary)
+           << ",\"objc_part7_actor_race_hazard_and_escape_diagnostics\":"
+           << BuildPart7ActorRaceHazardEscapeDiagnosticsSummaryJson(
+                  part7_actor_race_hazard_escape_diagnostics_summary)
            << ",\"objc_part7_task_group_and_cancellation_source_closure\":"
            << BuildPart7TaskGroupCancellationSourceClosureSummaryJson(
                   part7_task_group_cancellation_source_closure_summary)

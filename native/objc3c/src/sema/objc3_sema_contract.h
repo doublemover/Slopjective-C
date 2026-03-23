@@ -1153,6 +1153,67 @@ inline bool IsReadyObjc3Part7ActorIsolationSendabilityEnforcementSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline constexpr const char
+    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsDependencyContractId =
+        kObjc3Part7ActorIsolationSendabilityEnforcementContractId;
+inline constexpr const char
+    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsContractId =
+        "objc3c-part7-actor-race-hazard-escape-diagnostics/m270-b003-v1";
+inline constexpr const char
+    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part7_actor_race_hazard_and_escape_diagnostics";
+inline constexpr const char
+    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsRule =
+        "actor-method-task-handoff-now-fails-closed-without-race-guard-replay-proof-and-actor-isolation-coverage-while-escaping-block-literals-in-that-hazard-slice-remain-unsupported";
+inline constexpr const char
+    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsDeferredRule =
+        "runnable-actor-mailboxes-cross-module-isolation-runtime-and-full-strict-concurrency-escape-analysis-remain-deferred-to-later-m270-lanes";
+
+struct Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary {
+  std::string contract_id =
+      kObjc3Part7ActorRaceHazardEscapeDiagnosticsContractId;
+  std::string dependency_contract_id =
+      kObjc3Part7ActorRaceHazardEscapeDiagnosticsDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7ActorRaceHazardEscapeDiagnosticsSurfacePath;
+  std::string semantic_model =
+      kObjc3Part7ActorRaceHazardEscapeDiagnosticsRule;
+  std::string deferred_model =
+      kObjc3Part7ActorRaceHazardEscapeDiagnosticsDeferredRule;
+  std::size_t actor_method_sites = 0;
+  std::size_t replay_proof_sites = 0;
+  std::size_t race_guard_sites = 0;
+  std::size_t task_handoff_sites = 0;
+  std::size_t actor_isolation_sites = 0;
+  std::size_t escaping_block_literal_sites = 0;
+  std::size_t illegal_missing_race_guard_sites = 0;
+  std::size_t illegal_missing_replay_proof_sites = 0;
+  std::size_t illegal_missing_actor_isolation_sites = 0;
+  std::size_t illegal_escaping_block_literal_sites = 0;
+  bool dependency_required = false;
+  bool race_guard_fail_closed = false;
+  bool replay_proof_fail_closed = false;
+  bool actor_isolation_boundary_fail_closed = false;
+  bool escaping_block_fail_closed = false;
+  bool runnable_lowering_deferred = false;
+  bool actor_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string failure_reason;
+  std::string replay_key;
+};
+
+inline bool IsReadyObjc3Part7ActorRaceHazardEscapeDiagnosticsSummary(
+    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &summary) {
+  return summary.dependency_required && summary.race_guard_fail_closed &&
+         summary.replay_proof_fail_closed &&
+         summary.actor_isolation_boundary_fail_closed &&
+         summary.escaping_block_fail_closed &&
+         summary.runnable_lowering_deferred && summary.actor_runtime_deferred &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 struct Objc3TaskRuntimeCancellationSummary {
   std::size_t task_runtime_interop_sites = 0;
   std::size_t runtime_hook_sites = 0;

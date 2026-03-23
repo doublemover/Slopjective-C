@@ -4952,6 +4952,8 @@ struct Objc3FrontendPipelineResult {
       part7_actor_isolation_sendable_semantic_model_summary;
   Objc3Part7ActorIsolationSendabilityEnforcementSummary
       part7_actor_isolation_sendability_enforcement_summary;
+  Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
+      part7_actor_race_hazard_escape_diagnostics_summary;
   Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
       part7_task_group_cancellation_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary

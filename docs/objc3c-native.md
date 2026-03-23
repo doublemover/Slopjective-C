@@ -3399,6 +3399,17 @@ Lane B now publishes a second actor packet at
 - this remains a compiler-semantic slice only; runnable actor mailbox/runtime
   behavior and broader race-hazard completion remain later `M270` work
 
+## M270-B003 actor race-hazard and escape diagnostics
+
+Lane B now also publishes
+`frontend.pipeline.semantic_surface.objc_part7_actor_race_hazard_and_escape_diagnostics`.
+
+- actor methods that perform task handoff now fail closed without:
+  - race guard coverage
+  - replay proof coverage
+  - actor isolation coverage
+- escaping block literals remain unsupported in that actor-method hazard slice
+
 - this is source closure only
 - no continuation ABI, suspension cleanup, executor runtime, or runnable async
   behavior is claimed by `M268-A001`

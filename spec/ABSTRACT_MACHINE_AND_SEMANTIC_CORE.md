@@ -859,6 +859,14 @@ M270-B002 actor enforcement note:
 - this is still narrower than a complete strict-concurrency system; runnable
   actor runtime and broader race-hazard closure remain later `M270` work
 
+M270-B003 actor hazard note:
+
+- actor-method task handoff now fails closed without race guard coverage,
+  replay proof coverage, and actor isolation coverage
+- escaping block literals remain unsupported in that actor-method hazard slice
+- runnable actor runtime and broader strict-concurrency closure remain later
+  `M270` work
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

@@ -1,0 +1,18 @@
+module M270B003NoReplayProof;
+
+fn race_guard_lock() -> i32 { return 1; }
+fn task_handoff_ready() -> i32 { return 1; }
+fn actor_isolated_step() -> i32 { return 1; }
+
+actor class M270Mailbox
+- (i32)run async __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)run async __attribute__((objc_executor(main))) {
+  race_guard_lock();
+  task_handoff_ready();
+  actor_isolated_step();
+  return 0;
+}
+@end

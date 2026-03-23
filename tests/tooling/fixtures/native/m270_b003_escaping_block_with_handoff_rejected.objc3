@@ -1,0 +1,24 @@
+module M270B003EscapingBlock;
+
+fn replay_proof_step() -> i32 { return 1; }
+fn race_guard_lock() -> i32 { return 1; }
+fn task_handoff_ready() -> i32 { return 1; }
+fn actor_isolated_step() -> i32 { return 1; }
+fn materialize(handle: i32) -> i32 { return handle; }
+
+actor class M270Mailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  replay_proof_step();
+  race_guard_lock();
+  task_handoff_ready();
+  actor_isolated_step();
+  let closure = ^() {
+    return seed;
+  };
+  return materialize(closure);
+}
+@end

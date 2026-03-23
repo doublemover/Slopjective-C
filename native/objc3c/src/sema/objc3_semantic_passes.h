@@ -42,6 +42,12 @@ BuildPart7ActorIsolationSendabilityEnforcementSummary(
     const Objc3Part7ActorIsolationSendableSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
+BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
+    const Objc3Program &ast,
+    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+        &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7TaskExecutorCancellationSemanticModelSummary
 BuildPart7TaskExecutorCancellationSemanticModelSummary(
     const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
