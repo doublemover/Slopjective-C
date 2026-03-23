@@ -578,6 +578,18 @@ Current implementation status (`M269-A002`):
 - the packet remains source-only and still defers runnable task/runtime behavior
   to later `M269` issues
 
+Current implementation status (`M269-B001`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model`
+- the semantic packet consumes the `M269-A002` source packet and the existing
+  task-runtime/cancellation sema summaries
+- the live semantic packet now truthfully claims task lifetime legality,
+  executor-affinity legality, cancellation observation legality, and
+  structured-task legality
+- runnable lowering, executor runtime behavior, and scheduler runtime behavior
+  remain deferred to later `M269` issues
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

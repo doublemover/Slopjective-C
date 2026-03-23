@@ -4914,6 +4914,8 @@ struct Objc3FrontendPipelineResult {
   Objc3Part5ControlFlowSemanticModelSummary
       part5_control_flow_semantic_model_summary;
   Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;
+  Objc3Part7TaskExecutorCancellationSemanticModelSummary
+      part7_task_executor_cancellation_semantic_model_summary;
   Objc3Part7AsyncEffectSuspensionSemanticModelSummary
       part7_async_effect_suspension_semantic_model_summary;
   Objc3Part7AwaitSuspensionResumeSemanticSummary

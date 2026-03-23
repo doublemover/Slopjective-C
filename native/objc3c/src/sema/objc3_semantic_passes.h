@@ -6,6 +6,7 @@
 
 struct Objc3FrontendPart6ErrorSourceClosureSummary;
 struct Objc3FrontendPart7AsyncSourceClosureSummary;
+struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -28,6 +29,11 @@ Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
 Objc3Part7AsyncEffectSuspensionSemanticModelSummary
 BuildPart7AsyncEffectSuspensionSemanticModelSummary(
     const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3SemanticIntegrationSurface &surface);
+Objc3Part7TaskExecutorCancellationSemanticModelSummary
+BuildPart7TaskExecutorCancellationSemanticModelSummary(
+    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+        &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
 Objc3Part7AwaitSuspensionResumeSemanticSummary
 BuildPart7AwaitSuspensionResumeSemanticSummary(

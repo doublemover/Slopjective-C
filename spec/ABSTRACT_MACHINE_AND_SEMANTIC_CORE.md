@@ -732,6 +732,16 @@ M269-A002 frontend task-group/cancellation packet note:
 - later `M269` lanes must consume this packet rather than widening the source
   contract again
 
+M269-B001 task/executor/cancellation semantic-model note:
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model`
+- this packet consumes the `M269-A002` source packet and the existing task
+  runtime/cancellation sema summaries rather than inventing another source-only
+  surface
+- runnable lowering, executor runtime behavior, and scheduler runtime behavior
+  remain deferred to later `M269` lanes
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

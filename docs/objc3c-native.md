@@ -3449,6 +3449,19 @@ The frontend now publishes a dedicated task-runtime source packet at
 - the packet remains source-only and does not claim runnable task allocation,
   scheduler execution, or live cancellation runtime behavior
 
+## M269 task executor and cancellation semantic model
+
+The frontend now publishes a dedicated semantic packet at
+`frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model`.
+
+- the packet consumes the existing `M269-A002` task-group/cancellation source
+  packet rather than widening the source boundary again
+- the packet freezes live semantic ownership for task lifetime legality,
+  executor-affinity legality, cancellation observation legality, and structured
+  task-group legality
+- runnable lowering, executor runtime behavior, and scheduler runtime behavior
+  remain deferred to later `M269` issues
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

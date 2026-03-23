@@ -5636,6 +5636,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part6_error_semantic_model_summary =
       BuildPart6ErrorSemanticModelSummary(
           result.part6_error_source_closure_summary, result.integration_surface);
+  result.part7_task_executor_cancellation_semantic_model_summary =
+      BuildPart7TaskExecutorCancellationSemanticModelSummary(
+          result.part7_task_group_cancellation_source_closure_summary,
+          result.integration_surface);
   result.part7_async_effect_suspension_semantic_model_summary =
       BuildPart7AsyncEffectSuspensionSemanticModelSummary(
           result.part7_async_source_closure_summary, result.integration_surface);

@@ -551,6 +551,73 @@ inline bool IsReadyObjc3Part7AsyncEffectSuspensionSemanticModelSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDependencyContractId =
+    "objc3c-part7-task-group-cancellation-source-closure/m269-a002-v1";
+inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelContractId =
+    "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
+inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model";
+inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelRule =
+    "task-lifetime-executor-affinity-cancellation-observation-and-structured-task-legality-are-live-in-sema-while-runnable-task-allocation-and-scheduler-execution-remain-later-m269-work";
+inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDeferredRule =
+    "task-allocation-executor-hop-runtime-task-group-execution-and-scheduler-backed-cancellation-remain-deferred-to-later-m269-lanes";
+
+struct Objc3Part7TaskExecutorCancellationSemanticModelSummary {
+  std::string contract_id =
+      kObjc3Part7TaskExecutorCancellationSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part7TaskExecutorCancellationSemanticModelDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7TaskExecutorCancellationSemanticModelSurfacePath;
+  std::string semantic_model =
+      kObjc3Part7TaskExecutorCancellationSemanticModelRule;
+  std::string deferred_model =
+      kObjc3Part7TaskExecutorCancellationSemanticModelDeferredRule;
+  std::size_t async_callable_sites = 0;
+  std::size_t executor_attribute_sites = 0;
+  std::size_t task_creation_sites = 0;
+  std::size_t task_group_scope_sites = 0;
+  std::size_t task_group_add_task_sites = 0;
+  std::size_t task_group_wait_next_sites = 0;
+  std::size_t task_group_cancel_all_sites = 0;
+  std::size_t task_runtime_interop_sites = 0;
+  std::size_t runtime_hook_sites = 0;
+  std::size_t cancellation_check_sites = 0;
+  std::size_t cancellation_handler_sites = 0;
+  std::size_t suspension_point_sites = 0;
+  std::size_t cancellation_propagation_sites = 0;
+  bool source_dependency_required = false;
+  bool task_lifetime_semantics_landed = false;
+  bool executor_affinity_semantics_landed = false;
+  bool cancellation_observation_semantics_landed = false;
+  bool structured_task_legality_semantics_landed = false;
+  bool runnable_lowering_deferred = false;
+  bool executor_runtime_deferred = false;
+  bool scheduler_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.frontend_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.task_lifetime_semantics_landed &&
+         summary.executor_affinity_semantics_landed &&
+         summary.cancellation_observation_semantics_landed &&
+         summary.structured_task_legality_semantics_landed &&
+         summary.runnable_lowering_deferred &&
+         summary.executor_runtime_deferred &&
+         summary.scheduler_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
     "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =
