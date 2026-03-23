@@ -3326,3 +3326,18 @@ The frontend now publishes a dedicated Part 7 source packet at
 - the packet records canonical `objc_executor(...)` attribute use
 - the packet remains source-only and does not claim runnable continuation or
   executor runtime behavior
+
+## M268 async effect and suspension semantic model
+
+The semantic pipeline now publishes a dedicated Part 7 semantic packet at
+`frontend.pipeline.semantic_surface.objc_part7_async_effect_and_suspension_semantic_model`.
+
+- the packet carries live async-continuation legality counts derived from sema
+  integration summaries
+- the packet carries live await-suspension legality counts derived from sema
+  integration summaries
+- the packet records the current actor-isolation, task-cancellation, and
+  concurrency-replay guard profile handoff that already feeds later Part 7 work
+- the packet is ready for later lowering and runtime expansion, but it still
+  does not claim runnable async frame lowering, suspension cleanup, or executor
+  runtime execution behavior

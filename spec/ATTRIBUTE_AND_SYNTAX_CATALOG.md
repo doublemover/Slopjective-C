@@ -518,6 +518,20 @@ Current implementation status (`M268-A002`):
   `frontend.pipeline.semantic_surface.objc_part7_async_source_closure`
 - that packet records parser-owned `async`, `await`, and executor-affinity
   attribute usage deterministically
+- it remains the parser-owned dependency for the live semantic packet below
+- runnable continuation lowering and executor runtime behavior are still later
+  `M268` work
+
+Current implementation status (`M268-B001`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_async_effect_and_suspension_semantic_model`
+- that packet records live async-continuation legality, await-suspension
+  legality, actor-isolation handoff, task-cancellation handoff, and
+  concurrency-replay guard handoff deterministically
+- the current packet is truthful sema state only; runnable async frame
+  lowering, suspension cleanup, and executor runtime execution remain later
+  `M268` work
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

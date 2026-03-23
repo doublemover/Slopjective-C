@@ -5,6 +5,7 @@
 #include "sema/objc3_sema_contract.h"
 
 struct Objc3FrontendPart6ErrorSourceClosureSummary;
+struct Objc3FrontendPart7AsyncSourceClosureSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -23,6 +24,10 @@ Objc3Part5ControlFlowSemanticModelSummary BuildPart5ControlFlowSemanticModelSumm
     const Objc3Program &ast);
 Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
     const Objc3FrontendPart6ErrorSourceClosureSummary &source_summary,
+    const Objc3SemanticIntegrationSurface &surface);
+Objc3Part7AsyncEffectSuspensionSemanticModelSummary
+BuildPart7AsyncEffectSuspensionSemanticModelSummary(
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
 Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
     const Objc3Program &program,

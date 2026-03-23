@@ -601,6 +601,16 @@ M268-A002 semantic-packet note:
 - that packet is the truthful source-owned Part 7 handoff before later `M268`
   lowering and runtime issues widen execution behavior
 
+M268-B001 semantic-model note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_async_effect_and_suspension_semantic_model`
+- that packet freezes the live semantic legality and handoff state for async
+  continuations, await suspension, actor isolation, task cancellation, and
+  concurrency replay guards
+- runnable async frame lowering, suspension cleanup, and executor runtime
+  execution remain later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
