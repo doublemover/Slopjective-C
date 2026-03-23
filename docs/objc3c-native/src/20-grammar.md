@@ -3341,3 +3341,15 @@ The semantic pipeline now publishes a dedicated Part 7 semantic packet at
 - the packet is ready for later lowering and runtime expansion, but it still
   does not claim runnable async frame lowering, suspension cleanup, or executor
   runtime execution behavior
+
+## M268 await suspension and resume semantics
+
+The semantic pipeline now enforces live Part 7 await-placement legality and
+publishes a dedicated packet at
+`frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics`.
+
+- `await` now fails closed outside an async function or Objective-C method
+- the packet records live counts for async callable sites, await expression
+  sites, illegal await sites, and await sites admitted inside async callables
+- this issue still does not claim runnable async frame layout, resume lowering,
+  suspension cleanup, or executor runtime execution

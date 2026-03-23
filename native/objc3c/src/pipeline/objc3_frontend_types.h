@@ -4878,6 +4878,8 @@ struct Objc3FrontendPipelineResult {
   Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;
   Objc3Part7AsyncEffectSuspensionSemanticModelSummary
       part7_async_effect_suspension_semantic_model_summary;
+  Objc3Part7AwaitSuspensionResumeSemanticSummary
+      part7_await_suspension_resume_semantic_summary;
   Objc3Part6TryDoCatchSemanticSummary part6_try_do_catch_semantic_summary;
   Objc3Part6ErrorBridgeLegalitySummary part6_error_bridge_legality_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;

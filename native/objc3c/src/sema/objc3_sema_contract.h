@@ -551,6 +551,61 @@ inline bool IsReadyObjc3Part7AsyncEffectSuspensionSemanticModelSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
+inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
+    "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
+inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =
+    "objc3c-part7-await-suspension-resume-semantics/m268-b002-v1";
+inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics";
+inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryRule =
+    "await-placement-suspension-and-resume-semantics-are-live-in-sema-while-runnable-async-frame-lowering-and-executor-runtime-execution-remain-later-m268-work";
+inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDeferredRule =
+    "async-frame-layout-resume-lowering-suspension-cleanup-and-runtime-executor-scheduling-remain-deferred-to-later-m268-lanes";
+
+struct Objc3Part7AwaitSuspensionResumeSemanticSummary {
+  std::string contract_id =
+      kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7AwaitSuspensionResumeSemanticSummarySurfacePath;
+  std::string semantic_model =
+      kObjc3Part7AwaitSuspensionResumeSemanticSummaryRule;
+  std::string deferred_model =
+      kObjc3Part7AwaitSuspensionResumeSemanticSummaryDeferredRule;
+  std::size_t async_callable_sites = 0;
+  std::size_t await_expression_sites = 0;
+  std::size_t await_in_async_callable_sites = 0;
+  std::size_t illegal_await_sites = 0;
+  std::size_t await_suspension_point_sites = 0;
+  std::size_t await_resume_sites = 0;
+  std::size_t continuation_resume_sites = 0;
+  std::size_t continuation_suspend_sites = 0;
+  bool source_dependency_required = false;
+  bool await_placement_enforced = false;
+  bool suspension_profile_enforced = false;
+  bool resume_profile_enforced = false;
+  bool non_async_await_fail_closed = false;
+  bool deterministic = true;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part7AwaitSuspensionResumeSemanticSummary(
+    const Objc3Part7AwaitSuspensionResumeSemanticSummary &summary) {
+  return !summary.contract_id.empty() && !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.await_placement_enforced &&
+         summary.suspension_profile_enforced &&
+         summary.resume_profile_enforced &&
+         summary.non_async_await_fail_closed &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId =
     "objc3c-part6-error-semantic-model/m267-b001-v1";
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryContractId =

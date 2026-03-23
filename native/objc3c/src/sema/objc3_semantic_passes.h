@@ -29,6 +29,10 @@ Objc3Part7AsyncEffectSuspensionSemanticModelSummary
 BuildPart7AsyncEffectSuspensionSemanticModelSummary(
     const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part7AwaitSuspensionResumeSemanticSummary
+BuildPart7AwaitSuspensionResumeSemanticSummary(
+    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
     const Objc3Program &program,
     const Objc3SemanticIntegrationSurface &surface,

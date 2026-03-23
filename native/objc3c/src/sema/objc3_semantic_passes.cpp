@@ -1616,6 +1616,7 @@ struct Objc3MessageSendResolutionContext {
   std::string current_super_name;
   bool inside_method = false;
   bool is_class_method = false;
+  bool inside_async_context = false;
 };
 
 struct Objc3ResolvedMessageSendMethod {
@@ -4177,6 +4178,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
   if (expr == nullptr) {
     return MakeScalarSemanticType(ValueType::Unknown);
   }
+  if (expr->await_expression_enabled &&
+      !message_send_context.inside_async_context) {
+    diagnostics.push_back(MakeDiag(
+        expr->line, expr->column, "O3S223",
+        "async semantics failed: 'await' is only valid inside an async function or method"));
+  }
   switch (expr->kind) {
     case Expr::Kind::Number:
       return MakeScalarSemanticType(ValueType::I32);
@@ -6639,6 +6646,73 @@ BuildPart7AsyncEffectSuspensionSemanticModelSummary(
       << ":" << summary.race_guard_sites << ":" << summary.task_handoff_sites
       << ":" << summary.actor_isolation_sites << ":"
       << summary.deterministic_schedule_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part7AwaitSuspensionResumeSemanticSummary
+BuildPart7AwaitSuspensionResumeSemanticSummary(
+    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7AwaitSuspensionResumeSemanticSummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [&](const std::string &diag) { return diag.find(code) != std::string::npos; }));
+  };
+
+  summary.async_callable_sites =
+      dependency_summary.async_function_sites +
+      dependency_summary.async_method_sites;
+  summary.await_expression_sites = dependency_summary.await_expression_sites;
+  summary.illegal_await_sites = count_diagnostic_code("O3S223");
+  summary.await_in_async_callable_sites =
+      summary.await_expression_sites >= summary.illegal_await_sites
+          ? summary.await_expression_sites - summary.illegal_await_sites
+          : 0u;
+  summary.await_suspension_point_sites =
+      dependency_summary.await_suspension_point_sites;
+  summary.await_resume_sites = dependency_summary.await_resume_sites;
+  summary.continuation_resume_sites =
+      dependency_summary.continuation_resume_sites;
+  summary.continuation_suspend_sites =
+      dependency_summary.continuation_suspend_sites;
+
+  summary.source_dependency_required = true;
+  summary.await_placement_enforced =
+      dependency_summary.ready_for_lowering_and_runtime &&
+      summary.illegal_await_sites <= summary.await_expression_sites &&
+      summary.await_in_async_callable_sites + summary.illegal_await_sites ==
+          summary.await_expression_sites;
+  summary.suspension_profile_enforced =
+      dependency_summary.await_suspension_profile_semantics_landed &&
+      summary.await_suspension_point_sites <= summary.await_expression_sites;
+  summary.resume_profile_enforced =
+      dependency_summary.continuation_profile_semantics_landed &&
+      summary.continuation_resume_sites <=
+          dependency_summary.async_continuation_sites &&
+      summary.continuation_suspend_sites <=
+          dependency_summary.async_continuation_sites &&
+      summary.await_resume_sites <= dependency_summary.await_suspension_sites;
+  summary.non_async_await_fail_closed = true;
+  summary.deterministic =
+      dependency_summary.deterministic && summary.await_placement_enforced &&
+      summary.suspension_profile_enforced &&
+      summary.resume_profile_enforced;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";async-callables=" << summary.async_callable_sites
+      << ";await-expressions=" << summary.await_expression_sites
+      << ";await-in-async=" << summary.await_in_async_callable_sites
+      << ";illegal-await=" << summary.illegal_await_sites
+      << ";suspension-sites=" << summary.await_suspension_point_sites << ":"
+      << summary.await_resume_sites
+      << ";continuation-sites=" << summary.continuation_resume_sites << ":"
+      << summary.continuation_suspend_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -19911,6 +19985,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
       message_send_context.surface = &surface;
+      message_send_context.inside_async_context = fn.async_declared;
       ValidateStatements(fn.body, scopes, body_globals, surface.functions, expected_return_type, fn.name, diagnostics,
                          0, 0, 0, 0, false, options.max_message_send_args,
                          message_send_context);
@@ -19956,6 +20031,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       message_send_context.current_implementation_name = implementation_decl.name;
       message_send_context.inside_method = true;
       message_send_context.is_class_method = method.is_class_method;
+      message_send_context.inside_async_context = method.async_declared;
       const auto interface_it = surface.interfaces.find(implementation_decl.name);
       if (interface_it != surface.interfaces.end()) {
         message_send_context.current_super_name = interface_it->second.super_name;

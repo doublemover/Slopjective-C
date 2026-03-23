@@ -611,6 +611,15 @@ M268-B001 semantic-model note:
 - runnable async frame lowering, suspension cleanup, and executor runtime
   execution remain later `M268` work
 
+M268-B002 semantic-enforcement note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics`
+- that packet proves `await` placement is enforced in sema and fails closed
+  outside async functions and Objective-C methods
+- runnable async frame layout, suspension cleanup, and executor scheduling are
+  still later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

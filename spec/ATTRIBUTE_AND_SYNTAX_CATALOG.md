@@ -532,6 +532,16 @@ Current implementation status (`M268-B001`):
 - the current packet is truthful sema state only; runnable async frame
   lowering, suspension cleanup, and executor runtime execution remain later
   `M268` work
+
+Current implementation status (`M268-B002`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics`
+- `await` is now semantically restricted to async functions and Objective-C
+  methods
+- non-async `await` sites fail closed with diagnostic `O3S223`
+- runnable async frame layout, resume lowering, suspension cleanup, and
+  executor runtime behavior remain deferred to later `M268` issues
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred
