@@ -1,0 +1,21 @@
+module m271b001;
+
+extern fn BorrowIt(value: borrowed id *) -> borrowed id *
+    __attribute__((objc_returns_borrowed(owner_index=0)));
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), os_returns_not_retained));
+extern fn NSMakeThing() -> id
+    __attribute__((ns_returns_retained));
+
+fn semanticSurface(value: id) -> i32 {
+  @cleanup(ReleaseTemp) let temp = 1;
+  @resource(CloseFd, invalid: -1) let fd = 3;
+  __attribute__((cleanup(ClearScratch))) let scratch = 7;
+  __attribute__((objc_resource(close=ClosePipe, invalid=0))) let pipe = 9;
+  let block = ^[scratch, weak value, unowned fd, move temp] (i32 x) { return x + pipe; };
+  return 0;
+}

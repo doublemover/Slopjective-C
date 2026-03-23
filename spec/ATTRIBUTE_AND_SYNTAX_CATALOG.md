@@ -300,6 +300,13 @@ M271-A003 retainable-family source completion:
   `os_returns_retained`, `os_returns_not_retained`, `os_consumed`,
   `cf_returns_retained`, `cf_returns_not_retained`, `cf_consumed`,
   `ns_returns_retained`, `ns_returns_not_retained`, `ns_consumed`
+
+M271-B001 semantic-model note:
+- `frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model`
+- cleanup/resource locals, borrowed pointer spellings, explicit capture lists,
+  and retainable-family declarations now share one truthful sema packet
+- resource move legality, borrowed escape legality, retainable-family legality,
+  lowering, and runtime behavior remain later `M271` work
 ```
 
 This attribute may be applied to:

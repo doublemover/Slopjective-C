@@ -4022,6 +4022,27 @@ Current implementation status:
   - live continuation helper allocation, handoff, and resume traffic
 - broader suspension-frame, state-machine, executor-runtime, and cross-module
   runnable async claims remain later work beyond this closeout
+
+## M271 system-extension semantic model
+
+The semantic pipeline now publishes one deterministic Part 8 packet at
+`frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model`.
+
+Current implementation status:
+
+- the packet consumes the already-landed source surfaces from:
+  - `M271-A001`
+  - `M271-A002`
+  - `M271-A003`
+- the current truthful sema boundary freezes accounting for:
+  - cleanup-hook locals
+  - resource annotations and resource sugar
+  - borrowed pointer spellings and borrowed-return relations
+  - explicit block capture lists
+  - retainable C-family callable annotations and compatibility aliases
+- the packet remains sema/accounting only
+- resource move legality, borrowed escape legality, retainable-family legality,
+  lowering, and runtime behavior remain later `M271` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

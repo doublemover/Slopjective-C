@@ -8,6 +8,9 @@ struct Objc3FrontendPart6ErrorSourceClosureSummary;
 struct Objc3FrontendPart7AsyncSourceClosureSummary;
 struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary;
 struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary;
+struct Objc3FrontendPart8SystemExtensionSourceClosureSummary;
+struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary;
+struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -53,6 +56,14 @@ BuildPart7TaskExecutorCancellationSemanticModelSummary(
     const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part8SystemExtensionSemanticModelSummary
+BuildPart8SystemExtensionSemanticModelSummary(
+    const Objc3FrontendPart8SystemExtensionSourceClosureSummary
+        &source_summary,
+    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+        &completion_summary,
+    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+        &retainable_summary);
 Objc3Part7StructuredTaskCancellationSemanticSummary
 BuildPart7StructuredTaskCancellationSemanticSummary(
     const Objc3Part7TaskExecutorCancellationSemanticModelSummary

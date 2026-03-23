@@ -855,6 +855,18 @@ M271-A003 retainable-family source note:
   canonical compatibility aliases on function and method declarations
 - the current truthful source slice does not yet claim family legality,
   ARC-family interop, or runnable retainable-family runtime behavior
+- the next issue is `M271-B001`
+
+M271-B001 system-extension semantic-model note:
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model`
+- the packet consumes the already-landed `M271-A001`, `M271-A002`, and
+  `M271-A003` source surfaces and freezes one truthful sema/accounting boundary
+  for cleanup/resource locals, borrowed pointers, capture-list legality, and
+  retainable-family declaration metadata
+- resource move legality, borrowed escape legality, retainable-family legality,
+  lowering, and runtime behavior remain later `M271` work
 - actor interfaces now publish deterministic source counts for actor members,
   executor annotations, async actor methods, and actor member metadata sites
 - this remains a frontend/source-model claim; actor-member legality,

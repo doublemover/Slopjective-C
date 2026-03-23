@@ -214,6 +214,13 @@ M271-A003 implementation note:
 - the frontend now admits retainable C-family callable annotations and the
   canonical compatibility aliases before later `M271` legality and runtime
   integration work
+  
+M271-B001 implementation note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model`
+- the truthful lane-B packet consumes the `M271-A001` through `M271-A003`
+  source surfaces before later `M271` move, escape, legality, lowering, and
+  runtime work
   runnable actor runtime behavior remain later `M270` work
 
 M270-B001 implementation note:

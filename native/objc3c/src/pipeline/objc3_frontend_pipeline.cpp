@@ -6234,6 +6234,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPart7TaskExecutorCancellationSemanticModelSummary(
           result.part7_task_group_cancellation_source_closure_summary,
           result.integration_surface);
+  result.part8_system_extension_semantic_model_summary =
+      BuildPart8SystemExtensionSemanticModelSummary(
+          result.part8_system_extension_source_closure_summary,
+          result.part8_cleanup_resource_capture_source_completion_summary,
+          result.part8_retainable_c_family_source_completion_summary);
   result.part7_structured_task_cancellation_semantic_summary =
       BuildPart7StructuredTaskCancellationSemanticSummary(
           result.part7_task_executor_cancellation_semantic_model_summary,

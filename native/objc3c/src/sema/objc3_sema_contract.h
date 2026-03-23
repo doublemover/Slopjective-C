@@ -618,6 +618,66 @@ inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
          summary.failure_reason.empty();
 }
 
+inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDependencyContractId =
+    "objc3c-part8-retainable-c-family-source-completion/m271-a003-v1";
+inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelContractId =
+    "objc3c-part8-system-extension-semantic-model/m271-b001-v1";
+inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model";
+inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelRule =
+    "cleanup-resource-borrowed-capture-and-retainable-family-source-surfaces-now-share-one-truthful-sema-model-while-resource-move-borrowed-escape-and-runtime-interop-work-remain-later-m271-lanes";
+inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDeferredRule =
+    "resource-move-use-after-move-borrowed-escape-retainable-family-legality-and-runtime-interop-remain-deferred-to-later-m271-lanes";
+
+struct Objc3Part8SystemExtensionSemanticModelSummary {
+  std::string contract_id = kObjc3Part8SystemExtensionSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part8SystemExtensionSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3Part8SystemExtensionSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3Part8SystemExtensionSemanticModelRule;
+  std::string deferred_model = kObjc3Part8SystemExtensionSemanticModelDeferredRule;
+  std::size_t cleanup_attribute_sites = 0;
+  std::size_t cleanup_sugar_sites = 0;
+  std::size_t resource_attribute_sites = 0;
+  std::size_t resource_sugar_sites = 0;
+  std::size_t borrowed_pointer_sites = 0;
+  std::size_t returns_borrowed_attribute_sites = 0;
+  std::size_t explicit_capture_list_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t retainable_family_annotation_sites = 0;
+  std::size_t retainable_family_compatibility_alias_sites = 0;
+  bool source_dependency_required = false;
+  bool cleanup_resource_semantic_model_frozen = false;
+  bool borrowed_pointer_semantic_model_frozen = false;
+  bool capture_legality_semantic_model_frozen = false;
+  bool retainable_family_semantic_model_frozen = false;
+  bool resource_move_semantics_deferred = false;
+  bool borrowed_escape_semantics_deferred = false;
+  bool retainable_family_legality_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part8SystemExtensionSemanticModelSummary(
+    const Objc3Part8SystemExtensionSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.frontend_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.cleanup_resource_semantic_model_frozen &&
+         summary.borrowed_pointer_semantic_model_frozen &&
+         summary.capture_legality_semantic_model_frozen &&
+         summary.retainable_family_semantic_model_frozen &&
+         summary.resource_move_semantics_deferred &&
+         summary.borrowed_escape_semantics_deferred &&
+         summary.retainable_family_legality_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
