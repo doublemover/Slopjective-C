@@ -53,6 +53,9 @@ struct objc3c_frontend_context {
 // M268-E002 runnable async closeout matrix anchor: milestone closeout keeps
 // consuming those same publication paths instead of inventing a second
 // frontend matrix-only reporting path.
+// M269-E001 task/executor conformance gate anchor: lane-E keeps consuming the
+// same surfaced publication paths while using the hardened D003 runtime proof
+// as the truthful runnable task/executor capability anchor.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

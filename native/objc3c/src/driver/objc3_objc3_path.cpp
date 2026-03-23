@@ -49,6 +49,9 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // M268-E002 runnable async closeout matrix anchor: milestone closeout rows must
 // keep consuming this same emitted manifest/IR/object triplet for the current
 // Part 7 slice instead of a synthetic matrix-only publication path.
+// M269-E001 task/executor conformance gate anchor: lane-E freezes the current
+// runnable task/runtime slice by consuming the same published driver artifact
+// surface while the broader front-door publication path remains fail-closed.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

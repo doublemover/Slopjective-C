@@ -697,6 +697,17 @@ Current implementation status (`M269-D003`):
   - `objc3_runtime_push_autoreleasepool_scope`
   - `objc3_runtime_pop_autoreleasepool_scope`
 
+Current implementation status (`M269-E001`):
+
+- lane-E now freezes the current runnable task/executor gate above
+  `M269-A002`, `M269-B003`, `M269-C003`, and `M269-D003`
+- the gate keeps the driver/manifest/frontend publication anchors explicit
+  while relying on the hardened `M269-D003` runtime probe as the truthful live
+  runnable proof
+- broader front-door metadata export remains truthfully fail-closed here and is
+  not widened by this gate
+- the next issue is `M269-E002`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

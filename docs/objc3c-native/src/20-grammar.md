@@ -3528,6 +3528,19 @@ and autoreleasepool/cancellation edges.
 - the supported task helper cluster remains private and live
 - broader front-door metadata-export gating still remains outside this issue
 
+## M269 task and executor conformance gate
+
+`M269-E001` freezes the runnable task/executor milestone gate on top of the
+already-landed source, sema, lowering, ABI, and hardened runtime slices.
+
+- the gate consumes `M269-A002`, `M269-B003`, `M269-C003`, and `M269-D003`
+  summaries rather than introducing a second task-runtime proof model
+- the truthful runnable proof remains the hardened `M269-D003` live runtime
+  probe and its deterministic snapshot/replay evidence
+- lane-E keeps the driver/manifest/frontend publication anchors explicit so the
+  current fail-closed front-door behavior stays visible to operators
+- the next issue is `M269-E002`
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

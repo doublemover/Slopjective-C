@@ -536,3 +536,9 @@ runtime boundary.
   - `objc3_runtime_copy_arc_debug_state_for_testing`
   - `objc3_runtime_push_autoreleasepool_scope`
   - `objc3_runtime_pop_autoreleasepool_scope`
+
+## M269 task and executor conformance gate
+
+`M269-E001` does not add a new runtime probe. It freezes lane-E on top of the
+existing `M269-D003` hardened runtime proof and the upstream `M269-A002`
+through `M269-D003` summary chain.

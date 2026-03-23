@@ -845,6 +845,15 @@ M269-D003 task-runtime hardening note:
   task snapshot publication, memory-management snapshot publication,
   ARC-debug snapshot publication, and autoreleasepool push/pop boundaries
 
+M269-E001 task and executor conformance gate note:
+
+- the lane-E gate freezes the current runnable Part 7 task/runtime slice above
+  `M269-A002`, `M269-B003`, `M269-C003`, and `M269-D003`
+- it does not widen the abstract machine; it republishes the already-landed
+  hardened runtime proof and keeps the front-door publication path truthfully
+  fail-closed where broader metadata export is still blocked
+- the next issue is `M269-E002`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
