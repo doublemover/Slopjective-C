@@ -11047,6 +11047,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       throws_propagation_lowering_contract.deterministic &&
       ns_error_bridging_lowering_contract.deterministic &&
       unwind_cleanup_lowering_contract.deterministic;
+  // M267-C002 replay continuity anchor: \",\"next_issue\":\"M267-C003\"
   const std::string part6_throws_abi_propagation_lowering_replay_key =
       Objc3Part6ThrowsAbiPropagationLoweringSummary() +
       ";throws_replay_key=" + throws_propagation_lowering_replay_key +
@@ -11055,7 +11056,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ";unwind_replay_key=" + unwind_cleanup_lowering_replay_key +
       ";deterministic=" +
       (deterministic_part6_throws_abi_propagation_lowering ? "true" : "false") +
-      ";ready_for_runtime_execution=true";
+      ";ready_for_runtime_execution=true" +
+      ";next_issue=M267-C003";
   const auto part6_result_and_bridging_artifact_replay_summary =
       BuildPart6ResultAndBridgingArtifactReplaySummary(
           part6_throws_abi_propagation_lowering_replay_key,

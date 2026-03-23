@@ -494,6 +494,7 @@ M267-B002 try/do/catch semantic note:
 - `throw` requires a `throws` callable or catch body
 - native IR/object/executable behavior, runnable catch transfer, and native
   thrown-error ABI remain deferred to later `M267` issues
+- `try`, `throw`, and `do/catch` are reserved fail-closed parser constructs
 
 M267-B003 bridge legality note:
 
@@ -502,6 +503,15 @@ M267-B003 bridge legality note:
 - only semantically valid bridge call surfaces qualify for `try`
 - unsupported bridge combinations remain compile-time fail-closed and do not yet
   widen runnable native behavior
+
+M267-C001 lowering-boundary note:
+
+- lane C first froze the current Part 6 lowering packet before the runnable
+  error-out implementation tranche landed
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- `M267-C002` is the next issue
 
 M267-C002 lowering implementation note:
 
@@ -566,6 +576,23 @@ M267-D003 cross-module preservation note:
   replay contracts
 - the runtime helper ABI itself does not widen here; D003 hardens the imported
   runtime-surface and cross-image orchestration boundary above `M267-D002`
+
+M267-E002 runnable closeout note:
+
+- `M267-E002` closes the current runnable Part 6 slice over the already-landed
+  `M267-A001` through `M267-E001` proof chain
+- the closeout does not widen the abstract machine with any new error carrier,
+  bridge, or runtime state beyond what earlier M267 issues already proved
+- the canonical closeout evidence is
+  `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
+- the next issue after this closeout is `M268-A001`
+
+M267-E001 error-model conformance gate note:
+
+- the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
+  `M267-B003`, `M267-C003`, and `M267-D003`
+- it does not widen the abstract machine; it proves the same already-landed
+  runtime and cross-module behavior through one gate before `M267-E002`
 
 
 M266-B002 implementation note:

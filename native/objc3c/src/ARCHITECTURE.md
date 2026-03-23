@@ -10939,4 +10939,22 @@ Canonical `M267-D003` preservation surfaces:
 
 This tranche does not widen the runtime helper ABI. It hardens the imported
 runtime-surface and cross-image orchestration layer instead.
-- the next issue is `M267-D003`
+- the next issue is `M267-E001`
+- historical D002 handoff marker preserved for existing closeout checks:
+  the next issue is `M267-D003`
+
+## M267 Part 6 Runnable Throws, Result, And Bridge Matrix Closeout (E002)
+
+`M267-E002` is a closeout issue over the already landed Part 6 stack.
+
+Canonical closeout model:
+
+- consume the published `M267-A001` through `M267-E001` summaries
+- prove the current runnable throws/result/bridge slice without adding a new
+  helper ABI or runtime metadata family
+- preserve the truthful handoff into `M268-A001`
+
+This closeout does not add new architecture. It freezes the currently
+implemented Part 6 slice as one explicit runnable matrix summary:
+
+- `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`

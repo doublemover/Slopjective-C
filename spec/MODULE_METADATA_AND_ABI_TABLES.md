@@ -7824,6 +7824,16 @@ the already-live startup paths.
 - operator matrix summary:
   - `tmp/artifacts/objc3c-native/bootstrap-matrix/m263_e002_bootstrap_matrix_closeout/summary.json`
 
+## M267 runnable throws, result, and bridge matrix closeout metadata anchors (E002)
+
+`M267-E002` does not add new metadata families. It closes the milestone over
+published summaries and emitted Part 6 replay/import/link-plan artifacts.
+
+- contract id
+  `objc3c-part6-runnable-throws-result-and-bridge-matrix/m267-e002-v1`
+- closeout summary
+  - `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
+
 ## M257 synthesized accessor property metadata anchors (C003)
 
 `M257-C003` widens emitted property descriptor payloads so lowering publishes executable accessor attachments rather than only declaration summaries.

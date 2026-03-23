@@ -1412,6 +1412,9 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
 
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
   std::ostringstream out;
+  // M267-C001 Part 6 lowering freeze anchor: lane-C first froze the combined
+  // throws ABI and propagation packet before the runnable implementation
+  // tranche landed. ;next_issue=M267-C002
   // M267-C002 Part 6 lowering implementation anchor: lane-C now materializes
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
@@ -1434,7 +1437,7 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
       << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
       << ";non_goal_model="
       << kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel
-      << ";next_issue=M267-D001";
+      << ";next_issue=M267-C003";
   return out.str();
 }
 

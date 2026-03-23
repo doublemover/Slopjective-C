@@ -574,6 +574,17 @@ Current implementation status (`M267-B003`):
 
 ## M267 current Part 6 lowering boundary
 
+`try`, `throw`, and `do/catch` are reserved parser-owned fail-closed constructs until the later runnable lowering tranche lands.
+
+Current implementation status (`M267-C001`):
+
+- lane C first froze one truthful lowering-boundary packet at
+  `frontend.pipeline.semantic_surface.objc_part6_throws_abi_propagation_lowering`
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- `M267-C002` is the next issue.
+
 Current implementation status (`M267-C002`):
 
 - lowering now publishes one truthful Part 6 packet at
@@ -683,3 +694,23 @@ generic-preservation, and typed key-path facts into one executable gate.
 validated typed key paths now have real runtime rows. Pragmatic generics stay
 truthful through preserved metadata/replay evidence because they do not claim a
 separate runtime behavior. `M266-A001` is the next issue after `M265` closeout.
+
+## M267 runnable throws, Result, and bridge matrix closeout (E002)
+
+`objc3c-part6-runnable-throws-result-and-bridge-matrix/m267-e002-v1`
+
+Current implementation status (`M267-E002`):
+
+- closes the current runnable Part 6 slice over the already published
+  source/sema/lowering/runtime/cross-module evidence chain
+- does not widen the accepted syntax beyond the existing `try`, `throw`, and
+  `do/catch` surface already proven in `M267`
+- does not add a new bridge helper ABI or metadata family
+- preserves the truthful handoff from `M267-E001` to `M268-A001`
+
+Current implementation status (`M267-E001`):
+
+- freezes one executable gate over the current `M267-A002` through `M267-D003`
+  Part 6 slice
+- preserves the same published manifest/replay/link-plan evidence before the
+  `M267-E002` closeout matrix

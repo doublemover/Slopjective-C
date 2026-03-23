@@ -22,6 +22,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // M265-E002 runnable-type-surface closeout anchor: closeout matrix rows
   // consume the same manifest surface for truthful optionals/generic-replay/
   // typed-keypath evidence.
+  // M267-E001 error-model conformance gate anchor: lane-E keeps consuming the
+  // same manifest sidecar and the canonical cross-module link-plan artifact
+  // instead of introducing a parallel Part 6 publication surface.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

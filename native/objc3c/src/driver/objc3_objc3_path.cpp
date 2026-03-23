@@ -40,6 +40,10 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 
 }  // namespace
 
+// M267-E001 error-model conformance gate anchor: lane-E freezes the current
+// Part 6 slice by consuming the canonical integrated proof surface already
+// published by the driver and artifact sidecars.
+
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {
     std::cerr << "unsupported --emit-objc3-conformance-format selection: "

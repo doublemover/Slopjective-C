@@ -97,6 +97,15 @@ Current implementation status (`M267-B003`):
   - runnable bridge lowering/runtime support
   - native thrown-error ABI
 
+Current implementation status (`M267-C001`):
+
+- lane C first froze the lowering boundary packet at
+  `frontend.pipeline.semantic_surface.objc_part6_throws_abi_propagation_lowering`
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- `M267-C002` is the next issue.
+
 Current implementation status (`M267-C002`):
 
 - the compiler now also publishes one truthful Part 6 lowering packet at
@@ -538,3 +547,28 @@ Minimum diagnostics:
 
 A future revision may introduce typed throws syntax to restrict throwable error sets.
 ObjC 3.0 v1 intentionally ships only untyped `throws` and uses the reservation rules in [§6.3.7](#part-6-3-7) to preserve forward compatibility with that future work.
+
+## M267 current implementation closeout note
+
+`M267-E002` closes the current runnable Part 6 slice over the already landed
+source closure, semantic model, lowering, runtime helper, live runtime, and
+cross-module preservation tranches.
+
+The current truthful implemented slice is:
+
+- reserved and semantically validated `try`, `throw`, and `do/catch`
+- Result/error-carrier and NSError/status bridge semantics for the supported
+  narrow executable path
+- emitted replay/import/link-plan artifacts that preserve the implemented Part 6
+  boundary across separate compilation and cross-module builds
+
+The current truthful non-goals remain:
+
+- no generalized foreign exception transport
+- no broader typed-throws model
+- no additional Part 6 runtime claim beyond the evidenced runnable slice
+
+Canonical closeout evidence:
+
+- `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
+- next issue: `M268-A001`

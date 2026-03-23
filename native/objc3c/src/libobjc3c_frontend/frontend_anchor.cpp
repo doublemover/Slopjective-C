@@ -44,6 +44,9 @@ struct objc3c_frontend_context {
 // M265-E002 runnable-type-surface closeout anchor: the milestone closeout
 // matrix relies on the same publication paths instead of creating a separate
 // synthetic reporting surface.
+// M267-E001 error-model conformance gate anchor: lane-E consumes those same
+// publication paths and the same runtime-import surface without inventing a
+// second frontend proof channel.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

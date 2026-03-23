@@ -7573,6 +7573,20 @@ Current deferred behavior:
 - native thrown-error ABI
 - any claim that bridge legality is runnable in native mode
 
+## M267 Part 6 throws ABI and propagation lowering boundary (M267-C001)
+
+Lane C first froze the current Part 6 lowering packet before the runnable
+error-out implementation tranche landed.
+
+Current implementation status (`M267-C001`):
+
+- lowering publishes one canonical contract:
+  - `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- `M267-C002` is the next issue.
+
 ## M267 Part 6 runnable error-out ABI and propagation lowering (M267-C002)
 
 Lane C now lowers the Part 6 error surface into a runnable native path.
@@ -7752,7 +7766,31 @@ Recommended M267 lane-D cross-module check:
 - `python scripts/check_m267_d003_cross_module_error_surface_preservation_hardening_edge_case_and_compatibility_completion.py`
 - `M267-E001` is the next issue.
 
+## M267 error-model conformance gate (M267-E001)
 
+`M267-E001` freezes one lane-E gate over the already implemented Part 6 slice.
+
+- the gate consumes `M267-A002`, `M267-B003`, `M267-C003`, and `M267-D003`
+- it reuses the same manifest, replay, and cross-module publication surfaces
+- `M267-E002` is the next issue
+
+## M267 runnable throws, Result, and bridge matrix closeout (M267-E002)
+
+`M267-E002` closes the current Part 6 milestone over the runnable slice that is
+already proven by the earlier M267 source, semantic, lowering, runtime, and
+cross-module issues.
+
+Current closeout shape:
+
+- `throw`, `try`, and `do/catch` remain a narrow implemented slice with real
+  parser, semantic, lowering, and runtime evidence
+- Result and NSError/status bridging are supported only through the current
+  replayed carrier and bridge surfaces already frozen in `M267-A001` through
+  `M267-D003`
+- `M267-E002` adds no new runtime semantics, helper ABI, or metadata family
+- the canonical closeout summary is
+  `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
+- `M268-A001` is the next issue
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

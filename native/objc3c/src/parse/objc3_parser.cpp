@@ -1,4 +1,9 @@
 #include "parse/objc3_parser.h"
+
+// M267-A001 source-closure anchors: unsupported 'try' expression,
+// unsupported 'throw' statement, and unsupported 'do/catch' statement remain
+// explicit fail-closed parser-owned diagnostics until the later runnable Part 6
+// lowering/runtime tranches land.
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_parse_support.h"
 

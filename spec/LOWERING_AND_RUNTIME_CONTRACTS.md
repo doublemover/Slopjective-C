@@ -1943,6 +1943,17 @@ A `try` call should lower to:
 
 `try?` and `try!` should be implemented as specified in [Part 6](#part-6), using the same underlying error value.
 
+## M267 Part 6 throws ABI and propagation lowering boundary (C001)
+
+`M267-C001` freezes the first lane-C Part 6 lowering packet.
+
+- canonical contract id:
+  `objc3c-part6-throws-abi-propagation-lowering/m267-c001-v1`
+- emitted IR now carries:
+  - `; part6_throws_abi_propagation_lowering = ...`
+  - `!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}`
+- `M267-C002` is the next issue
+
 ## M267 Part 6 runnable error-out ABI and propagation lowering (C002)
 
 `M267-C002` promotes the Part 6 lane-C lowering surface into a runnable native
@@ -2054,6 +2065,17 @@ through the private runtime helper ABI frozen by `M267-D001`.
   - no generalized foreign exception ABI
   - no broader cross-module live executable Part 6 claim yet
 - `M267-D003` is the next issue
+
+## M267 runnable throws, result, and bridge matrix closeout (E002)
+
+`M267-E002` does not add new lowering or runtime contracts. It closes the
+current Part 6 tranche over the published `A001` through `D003` proof chain and
+hands off to `M268-A001`.
+
+- canonical contract id:
+  `objc3c-part6-runnable-throws-result-and-bridge-matrix/m267-e002-v1`
+- closeout summary:
+  - `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
 
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}
 
