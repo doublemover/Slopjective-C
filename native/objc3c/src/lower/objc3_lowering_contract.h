@@ -1422,6 +1422,16 @@ inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneCon
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
     "m190-concurrency-replay-race-guard-lowering-v1";
+// M269-C001 lowering-freeze anchor: these existing Part 7 concurrency lane
+// contracts now become the explicit task-runtime lowering handoff for task
+// creation, executor hops, cancellation polling, and task-group artifacts.
+// Later M269 lane-C issues must widen the same contract family with native
+// spawn/hop/cancel entrypoints and task-group ABI completion rather than
+// inventing a second lowering boundary.
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringContractId =
+    "objc3c-part7-task-runtime-lowering-contract/m269-c001-v1";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract";
 inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "m191-unsafe-pointer-extension-gating-lowering-v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =

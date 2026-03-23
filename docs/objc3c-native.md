@@ -3488,6 +3488,21 @@ The frontend now publishes a dedicated semantic packet at
 - runnable executor-hop lowering and scheduler-backed execution remain deferred
   to later `M269` issues
 
+## M269 task runtime lowering contract
+
+The frontend now publishes a dedicated lowering packet at
+`frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract`.
+
+- the packet consumes the existing `M269-B001`, `M269-B002`, and `M269-B003`
+  semantic packets and lowers them into explicit replay-stable lane contracts
+  for actor isolation, task runtime interop, and concurrency replay guards
+- emitted IR now carries replay keys and frontend lowering profiles for task
+  creation, task-group artifacts, executor-hop boundaries, cancellation polls,
+  and scheduler-visible replay handoff counts
+- this issue freezes the lowering handoff only; native task spawn, executor
+  hop, cancellation runtime entrypoints, and task-group ABI completion remain
+  later `M269` work
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

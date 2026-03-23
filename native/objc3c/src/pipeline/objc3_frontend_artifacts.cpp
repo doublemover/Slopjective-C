@@ -102,6 +102,19 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part7SuspensionCleanupIntegrationDeferredModel =
         "continuation-resume-cleanup-suspension-state-frames-and-executor-runtime-scheduling-remain-later-m268-work";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringContractId =
+    "objc3c-part7-task-runtime-lowering-contract/m269-c001-v1";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part7_task_runtime_lowering_contract";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringTaskModel =
+    "task-creation-cancellation-polls-and-task-group-artifacts-now-lower-through-explicit-replay-stable-lane-contracts";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringExecutorModel =
+    "executor-affinity-and-detached-hop-boundaries-now-lower-through-explicit-actor-and-task-runtime-profile-handoffs";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
+    "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
+inline constexpr const char *kObjc3Part7TaskRuntimeLoweringDeferredModel =
+    "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-m269-work";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1131,6 +1144,215 @@ std::string BuildPart7ExecutorHopAffinityCompatibilitySummaryJson(
       << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
       << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\"}";
+  return out.str();
+}
+
+Objc3ActorIsolationSendabilityLoweringContract
+BuildPart7ActorIsolationSendabilityLoweringContract(
+    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &summary) {
+  Objc3ActorIsolationSendabilityLoweringContract contract;
+  contract.actor_isolation_sites =
+      summary.executor_affinity_sites +
+      summary.illegal_missing_executor_affinity_sites +
+      summary.illegal_main_executor_detached_sites;
+  contract.sendability_check_sites = summary.executor_affinity_sites;
+  contract.cross_actor_hop_sites = summary.detached_task_creation_sites;
+  contract.non_sendable_capture_sites = 0;
+  contract.sendable_transfer_sites = summary.detached_task_creation_sites;
+  contract.isolation_boundary_sites = summary.executor_affinity_sites;
+  contract.guard_blocked_sites =
+      summary.illegal_missing_executor_affinity_sites +
+      summary.illegal_main_executor_detached_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      summary.deterministic && summary.ready_for_lowering_and_runtime &&
+      contract.actor_isolation_sites ==
+          contract.isolation_boundary_sites + contract.guard_blocked_sites;
+  return contract;
+}
+
+Objc3TaskRuntimeInteropCancellationLoweringContract
+BuildPart7TaskRuntimeInteropCancellationLoweringContract(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+        &semantic_summary,
+    const Objc3Part7StructuredTaskCancellationSemanticSummary
+        &structured_summary,
+    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &executor_summary) {
+  Objc3TaskRuntimeInteropCancellationLoweringContract contract;
+  contract.task_runtime_sites =
+      semantic_summary.task_runtime_interop_sites +
+      structured_summary.illegal_non_async_task_sites +
+      structured_summary.illegal_task_group_scope_sites +
+      structured_summary.illegal_task_hierarchy_sites +
+      structured_summary.illegal_cancellation_usage_sites +
+      executor_summary.illegal_missing_executor_affinity_sites +
+      executor_summary.illegal_main_executor_detached_sites;
+  contract.task_runtime_interop_sites =
+      semantic_summary.task_runtime_interop_sites;
+  contract.cancellation_probe_sites =
+      semantic_summary.cancellation_check_sites;
+  contract.cancellation_handler_sites =
+      semantic_summary.cancellation_handler_sites;
+  contract.runtime_resume_sites =
+      structured_summary.task_group_wait_next_sites;
+  contract.runtime_cancel_sites =
+      structured_summary.task_group_cancel_all_sites;
+  contract.guard_blocked_sites =
+      structured_summary.illegal_non_async_task_sites +
+      structured_summary.illegal_task_group_scope_sites +
+      structured_summary.illegal_task_hierarchy_sites +
+      structured_summary.illegal_cancellation_usage_sites +
+      executor_summary.illegal_missing_executor_affinity_sites +
+      executor_summary.illegal_main_executor_detached_sites;
+  contract.normalized_sites =
+      contract.task_runtime_sites - contract.guard_blocked_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      semantic_summary.deterministic && structured_summary.deterministic &&
+      executor_summary.deterministic &&
+      semantic_summary.ready_for_lowering_and_runtime &&
+      structured_summary.ready_for_lowering_and_runtime &&
+      executor_summary.ready_for_lowering_and_runtime &&
+      contract.task_runtime_interop_sites <= contract.task_runtime_sites;
+  return contract;
+}
+
+Objc3ConcurrencyReplayRaceGuardLoweringContract
+BuildPart7ConcurrencyReplayRaceGuardLoweringContract(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+        &semantic_summary,
+    const Objc3Part7StructuredTaskCancellationSemanticSummary
+        &structured_summary,
+    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &executor_summary,
+    const Objc3ActorIsolationSendabilityLoweringContract &actor_contract) {
+  Objc3ConcurrencyReplayRaceGuardLoweringContract contract;
+  contract.replay_proof_sites =
+      semantic_summary.task_creation_sites +
+      structured_summary.task_group_wait_next_sites;
+  contract.race_guard_sites =
+      semantic_summary.cancellation_check_sites +
+      semantic_summary.cancellation_handler_sites;
+  contract.task_handoff_sites =
+      semantic_summary.task_creation_sites +
+      executor_summary.detached_task_creation_sites +
+      structured_summary.task_group_wait_next_sites;
+  contract.actor_isolation_sites = actor_contract.actor_isolation_sites;
+  contract.guard_blocked_sites =
+      structured_summary.illegal_non_async_task_sites +
+      structured_summary.illegal_task_group_scope_sites +
+      structured_summary.illegal_task_hierarchy_sites +
+      structured_summary.illegal_cancellation_usage_sites +
+      executor_summary.illegal_missing_executor_affinity_sites +
+      executor_summary.illegal_main_executor_detached_sites;
+  contract.deterministic_schedule_sites =
+      contract.replay_proof_sites + contract.race_guard_sites +
+      contract.task_handoff_sites + contract.actor_isolation_sites;
+  contract.concurrency_replay_sites =
+      contract.deterministic_schedule_sites + contract.guard_blocked_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      semantic_summary.deterministic && structured_summary.deterministic &&
+      executor_summary.deterministic && actor_contract.deterministic &&
+      semantic_summary.ready_for_lowering_and_runtime &&
+      structured_summary.ready_for_lowering_and_runtime &&
+      executor_summary.ready_for_lowering_and_runtime;
+  return contract;
+}
+
+std::string BuildPart7TaskRuntimeLoweringContractJson(
+    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+        &semantic_summary,
+    const Objc3Part7StructuredTaskCancellationSemanticSummary
+        &structured_summary,
+    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &executor_summary,
+    const Objc3ActorIsolationSendabilityLoweringContract &actor_contract,
+    const std::string &actor_replay_key,
+    const Objc3TaskRuntimeInteropCancellationLoweringContract &task_contract,
+    const std::string &task_replay_key,
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &race_contract,
+    const std::string &race_replay_key) {
+  const bool deterministic_handoff =
+      actor_contract.deterministic && task_contract.deterministic &&
+      race_contract.deterministic;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringSurfacePath)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3Part7TaskExecutorCancellationSemanticModelContractId)
+      << "\",\"structured_semantic_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId)
+      << "\",\"executor_semantic_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId)
+      << "\",\"actor_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3ActorIsolationSendabilityLoweringLaneContract)
+      << "\",\"task_runtime_lane_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3TaskRuntimeInteropCancellationLoweringLaneContract)
+      << "\",\"concurrency_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract)
+      << "\",\"task_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringTaskModel)
+      << "\",\"executor_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringExecutorModel)
+      << "\",\"concurrency_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringConcurrencyModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part7TaskRuntimeLoweringDeferredModel)
+      << "\",\"actor_replay_key\":\"" << EscapeJsonString(actor_replay_key)
+      << "\",\"task_runtime_replay_key\":\""
+      << EscapeJsonString(task_replay_key)
+      << "\",\"concurrency_replay_key\":\""
+      << EscapeJsonString(race_replay_key)
+      << "\",\"task_creation_sites\":" << semantic_summary.task_creation_sites
+      << ",\"task_group_scope_sites\":"
+      << semantic_summary.task_group_scope_sites
+      << ",\"task_group_add_task_sites\":"
+      << semantic_summary.task_group_add_task_sites
+      << ",\"task_group_wait_next_sites\":"
+      << semantic_summary.task_group_wait_next_sites
+      << ",\"task_group_cancel_all_sites\":"
+      << semantic_summary.task_group_cancel_all_sites
+      << ",\"detached_task_creation_sites\":"
+      << executor_summary.detached_task_creation_sites
+      << ",\"actor_isolation_sites\":" << actor_contract.actor_isolation_sites
+      << ",\"cross_actor_hop_sites\":"
+      << actor_contract.cross_actor_hop_sites
+      << ",\"sendability_check_sites\":"
+      << actor_contract.sendability_check_sites
+      << ",\"task_runtime_sites\":" << task_contract.task_runtime_sites
+      << ",\"task_runtime_interop_sites\":"
+      << task_contract.task_runtime_interop_sites
+      << ",\"cancellation_probe_sites\":"
+      << task_contract.cancellation_probe_sites
+      << ",\"cancellation_handler_sites\":"
+      << task_contract.cancellation_handler_sites
+      << ",\"runtime_resume_sites\":"
+      << task_contract.runtime_resume_sites
+      << ",\"runtime_cancel_sites\":" << task_contract.runtime_cancel_sites
+      << ",\"task_runtime_normalized_sites\":"
+      << task_contract.normalized_sites
+      << ",\"task_runtime_guard_blocked_sites\":"
+      << task_contract.guard_blocked_sites
+      << ",\"concurrency_replay_sites\":"
+      << race_contract.concurrency_replay_sites
+      << ",\"replay_proof_sites\":" << race_contract.replay_proof_sites
+      << ",\"race_guard_sites\":" << race_contract.race_guard_sites
+      << ",\"task_handoff_sites\":" << race_contract.task_handoff_sites
+      << ",\"deterministic_schedule_sites\":"
+      << race_contract.deterministic_schedule_sites
+      << ",\"concurrency_guard_blocked_sites\":"
+      << race_contract.guard_blocked_sites
+      << ",\"deterministic_handoff\":"
+      << (deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (deterministic_handoff ? "true" : "false")
+      << "}";
   return out.str();
 }
 
@@ -11045,6 +11267,50 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part7_await_lowering_suspension_state_lowering_replay_key =
       Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
           part7_await_lowering_suspension_state_lowering_contract);
+  const Objc3ActorIsolationSendabilityLoweringContract
+      part7_actor_isolation_sendability_lowering_contract =
+          BuildPart7ActorIsolationSendabilityLoweringContract(
+              part7_executor_hop_affinity_compatibility_summary);
+  if (!IsValidObjc3ActorIsolationSendabilityLoweringContract(
+          part7_actor_isolation_sendability_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid actor isolation sendability lowering contract");
+  }
+  const std::string part7_actor_isolation_sendability_lowering_replay_key =
+      Objc3ActorIsolationSendabilityLoweringReplayKey(
+          part7_actor_isolation_sendability_lowering_contract);
+  const Objc3TaskRuntimeInteropCancellationLoweringContract
+      part7_task_runtime_interop_cancellation_lowering_contract =
+          BuildPart7TaskRuntimeInteropCancellationLoweringContract(
+              part7_task_executor_cancellation_semantic_model_summary,
+              part7_structured_task_cancellation_semantic_summary,
+              part7_executor_hop_affinity_compatibility_summary);
+  if (!IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
+          part7_task_runtime_interop_cancellation_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid task runtime interop cancellation lowering contract");
+  }
+  const std::string part7_task_runtime_interop_cancellation_lowering_replay_key =
+      Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
+          part7_task_runtime_interop_cancellation_lowering_contract);
+  const Objc3ConcurrencyReplayRaceGuardLoweringContract
+      part7_concurrency_replay_race_guard_lowering_contract =
+          BuildPart7ConcurrencyReplayRaceGuardLoweringContract(
+              part7_task_executor_cancellation_semantic_model_summary,
+              part7_structured_task_cancellation_semantic_summary,
+              part7_executor_hop_affinity_compatibility_summary,
+              part7_actor_isolation_sendability_lowering_contract);
+  if (!IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
+          part7_concurrency_replay_race_guard_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid concurrency replay race guard lowering contract");
+  }
+  const std::string part7_concurrency_replay_race_guard_lowering_replay_key =
+      Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
+          part7_concurrency_replay_race_guard_lowering_contract);
   const Objc3Part6TryDoCatchSemanticSummary
       &part6_try_do_catch_semantic_summary =
           pipeline_result.part6_try_do_catch_semantic_summary;
@@ -15365,6 +15631,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,
                   part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_task_runtime_lowering_contract\":"
+           << BuildPart7TaskRuntimeLoweringContractJson(
+                  part7_task_executor_cancellation_semantic_model_summary,
+                  part7_structured_task_cancellation_semantic_summary,
+                  part7_executor_hop_affinity_compatibility_summary,
+                  part7_actor_isolation_sendability_lowering_contract,
+                  part7_actor_isolation_sendability_lowering_replay_key,
+                  part7_task_runtime_interop_cancellation_lowering_contract,
+                  part7_task_runtime_interop_cancellation_lowering_replay_key,
+                  part7_concurrency_replay_race_guard_lowering_contract,
+                  part7_concurrency_replay_race_guard_lowering_replay_key)
            << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
            << BuildPart7AsyncDirectCallLoweringJson(
                   part7_async_source_closure_summary,
@@ -16652,6 +16929,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,
                   part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_task_runtime_lowering_contract\":"
+           << BuildPart7TaskRuntimeLoweringContractJson(
+                  part7_task_executor_cancellation_semantic_model_summary,
+                  part7_structured_task_cancellation_semantic_summary,
+                  part7_executor_hop_affinity_compatibility_summary,
+                  part7_actor_isolation_sendability_lowering_contract,
+                  part7_actor_isolation_sendability_lowering_replay_key,
+                  part7_task_runtime_interop_cancellation_lowering_contract,
+                  part7_task_runtime_interop_cancellation_lowering_replay_key,
+                  part7_concurrency_replay_race_guard_lowering_contract,
+                  part7_concurrency_replay_race_guard_lowering_replay_key)
            << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
            << BuildPart7AsyncDirectCallLoweringJson(
                   part7_async_source_closure_summary,
@@ -17518,6 +17806,107 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .deterministic_await_lowering_suspension_state_lowering_handoff =
       part7_await_lowering_suspension_state_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_actor_isolation_sendability_replay_key =
+      part7_actor_isolation_sendability_lowering_replay_key;
+  ir_frontend_metadata.actor_isolation_sendability_lowering_sites =
+      part7_actor_isolation_sendability_lowering_contract.actor_isolation_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_sendability_check_sites =
+      part7_actor_isolation_sendability_lowering_contract
+          .sendability_check_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_cross_actor_hop_sites =
+      part7_actor_isolation_sendability_lowering_contract.cross_actor_hop_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_non_sendable_capture_sites =
+      part7_actor_isolation_sendability_lowering_contract
+          .non_sendable_capture_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_sendable_transfer_sites =
+      part7_actor_isolation_sendability_lowering_contract
+          .sendable_transfer_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_isolation_boundary_sites =
+      part7_actor_isolation_sendability_lowering_contract
+          .isolation_boundary_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_guard_blocked_sites =
+      part7_actor_isolation_sendability_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata
+      .actor_isolation_sendability_lowering_contract_violation_sites =
+      part7_actor_isolation_sendability_lowering_contract
+          .contract_violation_sites;
+  ir_frontend_metadata.deterministic_actor_isolation_sendability_lowering_handoff =
+      part7_actor_isolation_sendability_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_task_runtime_interop_cancellation_replay_key =
+      part7_task_runtime_interop_cancellation_lowering_replay_key;
+  ir_frontend_metadata.task_runtime_interop_cancellation_lowering_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .task_runtime_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_runtime_interop_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .task_runtime_interop_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_cancellation_probe_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .cancellation_probe_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_cancellation_handler_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .cancellation_handler_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_runtime_resume_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .runtime_resume_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_runtime_cancel_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .runtime_cancel_sites;
+  ir_frontend_metadata.task_runtime_interop_cancellation_lowering_normalized_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .normalized_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_guard_blocked_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .guard_blocked_sites;
+  ir_frontend_metadata
+      .task_runtime_interop_cancellation_lowering_contract_violation_sites =
+      part7_task_runtime_interop_cancellation_lowering_contract
+          .contract_violation_sites;
+  ir_frontend_metadata
+      .deterministic_task_runtime_interop_cancellation_lowering_handoff =
+      part7_task_runtime_interop_cancellation_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_concurrency_replay_race_guard_replay_key =
+      part7_concurrency_replay_race_guard_lowering_replay_key;
+  ir_frontend_metadata.concurrency_replay_race_guard_lowering_sites =
+      part7_concurrency_replay_race_guard_lowering_contract
+          .concurrency_replay_sites;
+  ir_frontend_metadata
+      .concurrency_replay_race_guard_lowering_replay_proof_sites =
+      part7_concurrency_replay_race_guard_lowering_contract
+          .replay_proof_sites;
+  ir_frontend_metadata.concurrency_replay_race_guard_lowering_race_guard_sites =
+      part7_concurrency_replay_race_guard_lowering_contract.race_guard_sites;
+  ir_frontend_metadata.concurrency_replay_race_guard_lowering_task_handoff_sites =
+      part7_concurrency_replay_race_guard_lowering_contract.task_handoff_sites;
+  ir_frontend_metadata
+      .concurrency_replay_race_guard_lowering_actor_isolation_sites =
+      part7_concurrency_replay_race_guard_lowering_contract
+          .actor_isolation_sites;
+  ir_frontend_metadata
+      .concurrency_replay_race_guard_lowering_deterministic_schedule_sites =
+      part7_concurrency_replay_race_guard_lowering_contract
+          .deterministic_schedule_sites;
+  ir_frontend_metadata
+      .concurrency_replay_race_guard_lowering_guard_blocked_sites =
+      part7_concurrency_replay_race_guard_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata
+      .concurrency_replay_race_guard_lowering_contract_violation_sites =
+      part7_concurrency_replay_race_guard_lowering_contract
+          .contract_violation_sites;
+  ir_frontend_metadata.deterministic_concurrency_replay_race_guard_lowering_handoff =
+      part7_concurrency_replay_race_guard_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_ownership_qualifier_replay_key =
       ownership_qualifier_lowering_replay_key;
   ir_frontend_metadata.ownership_qualifier_lowering_ownership_qualifier_sites =

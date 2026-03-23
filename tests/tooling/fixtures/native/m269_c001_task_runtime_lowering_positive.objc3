@@ -1,0 +1,46 @@
+module M269C001;
+
+extern fn task_spawn_child() -> i32;
+extern fn with_task_group_scope() -> i32;
+extern fn task_group_add_task() -> i32;
+extern fn task_group_wait_next() -> i32;
+extern fn task_group_cancel_all() -> i32;
+extern fn task_runtime_cancelled_value() -> i32;
+extern fn task_runtime_on_cancel() -> i32;
+extern fn detached_task_create() -> i32;
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn task_group_entry() -> i32 __attribute__((objc_executor(global))) {
+  task_spawn_child();
+  with_task_group_scope();
+  task_group_add_task();
+  if (task_runtime_cancelled_value()) {
+    return task_group_cancel_all();
+  }
+  return await task_group_wait_next();
+}
+
+async fn detached_task_entry() -> i32 __attribute__((objc_executor(named("com.example.group")))) {
+  detached_task_create();
+  if (task_runtime_cancelled_value()) {
+    return task_runtime_on_cancel();
+  }
+  return 7;
+}
+
+@interface Loader
+- (i32)loadValue async __attribute__((objc_executor(main)));
+@end
+
+@implementation Loader
+- (i32)loadValue async __attribute__((objc_executor(main))) {
+  return await fetchValue();
+}
+@end
+
+fn main() -> i32 {
+  return task_group_entry();
+}

@@ -763,6 +763,19 @@ M269-B003 executor-hop/affinity compatibility note:
 - detached task creation under `objc_executor(main)` fails closed with
   `O3S232`
 
+M269-C001 task-runtime lowering note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract`
+- this packet consumes the already-landed `M269-B001`, `M269-B002`, and
+  `M269-B003` semantic packets and lowers them into explicit replay-stable
+  actor-isolation, task-runtime-interop, and concurrency-replay contracts
+- emitted IR now carries replay keys and lowering profiles for executor-hop
+  boundaries, task creation, task-group artifacts, cancellation polls, and
+  scheduler-visible replay handoff counts
+- native task spawn/hop/cancel runtime entrypoints and task-group ABI
+  completion remain later `M269` lane-C work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

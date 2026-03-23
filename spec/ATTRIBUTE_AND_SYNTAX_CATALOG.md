@@ -612,6 +612,19 @@ Current implementation status (`M269-B003`):
 - detached task creation under `objc_executor(main)` fails closed with
   diagnostic `O3S232`
 
+Current implementation status (`M269-C001`):
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract`
+- this lowering packet consumes the existing `M269-B001`, `M269-B002`, and
+  `M269-B003` semantic packets and lowers them into explicit replay-stable lane
+  contracts for actor isolation, task runtime interop, and concurrency replay
+- emitted IR now carries replay keys and frontend lowering profiles for task
+  creation, task-group artifacts, executor-hop boundaries, cancellation polls,
+  and scheduler-visible replay handoff points
+- native task spawn, executor hop, cancellation runtime entrypoints, and
+  task-group ABI completion remain later `M269` issues
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes
