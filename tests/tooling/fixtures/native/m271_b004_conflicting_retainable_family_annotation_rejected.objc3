@@ -1,0 +1,5 @@
+module m271b004bad3;
+
+extern fn conflictingFamily() -> id
+    __attribute__((objc_family_retain(CoreThing), objc_family_release(CoreThing)));
+

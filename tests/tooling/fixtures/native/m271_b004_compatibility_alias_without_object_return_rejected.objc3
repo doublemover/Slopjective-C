@@ -1,0 +1,5 @@
+module m271b004bad4;
+
+extern fn aliasWithoutObjectReturn() -> i32
+    __attribute__((cf_returns_retained));
+

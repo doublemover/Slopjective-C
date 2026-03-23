@@ -2,7 +2,7 @@ module m271b002bad3;
 
 fn invalidDuplicateMove() -> i32 {
   @cleanup(ReleaseTemp) let temp = 1;
-  let first = ^[move temp] (i32 x) { return x; };
-  let second = ^[move temp] (i32 y) { return y; };
+  let first = ^[move temp] (i32 x) { return x + temp; };
+  let second = ^[move temp] (i32 y) { return y + temp; };
   return 0;
 }

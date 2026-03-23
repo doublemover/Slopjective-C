@@ -1,0 +1,9 @@
+module m271b004bad2;
+
+fn weakNonObjectCapture() -> i32 {
+  let scalar = 1;
+  let closure = ^[weak scalar] {
+    return 0;
+  };
+  return 0;
+}

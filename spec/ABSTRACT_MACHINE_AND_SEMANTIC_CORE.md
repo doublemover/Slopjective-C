@@ -897,6 +897,17 @@ M271-B003 borrowed-escape semantic note:
 - retainable-family legality, lowering, and runtime behavior remain later
   `M271` work
 
+M271-B004 capture-list/family legality note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
+- the packet consumes the already-landed `M271-B003` sema packet and completes
+  the remaining legality edge cases for explicit capture lists and
+  retainable-family compatibility aliases
+- live sema rejects duplicate explicit captures, weak/unowned explicit captures
+  on non-object bindings, conflicting retainable-family annotations, and
+  compatibility aliases without supporting object-return family surfaces
+- lowering and runtime behavior remain later `M271` work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes
@@ -1052,3 +1063,4 @@ M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
 - currently supported exhaustive forms are catch-all branches, 	rue plus alse, and .Ok(...) plus .Err(...).
+

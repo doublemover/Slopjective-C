@@ -800,6 +800,78 @@ inline bool IsReadyObjc3Part8BorrowedPointerEscapeAnalysisSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDependencyContractId =
+        "objc3c-part8-borrowed-pointer-escape-analysis/m271-b003-v1";
+inline constexpr const char
+    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionContractId =
+        "objc3c-part8-capture-list-retainable-family-legality/m271-b004-v1";
+inline constexpr const char
+    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion";
+inline constexpr const char
+    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionRule =
+        "explicit-capture-lists-now-fail-closed-on-duplicate-unused-and-non-object-ownership-modes-while-retainable-family-callables-fail-closed-on-conflicting-and-shape-invalid-annotations-before-lowering-and-runtime-integration";
+inline constexpr const char
+    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDeferredRule =
+        "lowering-runtime-interop-and-runnable-retainable-family-behavior-remain-deferred-to-later-m271-lanes";
+
+struct Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary {
+  std::string contract_id =
+      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionContractId;
+  std::string dependency_contract_id =
+      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDependencyContractId;
+  std::string surface_path =
+      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionSurfacePath;
+  std::string semantic_model =
+      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionRule;
+  std::string deferred_model =
+      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDeferredRule;
+  std::size_t explicit_capture_list_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t explicit_capture_ownership_mode_sites = 0;
+  std::size_t retainable_family_callable_sites = 0;
+  std::size_t retainable_family_operation_callable_sites = 0;
+  std::size_t retainable_family_alias_callable_sites = 0;
+  std::size_t illegal_duplicate_explicit_capture_sites = 0;
+  std::size_t illegal_non_object_capture_mode_sites = 0;
+  std::size_t illegal_unused_explicit_capture_sites = 0;
+  std::size_t illegal_conflicting_retainable_family_sites = 0;
+  std::size_t illegal_invalid_family_operation_shape_sites = 0;
+  std::size_t illegal_invalid_family_alias_shape_sites = 0;
+  bool dependency_required = false;
+  bool explicit_capture_duplicate_fail_closed = false;
+  bool explicit_capture_ownership_mode_enforced = false;
+  bool explicit_capture_inventory_enforced = false;
+  bool retainable_family_conflict_enforced = false;
+  bool retainable_family_operation_shape_enforced = false;
+  bool retainable_family_alias_shape_enforced = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool
+IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
+    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+        &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.explicit_capture_duplicate_fail_closed &&
+         summary.explicit_capture_ownership_mode_enforced &&
+         summary.explicit_capture_inventory_enforced &&
+         summary.retainable_family_conflict_enforced &&
+         summary.retainable_family_operation_shape_enforced &&
+         summary.retainable_family_alias_shape_enforced &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

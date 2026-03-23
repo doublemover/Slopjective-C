@@ -321,6 +321,12 @@ M271-B003 semantic note:
   explicitly marked `borrowed`
 - live sema rejects unproven borrowed call escapes and invalid borrowed-return
   contracts
+
+M271-B004 semantic note:
+- `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
+- duplicate explicit captures, weak/unowned explicit captures on non-object
+  bindings, conflicting retainable-family annotations, and compatibility
+  aliases without supporting object-return family surfaces now fail closed
 ```
 
 This attribute may be applied to:
@@ -1069,3 +1075,4 @@ Current implementation status (`M267-E001`):
   Part 6 slice
 - preserves the same published manifest/replay/link-plan evidence before the
   `M267-E002` closeout matrix
+

@@ -5,6 +5,11 @@ fn completeSurface(value: id) -> i32 {
   @resource(CloseFd, invalid: -1) let fd = 3;
   __attribute__((cleanup(ClearScratch))) let scratch = 7;
   __attribute__((objc_resource(close=ClosePipe, invalid=0))) let pipe = 9;
-  let block = ^[scratch, weak value, unowned fd, move temp] (i32 x) { return x + pipe; };
+  let peer = value;
+  let block = ^[scratch, weak value, unowned peer, move temp] (i32 x) {
+    let weakRef = value;
+    let peerRef = peer;
+    return x + pipe + scratch + temp;
+  };
   return 0;
 }

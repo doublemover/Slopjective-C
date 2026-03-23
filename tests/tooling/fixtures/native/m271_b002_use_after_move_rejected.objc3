@@ -2,6 +2,6 @@ module m271b002bad2;
 
 fn invalidUseAfterMove() -> i32 {
   @cleanup(ReleaseTemp) let temp = 1;
-  let block = ^[move temp] (i32 x) { return x; };
+  let block = ^[move temp] (i32 x) { return x + temp; };
   return temp;
 }

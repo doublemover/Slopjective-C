@@ -1,0 +1,27 @@
+module m271b004;
+
+extern fn ConsumeBorrowed(bytes: borrowed id *) -> void;
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), os_returns_not_retained));
+extern fn NSMakeThing() -> id
+    __attribute__((ns_returns_retained));
+
+fn captureAndFamilyOk(owner: id, bytes: borrowed id *) -> i32 {
+  let temp = 1;
+  let peer = owner;
+  let closure = ^[temp, weak owner, unowned peer] {
+    let t = temp;
+    let strongRef = owner;
+    let borrowedRef = peer;
+  };
+  ConsumeBorrowed(bytes);
+  let retained = CFRetain(owner);
+  CFRelease(retained);
+  let autoreleased = CFAutorelease(owner);
+  let nsThing = NSMakeThing();
+  return 0;
+}

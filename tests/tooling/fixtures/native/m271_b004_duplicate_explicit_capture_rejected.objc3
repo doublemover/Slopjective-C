@@ -1,0 +1,10 @@
+module m271b004bad1;
+
+fn duplicateCapture() -> i32 {
+  let value = 1;
+  let closure = ^[value, value] {
+    let copy = value;
+    return 0;
+  };
+  return 0;
+}

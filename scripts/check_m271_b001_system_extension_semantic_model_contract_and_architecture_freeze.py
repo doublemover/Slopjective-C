@@ -257,7 +257,7 @@ def main(argv: Sequence[str]) -> int:
             SnippetCheck("M271-B001-FIX-02", "__attribute__((objc_returns_borrowed(owner_index=0)))"),
             SnippetCheck("M271-B001-FIX-03", "__attribute__((objc_family_retain(CoreThing), cf_returns_retained))"),
             SnippetCheck("M271-B001-FIX-04", "@cleanup(ReleaseTemp) let temp = 1;"),
-            SnippetCheck("M271-B001-FIX-05", "^[scratch, weak value, unowned fd, move temp]"),
+            SnippetCheck("M271-B001-FIX-05", "^[scratch, weak value, unowned peer, move temp]"),
         ],
     }
 

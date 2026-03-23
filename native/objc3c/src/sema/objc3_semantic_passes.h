@@ -75,6 +75,11 @@ BuildPart8BorrowedPointerEscapeAnalysisSummary(
     const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
+    const Objc3Program &program,
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7StructuredTaskCancellationSemanticSummary
 BuildPart7StructuredTaskCancellationSemanticSummary(
     const Objc3Part7TaskExecutorCancellationSemanticModelSummary

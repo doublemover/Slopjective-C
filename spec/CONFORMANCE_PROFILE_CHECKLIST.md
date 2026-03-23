@@ -238,6 +238,14 @@ M271-B003 implementation note:
   `objc_returns_borrowed(owner_index=...)` contract before later `M271`
   retainable-family, lowering, and runtime work
 
+M271-B004 implementation note:
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
+- live sema now fails closed on duplicate explicit captures, weak/unowned
+  explicit captures on non-object bindings, conflicting retainable-family
+  annotations, and compatibility aliases without a supporting object return
+  before later `M271` lowering and runtime work
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at
@@ -619,3 +627,4 @@ reporting to imply runnable support.
 Block literals remain part of the broader unsupported feature inventory, but the
 current parser path is still gated before the B002 semantic-rejection proof
 surface becomes authoritative for them.
+

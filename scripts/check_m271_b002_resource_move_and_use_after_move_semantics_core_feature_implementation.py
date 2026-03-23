@@ -179,10 +179,17 @@ def run_negative_case(case_index: int, fixture: Path, label: str, code: str, phr
     if summary_path.exists():
         payload = load_json(summary_path)
         last_error = payload.get("last_error", "")
+        diagnostics_path = payload.get("paths", {}).get("diagnostics", "")
+        diagnostics_blob = last_error
+        if diagnostics_path:
+            diagnostics_file = ROOT / diagnostics_path
+            if diagnostics_file.exists():
+                diagnostics_blob += "\n" + diagnostics_file.read_text(encoding="utf-8")
+                details["diagnostics"] = display_path(diagnostics_file)
         total += 1
-        passed += require(code in last_error, display_path(summary_path), f"M271-B002-DYN-{case_index + 2:02d}", f"missing {code}", failures)
+        passed += require(code in diagnostics_blob, display_path(summary_path), f"M271-B002-DYN-{case_index + 2:02d}", f"missing {code}", failures)
         total += 1
-        passed += require(phrase in last_error, display_path(summary_path), f"M271-B002-DYN-{case_index + 3:02d}", f"missing wording: {phrase}", failures)
+        passed += require(phrase in diagnostics_blob, display_path(summary_path), f"M271-B002-DYN-{case_index + 3:02d}", f"missing wording: {phrase}", failures)
         details["last_error"] = last_error
     return total, passed, details
 
@@ -321,7 +328,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         POSITIVE_FIXTURE: [
             SnippetCheck("M271-B002-FIX-01", "module m271b002;"),
             SnippetCheck("M271-B002-FIX-02", "@cleanup(ReleaseTemp) let temp = 1;"),
-            SnippetCheck("M271-B002-FIX-03", "^[move temp, unowned fd, weak value]"),
+            SnippetCheck("M271-B002-FIX-03", "^[move temp, unowned peer, weak value]"),
         ],
     }
 

@@ -9,6 +9,7 @@
 #include <map>
 #include <optional>
 #include <sstream>
+#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -372,6 +373,10 @@ static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
 static bool IsNullableObjCReferenceSemanticType(const SemanticTypeInfo &info) {
   return IsObjCReferenceSemanticType(info) && info.has_nullability_suffix &&
          !info.is_refined_nonnull_reference;
+}
+
+static bool IsVoidSemanticType(const SemanticTypeInfo &info) {
+  return !info.is_vector && info.type == ValueType::Void;
 }
 
 static SemanticTypeInfo MakeNonnullRefinedSemanticType(
@@ -2980,6 +2985,133 @@ static Part8BorrowedReturnContract BuildPart8BorrowedReturnContract(
   return contract;
 }
 
+static bool IsRetainableFamilyCanonicalOperationAttribute(
+    const std::string &attribute_name) {
+  return attribute_name == "objc_family_retain" ||
+         attribute_name == "objc_family_release" ||
+         attribute_name == "objc_family_autorelease";
+}
+
+static bool IsRetainableFamilyReturnAliasAttribute(
+    const std::string &attribute_name) {
+  return attribute_name == "os_returns_retained" ||
+         attribute_name == "os_returns_not_retained" ||
+         attribute_name == "cf_returns_retained" ||
+         attribute_name == "cf_returns_not_retained" ||
+         attribute_name == "ns_returns_retained" ||
+         attribute_name == "ns_returns_not_retained";
+}
+
+static bool IsRetainableFamilyConsumedAliasAttribute(
+    const std::string &attribute_name) {
+  return attribute_name == "os_consumed" ||
+         attribute_name == "cf_consumed" ||
+         attribute_name == "ns_consumed";
+}
+
+template <typename TCallableDecl>
+static bool HasObjCReferenceParameter(const TCallableDecl &decl) {
+  return std::any_of(
+      decl.params.begin(), decl.params.end(), [](const auto &param) {
+        return IsObjCReferenceSemanticType(MakeSemanticTypeFromParam(param));
+      });
+}
+
+template <typename TCallableDecl>
+static bool ReturnsObjCReference(const TCallableDecl &decl) {
+  if constexpr (std::is_same_v<TCallableDecl, FunctionDecl>) {
+    return IsObjCReferenceSemanticType(MakeSemanticTypeFromFunctionReturn(decl));
+  } else {
+    return IsObjCReferenceSemanticType(MakeSemanticTypeFromMethodReturn(decl));
+  }
+}
+
+template <typename TCallableDecl>
+static bool ReturnsVoid(const TCallableDecl &decl) {
+  if constexpr (std::is_same_v<TCallableDecl, FunctionDecl>) {
+    return IsVoidSemanticType(MakeSemanticTypeFromFunctionReturn(decl));
+  } else {
+    return IsVoidSemanticType(MakeSemanticTypeFromMethodReturn(decl));
+  }
+}
+
+template <typename TCallableDecl>
+static void DiagnosePart8RetainableFamilyCallableLegality(
+    const TCallableDecl &decl, const std::string &callable_label,
+    std::vector<std::string> &diagnostics) {
+  std::size_t canonical_operation_count = 0;
+  bool has_returns_retained_alias = false;
+  bool has_returns_not_retained_alias = false;
+  bool has_consumed_alias = false;
+  bool has_retain = false;
+  bool has_release = false;
+  bool has_autorelease = false;
+
+  for (const auto &attribute_name :
+       decl.retainable_c_family_callable_attributes) {
+    if (IsRetainableFamilyCanonicalOperationAttribute(attribute_name)) {
+      ++canonical_operation_count;
+    }
+    if (attribute_name == "objc_family_retain") {
+      has_retain = true;
+    } else if (attribute_name == "objc_family_release") {
+      has_release = true;
+    } else if (attribute_name == "objc_family_autorelease") {
+      has_autorelease = true;
+    } else if (attribute_name == "os_returns_retained" ||
+               attribute_name == "cf_returns_retained" ||
+               attribute_name == "ns_returns_retained") {
+      has_returns_retained_alias = true;
+    } else if (attribute_name == "os_returns_not_retained" ||
+               attribute_name == "cf_returns_not_retained" ||
+               attribute_name == "ns_returns_not_retained") {
+      has_returns_not_retained_alias = true;
+    } else if (IsRetainableFamilyConsumedAliasAttribute(attribute_name)) {
+      has_consumed_alias = true;
+    }
+  }
+
+  if (canonical_operation_count > 1u ||
+      (has_returns_retained_alias && has_returns_not_retained_alias)) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S304",
+        "retainable-family legality failed: conflicting retainable-family annotations on " +
+            callable_label));
+  }
+
+  const bool returns_objc_reference = ReturnsObjCReference(decl);
+  const bool has_objc_reference_parameter = HasObjCReferenceParameter(decl);
+  if ((has_retain || has_autorelease) &&
+      (!returns_objc_reference || !has_objc_reference_parameter)) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S305",
+        "retainable-family legality failed: " + callable_label +
+            " must return an Objective-C reference and accept an Objective-C reference parameter for family retain/autorelease annotations"));
+  } else if (has_release &&
+             (!ReturnsVoid(decl) || !has_objc_reference_parameter)) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S305",
+        "retainable-family legality failed: " + callable_label +
+            " must return void and accept an Objective-C reference parameter for family release annotations"));
+  }
+
+  if ((has_returns_retained_alias || has_returns_not_retained_alias) &&
+      !returns_objc_reference) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S306",
+        "retainable-family legality failed: returns-retained compatibility aliases on " +
+            callable_label +
+            " require an Objective-C reference return type"));
+  }
+  if (has_consumed_alias && !has_objc_reference_parameter) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S306",
+        "retainable-family legality failed: consumed compatibility aliases on " +
+            callable_label +
+            " require at least one Objective-C reference parameter"));
+  }
+}
+
 static bool IsPart8BorrowedExpr(
     const Expr *expr, const std::vector<Part8BorrowedScope> &scopes,
     const std::unordered_map<std::string, Part8BorrowedCallableContract>
@@ -3349,6 +3481,15 @@ struct Part8BorrowedEscapeSiteProfile {
   std::size_t borrowed_return_callable_sites = 0;
 };
 
+struct Part8CaptureListRetainableFamilySiteProfile {
+  std::size_t explicit_capture_list_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t explicit_capture_ownership_mode_sites = 0;
+  std::size_t retainable_family_callable_sites = 0;
+  std::size_t retainable_family_operation_callable_sites = 0;
+  std::size_t retainable_family_alias_callable_sites = 0;
+};
+
 static void CollectPart8BorrowedEscapeExprSites(
     const Expr *expr, const std::unordered_map<std::string, Part8BorrowedCallableContract> &callable_contracts,
     Part8BorrowedEscapeSiteProfile &profile) {
@@ -3481,6 +3622,171 @@ static void CollectPart8BorrowedEscapeStmtSites(
     case Stmt::Kind::Continue:
     case Stmt::Kind::Empty:
       return;
+  }
+}
+
+static void CollectPart8CaptureListRetainableFamilyExprSites(
+    const Expr *expr, Part8CaptureListRetainableFamilySiteProfile &profile);
+
+static void CollectPart8CaptureListRetainableFamilyStmtSites(
+    const Stmt *stmt, Part8CaptureListRetainableFamilySiteProfile &profile) {
+  if (stmt == nullptr) {
+    return;
+  }
+  switch (stmt->kind) {
+    case Stmt::Kind::Let:
+      if (stmt->let_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->let_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Assign:
+      if (stmt->assign_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->assign_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Return:
+      if (stmt->return_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->return_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::If:
+      if (stmt->if_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->if_stmt->condition.get(), profile);
+        for (const auto &body_stmt : stmt->if_stmt->then_body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+        for (const auto &body_stmt : stmt->if_stmt->else_body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+      }
+      return;
+    case Stmt::Kind::DoWhile:
+      if (stmt->do_while_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->do_while_stmt->body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->do_while_stmt->condition.get(), profile);
+      }
+      return;
+    case Stmt::Kind::For:
+      if (stmt->for_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->for_stmt->init.value.get(), profile);
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->for_stmt->condition.get(), profile);
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->for_stmt->step.value.get(), profile);
+        for (const auto &body_stmt : stmt->for_stmt->body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Switch:
+      if (stmt->switch_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->switch_stmt->condition.get(), profile);
+        for (const auto &switch_case : stmt->switch_stmt->cases) {
+          for (const auto &body_stmt : switch_case.body) {
+            CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                             profile);
+          }
+        }
+      }
+      return;
+    case Stmt::Kind::While:
+      if (stmt->while_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->while_stmt->condition.get(), profile);
+        for (const auto &body_stmt : stmt->while_stmt->body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Block:
+    case Stmt::Kind::Defer:
+      if (stmt->block_stmt != nullptr) {
+        for (const auto &body_stmt : stmt->block_stmt->body) {
+          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+                                                           profile);
+        }
+      }
+      return;
+    case Stmt::Kind::Expr:
+      if (stmt->expr_stmt != nullptr) {
+        CollectPart8CaptureListRetainableFamilyExprSites(
+            stmt->expr_stmt->value.get(), profile);
+      }
+      return;
+    case Stmt::Kind::Break:
+    case Stmt::Kind::Continue:
+    case Stmt::Kind::Empty:
+      return;
+  }
+}
+
+static void CollectPart8CaptureListRetainableFamilyExprSites(
+    const Expr *expr, Part8CaptureListRetainableFamilySiteProfile &profile) {
+  if (expr == nullptr) {
+    return;
+  }
+  if (expr->kind == Expr::Kind::BlockLiteral) {
+    if (expr->block_has_explicit_capture_list) {
+      ++profile.explicit_capture_list_sites;
+      profile.explicit_capture_item_sites += expr->block_explicit_capture_count;
+      profile.explicit_capture_ownership_mode_sites +=
+          expr->block_explicit_capture_weak_count +
+          expr->block_explicit_capture_unowned_count;
+    }
+    for (const auto &stmt : expr->block_body) {
+      CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+    }
+    return;
+  }
+  CollectPart8CaptureListRetainableFamilyExprSites(expr->receiver.get(), profile);
+  CollectPart8CaptureListRetainableFamilyExprSites(expr->left.get(), profile);
+  CollectPart8CaptureListRetainableFamilyExprSites(expr->right.get(), profile);
+  CollectPart8CaptureListRetainableFamilyExprSites(expr->third.get(), profile);
+  for (const auto &arg : expr->args) {
+    CollectPart8CaptureListRetainableFamilyExprSites(arg.get(), profile);
+  }
+}
+
+template <typename TCallableDecl>
+static void CollectPart8RetainableFamilyCallableSites(
+    const TCallableDecl &decl,
+    Part8CaptureListRetainableFamilySiteProfile &profile) {
+  bool has_callable_attributes = false;
+  bool has_canonical_operation = false;
+  bool has_compatibility_alias = false;
+  for (const auto &attribute_name :
+       decl.retainable_c_family_callable_attributes) {
+    has_callable_attributes = true;
+    has_canonical_operation =
+        has_canonical_operation ||
+        IsRetainableFamilyCanonicalOperationAttribute(attribute_name);
+    has_compatibility_alias =
+        has_compatibility_alias ||
+        IsRetainableFamilyReturnAliasAttribute(attribute_name) ||
+        IsRetainableFamilyConsumedAliasAttribute(attribute_name);
+  }
+  if (has_callable_attributes) {
+    ++profile.retainable_family_callable_sites;
+  }
+  if (has_canonical_operation) {
+    ++profile.retainable_family_operation_callable_sites;
+  }
+  if (has_compatibility_alias) {
+    ++profile.retainable_family_alias_callable_sites;
   }
 }
 
@@ -5845,6 +6151,7 @@ static void ValidateBlockLiteralCaptureLegality(
   std::unordered_set<std::string> mutated_names(
       expr->block_mutated_capture_names_lexicographic.begin(),
       expr->block_mutated_capture_names_lexicographic.end());
+  std::unordered_set<std::string> explicit_capture_names;
   std::size_t owned_object_capture_count = 0;
   std::size_t weak_object_capture_count = 0;
   std::size_t unowned_object_capture_count = 0;
@@ -5866,6 +6173,47 @@ static void ValidateBlockLiteralCaptureLegality(
                    "O3S206",
                    "type mismatch: block byref capture '" + byref_name +
                        "' is not present in the mutated-capture inventory"));
+    }
+  }
+  for (const auto &item : expr->block_explicit_capture_items_source_order) {
+    if (!explicit_capture_names.insert(item.name).second) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S301",
+                   "capture-list legality failed: duplicate explicit capture '" +
+                       item.name + "'"));
+      continue;
+    }
+
+    SemanticTypeInfo resolved_type = MakeScalarSemanticType(ValueType::Unknown);
+    const bool resolved_capture =
+        ResolveBlockCaptureSemanticType(scopes, globals, item.name, resolved_type);
+    if (!resolved_capture) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S202",
+                   "undefined capture '" + item.name + "' in block literal"));
+      continue;
+    }
+    if (capture_names.count(item.name) == 0u) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S303",
+                   "capture-list legality failed: explicit capture '" +
+                       item.name + "' is not used by the block body"));
+    }
+    if ((item.mode == "weak" || item.mode == "unowned") &&
+        !IsObjCReferenceSemanticType(resolved_type)) {
+      diagnostics.push_back(
+          MakeDiag(expr->line,
+                   expr->column,
+                   "O3S302",
+                   "capture-list legality failed: explicit " + item.mode +
+                       " capture '" + item.name +
+                       "' requires an Objective-C reference type"));
     }
   }
   for (const auto &capture_name : expr->block_capture_names_lexicographic) {
@@ -9092,6 +9440,134 @@ BuildPart8BorrowedPointerEscapeAnalysisSummary(
       << ";illegal-sites=" << summary.illegal_unproven_call_escape_sites << ":"
       << summary.illegal_escaping_block_capture_sites << ":"
       << summary.illegal_borrowed_return_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
+    const Objc3Program &program,
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary summary;
+  Part8CaptureListRetainableFamilySiteProfile profile;
+
+  for (const auto &fn : program.functions) {
+    CollectPart8RetainableFamilyCallableSites(fn, profile);
+    for (const auto &stmt : fn.body) {
+      CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      CollectPart8RetainableFamilyCallableSites(method, profile);
+    }
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      CollectPart8RetainableFamilyCallableSites(method, profile);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      CollectPart8RetainableFamilyCallableSites(method, profile);
+      if (!method.has_body) {
+        continue;
+      }
+      for (const auto &stmt : method.body) {
+        CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+      }
+    }
+  }
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) { return entry.find(code) != std::string::npos; });
+  };
+
+  summary.explicit_capture_list_sites = profile.explicit_capture_list_sites;
+  summary.explicit_capture_item_sites = profile.explicit_capture_item_sites;
+  summary.explicit_capture_ownership_mode_sites =
+      profile.explicit_capture_ownership_mode_sites;
+  summary.retainable_family_callable_sites =
+      profile.retainable_family_callable_sites;
+  summary.retainable_family_operation_callable_sites =
+      profile.retainable_family_operation_callable_sites;
+  summary.retainable_family_alias_callable_sites =
+      profile.retainable_family_alias_callable_sites;
+  summary.illegal_duplicate_explicit_capture_sites =
+      count_diagnostic_code("O3S301");
+  summary.illegal_non_object_capture_mode_sites =
+      count_diagnostic_code("O3S302");
+  summary.illegal_unused_explicit_capture_sites =
+      count_diagnostic_code("O3S303");
+  summary.illegal_conflicting_retainable_family_sites =
+      count_diagnostic_code("O3S304");
+  summary.illegal_invalid_family_operation_shape_sites =
+      count_diagnostic_code("O3S305");
+  summary.illegal_invalid_family_alias_shape_sites =
+      count_diagnostic_code("O3S306");
+
+  const bool dependency_surface_present =
+      !dependency_summary.contract_id.empty() &&
+      !dependency_summary.surface_path.empty();
+  summary.dependency_required = true;
+  summary.explicit_capture_duplicate_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_duplicate_explicit_capture_sites <=
+          summary.explicit_capture_item_sites;
+  summary.explicit_capture_ownership_mode_enforced =
+      dependency_surface_present &&
+      summary.illegal_non_object_capture_mode_sites <=
+          summary.explicit_capture_ownership_mode_sites;
+  summary.explicit_capture_inventory_enforced =
+      dependency_surface_present &&
+      summary.illegal_unused_explicit_capture_sites <=
+          summary.explicit_capture_item_sites;
+  summary.retainable_family_conflict_enforced =
+      dependency_surface_present &&
+      summary.illegal_conflicting_retainable_family_sites <=
+          summary.retainable_family_callable_sites;
+  summary.retainable_family_operation_shape_enforced =
+      dependency_surface_present &&
+      summary.illegal_invalid_family_operation_shape_sites <=
+          summary.retainable_family_operation_callable_sites;
+  summary.retainable_family_alias_shape_enforced =
+      dependency_surface_present &&
+      summary.illegal_invalid_family_alias_shape_sites <=
+          summary.retainable_family_alias_callable_sites;
+  summary.lowering_runtime_deferred = true;
+  summary.deterministic =
+      dependency_surface_present &&
+      summary.explicit_capture_duplicate_fail_closed &&
+      summary.explicit_capture_ownership_mode_enforced &&
+      summary.explicit_capture_inventory_enforced &&
+      summary.retainable_family_conflict_enforced &&
+      summary.retainable_family_operation_shape_enforced &&
+      summary.retainable_family_alias_shape_enforced;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "capture-list and retainable-family legality must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";captures=" << summary.explicit_capture_list_sites << ":"
+      << summary.explicit_capture_item_sites << ":"
+      << summary.explicit_capture_ownership_mode_sites
+      << ";retainable-callables=" << summary.retainable_family_callable_sites
+      << ":" << summary.retainable_family_operation_callable_sites << ":"
+      << summary.retainable_family_alias_callable_sites
+      << ";illegal-sites=" << summary.illegal_duplicate_explicit_capture_sites
+      << ":" << summary.illegal_non_object_capture_mode_sites << ":"
+      << summary.illegal_unused_explicit_capture_sites << ":"
+      << summary.illegal_conflicting_retainable_family_sites << ":"
+      << summary.illegal_invalid_family_operation_shape_sites << ":"
+      << summary.illegal_invalid_family_alias_shape_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -22648,6 +23124,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   for (const auto &fn : ast.functions) {
     ValidateReturnTypeSuffixes(fn, diagnostics);
     ValidateParameterTypeSuffixes(fn, diagnostics);
+    DiagnosePart8RetainableFamilyCallableLegality(
+        fn, "function '" + fn.name + "'", diagnostics);
     if (fn.executor_affinity_declared && !fn.async_declared) {
       diagnostics.push_back(MakeDiag(
           fn.line, fn.column, "O3S224",
@@ -22710,8 +23188,33 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
   }
 
+  for (const auto &protocol_decl : ast.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      DiagnosePart8RetainableFamilyCallableLegality(
+          method,
+          "method '" + MethodSelectorName(method) + "' in protocol '" +
+              protocol_decl.name + "'",
+          diagnostics);
+    }
+  }
+
+  for (const auto &interface_decl : ast.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      DiagnosePart8RetainableFamilyCallableLegality(
+          method,
+          "method '" + MethodSelectorName(method) + "' in interface '" +
+              interface_decl.name + "'",
+          diagnostics);
+    }
+  }
+
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
+      DiagnosePart8RetainableFamilyCallableLegality(
+          method,
+          "method '" + MethodSelectorName(method) + "' in implementation '" +
+              implementation_decl.name + "'",
+          diagnostics);
       DiagnosePart7ActorMethodIsolationRules(
           method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
           method.line, method.column, diagnostics);

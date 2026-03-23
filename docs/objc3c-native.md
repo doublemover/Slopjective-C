@@ -4079,6 +4079,24 @@ Current implementation status:
   analysis path
 - retainable-family legality, lowering, and runtime behavior remain later
   `M271` work
+
+## M271 capture-list and retainable-family legality completion
+
+The semantic pipeline now publishes one deterministic Part 8 packet at
+`frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`.
+
+Current implementation status:
+
+- the packet consumes the already-landed `M271-B003` sema packet
+- the packet closes the remaining legality edge cases for explicit capture
+  lists and retainable-family compatibility aliases
+- live sema rejects:
+  - duplicate explicit captures
+  - weak/unowned explicit captures on non-object bindings
+  - conflicting retainable-family annotations
+  - compatibility aliases without supporting object-return family surfaces
+- lowering and runtime behavior remain later `M271` work
+
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
@@ -19332,3 +19350,4 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
+
