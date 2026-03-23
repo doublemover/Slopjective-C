@@ -6718,6 +6718,77 @@ BuildPart7AwaitSuspensionResumeSemanticSummary(
   return summary;
 }
 
+Objc3Part7AsyncDiagnosticsCompatibilitySummary
+BuildPart7AsyncDiagnosticsCompatibilitySummary(
+    const Objc3Part7AwaitSuspensionResumeSemanticSummary &dependency_summary,
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3Program &ast,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7AsyncDiagnosticsCompatibilitySummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [&](const std::string &diag) { return diag.find(code) != std::string::npos; }));
+  };
+
+  const auto count_async_function_prototypes = [&]() {
+    return static_cast<std::size_t>(std::count_if(
+        ast.functions.begin(), ast.functions.end(),
+        [](const FunctionDecl &fn) { return fn.async_declared && fn.is_prototype; }));
+  };
+
+  summary.async_callable_sites = dependency_summary.async_callable_sites;
+  summary.executor_affinity_sites = source_summary.executor_attribute_sites;
+  summary.illegal_non_async_executor_sites = count_diagnostic_code("O3S224");
+  summary.illegal_async_function_prototype_sites =
+      count_diagnostic_code("O3S225");
+  summary.illegal_async_throws_sites = count_diagnostic_code("O3S226");
+  summary.compatibility_diagnostic_sites =
+      summary.illegal_non_async_executor_sites +
+      summary.illegal_async_function_prototype_sites +
+      summary.illegal_async_throws_sites;
+  summary.supported_async_callable_sites =
+      summary.async_callable_sites >=
+              summary.illegal_async_function_prototype_sites +
+                  summary.illegal_async_throws_sites
+          ? summary.async_callable_sites -
+                (summary.illegal_async_function_prototype_sites +
+                 summary.illegal_async_throws_sites)
+          : 0u;
+  summary.dependency_required = true;
+  summary.executor_affinity_requires_async_enforced =
+      summary.illegal_non_async_executor_sites <=
+      source_summary.executor_attribute_sites;
+  summary.async_function_prototypes_fail_closed =
+      summary.illegal_async_function_prototype_sites ==
+      count_async_function_prototypes();
+  summary.async_throws_fail_closed =
+      summary.illegal_async_throws_sites <= summary.async_callable_sites;
+  summary.unsupported_topology_fail_closed =
+      dependency_summary.ready_for_lowering_and_runtime &&
+      summary.executor_affinity_requires_async_enforced &&
+      summary.async_function_prototypes_fail_closed &&
+      summary.async_throws_fail_closed;
+  summary.deterministic =
+      dependency_summary.deterministic &&
+      source_summary.deterministic_handoff &&
+      summary.unsupported_topology_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";async-callables=" << summary.async_callable_sites
+      << ";executor-sites=" << summary.executor_affinity_sites
+      << ";illegal-executor=" << summary.illegal_non_async_executor_sites
+      << ";illegal-prototypes=" << summary.illegal_async_function_prototype_sites
+      << ";illegal-throws=" << summary.illegal_async_throws_sites
+      << ";supported-async=" << summary.supported_async_callable_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
 namespace {
 
 struct Objc3Part6SemanticWalkContext {
@@ -19969,6 +20040,21 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   for (const auto &fn : ast.functions) {
     ValidateReturnTypeSuffixes(fn, diagnostics);
     ValidateParameterTypeSuffixes(fn, diagnostics);
+    if (fn.executor_affinity_declared && !fn.async_declared) {
+      diagnostics.push_back(MakeDiag(
+          fn.line, fn.column, "O3S224",
+          "async semantics failed: objc_executor requires an async function or method"));
+    }
+    if (fn.async_declared && fn.is_prototype) {
+      diagnostics.push_back(MakeDiag(
+          fn.line, fn.column, "O3S225",
+          "async semantics failed: async function prototypes remain unsupported until continuation lowering lands"));
+    }
+    if (fn.async_declared && fn.throws_declared) {
+      diagnostics.push_back(MakeDiag(
+          fn.line, fn.column, "O3S226",
+          "async semantics failed: async throws functions remain unsupported until async error propagation lands"));
+    }
 
     std::vector<SemanticScope> scopes;
     scopes.push_back({});
@@ -20001,6 +20087,16 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
+      if (method.executor_affinity_declared && !method.async_declared) {
+        diagnostics.push_back(MakeDiag(
+            method.line, method.column, "O3S224",
+            "async semantics failed: objc_executor requires an async function or method"));
+      }
+      if (method.async_declared && method.throws_declared) {
+        diagnostics.push_back(MakeDiag(
+            method.line, method.column, "O3S226",
+            "async semantics failed: async throws functions remain unsupported until async error propagation lands"));
+      }
       if (!method.has_body) {
         continue;
       }

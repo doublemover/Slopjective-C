@@ -620,6 +620,17 @@ M268-B002 semantic-enforcement note:
 - runnable async frame layout, suspension cleanup, and executor scheduling are
   still later `M268` work
 
+M268-B003 compatibility note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_async_diagnostics_and_compatibility_completion`
+- that packet freezes the current fail-closed async topology boundary around:
+  - non-async `objc_executor(...)`
+  - async function prototypes
+  - async throws functions
+- runnable async frame layout, async error propagation, and executor scheduling
+  remain later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

@@ -5347,6 +5347,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPart7AwaitSuspensionResumeSemanticSummary(
           result.part7_async_effect_suspension_semantic_model_summary,
           result.stage_diagnostics.semantic);
+  result.part7_async_diagnostics_compatibility_summary =
+      BuildPart7AsyncDiagnosticsCompatibilitySummary(
+          result.part7_await_suspension_resume_semantic_summary,
+          result.part7_async_source_closure_summary,
+          Objc3ParsedProgramAst(result.program),
+          result.stage_diagnostics.semantic);
   result.part6_try_do_catch_semantic_summary =
       BuildPart6TryDoCatchSemanticSummary(
           Objc3ParsedProgramAst(result.program),

@@ -1,0 +1,7 @@
+module AsyncPrototype;
+
+async fn fetch() -> i32;
+
+fn main() -> i32 {
+  return 0;
+}

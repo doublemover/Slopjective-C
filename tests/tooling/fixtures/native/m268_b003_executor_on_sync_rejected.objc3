@@ -1,0 +1,5 @@
+module ExecutorOnSync;
+
+fn main() -> i32 __attribute__((objc_executor(main))) {
+  return 0;
+}

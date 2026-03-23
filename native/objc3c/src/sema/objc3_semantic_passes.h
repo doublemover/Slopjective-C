@@ -33,6 +33,12 @@ Objc3Part7AwaitSuspensionResumeSemanticSummary
 BuildPart7AwaitSuspensionResumeSemanticSummary(
     const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part7AsyncDiagnosticsCompatibilitySummary
+BuildPart7AsyncDiagnosticsCompatibilitySummary(
+    const Objc3Part7AwaitSuspensionResumeSemanticSummary &dependency_summary,
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3Program &ast,
+    const std::vector<std::string> &diagnostics);
 Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
     const Objc3Program &program,
     const Objc3SemanticIntegrationSurface &surface,

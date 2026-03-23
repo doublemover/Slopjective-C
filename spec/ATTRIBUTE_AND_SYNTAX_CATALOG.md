@@ -542,6 +542,16 @@ Current implementation status (`M268-B002`):
 - non-async `await` sites fail closed with diagnostic `O3S223`
 - runnable async frame layout, resume lowering, suspension cleanup, and
   executor runtime behavior remain deferred to later `M268` issues
+
+Current implementation status (`M268-B003`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_async_diagnostics_and_compatibility_completion`
+- non-async `objc_executor(...)` sites fail closed with diagnostic `O3S224`
+- async function prototypes fail closed with diagnostic `O3S225`
+- async throws functions fail closed with diagnostic `O3S226`
+- runnable async frame layout, async error propagation, and executor runtime
+  behavior remain deferred to later `M268` issues
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

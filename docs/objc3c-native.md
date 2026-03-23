@@ -3426,6 +3426,17 @@ publishes a dedicated packet at
   sites, illegal await sites, and await sites admitted inside async callables
 - this issue still does not claim runnable async frame layout, resume lowering,
   suspension cleanup, or executor runtime execution
+
+## M268 async diagnostics and compatibility completion
+
+The semantic pipeline now publishes a dedicated compatibility packet at
+`frontend.pipeline.semantic_surface.objc_part7_async_diagnostics_and_compatibility_completion`.
+
+- `objc_executor(...)` now fails closed on non-async functions and methods
+- async function prototypes now fail closed until continuation lowering lands
+- async throws functions now fail closed until async error propagation lands
+- this issue still does not claim runnable async frame layout, suspension
+  cleanup, or executor runtime execution
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
