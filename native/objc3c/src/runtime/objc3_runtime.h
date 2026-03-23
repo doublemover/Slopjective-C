@@ -82,6 +82,10 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // error-object storage, bridge normalization, and catch-dispatch helpers also
 // remain private bootstrap-internal runtime ABI. No public error helper or
 // foreign-exception header widening is published here.
+// M268-D001 continuation/runtime-helper anchor: the first Part 7 continuation
+// allocation, handoff, and resume helpers follow the same rule. They remain on
+// the bootstrap-internal private helper surface and do not widen this public
+// runtime header while async lowering is still in the non-suspending slice.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

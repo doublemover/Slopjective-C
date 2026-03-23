@@ -1518,6 +1518,36 @@ std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
   return out.str();
 }
 
+std::string Objc3Part7ContinuationRuntimeHelperSummary() {
+  std::ostringstream out;
+  // M268-D001 continuation/runtime-helper anchor: lane-D freezes the first
+  // real private Part 7 helper ABI. The helper cluster now allocates logical
+  // continuation handles and supports deterministic handoff/resume probes even
+  // though the current direct-call async lowering slice still does not consume
+  // those helpers for live suspension.
+  out << "contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
+      << ";source_contract="
+      << "objc3c-part7-continuation-abi-async-lowering-contract/m268-c001-v1"
+      << ";direct_call_contract="
+      << "objc3c-part7-async-direct-call-lowering/m268-c002-v1"
+      << ";cleanup_contract="
+      << "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1"
+      << ";source_model=" << kObjc3Part7ContinuationRuntimeHelperSourceModel
+      << ";abi_model=" << kObjc3Part7ContinuationRuntimeHelperAbiModel
+      << ";execution_model="
+      << kObjc3Part7ContinuationRuntimeHelperExecutionModel
+      << ";allocate_symbol="
+      << kObjc3RuntimeAllocateAsyncContinuationI32Symbol
+      << ";handoff_symbol="
+      << kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol
+      << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
+      << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part7ContinuationRuntimeHelperFailClosedModel
+      << ";next_issue=M268-D002";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

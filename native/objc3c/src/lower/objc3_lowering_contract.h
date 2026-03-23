@@ -637,6 +637,13 @@ inline constexpr const char *kObjc3RuntimeBridgeNSErrorErrorI32Symbol =
     "objc3_runtime_bridge_nserror_error_i32";
 inline constexpr const char *kObjc3RuntimeCatchMatchesErrorI32Symbol =
     "objc3_runtime_catch_matches_error_i32";
+inline constexpr const char *kObjc3RuntimeAllocateAsyncContinuationI32Symbol =
+    "objc3_runtime_allocate_async_continuation_i32";
+inline constexpr const char
+    *kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol =
+        "objc3_runtime_handoff_async_continuation_to_executor_i32";
+inline constexpr const char *kObjc3RuntimeResumeAsyncContinuationI32Symbol =
+    "objc3_runtime_resume_async_continuation_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =
@@ -802,6 +809,21 @@ inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationPackagingMode
 inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel =
     "no-public-error-runtime-abi-no-generalized-foreign-exception-support-no-cross-module-live-claim-yet";
 std::string Objc3Part6LiveErrorRuntimeIntegrationSummary();
+// M268-D001 continuation/runtime-helper freeze anchor: lane-D now freezes a
+// private Part 7 helper ABI for logical continuation handles, resume traffic,
+// and executor handoff without pretending the current direct-call async slice
+// already emits live suspension or scheduler traffic through it.
+inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperContractId =
+    "objc3c-part7-continuation-runtime-helper-api/m268-d001-v1";
+inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperSourceModel =
+    "part7-lowering-publishes-a-private-runtime-helper-abi-for-logical-continuation-allocation-resume-and-executor-handoff";
+inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperAbiModel =
+    "i32-backed-logical-continuation-handles-resume-entry-tags-and-executor-tags-remain-bootstrap-internal-runtime-abi";
+inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperExecutionModel =
+    "runtime-helpers-now-materialize-deterministic-logical-continuation-handles-for-probes-while-direct-call-async-lowering-still-does-not-consume-them";
+inline constexpr const char *kObjc3Part7ContinuationRuntimeHelperFailClosedModel =
+    "no-public-async-runtime-header-no-suspension-state-machine-no-executor-runtime-scheduling-claim-yet";
+std::string Objc3Part7ContinuationRuntimeHelperSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

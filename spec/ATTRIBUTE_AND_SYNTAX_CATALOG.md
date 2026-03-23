@@ -587,10 +587,28 @@ Current implementation status (`M268-C003`):
   - defer cleanup emission on scope exit
 - the emitted IR proof remains a non-suspending direct-call path; it does not
   claim continuation-frame cleanup or executor resume scheduling
+- the first private Part 7 continuation helper ABI is frozen separately in
+  `M268-D001`; this issue does not yet claim compiled async code uses it
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred
   to later `M267` issues
+
+Current implementation status (`M268-D001`):
+
+- emitted IR now publishes
+  `; part7_continuation_runtime_helper = ...`
+  and `!objc3.objc_part7_continuation_runtime_helper = !{!91}`
+- the runtime now exposes a private helper cluster for:
+  - logical continuation allocation
+  - executor handoff
+  - continuation resume
+- the runtime also exposes
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+  for deterministic probe coverage
+- the current runnable async lowering slice still does not consume this helper
+  cluster; live suspension/state-machine scheduling remains deferred to later
+  `M268` issues
 
 ## M267 current canonical error bridge-marker frontend boundary
 

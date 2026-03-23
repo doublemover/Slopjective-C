@@ -10958,3 +10958,33 @@ This closeout does not add new architecture. It freezes the currently
 implemented Part 6 slice as one explicit runnable matrix summary:
 
 - `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
+
+## M268 Part 7 Continuation And Runtime-Helper Contract (D001)
+
+`M268-D001` freezes the first truthful private runtime helper ABI for the
+future suspending async path without pretending the current direct-call slice
+already uses it.
+
+Canonical architecture boundary:
+
+- helper ABI remains private to
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- helper symbols:
+  - `objc3_runtime_allocate_async_continuation_i32`
+  - `objc3_runtime_handoff_async_continuation_to_executor_i32`
+  - `objc3_runtime_resume_async_continuation_i32`
+- testing snapshot:
+  - `objc3_runtime_copy_async_continuation_state_for_testing`
+- emitted IR publishes the helper boundary and named metadata:
+  - `; part7_continuation_runtime_helper = ...`
+  - `!objc3.objc_part7_continuation_runtime_helper = !{!91}`
+
+Truthful status:
+
+- the helper cluster is real and probeable
+- compiled async functions still use the direct-call lowering slice from
+  `M268-C002`
+- no live suspension frame layout, async state machine, or executor scheduling
+  claim is made here
+
+- the next issue is `M268-D002`

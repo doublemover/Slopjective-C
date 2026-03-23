@@ -139,6 +139,25 @@ path now targets:
 
 - semantic surface
   `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
+
+## M268 continuation runtime-helper probe
+
+`tests/tooling/runtime/m268_d001_continuation_runtime_helper_probe.cpp`
+proves the first private Part 7 continuation helper ABI executes and publishes
+deterministic state:
+
+- allocation through `objc3_runtime_allocate_async_continuation_i32`
+- executor handoff through
+  `objc3_runtime_handoff_async_continuation_to_executor_i32`
+- resume through `objc3_runtime_resume_async_continuation_i32`
+- state inspection through
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+
+This probe is intentionally narrower than later live async runtime work:
+
+- it does not claim compiled async functions suspend
+- it does not claim state-machine execution
+- it does not claim executor scheduling beyond deterministic helper traffic
 - public header `native/objc3c/src/runtime/objc3_runtime.h`
 - archive `artifacts/lib/objc3_runtime.lib`
 - preserved runtime entrypoints:

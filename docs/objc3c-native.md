@@ -3488,6 +3488,32 @@ The native lowering path now publishes a dedicated integration packet at
   - emit the deferred cleanup call before returning
 - this issue still does not claim continuation-frame cleanup, suspension resume
   cleanup, or executor runtime scheduling
+
+## M268 continuation and runtime-helper contract
+
+The runtime/lowering boundary now publishes a dedicated helper packet through
+emitted IR:
+
+- `; part7_continuation_runtime_helper = ...`
+- `!objc3.objc_part7_continuation_runtime_helper = !{!91}`
+
+This freezes the first truthful private Part 7 helper cluster for:
+
+- logical continuation-handle allocation
+- executor handoff recording
+- resume traffic
+
+Current implementation status:
+
+- the helper ABI is private to `objc3_runtime_bootstrap_internal.h`
+- the runtime probe can allocate a logical continuation handle, hand it off to
+  an executor tag, resume it, and inspect the published testing snapshot
+- the published testing snapshot entrypoint is
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+- compiled async code still uses the direct-call slice from `M268-C002` and
+  does not yet emit live continuation helper traffic
+- live suspension frames, state machines, and executor scheduling remain later
+  `M268` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

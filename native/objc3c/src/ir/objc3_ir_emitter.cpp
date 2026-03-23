@@ -750,6 +750,13 @@ class Objc3IREmitter {
     // prove the private helper ABI is live rather than a contract-only marker.
     out << "; part6_live_error_runtime_integration = "
         << Objc3Part6LiveErrorRuntimeIntegrationSummary() << "\n";
+    // M268-D001 continuation/runtime-helper anchor: publish the first private
+    // Part 7 helper ABI boundary for logical continuation allocation,
+    // scheduler handoff, and resume traffic. The current async lowering slice
+    // remains direct-call only, so this line freezes the helper contract
+    // without claiming live suspension or executor scheduling yet.
+    out << "; part7_continuation_runtime_helper = "
+        << Objc3Part7ContinuationRuntimeHelperSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2975,6 +2982,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}\n";
     out << "!objc3.objc_part6_error_runtime_bridge_helper = !{!89}\n";
     out << "!objc3.objc_part6_live_error_runtime_integration = !{!90}\n";
+    out << "!objc3.objc_part7_continuation_runtime_helper = !{!91}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4623,6 +4631,26 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel)
+        << "\"}\n";
+    out << "!91 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperAbiModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7ContinuationRuntimeHelperExecutionModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeAllocateAsyncContinuationI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part7ContinuationRuntimeHelperFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "
@@ -11906,6 +11934,9 @@ class Objc3IREmitter {
         requires_arc_helper_declarations() ||
         !frontend_metadata_.lowering_part6_throws_abi_propagation_replay_key
              .empty() ||
+        !frontend_metadata_.lowering_async_continuation_replay_key.empty() ||
+        !frontend_metadata_
+             .lowering_await_lowering_suspension_state_replay_key.empty() ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
         frontend_metadata_.block_storage_escape_lowering_escape_to_heap_sites >
             0u ||
@@ -11951,6 +11982,22 @@ class Objc3IREmitter {
                                 std::string(
                                     kObjc3RuntimeCatchMatchesErrorI32Symbol) +
                                 "(i32, i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeAllocateAsyncContinuationI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeAllocateAsyncContinuationI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(
+          kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol,
+          "declare i32 @" +
+              std::string(
+                  kObjc3RuntimeHandoffAsyncContinuationToExecutorI32Symbol) +
+              "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeResumeAsyncContinuationI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeResumeAsyncContinuationI32Symbol) +
+                                "(i32, i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(

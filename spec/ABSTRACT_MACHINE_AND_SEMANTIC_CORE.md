@@ -666,6 +666,19 @@ M268-C003 lowering note:
 - continuation-frame cleanup, suspension resume cleanup, and executor
   scheduling remain later `M268` work
 
+M268-D001 runtime-helper note:
+
+- emitted IR now publishes `; part7_continuation_runtime_helper = ...`
+  alongside `!objc3.objc_part7_continuation_runtime_helper = !{!91}`
+- the runtime owns one private helper cluster for logical continuation-handle
+  allocation, executor handoff, and resume traffic plus one testing snapshot:
+  `objc3_runtime_copy_async_continuation_state_for_testing`
+- this helper ABI is real and probeable, but compiled async functions still do
+  not consume it yet; the current executable async slice remains direct-call
+  only
+- live suspension-frame materialization and executor scheduling remain later
+  `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

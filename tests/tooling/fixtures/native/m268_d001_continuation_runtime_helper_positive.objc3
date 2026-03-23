@@ -1,0 +1,23 @@
+module M268D001;
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn runTask() -> i32 __attribute__((objc_executor(named("com.example.main")))) {
+  return await fetchValue();
+}
+
+@interface Loader
+- (i32)loadValue async __attribute__((objc_executor(main)));
+@end
+
+@implementation Loader
+- (i32)loadValue async __attribute__((objc_executor(main))) {
+  return await fetchValue();
+}
+@end
+
+fn main() -> i32 {
+  return runTask();
+}

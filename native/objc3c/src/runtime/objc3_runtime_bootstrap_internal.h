@@ -296,6 +296,21 @@ typedef struct objc3_runtime_error_bridge_state_snapshot {
   const char *last_catch_kind_name;
 } objc3_runtime_error_bridge_state_snapshot;
 
+typedef struct objc3_runtime_async_continuation_state_snapshot {
+  uint64_t allocation_call_count;
+  uint64_t handoff_call_count;
+  uint64_t resume_call_count;
+  uint64_t live_continuation_handle_count;
+  int last_allocated_continuation_handle;
+  int last_allocated_resume_entry_tag;
+  int last_allocated_executor_tag;
+  int last_handoff_continuation_handle;
+  int last_handoff_executor_tag;
+  int last_resume_continuation_handle;
+  int last_resume_result_value;
+  int last_resume_return_value;
+} objc3_runtime_async_continuation_state_snapshot;
+
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
 // the emitted `module.objc3-conformance-report.json` plus the sibling
@@ -447,6 +462,18 @@ int objc3_runtime_bridge_status_error_i32(int status_value,
 int objc3_runtime_bridge_nserror_error_i32(int error_value);
 int objc3_runtime_catch_matches_error_i32(int error_value, int catch_kind,
                                           int catch_all);
+// M268-D001 continuation/runtime-helper anchor: lane-D now freezes the first
+// truthful private Part 7 helper ABI for logical continuation-handle
+// allocation, scheduler handoff, and resume traffic. The current direct-call
+// async slice still does not consume this helper cluster yet, but the helper
+// runtime surface itself is now real and probeable without widening the public
+// runtime header.
+int objc3_runtime_allocate_async_continuation_i32(int resume_entry_tag,
+                                                  int executor_tag);
+int objc3_runtime_handoff_async_continuation_to_executor_i32(
+    int continuation_handle, int executor_tag);
+int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
+                                                int result_value);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
@@ -488,6 +515,8 @@ int objc3_runtime_copy_arc_debug_state_for_testing(
 // prove executable helper traffic without widening the public runtime ABI.
 int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot);
+int objc3_runtime_copy_async_continuation_state_for_testing(
+    objc3_runtime_async_continuation_state_snapshot *snapshot);
 
 #ifdef __cplusplus
 }

@@ -1565,6 +1565,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // the same packaged runtime-support archive path as the rest of the native
     // runtime helper cluster, so imported modules must agree on that archive
     // before later cross-module Part 6 execution claims can become truthful.
+    // M268-D001 continuation/runtime-helper anchor: the first private Part 7
+    // continuation helper cluster likewise stays inside the same packaged
+    // runtime-support archive path. Mixed-module async/runtime-helper claims
+    // therefore may not diverge on the runtime archive even before live
+    // suspension integration lands.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =
