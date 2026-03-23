@@ -819,6 +819,21 @@ M269-D001 scheduler/executor runtime note:
 - the public runtime header still does not widen
 - broader live scheduler implementation remains the next issue: `M269-D002`
 
+M269-D002 live task runtime note:
+
+- the supported Part 7 task slice now executes through the private helper
+  cluster already frozen in `M269-D001`
+- emitted IR now publishes
+  `; part7_live_task_runtime_integration = ...` and
+  `!objc3.objc_part7_live_task_runtime_integration = !{!95}`
+- linked runtime proof validates live helper traffic through task spawn,
+  task-group scope/add/wait/cancel, cancellation polling, executor hops, and
+  the private task-runtime snapshot
+- the public runtime header still does not widen
+- retained `O3S260` / `O3L300` front-door metadata-export gates may still block
+  some fixture shapes before object emission, so D002 keeps its claim scoped to
+  the helper-backed live runtime boundary
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

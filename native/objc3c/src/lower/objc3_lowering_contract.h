@@ -869,6 +869,22 @@ inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimePackagingModel =
 inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeFailClosedModel =
     "no-public-task-runtime-header-no-general-scheduler-implementation-claim-no-cross-module-task-runtime-claim-yet";
 std::string Objc3Part7SchedulerExecutorRuntimeSummary();
+// M269-D002 live task runtime anchor: lane-D now publishes the existing helper
+// cluster as a live private runtime execution boundary. Supported task spawn,
+// task-group, cancellation, and executor-hop traffic executes through the
+// runtime library and packaged object/runtime probe path, while broader
+// metadata-export and cross-module scheduler work remains deferred.
+inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationContractId =
+    "objc3c-part7-live-task-runtime-integration/m269-d002-v1";
+inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationSourceModel =
+    "supported-task-spawn-task-group-cancellation-and-executor-hop-sites-now-execute-through-the-private-task-runtime-helper-cluster";
+inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationExecutionModel =
+    "native-runtime-helpers-materialize-deterministic-task-spawn-task-group-cancellation-and-executor-hop-results-through-linked-runtime-probes";
+inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel =
+    "driver-emitted-object-artifacts-and-runtime-probes-link-against-the-existing-runtime-support-archive-for-live-part7-task-execution";
+inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel =
+    "retained-runtime-metadata-export-gates-and-no-public-task-runtime-header-mean-broader-native-task-scheduler-claims-remain-deferred";
+std::string Objc3Part7LiveTaskRuntimeIntegrationSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

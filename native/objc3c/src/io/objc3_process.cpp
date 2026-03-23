@@ -25,6 +25,10 @@ namespace {
 extern char **environ;
 #endif
 
+// M269-D002 live task runtime anchor: packaged task-runtime probes continue to
+// use the existing runtime library path and linked execution surface; no
+// separate public scheduler/runtime package is introduced here.
+
 enum class ProducedObjectFormat : std::uint8_t {
   kUnknown = 0,
   kCoff = 1,

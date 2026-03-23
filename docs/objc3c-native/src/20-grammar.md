@@ -3487,6 +3487,29 @@ slice already landed in `M269-C002` and `M269-C003`.
 - this issue does not yet claim a general scheduler implementation or
   cross-module task runtime behavior
 
+## M269 live task runtime and executor implementation
+
+`M269-D002` turns the same private helper cluster into a truthful live runtime
+execution boundary for the supported Part 7 task slice.
+
+- emitted IR now carries:
+  - `; part7_live_task_runtime_integration = ...`
+  - `!objc3.objc_part7_live_task_runtime_integration = !{!95}`
+- the linked runtime probe proves executable traffic through:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`
+- the public runtime header still does not widen
+- retained runtime-metadata export gates can still fail closed earlier with
+  `O3S260` / `O3L300`, so D002 proves the live helper-backed execution path
+  directly rather than claiming broader front-door scheduler completeness
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

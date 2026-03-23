@@ -1597,6 +1597,38 @@ std::string Objc3Part7SchedulerExecutorRuntimeSummary() {
   return out.str();
 }
 
+std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
+  std::ostringstream out;
+  // M269-D002 live task runtime anchor: the private helper cluster frozen in
+  // D001 now serves as a live execution surface for the supported task spawn,
+  // task-group, cancellation, and executor-hop slice rather than only an ABI
+  // contract. Front-door metadata export gates remain deferred outside D002.
+  out << "contract=" << kObjc3Part7LiveTaskRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3Part7SchedulerExecutorRuntimeContractId
+      << ";lowering_contract="
+      << "objc3c-part7-task-runtime-lowering-implementation/m269-c002-v1"
+      << ";abi_contract="
+      << "objc3c-part7-task-runtime-abi-completion/m269-c003-v1"
+      << ";source_model=" << kObjc3Part7LiveTaskRuntimeIntegrationSourceModel
+      << ";execution_model="
+      << kObjc3Part7LiveTaskRuntimeIntegrationExecutionModel
+      << ";packaging_model="
+      << kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel
+      << ";spawn_symbol=" << kObjc3RuntimeSpawnTaskI32Symbol
+      << ";scope_symbol=" << kObjc3RuntimeEnterTaskGroupScopeI32Symbol
+      << ";add_symbol=" << kObjc3RuntimeAddTaskGroupTaskI32Symbol
+      << ";wait_symbol=" << kObjc3RuntimeWaitTaskGroupNextI32Symbol
+      << ";cancel_symbol=" << kObjc3RuntimeCancelTaskGroupI32Symbol
+      << ";cancelled_symbol=" << kObjc3RuntimeTaskIsCancelledI32Symbol
+      << ";on_cancel_symbol=" << kObjc3RuntimeTaskOnCancelI32Symbol
+      << ";executor_hop_symbol=" << kObjc3RuntimeExecutorHopI32Symbol
+      << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel
+      << ";next_issue=M269-D003";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

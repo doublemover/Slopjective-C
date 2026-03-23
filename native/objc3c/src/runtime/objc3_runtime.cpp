@@ -4650,6 +4650,9 @@ extern "C" int objc3_runtime_resume_async_continuation_i32(
   return result_value;
 }
 
+// M269-D002 live task runtime anchor: the supported Part 7 task slice now
+// executes through this private helper cluster and publishes deterministic
+// snapshot state for linked runtime probes without widening the public ABI.
 extern "C" int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag) {
   ++g_runtime_task_spawn_call_count;
   g_runtime_task_last_spawn_kind = task_kind;

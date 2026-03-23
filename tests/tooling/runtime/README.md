@@ -503,3 +503,21 @@ Part 7 surface.
   - `objc3_runtime_task_on_cancel_i32`
   - `objc3_runtime_executor_hop_i32`
   - `objc3_runtime_copy_task_runtime_state_for_testing`
+
+## M269 live task runtime and executor implementation probe
+
+`M269-D002` keeps the same private helper surface but proves it as a live
+runtime execution boundary rather than only a frozen contract.
+
+- runtime probe:
+  `tests/tooling/runtime/m269_d002_live_task_runtime_and_executor_implementation_probe.cpp`
+- the probe validates live execution through:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`

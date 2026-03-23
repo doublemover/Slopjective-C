@@ -667,6 +667,21 @@ Current implementation status (`M269-D001`):
 - this issue still does not claim a general scheduler implementation or
   cross-module task-runtime behavior
 
+Current implementation status (`M269-D002`):
+
+- the same private helper cluster is now published as a live runtime execution
+  boundary for the supported Part 7 task slice
+- emitted IR now carries:
+  - `; part7_live_task_runtime_integration = ...`
+  - `!objc3.objc_part7_live_task_runtime_integration = !{!95}`
+- issue-local runtime proof validates task spawn, task-group scope/add/wait,
+  cancel-all, cancellation polling, executor hops, and
+  `objc3_runtime_copy_task_runtime_state_for_testing`
+- the public runtime header still does not widen
+- retained `O3S260` / `O3L300` metadata-export gates still block some broader
+  front-door fixture shapes, so this issue keeps its claim scoped to the live
+  helper-backed execution path
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

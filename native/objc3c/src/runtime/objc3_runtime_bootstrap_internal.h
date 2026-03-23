@@ -507,6 +507,9 @@ int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
 // private helper cluster plus `objc3_runtime_copy_task_runtime_state_for_testing`
 // as the canonical scheduler/executor/task-state runtime contract for the
 // current supported Part 7 slice.
+// M269-D002 live task runtime anchor: the same private helper cluster now also
+// serves as the executable Part 7 runtime boundary for the supported task
+// slice, with live probe coverage proving helper traffic and snapshot state.
 int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag);
 int objc3_runtime_enter_task_group_scope_i32(int executor_tag);
 int objc3_runtime_add_task_group_task_i32(int executor_tag);
@@ -554,6 +557,9 @@ int objc3_runtime_copy_arc_debug_state_for_testing(
     objc3_runtime_arc_debug_state_snapshot *snapshot);
 // M267-D002 live catch/bridge/runtime integration anchor: lane-D continues to
 // prove executable helper traffic without widening the public runtime ABI.
+// M269-D002 live task runtime anchor: task-runtime snapshot publication stays
+// private and is consumed by the linked runtime probe rather than a widened
+// public scheduler ABI.
 int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot);
 int objc3_runtime_copy_async_continuation_state_for_testing(
