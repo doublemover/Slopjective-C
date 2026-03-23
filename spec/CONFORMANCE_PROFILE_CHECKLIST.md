@@ -187,6 +187,13 @@ while the standalone textual-interface payload remains
   - values crossing executor domains. ([Part 7](#part-7); [D Table A](#d-3-1))
 - [x] SPT-0066 **[CONC]** Enforce [D-011](#decisions-d-011): require `await` for any potentially-suspending operation, not only explicit `async` calls. (Decisions Log; [Part 7](#part-7)) ([Issue #87](https://github.com/doublemover/Slopjective-C/issues/87)) Evidence: `tests/conformance/parser/AWT-01.json`, `tests/conformance/semantic/AWT-04.json`, `tests/conformance/diagnostics/AWT-06.json`. Validation: parser/semantic/diagnostics manifests for `issue_87_d011_await_requirement_*` groups.
 
+M270-A001 implementation note:
+
+- the current repo source boundary still relies on parser-owned actor/isolation/sendability symbol profiling rather than dedicated `actor`/`sendable`/`nonisolated` grammar tokens
+- the truthful lane-A proof is frontend-only and preserves deterministic counts
+  for actor declarations, actor hops, sendable markers, and non-sendable
+  crossings before later `M270` semantic/runtime work widens the claim
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.

@@ -88,6 +88,11 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // parser-owned identifier profiles and canonical `objc_executor(...)`
   // attribute payloads, including the later M269-A002 task-group/task-creation
   // callable source completion.
+  // M270-A001 source-closure note: actor/isolation/sendable work also remains
+  // identifier/attribute-profile driven here. Do not add dedicated `actor`,
+// Do not add dedicated actor/sendable/nonisolated lexer keywords yet; the truthful source
+  // boundary is still parser-owned profiling on top of the existing token
+  // stream.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

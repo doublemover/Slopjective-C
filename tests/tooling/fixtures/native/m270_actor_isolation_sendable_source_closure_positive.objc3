@@ -1,0 +1,14 @@
+module M270A001;
+
+extern fn actor_isolation_marker() -> i32;
+extern fn hop_to_executor_lane() -> i32;
+extern fn sendable_transfer_marker() -> i32;
+extern fn non_sendable_bridge() -> i32;
+
+fn actor_isolation_sendable_probe() -> i32 {
+  let isolated = actor_isolation_marker();
+  let hopped = hop_to_executor_lane();
+  let sent = sendable_transfer_marker();
+  let blocked = non_sendable_bridge();
+  return isolated + hopped + sent + blocked;
+}

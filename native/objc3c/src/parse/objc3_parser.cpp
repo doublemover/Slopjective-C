@@ -3580,6 +3580,11 @@ static Objc3AwaitSuspensionProfile BuildAwaitSuspensionProfileFromOpaqueBody(
       counts.await_continuation_sites);
 }
 
+// M270-A001 source-closure anchor: actor/isolation/sendable admission remains
+// parser-owned symbol profiling on top of the existing token stream. This
+// tranche does not claim dedicated actor/sendable/nonisolated grammar forms
+// yet; it freezes the current source contract around actor-isolation
+// declarations, hop markers, sendable markers, and non-sendable crossings.
 static bool IsActorIsolationDeclSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;

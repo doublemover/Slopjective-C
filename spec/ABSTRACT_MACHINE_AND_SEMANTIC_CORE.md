@@ -819,6 +819,17 @@ M269-D001 scheduler/executor runtime note:
 - the public runtime header still does not widen
 - broader live scheduler implementation remains the next issue: `M269-D002`
 
+M270-A001 actor/isolation/sendable source-closure note:
+
+- the current repo source boundary freezes the existing parser-owned
+  actor/isolation/sendability symbol profiling already carried by the Part 7
+  async semantic packet
+- no dedicated `actor`, `sendable`, or `nonisolated` keyword is claimed yet
+- the admitted source surface covers actor-isolation declaration markers,
+  actor-hop markers, sendable markers, and non-sendable crossing markers
+- actor-member legality, isolation diagnostics, and runnable actor runtime
+  behavior remain later `M270` work
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

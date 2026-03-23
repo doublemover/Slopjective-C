@@ -3376,6 +3376,27 @@ The frontend now publishes a dedicated task-runtime source packet at
 - the packet remains source-only and does not claim runnable task allocation,
   scheduler execution, or live cancellation runtime behavior
 
+## M270 actor, isolation, and sendable source closure
+
+The frontend now freezes one truthful source boundary for actor, isolation, and
+sendability markers.
+
+- no dedicated `actor`, `sendable`, or `nonisolated` keyword is claimed by this issue
+- the admitted source surface remains the existing parser-owned symbol and
+  attribute profiling already carried by the Part 7 async semantic packet
+- parser-owned symbol profiling remains the deterministic source contract for
+  actor-isolation declarations, actor hops, sendable markers, and non-sendable
+  crossings
+- the happy path is proven through the frontend C API runner with
+  `--no-emit-ir --no-emit-object`, not through live actor-member or runtime
+  behavior yet
+
+Current implementation status:
+
+- this issue freezes source closure only
+- actor-member semantics, isolation diagnostics, cross-actor legality, and
+  runnable actor runtime behavior remain later `M270` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

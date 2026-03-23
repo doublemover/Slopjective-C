@@ -136,6 +136,14 @@ inline constexpr const char *kObjc3TaskExecutorCancellationSourceClosureContract
     "objc3c-part7-task-executor-cancellation-source-closure/m269-a001-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskExecutorCancellationProfiles =
     "source-only:task-executor-cancellation-profiles";
+inline constexpr const char *kObjc3ActorIsolationSendableSourceClosureContractId =
+    "objc3c-part7-actor-isolation-sendable-source-closure/m270-a001-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimActorDeclarationMarkers =
+    "source-only:actor-declaration-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimIsolationAnnotationMarkers =
+    "source-only:isolation-annotation-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimSendableMarkers =
+    "source-only:sendable-markers";
 inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureContractId =
     "objc3c-part7-task-group-cancellation-source-closure/m269-a002-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskCreationSites =
