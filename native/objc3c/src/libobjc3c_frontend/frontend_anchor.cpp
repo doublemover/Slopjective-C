@@ -47,6 +47,9 @@ struct objc3c_frontend_context {
 // M267-E001 error-model conformance gate anchor: lane-E consumes those same
 // publication paths and the same runtime-import surface without inventing a
 // second frontend proof channel.
+// M268-E001 async executable conformance gate anchor: lane-E consumes those
+// same publication paths for the runnable Part 7 slice instead of inventing a
+// second frontend async proof channel.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

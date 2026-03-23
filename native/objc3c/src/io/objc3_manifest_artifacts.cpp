@@ -25,6 +25,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // M267-E001 error-model conformance gate anchor: lane-E keeps consuming the
   // same manifest sidecar and the canonical cross-module link-plan artifact
   // instead of introducing a parallel Part 6 publication surface.
+  // M268-E001 async executable conformance gate anchor: lane-E keeps consuming
+  // the same manifest sidecar and its paired IR/object artifacts instead of a
+  // separate Part 7 publication surface.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

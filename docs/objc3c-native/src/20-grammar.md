@@ -3462,3 +3462,27 @@ Current implementation status:
   runtime probes can observe deterministic helper traffic
 - live suspension frames, executor scheduling, and cross-module runnable async
   claims remain later `M268` work
+
+## M268 async executable conformance gate (M268-E001)
+
+Lane E freezes one truthful end-to-end gate over the currently runnable Part 7
+slice.
+
+Current implementation status:
+
+- the gate fail-closes over the upstream evidence chain from:
+  - `M268-A002`
+  - `M268-B003`
+  - `M268-C003`
+  - `M268-D002`
+- the canonical gate fixture remains
+  `tests/tooling/fixtures/native/m268_d002_live_continuation_runtime_integration_positive.objc3`
+- lane-E consumes the emitted manifest/IR/object artifact triplet from the
+  native CLI and frontend publication path instead of inventing a separate Part
+  7 proof channel
+- the gate proves the current runnable async/await slice only: parser-owned
+  async syntax, fail-closed legality, direct-call await lowering, cleanup
+  integration, and live continuation-helper execution on the supported
+  non-suspending path
+- matrix expansion and broader suspension/runtime claims are deferred to
+  `M268-E002`

@@ -52,6 +52,9 @@ FUNCTION_PATTERNS = {
         r"define i32 @runTask\(\) \{\s*entry:\s*"
         r"call void @objc3_runtime_push_autoreleasepool_scope\(\)\s*"
         r"%t\d+ = call i32 @fetchValue\(\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_allocate_async_continuation_i32\(i32 \d+, i32 \d+\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_handoff_async_continuation_to_executor_i32\(i32 %t\d+, i32 \d+\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_resume_async_continuation_i32\(i32 %t\d+, i32 %t\d+\)\s*"
         r"call void @objc3_runtime_pop_autoreleasepool_scope\(\)\s*"
         r"%t\d+ = call i32 @fetchValue\(\)\s*"
         r"ret i32 %t\d+\s*\}",
@@ -61,6 +64,9 @@ FUNCTION_PATTERNS = {
         r"define i32 @objc3_method_Loader_instance_loadValue\(\) \{\s*entry:\s*"
         r"call void @objc3_runtime_push_autoreleasepool_scope\(\)\s*"
         r"%t\d+ = call i32 @fetchValue\(\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_allocate_async_continuation_i32\(i32 \d+, i32 \d+\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_handoff_async_continuation_to_executor_i32\(i32 %t\d+, i32 \d+\)\s*"
+        r"%t\d+ = call i32 @objc3_runtime_resume_async_continuation_i32\(i32 %t\d+, i32 %t\d+\)\s*"
         r"call void @objc3_runtime_pop_autoreleasepool_scope\(\)\s*"
         r"%t\d+ = call i32 @fetchValue\(\)\s*"
         r"ret i32 %t\d+\s*\}",

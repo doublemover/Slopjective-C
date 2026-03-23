@@ -43,6 +43,9 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // M267-E001 error-model conformance gate anchor: lane-E freezes the current
 // Part 6 slice by consuming the canonical integrated proof surface already
 // published by the driver and artifact sidecars.
+// M268-E001 async executable conformance gate anchor: lane-E must keep
+// consuming this same emitted manifest/IR/object triplet for the runnable Part
+// 7 slice instead of introducing an async-only publication channel.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

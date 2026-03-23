@@ -691,6 +691,17 @@ M268-D002 runtime integration note:
 - this issue still does not claim suspension-frame materialization, async state
   machine execution, or general executor scheduling
 
+M268-E001 async executable conformance gate note:
+
+- the lane-E gate freezes one truthful runnable Part 7 proof chain above
+  `M268-A002`, `M268-B003`, `M268-C003`, and `M268-D002`
+- the gate consumes the same emitted manifest/IR/object triplet already
+  published by the native CLI and frontend bridge instead of introducing a
+  separate async-only publication surface
+- the canonical gate fixture remains the supported non-suspending direct-call
+  async slice; this issue does not widen the abstract machine beyond that
+  executable boundary
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

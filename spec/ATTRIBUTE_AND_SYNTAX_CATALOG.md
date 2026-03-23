@@ -622,6 +622,20 @@ Current implementation status (`M268-D002`):
   `objc3_runtime_copy_async_continuation_state_for_testing`
 - live suspension frames, async state machines, general executor scheduling,
   and cross-module runnable async claims remain deferred to later `M268`
+
+Current implementation status (`M268-E001`):
+
+- lane-E now freezes the runnable Part 7 gate over:
+  - `M268-A002`
+  - `M268-B003`
+  - `M268-C003`
+  - `M268-D002`
+- the gate consumes the same emitted manifest/IR/object artifact triplet from
+  the native CLI/frontend publication path
+- the canonical gate fixture remains
+  `tests/tooling/fixtures/native/m268_d002_live_continuation_runtime_integration_positive.objc3`
+- matrix expansion and broader runnable async claims remain deferred to
+  `M268-E002`
   issues
 
 ## M267 current canonical error bridge-marker frontend boundary
