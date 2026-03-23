@@ -11396,6 +11396,10 @@ class Objc3IREmitter {
         const std::size_t autoreleasepool_depth =
             ctx.autoreleasepool_scope_symbols.size();
         if (block_stmt->is_autoreleasepool_scope) {
+          // M268-C003 integration anchor: the current non-suspending async
+          // slice reuses the existing autoreleasepool scope hooks and later
+          // composes them with deferred cleanup emission on scope exit. There
+          // is still no separate suspension-frame cleanup runtime here.
           ctx.code_lines.push_back(
               "  call void @" +
               std::string(kObjc3RuntimePushAutoreleasepoolScopeSymbol) + "()");

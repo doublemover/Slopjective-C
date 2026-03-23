@@ -654,6 +654,18 @@ M268-C002 lowering note:
 - continuation runtime, suspension cleanup, and executor scheduling remain
   later `M268` work
 
+M268-C003 lowering note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_suspension_autorelease_and_cleanup_integration`
+- the current supported async slice composes with existing lowering rather than
+  a dedicated suspension runtime:
+  - autoreleasepool scopes lower through the live push/pop hooks
+  - defer cleanup remains on the existing Part 5 scope-exit path
+  - `await` still lowers through the direct-call happy path
+- continuation-frame cleanup, suspension resume cleanup, and executor
+  scheduling remain later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

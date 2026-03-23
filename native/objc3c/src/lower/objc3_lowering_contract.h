@@ -1379,6 +1379,10 @@ inline constexpr const char
 // await-marked expressions lower through the existing direct-call/object path
 // only for the non-suspending happy path, while continuation allocation,
 // suspend/resume, and executor scheduling remain deferred.
+// M268-C003 integration anchor: the same supported async slice composes with
+// existing autoreleasepool-scope and defer-cleanup lowering rather than a
+// separate suspension cleanup runtime. Later M268 work still has to widen that
+// into real suspension-frame cleanup and executor resume behavior.
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =

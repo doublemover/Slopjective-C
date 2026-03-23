@@ -576,6 +576,17 @@ Current implementation status (`M268-C002`):
   calls rather than continuation allocation or state-machine emission
 - continuation allocation, suspend/resume lowering, suspension cleanup, and
   executor runtime behavior remain deferred to later `M268` issues
+
+Current implementation status (`M268-C003`):
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_suspension_autorelease_and_cleanup_integration`
+- the current supported async slice now has explicit proof that it composes
+  with:
+  - autoreleasepool scope push/pop lowering
+  - defer cleanup emission on scope exit
+- the emitted IR proof remains a non-suspending direct-call path; it does not
+  claim continuation-frame cleanup or executor resume scheduling
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

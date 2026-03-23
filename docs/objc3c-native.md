@@ -3472,6 +3472,22 @@ The native lowering path now publishes a dedicated implementation packet at
   - `await_continuation_sites = 0`
 - continuation allocation, suspension cleanup, resume cleanup, and executor
   runtime scheduling remain later `M268` work
+
+## M268 async cleanup integration slice
+
+The native lowering path now publishes a dedicated integration packet at
+`frontend.pipeline.semantic_surface.objc_part7_suspension_autorelease_and_cleanup_integration`.
+
+- the current non-suspending async slice reuses the already-live
+  autoreleasepool scope hooks and defer-cleanup lowering
+- the supported proof fixture shows one deterministic composition shape in
+  emitted IR:
+  - push autoreleasepool scope
+  - lower the awaited operand through a direct call
+  - pop the autoreleasepool scope
+  - emit the deferred cleanup call before returning
+- this issue still does not claim continuation-frame cleanup, suspension resume
+  cleanup, or executor runtime scheduling
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

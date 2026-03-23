@@ -83,6 +83,25 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part7AsyncDirectCallLoweringDeferredModel =
         "continuation-allocation-resume-suspend-state-machine-cleanup-and-executor-runtime-scheduling-remain-later-m268-work";
+inline constexpr const char
+    *kObjc3Part7SuspensionCleanupIntegrationContractId =
+        "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1";
+// M268-C003 integration anchor: this packet ties the current direct-call async
+// slice to the already-live autoreleasepool and defer-cleanup lowering surfaces
+// instead of claiming a separate continuation cleanup runtime.
+inline constexpr const char
+    *kObjc3Part7SuspensionCleanupIntegrationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part7_suspension_autorelease_and_cleanup_integration";
+inline constexpr const char
+    *kObjc3Part7SuspensionCleanupIntegrationModel =
+        "supported-non-suspending-async-lowering-reuses-existing-autoreleasepool-scope-and-defer-cleanup-lowering-through-real-ir-and-object-emission";
+inline constexpr const char
+    *kObjc3Part7SuspensionCleanupIntegrationOrderingModel =
+        "current-proof-fixtures-show-terminal-return-paths-compose-await-direct-call-lowering-with-autoreleasepool-pop-and-defer-cleanup-without-a-separate-suspension-runtime";
+inline constexpr const char
+    *kObjc3Part7SuspensionCleanupIntegrationDeferredModel =
+        "continuation-resume-cleanup-suspension-state-frames-and-executor-runtime-scheduling-remain-later-m268-work";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1310,6 +1329,81 @@ std::string BuildPart7AsyncDirectCallLoweringJson(
       << "\",\"await_replay_key\":\""
       << EscapeJsonString(await_replay_key)
       << "\",\"deterministic\":"
+      << (deterministic ? "true" : "false")
+      << ",\"ready_for_ir_object_emission\":"
+      << (deterministic ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart7SuspensionCleanupIntegrationJson(
+    const Objc3Part5ControlFlowSafetyLoweringContract &control_flow_contract,
+    const std::string &control_flow_replay_key,
+    const Objc3AutoreleasePoolScopeLoweringContract &autoreleasepool_contract,
+    const std::string &autoreleasepool_replay_key,
+    const Objc3AsyncContinuationLoweringContract &continuation_contract,
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
+    const std::string &continuation_replay_key,
+    const std::string &await_replay_key) {
+  const bool deterministic = control_flow_contract.deterministic &&
+                             autoreleasepool_contract.deterministic &&
+                             continuation_contract.deterministic &&
+                             await_contract.deterministic;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7SuspensionCleanupIntegrationContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7SuspensionCleanupIntegrationSurfacePath)
+      << "\",\"integration_model\":\""
+      << EscapeJsonString(kObjc3Part7SuspensionCleanupIntegrationModel)
+      << "\",\"cleanup_ordering_model\":\""
+      << EscapeJsonString(kObjc3Part7SuspensionCleanupIntegrationOrderingModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part7SuspensionCleanupIntegrationDeferredModel)
+      << "\",\"async_lowering_contract_id\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringContractId)
+      << "\",\"control_flow_contract_id\":\""
+      << EscapeJsonString(kObjc3Part5ControlFlowSafetyLoweringContractId)
+      << "\",\"autoreleasepool_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AutoreleasePoolScopeLoweringLaneContract)
+      << "\",\"continuation_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
+      << "\",\"await_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
+      << "\",\"defer_statement_sites\":"
+      << control_flow_contract.defer_statement_sites
+      << ",\"live_defer_cleanup_sites\":"
+      << control_flow_contract.live_defer_cleanup_sites
+      << ",\"continuation_allocation_sites\":"
+      << continuation_contract.continuation_allocation_sites
+      << ",\"continuation_resume_sites\":"
+      << continuation_contract.continuation_resume_sites
+      << ",\"continuation_suspend_sites\":"
+      << continuation_contract.continuation_suspend_sites
+      << ",\"await_resume_sites\":"
+      << await_contract.await_resume_sites
+      << ",\"await_state_machine_sites\":"
+      << await_contract.await_state_machine_sites
+      << ",\"await_continuation_sites\":"
+      << await_contract.await_continuation_sites
+      << ",\"control_flow_replay_key\":\""
+      << EscapeJsonString(control_flow_replay_key)
+      << "\",\"autoreleasepool_replay_key\":\""
+      << EscapeJsonString(autoreleasepool_replay_key)
+      << "\",\"continuation_replay_key\":\""
+      << EscapeJsonString(continuation_replay_key)
+      << "\",\"await_replay_key\":\""
+      << EscapeJsonString(await_replay_key)
+      << "\",\"autoreleasepool_scope_supported\":"
+      << (!autoreleasepool_replay_key.empty() ? "true" : "false")
+      << ",\"defer_cleanup_supported\":"
+      << (control_flow_contract.live_defer_cleanup_sites > 0 ? "true" : "false")
+      << ",\"direct_call_lowering_supported\":"
+      << (deterministic ? "true" : "false")
+      << ",\"suspension_runtime_required\":false"
+      << ",\"state_machine_emission_present\":false"
+      << ",\"deterministic\":"
       << (deterministic ? "true" : "false")
       << ",\"ready_for_ir_object_emission\":"
       << (deterministic ? "true" : "false")
@@ -15071,6 +15165,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,
                   part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_suspension_autorelease_and_cleanup_integration\":"
+           << BuildPart7SuspensionCleanupIntegrationJson(
+                  part5_control_flow_safety_lowering_contract,
+                  part5_control_flow_safety_lowering_replay_key,
+                  autoreleasepool_scope_lowering_contract,
+                  autoreleasepool_scope_lowering_replay_key,
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)
@@ -16332,6 +16436,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
            << BuildPart7AsyncDirectCallLoweringJson(
                   part7_async_source_closure_summary,
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_suspension_autorelease_and_cleanup_integration\":"
+           << BuildPart7SuspensionCleanupIntegrationJson(
+                  part5_control_flow_safety_lowering_contract,
+                  part5_control_flow_safety_lowering_replay_key,
+                  autoreleasepool_scope_lowering_contract,
+                  autoreleasepool_scope_lowering_replay_key,
                   part7_async_continuation_lowering_contract,
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,
