@@ -1487,6 +1487,34 @@ std::string Objc3Part6ErrorRuntimeBridgeHelperSummary() {
   return out.str();
 }
 
+std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
+  std::ostringstream out;
+  // M267-D002 live catch/bridge/runtime integration anchor: lane-D now proves
+  // the runnable Part 6 lowering does not just mention the private helper ABI;
+  // linked native object code executes through that helper cluster and the
+  // existing runtime-library packaging path remains sufficient for the current
+  // supported error/bridge slice.
+  out << "contract=" << kObjc3Part6LiveErrorRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3Part6ErrorRuntimeBridgeHelperContractId
+      << ";replay_contract="
+      << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+      << ";source_model="
+      << kObjc3Part6LiveErrorRuntimeIntegrationSourceModel
+      << ";execution_model="
+      << kObjc3Part6LiveErrorRuntimeIntegrationExecutionModel
+      << ";packaging_model="
+      << kObjc3Part6LiveErrorRuntimeIntegrationPackagingModel
+      << ";store_symbol=" << kObjc3RuntimeStoreThrownErrorI32Symbol
+      << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
+      << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
+      << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
+      << ";snapshot_symbol=objc3_runtime_copy_error_bridge_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel
+      << ";next_issue=M267-D003";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

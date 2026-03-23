@@ -4312,3 +4312,38 @@ Recommended M267 lane-D helper check:
 
 - `python scripts/check_m267_d001_error_runtime_and_bridge_helper_contract_and_architecture_freeze.py`
 - `M267-D002` is the next issue.
+
+## M267 Part 6 live catch, bridge, and runtime integration (M267-D002)
+
+Lane D now proves the current runnable Part 6 slice links and executes through
+the private runtime helper boundary from `M267-D001`.
+
+Current implementation status (`M267-D002`):
+
+- the runtime now publishes one canonical live integration contract:
+  - `objc3c-part6-live-error-runtime-integration/m267-d002-v1`
+- linked native Part 6 probes now execute through:
+  - `objc3_runtime_store_thrown_error_i32`
+  - `objc3_runtime_load_thrown_error_i32`
+  - `objc3_runtime_bridge_status_error_i32`
+  - `objc3_runtime_catch_matches_error_i32`
+- emitted IR now carries:
+  - `; part6_live_error_runtime_integration = ...`
+  - `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
+- the current runtime proof remains intentionally narrow:
+  - status-code bridge failure mapped to `NSError`
+  - thrown-error store/load through the helper slot path
+  - `catch (NSError* error)` dispatch through helper-backed kind matching
+- the same emitted runtime-registration manifest remains the authoritative
+  runtime-library link input for the native probe path
+
+Still explicitly deferred:
+
+- public error-runtime helper headers
+- generalized foreign exception ABI
+- broader cross-module live executable Part 6 claims
+
+Recommended M267 lane-D live-runtime check:
+
+- `python scripts/check_m267_d002_live_catch_bridge_and_runtime_integration_core_feature_implementation.py`
+- `M267-D003` is the next issue.

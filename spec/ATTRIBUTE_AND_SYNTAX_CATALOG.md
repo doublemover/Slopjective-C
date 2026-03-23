@@ -626,6 +626,21 @@ Current implementation status (`M267-D001`):
   - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
 - the helper ABI remains private to `objc3_runtime_bootstrap_internal.h`
 - still deferred:
+
+Current implementation status (`M267-D002`):
+
+- lane D now proves one truthful live runtime integration contract:
+  `objc3c-part6-live-error-runtime-integration/m267-d002-v1`
+- linked runnable Part 6 programs now execute:
+  - thrown-error store/load
+  - status-code bridge normalization
+  - `catch (NSError* error)` dispatch
+  through the private runtime helper cluster
+- emitted IR now carries:
+  - `; part6_live_error_runtime_integration = ...`
+  - `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
+- the live proof still remains limited to the supported `NSError` bridging
+  slice and does not claim generalized foreign exceptions
   - public error-runtime headers
   - generalized foreign exception ABI
   - broader cross-module executable Part 6 claims

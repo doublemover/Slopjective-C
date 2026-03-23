@@ -791,6 +791,17 @@ inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperAbiModel =
 inline constexpr const char *kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel =
     "no-public-part6-error-runtime-header-widening-no-generalized-foreign-exception-abi-yet";
 std::string Objc3Part6ErrorRuntimeBridgeHelperSummary();
+inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationContractId =
+    "objc3c-part6-live-error-runtime-integration/m267-d002-v1";
+inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationSourceModel =
+    "runnable-part6-object-code-links-and-executes-through-the-private-error-runtime-helper-cluster";
+inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationExecutionModel =
+    "linked-native-part6-fixtures-drive-status-bridge-thrown-error-store-load-and-catch-dispatch-through-runtime-owned-helpers";
+inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationPackagingModel =
+    "driver-emitted-object-and-registration-manifest-artifacts-preserve-runtime-library-link-inputs-for-runnable-part6-probes";
+inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel =
+    "no-public-error-runtime-abi-no-generalized-foreign-exception-support-no-cross-module-live-claim-yet";
+std::string Objc3Part6LiveErrorRuntimeIntegrationSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

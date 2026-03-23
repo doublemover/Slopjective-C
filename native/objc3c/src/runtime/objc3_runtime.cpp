@@ -4397,6 +4397,9 @@ extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
 // slice now routes thrown-error storage, bridge normalization, and catch-kind
 // matching through this same private bootstrap-internal helper cluster instead
 // of treating raw function-local slots as the runtime boundary.
+// M267-D002 live catch/bridge/runtime integration anchor: linked Part 6
+// object-code probes now execute through these helpers and consume the
+// snapshot state below to prove live store/load/bridge/catch traffic.
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
   ++g_runtime_arc_debug_weak_current_property_load_count;
   const int result = objc3_runtime_read_current_property_i32();

@@ -914,6 +914,11 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // command surfaces must all consume this emitted registration manifest as the
   // authoritative runtime launch contract instead of guessing archive paths or
   // linker flags from ad hoc fallback heuristics.
+  // M267-D002 live catch/bridge/runtime integration anchor: runnable Part 6
+  // probes keep using this same emitted runtime-library archive path and
+  // linker-response topology; lane-D must prove linked error/bridge execution
+  // through the packaged runtime rather than inventing a special-case driver
+  // path for throws or catch handling.
   // M254-E001 startup-registration gate anchor: lane-E closes over this same
   // emitted manifest plus the replay-stable bootstrap evidence chain from
   // A002/B002/C003/D003/D004, so drift here must fail closed before E002.

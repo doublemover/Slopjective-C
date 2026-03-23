@@ -388,3 +388,21 @@ Relevant paths:
   - `objc3_runtime_bridge_status_error_i32`
   - `objc3_runtime_bridge_nserror_error_i32`
   - `objc3_runtime_catch_matches_error_i32`
+
+## M267 live error runtime integration probe
+
+`M267-D002` links generated Part 6 object code against the packaged runtime
+library and proves the helper surface from `M267-D001` is live:
+
+- contract id `objc3c-part6-live-error-runtime-integration/m267-d002-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp`
+- runtime registration manifest remains the runtime-library path source:
+  - `module.runtime-registration-manifest.json`
+- helper traffic proven by the linked probe:
+  - `objc3_runtime_store_thrown_error_i32`
+  - `objc3_runtime_load_thrown_error_i32`
+  - `objc3_runtime_bridge_status_error_i32`
+  - `objc3_runtime_catch_matches_error_i32`

@@ -434,6 +434,9 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 // slice now uses one narrow private helper ABI for thrown-error slot traffic,
 // bridge normalization, and catch-kind matching without widening the public
 // runtime header or claiming generalized foreign exception support.
+// M267-D002 live catch/bridge/runtime integration anchor: linked native Part 6
+// probes now execute through this same helper cluster and validate the helper
+// traffic through the retained private snapshot surface below.
 void objc3_runtime_store_thrown_error_i32(int *slot, int value);
 int objc3_runtime_load_thrown_error_i32(const int *slot);
 int objc3_runtime_bridge_status_error_i32(int status_value,
@@ -478,6 +481,8 @@ int objc3_runtime_copy_memory_management_state_for_testing(
 // public runtime ABI.
 int objc3_runtime_copy_arc_debug_state_for_testing(
     objc3_runtime_arc_debug_state_snapshot *snapshot);
+// M267-D002 live catch/bridge/runtime integration anchor: lane-D continues to
+// prove executable helper traffic without widening the public runtime ABI.
 int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot);
 

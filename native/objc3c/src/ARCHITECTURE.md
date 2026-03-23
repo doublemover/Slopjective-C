@@ -10882,3 +10882,36 @@ Truth boundary:
   `id<Error>` slice
 - generalized foreign exception ABI remains deferred
 - the next issue is `M267-D002`
+
+## M267 Part 6 Live Catch, Bridge, And Runtime Integration (D002)
+
+`M267-D002` proves the runnable Part 6 lowering and the packaged native runtime
+already form one executable path for the supported status-bridge plus
+`catch (NSError* error)` slice.
+
+Contract id:
+
+- `objc3c-part6-live-error-runtime-integration/m267-d002-v1`
+
+Canonical `M267-D002` live surfaces:
+
+- private runtime header:
+  - `objc3_runtime_bootstrap_internal.h`
+- private testing snapshot:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+- executable helper traffic:
+  - `objc3_runtime_store_thrown_error_i32`
+  - `objc3_runtime_load_thrown_error_i32`
+  - `objc3_runtime_bridge_status_error_i32`
+  - `objc3_runtime_catch_matches_error_i32`
+- emitted IR anchors:
+  - `; part6_live_error_runtime_integration = ...`
+  - `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
+
+Truth boundary:
+
+- the runtime path still remains private/bootstrap-internal
+- the current live execution proof stays limited to the supported `NSError`
+  status-bridge and catch-dispatch slice
+- generalized foreign exception ABI remains deferred
+- the next issue is `M267-D003`

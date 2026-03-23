@@ -745,6 +745,11 @@ class Objc3IREmitter {
     // traffic.
     out << "; part6_error_runtime_bridge_helper = "
         << Objc3Part6ErrorRuntimeBridgeHelperSummary() << "\n";
+    // M267-D002 live catch/bridge/runtime integration anchor: publish the
+    // executable Part 6 runtime-support boundary so linked object probes can
+    // prove the private helper ABI is live rather than a contract-only marker.
+    out << "; part6_live_error_runtime_integration = "
+        << Objc3Part6LiveErrorRuntimeIntegrationSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2969,6 +2974,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}\n";
     out << "!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}\n";
     out << "!objc3.objc_part6_error_runtime_bridge_helper = !{!89}\n";
+    out << "!objc3.objc_part6_live_error_runtime_integration = !{!90}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4594,6 +4600,29 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel)
+        << "\"}\n";
+    out << "!90 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part6LiveErrorRuntimeIntegrationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6LiveErrorRuntimeIntegrationSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6LiveErrorRuntimeIntegrationExecutionModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6LiveErrorRuntimeIntegrationPackagingModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeStoreThrownErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeLoadThrownErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeBridgeStatusErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

@@ -2026,6 +2026,35 @@ current runnable Part 6 lowering.
   - no broader cross-module executable Part 6 claim yet
 - `M267-D002` is the next issue
 
+## M267 Part 6 live catch, bridge, and runtime integration (D002)
+
+`M267-D002` proves the current runnable Part 6 lowering links and executes
+through the private runtime helper ABI frozen by `M267-D001`.
+
+- canonical contract id:
+  `objc3c-part6-live-error-runtime-integration/m267-d002-v1`
+- canonical live-runtime model:
+  - generated native Part 6 object code now executes through
+    `objc3_runtime_store_thrown_error_i32` and
+    `objc3_runtime_load_thrown_error_i32`
+  - status-code bridge failures now execute through
+    `objc3_runtime_bridge_status_error_i32`
+  - `catch (NSError* error)` dispatch now executes through
+    `objc3_runtime_catch_matches_error_i32`
+  - emitted IR carries `; part6_live_error_runtime_integration = ...`
+  - emitted IR carries
+    `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
+- canonical packaging/runtime-link model:
+  - the emitted runtime-registration manifest remains the authoritative source
+    of the runtime support library archive path for runnable Part 6 probes
+- canonical testing surface:
+  - `objc3_runtime_copy_error_bridge_state_for_testing`
+- explicit current non-goals:
+  - no public error-runtime helper ABI
+  - no generalized foreign exception ABI
+  - no broader cross-module live executable Part 6 claim yet
+- `M267-D003` is the next issue
+
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}
 
 ### C.5.1 Coroutine model (normative for implementations) {#c-5-1}

@@ -545,6 +545,18 @@ M267-D001 runtime-helper note:
 - remaining work moves to `M267-D002`, which is the first broader live runtime
   execution tranche above this helper boundary
 
+M267-D002 live-runtime note:
+
+- the current runnable Part 6 slice now links and executes through that same
+  private helper cluster instead of proving only an IR-level contract
+- emitted IR now carries:
+  - `; part6_live_error_runtime_integration = ...`
+  - `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
+- the current live proof stays narrow to the supported status-bridge plus
+  `catch (NSError* error)` execution slice
+- remaining work moves to `M267-D003`, which is the cross-module/runtime-import
+  hardening tranche above this live path
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
