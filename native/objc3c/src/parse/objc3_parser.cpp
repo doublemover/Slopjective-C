@@ -6562,6 +6562,27 @@ class Objc3Parser {
     return out.str();
   }
 
+  std::string BuildRetainableCFamilyCallableProfile(
+      const std::vector<std::string> &attribute_names,
+      const std::vector<std::string> &family_names) {
+    std::ostringstream out;
+    out << "retainable-c-family:attrs=";
+    for (std::size_t index = 0; index < attribute_names.size(); ++index) {
+      if (index != 0u) {
+        out << ",";
+      }
+      out << attribute_names[index];
+    }
+    out << ";families=";
+    for (std::size_t index = 0; index < family_names.size(); ++index) {
+      if (index != 0u) {
+        out << ",";
+      }
+      out << family_names[index];
+    }
+    return out.str();
+  }
+
   template <typename TCallableDecl>
   bool ParseReturnsBorrowedAttributePayload(TCallableDecl &decl) {
     if (!Match(TokenKind::LParen)) {
@@ -6943,6 +6964,74 @@ class Objc3Parser {
   }
 
   template <typename TCallableDecl>
+  bool ParseRetainableCFamilyCallableAttribute(
+      TCallableDecl &decl,
+      const Token &attribute_name) {
+    const auto record_no_payload =
+        [this, &decl, &attribute_name]() {
+          decl.retainable_c_family_callable_attributes.push_back(
+              attribute_name.text);
+          decl.retainable_c_family_profile_is_normalized = true;
+          decl.retainable_c_family_profile =
+              BuildRetainableCFamilyCallableProfile(
+                  decl.retainable_c_family_callable_attributes,
+                  decl.retainable_c_family_names);
+        };
+    const auto record_family_payload =
+        [this, &decl, &attribute_name]() -> bool {
+          if (!Match(TokenKind::LParen)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(
+                token.line, token.column, "O3P327",
+                "missing '(' after retainable C-family callable attribute"));
+            return false;
+          }
+          if (!At(TokenKind::Identifier)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(
+                token.line, token.column, "O3P328",
+                "retainable C-family callable attribute requires family identifier"));
+            return false;
+          }
+          decl.retainable_c_family_callable_attributes.push_back(
+              attribute_name.text);
+          decl.retainable_c_family_names.push_back(Advance().text);
+          if (!Match(TokenKind::RParen)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(
+                token.line, token.column, "O3P329",
+                "missing ')' after retainable C-family attribute payload"));
+            return false;
+          }
+          decl.retainable_c_family_profile_is_normalized = true;
+          decl.retainable_c_family_profile =
+              BuildRetainableCFamilyCallableProfile(
+                  decl.retainable_c_family_callable_attributes,
+                  decl.retainable_c_family_names);
+          return true;
+        };
+
+    if (attribute_name.text == "objc_family_retain" ||
+        attribute_name.text == "objc_family_release" ||
+        attribute_name.text == "objc_family_autorelease") {
+      return record_family_payload();
+    }
+    if (attribute_name.text == "os_returns_retained" ||
+        attribute_name.text == "os_returns_not_retained" ||
+        attribute_name.text == "os_consumed" ||
+        attribute_name.text == "cf_returns_retained" ||
+        attribute_name.text == "cf_returns_not_retained" ||
+        attribute_name.text == "cf_consumed" ||
+        attribute_name.text == "ns_returns_retained" ||
+        attribute_name.text == "ns_returns_not_retained" ||
+        attribute_name.text == "ns_consumed") {
+      record_no_payload();
+      return true;
+    }
+    return false;
+  }
+
+  template <typename TCallableDecl>
   bool ParseSingleCallableBridgeAttribute(TCallableDecl &decl) {
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
@@ -7000,6 +7089,9 @@ class Objc3Parser {
         return false;
       }
       return ParseReturnsBorrowedAttributePayload(decl);
+    }
+    if (ParseRetainableCFamilyCallableAttribute(decl, attribute_name)) {
+      return true;
     }
 
     diagnostics_.push_back(MakeDiag(

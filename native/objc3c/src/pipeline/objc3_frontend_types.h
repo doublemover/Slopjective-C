@@ -1507,6 +1507,12 @@ inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSo
     "cleanup-hooks-resource-sugar-and-explicit-block-capture-surface-forms-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-resource-ownership-remain-later-m271-work";
 inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-cleanup-lowering-resource-runtime-behavior-or-borrowed-pointer-semantic-enforcement";
+inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part8_retainable_c_family_source_completion";
+inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSourceModel =
+    "retainable-c-family-callable-annotations-and-compatibility-aliases-are-live-frontend-owned-source-surfaces-while-family-legality-arc-integration-and-runtime-interop-remain-later-m271-work";
+inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionFailureModel =
+    "frontend-source-completion-does-not-yet-claim-retainable-c-family-legality-arc-interop-or-runnable-family-runtime-behavior";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1570,6 +1576,33 @@ struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary {
   bool cleanup_attribute_source_supported = false;
   bool resource_sugar_source_supported = false;
   bool explicit_capture_list_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary {
+  std::string contract_id =
+      kObjc3Part8RetainableCFamilySourceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part8RetainableCFamilySourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part8RetainableCFamilySourceCompletionSourceModel;
+  std::string failure_model =
+      kObjc3Part8RetainableCFamilySourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimRetainableCFamilyCallableAnnotations,
+      kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompatibilityAliases,
+  };
+  std::size_t family_retain_sites = 0;
+  std::size_t family_release_sites = 0;
+  std::size_t family_autorelease_sites = 0;
+  std::size_t compatibility_returns_retained_sites = 0;
+  std::size_t compatibility_returns_not_retained_sites = 0;
+  std::size_t compatibility_consumed_sites = 0;
+  bool callable_annotation_source_supported = false;
+  bool compatibility_alias_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5031,6 +5064,8 @@ struct Objc3FrontendPipelineResult {
       part8_system_extension_source_closure_summary;
   Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
       part8_cleanup_resource_capture_source_completion_summary;
+  Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+      part8_retainable_c_family_source_completion_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

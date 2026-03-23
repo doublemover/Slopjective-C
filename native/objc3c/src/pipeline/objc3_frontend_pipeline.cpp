@@ -4421,6 +4421,20 @@ std::string BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart8RetainableCFamilySourceCompletionReplayKey(
+    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";family_sites=" << summary.family_retain_sites << ":"
+      << summary.family_release_sites << ":"
+      << summary.family_autorelease_sites
+      << ";compat_sites=" << summary.compatibility_returns_retained_sites
+      << ":" << summary.compatibility_returns_not_retained_sites
+      << ":" << summary.compatibility_consumed_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -5844,6 +5858,60 @@ BuildPart8CleanupResourceCaptureSourceCompletionSummary(
   return summary;
 }
 
+Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+BuildPart8RetainableCFamilySourceCompletionSummary(
+    const Objc3Program &program) {
+  Objc3FrontendPart8RetainableCFamilySourceCompletionSummary summary;
+
+  const auto accumulate_callable =
+      [&summary](const auto &decl) {
+        for (const std::string &attribute_name :
+             decl.retainable_c_family_callable_attributes) {
+          if (attribute_name == "objc_family_retain") {
+            ++summary.family_retain_sites;
+          } else if (attribute_name == "objc_family_release") {
+            ++summary.family_release_sites;
+          } else if (attribute_name == "objc_family_autorelease") {
+            ++summary.family_autorelease_sites;
+          } else if (attribute_name == "os_returns_retained" ||
+                     attribute_name == "cf_returns_retained" ||
+                     attribute_name == "ns_returns_retained") {
+            ++summary.compatibility_returns_retained_sites;
+          } else if (attribute_name == "os_returns_not_retained" ||
+                     attribute_name == "cf_returns_not_retained" ||
+                     attribute_name == "ns_returns_not_retained") {
+            ++summary.compatibility_returns_not_retained_sites;
+          } else if (attribute_name == "os_consumed" ||
+                     attribute_name == "cf_consumed" ||
+                     attribute_name == "ns_consumed") {
+            ++summary.compatibility_consumed_sites;
+          }
+        }
+      };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      accumulate_callable(method);
+    }
+  }
+
+  summary.callable_annotation_source_supported = true;
+  summary.compatibility_alias_source_supported = true;
+  summary.deterministic_handoff = true;
+  summary.ready_for_semantic_expansion = true;
+  summary.replay_key =
+      BuildPart8RetainableCFamilySourceCompletionReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6064,6 +6132,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part8_cleanup_resource_capture_source_completion_summary =
       BuildPart8CleanupResourceCaptureSourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part8_retainable_c_family_source_completion_summary =
+      BuildPart8RetainableCFamilySourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

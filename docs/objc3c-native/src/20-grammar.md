@@ -3565,6 +3565,21 @@ it under
 - this lane still remains parser/frontend only; cleanup lowering, resource
   runtime behavior, and borrowed-pointer legality remain later `M271` work
 
+## M271 retainable C-family callable source completion
+
+- callable `__attribute__((objc_family_retain(FamilyName)))` is admitted on
+  function and Objective-C method declarations
+- callable `__attribute__((objc_family_release(FamilyName)))` is admitted on
+  function and Objective-C method declarations
+- callable `__attribute__((objc_family_autorelease(FamilyName)))` is admitted
+  on function and Objective-C method declarations
+- compatibility aliases are admitted on callable declarations:
+  `os_returns_retained`, `os_returns_not_retained`, `os_consumed`,
+  `cf_returns_retained`, `cf_returns_not_retained`, `cf_consumed`,
+  `ns_returns_retained`, `ns_returns_not_retained`, and `ns_consumed`
+- this lane remains frontend/source-model only; retainable-family legality,
+  ARC-family interop, and runtime integration remain later `M271` work
+
 ## M270 actor isolation and sendable semantic model
 
 The semantic pipeline now publishes a dedicated packet at

@@ -174,6 +174,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupHookAnnotations 
     "source-only:cleanup-hook-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupResourceSugar =
     "source-only:cleanup-resource-sugar";
+inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionContractId =
+    "objc3c-part8-retainable-c-family-source-completion/m271-a003-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCallableAnnotations =
+    "source-only:retainable-c-family-callable-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompatibilityAliases =
+    "source-only:retainable-c-family-compatibility-aliases";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

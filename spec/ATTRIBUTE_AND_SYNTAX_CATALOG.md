@@ -291,6 +291,15 @@ M271-A002 frontend completion:
 - `@cleanup(CleanupFn)` and `@resource(CloseFn, invalid: Expr)`
 - explicit block capture lists now preserve plain, `weak`, `unowned`, and
   `move` item modes in the emitted frontend packet
+
+M271-A003 retainable-family source completion:
+- `__attribute__((objc_family_retain(FamilyName)))`
+- `__attribute__((objc_family_release(FamilyName)))`
+- `__attribute__((objc_family_autorelease(FamilyName)))`
+- compatibility aliases on callables:
+  `os_returns_retained`, `os_returns_not_retained`, `os_consumed`,
+  `cf_returns_retained`, `cf_returns_not_retained`, `cf_consumed`,
+  `ns_returns_retained`, `ns_returns_not_retained`, `ns_consumed`
 ```
 
 This attribute may be applied to:

@@ -209,6 +209,11 @@ M271-A002 implementation note:
 - the frontend now admits cleanup-hook locals, local resource sugar, and all
   explicit block capture item modes before later `M271` semantic and lowering
   work
+
+M271-A003 implementation note:
+- the frontend now admits retainable C-family callable annotations and the
+  canonical compatibility aliases before later `M271` legality and runtime
+  integration work
   runnable actor runtime behavior remain later `M270` work
 
 M270-B001 implementation note:

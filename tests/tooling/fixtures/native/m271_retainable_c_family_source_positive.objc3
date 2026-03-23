@@ -1,0 +1,10 @@
+module m271a003;
+
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), os_returns_not_retained));
+extern fn NSMakeThing() -> id
+    __attribute__((ns_returns_retained));

@@ -849,6 +849,12 @@ M271-A002 frontend completion note:
   modes: plain, `weak`, `unowned`, and `move`
 - cleanup lowering, resource runtime behavior, and borrowed-pointer legality
   remain later `M271` work
+
+M271-A003 retainable-family source note:
+- the frontend now admits retainable C-family callable attributes and the
+  canonical compatibility aliases on function and method declarations
+- the current truthful source slice does not yet claim family legality,
+  ARC-family interop, or runnable retainable-family runtime behavior
 - actor interfaces now publish deterministic source counts for actor members,
   executor annotations, async actor methods, and actor member metadata sites
 - this remains a frontend/source-model claim; actor-member legality,

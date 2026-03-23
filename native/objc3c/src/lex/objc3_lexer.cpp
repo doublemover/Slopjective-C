@@ -104,6 +104,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M271-A002 source-surface note: `@cleanup` and `@resource` are admitted as
   // local storage-annotation directives without claiming cleanup lowering or
   // runtime resource behavior yet.
+  // M271-A003 source-surface note: retainable C-family callable annotations
+  // remain parser-owned `__attribute__` spellings rather than dedicated lexer
+  // keywords; the lexer only needs to preserve their identifier tokens.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

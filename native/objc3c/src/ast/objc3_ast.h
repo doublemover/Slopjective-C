@@ -1294,6 +1294,10 @@ struct Objc3MethodDecl {
   std::size_t objc_returns_borrowed_owner_index = 0;
   bool return_borrowed_pointer_qualified = false;
   std::string returns_borrowed_profile;
+  std::vector<std::string> retainable_c_family_callable_attributes;
+  std::vector<std::string> retainable_c_family_names;
+  bool retainable_c_family_profile_is_normalized = false;
+  std::string retainable_c_family_profile;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
@@ -1705,6 +1709,10 @@ struct FunctionDecl {
   std::size_t objc_returns_borrowed_owner_index = 0;
   bool return_borrowed_pointer_qualified = false;
   std::string returns_borrowed_profile;
+  std::vector<std::string> retainable_c_family_callable_attributes;
+  std::vector<std::string> retainable_c_family_names;
+  bool retainable_c_family_profile_is_normalized = false;
+  std::string retainable_c_family_profile;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
