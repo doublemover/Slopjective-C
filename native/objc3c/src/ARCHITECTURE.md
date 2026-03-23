@@ -11123,3 +11123,20 @@ execution surface for the supported task-runtime slice.
     some broader fixture shapes, so D002 keeps its claim scoped to the live
     helper-backed execution boundary
 - the next issue is `M269-D003`
+
+## M269 Part 7 Task Runtime Hardening (D003)
+
+`M269-D003` hardens the same live task-runtime slice around cancellation,
+autoreleasepool boundaries, and reset-stable replay determinism.
+
+- emitted IR now carries:
+  - `; part7_task_runtime_hardening = ...`
+  - `!objc3.objc_part7_task_runtime_hardening = !{!96}`
+- linked runtime proof validates:
+  - reset-stable task snapshot replay
+  - autoreleasepool push/pop accounting
+  - ARC debug push/pop accounting
+  - deterministic cancellation/task-helper state across two identical passes
+- the helper/runtime surface remains private and linkable through the existing
+  runtime support archive
+- the next issue is `M269-E001`

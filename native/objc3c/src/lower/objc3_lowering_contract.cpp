@@ -1629,6 +1629,28 @@ std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
   return out.str();
 }
 
+std::string Objc3Part7TaskRuntimeHardeningSummary() {
+  std::ostringstream out;
+  // M269-D003 hardening anchor: live task helper execution now carries one
+  // explicit edge-case/runtime-stability packet for cancellation cleanup,
+  // autorelease scopes, and reset-stable replay proof.
+  out << "contract=" << kObjc3Part7TaskRuntimeHardeningContractId
+      << ";live_runtime_contract="
+      << kObjc3Part7LiveTaskRuntimeIntegrationContractId
+      << ";source_model=" << kObjc3Part7TaskRuntimeHardeningSourceModel
+      << ";execution_model=" << kObjc3Part7TaskRuntimeHardeningExecutionModel
+      << ";packaging_model=" << kObjc3Part7TaskRuntimeHardeningPackagingModel
+      << ";reset_symbol=objc3_runtime_reset_for_testing"
+      << ";task_snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
+      << ";memory_snapshot_symbol=objc3_runtime_copy_memory_management_state_for_testing"
+      << ";arc_snapshot_symbol=objc3_runtime_copy_arc_debug_state_for_testing"
+      << ";push_scope_symbol=" << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";pop_scope_symbol=" << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";fail_closed_model=" << kObjc3Part7TaskRuntimeHardeningFailClosedModel
+      << ";next_issue=M269-E001";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

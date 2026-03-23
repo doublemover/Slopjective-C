@@ -560,6 +560,10 @@ int objc3_runtime_copy_arc_debug_state_for_testing(
 // M269-D002 live task runtime anchor: task-runtime snapshot publication stays
 // private and is consumed by the linked runtime probe rather than a widened
 // public scheduler ABI.
+// M269-D003 hardening anchor: cancellation cleanup, autoreleasepool scopes,
+// arc-debug counters, and explicit runtime resets are validated against the
+// same private snapshot/testing surface rather than widening any public task
+// scheduler ABI.
 int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot);
 int objc3_runtime_copy_async_continuation_state_for_testing(

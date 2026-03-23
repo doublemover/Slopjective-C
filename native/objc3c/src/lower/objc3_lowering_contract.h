@@ -885,6 +885,21 @@ inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel
 inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel =
     "retained-runtime-metadata-export-gates-and-no-public-task-runtime-header-mean-broader-native-task-scheduler-claims-remain-deferred";
 std::string Objc3Part7LiveTaskRuntimeIntegrationSummary();
+// M269-D003 hardening anchor: lane-D now freezes one truthful edge-case
+// completion surface above the live task runtime boundary. The current helper
+// cluster must remain deterministic across cancellation paths, autoreleasepool
+// scopes, and explicit runtime resets used by issue-local replay probes.
+inline constexpr const char *kObjc3Part7TaskRuntimeHardeningContractId =
+    "objc3c-part7-task-runtime-hardening/m269-d003-v1";
+inline constexpr const char *kObjc3Part7TaskRuntimeHardeningSourceModel =
+    "supported-task-runtime-helper-traffic-now-preserves-cancellation-cleanup-autorelease-scope-and-reset-replay-determinism";
+inline constexpr const char *kObjc3Part7TaskRuntimeHardeningExecutionModel =
+    "task-runtime-helper-state-memory-management-scope-state-and-arc-debug-counters-remain-stable-across-reset-and-autorelease-boundaries";
+inline constexpr const char *kObjc3Part7TaskRuntimeHardeningPackagingModel =
+    "linked-runtime-probes-consume-the-existing-runtime-support-archive-and-validate-two-pass-reset-stable-task-runtime-state";
+inline constexpr const char *kObjc3Part7TaskRuntimeHardeningFailClosedModel =
+    "no-public-task-scheduler-abi-no-cross-module-task-runtime-claim-and-no-broader-front-door-metadata-export-unblock-claim-yet";
+std::string Objc3Part7TaskRuntimeHardeningSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

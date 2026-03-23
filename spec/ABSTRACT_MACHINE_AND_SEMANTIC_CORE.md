@@ -834,6 +834,17 @@ M269-D002 live task runtime note:
   some fixture shapes before object emission, so D002 keeps its claim scoped to
   the helper-backed live runtime boundary
 
+M269-D003 task-runtime hardening note:
+
+- the live Part 7 task slice now publishes one explicit hardening packet for
+  cancellation cleanup, autoreleasepool scope interaction, and reset-stable
+  replay determinism
+- emitted IR now publishes `; part7_task_runtime_hardening = ...` and
+  `!objc3.objc_part7_task_runtime_hardening = !{!96}`
+- linked runtime proof validates deterministic two-pass replay across reset,
+  task snapshot publication, memory-management snapshot publication,
+  ARC-debug snapshot publication, and autoreleasepool push/pop boundaries
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

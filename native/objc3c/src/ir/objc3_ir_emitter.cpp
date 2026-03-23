@@ -783,6 +783,11 @@ class Objc3IREmitter {
     // gating remains intentionally deferred.
     out << "; part7_live_task_runtime_integration = "
         << Objc3Part7LiveTaskRuntimeIntegrationSummary() << "\n";
+    // M269-D003 hardening anchor: publish the reset/autorelease/cancellation
+    // stability packet above the live task runtime boundary so issue-local
+    // probes can prove deterministic replay across scope and reset edges.
+    out << "; part7_task_runtime_hardening = "
+        << Objc3Part7TaskRuntimeHardeningSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -3133,6 +3138,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_task_runtime_abi_completion = !{!93}\n";
     out << "!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}\n";
     out << "!objc3.objc_part7_live_task_runtime_integration = !{!95}\n";
+    out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4913,6 +4919,31 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                "objc3_runtime_copy_task_runtime_state_for_testing")
+        << "\"}\n";
+    out << "!96 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningSourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningExecutionModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningPackagingModel)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningFailClosedModel)
+        << "\", !\""
+        << EscapeCStringLiteral("objc3_runtime_reset_for_testing")
+        << "\", !\""
+        << EscapeCStringLiteral(
+               "objc3_runtime_copy_task_runtime_state_for_testing")
+        << "\", !\""
+        << EscapeCStringLiteral(
+               "objc3_runtime_copy_memory_management_state_for_testing")
+        << "\", !\""
+        << EscapeCStringLiteral("objc3_runtime_copy_arc_debug_state_for_testing")
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

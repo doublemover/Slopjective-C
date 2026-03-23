@@ -521,3 +521,18 @@ runtime execution boundary rather than only a frozen contract.
   - `objc3_runtime_task_on_cancel_i32`
   - `objc3_runtime_executor_hop_i32`
   - `objc3_runtime_copy_task_runtime_state_for_testing`
+
+## M269 task runtime hardening probe
+
+`M269-D003` adds a reset/autorelease hardening probe above the same live task
+runtime boundary.
+
+- runtime probe:
+  `tests/tooling/runtime/m269_d003_task_runtime_hardening_probe.cpp`
+- the probe validates:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+  - `objc3_runtime_copy_arc_debug_state_for_testing`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`

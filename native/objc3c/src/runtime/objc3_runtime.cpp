@@ -4831,6 +4831,9 @@ extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
 }
 
+// M269-D003 hardening anchor: task-runtime probes now rely on these existing
+// autoreleasepool helpers plus reset-stable snapshot state to prove
+// cancellation/autorelease determinism without widening the public ABI.
 extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   ++g_runtime_arc_debug_autoreleasepool_pop_count;
   const std::vector<int> values = PopRuntimeAutoreleasePoolFrameValues();

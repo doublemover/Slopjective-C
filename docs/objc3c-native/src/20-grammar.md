@@ -3510,6 +3510,24 @@ execution boundary for the supported Part 7 task slice.
   `O3S260` / `O3L300`, so D002 proves the live helper-backed execution path
   directly rather than claiming broader front-door scheduler completeness
 
+## M269 task runtime cancellation and autorelease hardening
+
+`M269-D003` hardens the same live task-runtime slice around reset-stable replay
+and autoreleasepool/cancellation edges.
+
+- emitted IR now carries:
+  - `; part7_task_runtime_hardening = ...`
+  - `!objc3.objc_part7_task_runtime_hardening = !{!96}`
+- the linked runtime probe validates deterministic two-pass replay across:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+  - `objc3_runtime_copy_arc_debug_state_for_testing`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+- the supported task helper cluster remains private and live
+- broader front-door metadata-export gating still remains outside this issue
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

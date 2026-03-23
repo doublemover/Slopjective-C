@@ -682,6 +682,21 @@ Current implementation status (`M269-D002`):
   front-door fixture shapes, so this issue keeps its claim scoped to the live
   helper-backed execution path
 
+Current implementation status (`M269-D003`):
+
+- the live task-runtime slice now publishes one hardening boundary for
+  cancellation cleanup, autoreleasepool scopes, and reset-stable replay
+- emitted IR now carries:
+  - `; part7_task_runtime_hardening = ...`
+  - `!objc3.objc_part7_task_runtime_hardening = !{!96}`
+- issue-local runtime proof validates deterministic two-pass replay across:
+  - `objc3_runtime_reset_for_testing`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`
+  - `objc3_runtime_copy_memory_management_state_for_testing`
+  - `objc3_runtime_copy_arc_debug_state_for_testing`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

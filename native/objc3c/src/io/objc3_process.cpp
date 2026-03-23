@@ -28,6 +28,8 @@ extern char **environ;
 // M269-D002 live task runtime anchor: packaged task-runtime probes continue to
 // use the existing runtime library path and linked execution surface; no
 // separate public scheduler/runtime package is introduced here.
+// M269-D003 hardening anchor: replay/hardening probes for the same task
+// runtime continue to package against that existing runtime archive path.
 
 enum class ProducedObjectFormat : std::uint8_t {
   kUnknown = 0,
