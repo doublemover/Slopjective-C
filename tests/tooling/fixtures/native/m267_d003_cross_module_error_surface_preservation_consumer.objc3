@@ -1,0 +1,11 @@
+module m267_d003_cross_module_error_surface_preservation_consumer;
+
+extern fn risky(value: i32) -> i32;
+extern fn mapStatus(status: i32) -> i32;
+extern fn bridgeStatus(value: i32) -> i32;
+
+fn runCase() -> i32 {
+  let direct = risky(1);
+  let bridged = bridgeStatus(2);
+  return direct + bridged;
+}

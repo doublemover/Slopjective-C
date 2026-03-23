@@ -28,6 +28,8 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool part6_runtime_import_artifact_ready = false;
   bool part6_separate_compilation_replay_ready = false;
   bool part6_deterministic = false;
+  std::string part6_contract_id;
+  std::string part6_source_contract_id;
   std::string part6_result_and_bridging_artifact_replay_key;
   std::string part6_part6_replay_key;
   std::string part6_throws_replay_key;

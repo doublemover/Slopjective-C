@@ -10914,4 +10914,29 @@ Truth boundary:
 - the current live execution proof stays limited to the supported `NSError`
   status-bridge and catch-dispatch slice
 - generalized foreign exception ABI remains deferred
+
+## M267 Part 6 Cross-Module Error-Surface Preservation Hardening (D003)
+
+`M267-D003` hardens the imported runtime-surface and cross-module link-plan
+boundary above the live helper/runtime path from `M267-D002`.
+
+Canonical `M267-D003` preservation surfaces:
+
+- imported Part 6 replay state remains parsed in
+  `Objc3ImportedRuntimeModuleSurface`
+- cross-module link-plan inputs now preserve imported Part 6:
+  - contract id
+  - source contract id
+  - readiness booleans
+  - replay keys
+- `TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(...)` now fail-closes on:
+  - Part 6 contract drift
+  - Part 6 source-contract drift
+  - incomplete imported Part 6 replay state
+  - duplicate imported Part 6 replay keys
+- emitted `module.cross-module-runtime-link-plan.json` now publishes the
+  expected Part 6 contracts plus the imported Part 6 preservation state
+
+This tranche does not widen the runtime helper ABI. It hardens the imported
+runtime-surface and cross-image orchestration layer instead.
 - the next issue is `M267-D003`

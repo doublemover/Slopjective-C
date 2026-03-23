@@ -1,0 +1,32 @@
+module m267_d003_cross_module_error_surface_preservation_provider;
+
+@interface ReplayBox
+- (i32)tag;
+@end
+
+@implementation ReplayBox
+- (i32)tag {
+  return 7;
+}
+@end
+
+fn risky(value: i32) -> i32 {
+  return value + 10;
+}
+
+fn mapStatus(status: i32) -> i32 {
+  return status + 40;
+}
+
+fn bridgeStatus(value: i32) -> i32 {
+  if (value == 2) {
+    return 5;
+  }
+  return 0;
+}
+
+fn recover() -> i32 {
+  let direct = risky(0);
+  let bridgedValue = bridgeStatus(2);
+  return direct + bridgedValue;
+}

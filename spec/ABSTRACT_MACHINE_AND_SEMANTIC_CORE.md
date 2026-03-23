@@ -557,6 +557,16 @@ M267-D002 live-runtime note:
 - remaining work moves to `M267-D003`, which is the cross-module/runtime-import
   hardening tranche above this live path
 
+M267-D003 cross-module preservation note:
+
+- imported runtime surfaces now preserve the current runnable Part 6 replay
+  contract/source-contract pair plus the readiness and replay-key inventory
+- cross-module link-plan construction fail-closes if imported Part 6 replay
+  state is incomplete, non-deterministic, or drifted from the canonical Part 6
+  replay contracts
+- the runtime helper ABI itself does not widen here; D003 hardens the imported
+  runtime-surface and cross-image orchestration boundary above `M267-D002`
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

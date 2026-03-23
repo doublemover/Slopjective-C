@@ -1453,6 +1453,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.local_translation_unit_identity_model.empty() ||
       inputs.local_translation_unit_identity_key.empty() ||
       inputs.local_translation_unit_registration_order_ordinal == 0 ||
+      inputs.expected_part6_contract_id.empty() ||
+      inputs.expected_part6_source_contract_id.empty() ||
       inputs.local_driver_linker_flags.empty() ||
       inputs.direct_import_surface_artifact_paths.empty() ||
       inputs.imported_inputs.empty()) {
@@ -1491,8 +1493,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::uint64_t> seen_registration_ordinals;
   std::unordered_set<std::string> seen_driver_linker_flags;
   std::unordered_set<std::string> seen_direct_import_surface_paths;
+  std::unordered_set<std::string> seen_part6_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
+  std::vector<std::string> imported_part6_module_names;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
   std::sort(direct_import_surface_artifact_paths.begin(),
@@ -1593,6 +1597,43 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
               imported_input.translation_unit_registration_order_ordinal);
       return false;
     }
+    if (imported_input.part6_result_and_bridging_artifact_replay_present) {
+      if (imported_input.part6_contract_id != inputs.expected_part6_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 6 contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part6_source_contract_id !=
+          inputs.expected_part6_source_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 6 source contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!imported_input.part6_binary_artifact_replay_ready ||
+          !imported_input.part6_runtime_import_artifact_ready ||
+          !imported_input.part6_separate_compilation_replay_ready ||
+          imported_input.part6_result_and_bridging_artifact_replay_key.empty() ||
+          imported_input.part6_part6_replay_key.empty() ||
+          imported_input.part6_throws_replay_key.empty() ||
+          imported_input.part6_result_like_replay_key.empty() ||
+          imported_input.part6_ns_error_replay_key.empty() ||
+          imported_input.part6_unwind_replay_key.empty()) {
+        error =
+            "cross-module runtime link-plan Part 6 replay surface incomplete for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!seen_part6_replay_keys.insert(imported_input.part6_part6_replay_key)
+               .second) {
+        error =
+            "cross-module runtime link-plan duplicate imported Part 6 replay key: " +
+            imported_input.part6_part6_replay_key;
+        return false;
+      }
+      imported_part6_module_names.push_back(imported_input.module_name);
+    }
     ordered_link_inputs.push_back(
         {imported_input.translation_unit_registration_order_ordinal,
          imported_input.translation_unit_identity_key,
@@ -1673,6 +1714,49 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << EscapeJsonString(
                imported_input.runtime_support_library_archive_relative_path)
         << "\",\n"
+        << "      \"part6_result_and_bridging_artifact_replay_present\": "
+        << (imported_input.part6_result_and_bridging_artifact_replay_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part6_binary_artifact_replay_ready\": "
+        << (imported_input.part6_binary_artifact_replay_ready ? "true"
+                                                              : "false")
+        << ",\n"
+        << "      \"part6_runtime_import_artifact_ready\": "
+        << (imported_input.part6_runtime_import_artifact_ready ? "true"
+                                                               : "false")
+        << ",\n"
+        << "      \"part6_separate_compilation_replay_ready\": "
+        << (imported_input.part6_separate_compilation_replay_ready ? "true"
+                                                                   : "false")
+        << ",\n"
+        << "      \"part6_deterministic\": "
+        << (imported_input.part6_deterministic ? "true" : "false")
+        << ",\n"
+        << "      \"part6_contract_id\": \""
+        << EscapeJsonString(imported_input.part6_contract_id) << "\",\n"
+        << "      \"part6_source_contract_id\": \""
+        << EscapeJsonString(imported_input.part6_source_contract_id)
+        << "\",\n"
+        << "      \"part6_result_and_bridging_artifact_replay_key\": \""
+        << EscapeJsonString(
+               imported_input.part6_result_and_bridging_artifact_replay_key)
+        << "\",\n"
+        << "      \"part6_replay_key\": \""
+        << EscapeJsonString(imported_input.part6_part6_replay_key) << "\",\n"
+        << "      \"throws_replay_key\": \""
+        << EscapeJsonString(imported_input.part6_throws_replay_key)
+        << "\",\n"
+        << "      \"result_like_replay_key\": \""
+        << EscapeJsonString(imported_input.part6_result_like_replay_key)
+        << "\",\n"
+        << "      \"ns_error_replay_key\": \""
+        << EscapeJsonString(imported_input.part6_ns_error_replay_key)
+        << "\",\n"
+        << "      \"unwind_replay_key\": \""
+        << EscapeJsonString(imported_input.part6_unwind_replay_key)
+        << "\",\n"
         << "      \"driver_linker_flags\": "
         << BuildIndentedStringArrayJson(imported_input.driver_linker_flags,
                                         "        ");
@@ -1683,6 +1767,7 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     imported_modules_json << "\n";
   }
   imported_modules_json << "  ]";
+  std::sort(imported_part6_module_names.begin(), imported_part6_module_names.end());
 
   std::ostringstream out;
   out << "{\n"
@@ -1710,6 +1795,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << EscapeJsonString(inputs.registration_scope_model) << "\",\n"
       << "  \"link_object_order_model\": \""
       << EscapeJsonString(inputs.link_object_order_model) << "\",\n"
+      << "  \"expected_part6_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part6_contract_id) << "\",\n"
+      << "  \"expected_part6_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part6_source_contract_id) << "\",\n"
       << "  \"module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(module_names_lexicographic, "    ")
       << ",\n"
@@ -1717,10 +1806,17 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << ",\n"
       << "  \"direct_import_input_count\": "
       << direct_import_surface_artifact_paths.size() << ",\n"
+      << "  \"part6_imported_module_count\": "
+      << imported_part6_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
       << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
                                       "    ")
       << ",\n"
+      << "  \"part6_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_part6_module_names, "    ")
+      << ",\n"
+      << "  \"part6_cross_module_preservation_ready\": "
+      << (!imported_part6_module_names.empty() ? "true" : "false") << ",\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""

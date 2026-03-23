@@ -4400,6 +4400,9 @@ extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
 // M267-D002 live catch/bridge/runtime integration anchor: linked Part 6
 // object-code probes now execute through these helpers and consume the
 // snapshot state below to prove live store/load/bridge/catch traffic.
+// M267-D003 cross-module preservation anchor: the runtime helper behavior stays
+// image-local, while the driver/link-plan layer now fail-closes imported Part 6
+// replay drift before mixed-module executables can claim runnable compatibility.
 extern "C" int objc3_runtime_load_weak_current_property_i32(void) {
   ++g_runtime_arc_debug_weak_current_property_load_count;
   const int result = objc3_runtime_read_current_property_i32();

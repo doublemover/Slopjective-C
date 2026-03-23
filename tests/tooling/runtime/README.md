@@ -406,3 +406,15 @@ library and proves the helper surface from `M267-D001` is live:
   - `objc3_runtime_load_thrown_error_i32`
   - `objc3_runtime_bridge_status_error_i32`
   - `objc3_runtime_catch_matches_error_i32`
+
+## M267 cross-module error-surface preservation probe
+
+`M267-D003` hardens the cross-module side of the same runnable Part 6 slice:
+
+- a provider emits the canonical runtime import surface plus
+  `module.part6-error-replay.json`
+- a consumer imports that surface and emits a cross-module link plan that now
+  preserves the imported Part 6 replay contract ids, readiness booleans, and
+  replay keys
+- a tampered imported runtime surface must fail closed during cross-module
+  link-plan construction before mixed-module executable claims are made

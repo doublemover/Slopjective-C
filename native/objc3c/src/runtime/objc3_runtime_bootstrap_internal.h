@@ -437,6 +437,9 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 // M267-D002 live catch/bridge/runtime integration anchor: linked native Part 6
 // probes now execute through this same helper cluster and validate the helper
 // traffic through the retained private snapshot surface below.
+// M267-D003 cross-module preservation anchor: imported modules preserve this
+// same Part 6 helper cluster indirectly through replay sidecars and cross-image
+// link-plan validation rather than by widening the runtime helper ABI again.
 void objc3_runtime_store_thrown_error_i32(int *slot, int value);
 int objc3_runtime_load_thrown_error_i32(const int *slot);
 int objc3_runtime_bridge_status_error_i32(int status_value,

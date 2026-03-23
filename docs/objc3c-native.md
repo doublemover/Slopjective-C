@@ -7717,6 +7717,40 @@ Recommended M267 lane-D live-runtime check:
 
 - `python scripts/check_m267_d002_live_catch_bridge_and_runtime_integration_core_feature_implementation.py`
 - `M267-D003` is the next issue.
+
+## M267 Part 6 cross-module error-surface preservation hardening (M267-D003)
+
+Lane D now hardens the imported runtime-surface and cross-module link-plan path
+for the current runnable Part 6 slice.
+
+Current implementation status (`M267-D003`):
+
+- the cross-module runtime link plan now preserves imported Part 6 replay state:
+  - `contract_id`
+  - `source_contract_id`
+  - readiness booleans
+  - replay keys for Part 6, throws, result-like, `NSError`, and unwind
+- cross-module link planning now fails closed if an imported Part 6 replay
+  surface drifts from the canonical runnable contract or arrives incomplete
+- emitted `module.cross-module-runtime-link-plan.json` now publishes:
+  - `expected_part6_contract_id`
+  - `expected_part6_source_contract_id`
+  - `part6_imported_module_names_lexicographic`
+  - `part6_cross_module_preservation_ready`
+- the runtime helper ABI remains unchanged:
+  - D003 hardens the driver/import/link-plan boundary rather than widening the
+    runtime helper surface from `M267-D001`
+
+Still explicitly deferred:
+
+- broader cross-module executable claims beyond the supported imported Part 6
+  replay and link-plan preservation slice
+- generalized foreign exception transport across module boundaries
+
+Recommended M267 lane-D cross-module check:
+
+- `python scripts/check_m267_d003_cross_module_error_surface_preservation_hardening_edge_case_and_compatibility_completion.py`
+- `M267-E001` is the next issue.
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

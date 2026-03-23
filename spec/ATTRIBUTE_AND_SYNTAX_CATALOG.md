@@ -645,6 +645,18 @@ Current implementation status (`M267-D002`):
   - generalized foreign exception ABI
   - broader cross-module executable Part 6 claims
 
+Current implementation status (`M267-D003`):
+
+- imported runtime surfaces now preserve the current runnable Part 6 replay
+  contract/source pair and the associated readiness + replay-key inventory
+- cross-module link-plan emission now publishes:
+  - `expected_part6_contract_id`
+  - `expected_part6_source_contract_id`
+  - imported Part 6 module names and readiness state
+- mixed-module native builds now fail closed if an imported Part 6 replay
+  surface is incomplete or drifted from the canonical runnable replay contract
+- the runtime helper ABI remains unchanged in this tranche
+
 ## M265 imported Part 3 packets
 
 Cross-module imports preserve optional/key-path runtime packets alongside the

@@ -820,6 +820,8 @@ bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
   }
 
   surface.part6_result_and_bridging_artifact_replay_present = true;
+  surface.part6_contract_id = std::move(contract_id);
+  surface.part6_source_contract_id = std::move(source_contract_id);
   return true;
 }
 

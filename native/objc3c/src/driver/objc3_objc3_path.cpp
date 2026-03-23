@@ -810,15 +810,20 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   .translation_unit_registration_order_ordinal;
           link_plan_inputs.local_driver_linker_flags = {
               linker_retention_artifacts.driver_linker_flag};
+          link_plan_inputs.expected_part6_contract_id =
+              kObjc3Part6ResultAndBridgingArtifactReplayContractId;
+          link_plan_inputs.expected_part6_source_contract_id =
+              kObjc3Part6ThrowsAbiPropagationLoweringContractId;
           for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
             link_plan_inputs.direct_import_surface_artifact_paths.push_back(
                 imported_surfaces[index].source_path.generic_string());
             const auto &peer_artifacts = imported_peer_artifacts[index];
+            const auto &imported_surface = imported_surfaces[index];
             Objc3CrossModuleRuntimeLinkPlanImportedInput imported_input;
             imported_input.module_name =
-                imported_surfaces[index].frontend_closure_summary.module_name;
+                imported_surface.frontend_closure_summary.module_name;
             imported_input.import_surface_artifact_path =
-                imported_surfaces[index].source_path.generic_string();
+                imported_surface.source_path.generic_string();
             imported_input.registration_manifest_artifact_path =
                 peer_artifacts.registration_manifest_path.generic_string();
             imported_input.object_artifact_path =
@@ -838,6 +843,31 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 peer_artifacts.translation_unit_registration_order_ordinal;
             imported_input.driver_linker_flags =
                 peer_artifacts.driver_linker_flags;
+            imported_input.part6_result_and_bridging_artifact_replay_present =
+                imported_surface.part6_result_and_bridging_artifact_replay_present;
+            imported_input.part6_binary_artifact_replay_ready =
+                imported_surface.part6_binary_artifact_replay_ready;
+            imported_input.part6_runtime_import_artifact_ready =
+                imported_surface.part6_runtime_import_artifact_ready;
+            imported_input.part6_separate_compilation_replay_ready =
+                imported_surface.part6_separate_compilation_replay_ready;
+            imported_input.part6_deterministic =
+                imported_surface.part6_deterministic;
+            imported_input.part6_contract_id = imported_surface.part6_contract_id;
+            imported_input.part6_source_contract_id =
+                imported_surface.part6_source_contract_id;
+            imported_input.part6_result_and_bridging_artifact_replay_key =
+                imported_surface.part6_result_and_bridging_artifact_replay_key;
+            imported_input.part6_part6_replay_key =
+                imported_surface.part6_part6_replay_key;
+            imported_input.part6_throws_replay_key =
+                imported_surface.part6_throws_replay_key;
+            imported_input.part6_result_like_replay_key =
+                imported_surface.part6_result_like_replay_key;
+            imported_input.part6_ns_error_replay_key =
+                imported_surface.part6_ns_error_replay_key;
+            imported_input.part6_unwind_replay_key =
+                imported_surface.part6_unwind_replay_key;
             link_plan_inputs.imported_inputs.push_back(std::move(imported_input));
           }
 
