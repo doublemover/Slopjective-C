@@ -63,6 +63,26 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part7ContinuationAbiAsyncLoweringDeferredModel =
         "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-m268-work";
+// M268-C002 implementation anchor: publish a second Part 7 packet that states
+// the current runnable lowering truthfully. The live native slice is
+// direct-call based and non-suspending; it does not claim a full continuation
+// runtime yet.
+inline constexpr const char
+    *kObjc3Part7AsyncDirectCallLoweringContractId =
+        "objc3c-part7-async-direct-call-lowering/m268-c002-v1";
+inline constexpr const char
+    *kObjc3Part7AsyncDirectCallLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part7_async_function_await_and_continuation_lowering";
+inline constexpr const char
+    *kObjc3Part7AsyncDirectCallLoweringImplementationModel =
+        "supported-async-functions-and-await-lower-through-direct-calls-in-native-ir-and-object-emission-for-the-current-non-suspending-slice";
+inline constexpr const char
+    *kObjc3Part7AsyncDirectCallLoweringAwaitModel =
+        "await-marked-expressions-currently-reuse-the-operand-direct-call-lowering-path-without-materializing-a-suspension-state-machine";
+inline constexpr const char
+    *kObjc3Part7AsyncDirectCallLoweringDeferredModel =
+        "continuation-allocation-resume-suspend-state-machine-cleanup-and-executor-runtime-scheduling-remain-later-m268-work";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1228,6 +1248,71 @@ std::string BuildPart7ContinuationAbiAsyncLoweringContractJson(
       << (deterministic_handoff ? "true" : "false")
       << ",\"ready_for_ir_emission\":"
       << (deterministic_handoff ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart7AsyncDirectCallLoweringJson(
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3AsyncContinuationLoweringContract &continuation_contract,
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
+    const std::string &continuation_replay_key,
+    const std::string &await_replay_key) {
+  const bool deterministic = source_summary.deterministic_handoff &&
+                             continuation_contract.deterministic &&
+                             await_contract.deterministic;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringSurfacePath)
+      << "\",\"implementation_model\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringImplementationModel)
+      << "\",\"await_lowering_model\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringAwaitModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part7AsyncDirectCallLoweringDeferredModel)
+      << "\",\"source_closure_contract_id\":\""
+      << EscapeJsonString(kObjc3Part7AsyncSourceClosureContractId)
+      << "\",\"continuation_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
+      << "\",\"await_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
+      << "\",\"async_function_sites\":"
+      << source_summary.async_function_sites
+      << ",\"async_method_sites\":"
+      << source_summary.async_method_sites
+      << ",\"await_expression_sites\":"
+      << source_summary.await_expression_sites
+      << ",\"continuation_allocation_sites\":"
+      << continuation_contract.continuation_allocation_sites
+      << ",\"continuation_resume_sites\":"
+      << continuation_contract.continuation_resume_sites
+      << ",\"continuation_suspend_sites\":"
+      << continuation_contract.continuation_suspend_sites
+      << ",\"async_state_machine_sites\":"
+      << continuation_contract.async_state_machine_sites
+      << ",\"await_resume_sites\":"
+      << await_contract.await_resume_sites
+      << ",\"await_state_machine_sites\":"
+      << await_contract.await_state_machine_sites
+      << ",\"await_continuation_sites\":"
+      << await_contract.await_continuation_sites
+      << ",\"direct_call_lowering_supported\":"
+      << (deterministic ? "true" : "false")
+      << ",\"non_suspending_happy_path_only\":true"
+      << ",\"object_emission_supported\":"
+      << (deterministic ? "true" : "false")
+      << ",\"runtime_scheduler_required\":false"
+      << ",\"continuation_replay_key\":\""
+      << EscapeJsonString(continuation_replay_key)
+      << "\",\"await_replay_key\":\""
+      << EscapeJsonString(await_replay_key)
+      << "\",\"deterministic\":"
+      << (deterministic ? "true" : "false")
+      << ",\"ready_for_ir_object_emission\":"
+      << (deterministic ? "true" : "false")
       << "}";
   return out.str();
 }
@@ -14979,6 +15064,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,
                   part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
+           << BuildPart7AsyncDirectCallLoweringJson(
+                  part7_async_source_closure_summary,
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)
@@ -16233,6 +16325,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part7_async_diagnostics_compatibility_summary)
            << ",\"objc_part7_continuation_abi_and_async_lowering_contract\":"
            << BuildPart7ContinuationAbiAsyncLoweringContractJson(
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
+           << ",\"objc_part7_async_function_await_and_continuation_lowering\":"
+           << BuildPart7AsyncDirectCallLoweringJson(
+                  part7_async_source_closure_summary,
                   part7_async_continuation_lowering_contract,
                   part7_await_lowering_suspension_state_lowering_contract,
                   part7_async_continuation_lowering_replay_key,

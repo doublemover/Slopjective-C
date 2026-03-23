@@ -1374,6 +1374,11 @@ inline constexpr const char
 // M268-C001 freeze anchor: these lane contracts become the explicit Part 7
 // continuation ABI / await suspension lowering boundary once frontend artifacts
 // publish the replay-stable handoff packet into emitted manifests and IR.
+// M268-C002 implementation anchor: the currently supported runnable lowering
+// slice is narrower than the lane-contract names imply. Async entry points and
+// await-marked expressions lower through the existing direct-call/object path
+// only for the non-suspending happy path, while continuation allocation,
+// suspend/resume, and executor scheduling remain deferred.
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =

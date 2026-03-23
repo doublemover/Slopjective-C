@@ -3451,6 +3451,27 @@ The lowering pipeline now publishes a dedicated contract packet at
   suspension points, and continuation handoff readiness
 - this issue still does not claim runnable async frame layout, resume cleanup,
   or executor runtime execution
+
+## M268 native async lowering slice
+
+The native lowering path now publishes a dedicated implementation packet at
+`frontend.pipeline.semantic_surface.objc_part7_async_function_await_and_continuation_lowering`.
+
+- supported async functions and async Objective-C methods now emit runnable
+  LLVM IR and object files for the current non-suspending happy path
+- `await` currently lowers by reusing the operand direct-call path rather than
+  materializing continuation allocation, suspend/resume helpers, or a state
+  machine
+- the emitted packet records that the current slice remains direct-call-only:
+  - `continuation_allocation_sites = 0`
+  - `continuation_resume_sites = 0`
+  - `continuation_suspend_sites = 0`
+  - `async_state_machine_sites = 0`
+  - `await_resume_sites = 0`
+  - `await_state_machine_sites = 0`
+  - `await_continuation_sites = 0`
+- continuation allocation, suspension cleanup, resume cleanup, and executor
+  runtime scheduling remain later `M268` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

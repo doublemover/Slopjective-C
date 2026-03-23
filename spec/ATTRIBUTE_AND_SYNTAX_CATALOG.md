@@ -563,6 +563,19 @@ Current implementation status (`M268-C001`):
   entry points, await suspension points, and continuation handoff readiness
 - runnable async frame layout, suspension cleanup, and executor runtime
   behavior remain deferred to later `M268` issues
+
+Current implementation status (`M268-C002`):
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_async_function_await_and_continuation_lowering`
+- the current runnable lowering slice supports:
+  - async functions
+  - async Objective-C methods
+  - `await` on the supported non-suspending happy path
+- emitted LLVM IR and object files currently realize that slice through direct
+  calls rather than continuation allocation or state-machine emission
+- continuation allocation, suspend/resume lowering, suspension cleanup, and
+  executor runtime behavior remain deferred to later `M268` issues
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

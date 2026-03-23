@@ -642,6 +642,18 @@ M268-C001 lowering note:
 - runnable async frame layout, suspension cleanup, and executor scheduling
   remain later `M268` work
 
+M268-C002 lowering note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part7_async_function_await_and_continuation_lowering`
+- the current runnable Part 7 lowering slice is truthful but narrow:
+  - async functions and async Objective-C methods emit runnable IR/object code
+  - `await` lowers through the operand direct-call path
+  - no continuation allocation, suspend/resume helpers, or async state machine
+    is emitted in the supported happy path
+- continuation runtime, suspension cleanup, and executor scheduling remain
+  later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

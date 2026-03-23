@@ -11149,6 +11149,11 @@ class Objc3IREmitter {
                                    ", align 4");
           return EmitDirectFunctionCall(expr, signature, ctx, ignored_error_slot);
         }
+        // M268-C002 implementation anchor: supported await-marked expressions
+        // currently reach native IR through the operand's direct-call lowering
+        // path. This emits runnable IR/object code for the non-suspending happy
+        // slice without materializing continuation allocation or a state
+        // machine; those surfaces remain later M268 work.
         return EmitDirectFunctionCall(expr, signature, ctx, "");
       }
       case Expr::Kind::MessageSend: {
