@@ -5644,6 +5644,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPart7StructuredTaskCancellationSemanticSummary(
           result.part7_task_executor_cancellation_semantic_model_summary,
           result.stage_diagnostics.semantic);
+  result.part7_executor_hop_affinity_compatibility_summary =
+      BuildPart7ExecutorHopAffinityCompatibilitySummary(
+          result.part7_structured_task_cancellation_semantic_summary,
+          result.part7_async_source_closure_summary,
+          result.stage_diagnostics.semantic);
   result.part7_async_effect_suspension_semantic_model_summary =
       BuildPart7AsyncEffectSuspensionSemanticModelSummary(
           result.part7_async_source_closure_summary, result.integration_surface);

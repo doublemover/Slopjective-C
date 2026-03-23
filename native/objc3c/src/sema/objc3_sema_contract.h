@@ -689,6 +689,69 @@ inline bool IsReadyObjc3Part7StructuredTaskCancellationSemanticSummary(
          summary.failure_reason.empty();
 }
 
+inline constexpr const char
+    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDependencyContractId =
+        "objc3c-part7-structured-task-cancellation-semantics/m269-b002-v1";
+inline constexpr const char
+    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId =
+        "objc3c-part7-executor-hop-affinity-compatibility/m269-b003-v1";
+inline constexpr const char
+    *kObjc3Part7ExecutorHopAffinityCompatibilitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion";
+inline constexpr const char
+    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryRule =
+        "executor-affinity-and-detached-task-hop-boundaries-are-live-in-sema-while-runnable-hop-lowering-and-scheduler-runtime-remain-later-m269-work";
+inline constexpr const char
+    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDeferredRule =
+        "executor-hop-lowering-task-spawn-runtime-and-scheduler-visible-execution-remain-deferred-to-later-m269-lanes";
+
+struct Objc3Part7ExecutorHopAffinityCompatibilitySummary {
+  std::string contract_id =
+      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part7ExecutorHopAffinityCompatibilitySummarySurfacePath;
+  std::string semantic_model =
+      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryRule;
+  std::string deferred_model =
+      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDeferredRule;
+  std::size_t async_callable_sites = 0;
+  std::size_t executor_affinity_sites = 0;
+  std::size_t executor_main_sites = 0;
+  std::size_t executor_global_sites = 0;
+  std::size_t executor_named_sites = 0;
+  std::size_t task_creation_sites = 0;
+  std::size_t detached_task_creation_sites = 0;
+  std::size_t illegal_missing_executor_affinity_sites = 0;
+  std::size_t illegal_main_executor_detached_sites = 0;
+  bool dependency_required = false;
+  bool executor_affinity_required_for_task_callables_enforced = false;
+  bool detached_task_hop_boundary_enforced = false;
+  bool runnable_lowering_deferred = false;
+  bool executor_runtime_deferred = false;
+  bool scheduler_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part7ExecutorHopAffinityCompatibilitySummary(
+    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.executor_affinity_required_for_task_callables_enforced &&
+         summary.detached_task_hop_boundary_enforced &&
+         summary.runnable_lowering_deferred &&
+         summary.executor_runtime_deferred &&
+         summary.scheduler_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
     "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =

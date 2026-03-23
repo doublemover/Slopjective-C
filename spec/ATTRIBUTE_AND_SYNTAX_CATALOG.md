@@ -603,6 +603,15 @@ Current implementation status (`M269-B002`):
 - cancellation handlers and cancel-all calls without a cancellation check fail
   closed with diagnostic `O3S230`
 
+Current implementation status (`M269-B003`):
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion`
+- async task callables without `objc_executor(...)` affinity fail closed with
+  diagnostic `O3S231`
+- detached task creation under `objc_executor(main)` fails closed with
+  diagnostic `O3S232`
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

@@ -40,6 +40,12 @@ BuildPart7StructuredTaskCancellationSemanticSummary(
     const Objc3Part7TaskExecutorCancellationSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part7ExecutorHopAffinityCompatibilitySummary
+BuildPart7ExecutorHopAffinityCompatibilitySummary(
+    const Objc3Part7StructuredTaskCancellationSemanticSummary
+        &dependency_summary,
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part7AwaitSuspensionResumeSemanticSummary
 BuildPart7AwaitSuspensionResumeSemanticSummary(
     const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,

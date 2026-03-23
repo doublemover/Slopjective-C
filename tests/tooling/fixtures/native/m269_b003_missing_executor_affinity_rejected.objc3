@@ -1,0 +1,8 @@
+module M269B003NoAffinity;
+
+extern fn task_spawn_child() -> i32;
+
+async fn missing_affinity() -> i32 {
+  task_spawn_child();
+  return 0;
+}

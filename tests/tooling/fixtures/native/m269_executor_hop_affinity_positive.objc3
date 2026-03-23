@@ -1,0 +1,14 @@
+module M269B003;
+
+extern fn task_spawn_child() -> i32;
+extern fn detached_task_create() -> i32;
+
+async fn grouped_worker() -> i32 __attribute__((objc_executor(global))) {
+  task_spawn_child();
+  return 1;
+}
+
+async fn detached_worker() -> i32 __attribute__((objc_executor(named("com.example.detached")))) {
+  detached_task_create();
+  return 2;
+}

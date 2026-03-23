@@ -3476,6 +3476,18 @@ The frontend now publishes a dedicated semantic packet at
 - cancellation handlers and cancel-all calls now fail closed without a
   cancellation check in the same async callable with `O3S230`
 
+## M269 executor hop and affinity compatibility completion
+
+The frontend now publishes a dedicated semantic packet at
+`frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion`.
+
+- async task callables now fail closed without `objc_executor(...)` affinity
+  with `O3S231`
+- detached task creation now fails closed under `objc_executor(main)` with
+  `O3S232`
+- runnable executor-hop lowering and scheduler-backed execution remain deferred
+  to later `M269` issues
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

@@ -1,0 +1,8 @@
+module M269B003MainDetached;
+
+extern fn detached_task_create() -> i32;
+
+async fn illegal_detached_main() -> i32 __attribute__((objc_executor(main))) {
+  detached_task_create();
+  return 0;
+}

@@ -4918,6 +4918,8 @@ struct Objc3FrontendPipelineResult {
       part7_task_executor_cancellation_semantic_model_summary;
   Objc3Part7StructuredTaskCancellationSemanticSummary
       part7_structured_task_cancellation_semantic_summary;
+  Objc3Part7ExecutorHopAffinityCompatibilitySummary
+      part7_executor_hop_affinity_compatibility_summary;
   Objc3Part7AsyncEffectSuspensionSemanticModelSummary
       part7_async_effect_suspension_semantic_model_summary;
   Objc3Part7AwaitSuspensionResumeSemanticSummary

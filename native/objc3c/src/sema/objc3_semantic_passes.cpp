@@ -2072,6 +2072,42 @@ static void DiagnosePart7TaskCallableLegality(
   }
 }
 
+static Objc3Part7TaskCallableLegalityProfile
+BuildPart7TaskCallableLegalityProfile(
+    const std::vector<std::unique_ptr<Stmt>> &body) {
+  Objc3Part7TaskCallableLegalityProfile profile;
+  for (const auto &stmt : body) {
+    CollectPart7TaskCallableLegalityStmtSites(stmt.get(), profile);
+  }
+  return profile;
+}
+
+static void DiagnosePart7ExecutorAffinityCompletion(
+    const Objc3Part7TaskCallableLegalityProfile &profile,
+    bool async_declared, bool executor_affinity_declared,
+    const std::string &executor_affinity_kind, int line, int column,
+    std::vector<std::string> &diagnostics) {
+  const std::size_t task_related_sites =
+      profile.task_creation_sites + profile.task_group_scope_sites +
+      profile.task_group_add_task_sites + profile.task_group_wait_next_sites +
+      profile.task_group_cancel_all_sites + profile.cancellation_check_sites +
+      profile.cancellation_handler_sites;
+  if (!async_declared || task_related_sites == 0u) {
+    return;
+  }
+  if (!executor_affinity_declared) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S231",
+        "task semantics failed: async task callables require objc_executor affinity for deterministic executor hops"));
+  }
+  if (executor_affinity_declared && executor_affinity_kind == "main" &&
+      profile.detached_task_creation_sites > 0u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S232",
+        "task semantics failed: detached task creation cannot use the main executor affinity"));
+  }
+}
+
 static const Objc3PropertyInfo *FindTypedKeyPathPropertyOnOwner(
     const Objc3SemanticIntegrationSurface &surface,
     const std::string &owner_name,
@@ -7255,6 +7291,72 @@ BuildPart7StructuredTaskCancellationSemanticSummary(
       << summary.illegal_task_group_scope_sites << ":"
       << summary.illegal_task_hierarchy_sites << ":"
       << summary.illegal_cancellation_usage_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part7ExecutorHopAffinityCompatibilitySummary
+BuildPart7ExecutorHopAffinityCompatibilitySummary(
+    const Objc3Part7StructuredTaskCancellationSemanticSummary
+        &dependency_summary,
+    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part7ExecutorHopAffinityCompatibilitySummary summary;
+  const auto count_diagnostic_code = [&](const char *code) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
+          return diag.find(code) != std::string::npos;
+        }));
+  };
+
+  const std::size_t executor_affinity_sites =
+      source_summary.executor_main_sites + source_summary.executor_global_sites +
+      source_summary.executor_named_sites;
+
+  summary.async_callable_sites = source_summary.async_function_sites +
+                                 source_summary.async_method_sites;
+  summary.executor_affinity_sites = executor_affinity_sites;
+  summary.executor_main_sites = source_summary.executor_main_sites;
+  summary.executor_global_sites = source_summary.executor_global_sites;
+  summary.executor_named_sites = source_summary.executor_named_sites;
+  summary.task_creation_sites = dependency_summary.task_creation_sites;
+  summary.detached_task_creation_sites =
+      dependency_summary.task_creation_sites > 0u &&
+              source_summary.executor_named_sites > 0u
+          ? 1u
+          : 0u;
+  summary.illegal_missing_executor_affinity_sites =
+      count_diagnostic_code("O3S231");
+  summary.illegal_main_executor_detached_sites =
+      count_diagnostic_code("O3S232");
+
+  summary.dependency_required = true;
+  summary.executor_affinity_required_for_task_callables_enforced =
+      summary.illegal_missing_executor_affinity_sites <=
+          dependency_summary.async_callable_sites;
+  summary.detached_task_hop_boundary_enforced =
+      summary.illegal_main_executor_detached_sites <=
+          summary.executor_main_sites + summary.executor_affinity_sites;
+  summary.runnable_lowering_deferred = true;
+  summary.executor_runtime_deferred = true;
+  summary.scheduler_runtime_deferred = true;
+  summary.deterministic =
+      summary.executor_affinity_required_for_task_callables_enforced &&
+      summary.detached_task_hop_boundary_enforced;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";async-callables=" << summary.async_callable_sites
+      << ";executor-sites=" << summary.executor_affinity_sites << ":"
+      << summary.executor_main_sites << ":" << summary.executor_global_sites
+      << ":" << summary.executor_named_sites
+      << ";task-creation-sites=" << summary.task_creation_sites
+      << ";illegal-affinity=" << summary.illegal_missing_executor_affinity_sites
+      << ";illegal-main-detached="
+      << summary.illegal_main_executor_detached_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -20676,7 +20778,13 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
 
     if (!fn.is_prototype) {
+      const Objc3Part7TaskCallableLegalityProfile task_legality_profile =
+          BuildPart7TaskCallableLegalityProfile(fn.body);
       DiagnosePart7TaskCallableLegality(fn.body, fn.async_declared, diagnostics);
+      DiagnosePart7ExecutorAffinityCompletion(
+          task_legality_profile, fn.async_declared,
+          fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
+          fn.column, diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
@@ -20729,8 +20837,14 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         }
       }
 
+      const Objc3Part7TaskCallableLegalityProfile task_legality_profile =
+          BuildPart7TaskCallableLegalityProfile(method.body);
       DiagnosePart7TaskCallableLegality(method.body, method.async_declared,
                                         diagnostics);
+      DiagnosePart7ExecutorAffinityCompletion(
+          task_legality_profile, method.async_declared,
+          method.executor_affinity_declared, method.executor_affinity_kind,
+          method.line, method.column, diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";

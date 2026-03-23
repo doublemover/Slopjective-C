@@ -754,6 +754,15 @@ M269-B002 structured-task/cancellation enforcement note:
 - cancellation handlers and cancel-all calls without a cancellation check fail
   closed with `O3S230`
 
+M269-B003 executor-hop/affinity compatibility note:
+
+- the frontend now publishes a dedicated semantic packet at
+  `frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion`
+- async task callables without `objc_executor(...)` affinity fail closed with
+  `O3S231`
+- detached task creation under `objc_executor(main)` fails closed with
+  `O3S232`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
