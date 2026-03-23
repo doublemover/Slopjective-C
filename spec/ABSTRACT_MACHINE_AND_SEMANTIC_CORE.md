@@ -902,6 +902,15 @@ M270-D001 runtime-contract note:
 - mixed-module actor helper execution remains bound to the packaged runtime
   archive path rather than a separate actor-runtime distribution
 
+M270-D002 live-runtime note:
+
+- the private actor runtime slice now includes live mailbox binding, enqueue,
+  and drain helpers
+- actor mailbox state still remains private and is published only through
+  `objc3_runtime_copy_actor_runtime_state_for_testing`
+- mixed-module actor helper execution still remains bound to the packaged
+  runtime archive path rather than a separate actor-runtime distribution
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

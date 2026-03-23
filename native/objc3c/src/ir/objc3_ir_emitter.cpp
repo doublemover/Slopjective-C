@@ -2734,6 +2734,48 @@ class Objc3IREmitter {
       result_out = out;
       return true;
     }
+    if (lowered == "actor_bind_executor") {
+      const std::string actor_handle =
+          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(kObjc3RuntimeActorBindExecutorI32Symbol) +
+                               "(i32 " + actor_handle + ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "actor_mailbox_enqueue") {
+      const std::string actor_handle =
+          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
+      const std::string value = expr->args.size() < 2u
+                                    ? "0"
+                                    : EmitExpr(expr->args[1].get(), ctx);
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorMailboxEnqueueI32Symbol) +
+                               "(i32 " + actor_handle + ", i32 " + value +
+                               ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
+    if (lowered == "actor_mailbox_drain_next") {
+      const std::string actor_handle =
+          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
+      const std::string out = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + out + " = call i32 @" +
+                               std::string(
+                                   kObjc3RuntimeActorMailboxDrainNextI32Symbol) +
+                               "(i32 " + actor_handle + ", i32 " +
+                               std::to_string(ctx.async_executor_tag) + ")");
+      InvalidateGlobalProofState(ctx);
+      result_out = out;
+      return true;
+    }
     if (lowered == "replay_proof_step") {
       const std::string out = NewTemp(ctx);
       ctx.code_lines.push_back("  " + out + " = call i32 @" +
@@ -12546,6 +12588,21 @@ class Objc3IREmitter {
                                 std::string(
                                     kObjc3RuntimeActorRecordRaceGuardI32Symbol) +
                                 "(i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorBindExecutorI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorBindExecutorI32Symbol) +
+                                "(i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorMailboxEnqueueI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorMailboxEnqueueI32Symbol) +
+                                "(i32, i32, i32)\n");
+      emit_declaration_once(kObjc3RuntimeActorMailboxDrainNextI32Symbol,
+                            "declare i32 @" +
+                                std::string(
+                                    kObjc3RuntimeActorMailboxDrainNextI32Symbol) +
+                                "(i32, i32)\n");
       emit_declaration_once(kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol,
                             "declare i32 @" +
                                 std::string(

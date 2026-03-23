@@ -341,6 +341,9 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   uint64_t hop_to_executor_call_count;
   uint64_t replay_proof_call_count;
   uint64_t race_guard_call_count;
+  uint64_t bind_executor_call_count;
+  uint64_t mailbox_enqueue_call_count;
+  uint64_t mailbox_drain_call_count;
   int last_isolation_executor_tag;
   int last_nonisolated_value;
   int last_nonisolated_executor_tag;
@@ -349,6 +352,13 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   int last_hop_result;
   int last_replay_proof_executor_tag;
   int last_race_guard_executor_tag;
+  int last_bound_actor_handle;
+  int last_bound_executor_tag;
+  int last_mailbox_actor_handle;
+  int last_mailbox_enqueued_value;
+  int last_mailbox_executor_tag;
+  int last_mailbox_depth;
+  int last_mailbox_drained_value;
 } objc3_runtime_actor_runtime_state_snapshot;
 
 // M270-C002 actor lowering/runtime anchor: actor thunk, nonisolated entry,
@@ -358,6 +368,9 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
 // helper cluster plus `objc3_runtime_actor_runtime_state_snapshot` is now the
 // canonical lane-D runtime contract for actor-state, mailbox-ownership, and
 // executor-binding proof without widening the public runtime header.
+// M270-D002 actor-mailbox/isolation-runtime anchor: live mailbox binding,
+// enqueue, and drain helpers also remain inside that same private snapshot-
+// backed runtime slice rather than claiming a public actor runtime ABI.
 
 // M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
@@ -547,6 +560,11 @@ int objc3_runtime_actor_enter_nonisolated_i32(int value, int executor_tag);
 int objc3_runtime_actor_hop_to_executor_i32(int value, int executor_tag);
 int objc3_runtime_actor_record_replay_proof_i32(int executor_tag);
 int objc3_runtime_actor_record_race_guard_i32(int executor_tag);
+int objc3_runtime_actor_bind_executor_i32(int actor_handle, int executor_tag);
+int objc3_runtime_actor_mailbox_enqueue_i32(int actor_handle, int value,
+                                            int executor_tag);
+int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
+                                               int executor_tag);
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);

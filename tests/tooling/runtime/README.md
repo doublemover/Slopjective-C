@@ -584,6 +584,22 @@ strict-concurrency replay-proof and race-guard artifact slice.
   - `objc3_runtime_actor_record_race_guard_i32`
   - `objc3_runtime_copy_actor_runtime_state_for_testing`
 
+## M270 live actor mailbox runtime probe
+
+`M270-D002` proves the supported actor mailbox runtime slice without widening
+the public runtime header.
+
+- contract id `objc3c-part7-live-actor-mailbox-and-isolation-runtime/m270-d002-v1`
+- fixture:
+  `tests/tooling/fixtures/native/m270_d002_live_actor_mailbox_runtime_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m270_d002_live_actor_mailbox_runtime_probe.cpp`
+- helper traffic proven by the probe:
+  - `objc3_runtime_actor_bind_executor_i32`
+  - `objc3_runtime_actor_mailbox_enqueue_i32`
+  - `objc3_runtime_actor_mailbox_drain_next_i32`
+  - `objc3_runtime_copy_actor_runtime_state_for_testing`
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the

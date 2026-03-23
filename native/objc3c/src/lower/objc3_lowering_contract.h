@@ -670,6 +670,12 @@ inline constexpr const char *kObjc3RuntimeActorRecordReplayProofI32Symbol =
     "objc3_runtime_actor_record_replay_proof_i32";
 inline constexpr const char *kObjc3RuntimeActorRecordRaceGuardI32Symbol =
     "objc3_runtime_actor_record_race_guard_i32";
+inline constexpr const char *kObjc3RuntimeActorBindExecutorI32Symbol =
+    "objc3_runtime_actor_bind_executor_i32";
+inline constexpr const char *kObjc3RuntimeActorMailboxEnqueueI32Symbol =
+    "objc3_runtime_actor_mailbox_enqueue_i32";
+inline constexpr const char *kObjc3RuntimeActorMailboxDrainNextI32Symbol =
+    "objc3_runtime_actor_mailbox_drain_next_i32";
 inline constexpr const char *kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol =
     "objc3_runtime_load_weak_current_property_i32";
 inline constexpr const char *kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol =

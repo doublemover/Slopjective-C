@@ -3389,9 +3389,18 @@ lowering path.
 - mixed-module actor helper traffic remains tied to the packaged runtime
   archive path `artifacts/lib/objc3_runtime.lib`
 
-- this is source closure only
-- no continuation ABI, suspension cleanup, executor runtime, or runnable async
-  behavior is claimed by `M268-A001`
+## M270 live actor mailbox and isolation runtime
+
+`M270-D002` moves the current actor lane from contract-only runtime proof to a
+small runnable mailbox slice.
+
+- actor lowering now routes `actor_bind_executor(...)`,
+  `actor_mailbox_enqueue(...)`, and `actor_mailbox_drain_next(...)` through
+  private runtime helpers
+- mailbox state remains private and is published only through
+  `objc3_runtime_copy_actor_runtime_state_for_testing`
+- mixed-module actor helper traffic still remains tied to the packaged runtime
+  archive path `artifacts/lib/objc3_runtime.lib`
 
 ## M268 frontend async semantic packet
 

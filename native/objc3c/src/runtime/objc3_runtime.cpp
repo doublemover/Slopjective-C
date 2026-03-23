@@ -619,6 +619,9 @@ thread_local std::uint64_t g_runtime_actor_nonisolated_entry_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_hop_to_executor_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_replay_proof_call_count = 0;
 thread_local std::uint64_t g_runtime_actor_race_guard_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_bind_executor_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_mailbox_enqueue_call_count = 0;
+thread_local std::uint64_t g_runtime_actor_mailbox_drain_call_count = 0;
 thread_local int g_runtime_task_last_spawn_kind = 0;
 thread_local int g_runtime_task_last_spawn_executor_tag = 0;
 thread_local int g_runtime_task_last_scope_executor_tag = 0;
@@ -640,6 +643,14 @@ thread_local int g_runtime_actor_last_hop_executor_tag = 0;
 thread_local int g_runtime_actor_last_hop_result = 0;
 thread_local int g_runtime_actor_last_replay_proof_executor_tag = 0;
 thread_local int g_runtime_actor_last_race_guard_executor_tag = 0;
+thread_local int g_runtime_actor_last_bound_actor_handle = 0;
+thread_local int g_runtime_actor_last_bound_executor_tag = 0;
+thread_local int g_runtime_actor_last_mailbox_actor_handle = 0;
+thread_local int g_runtime_actor_last_mailbox_enqueued_value = 0;
+thread_local int g_runtime_actor_last_mailbox_executor_tag = 0;
+thread_local int g_runtime_actor_last_mailbox_depth = 0;
+thread_local int g_runtime_actor_last_mailbox_drained_value = 0;
+thread_local std::unordered_map<int, std::deque<int>> g_runtime_actor_mailboxes;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
@@ -816,6 +827,9 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_actor_hop_to_executor_call_count = 0;
   g_runtime_actor_replay_proof_call_count = 0;
   g_runtime_actor_race_guard_call_count = 0;
+  g_runtime_actor_bind_executor_call_count = 0;
+  g_runtime_actor_mailbox_enqueue_call_count = 0;
+  g_runtime_actor_mailbox_drain_call_count = 0;
   g_runtime_task_last_spawn_kind = 0;
   g_runtime_task_last_spawn_executor_tag = 0;
   g_runtime_task_last_scope_executor_tag = 0;
@@ -837,6 +851,14 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_actor_last_hop_result = 0;
   g_runtime_actor_last_replay_proof_executor_tag = 0;
   g_runtime_actor_last_race_guard_executor_tag = 0;
+  g_runtime_actor_last_bound_actor_handle = 0;
+  g_runtime_actor_last_bound_executor_tag = 0;
+  g_runtime_actor_last_mailbox_actor_handle = 0;
+  g_runtime_actor_last_mailbox_enqueued_value = 0;
+  g_runtime_actor_last_mailbox_executor_tag = 0;
+  g_runtime_actor_last_mailbox_depth = 0;
+  g_runtime_actor_last_mailbox_drained_value = 0;
+  g_runtime_actor_mailboxes.clear();
 }
 
 void RecordArcDebugPropertyContext(const RuntimeDispatchFrame *frame) {
@@ -4369,6 +4391,10 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
       g_runtime_actor_hop_to_executor_call_count;
   snapshot->replay_proof_call_count = g_runtime_actor_replay_proof_call_count;
   snapshot->race_guard_call_count = g_runtime_actor_race_guard_call_count;
+  snapshot->bind_executor_call_count = g_runtime_actor_bind_executor_call_count;
+  snapshot->mailbox_enqueue_call_count =
+      g_runtime_actor_mailbox_enqueue_call_count;
+  snapshot->mailbox_drain_call_count = g_runtime_actor_mailbox_drain_call_count;
   snapshot->last_isolation_executor_tag =
       g_runtime_actor_last_isolation_executor_tag;
   snapshot->last_nonisolated_value = g_runtime_actor_last_nonisolated_value;
@@ -4381,6 +4407,16 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
       g_runtime_actor_last_replay_proof_executor_tag;
   snapshot->last_race_guard_executor_tag =
       g_runtime_actor_last_race_guard_executor_tag;
+  snapshot->last_bound_actor_handle = g_runtime_actor_last_bound_actor_handle;
+  snapshot->last_bound_executor_tag = g_runtime_actor_last_bound_executor_tag;
+  snapshot->last_mailbox_actor_handle = g_runtime_actor_last_mailbox_actor_handle;
+  snapshot->last_mailbox_enqueued_value =
+      g_runtime_actor_last_mailbox_enqueued_value;
+  snapshot->last_mailbox_executor_tag =
+      g_runtime_actor_last_mailbox_executor_tag;
+  snapshot->last_mailbox_depth = g_runtime_actor_last_mailbox_depth;
+  snapshot->last_mailbox_drained_value =
+      g_runtime_actor_last_mailbox_drained_value;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -4799,6 +4835,52 @@ extern "C" int objc3_runtime_actor_record_race_guard_i32(int executor_tag) {
   ++g_runtime_actor_race_guard_call_count;
   g_runtime_actor_last_race_guard_executor_tag = executor_tag;
   return executor_tag;
+}
+
+extern "C" int objc3_runtime_actor_bind_executor_i32(int actor_handle,
+                                                     int executor_tag) {
+  // M270-D002 actor-mailbox/isolation-runtime anchor: actor runtime proof now
+  // includes private mailbox binding state and deterministic enqueue/drain
+  // helpers without widening the public runtime ABI.
+  ++g_runtime_actor_bind_executor_call_count;
+  g_runtime_actor_last_bound_actor_handle = actor_handle;
+  g_runtime_actor_last_bound_executor_tag = executor_tag;
+  g_runtime_actor_last_mailbox_actor_handle = actor_handle;
+  g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  g_runtime_actor_last_mailbox_depth =
+      static_cast<int>(g_runtime_actor_mailboxes[actor_handle].size());
+  return executor_tag;
+}
+
+extern "C" int objc3_runtime_actor_mailbox_enqueue_i32(int actor_handle,
+                                                       int value,
+                                                       int executor_tag) {
+  ++g_runtime_actor_mailbox_enqueue_call_count;
+  g_runtime_actor_last_mailbox_actor_handle = actor_handle;
+  g_runtime_actor_last_mailbox_enqueued_value = value;
+  g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  std::deque<int> &mailbox = g_runtime_actor_mailboxes[actor_handle];
+  mailbox.push_back(value);
+  g_runtime_actor_last_mailbox_depth = static_cast<int>(mailbox.size());
+  return value;
+}
+
+extern "C" int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
+                                                          int executor_tag) {
+  ++g_runtime_actor_mailbox_drain_call_count;
+  g_runtime_actor_last_mailbox_actor_handle = actor_handle;
+  g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  std::deque<int> &mailbox = g_runtime_actor_mailboxes[actor_handle];
+  if (mailbox.empty()) {
+    g_runtime_actor_last_mailbox_depth = 0;
+    g_runtime_actor_last_mailbox_drained_value = 0;
+    return 0;
+  }
+  const int value = mailbox.front();
+  mailbox.pop_front();
+  g_runtime_actor_last_mailbox_depth = static_cast<int>(mailbox.size());
+  g_runtime_actor_last_mailbox_drained_value = value;
+  return value;
 }
 
 extern "C" int objc3_runtime_retain_i32(int value) {

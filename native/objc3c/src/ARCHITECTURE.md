@@ -11210,3 +11210,18 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - mixed-module actor helper traffic remains bound to the packaged runtime
   archive path `artifacts/lib/objc3_runtime.lib`
 - the next issue is `M270-D002`
+
+## M270 Part 7 Live Actor Mailbox And Isolation Runtime (D002)
+
+- `M270-D002` keeps the actor runtime private but makes the supported mailbox
+  slice runnable
+- the lane-D helper cluster now includes:
+  - `objc3_runtime_actor_bind_executor_i32`
+  - `objc3_runtime_actor_mailbox_enqueue_i32`
+  - `objc3_runtime_actor_mailbox_drain_next_i32`
+- mailbox ownership, last-enqueued value, last-drained value, and mailbox
+  depth continue to publish through
+  `objc3_runtime_actor_runtime_state_snapshot`
+- mixed-module actor helper traffic still remains bound to the packaged
+  runtime archive path `artifacts/lib/objc3_runtime.lib`
+- the next issue is `M270-D003`

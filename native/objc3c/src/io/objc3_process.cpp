@@ -1588,6 +1588,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // runtime helper cluster also rides that same packaged runtime archive, so
     // actor-state/executor-binding claims cannot diverge on archive identity
     // across mixed-module link plans.
+    // M270-D002 actor-mailbox/isolation-runtime anchor: live mailbox helper
+    // traffic still links through that same packaged runtime archive, so mixed
+    // actor-runtime link plans must keep one archive identity even after the
+    // mailbox helpers become runnable.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =
