@@ -13,6 +13,7 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::vector<std::string> reused_module_names_lexicographic;
   bool uses_serialized_runtime_metadata_payload = false;
   bool part3_optional_keypath_lowering_contract_present = false;
+  bool part6_result_and_bridging_artifact_replay_present = false;
   std::size_t part3_optional_send_sites = 0;
   std::size_t part3_typed_keypath_literal_sites = 0;
   std::size_t part3_live_optional_lowering_sites = 0;
@@ -23,6 +24,16 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool part3_typed_keypath_runtime_execution_helper_landed = false;
   std::string part3_optional_keypath_lowering_replay_key;
   std::string part3_optional_keypath_runtime_helper_replay_key;
+  bool part6_binary_artifact_replay_ready = false;
+  bool part6_runtime_import_artifact_ready = false;
+  bool part6_separate_compilation_replay_ready = false;
+  bool part6_deterministic = false;
+  std::string part6_result_and_bridging_artifact_replay_key;
+  std::string part6_part6_replay_key;
+  std::string part6_throws_replay_key;
+  std::string part6_result_like_replay_key;
+  std::string part6_ns_error_replay_key;
+  std::string part6_unwind_replay_key;
 };
 
 struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {

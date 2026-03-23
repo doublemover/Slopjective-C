@@ -731,6 +731,13 @@ class Objc3IREmitter {
                  .lowering_part6_throws_abi_propagation_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_part6_result_and_bridging_artifact_replay_key.empty()) {
+      out << "; part6_result_and_bridging_artifact_replay = "
+          << frontend_metadata_
+                 .lowering_part6_result_and_bridging_artifact_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -2953,6 +2960,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}\n";
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
     out << "!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}\n";
+    out << "!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -4517,6 +4525,47 @@ class Objc3IREmitter {
         << ", !\""
         << EscapeCStringLiteral(
                kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel)
+        << "\"}\n";
+    out << "!88 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ResultAndBridgingArtifactReplayContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ResultAndBridgingArtifactReplaySourceModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ResultAndBridgingArtifactReplayModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_
+                   .lowering_part6_result_and_bridging_artifact_replay_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .imported_part6_result_and_bridging_artifact_modules)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part6_result_and_bridging_binary_artifact_replay_ready
+                    ? 1
+                    : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part6_result_and_bridging_runtime_import_artifact_ready
+                    ? 1
+                    : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part6_result_and_bridging_separate_compilation_replay_ready
+                    ? 1
+                    : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part6_result_and_bridging_artifact_replay_handoff
+                    ? 1
+                    : 0)
+        << ", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel)
         << "\"}\n";
     out << "!5 = !{i64 " << static_cast<unsigned long long>(frontend_metadata_.object_pointer_type_spellings)
         << ", i64 " << static_cast<unsigned long long>(frontend_metadata_.pointer_declarator_entries) << ", i64 "

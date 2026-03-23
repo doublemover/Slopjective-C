@@ -1415,7 +1415,7 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
   // M267-C002 Part 6 lowering implementation anchor: lane-C now materializes
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
-  // artifacts while deferring the replay-completion tranche to M267-C003.
+  // artifacts while deferring the D001 runtime-helper contract tranche.
   out << "contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
       << ";source_model="
       << kObjc3Part6ThrowsAbiPropagationLoweringSourceModel
@@ -1434,7 +1434,33 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
       << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
       << ";non_goal_model="
       << kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel
-      << ";next_issue=M267-C003";
+      << ";next_issue=M267-D001";
+  return out.str();
+}
+
+std::string Objc3Part6ResultAndBridgingArtifactReplaySummary() {
+  std::ostringstream out;
+  // M267-C003 Part 6 replay-completion anchor: lane-C now extends the live
+  // C002 lowering surface with deterministic replay artifacts that survive
+  // object emission, manifest emission, and emitted sidecar publication so
+  // separate provider/consumer compilation can prove preserved result/bridge
+  // metadata without claiming import-surface ingestion yet.
+  out << "contract=" << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+      << ";source_contract="
+      << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+      << ";source_model="
+      << kObjc3Part6ResultAndBridgingArtifactReplaySourceModel
+      << ";replay_model="
+      << kObjc3Part6ResultAndBridgingArtifactReplayModel
+      << ";surface_path="
+      << kObjc3Part6ResultAndBridgingArtifactReplaySurfacePath
+      << ";artifact_member="
+      << kObjc3Part6ResultAndBridgingArtifactReplayImportArtifactMemberName
+      << ";artifact_suffix="
+      << kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix
+      << ";fail_closed_model="
+      << kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel
+      << ";next_issue=M267-D001";
   return out.str();
 }
 

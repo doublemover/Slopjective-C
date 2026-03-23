@@ -14,6 +14,7 @@ struct Objc3FrontendArtifactBundle {
   std::string manifest_json;
   std::string runtime_metadata_binary;
   std::string runtime_aware_import_module_artifact_json;
+  std::string part6_result_bridge_artifact_replay_json;
   std::string versioned_conformance_report_artifact_json;
   Objc3RuntimeAwareImportModuleFrontendClosureSummary
       runtime_aware_import_module_frontend_closure_summary;

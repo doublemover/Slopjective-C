@@ -787,6 +787,12 @@ struct Objc3IRFrontendMetadata {
   std::size_t unwind_cleanup_lowering_guard_blocked_sites = 0;
   std::size_t unwind_cleanup_lowering_contract_violation_sites = 0;
   bool deterministic_unwind_cleanup_lowering_handoff = false;
+  std::string lowering_part6_result_and_bridging_artifact_replay_key;
+  std::size_t imported_part6_result_and_bridging_artifact_modules = 0;
+  bool part6_result_and_bridging_binary_artifact_replay_ready = false;
+  bool part6_result_and_bridging_runtime_import_artifact_ready = false;
+  bool part6_result_and_bridging_separate_compilation_replay_ready = false;
+  bool deterministic_part6_result_and_bridging_artifact_replay_handoff = false;
   std::string lowering_error_diagnostics_recovery_replay_key;
   std::size_t error_diagnostics_recovery_lowering_sites = 0;
   std::size_t

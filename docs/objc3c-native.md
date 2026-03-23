@@ -7609,6 +7609,46 @@ Recommended M267 lane-C implementation check:
 
 - `python scripts/check_m267_c002_error_out_abi_and_propagation_lowering_core_feature_implementation.py`
 - `M267-C003` is the next issue.
+
+## M267 Part 6 result and bridging artifact replay completion (M267-C003)
+
+Lane C now closes the artifact replay tranche for the current runnable Part 6
+lowering surface.
+
+Current implementation status (`M267-C003`):
+
+- the compiler now publishes one canonical replay contract:
+  - `objc3c-part6-result-and-bridging-artifact-replay/m267-c003-v1`
+- emitted frontend artifacts now preserve the Part 6 replay packet in three
+  places:
+  - `frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay`
+  - `module.runtime-import-surface.json`
+  - `module.part6-error-replay.json`
+- emitted IR now carries:
+  - `; part6_result_and_bridging_artifact_replay = ...`
+  - `!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}`
+- the provider/consumer artifact chain now proves:
+  - object emission keeps the Part 6 throws/result-like/`NSError`/unwind replay
+    keys intact
+  - runtime-import surfaces preserve those packets across separate compilation
+  - downstream consumers publish imported provider replay keys lexicographically
+    in the same canonical packet family
+- the replay packet now truthfully distinguishes:
+  - `binary_artifact_replay_ready`
+  - `runtime_import_artifact_ready`
+  - `separate_compilation_replay_ready`
+
+Still explicitly deferred:
+
+- generalized foreign exception or foreign error-object ABI
+- runtime helper contracts beyond the current lane-C lowering surface
+- any claim that imported Part 6 packets are executable cross-module runtime
+  behavior rather than preserved replay metadata
+
+Recommended M267 lane-C replay check:
+
+- `python scripts/check_m267_c003_result_and_bridging_artifact_replay_completion_core_feature_expansion.py`
+- `M267-D001` is the next issue.
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

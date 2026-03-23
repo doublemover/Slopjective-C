@@ -589,6 +589,25 @@ Current implementation status (`M267-C002`):
   - `ready_for_runtime_execution=true`
 - still deferred:
   - replay/inspection completion for separate compilation
+
+Current implementation status (`M267-C003`):
+
+- the compiler now also publishes the replay-completion packet at
+  `frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay`
+- the same packet is emitted into:
+  - `module.runtime-import-surface.json`
+  - `module.part6-error-replay.json`
+- emitted IR now carries:
+  - `; part6_result_and_bridging_artifact_replay = ...`
+  - `!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}`
+- separate provider/consumer compilation now preserves imported provider replay
+  keys for:
+  - the Part 6 throws packet
+  - the result-like lowering packet
+  - the `NSError` bridging packet
+- still deferred:
+  - generalized foreign error-object ABI
+  - runtime helper ABI freeze beyond the current emitted replay surfaces
   - broader cross-module preservation claims
   - generalized native thrown-error object ABI
 

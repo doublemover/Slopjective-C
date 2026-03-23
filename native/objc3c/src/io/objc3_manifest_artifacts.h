@@ -18,6 +18,9 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildPart6ResultBridgeArtifactReplayPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildVersionedConformanceReportArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
@@ -55,6 +58,10 @@ void WriteRuntimeMetadataDiscoveryArtifact(
     const std::string &emit_prefix,
     const std::string &discovery_json);
 void WriteRuntimeAwareImportModuleArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
+void WritePart6ResultBridgeArtifactReplay(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);

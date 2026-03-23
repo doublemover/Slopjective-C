@@ -762,6 +762,67 @@ bool PopulateImportedPart3OptionalKeypathSurface(
   return true;
 }
 
+bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
+    const JsonValue::Object &root,
+    Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *replay_value =
+      FindMember(root, "objc_part6_result_and_bridging_artifact_replay");
+  if (replay_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *replay_object = AsObject(*replay_value);
+  if (replay_object == nullptr) {
+    error =
+        "part6 result/bridging imported replay contract must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  if (!ReadStringMember(*replay_object, "contract_id", contract_id, error) ||
+      !ReadStringMember(*replay_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadBoolMember(*replay_object, "binary_artifact_replay_ready",
+                      surface.part6_binary_artifact_replay_ready, error) ||
+      !ReadBoolMember(*replay_object, "runtime_import_artifact_ready",
+                      surface.part6_runtime_import_artifact_ready, error) ||
+      !ReadBoolMember(*replay_object, "separate_compilation_replay_ready",
+                      surface.part6_separate_compilation_replay_ready, error) ||
+      !ReadBoolMember(*replay_object, "deterministic",
+                      surface.part6_deterministic, error) ||
+      !ReadStringMember(*replay_object, "replay_key",
+                        surface.part6_result_and_bridging_artifact_replay_key,
+                        error) ||
+      !ReadStringMember(*replay_object, "part6_replay_key",
+                        surface.part6_part6_replay_key, error) ||
+      !ReadStringMember(*replay_object, "throws_replay_key",
+                        surface.part6_throws_replay_key, error) ||
+      !ReadStringMember(*replay_object, "result_like_replay_key",
+                        surface.part6_result_like_replay_key, error) ||
+      !ReadStringMember(*replay_object, "ns_error_replay_key",
+                        surface.part6_ns_error_replay_key, error) ||
+      !ReadStringMember(*replay_object, "unwind_replay_key",
+                        surface.part6_unwind_replay_key, error)) {
+    return false;
+  }
+
+  if (contract_id != kObjc3Part6ResultAndBridgingArtifactReplayContractId) {
+    error =
+        "unexpected Part 6 result/bridging artifact replay contract id in import surface";
+    return false;
+  }
+  if (source_contract_id != kObjc3Part6ThrowsAbiPropagationLoweringContractId) {
+    error =
+        "unexpected Part 6 throws ABI propagation source contract id in import surface";
+    return false;
+  }
+
+  surface.part6_result_and_bridging_artifact_replay_present = true;
+  return true;
+}
+
 bool ParseRuntimeMetadataSourceRecordSet(
     const JsonValue::Object &root, const std::string &declarations_name,
     Objc3RuntimeMetadataSourceRecordSet &record_set, std::string &error) {
@@ -932,6 +993,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     return false;
   }
   if (!PopulateImportedPart3OptionalKeypathSurface(root, surface, error)) {
+    return false;
+  }
+  if (!PopulateImportedPart6ResultAndBridgingArtifactReplay(root, surface,
+                                                            error)) {
     return false;
   }
   Objc3RuntimeMetadataSourceRecordSet local_runtime_metadata_source_records;

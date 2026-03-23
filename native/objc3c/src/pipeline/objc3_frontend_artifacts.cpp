@@ -141,6 +141,162 @@ std::string BuildStringArrayJson(const std::vector<std::string> &values) {
   return out.str();
 }
 
+struct Objc3Part6ResultAndBridgingArtifactReplaySurfaceSummary {
+  std::string contract_id =
+      kObjc3Part6ResultAndBridgingArtifactReplayContractId;
+  std::string source_contract_id =
+      kObjc3Part6ThrowsAbiPropagationLoweringContractId;
+  std::string surface_path =
+      kObjc3Part6ResultAndBridgingArtifactReplaySurfacePath;
+  std::string import_artifact_member_name =
+      kObjc3Part6ResultAndBridgingArtifactReplayImportArtifactMemberName;
+  std::string source_model =
+      kObjc3Part6ResultAndBridgingArtifactReplaySourceModel;
+  std::string replay_model =
+      kObjc3Part6ResultAndBridgingArtifactReplayModel;
+  std::string fail_closed_model =
+      kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel;
+  std::string replay_key;
+  std::string part6_replay_key;
+  std::string throws_replay_key;
+  std::string result_like_replay_key;
+  std::string ns_error_replay_key;
+  std::string unwind_replay_key;
+  std::vector<std::string> imported_module_names_lexicographic;
+  std::vector<std::string> imported_part6_replay_keys_lexicographic;
+  std::vector<std::string> imported_result_like_replay_keys_lexicographic;
+  std::vector<std::string> imported_ns_error_replay_keys_lexicographic;
+  bool binary_artifact_replay_ready = false;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_replay_ready = false;
+  bool deterministic = false;
+};
+
+Objc3Part6ResultAndBridgingArtifactReplaySurfaceSummary
+BuildPart6ResultAndBridgingArtifactReplaySummary(
+    const std::string &part6_replay_key,
+    const std::string &throws_replay_key,
+    const std::string &result_like_replay_key,
+    const std::string &ns_error_replay_key,
+    const std::string &unwind_replay_key,
+    bool deterministic_part6_handoff,
+    bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces) {
+  Objc3Part6ResultAndBridgingArtifactReplaySurfaceSummary summary;
+  summary.part6_replay_key = part6_replay_key;
+  summary.throws_replay_key = throws_replay_key;
+  summary.result_like_replay_key = result_like_replay_key;
+  summary.ns_error_replay_key = ns_error_replay_key;
+  summary.unwind_replay_key = unwind_replay_key;
+  summary.binary_artifact_replay_ready = !part6_replay_key.empty() &&
+                                         !throws_replay_key.empty() &&
+                                         !result_like_replay_key.empty() &&
+                                         !ns_error_replay_key.empty() &&
+                                         !unwind_replay_key.empty();
+  summary.runtime_import_artifact_ready =
+      runtime_import_artifact_ready && summary.binary_artifact_replay_ready;
+  summary.deterministic = deterministic_part6_handoff;
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part6_result_and_bridging_artifact_replay_present) {
+      continue;
+    }
+    summary.imported_module_names_lexicographic.push_back(
+        surface.frontend_closure_summary.module_name);
+    summary.imported_part6_replay_keys_lexicographic.push_back(
+        surface.part6_part6_replay_key);
+    summary.imported_result_like_replay_keys_lexicographic.push_back(
+        surface.part6_result_like_replay_key);
+    summary.imported_ns_error_replay_keys_lexicographic.push_back(
+        surface.part6_ns_error_replay_key);
+    summary.deterministic = summary.deterministic && surface.part6_deterministic;
+  }
+  std::sort(summary.imported_module_names_lexicographic.begin(),
+            summary.imported_module_names_lexicographic.end());
+  std::sort(summary.imported_part6_replay_keys_lexicographic.begin(),
+            summary.imported_part6_replay_keys_lexicographic.end());
+  std::sort(summary.imported_result_like_replay_keys_lexicographic.begin(),
+            summary.imported_result_like_replay_keys_lexicographic.end());
+  std::sort(summary.imported_ns_error_replay_keys_lexicographic.begin(),
+            summary.imported_ns_error_replay_keys_lexicographic.end());
+  const std::size_t imported_part6_module_count =
+      std::count_if(imported_runtime_module_surfaces.begin(),
+                    imported_runtime_module_surfaces.end(),
+                    [](const Objc3ImportedRuntimeModuleSurface &surface) {
+                      return surface
+                          .part6_result_and_bridging_artifact_replay_present;
+                    });
+  summary.separate_compilation_replay_ready =
+      summary.binary_artifact_replay_ready &&
+      summary.runtime_import_artifact_ready &&
+      summary.imported_module_names_lexicographic.size() ==
+          imported_part6_module_count;
+  std::ostringstream replay_key;
+  replay_key << Objc3Part6ResultAndBridgingArtifactReplaySummary()
+             << ";binary_artifact_replay_ready="
+             << (summary.binary_artifact_replay_ready ? "true" : "false")
+             << ";runtime_import_artifact_ready="
+             << (summary.runtime_import_artifact_ready ? "true" : "false")
+             << ";separate_compilation_replay_ready="
+             << (summary.separate_compilation_replay_ready ? "true" : "false")
+             << ";imported_module_count="
+             << summary.imported_module_names_lexicographic.size()
+             << ";deterministic="
+             << (summary.deterministic ? "true" : "false")
+             << ";part6_replay_key=" << part6_replay_key
+             << ";result_like_replay_key=" << result_like_replay_key
+             << ";ns_error_replay_key=" << ns_error_replay_key;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+std::string BuildPart6ResultAndBridgingArtifactReplaySummaryJson(
+    const Objc3Part6ResultAndBridgingArtifactReplaySurfaceSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"replay_model\":\"" << EscapeJsonString(summary.replay_model)
+      << "\",\"part6_replay_key\":\""
+      << EscapeJsonString(summary.part6_replay_key)
+      << "\",\"throws_replay_key\":\""
+      << EscapeJsonString(summary.throws_replay_key)
+      << "\",\"result_like_replay_key\":\""
+      << EscapeJsonString(summary.result_like_replay_key)
+      << "\",\"ns_error_replay_key\":\""
+      << EscapeJsonString(summary.ns_error_replay_key)
+      << "\",\"unwind_replay_key\":\""
+      << EscapeJsonString(summary.unwind_replay_key)
+      << "\",\"imported_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.imported_module_names_lexicographic)
+      << ",\"imported_part6_replay_keys_lexicographic\":"
+      << BuildStringArrayJson(summary.imported_part6_replay_keys_lexicographic)
+      << ",\"imported_result_like_replay_keys_lexicographic\":"
+      << BuildStringArrayJson(
+             summary.imported_result_like_replay_keys_lexicographic)
+      << ",\"imported_ns_error_replay_keys_lexicographic\":"
+      << BuildStringArrayJson(
+             summary.imported_ns_error_replay_keys_lexicographic)
+      << ",\"binary_artifact_replay_ready\":"
+      << (summary.binary_artifact_replay_ready ? "true" : "false")
+      << ",\"runtime_import_artifact_ready\":"
+      << (summary.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_replay_ready\":"
+      << (summary.separate_compilation_replay_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::vector<std::string> BuildRunnableFeatureClaimIds() {
   return {
       kObjc3RunnableFeatureClaimModule,
@@ -1233,7 +1389,9 @@ BuildRuntimeAwareImportModuleFrontendClosureSummary(
   Objc3RuntimeAwareImportModuleFrontendClosureSummary summary;
   summary.fail_closed = true;
   summary.source_surface_contract_ready =
-      module_import_graph_lowering_contract.deterministic;
+      !program.module_name.empty() &&
+      IsValidObjc3ModuleImportGraphLoweringContract(
+          module_import_graph_lowering_contract);
   summary.runtime_metadata_source_records_ready =
       IsReadyObjc3RuntimeMetadataSourceRecordSet(runtime_metadata_source_records);
   summary.frontend_surface_published = true;
@@ -1307,13 +1465,11 @@ BuildRuntimeAwareImportModuleFrontendClosureSummary(
       summary.runtime_metadata_source_records_ready;
   summary.ready_for_frontend_module_consumption =
       summary.ready_for_import_artifact_emission;
-  if (summary.source_surface_contract_ready) {
-    summary.source_surface_replay_key =
-        BuildRuntimeAwareImportModuleSurfaceReplayKey(
-            program,
-            parser_contract_snapshot,
-            module_import_graph_lowering_contract);
-  }
+  summary.source_surface_replay_key =
+      BuildRuntimeAwareImportModuleSurfaceReplayKey(
+          program,
+          parser_contract_snapshot,
+          module_import_graph_lowering_contract);
   if (summary.ready_for_frontend_module_consumption) {
     summary.replay_key =
         BuildRuntimeAwareImportModuleFrontendClosureReplayKey(summary);
@@ -2922,6 +3078,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
     const std::string &part3_optional_keypath_lowering_contract_json,
     const std::string &part3_optional_keypath_runtime_helper_contract_json,
+    const std::string &part6_result_and_bridging_artifact_replay_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
     const Objc3RuntimeMetadataSourceRecordSet
@@ -3002,6 +3159,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part3_optional_keypath_lowering_contract_json << ",\n"
       << "  \"objc_part3_optional_keypath_runtime_helper_contract\": "
       << part3_optional_keypath_runtime_helper_contract_json << ",\n"
+      << "  \"objc_part6_result_and_bridging_artifact_replay\": "
+      << part6_result_and_bridging_artifact_replay_json << ",\n"
       << "  \""
       << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
       << "\": "
@@ -10897,6 +11056,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ";deterministic=" +
       (deterministic_part6_throws_abi_propagation_lowering ? "true" : "false") +
       ";ready_for_runtime_execution=true";
+  const auto part6_result_and_bridging_artifact_replay_summary =
+      BuildPart6ResultAndBridgingArtifactReplaySummary(
+          part6_throws_abi_propagation_lowering_replay_key,
+          throws_propagation_lowering_replay_key,
+          result_like_lowering_replay_key,
+          ns_error_bridging_lowering_replay_key,
+          unwind_cleanup_lowering_replay_key,
+          deterministic_part6_throws_abi_propagation_lowering,
+          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+              runtime_aware_import_module_frontend_closure),
+          imported_runtime_module_surfaces);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -15584,7 +15754,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"ready_for_runtime_execution\":true"
            << ",\"fail_closed_model\":\""
            << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
-           << "\",\"next_issue\":\"M267-C003\"}"
+           << "\",\"next_issue\":\"M267-D001\"}"
+           << ",\"objc_part6_result_and_bridging_artifact_replay\":"
+           << BuildPart6ResultAndBridgingArtifactReplaySummaryJson(
+                  part6_result_and_bridging_artifact_replay_summary)
            << ",\"objc_object_pointer_nullability_generics_surface\":{\"object_pointer_type_spellings\":"
            << object_pointer_nullability_generics_summary.object_pointer_type_spellings
            << ",\"pointer_declarator_entries\":"
@@ -15922,6 +16095,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       << (deterministic_part6_throws_abi_propagation_lowering ? "true"
                                                               : "false")
       << "},\n";
+  manifest
+      << "  \"lowering_part6_result_and_bridging_artifact_replay\":{\"replay_key\":\""
+      << part6_result_and_bridging_artifact_replay_summary.replay_key
+      << "\",\"contract_id\":\""
+      << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+      << "\",\"deterministic_handoff\":"
+      << (part6_result_and_bridging_artifact_replay_summary.deterministic
+              ? "true"
+              : "false")
+      << "},\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
     manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]
@@ -16152,8 +16335,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 part3_optional_keypath_lowering_contract,
                 runtime_support_library_link_wiring,
                 part3_optional_keypath_lowering_replay_key),
+            BuildPart6ResultAndBridgingArtifactReplaySummaryJson(
+                part6_result_and_bridging_artifact_replay_summary),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
+  }
+  if (part6_result_and_bridging_artifact_replay_summary
+          .binary_artifact_replay_ready) {
+    bundle.part6_result_bridge_artifact_replay_json =
+        BuildPart6ResultAndBridgingArtifactReplaySummaryJson(
+            part6_result_and_bridging_artifact_replay_summary);
   }
   if (IsReadyObjc3VersionedConformanceReportLoweringSummary(
           versioned_conformance_report_lowering)) {
@@ -16940,6 +17131,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       unwind_cleanup_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_unwind_cleanup_lowering_handoff =
       unwind_cleanup_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_part6_result_and_bridging_artifact_replay_key =
+      part6_result_and_bridging_artifact_replay_summary.replay_key;
+  ir_frontend_metadata.imported_part6_result_and_bridging_artifact_modules =
+      part6_result_and_bridging_artifact_replay_summary
+          .imported_module_names_lexicographic.size();
+  ir_frontend_metadata.part6_result_and_bridging_binary_artifact_replay_ready =
+      part6_result_and_bridging_artifact_replay_summary
+          .binary_artifact_replay_ready;
+  ir_frontend_metadata.part6_result_and_bridging_runtime_import_artifact_ready =
+      part6_result_and_bridging_artifact_replay_summary
+          .runtime_import_artifact_ready;
+  ir_frontend_metadata
+      .part6_result_and_bridging_separate_compilation_replay_ready =
+      part6_result_and_bridging_artifact_replay_summary
+          .separate_compilation_replay_ready;
+  ir_frontend_metadata
+      .deterministic_part6_result_and_bridging_artifact_replay_handoff =
+      part6_result_and_bridging_artifact_replay_summary.deterministic;
   ir_frontend_metadata.object_pointer_type_spellings =
       object_pointer_nullability_generics_summary.object_pointer_type_spellings;
   ir_frontend_metadata.pointer_declarator_entries =

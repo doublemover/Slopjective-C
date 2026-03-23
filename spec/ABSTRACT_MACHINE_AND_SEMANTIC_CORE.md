@@ -517,6 +517,20 @@ M267-C002 lowering implementation note:
 - remaining work moves to `M267-C003`, which is the replay and separate-
   compilation completion tranche rather than the initial runnable lowering step
 
+M267-C003 replay completion note:
+
+- the current Part 6 lowering packet is now preserved through:
+  - `frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay`
+  - `module.runtime-import-surface.json`
+  - `module.part6-error-replay.json`
+- emitted IR now carries:
+  - `; part6_result_and_bridging_artifact_replay = ...`
+  - `!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}`
+- downstream consumers compiled with imported runtime surfaces now republish
+  imported provider replay keys without claiming a broader foreign runtime ABI
+- remaining work moves to `M267-D001`, which is the runtime helper and helper
+  ABI freeze tranche rather than another replay-only step
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.

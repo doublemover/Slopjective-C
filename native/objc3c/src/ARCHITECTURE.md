@@ -10821,3 +10821,35 @@ in both local and CI execution environments.
   - `tmp/reports/m276/M276-E002/`
   - records cold-build, warm-build, invalid-fingerprint fallback,
     contracts-only, and full-build proofs
+
+## M267 Part 6 replay artifact chain
+
+The current Part 6 lane-C architecture is split deliberately:
+
+- `M267-C002`
+  - lowers throwing calls, `throw`, `try`, `try?`, `try!`, `do/catch`, and
+    status-to-`NSError` bridge propagation into real native IR/object output
+- `M267-C003`
+  - preserves the resulting replay packets through emitted artifacts rather
+    than claiming broader foreign runtime execution
+
+Canonical `M267-C003` artifact surfaces:
+
+- frontend semantic surface:
+  - `frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay`
+- emitted sidecar:
+  - `module.part6-error-replay.json`
+- emitted import surface:
+  - `module.runtime-import-surface.json`
+- emitted IR anchors:
+  - `; part6_result_and_bridging_artifact_replay = ...`
+  - `!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}`
+
+Truth boundary:
+
+- provider compilation may prove binary replay publication without claiming any
+  imported-module behavior
+- provider plus consumer compilation may prove separate-compilation replay
+  preservation
+- neither step claims a generalized foreign exception ABI or a broader
+  cross-module runtime helper contract before `M267-D001`

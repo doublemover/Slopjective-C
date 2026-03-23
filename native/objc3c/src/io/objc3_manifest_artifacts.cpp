@@ -52,6 +52,14 @@ std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
           kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix);
 }
 
+std::filesystem::path BuildPart6ResultBridgeArtifactReplayPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir /
+         (emit_prefix +
+          kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix);
+}
+
 std::filesystem::path BuildVersionedConformanceReportArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
@@ -149,6 +157,14 @@ void WriteRuntimeAwareImportModuleArtifact(
     const std::string &emit_prefix,
     const std::string &artifact_json) {
   WriteText(BuildRuntimeAwareImportModuleArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WritePart6ResultBridgeArtifactReplay(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildPart6ResultBridgeArtifactReplayPath(out_dir, emit_prefix),
             artifact_json);
 }
 

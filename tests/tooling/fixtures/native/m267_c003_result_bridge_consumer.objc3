@@ -1,0 +1,18 @@
+module m267_c003_result_bridge_consumer;
+
+extern fn risky(value: i32) throws -> i32;
+extern fn mapStatus(status: i32) -> NSError;
+extern fn bridged(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+
+fn main() -> i32 {
+  do {
+    let direct = try risky(1);
+    return direct;
+  } catch (NSError* error) {
+    let maybeValue = try? bridged(1, 0);
+    let forced = try! risky(2);
+    return error + maybeValue + forced;
+  } catch {
+    return 0;
+  }
+}

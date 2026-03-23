@@ -1964,7 +1964,41 @@ capability.
   - no separate-compilation replay completion yet
   - no broader cross-module preservation claim yet
   - no generalized foreign error-object ABI claim yet
-- `M267-C002` is the next issue
+- `M267-C003` is the next issue
+
+## M267 Part 6 result and bridging artifact replay completion (C003)
+
+`M267-C003` extends the live `M267-C002` lowering surface with emitted replay
+artifacts that survive object emission and separate provider/consumer
+compilation.
+
+- canonical contract id:
+  `objc3c-part6-result-and-bridging-artifact-replay/m267-c003-v1`
+- canonical replay model:
+  - the current Part 6 lowering replay keys are serialized into
+    `frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay`
+  - the same packet is emitted into `module.part6-error-replay.json`
+  - the same packet is nested into `module.runtime-import-surface.json`
+  - downstream consumers ingest the imported packet and republish imported
+    provider replay keys in the same canonical surface
+  - emitted IR carries
+    `; part6_result_and_bridging_artifact_replay = ...`
+  - emitted IR carries
+    `!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}`
+- truthful readiness split:
+  - `binary_artifact_replay_ready=true` means the provider emitted the Part 6
+    replay packet into manifest, IR, and sidecar artifacts
+  - `runtime_import_artifact_ready=true` means the provider also emitted a real
+    `module.runtime-import-surface.json` containing the same packet
+  - `separate_compilation_replay_ready=true` means a downstream consumer
+    successfully preserved imported provider replay packets through its own
+    runtime-import artifact and emitted metadata
+- explicit current non-goals:
+  - no generalized foreign exception ABI yet
+  - no runtime helper contract freeze yet
+  - no claim that imported Part 6 packets are already live cross-module runtime
+    execution behavior
+- `M267-D001` is the next issue
 
 ## C.5 `async` ABI and lowering (normative for implementations) {#c-5}
 

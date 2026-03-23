@@ -155,24 +155,24 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                                         cli_options.emit_prefix,
                                         artifacts.runtime_metadata_binary);
     }
+    if (!artifacts.part6_result_bridge_artifact_replay_json.empty()) {
+      WritePart6ResultBridgeArtifactReplay(
+          cli_options.out_dir, cli_options.emit_prefix,
+          artifacts.part6_result_bridge_artifact_replay_json);
+    }
     if (!artifacts.diagnostics.empty()) {
       return 1;
     }
 
-    const bool has_imported_runtime_surface_inputs =
-        !cli_options.imported_runtime_surface_paths.empty();
-    if (has_imported_runtime_surface_inputs &&
+    const bool has_runtime_import_artifact =
+        !artifacts.runtime_aware_import_module_artifact_json.empty();
+    if (has_runtime_import_artifact &&
         !IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
             artifacts.runtime_aware_import_module_frontend_closure_summary)) {
       std::cerr << "runtime-aware import/module frontend closure not ready\n";
       return 125;
     }
-    if (has_imported_runtime_surface_inputs &&
-        artifacts.runtime_aware_import_module_artifact_json.empty()) {
-      std::cerr << "runtime-aware import/module artifact payload missing\n";
-      return 125;
-    }
-    if (has_imported_runtime_surface_inputs) {
+    if (has_runtime_import_artifact) {
       WriteRuntimeAwareImportModuleArtifact(
           cli_options.out_dir,
           cli_options.emit_prefix,

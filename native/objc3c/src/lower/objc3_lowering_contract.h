@@ -753,10 +753,25 @@ inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringSourceModel 
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringAbiModel =
     "native-lowering-emits-hidden-error-out-abi-propagation-operators-and-do-catch-control-flow-through-real-ir-and-object-artifacts";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel =
-    "result-bridge-replay-completion-and-separate-compilation-proof-remain-deferred-to-m267-c003";
+    "generalized-foreign-exception-abi-and-runtime-bridge-helper-contract-remain-deferred-to-m267-d001";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel =
     "no-generalized-foreign-exception-abi-no-stable-cross-module-replay-claim-yet";
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary();
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayContractId =
+    "objc3c-part6-result-and-bridging-artifact-replay/m267-c003-v1";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplaySourceModel =
+    "part6-lowering-replay-keys-survive-object-emission-manifest-emission-and-emitted-sidecar-artifacts";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayModel =
+    "provider-and-consumer-sidecar-artifacts-preserve-result-and-bridge-replay-packets-for-separate-compilation-proof";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel =
+    "missing-or-drifted-result-bridge-replay-sidecars-disable-separate-compilation-proof";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplaySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part6_result_and_bridging_artifact_replay";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayImportArtifactMemberName =
+    "objc_part6_result_and_bridging_artifact_replay";
+inline constexpr const char *kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix =
+    ".part6-error-replay.json";
+std::string Objc3Part6ResultAndBridgingArtifactReplaySummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =
