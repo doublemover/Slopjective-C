@@ -7751,6 +7751,8 @@ Recommended M267 lane-D cross-module check:
 
 - `python scripts/check_m267_d003_cross_module_error_surface_preservation_hardening_edge_case_and_compatibility_completion.py`
 - `M267-E001` is the next issue.
+
+
 ## O3S201..O3S216 behavior (implemented now)
 
 - `O3S201`:

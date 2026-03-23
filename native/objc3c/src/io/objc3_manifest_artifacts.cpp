@@ -47,6 +47,7 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix);
@@ -55,6 +56,7 @@ std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
 std::filesystem::path BuildPart6ResultBridgeArtifactReplayPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+
   return out_dir /
          (emit_prefix +
           kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix);
@@ -113,6 +115,7 @@ std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
 std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
+
   return out_dir / (emit_prefix + kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix);
 }
 

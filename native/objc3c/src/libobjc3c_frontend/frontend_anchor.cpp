@@ -523,6 +523,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
 
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
       !product.artifact_bundle.part6_result_bridge_artifact_replay_json.empty()) {
+
     const std::filesystem::path replay_out =
         BuildPart6ResultBridgeArtifactReplayPath(out_dir, emit_prefix);
     std::string io_error;
@@ -552,6 +553,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
           context,
           "runtime-aware import/module frontend closure not ready");
     } else {
+
       const std::filesystem::path runtime_import_surface_out =
           BuildRuntimeAwareImportModuleArtifactPath(out_dir, emit_prefix);
       std::string io_error;

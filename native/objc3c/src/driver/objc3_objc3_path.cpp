@@ -810,6 +810,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   .translation_unit_registration_order_ordinal;
           link_plan_inputs.local_driver_linker_flags = {
               linker_retention_artifacts.driver_linker_flag};
+
           link_plan_inputs.expected_part6_contract_id =
               kObjc3Part6ResultAndBridgingArtifactReplayContractId;
           link_plan_inputs.expected_part6_source_contract_id =

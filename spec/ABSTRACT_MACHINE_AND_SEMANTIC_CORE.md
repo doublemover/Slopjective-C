@@ -567,6 +567,7 @@ M267-D003 cross-module preservation note:
 - the runtime helper ABI itself does not widen here; D003 hardens the imported
   runtime-surface and cross-image orchestration boundary above `M267-D002`
 
+
 M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
