@@ -830,6 +830,16 @@ M270-A001 actor/isolation/sendable source-closure note:
 - actor-member legality, isolation diagnostics, and runnable actor runtime
   behavior remain later `M270` work
 
+M270-A002 actor-member/isolation-annotation source note:
+
+- the frontend now admits contextual `actor class` declarations and
+  `objc_nonisolated` callable annotations without reserving new lexer tokens
+- actor interfaces now publish deterministic source counts for actor members,
+  executor annotations, async actor methods, and actor member metadata sites
+- this remains a frontend/source-model claim; actor-member legality,
+  cross-actor diagnostics, sendability enforcement, and runnable actor runtime
+  behavior remain later `M270` work
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

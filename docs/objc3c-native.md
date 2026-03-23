@@ -3470,6 +3470,30 @@ Current implementation status:
 - actor-member semantics, isolation diagnostics, cross-actor legality, and
   runnable actor runtime behavior remain later `M270` work
 
+## M270 actor-member and isolation annotation surface
+
+The frontend now admits one dedicated actor-member source surface and publishes
+it under
+`frontend.pipeline.semantic_surface.objc_part7_actor_member_and_isolation_source_closure`.
+
+- `actor class` is admitted as a contextual parser surface rather than a
+  reserved lexer keyword
+- actor interfaces now carry methods and properties through the normal
+  interface source closure
+- callable `__attribute__((objc_nonisolated))` is admitted on actor methods
+- actor methods continue to carry existing `async` and
+  `__attribute__((objc_executor(...)))` spellings
+- the emitted semantic packet publishes deterministic counts for actor
+  interfaces, actor methods, actor properties, nonisolated annotations,
+  executor annotations on actor members, async actor methods, and actor member
+  metadata sites
+
+Current implementation status:
+
+- this issue completes the frontend/source-model surface only
+- actor-member legality, cross-actor diagnostics, sendability enforcement, and
+  runnable actor runtime behavior remain later `M270` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

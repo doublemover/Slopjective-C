@@ -89,9 +89,13 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // attribute payloads, including the later M269-A002 task-group/task-creation
   // callable source completion.
   // M270-A001 source-closure note: actor/isolation/sendable work also remains
-  // identifier/attribute-profile driven here. Do not add dedicated `actor`,
-// Do not add dedicated actor/sendable/nonisolated lexer keywords yet; the truthful source
+  // identifier/attribute-profile driven here. Do not add dedicated
+  // actor/sendable/nonisolated lexer keywords yet; the truthful source
   // boundary is still parser-owned profiling on top of the existing token
+  // stream.
+  // M270-A002 source-surface note: actor-member completion keeps `actor`
+  // contextual rather than promoting it to a reserved token; `actor class`
+  // and `objc_nonisolated` are parser-owned surfaces built on this same token
   // stream.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;

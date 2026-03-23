@@ -1259,6 +1259,7 @@ struct Objc3MethodDecl {
   std::string override_lookup_symbol;
   std::string conflict_lookup_symbol;
   bool async_declared = false;
+  bool objc_nonisolated_declared = false;
   bool executor_affinity_declared = false;
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
@@ -1563,6 +1564,7 @@ struct Objc3InterfaceDecl {
   std::string super_name;
   std::string category_name;
   bool has_category = false;
+  bool is_actor = false;
   std::string scope_owner_symbol;
   std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> adopted_protocols;
@@ -1664,6 +1666,7 @@ struct FunctionDecl {
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
   bool async_declared = false;
+  bool objc_nonisolated_declared = false;
   bool executor_affinity_declared = false;
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;

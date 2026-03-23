@@ -4350,6 +4350,20 @@ std::string BuildPart7AsyncSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart7ActorMemberIsolationSourceClosureReplayKey(
+    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";actor_sites=" << summary.actor_interface_sites << ":"
+      << summary.actor_method_sites << ":" << summary.actor_property_sites
+      << ";nonisolated_sites=" << summary.objc_nonisolated_annotation_sites
+      << ";executor_sites=" << summary.actor_member_executor_annotation_sites
+      << ";async_sites=" << summary.actor_async_method_sites
+      << ";metadata_sites=" << summary.actor_member_metadata_sites
+      << ";deterministic=" << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7TaskGroupCancellationSourceClosureReplayKey(
     const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -5290,6 +5304,48 @@ BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
   return summary;
 }
 
+Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+BuildPart7ActorMemberIsolationSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary summary;
+
+  for (const auto &interface_decl : program.interfaces) {
+    if (!interface_decl.is_actor) {
+      continue;
+    }
+    ++summary.actor_interface_sites;
+    summary.actor_property_sites += interface_decl.properties.size();
+    summary.actor_method_sites += interface_decl.methods.size();
+    summary.actor_member_metadata_sites +=
+        interface_decl.properties.size() + interface_decl.methods.size();
+    for (const auto &method : interface_decl.methods) {
+      if (method.objc_nonisolated_declared) {
+        ++summary.objc_nonisolated_annotation_sites;
+      }
+      if (method.executor_affinity_declared) {
+        ++summary.actor_member_executor_annotation_sites;
+      }
+      if (method.async_declared) {
+        ++summary.actor_async_method_sites;
+      }
+    }
+  }
+
+  summary.actor_declaration_source_supported = true;
+  summary.actor_member_source_supported = true;
+  summary.isolation_annotation_source_supported = true;
+  summary.actor_metadata_surface_supported = true;
+  summary.deterministic_handoff =
+      summary.objc_nonisolated_annotation_sites <= summary.actor_method_sites &&
+      summary.actor_member_executor_annotation_sites <= summary.actor_method_sites &&
+      summary.actor_async_method_sites <= summary.actor_method_sites &&
+      summary.actor_member_metadata_sites ==
+          summary.actor_method_sites + summary.actor_property_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart7ActorMemberIsolationSourceClosureReplayKey(summary);
+  return summary;
+}
+
 Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
 BuildPart7TaskGroupCancellationSourceClosureSummary(
     const Objc3Program &program) {
@@ -5559,6 +5615,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part7_async_source_closure_summary =
       BuildPart7AsyncSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
+  result.part7_actor_member_isolation_source_closure_summary =
+      BuildPart7ActorMemberIsolationSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program));
   result.part7_task_group_cancellation_source_closure_summary =
       BuildPart7TaskGroupCancellationSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));

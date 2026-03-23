@@ -1421,6 +1421,12 @@ inline constexpr const char *kObjc3Part7AsyncSourceClosureSourceModel =
     "async-entry-await-expression-and-executor-affinity-syntax-are-live-frontend-owned-source-surfaces-while-continuation-lowering-suspension-cleanup-and-runtime-scheduling-remain-later-m268-work";
 inline constexpr const char *kObjc3Part7AsyncSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-continuation-abi-suspension-cleanup-or-executor-runtime-behavior";
+inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part7_actor_member_and_isolation_source_closure";
+inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSourceModel =
+    "actor-class-declarations-actor-members-and-objc-nonisolated-annotations-are-live-frontend-owned-source-surfaces-while-actor-legality-diagnostics-and-runnable-actor-runtime-behavior-remain-later-m270-work";
+inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureFailureModel =
+    "frontend-source-closure-does-not-yet-claim-actor-member-legality-diagnostics-cross-actor-enforcement-or-runnable-actor-runtime-behavior";
 
 struct Objc3FrontendPart7AsyncSourceClosureSummary {
   std::string contract_id = kObjc3Part7AsyncSourceClosureContractId;
@@ -1445,6 +1451,37 @@ struct Objc3FrontendPart7AsyncSourceClosureSummary {
   bool async_method_source_supported = false;
   bool await_expression_source_supported = false;
   bool executor_attribute_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary {
+  std::string contract_id = kObjc3ActorMemberIsolationSourceClosureContractId;
+  std::string frontend_surface_path =
+      kObjc3Part7ActorMemberIsolationSourceClosureSurfacePath;
+  std::string source_model =
+      kObjc3Part7ActorMemberIsolationSourceClosureSourceModel;
+  std::string failure_model =
+      kObjc3Part7ActorMemberIsolationSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimActorDeclarationMarkers,
+      kObjc3SourceOnlyFeatureClaimActorMemberSurfaces,
+      kObjc3SourceOnlyFeatureClaimIsolationAnnotationMarkers,
+      kObjc3SourceOnlyFeatureClaimActorMetadataSurfaces,
+  };
+  std::size_t actor_interface_sites = 0;
+  std::size_t actor_method_sites = 0;
+  std::size_t actor_property_sites = 0;
+  std::size_t objc_nonisolated_annotation_sites = 0;
+  std::size_t actor_member_executor_annotation_sites = 0;
+  std::size_t actor_async_method_sites = 0;
+  std::size_t actor_member_metadata_sites = 0;
+  bool actor_declaration_source_supported = false;
+  bool actor_member_source_supported = false;
+  bool isolation_annotation_source_supported = false;
+  bool actor_metadata_surface_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -4909,6 +4946,8 @@ struct Objc3FrontendPipelineResult {
       part5_control_flow_source_closure_summary;
   Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
   Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
+  Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+      part7_actor_member_isolation_source_closure_summary;
   Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
       part7_task_group_cancellation_source_closure_summary;
   Objc3Part5ControlFlowSemanticModelSummary

@@ -1,0 +1,17 @@
+module M270A002;
+
+actor class M270Mailbox
+@property (atomic) i32 count;
+- (i32)cachedToken __attribute__((objc_nonisolated));
+- (i32)run:(i32)seed async __attribute__((objc_executor(main)));
+@end
+
+@implementation M270Mailbox
+- (i32)cachedToken {
+  return 0;
+}
+
+- (i32)run:(i32)seed async __attribute__((objc_executor(main))) {
+  return seed;
+}
+@end

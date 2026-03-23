@@ -5424,6 +5424,17 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddProtocolDecl(program, std::move(*decl));
         }
+      } else if (AtIdentifierText("actor") &&
+                 AtIdentifierTextOffset(1, "class")) {
+        // M270-A002 source-surface anchor: `actor class` stays a contextual
+        // parser form rather than a dedicated lexer keyword while lane-A
+        // completes actor-member frontend admission.
+        const Token actor_token = Advance();
+        Advance();
+        auto decl = ParseObjcActorInterfaceDecl(actor_token);
+        if (decl != nullptr) {
+          ast_builder_.AddInterfaceDecl(program, std::move(*decl));
+        }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync) ||
                  At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
@@ -6383,6 +6394,12 @@ class Objc3Parser {
     return At(TokenKind::Identifier) && Peek().text == text;
   }
 
+  bool AtIdentifierTextOffset(std::size_t offset, const char *text) const {
+    const std::size_t cursor = index_ + offset;
+    return cursor < tokens_.size() && tokens_[cursor].kind == TokenKind::Identifier &&
+           tokens_[cursor].text == text;
+  }
+
   bool ParseOptionalThrowsClause(FunctionDecl &fn) {
     if (!AtThrowsClauseKeyword()) {
       return true;
@@ -6645,6 +6662,18 @@ class Objc3Parser {
         return false;
       }
       return ParseExecutorAttributePayload(decl, attribute_name);
+    }
+    if (attribute_name.text == "objc_nonisolated") {
+      // M270-A002 source-surface anchor: nonisolated actor-member admission is
+      // parser-owned callable attribute handling, not a standalone keyword.
+      if (decl.objc_nonisolated_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P295",
+                     "duplicate objc_nonisolated attribute"));
+        return false;
+      }
+      decl.objc_nonisolated_declared = true;
+      return true;
     }
 
     diagnostics_.push_back(MakeDiag(
@@ -8391,6 +8420,128 @@ class Objc3Parser {
     if (!Match(TokenKind::KwAtEnd)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '@end' after @interface"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    return decl;
+  }
+
+  std::unique_ptr<Objc3InterfaceDecl> ParseObjcActorInterfaceDecl(
+      const Token &actor_token) {
+    // M270-A002 actor-member source-closure anchor: actor interfaces now ride
+    // the same interface parsing path while publishing one dedicated frontend
+    // semantic packet for member/isolation annotations.
+    auto decl = std::make_unique<Objc3InterfaceDecl>();
+    decl->line = actor_token.line;
+    decl->column = actor_token.column;
+    decl->is_actor = true;
+
+    const Token &name_token = Peek();
+    if (!Match(TokenKind::Identifier)) {
+      diagnostics_.push_back(
+          MakeDiag(name_token.line, name_token.column, "O3P101",
+                   "invalid Objective-C actor identifier"));
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+    decl->name = Previous().text;
+
+    if (Match(TokenKind::Colon)) {
+      const Token &super_token = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(MakeDiag(
+            super_token.line, super_token.column, "O3P109",
+            "invalid Objective-C superclass identifier"));
+        SynchronizeTopLevel();
+        return nullptr;
+      }
+      decl->super_name = Previous().text;
+    }
+
+    if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
+      SynchronizeObjcContainer();
+    }
+    decl->adopted_protocols_lexicographic =
+        BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
+
+    decl->semantic_link_symbol =
+        BuildObjcContainerScopeOwner("interface", decl->name, false, "");
+    if (!decl->super_name.empty()) {
+      decl->semantic_link_super_symbol = "interface:" + decl->super_name;
+    }
+    decl->scope_owner_symbol =
+        BuildObjcContainerScopeOwner("interface", decl->name, false, "");
+    decl->scope_path_lexicographic =
+        BuildScopePathLexicographic(decl->scope_owner_symbol,
+                                    "interface:" + decl->name);
+    if (!decl->super_name.empty()) {
+      decl->scope_path_lexicographic.push_back("super:" + decl->super_name);
+      std::sort(decl->scope_path_lexicographic.begin(),
+                decl->scope_path_lexicographic.end());
+      decl->scope_path_lexicographic.erase(
+          std::unique(decl->scope_path_lexicographic.begin(),
+                      decl->scope_path_lexicographic.end()),
+          decl->scope_path_lexicographic.end());
+    }
+
+    while (!At(TokenKind::KwAtEnd) && !At(TokenKind::Eof)) {
+      if (At(TokenKind::KwAtProperty)) {
+        Objc3PropertyDecl property;
+        if (ParseObjcPropertyDecl(property)) {
+          property.scope_owner_symbol = decl->scope_owner_symbol;
+          property.scope_path_symbol =
+              decl->scope_owner_symbol + "::" +
+              BuildObjcPropertyScopePathSymbol(property);
+          AssignObjcPropertySynthesisIvarBindingSymbols(
+              property, decl->semantic_link_symbol);
+          AssignObjcExecutablePropertySourceModelFields(
+              property, decl->semantic_link_symbol, decl->properties.size(),
+              true);
+          decl->properties.push_back(std::move(property));
+          continue;
+        }
+        SynchronizeObjcContainer();
+        continue;
+      }
+      if (!(At(TokenKind::Minus) || At(TokenKind::Plus))) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P100",
+            "unsupported token inside actor class declaration"));
+        SynchronizeObjcContainer();
+        continue;
+      }
+
+      Objc3MethodDecl method;
+      if (ParseObjcMethodDecl(method, false)) {
+        method.scope_owner_symbol = decl->scope_owner_symbol;
+        method.scope_path_symbol =
+            decl->scope_owner_symbol + "::" +
+            BuildObjcMethodScopePathSymbol(method);
+        const std::string override_owner_symbol =
+            decl->semantic_link_super_symbol.empty()
+                ? decl->semantic_link_symbol
+                : decl->semantic_link_super_symbol;
+        AssignObjcMethodLookupOverrideConflictSymbols(
+            method, decl->semantic_link_symbol, override_owner_symbol);
+        decl->methods.push_back(std::move(method));
+        continue;
+      }
+      SynchronizeObjcContainer();
+    }
+
+    FinalizeObjcPropertySynthesisIvarBindingPackets(
+        decl->properties, decl->property_synthesis_symbols_lexicographic,
+        decl->ivar_binding_symbols_lexicographic);
+    FinalizeObjcMethodLookupOverrideConflictPackets(
+        decl->methods, decl->method_lookup_symbols_lexicographic,
+        decl->override_lookup_symbols_lexicographic,
+        decl->conflict_lookup_symbols_lexicographic);
+
+    if (!Match(TokenKind::KwAtEnd)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111",
+                                      "missing '@end' after actor class"));
       SynchronizeTopLevel();
       return nullptr;
     }

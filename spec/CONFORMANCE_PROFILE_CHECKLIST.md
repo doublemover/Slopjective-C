@@ -194,6 +194,17 @@ M270-A001 implementation note:
   for actor declarations, actor hops, sendable markers, and non-sendable
   crossings before later `M270` semantic/runtime work widens the claim
 
+M270-A002 implementation note:
+
+- the frontend now admits contextual `actor class` declarations and
+  `objc_nonisolated` callable annotations as real parser/frontend capability
+- the truthful lane-A proof is still frontend-only and preserves deterministic
+  counts for actor interfaces, actor members, async actor methods,
+  `objc_nonisolated` annotations, executor annotations on actor members, and
+  actor member metadata sites
+- actor-member legality, cross-actor diagnostics, sendability enforcement, and
+  runnable actor runtime behavior remain later `M270` work
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.
