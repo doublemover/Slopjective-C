@@ -484,3 +484,22 @@ artifact-level ABI packet and IR metadata marker for it:
   `tests/tooling/runtime/m269_c003_task_runtime_abi_completion_probe.cpp`
 - private runtime snapshot symbol:
   - `objc3_runtime_copy_task_runtime_state_for_testing`
+
+## M269 scheduler and executor runtime contract probe
+
+`M269-D001` reuses the same helper-backed runtime slice but freezes it as the
+canonical private scheduler/executor/task-state contract for the supported
+Part 7 surface.
+
+- runtime probe:
+  `tests/tooling/runtime/m269_d001_scheduler_executor_runtime_contract_probe.cpp`
+- the probe validates:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+  - `objc3_runtime_copy_task_runtime_state_for_testing`

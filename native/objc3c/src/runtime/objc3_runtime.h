@@ -89,6 +89,11 @@ typedef struct objc3_runtime_registration_state_snapshot {
 // M268-D002 live continuation/runtime integration anchor: the supported
 // non-suspending async slice now executes through that same private helper
 // surface, but this public runtime header still does not widen.
+// M269-D001 scheduler/executor runtime anchor: the first truthful task
+// scheduler/executor helper boundary follows the same rule. Task creation,
+// task-group control, cancellation observation, executor hops, and task-state
+// snapshots remain bootstrap-internal private runtime ABI and do not widen
+// this public runtime header.
 // M254-D001 runtime-bootstrap-api anchor: these exported C ABI type names and
 // function signatures are the canonical bootstrap runtime surface. Later image
 // walk, realization, and deterministic-reset issues must extend this boundary

@@ -65,6 +65,10 @@ inline constexpr const char *kObjc3ToolchainConformanceClaimValidationModel =
     "driver-validates-versioned-conformance-report-and-publication-sidecars-before-toolchain-consumption";
 inline constexpr const char *kObjc3ToolchainConformanceClaimConsumptionModel =
     "validation-consumes-json-sidecars-only-and-keeps-unsupported-profiles-fail-closed";
+// M269-D001 scheduler/executor runtime anchor: the driver/process layer still
+// does not own scheduling itself, but emitted IR/object evidence now carries a
+// frozen private task-runtime helper boundary that later runtime integration
+// issues must consume without reconstructing helper or snapshot names ad hoc.
 
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {

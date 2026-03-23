@@ -3535,6 +3535,31 @@ Part 7 task-runtime slice.
 - the runtime proof surface remains private and continues to use
   `objc3_runtime_copy_task_runtime_state_for_testing`
 
+## M269 scheduler and executor runtime contract
+
+`M269-D001` freezes the truthful private runtime boundary above the helper
+slice already landed in `M269-C002` and `M269-C003`.
+
+- the contract remains private to
+  `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- the helper cluster is:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+- the private testing snapshot remains
+  `objc3_runtime_copy_task_runtime_state_for_testing`
+- emitted IR carries:
+  - `; part7_scheduler_executor_runtime_contract = ...`
+  - `!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}`
+- the public runtime header still does not widen
+- this issue does not yet claim a general scheduler implementation or
+  cross-module task runtime behavior
+
 ## M268 await suspension and resume semantics
 
 The semantic pipeline now enforces live Part 7 await-placement legality and

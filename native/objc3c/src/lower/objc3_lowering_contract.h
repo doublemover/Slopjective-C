@@ -851,6 +851,24 @@ inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationPackag
 inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel =
     "no-suspension-state-machine-no-general-executor-runtime-no-cross-module-live-claim-yet";
 std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary();
+// M269-D001 scheduler/executor runtime freeze anchor: lane-D freezes the
+// private Part 7 helper/runtime boundary that already exists after C002/C003.
+// Task spawn, task-group scope/add/wait/cancel, cancellation polling, executor
+// hops, and task-state snapshot publication remain bootstrap-internal runtime
+// ABI and do not widen the public runtime header yet.
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeContractId =
+    "objc3c-part7-scheduler-executor-runtime-contract/m269-d001-v1";
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeSourceModel =
+    "helper-backed-task-runtime-abi-completion-freezes-one-private-scheduler-executor-task-and-cancellation-runtime-boundary";
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeAbiModel =
+    "private-bootstrap-internal-task-runtime-helpers-and-snapshot-publish-executor-tags-task-state-and-cancellation-observation";
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeExecutionModel =
+    "runtime-library-materializes-deterministic-task-spawn-task-group-cancellation-and-executor-hop-helper-traffic-without-public-abi-widening";
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimePackagingModel =
+    "native-driver-and-runtime-probes-link-against-the-existing-runtime-support-archive-for-private-task-runtime-helper-execution";
+inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeFailClosedModel =
+    "no-public-task-runtime-header-no-general-scheduler-implementation-claim-no-cross-module-task-runtime-claim-yet";
+std::string Objc3Part7SchedulerExecutorRuntimeSummary();
 inline constexpr const char *kObjc3ArcAutomaticInsertionContractId =
     "objc3c-arc-automatic-insertion/m262-c002-v1";
 inline constexpr const char *kObjc3ArcAutomaticInsertionSourceModel =

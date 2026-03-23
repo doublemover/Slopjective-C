@@ -503,6 +503,10 @@ int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
 // helper cluster so task creation, task-group operations, cancellation polls,
 // and executor-handoff proof points become real runnable runtime traffic
 // without widening the public runtime header.
+// M269-D001 scheduler/executor runtime anchor: lane-D now freezes this same
+// private helper cluster plus `objc3_runtime_copy_task_runtime_state_for_testing`
+// as the canonical scheduler/executor/task-state runtime contract for the
+// current supported Part 7 slice.
 int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag);
 int objc3_runtime_enter_task_group_scope_i32(int executor_tag);
 int objc3_runtime_add_task_group_task_i32(int executor_tag);

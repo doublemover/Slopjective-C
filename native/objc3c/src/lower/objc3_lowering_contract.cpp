@@ -1577,6 +1577,26 @@ std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
   return out.str();
 }
 
+std::string Objc3Part7SchedulerExecutorRuntimeSummary() {
+  std::ostringstream out;
+  out << "contract=" << kObjc3Part7SchedulerExecutorRuntimeContractId
+      << ";source_model=" << kObjc3Part7SchedulerExecutorRuntimeSourceModel
+      << ";abi_model=" << kObjc3Part7SchedulerExecutorRuntimeAbiModel
+      << ";execution_model="
+      << kObjc3Part7SchedulerExecutorRuntimeExecutionModel
+      << ";packaging_model="
+      << kObjc3Part7SchedulerExecutorRuntimePackagingModel
+      << ";helper_cluster="
+      << "spawn_task,enter_task_group_scope,add_task_group_task,"
+         "wait_task_group_next,cancel_task_group,task_is_cancelled,"
+         "task_on_cancel,executor_hop"
+      << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part7SchedulerExecutorRuntimeFailClosedModel
+      << ";next_issue=M269-D002";
+  return out.str();
+}
+
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
   // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the

@@ -646,6 +646,27 @@ Current implementation status (`M269-C003`):
 - emitted IR now carries `; part7_task_runtime_abi_completion = ...` plus
   `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
 
+Current implementation status (`M269-D001`):
+
+- the private runtime helper boundary for task creation, task-group control,
+  cancellation observation, executor hops, and task-state publication is now
+  frozen above the earlier `M269-C002`/`M269-C003` helper-backed slice
+- the canonical private helper cluster is:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+- the canonical private testing snapshot is
+  `objc3_runtime_copy_task_runtime_state_for_testing`
+- emitted IR now carries
+  `!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}`
+- this issue still does not claim a general scheduler implementation or
+  cross-module task-runtime behavior
+
 Current implementation status (`M268-C001`):
 
 - the frontend now publishes

@@ -799,6 +799,26 @@ M269-C003 task-runtime ABI completion note:
 - emitted IR now carries `; part7_task_runtime_abi_completion = ...` and
   `!objc3.objc_part7_task_runtime_abi_completion = !{!93}`
 
+M269-D001 scheduler/executor runtime note:
+
+- `M269-D001` freezes the truthful private runtime boundary above the helper
+  slice landed in `M269-C002` and `M269-C003`
+- the canonical private helper cluster is:
+  - `objc3_runtime_spawn_task_i32`
+  - `objc3_runtime_enter_task_group_scope_i32`
+  - `objc3_runtime_add_task_group_task_i32`
+  - `objc3_runtime_wait_task_group_next_i32`
+  - `objc3_runtime_cancel_task_group_i32`
+  - `objc3_runtime_task_is_cancelled_i32`
+  - `objc3_runtime_task_on_cancel_i32`
+  - `objc3_runtime_executor_hop_i32`
+- the canonical private testing snapshot is
+  `objc3_runtime_copy_task_runtime_state_for_testing`
+- emitted IR publishes `; part7_scheduler_executor_runtime_contract = ...`
+  and `!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}`
+- the public runtime header still does not widen
+- broader live scheduler implementation remains the next issue: `M269-D002`
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,
