@@ -930,6 +930,16 @@ M270-E001 strict concurrency conformance gate note:
   fail-closed
 - the next issue is `M270-E002`
 
+M270-E002 runnable actor/isolation closeout note:
+
+- the closeout replays the published `M270-A002` through `M270-E001` proof chain
+  and freezes one explicit runnable matrix for the already-landed actor/runtime
+  slice
+- it does not widen the abstract machine; it republishes the already-landed
+  actor source, hazard, lowering, runtime, cross-module, and gate evidence as
+  one closeout surface
+- the next issue is `M271-A001`
+
 M269-D002 live task runtime note:
 
 - the supported Part 7 task slice now executes through the private helper

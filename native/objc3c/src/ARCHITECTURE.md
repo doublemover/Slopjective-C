@@ -11257,3 +11257,17 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   current front-door fail-closed actor publication boundary remains visible to
   operators
 - the next issue is `M270-E002`
+
+## M270 Part 7 Runnable Actor And Isolation Matrix Closeout (E002)
+
+- `M270-E002` closes the milestone by replaying the published `M270-A002`
+  through `M270-E001` proof chain and freezing one explicit runnable matrix for
+  the already-landed actor/runtime slice
+- supported closeout rows cover:
+  - actor member and isolation source closure
+  - actor race-hazard and strict-concurrency diagnostics
+  - actor hop/replay/race artifact integration
+  - live actor mailbox and isolation runtime
+  - cross-module actor isolation preservation
+  - lane-E strict concurrency conformance gate
+- the next issue is `M271-A001`

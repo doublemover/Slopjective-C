@@ -3429,6 +3429,23 @@ cross-module preservation slices.
   visible to operators
 - the next issue is `M270-E002`
 
+## M270 runnable actor and isolation matrix closeout (M270-E002)
+
+`M270-E002` closes the current actor/isolation milestone truthfully by
+replaying `M270-A002` through `M270-E001` and publishing one explicit runnable
+matrix for the already-landed Part 7 actor/runtime slice.
+
+- the closeout rows are:
+  - actor member and isolation source closure
+  - actor race-hazard and strict-concurrency diagnostics
+  - actor hop/replay/race artifact integration
+  - live actor mailbox and isolation runtime
+  - cross-module actor isolation preservation
+  - lane-E strict concurrency conformance gate
+- the closeout does not widen the front-door publication claim; it republishes
+  the same actor/runtime evidence chain already proven upstream
+- the next issue is `M271-A001`
+
 ## M268 frontend async semantic packet
 
 The frontend now publishes a dedicated Part 7 source packet at

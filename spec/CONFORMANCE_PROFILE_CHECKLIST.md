@@ -295,6 +295,19 @@ M270-E001 strict concurrency conformance gate note:
   front-door publication claims
 - the next issue is `M270-E002`
 
+M270-E002 runnable actor/isolation closeout note:
+
+- lane E now closes `M270` by replaying the published `M270-A002` through
+  `M270-E001` proof chain as one explicit runnable actor/isolation matrix
+- supported closeout rows cover:
+  - actor member and isolation source closure
+  - actor race-hazard and strict-concurrency diagnostics
+  - actor hop/replay/race artifact integration
+  - live actor mailbox and isolation runtime
+  - cross-module actor isolation preservation
+  - lane-E strict concurrency conformance gate
+- the next issue is `M271-A001`
+
 ### E.3.8 System programming extensions (Part 8) {#e-3-8}
 
 - [x] SPT-0067 **[SYSTEM]** Support canonical attribute spellings for [Part 8](#part-8) features ([B.8](#b-8)), including: ([Issue #88](https://github.com/doublemover/Slopjective-C/issues/88)) Evidence: `tests/conformance/parser/SYS-ATTR-01.json`, `tests/conformance/parser/SYS-ATTR-04.json`, `tests/conformance/module_roundtrip/SYS-ATTR-08.json`. Validation: parser/module manifests for `issue_88_*` groups.
