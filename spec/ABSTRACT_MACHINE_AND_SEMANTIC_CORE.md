@@ -631,6 +631,17 @@ M268-B003 compatibility note:
 - runnable async frame layout, async error propagation, and executor scheduling
   remain later `M268` work
 
+M268-C001 lowering note:
+
+- the frontend now publishes
+  `frontend.pipeline.lowering_surface.objc_part7_continuation_abi_and_async_lowering_contract`
+- that packet freezes the current continuation and await suspension lowering
+  replay keys before runnable async frame execution exists
+- emitted IR now carries the same replay-stable continuation and await lowering
+  profiles through the frontend metadata surface
+- runnable async frame layout, suspension cleanup, and executor scheduling
+  remain later `M268` work
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

@@ -47,6 +47,22 @@ inline constexpr const char
     *kObjc3Part5ControlFlowSafetyLoweringSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part5_control_flow_safety_lowering_contract";
+inline constexpr const char
+    *kObjc3Part7ContinuationAbiAsyncLoweringContractId =
+        "objc3c-part7-continuation-abi-async-lowering-contract/m268-c001-v1";
+inline constexpr const char
+    *kObjc3Part7ContinuationAbiAsyncLoweringSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part7_continuation_abi_and_async_lowering_contract";
+inline constexpr const char
+    *kObjc3Part7ContinuationAbiAsyncLoweringContinuationModel =
+        "async-entry-points-carry-deterministic-continuation-lowering-replay-keys-and-counts-into-emitted-ir";
+inline constexpr const char
+    *kObjc3Part7ContinuationAbiAsyncLoweringAwaitModel =
+        "await-suspension-state-lowering-replay-keys-and-counts-are-published-alongside-continuation-lowering";
+inline constexpr const char
+    *kObjc3Part7ContinuationAbiAsyncLoweringDeferredModel =
+        "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-m268-work";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1077,6 +1093,142 @@ std::string BuildPart7AsyncDiagnosticsCompatibilitySummaryJson(
       << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason) << "\""
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\""
       << '}';
+  return out.str();
+}
+
+Objc3AsyncContinuationLoweringContract BuildPart7AsyncContinuationLoweringContract(
+    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &summary,
+    const Objc3Part7AsyncDiagnosticsCompatibilitySummary
+        &compatibility_summary) {
+  Objc3AsyncContinuationLoweringContract contract;
+  contract.async_continuation_sites = summary.async_continuation_sites;
+  contract.async_keyword_sites = summary.async_keyword_sites;
+  contract.async_function_sites = summary.async_function_sites;
+  contract.continuation_allocation_sites = summary.continuation_allocation_sites;
+  contract.continuation_resume_sites = summary.continuation_resume_sites;
+  contract.continuation_suspend_sites = summary.continuation_suspend_sites;
+  contract.async_state_machine_sites = summary.async_state_machine_sites;
+  contract.gate_blocked_sites =
+      compatibility_summary.illegal_non_async_executor_sites +
+      compatibility_summary.illegal_async_function_prototype_sites +
+      compatibility_summary.illegal_async_throws_sites;
+  if (contract.gate_blocked_sites > contract.async_continuation_sites) {
+    contract.contract_violation_sites =
+        contract.gate_blocked_sites - contract.async_continuation_sites;
+    contract.gate_blocked_sites = contract.async_continuation_sites;
+  }
+  contract.normalized_sites =
+      contract.async_continuation_sites - contract.gate_blocked_sites;
+  contract.deterministic =
+      summary.deterministic && compatibility_summary.deterministic &&
+      summary.ready_for_lowering_and_runtime &&
+      compatibility_summary.ready_for_lowering_and_runtime &&
+      contract.contract_violation_sites == 0;
+  return contract;
+}
+
+Objc3AwaitLoweringSuspensionStateLoweringContract
+BuildPart7AwaitLoweringSuspensionStateLoweringContract(
+    const Objc3Part7AwaitSuspensionResumeSemanticSummary &summary) {
+  Objc3AwaitLoweringSuspensionStateLoweringContract contract;
+  contract.await_suspension_sites = summary.await_expression_sites +
+                                    summary.await_suspension_point_sites;
+  contract.await_keyword_sites =
+      summary.await_suspension_point_sites > 0 ? 1 : 0;
+  contract.await_suspension_point_sites = summary.await_suspension_point_sites;
+  contract.await_resume_sites = summary.await_resume_sites;
+  contract.await_state_machine_sites = summary.await_resume_sites;
+  contract.await_continuation_sites =
+      summary.await_suspension_point_sites > 0
+          ? std::min(summary.await_suspension_point_sites,
+                     std::max(summary.continuation_resume_sites,
+                              summary.continuation_suspend_sites))
+          : 0;
+  contract.gate_blocked_sites = summary.illegal_await_sites;
+  if (contract.gate_blocked_sites > contract.await_suspension_sites) {
+    contract.contract_violation_sites =
+        contract.gate_blocked_sites - contract.await_suspension_sites;
+    contract.gate_blocked_sites = contract.await_suspension_sites;
+  }
+  contract.normalized_sites =
+      contract.await_suspension_sites - contract.gate_blocked_sites;
+  contract.deterministic =
+      summary.deterministic && summary.ready_for_lowering_and_runtime &&
+      contract.contract_violation_sites == 0;
+  return contract;
+}
+
+std::string BuildPart7ContinuationAbiAsyncLoweringContractJson(
+    const Objc3AsyncContinuationLoweringContract &continuation_contract,
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &await_contract,
+    const std::string &continuation_replay_key,
+    const std::string &await_replay_key) {
+  const bool deterministic_handoff =
+      continuation_contract.deterministic && await_contract.deterministic;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part7ContinuationAbiAsyncLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part7ContinuationAbiAsyncLoweringSurfacePath)
+      << "\",\"continuation_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AsyncContinuationLoweringLaneContract)
+      << "\",\"await_lane_contract_id\":\""
+      << EscapeJsonString(kObjc3AwaitLoweringSuspensionStateLoweringLaneContract)
+      << "\",\"continuation_model\":\""
+      << EscapeJsonString(
+             kObjc3Part7ContinuationAbiAsyncLoweringContinuationModel)
+      << "\",\"await_model\":\""
+      << EscapeJsonString(kObjc3Part7ContinuationAbiAsyncLoweringAwaitModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part7ContinuationAbiAsyncLoweringDeferredModel)
+      << "\",\"async_continuation_replay_key\":\""
+      << EscapeJsonString(continuation_replay_key)
+      << "\",\"await_suspension_replay_key\":\""
+      << EscapeJsonString(await_replay_key)
+      << "\",\"async_continuation_sites\":"
+      << continuation_contract.async_continuation_sites
+      << ",\"async_keyword_sites\":"
+      << continuation_contract.async_keyword_sites
+      << ",\"async_function_sites\":"
+      << continuation_contract.async_function_sites
+      << ",\"continuation_allocation_sites\":"
+      << continuation_contract.continuation_allocation_sites
+      << ",\"continuation_resume_sites\":"
+      << continuation_contract.continuation_resume_sites
+      << ",\"continuation_suspend_sites\":"
+      << continuation_contract.continuation_suspend_sites
+      << ",\"async_state_machine_sites\":"
+      << continuation_contract.async_state_machine_sites
+      << ",\"async_normalized_sites\":"
+      << continuation_contract.normalized_sites
+      << ",\"async_gate_blocked_sites\":"
+      << continuation_contract.gate_blocked_sites
+      << ",\"async_contract_violation_sites\":"
+      << continuation_contract.contract_violation_sites
+      << ",\"await_suspension_sites\":"
+      << await_contract.await_suspension_sites
+      << ",\"await_keyword_sites\":"
+      << await_contract.await_keyword_sites
+      << ",\"await_suspension_point_sites\":"
+      << await_contract.await_suspension_point_sites
+      << ",\"await_resume_sites\":"
+      << await_contract.await_resume_sites
+      << ",\"await_state_machine_sites\":"
+      << await_contract.await_state_machine_sites
+      << ",\"await_continuation_sites\":"
+      << await_contract.await_continuation_sites
+      << ",\"await_normalized_sites\":"
+      << await_contract.normalized_sites
+      << ",\"await_gate_blocked_sites\":"
+      << await_contract.gate_blocked_sites
+      << ",\"await_contract_violation_sites\":"
+      << await_contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (deterministic_handoff ? "true" : "false")
+      << "}";
   return out.str();
 }
 
@@ -10492,6 +10644,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part7AsyncDiagnosticsCompatibilitySummary
       &part7_async_diagnostics_compatibility_summary =
           pipeline_result.part7_async_diagnostics_compatibility_summary;
+  const Objc3AsyncContinuationLoweringContract
+      part7_async_continuation_lowering_contract =
+          BuildPart7AsyncContinuationLoweringContract(
+              part7_async_effect_suspension_semantic_model_summary,
+              part7_async_diagnostics_compatibility_summary);
+  const Objc3AwaitLoweringSuspensionStateLoweringContract
+      part7_await_lowering_suspension_state_lowering_contract =
+          BuildPart7AwaitLoweringSuspensionStateLoweringContract(
+              part7_await_suspension_resume_semantic_summary);
+  if (!IsValidObjc3AsyncContinuationLoweringContract(
+          part7_async_continuation_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid async continuation lowering contract");
+  }
+  if (!IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
+          part7_await_lowering_suspension_state_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid await suspension lowering contract");
+  }
+  const std::string part7_async_continuation_lowering_replay_key =
+      Objc3AsyncContinuationLoweringReplayKey(
+          part7_async_continuation_lowering_contract);
+  const std::string part7_await_lowering_suspension_state_lowering_replay_key =
+      Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
+          part7_await_lowering_suspension_state_lowering_contract);
   const Objc3Part6TryDoCatchSemanticSummary
       &part6_try_do_catch_semantic_summary =
           pipeline_result.part6_try_do_catch_semantic_summary;
@@ -14794,6 +14973,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_async_diagnostics_and_compatibility_completion\":"
            << BuildPart7AsyncDiagnosticsCompatibilitySummaryJson(
                   part7_async_diagnostics_compatibility_summary)
+           << ",\"objc_part7_continuation_abi_and_async_lowering_contract\":"
+           << BuildPart7ContinuationAbiAsyncLoweringContractJson(
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)
@@ -16046,6 +16231,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part7_async_diagnostics_and_compatibility_completion\":"
            << BuildPart7AsyncDiagnosticsCompatibilitySummaryJson(
                   part7_async_diagnostics_compatibility_summary)
+           << ",\"objc_part7_continuation_abi_and_async_lowering_contract\":"
+           << BuildPart7ContinuationAbiAsyncLoweringContractJson(
+                  part7_async_continuation_lowering_contract,
+                  part7_await_lowering_suspension_state_lowering_contract,
+                  part7_async_continuation_lowering_replay_key,
+                  part7_await_lowering_suspension_state_lowering_replay_key)
            << ",\"objc_part6_error_semantic_model\":"
            << BuildPart6ErrorSemanticModelSummaryJson(
                   part6_error_semantic_model_summary)
@@ -16834,6 +17025,67 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_shim_host_link_contract.runtime_dispatch_symbol;
   ir_frontend_metadata.runtime_shim_host_link_default_runtime_dispatch_symbol_binding =
       runtime_shim_host_link_contract.default_runtime_dispatch_symbol_binding;
+  ir_frontend_metadata.lowering_async_continuation_replay_key =
+      part7_async_continuation_lowering_replay_key;
+  ir_frontend_metadata.async_continuation_lowering_sites =
+      part7_async_continuation_lowering_contract.async_continuation_sites;
+  ir_frontend_metadata.async_continuation_lowering_async_keyword_sites =
+      part7_async_continuation_lowering_contract.async_keyword_sites;
+  ir_frontend_metadata.async_continuation_lowering_async_function_sites =
+      part7_async_continuation_lowering_contract.async_function_sites;
+  ir_frontend_metadata
+      .async_continuation_lowering_continuation_allocation_sites =
+      part7_async_continuation_lowering_contract.continuation_allocation_sites;
+  ir_frontend_metadata.async_continuation_lowering_continuation_resume_sites =
+      part7_async_continuation_lowering_contract.continuation_resume_sites;
+  ir_frontend_metadata.async_continuation_lowering_continuation_suspend_sites =
+      part7_async_continuation_lowering_contract.continuation_suspend_sites;
+  ir_frontend_metadata.async_continuation_lowering_async_state_machine_sites =
+      part7_async_continuation_lowering_contract.async_state_machine_sites;
+  ir_frontend_metadata.async_continuation_lowering_normalized_sites =
+      part7_async_continuation_lowering_contract.normalized_sites;
+  ir_frontend_metadata.async_continuation_lowering_gate_blocked_sites =
+      part7_async_continuation_lowering_contract.gate_blocked_sites;
+  ir_frontend_metadata.async_continuation_lowering_contract_violation_sites =
+      part7_async_continuation_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_async_continuation_lowering_handoff =
+      part7_async_continuation_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_await_lowering_suspension_state_replay_key =
+      part7_await_lowering_suspension_state_lowering_replay_key;
+  ir_frontend_metadata.await_lowering_suspension_state_lowering_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .await_suspension_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_await_keyword_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .await_keyword_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_await_suspension_point_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .await_suspension_point_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_await_resume_sites =
+      part7_await_lowering_suspension_state_lowering_contract.await_resume_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_await_state_machine_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .await_state_machine_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_await_continuation_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .await_continuation_sites;
+  ir_frontend_metadata.await_lowering_suspension_state_lowering_normalized_sites =
+      part7_await_lowering_suspension_state_lowering_contract.normalized_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_gate_blocked_sites =
+      part7_await_lowering_suspension_state_lowering_contract.gate_blocked_sites;
+  ir_frontend_metadata
+      .await_lowering_suspension_state_lowering_contract_violation_sites =
+      part7_await_lowering_suspension_state_lowering_contract
+          .contract_violation_sites;
+  ir_frontend_metadata
+      .deterministic_await_lowering_suspension_state_lowering_handoff =
+      part7_await_lowering_suspension_state_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_ownership_qualifier_replay_key =
       ownership_qualifier_lowering_replay_key;
   ir_frontend_metadata.ownership_qualifier_lowering_ownership_qualifier_sites =

@@ -1371,6 +1371,9 @@ inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
 inline constexpr const char
     *kObjc3AwaitLoweringSuspensionStateLoweringLaneContract =
         "m187-await-lowering-suspension-state-lowering-v1";
+// M268-C001 freeze anchor: these lane contracts become the explicit Part 7
+// continuation ABI / await suspension lowering boundary once frontend artifacts
+// publish the replay-stable handoff packet into emitted manifests and IR.
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =

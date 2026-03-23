@@ -3437,6 +3437,20 @@ The semantic pipeline now publishes a dedicated compatibility packet at
 - async throws functions now fail closed until async error propagation lands
 - this issue still does not claim runnable async frame layout, suspension
   cleanup, or executor runtime execution
+
+## M268 continuation ABI and async lowering contract
+
+The lowering pipeline now publishes a dedicated contract packet at
+`frontend.pipeline.semantic_surface.objc_part7_continuation_abi_and_async_lowering_contract`.
+
+- async continuation lowering replay keys now flow through emitted manifests and
+  IR metadata
+- await suspension lowering replay keys now flow through emitted manifests and
+  IR metadata
+- the packet freezes the current lowering counts for async entry points, await
+  suspension points, and continuation handoff readiness
+- this issue still does not claim runnable async frame layout, resume cleanup,
+  or executor runtime execution
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
