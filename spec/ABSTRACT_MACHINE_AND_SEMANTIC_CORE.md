@@ -587,6 +587,13 @@ M267-E002 runnable closeout note:
   `tmp/reports/m267/M267-E002/runnable_throws_result_and_bridge_matrix_summary.json`
 - the next issue after this closeout is `M268-A001`
 
+M268-A001 source-closure note:
+
+- `async`, `await`, and canonical `objc_executor(...)` callable attributes are
+  now parser-owned source constructs
+- this does not widen the abstract machine with runnable continuations,
+  suspension cleanup, or executor runtime behavior yet
+
 M267-E001 error-model conformance gate note:
 
 - the lane-E gate freezes the current runnable Part 6 slice above `M267-A002`,

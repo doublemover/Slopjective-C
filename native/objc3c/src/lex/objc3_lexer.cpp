@@ -37,6 +37,20 @@ bool IsHorizontalWhitespace(char c) {
   return c == ' ' || c == '\t' || c == '\r' || c == '\v' || c == '\f';
 }
 
+std::string EscapeStringTokenText(const std::string &value) {
+  std::string escaped;
+  escaped.reserve(value.size() + 2u);
+  escaped.push_back('"');
+  for (char c : value) {
+    if (c == '"' || c == '\\') {
+      escaped.push_back('\\');
+    }
+    escaped.push_back(c);
+  }
+  escaped.push_back('"');
+  return escaped;
+}
+
 std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
   std::ostringstream out;
   out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
@@ -136,6 +150,39 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
           MakeDiag(token_line, token_column, "O3L001", "unexpected character '@'"));
       continue;
     }
+    if (c == '"') {
+      Advance();
+      std::string value;
+      bool terminated = false;
+      while (index_ < source_.size()) {
+        const char current = source_[index_];
+        if (current == '"') {
+          Advance();
+          terminated = true;
+          break;
+        }
+        if (current == '\\' && index_ + 1 < source_.size()) {
+          Advance();
+          value.push_back(source_[index_]);
+          Advance();
+          continue;
+        }
+        if (current == '\n') {
+          break;
+        }
+        value.push_back(current);
+        Advance();
+      }
+      if (!terminated) {
+        diagnostics.push_back(
+            MakeDiag(token_line, token_column, "O3L005",
+                     "unterminated string literal"));
+        continue;
+      }
+      tokens.push_back(Token{TokenKind::String, EscapeStringTokenText(value),
+                             token_line, token_column});
+      continue;
+    }
     if (IsIdentStart(c)) {
       std::string ident = ConsumeIdentifier();
       TokenKind kind = TokenKind::Identifier;
@@ -147,6 +194,8 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwVar;
       } else if (ident == "fn") {
         kind = TokenKind::KwFn;
+      } else if (ident == "async") {
+        kind = TokenKind::KwAsync;
       } else if (ident == "pure") {
         kind = TokenKind::KwPure;
       } else if (ident == "extern") {
@@ -166,6 +215,8 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwDefer;
       } else if (ident == "do") {
         kind = TokenKind::KwDo;
+      } else if (ident == "await") {
+        kind = TokenKind::KwAwait;
       } else if (ident == "try") {
         kind = TokenKind::KwTry;
       } else if (ident == "throw") {

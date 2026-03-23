@@ -9,10 +9,12 @@ enum class Objc3LexTokenKind {
   Eof,
   Identifier,
   Number,
+  String,
   KwModule,
   KwLet,
   KwVar,
   KwFn,
+  KwAsync,
   KwPure,
   KwExtern,
   KwReturn,
@@ -21,6 +23,7 @@ enum class Objc3LexTokenKind {
   KwGuard,
   KwDefer,
   KwDo,
+  KwAwait,
   KwTry,
   KwThrow,
   KwCatch,
@@ -185,6 +188,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimTypedKeyPathLiterals =
     "source-only:typed-keypath-literals";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimThrowsDeclarations =
     "source-only:throws-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimAsyncDeclarations =
+    "source-only:async-declarations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimAwaitExpressions =
+    "source-only:await-expressions";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimExecutorAffinityAttributes =
+    "source-only:executor-affinity-attributes";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimResultCarrierProfiles =
     "source-only:result-carrier-profiles";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles =

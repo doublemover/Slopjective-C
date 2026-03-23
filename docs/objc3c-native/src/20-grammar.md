@@ -3297,3 +3297,21 @@ Current implementation boundary:
 - malformed `objc_status_code(...)` payloads fail closed in the parser
 - runtime `try` lowering, bridge temporaries, and status-to-error execution
   remain deferred to later `M267` issues
+
+## M268 frontend async source closure
+
+The frontend now owns one truthful Part 7 source boundary for async syntax.
+
+- `async fn` is admitted as a parser-owned declaration form
+- Objective-C methods now admit a parser-owned `async` declaration modifier
+- `await <expr>` is admitted as a parser-owned expression marker
+- callable declarations now admit:
+  - `__attribute__((objc_executor(main)))`
+  - `__attribute__((objc_executor(global)))`
+  - `__attribute__((objc_executor(named("..."))))`
+
+Current implementation status:
+
+- this is source closure only
+- no continuation ABI, suspension cleanup, executor runtime, or runnable async
+  behavior is claimed by `M268-A001`

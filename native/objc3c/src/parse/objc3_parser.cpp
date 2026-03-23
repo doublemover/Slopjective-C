@@ -3177,8 +3177,11 @@ static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromCounts(
 
 static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromFunction(
     const FunctionDecl &fn) {
-  const Objc3AsyncContinuationSiteCounts counts =
-      CountAsyncContinuationSitesInBody(fn.body);
+  Objc3AsyncContinuationSiteCounts counts = CountAsyncContinuationSitesInBody(fn.body);
+  if (fn.async_declared) {
+    counts.async_keyword_sites += 1u;
+    counts.async_function_sites += 1u;
+  }
   return BuildAsyncContinuationProfileFromCounts(
       counts.async_keyword_sites,
       counts.async_function_sites,
@@ -3193,6 +3196,10 @@ static Objc3AsyncContinuationProfile BuildAsyncContinuationProfileFromOpaqueBody
   Objc3AsyncContinuationSiteCounts counts;
   if (method.has_body) {
     CollectAsyncContinuationSitesFromSymbol(method.selector, counts);
+  }
+  if (method.async_declared) {
+    counts.async_keyword_sites += 1u;
+    counts.async_function_sites += 1u;
   }
   return BuildAsyncContinuationProfileFromCounts(
       counts.async_keyword_sites,
@@ -3282,6 +3289,11 @@ static void CollectAwaitSuspensionExprSites(
     Objc3AwaitSuspensionSiteCounts &counts) {
   if (expr == nullptr) {
     return;
+  }
+  if (expr->await_expression_enabled) {
+    counts.await_keyword_sites += 1u;
+    counts.await_suspension_point_sites += 1u;
+    counts.await_continuation_sites += 1u;
   }
   switch (expr->kind) {
   case Expr::Kind::Call:
@@ -5396,7 +5408,8 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddProtocolDecl(program, std::move(*decl));
         }
-      } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwFn)) {
+      } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync) ||
+                 At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
       } else if (AtCStyleTopLevelFunctionDeclStart()) {
         ParseTopLevelCompatFunctionDecl(program);
@@ -5753,9 +5766,10 @@ class Objc3Parser {
   void ParseTopLevelFunctionDecl(Objc3ParsedProgram &program) {
     bool is_pure = false;
     bool is_extern = false;
+    bool is_async = false;
     std::optional<TokenKind> trailing_qualifier = std::nullopt;
 
-    while (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    while (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       if (Match(TokenKind::KwPure)) {
         if (is_pure) {
           const Token &token = Previous();
@@ -5779,6 +5793,19 @@ class Objc3Parser {
         }
         is_extern = true;
         trailing_qualifier = TokenKind::KwExtern;
+        continue;
+      }
+
+      if (Match(TokenKind::KwAsync)) {
+        if (is_async) {
+          const Token &token = Previous();
+          diagnostics_.push_back(
+              MakeDiag(token.line, token.column, "O3P100", "duplicate 'async' qualifier in function declaration"));
+          SynchronizeTopLevel();
+          return;
+        }
+        is_async = true;
+        trailing_qualifier = TokenKind::KwAsync;
       }
     }
 
@@ -5798,6 +5825,7 @@ class Objc3Parser {
     }
 
     fn->is_pure = is_pure;
+    fn->async_declared = is_async;
     if (is_extern && !fn->is_prototype) {
       diagnostics_.push_back(MakeDiag(fn->line, fn->column, "O3P104", "missing ';' after extern function declaration"));
       return;
@@ -6331,6 +6359,10 @@ class Objc3Parser {
     return At(TokenKind::Identifier) && Peek().text == "throws";
   }
 
+  bool AtAsyncClauseKeyword() const {
+    return At(TokenKind::KwAsync);
+  }
+
   bool AtIdentifierText(const char *text) const {
     return At(TokenKind::Identifier) && Peek().text == text;
   }
@@ -6360,6 +6392,95 @@ class Objc3Parser {
       return false;
     }
     method.throws_declared = true;
+    return true;
+  }
+
+  bool ParseOptionalAsyncClause(FunctionDecl &fn) {
+    if (!AtAsyncClauseKeyword()) {
+      return true;
+    }
+    const Token async_token = Advance();
+    if (fn.async_declared) {
+      diagnostics_.push_back(MakeDiag(async_token.line, async_token.column, "O3P181",
+                                      "duplicate 'async' declaration modifier"));
+      return false;
+    }
+    fn.async_declared = true;
+    return true;
+  }
+
+  bool ParseOptionalAsyncClause(Objc3MethodDecl &method) {
+    if (!AtAsyncClauseKeyword()) {
+      return true;
+    }
+    const Token async_token = Advance();
+    if (method.async_declared) {
+      diagnostics_.push_back(MakeDiag(async_token.line, async_token.column, "O3P181",
+                                      "duplicate 'async' declaration modifier"));
+      return false;
+    }
+    method.async_declared = true;
+    return true;
+  }
+
+  template <typename TCallableDecl>
+  bool ParseExecutorAttributePayload(TCallableDecl &decl, const Token &attribute_token) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P287", "missing '(' after objc_executor attribute"));
+      return false;
+    }
+
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P288", "invalid objc_executor payload"));
+      return false;
+    }
+
+    const Token kind = Advance();
+    decl.executor_affinity_declared = true;
+    decl.executor_affinity_kind = kind.text;
+    decl.executor_affinity_named = false;
+    decl.executor_affinity_name.clear();
+
+    if (kind.text == "main" || kind.text == "global") {
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P289", "missing ')' after objc_executor payload"));
+        return false;
+      }
+      return true;
+    }
+
+    if (kind.text != "named") {
+      diagnostics_.push_back(MakeDiag(attribute_token.line, attribute_token.column, "O3P290",
+                                      "unsupported objc_executor payload '" + kind.text + "'"));
+      return false;
+    }
+
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P291", "missing '(' after objc_executor named payload"));
+      return false;
+    }
+    if (!At(TokenKind::String)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(
+          MakeDiag(token.line, token.column, "O3P292", "objc_executor named payload requires string literal"));
+      return false;
+    }
+    decl.executor_affinity_name = Advance().text;
+    decl.executor_affinity_named = true;
+    if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P293",
+                                      "missing '))' after objc_executor named payload"));
+      return false;
+    }
     return true;
   }
 
@@ -6499,6 +6620,15 @@ class Objc3Parser {
         return false;
       }
       return ParseStatusCodeBridgeAttributePayload(decl, attribute_name);
+    }
+    if (attribute_name.text == "objc_executor") {
+      if (decl.executor_affinity_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P294",
+                     "duplicate objc_executor attribute"));
+        return false;
+      }
+      return ParseExecutorAttributePayload(decl, attribute_name);
     }
 
     diagnostics_.push_back(MakeDiag(
@@ -7745,6 +7875,10 @@ class Objc3Parser {
     method.selector = BuildNormalizedObjcSelector(method.selector_pieces);
     method.selector_is_normalized = true;
 
+    if (!ParseOptionalAsyncClause(method)) {
+      return false;
+    }
+
     if (!ParseOptionalThrowsClause(method)) {
       return false;
     }
@@ -7954,7 +8088,7 @@ class Objc3Parser {
       }
       if (At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) || At(TokenKind::KwAtProtocol) ||
           At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern)) {
+          At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
         return;
       }
       if (Match(TokenKind::Semicolon)) {
@@ -8350,11 +8484,12 @@ class Objc3Parser {
 
   std::unique_ptr<FunctionDecl> ParseFunction() {
     auto fn = std::make_unique<FunctionDecl>();
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' after 'fn'"
-                                      : "unexpected qualifier 'extern' after 'fn'";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after 'fn'"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after 'fn'"
+                                                  : "unexpected qualifier 'async' after 'fn'";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       SynchronizeTopLevel();
       return nullptr;
@@ -8374,11 +8509,12 @@ class Objc3Parser {
     fn->scope_path_lexicographic =
         BuildScopePathLexicographic(fn->scope_owner_symbol, "function:" + fn->name);
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' after function name"
-                                      : "unexpected qualifier 'extern' after function name";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after function name"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after function name"
+                                                  : "unexpected qualifier 'async' after function name";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       SynchronizeTopLevel();
       return nullptr;
@@ -8403,17 +8539,22 @@ class Objc3Parser {
       return nullptr;
     }
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' after parameter list"
-                                      : "unexpected qualifier 'extern' after parameter list";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after parameter list"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after parameter list"
+                                                  : "unexpected qualifier 'async' after parameter list";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       SynchronizeTopLevel();
       return nullptr;
     }
 
     bool has_return_annotation = false;
+    if (!ParseOptionalAsyncClause(*fn)) {
+      SynchronizeTopLevel();
+      return nullptr;
+    }
     if (!ParseOptionalThrowsClause(*fn)) {
       SynchronizeTopLevel();
       return nullptr;
@@ -8439,16 +8580,22 @@ class Objc3Parser {
       return nullptr;
     }
 
+    if (!ParseOptionalAsyncClause(*fn)) {
+      SynchronizeTopLevel();
+      return nullptr;
+    }
+
     if (!ParseOptionalCallableBridgeAttributes(*fn)) {
       SynchronizeTopLevel();
       return nullptr;
     }
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' after function return annotation"
-                                      : "unexpected qualifier 'extern' after function return annotation";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after function return annotation"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after function return annotation"
+                                                  : "unexpected qualifier 'async' after function return annotation";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       SynchronizeTopLevel();
       return nullptr;
@@ -8475,7 +8622,7 @@ class Objc3Parser {
     if (!At(TokenKind::LBrace)) {
       const Token &token = Peek();
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::KwExtern) || At(TokenKind::KwAsync) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
           At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty) ||
           At(TokenKind::Eof)) {
         diagnostics_.push_back(
@@ -8515,11 +8662,12 @@ class Objc3Parser {
     }
 
     while (true) {
-      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
         const Token qualifier = Advance();
-        const std::string message = qualifier.kind == TokenKind::KwPure
-                                        ? "unexpected qualifier 'pure' in parameter identifier position"
-                                        : "unexpected qualifier 'extern' in parameter identifier position";
+        const std::string message =
+            qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in parameter identifier position"
+            : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in parameter identifier position"
+                                                    : "unexpected qualifier 'async' in parameter identifier position";
         diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
         return false;
       }
@@ -8536,11 +8684,12 @@ class Objc3Parser {
       param.line = Previous().line;
       param.column = Previous().column;
 
-      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
         const Token qualifier = Advance();
-        const std::string message = qualifier.kind == TokenKind::KwPure
-                                        ? "unexpected qualifier 'pure' after parameter name"
-                                        : "unexpected qualifier 'extern' after parameter name";
+        const std::string message =
+            qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after parameter name"
+            : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after parameter name"
+                                                    : "unexpected qualifier 'async' after parameter name";
         diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
         return false;
       }
@@ -8555,11 +8704,12 @@ class Objc3Parser {
         return false;
       }
 
-      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+      if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
         const Token qualifier = Advance();
-        const std::string message = qualifier.kind == TokenKind::KwPure
-                                        ? "unexpected qualifier 'pure' after parameter type annotation"
-                                        : "unexpected qualifier 'extern' after parameter type annotation";
+        const std::string message =
+            qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' after parameter type annotation"
+            : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' after parameter type annotation"
+                                                    : "unexpected qualifier 'async' after parameter type annotation";
         diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
         return false;
       }
@@ -8629,11 +8779,12 @@ class Objc3Parser {
     fn.return_ownership_arc_diagnostic_profile.clear();
     fn.return_ownership_arc_fixit_hint.clear();
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' in function return type annotation"
-                                      : "unexpected qualifier 'extern' in function return type annotation";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in function return type annotation"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in function return type annotation"
+                                                  : "unexpected qualifier 'async' in function return type annotation";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return false;
     }
@@ -8986,11 +9137,12 @@ class Objc3Parser {
     param.ownership_arc_fixit_available = false;
     param.ownership_arc_diagnostic_profile.clear();
     param.ownership_arc_fixit_hint.clear();
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' in parameter type annotation"
-                                      : "unexpected qualifier 'extern' in parameter type annotation";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in parameter type annotation"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in parameter type annotation"
+                                                  : "unexpected qualifier 'async' in parameter type annotation";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return false;
     }
@@ -9444,7 +9596,7 @@ class Objc3Parser {
         return;
       }
       if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
-          At(TokenKind::KwExtern) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::KwExtern) || At(TokenKind::KwAsync) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
           At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty)) {
         return;
       }
@@ -9517,11 +9669,12 @@ class Objc3Parser {
       return stmt;
     }
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' in statement position"
-                                      : "unexpected qualifier 'extern' in statement position";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in statement position"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in statement position"
+                                                  : "unexpected qualifier 'async' in statement position";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return nullptr;
     }
@@ -10216,11 +10369,12 @@ class Objc3Parser {
             case_stmt.value_line = Previous().line;
             case_stmt.value_column = Previous().column;
             case_stmt.value = Previous().kind == TokenKind::KwTrue ? 1 : 0;
-          } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+          } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
             const Token qualifier = Advance();
-            const std::string message = qualifier.kind == TokenKind::KwPure
-                                            ? "unexpected qualifier 'pure' in case label expression"
-                                            : "unexpected qualifier 'extern' in case label expression";
+            const std::string message =
+                qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in case label expression"
+                : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in case label expression"
+                                                        : "unexpected qualifier 'async' in case label expression";
             diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
             return nullptr;
           } else {
@@ -10970,6 +11124,21 @@ class Objc3Parser {
       expr->args.push_back(std::move(rhs));
       expr->try_expression_profile = BuildTryExpressionProfile(*expr);
       return expr;
+    }
+    if (Match(TokenKind::KwAwait)) {
+      const Token await_token = Previous();
+      auto rhs = ParseUnary();
+      if (rhs == nullptr) {
+        return nullptr;
+      }
+      rhs->await_expression_enabled = true;
+      if (rhs->line == 0u) {
+        rhs->line = await_token.line;
+      }
+      if (rhs->column == 0u) {
+        rhs->column = await_token.column;
+      }
+      return rhs;
     }
     if (Match(TokenKind::Bang)) {
       const Token op = Previous();
@@ -11916,11 +12085,12 @@ class Objc3Parser {
       return ParseMessageSendExpression();
     }
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
-      const std::string message = qualifier.kind == TokenKind::KwPure
-                                      ? "unexpected qualifier 'pure' in expression position"
-                                      : "unexpected qualifier 'extern' in expression position";
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in expression position"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in expression position"
+                                                  : "unexpected qualifier 'async' in expression position";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
       return nullptr;
     }
@@ -11955,12 +12125,14 @@ class Objc3Parser {
       message->optional_send_is_normalized = true;
     }
 
-    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
       const Token qualifier = Advance();
       const std::string message_text =
           qualifier.kind == TokenKind::KwPure
               ? "unexpected qualifier 'pure' in message selector position"
-              : "unexpected qualifier 'extern' in message selector position";
+              : qualifier.kind == TokenKind::KwExtern
+                    ? "unexpected qualifier 'extern' in message selector position"
+                    : "unexpected qualifier 'async' in message selector position";
       diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message_text));
       return nullptr;
     }
@@ -11991,12 +12163,14 @@ class Objc3Parser {
       message->args.push_back(std::move(first_arg));
 
       while (true) {
-        if (At(TokenKind::KwPure) || At(TokenKind::KwExtern)) {
+        if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
           const Token qualifier = Advance();
           const std::string message_text =
               qualifier.kind == TokenKind::KwPure
                   ? "unexpected qualifier 'pure' in keyword selector segment position"
-                  : "unexpected qualifier 'extern' in keyword selector segment position";
+                  : qualifier.kind == TokenKind::KwExtern
+                        ? "unexpected qualifier 'extern' in keyword selector segment position"
+                        : "unexpected qualifier 'async' in keyword selector segment position";
           diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message_text));
           return nullptr;
         }
@@ -12187,5 +12361,3 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size(), tokens.size());
   return result;
 }
-
-

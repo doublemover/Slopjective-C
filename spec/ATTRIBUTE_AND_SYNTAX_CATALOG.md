@@ -499,6 +499,18 @@ Current implementation status (`M267-A001`):
   method declarations
 - deterministic `NSError` bridging profiling remains attached to function and
   method declarations
+
+## M268 current async source boundary (implementation note)
+
+Current implementation status (`M268-A001`):
+
+- `async fn` is now admitted as a parser-owned declaration form
+- Objective-C methods now admit parser-owned `async` declaration modifiers
+- `await` is now admitted as a parser-owned expression marker
+- callable declarations now admit canonical `objc_executor(main)`,
+  `objc_executor(global)`, and `objc_executor(named("..."))` attributes
+- continuation lowering, executor binding, and runnable suspension semantics
+  remain later `M268` work
 - `try`, `throw`, and `do/catch` are reserved frontend/source constructs in the
   current native implementation; A001 does not claim runnable semantics for them
 - runnable propagation, catch handling, and native error ABI are still deferred

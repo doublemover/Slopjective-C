@@ -410,6 +410,7 @@ struct Expr {
   bool try_expression_requires_throwing_context = false;
   bool try_expression_is_normalized = false;
   std::string try_expression_profile;
+  bool await_expression_enabled = false;
   bool throw_statement_enabled = false;
   bool throw_statement_is_normalized = false;
   std::string throw_statement_profile;
@@ -1257,6 +1258,11 @@ struct Objc3MethodDecl {
   std::string method_lookup_symbol;
   std::string override_lookup_symbol;
   std::string conflict_lookup_symbol;
+  bool async_declared = false;
+  bool executor_affinity_declared = false;
+  bool executor_affinity_named = false;
+  std::string executor_affinity_kind;
+  std::string executor_affinity_name;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
@@ -1657,6 +1663,11 @@ struct FunctionDecl {
   bool return_ownership_arc_fixit_available = false;
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
+  bool async_declared = false;
+  bool executor_affinity_declared = false;
+  bool executor_affinity_named = false;
+  std::string executor_affinity_kind;
+  std::string executor_affinity_name;
   bool throws_declared = false;
   bool throws_declaration_profile_is_normalized = false;
   std::string throws_declaration_profile;
