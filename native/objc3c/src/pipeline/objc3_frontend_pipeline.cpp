@@ -4601,6 +4601,31 @@ std::string BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(
+    const Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+        &summary) {
+  std::ostringstream out;
+  out << "families=" << summary.advanced_feature_family_count
+      << ";dependencies=" << summary.dependency_surface_count
+      << ";claims=" << summary.aggregated_source_only_claim_count
+      << ";fail-closed=" << summary.fail_closed_construct_count
+      << ";sites=" << summary.diagnostic_surface_sites << ":"
+      << summary.fixit_surface_sites << ":" << summary.migrator_surface_sites
+      << ":" << summary.canonicalization_hint_sites
+      << ";parts=" << summary.error_surface_sites << ":"
+      << summary.concurrency_surface_sites << ":"
+      << summary.system_surface_sites << ":" << summary.dispatch_surface_sites
+      << ":" << summary.metaprogramming_surface_sites << ":"
+      << summary.interop_surface_sites
+      << ";supported="
+      << (summary.diagnostics_inventory_source_supported ? "true" : "false")
+      << ":" << (summary.fixit_inventory_source_supported ? "true" : "false")
+      << ":" << (summary.migrator_inventory_source_supported ? "true" : "false")
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6507,6 +6532,167 @@ BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
   return summary;
 }
 
+Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+BuildPart12DiagnosticsMigratorSourceInventorySummary(
+    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendPart6ErrorSourceClosureSummary &part6_summary,
+    const Objc3FrontendPart7AsyncSourceClosureSummary &part7_async_summary,
+    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+        &part7_actor_summary,
+    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+        &part7_task_summary,
+    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &part8_summary,
+    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+        &part8_cleanup_summary,
+    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+        &part8_family_summary,
+    const Objc3FrontendPart9DispatchIntentSourceClosureSummary
+        &part9_closure_summary,
+    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+        &part9_completion_summary,
+    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+        &part10_closure_summary,
+    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+        &part10_macro_summary,
+    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+        &part10_property_summary,
+    const Objc3FrontendPart11ForeignImportSourceClosureSummary
+        &part11_closure_summary,
+    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+        &part11_completion_summary) {
+  Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary summary;
+
+  summary.advanced_feature_family_count = 6;
+  summary.dependency_surface_count = summary.dependency_contract_ids.size();
+  summary.aggregated_source_only_claim_count =
+      part6_summary.source_only_claim_ids.size() +
+      part7_async_summary.source_only_claim_ids.size() +
+      part7_actor_summary.source_only_claim_ids.size() +
+      part7_task_summary.source_only_claim_ids.size() +
+      part8_summary.source_only_claim_ids.size() +
+      part8_cleanup_summary.source_only_claim_ids.size() +
+      part8_family_summary.source_only_claim_ids.size() +
+      part9_closure_summary.source_only_claim_ids.size() +
+      part9_completion_summary.source_only_claim_ids.size() +
+      part10_closure_summary.source_only_claim_ids.size() +
+      part10_macro_summary.source_only_claim_ids.size() +
+      part10_property_summary.source_only_claim_ids.size() +
+      part11_closure_summary.source_only_claim_ids.size() +
+      part11_completion_summary.source_only_claim_ids.size();
+  summary.fail_closed_construct_count =
+      part6_summary.fail_closed_construct_ids.size();
+  summary.error_surface_sites =
+      part6_summary.function_throws_declaration_sites +
+      part6_summary.method_throws_declaration_sites +
+      part6_summary.result_like_sites + part6_summary.result_payload_sites +
+      part6_summary.ns_error_bridging_sites +
+      part6_summary.ns_error_out_parameter_sites +
+      part6_summary.ns_error_bridge_path_sites +
+      part6_summary.objc_nserror_attribute_sites +
+      part6_summary.objc_status_code_attribute_sites +
+      part6_summary.try_keyword_sites + part6_summary.throw_keyword_sites +
+      part6_summary.catch_keyword_sites;
+  summary.concurrency_surface_sites =
+      part7_async_summary.async_keyword_sites +
+      part7_async_summary.await_keyword_sites +
+      part7_async_summary.executor_attribute_sites +
+      part7_actor_summary.actor_interface_sites +
+      part7_actor_summary.actor_method_sites +
+      part7_actor_summary.actor_property_sites +
+      part7_actor_summary.objc_nonisolated_annotation_sites +
+      part7_actor_summary.actor_member_executor_annotation_sites +
+      part7_task_summary.task_creation_sites +
+      part7_task_summary.task_group_scope_sites +
+      part7_task_summary.task_group_add_task_sites +
+      part7_task_summary.task_group_wait_next_sites +
+      part7_task_summary.task_group_cancel_all_sites +
+      part7_task_summary.cancellation_check_sites +
+      part7_task_summary.cancellation_handler_sites;
+  summary.system_surface_sites =
+      part8_summary.resource_attribute_sites +
+      part8_summary.resource_close_clause_sites +
+      part8_summary.borrowed_pointer_sites +
+      part8_summary.returns_borrowed_attribute_sites +
+      part8_summary.explicit_capture_list_sites +
+      part8_summary.explicit_capture_item_sites +
+      part8_cleanup_summary.cleanup_attribute_sites +
+      part8_cleanup_summary.cleanup_sugar_sites +
+      part8_cleanup_summary.resource_sugar_sites +
+      part8_family_summary.family_retain_sites +
+      part8_family_summary.family_release_sites +
+      part8_family_summary.family_autorelease_sites +
+      part8_family_summary.compatibility_returns_retained_sites +
+      part8_family_summary.compatibility_returns_not_retained_sites +
+      part8_family_summary.compatibility_consumed_sites;
+  summary.dispatch_surface_sites =
+      part9_closure_summary.direct_callable_sites +
+      part9_closure_summary.final_callable_sites +
+      part9_closure_summary.dynamic_callable_sites +
+      part9_closure_summary.direct_members_container_sites +
+      part9_closure_summary.final_container_sites +
+      part9_closure_summary.sealed_container_sites +
+      part9_completion_summary.prefixed_container_attribute_sites +
+      part9_completion_summary.effective_direct_member_sites +
+      part9_completion_summary.direct_members_defaulted_method_sites +
+      part9_completion_summary.direct_members_dynamic_opt_out_sites;
+  summary.metaprogramming_surface_sites =
+      part10_closure_summary.derive_marker_sites +
+      part10_closure_summary.macro_marker_sites +
+      part10_closure_summary.property_behavior_sites +
+      part10_macro_summary.macro_package_sites +
+      part10_macro_summary.macro_provenance_sites +
+      part10_macro_summary.expansion_visible_macro_sites +
+      part10_property_summary.property_behavior_sites +
+      part10_property_summary.synthesized_binding_visible_sites +
+      part10_property_summary.synthesized_getter_visible_sites +
+      part10_property_summary.synthesized_setter_visible_sites;
+  summary.interop_surface_sites =
+      part11_closure_summary.foreign_callable_sites +
+      part11_closure_summary.import_module_annotation_sites +
+      part11_closure_summary.imported_module_name_sites +
+      part11_completion_summary.swift_name_annotation_sites +
+      part11_completion_summary.swift_private_annotation_sites +
+      part11_completion_summary.cpp_name_annotation_sites +
+      part11_completion_summary.header_name_annotation_sites +
+      part11_completion_summary.named_annotation_payload_sites;
+  summary.diagnostic_surface_sites =
+      summary.error_surface_sites + summary.concurrency_surface_sites +
+      summary.system_surface_sites + summary.dispatch_surface_sites +
+      summary.metaprogramming_surface_sites + summary.interop_surface_sites;
+  summary.fixit_surface_sites = summary.diagnostic_surface_sites;
+  summary.migrator_surface_sites = summary.diagnostic_surface_sites;
+  summary.canonicalization_hint_sites = migration_hints.legacy_total();
+
+  const bool dependencies_ready =
+      part6_summary.ready_for_semantic_expansion &&
+      part7_async_summary.ready_for_semantic_expansion &&
+      part7_actor_summary.ready_for_semantic_expansion &&
+      part7_task_summary.ready_for_semantic_expansion &&
+      part8_summary.ready_for_semantic_expansion &&
+      part8_cleanup_summary.ready_for_semantic_expansion &&
+      part8_family_summary.ready_for_semantic_expansion &&
+      part9_closure_summary.ready_for_semantic_expansion &&
+      part9_completion_summary.ready_for_semantic_expansion &&
+      part10_closure_summary.ready_for_semantic_expansion &&
+      part10_macro_summary.ready_for_semantic_expansion &&
+      part10_property_summary.ready_for_semantic_expansion &&
+      part11_closure_summary.ready_for_semantic_expansion &&
+      part11_completion_summary.ready_for_semantic_expansion;
+  summary.diagnostics_inventory_source_supported = dependencies_ready;
+  summary.fixit_inventory_source_supported = dependencies_ready;
+  summary.migrator_inventory_source_supported = dependencies_ready;
+  summary.deterministic_handoff =
+      dependencies_ready && summary.dependency_surface_count == 14 &&
+      summary.aggregated_source_only_claim_count > 0 &&
+      summary.advanced_feature_family_count == 6 &&
+      summary.diagnostic_surface_sites >= summary.error_surface_sites &&
+      summary.diagnostic_surface_sites >= summary.interop_surface_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6758,6 +6944,22 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part7_task_group_cancellation_source_closure_summary =
       BuildPart7TaskGroupCancellationSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
+  result.part12_diagnostics_migrator_source_inventory_summary =
+      BuildPart12DiagnosticsMigratorSourceInventorySummary(
+          result.migration_hints, result.part6_error_source_closure_summary,
+          result.part7_async_source_closure_summary,
+          result.part7_actor_member_isolation_source_closure_summary,
+          result.part7_task_group_cancellation_source_closure_summary,
+          result.part8_system_extension_source_closure_summary,
+          result.part8_cleanup_resource_capture_source_completion_summary,
+          result.part8_retainable_c_family_source_completion_summary,
+          result.part9_dispatch_intent_source_closure_summary,
+          result.part9_dispatch_intent_source_completion_summary,
+          result.part10_metaprogramming_source_closure_summary,
+          result.part10_macro_package_provenance_source_completion_summary,
+          result.part10_property_behavior_source_completion_summary,
+          result.part11_foreign_import_source_closure_summary,
+          result.part11_cpp_swift_interop_annotation_source_completion_summary);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,

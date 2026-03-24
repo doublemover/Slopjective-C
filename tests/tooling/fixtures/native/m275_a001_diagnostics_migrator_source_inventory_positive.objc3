@@ -1,0 +1,62 @@
+module M275A001;
+
+fn recover(error: NSError*) throws -> i32 {
+  return 0;
+}
+
+fn fetchValue() -> i32 {
+  return 7;
+}
+
+async fn runTask() -> i32 __attribute__((objc_executor(named("com.example.main")))) {
+  return await fetchValue();
+}
+
+extern fn task_spawn_child() -> i32;
+extern fn with_task_group_scope() -> i32;
+extern fn task_group_add_task() -> i32;
+extern fn task_group_wait_next() -> i32;
+extern fn task_group_cancel_all() -> i32;
+extern fn task_runtime_cancelled_value() -> i32;
+extern fn task_runtime_on_cancel() -> i32;
+extern fn detached_task_create() -> i32;
+
+async fn taskGroupEntry() -> i32 __attribute__((objc_executor(global))) {
+  task_spawn_child();
+  with_task_group_scope();
+  task_group_add_task();
+  if (task_runtime_cancelled_value()) {
+    return task_group_cancel_all();
+  }
+  return await task_group_wait_next();
+}
+
+fn borrowIt(value: borrowed id *) -> borrowed id * __attribute__((objc_returns_borrowed(owner_index=0))) {
+  __attribute__((objc_resource(close=CloseFd, invalid=-1))) let fd = 3;
+  let block = ^[move fd] (i32 x) {
+    return x + fd;
+  };
+  return value;
+}
+
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), os_returns_not_retained));
+extern fn NSMakeThing() -> id
+    __attribute__((ns_returns_retained));
+
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming")), objc_macro_provenance(named("sha256:abc123")))) {
+  return 7;
+}
+
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+fn annotatedBridge() -> i32 __attribute__((objc_swift_name(named("SwiftBridge")), objc_swift_private, objc_cxx_name(named("CppBridge")), objc_header_name(named("HeaderBridge")))) {
+  return 7;
+}
+
+fn main() -> i32 {
+  return traced() + annotatedBridge();
+}

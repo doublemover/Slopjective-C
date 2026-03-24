@@ -4465,3 +4465,22 @@ Current implementation status (`M274-A002`):
 - this lane still stops at source completion; textual/module interface
   preservation, FFI lowering, and runtime bridge generation remain later
   `M274` work
+
+## M275 diagnostics, fix-it, and migrator source surface inventory
+
+Current implementation status (`M275-A001`):
+
+- the emitted frontend manifest now publishes
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostics_fixit_and_migrator_source_inventory`
+- this packet aggregates the already-admitted advanced frontend surfaces from:
+  - Part 6 error-model source closure
+  - Part 7 async, actor, and task source closure
+  - Part 8 system-extension source closure/completion
+  - Part 9 dispatch-intent source closure/completion
+  - Part 10 metaprogramming source closure/completion
+  - Part 11 interop source closure/completion
+- the lexer still does not grow a Part 12 keyword family; the inventory also
+  reuses migration-hint counters for legacy `yes` / `no` / `null` spellings
+- this lane inventories source surfaces only; feature-specific fix-it synthesis,
+  migrator rewrites, conformance report emission, and release automation remain
+  later `M275` work

@@ -1134,3 +1134,14 @@ M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
 - currently supported exhaustive forms are catch-all branches, 	rue plus alse, and .Ok(...) plus .Err(...).
+
+M275-A001 source-inventory note:
+
+- the frontend now publishes
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostics_fixit_and_migrator_source_inventory`
+- this is a tooling/governance packet, not a new executable language feature
+- it aggregates the already-admitted Part 6 through Part 11 advanced source
+  packets plus legacy migration-hint counters into one deterministic
+  diagnostics/fix-it/migrator planning surface
+- it does not yet claim feature-specific fix-it synthesis, migrator rewrite
+  application, machine-readable conformance reporting, or release automation

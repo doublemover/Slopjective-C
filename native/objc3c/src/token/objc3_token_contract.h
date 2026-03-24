@@ -225,6 +225,14 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropMetadataAnnotati
     "source-only:interop-metadata-annotation-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropNamedMetadataPayloads =
     "source-only:interop-named-metadata-payloads";
+inline constexpr const char *kObjc3Part12DiagnosticsMigratorSourceInventoryContractId =
+    "objc3c-part12-diagnostics-fixit-migrator-source-inventory/m275-a001-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedDiagnosticInventory =
+    "source-only:advanced-diagnostic-inventory";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedFixItInventory =
+    "source-only:advanced-fixit-inventory";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedMigratorInventory =
+    "source-only:advanced-migrator-inventory";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =

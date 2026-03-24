@@ -1556,6 +1556,16 @@ inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompleti
 inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel =
     "part11-source-completion-does-not-yet-claim-interface-emission-cpp-swift-runtime-bridging-or-runnable-cross-language-call-behavior";
 inline constexpr const char
+    *kObjc3Part12DiagnosticsMigratorSourceInventorySurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_diagnostics_fixit_and_migrator_source_inventory";
+inline constexpr const char
+    *kObjc3Part12DiagnosticsMigratorSourceInventorySourceModel =
+        "advanced-part6-through-part11-source-packets-and-migration-hints-are-aggregated-into-one-frontend-owned-inventory-for-diagnostics-fix-its-and-migrator-planning-while-feature-specific-synthesis-report-emission-and-release-automation-remain-later-m275-work";
+inline constexpr const char
+    *kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel =
+        "part12-source-inventory-does-not-yet-claim-feature-specific-fix-it-rewrites-legacy-to-canonical-migration-application-or-machine-readable-release-report-emission";
+inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part11_foreign_surface_interface_and_module_preservation";
@@ -1882,6 +1892,59 @@ struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary {
   bool swift_annotation_source_supported = false;
   bool cpp_annotation_source_supported = false;
   bool interop_metadata_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary {
+  std::string contract_id =
+      kObjc3Part12DiagnosticsMigratorSourceInventoryContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12DiagnosticsMigratorSourceInventorySurfacePath;
+  std::string source_model =
+      kObjc3Part12DiagnosticsMigratorSourceInventorySourceModel;
+  std::string failure_model =
+      kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel;
+  std::vector<std::string> dependency_contract_ids = {
+      kObjc3Part6ErrorSourceClosureContractId,
+      kObjc3Part7AsyncSourceClosureContractId,
+      kObjc3ActorMemberIsolationSourceClosureContractId,
+      kObjc3Part7TaskGroupCancellationSourceClosureContractId,
+      kObjc3Part8SystemExtensionSourceClosureContractId,
+      kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId,
+      kObjc3Part8RetainableCFamilySourceCompletionContractId,
+      kObjc3Part9DispatchIntentSourceClosureContractId,
+      kObjc3Part9DispatchIntentSourceCompletionContractId,
+      kObjc3Part10MetaprogrammingSourceClosureContractId,
+      kObjc3Part10MacroPackageProvenanceSourceCompletionContractId,
+      kObjc3Part10PropertyBehaviorSourceCompletionContractId,
+      kObjc3Part11ForeignImportSourceClosureContractId,
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId,
+  };
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimAdvancedDiagnosticInventory,
+      kObjc3SourceOnlyFeatureClaimAdvancedFixItInventory,
+      kObjc3SourceOnlyFeatureClaimAdvancedMigratorInventory,
+  };
+  std::size_t advanced_feature_family_count = 0;
+  std::size_t dependency_surface_count = 0;
+  std::size_t aggregated_source_only_claim_count = 0;
+  std::size_t fail_closed_construct_count = 0;
+  std::size_t diagnostic_surface_sites = 0;
+  std::size_t fixit_surface_sites = 0;
+  std::size_t migrator_surface_sites = 0;
+  std::size_t canonicalization_hint_sites = 0;
+  std::size_t error_surface_sites = 0;
+  std::size_t concurrency_surface_sites = 0;
+  std::size_t system_surface_sites = 0;
+  std::size_t dispatch_surface_sites = 0;
+  std::size_t metaprogramming_surface_sites = 0;
+  std::size_t interop_surface_sites = 0;
+  bool diagnostics_inventory_source_supported = false;
+  bool fixit_inventory_source_supported = false;
+  bool migrator_inventory_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5447,6 +5510,8 @@ struct Objc3FrontendPipelineResult {
       part11_foreign_import_source_closure_summary;
   Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
       part11_cpp_swift_interop_annotation_source_completion_summary;
+  Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+      part12_diagnostics_migrator_source_inventory_summary;
   Objc3Part11ForeignSurfaceInterfacePreservationSummary
       part11_foreign_surface_interface_preservation_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary

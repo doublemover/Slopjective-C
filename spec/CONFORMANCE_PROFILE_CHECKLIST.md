@@ -658,3 +658,21 @@ Block literals remain part of the broader unsupported feature inventory, but the
 current parser path is still gated before the B002 semantic-rejection proof
 surface becomes authoritative for them.
 
+## M275 advanced diagnostics/fix-it/migrator inventory (implementation note)
+
+The advanced runnable tranche now has one explicit frontend inventory packet:
+
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostics_fixit_and_migrator_source_inventory`
+
+Current truthful scope:
+
+- the packet aggregates the already-landed Part 6 through Part 11 source
+  closure/completion packets
+- legacy migration-hint counters for `yes` / `no` / `null` are included when
+  migration assist is enabled
+- the packet inventories diagnostic/fix-it/migrator-relevant source sites only
+- feature-specific fix-it synthesis, migrator rewrite application,
+  machine-readable conformance reports, CI publication, and release matrices
+  remain later `M275` work
+
