@@ -30,6 +30,12 @@ std::filesystem::path BuildConformancePublicationArtifactPath(
 std::filesystem::path BuildConformanceValidationArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildReleaseEvidenceOperationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildDashboardStatusArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
@@ -89,6 +95,13 @@ void WriteConformanceValidationArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);
+void WriteReleaseEvidenceOperationArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
+void WriteDashboardStatusArtifact(const std::filesystem::path &out_dir,
+                                  const std::string &emit_prefix,
+                                  const std::string &artifact_json);
 void WriteRuntimeRegistrationManifestArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,

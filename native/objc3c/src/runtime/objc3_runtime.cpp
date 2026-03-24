@@ -43,6 +43,12 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureDashboardSchemaPath =
         "schemas/objc3-conformance-dashboard-status-v1.schema.json";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureReleaseEvidenceOperationContractId =
+        "objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureDashboardStatusPublicationContractId =
+        "objc3c-part12-dashboard-status-publication/m275-d002-v1";
 
 struct SelectorSlot {
   std::string spelling_storage;

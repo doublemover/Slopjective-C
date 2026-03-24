@@ -404,6 +404,10 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
 // publication/validation pair now also carries the advanced-feature CI gate,
 // runbook, and dashboard references derived from the emitted Part 12 report
 // payloads instead of reconstructing that contract from docs alone.
+// M275-D002 release-evidence/dashboard publication anchor: the validation
+// path now also publishes one release-evidence operation sidecar plus one
+// dashboard-ready status sidecar without introducing a separate runtime-owned
+// release evidence executor or dashboard transport.
 
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening

@@ -698,8 +698,11 @@ Current truthful scope:
 - Part 12 CI/runbook/dashboard operator contract now freezes the advanced
   operator references echoed through the existing conformance publication and
   validation sidecars
+- Part 12 release-evidence operations and dashboard publication now emit one
+  release-evidence operation sidecar and one dashboard-ready status sidecar
+  from the native validation path
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
-  machine-readable conformance reports, CI publication closeout, and release
-  matrices remain later `M275` work
+  machine-readable conformance reports, integrated conformance gating, and
+  release matrices remain later `M275` work
 

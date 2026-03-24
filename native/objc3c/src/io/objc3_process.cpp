@@ -97,6 +97,18 @@ inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
     "spec/conformance/release_evidence_gate_maintenance.md";
 inline constexpr const char *kObjc3AdvancedFeatureDashboardSchemaPath =
     "schemas/objc3-conformance-dashboard-status-v1.schema.json";
+inline constexpr const char *kObjc3ReleaseEvidenceOperationContractId =
+    "objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1";
+inline constexpr const char *kObjc3ReleaseEvidenceOperationSchemaId =
+    "objc3c-part12-release-evidence-operation-v1";
+inline constexpr const char *kObjc3DashboardStatusPublicationContractId =
+    "objc3c-part12-dashboard-status-publication/m275-d002-v1";
+inline constexpr const char *kObjc3DashboardStatusPublicationSchemaId =
+    "objc3c-part12-dashboard-status-publication-v1";
+inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
+inline constexpr const char *kObjc3DeterministicReplayTimestamp =
+    "1970-01-01T00:00:00Z";
+inline constexpr const char *kObjc3DeterministicSourceRevision = "0000000";
 // M269-D001 scheduler/executor runtime anchor: the driver/process layer still
 // does not own scheduling itself, but emitted IR/object evidence now carries a
 // frozen private task-runtime helper boundary that later runtime integration
@@ -2894,6 +2906,199 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       << (migration_assist_enabled ? "true" : "false") << ",\n"
       << "  \"publication_surface_kind\": \""
       << EscapeJsonString(publication_surface_kind) << "\",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
+    const Objc3ReleaseEvidenceOperationArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    const std::string &validation_json,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.report_artifact_path.empty() || inputs.publication_artifact_path.empty() ||
+      inputs.validation_artifact_path.empty() ||
+      inputs.dashboard_artifact_path.empty()) {
+    error = "release evidence operation artifact inputs are incomplete";
+    return false;
+  }
+  if (report_json.find("\"advanced_feature_release_evidence\"") ==
+          std::string::npos ||
+      report_json.find("\"release_evidence_checklist_path\":\"spec/conformance/profile_release_evidence_checklist.md\"") ==
+          std::string::npos ||
+      report_json.find("\"release_evidence_schema_path\":\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\"") ==
+          std::string::npos) {
+    error = "advanced feature release evidence payload is missing or drifted";
+    return false;
+  }
+  if (publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos ||
+      validation_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos) {
+    error = "advanced feature operator contract drifted";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(kObjc3ReleaseEvidenceOperationContractId) << "\",\n"
+      << "  \"schema_id\": \""
+      << EscapeJsonString(kObjc3ReleaseEvidenceOperationSchemaId) << "\",\n"
+      << "  \"dependency_contract_ids\": "
+      << BuildIndentedStringArrayJson(
+             {kObjc3AdvancedFeatureOpsContractId,
+              kObjc3AdvancedFeatureReleaseEvidenceContractId},
+             "    ")
+      << ",\n"
+      << "  \"validation_contract_id\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
+      << "\",\n"
+      << "  \"dashboard_contract_id\": \""
+      << EscapeJsonString(kObjc3DashboardStatusPublicationContractId)
+      << "\",\n"
+      << "  \"operation_model\": \""
+      << "validation-publishes-release-evidence-command-surface-and-dashboard-ready-summary"
+      << "\",\n"
+      << "  \"release_label\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
+      << "  \"command_tokens\": "
+      << BuildIndentedStringArrayJson({"python",
+                                       kObjc3AdvancedFeatureEvidenceGateScriptPath},
+                                      "    ")
+      << ",\n"
+      << "  \"report_artifact\": \""
+      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
+      << "  \"publication_artifact\": \""
+      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
+      << "  \"validation_artifact\": \""
+      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
+      << "  \"dashboard_artifact\": \""
+      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
+      << "  \"gate_script_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceGateScriptPath)
+      << "\",\n"
+      << "  \"runbook_reference_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceRunbookPath)
+      << "\",\n"
+      << "  \"dashboard_schema_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureDashboardSchemaPath)
+      << "\",\n"
+      << "  \"release_evidence_checklist_path\": "
+      << "\"spec/conformance/profile_release_evidence_checklist.md\",\n"
+      << "  \"release_evidence_schema_path\": "
+      << "\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\",\n"
+      << "  \"targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(
+             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << ",\n"
+      << "  \"corpus_shard_ids\": "
+      << BuildIndentedStringArrayJson({"parser", "semantic", "lowering_abi",
+                                       "module_roundtrip", "diagnostics"},
+                                      "    ")
+      << ",\n"
+      << "  \"release_evidence_artifact_ids\": "
+      << BuildIndentedStringArrayJson({"EVID-01", "EVID-02", "EVID-03",
+                                       "EVID-04", "EVID-07", "EVID-08",
+                                       "EVID-09", "EVID-10", "EVID-11"},
+                                      "    ")
+      << ",\n"
+      << "  \"generated_at\": \""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp) << "\",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3DashboardStatusArtifact(
+    const Objc3DashboardStatusArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    const std::string &validation_json,
+    const std::string &release_evidence_operation_json,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.report_artifact_path.empty() || inputs.publication_artifact_path.empty() ||
+      inputs.validation_artifact_path.empty() ||
+      inputs.release_evidence_operation_artifact_path.empty()) {
+    error = "dashboard status artifact inputs are incomplete";
+    return false;
+  }
+  if (report_json.find("\"advanced_feature_release_evidence\"") ==
+          std::string::npos ||
+      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos ||
+      validation_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos ||
+      release_evidence_operation_json.find(
+          kObjc3ReleaseEvidenceOperationContractId) == std::string::npos) {
+    error = "dashboard status publication inputs drifted";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(kObjc3DashboardStatusPublicationContractId)
+      << "\",\n"
+      << "  \"schema_id\": \""
+      << EscapeJsonString(kObjc3DashboardStatusPublicationSchemaId)
+      << "\",\n"
+      << "  \"dashboard_schema_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureDashboardSchemaPath)
+      << "\",\n"
+      << "  \"release_label\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
+      << "  \"generated_at\": \""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp) << "\",\n"
+      << "  \"source_revision\": \""
+      << EscapeJsonString(kObjc3DeterministicSourceRevision) << "\",\n"
+      << "  \"source_validation_contract_id\": \""
+      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
+      << "\",\n"
+      << "  \"source_release_evidence_operation_contract_id\": \""
+      << EscapeJsonString(kObjc3ReleaseEvidenceOperationContractId)
+      << "\",\n"
+      << "  \"dashboard_publication_model\": \""
+      << "validation-publishes-dashboard-ready-summary-over-current-advanced-profile-truth-surface"
+      << "\",\n"
+      << "  \"profile_statuses\": [\n"
+      << "    {\"profile_id\":\"core\",\"status\":\"pass\",\"reason\":\"current runnable public profile\"},\n"
+      << "    {\"profile_id\":\"strict\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"},\n"
+      << "    {\"profile_id\":\"strict-concurrency\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"},\n"
+      << "    {\"profile_id\":\"strict-system\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"}\n"
+      << "  ],\n"
+      << "  \"artifact_refs\": "
+      << BuildIndentedStringArrayJson(
+             {inputs.report_artifact_path, inputs.publication_artifact_path,
+              inputs.validation_artifact_path,
+              inputs.release_evidence_operation_artifact_path},
+             "    ")
+      << ",\n"
+      << "  \"targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(
+             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << ",\n"
+      << "  \"gate_script_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceGateScriptPath)
+      << "\",\n"
+      << "  \"runbook_reference_path\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceRunbookPath)
+      << "\",\n"
+      << "  \"release_evidence_checklist_path\": "
+      << "\"spec/conformance/profile_release_evidence_checklist.md\",\n"
+      << "  \"release_evidence_schema_path\": "
+      << "\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\",\n"
       << "  \"ready\": true\n"
       << "}\n";
   artifact_json = out.str();

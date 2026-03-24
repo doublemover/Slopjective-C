@@ -131,6 +131,18 @@ std::filesystem::path BuildConformanceValidationArtifactPath(
   return out_dir / (emit_prefix + ".objc3-conformance-validation.json");
 }
 
+std::filesystem::path BuildReleaseEvidenceOperationArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".objc3-release-evidence-operation.json");
+}
+
+std::filesystem::path BuildDashboardStatusArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".objc3-dashboard-status.json");
+}
+
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
@@ -259,6 +271,21 @@ void WriteConformanceValidationArtifact(
     const std::string &emit_prefix,
     const std::string &artifact_json) {
   WriteText(BuildConformanceValidationArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WriteReleaseEvidenceOperationArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildReleaseEvidenceOperationArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WriteDashboardStatusArtifact(const std::filesystem::path &out_dir,
+                                  const std::string &emit_prefix,
+                                  const std::string &artifact_json) {
+  WriteText(BuildDashboardStatusArtifactPath(out_dir, emit_prefix),
             artifact_json);
 }
 

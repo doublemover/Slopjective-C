@@ -135,6 +135,63 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   WriteConformanceValidationArtifact(cli_options.out_dir,
                                      cli_options.emit_prefix,
                                      validation_artifact_json);
+
+  std::string release_evidence_operation_json;
+  std::string release_evidence_operation_error;
+  if (!TryBuildObjc3ReleaseEvidenceOperationArtifact(
+          {.report_artifact_path =
+               cli_options.validate_conformance_report_path.filename().string(),
+           .publication_artifact_path = publication_path.filename().string(),
+           .validation_artifact_path =
+               BuildConformanceValidationArtifactPath(cli_options.out_dir,
+                                                     cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .dashboard_artifact_path =
+               BuildDashboardStatusArtifactPath(cli_options.out_dir,
+                                               cli_options.emit_prefix)
+                   .filename()
+                   .string()},
+          report_json,
+          publication_json,
+          validation_artifact_json,
+          release_evidence_operation_json,
+          release_evidence_operation_error)) {
+    std::cerr << release_evidence_operation_error << "\n";
+    return 125;
+  }
+  WriteReleaseEvidenceOperationArtifact(cli_options.out_dir,
+                                        cli_options.emit_prefix,
+                                        release_evidence_operation_json);
+
+  std::string dashboard_status_json;
+  std::string dashboard_status_error;
+  if (!TryBuildObjc3DashboardStatusArtifact(
+          {.report_artifact_path =
+               cli_options.validate_conformance_report_path.filename().string(),
+           .publication_artifact_path = publication_path.filename().string(),
+           .validation_artifact_path =
+               BuildConformanceValidationArtifactPath(cli_options.out_dir,
+                                                     cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .release_evidence_operation_artifact_path =
+               BuildReleaseEvidenceOperationArtifactPath(
+                   cli_options.out_dir, cli_options.emit_prefix)
+                   .filename()
+                   .string()},
+          report_json,
+          publication_json,
+          validation_artifact_json,
+          release_evidence_operation_json,
+          dashboard_status_json,
+          dashboard_status_error)) {
+    std::cerr << dashboard_status_error << "\n";
+    return 125;
+  }
+  WriteDashboardStatusArtifact(cli_options.out_dir,
+                               cli_options.emit_prefix,
+                               dashboard_status_json);
   return 0;
 }
 

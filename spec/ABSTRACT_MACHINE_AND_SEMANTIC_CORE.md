@@ -1228,3 +1228,17 @@ M275-D001 CI/runbook/dashboard operator contract note:
 - the contract remains bounded to operator reference publication and does not
   promote strict, strict-concurrency, or strict-system into runnable public
   claims
+
+M275-D002 release-evidence operations and dashboard publication note:
+
+- the native validation path now also publishes
+  `module.objc3-release-evidence-operation.json`
+  and `module.objc3-dashboard-status.json`
+- those sidecars are derived from the emitted report/publication/validation
+  chain plus the Part 12 release-evidence payload already lowered in `M275-C003`
+- the dashboard status sidecar stays bounded to dashboard-ready projection
+  truth:
+  - `core` is the current pass profile
+  - `strict`, `strict-concurrency`, and `strict-system` remain blocked
+- the implementation does not claim that the compiler owns CI execution; it
+  publishes deterministic operator-ready sidecars instead

@@ -5508,6 +5508,52 @@ Validation proves:
 - the frontend C API runner publishes the same operator references on the
   manifest-only path without widening the runtime claim surface
 
+## Part 12 release-evidence operations and dashboard publication (M275-D002)
+
+`M275-D002` turns the frozen operator references from `M275-D001` into real
+native validation-time sidecars.
+
+Current live behavior:
+
+- the native validation path now writes
+  `module.objc3-release-evidence-operation.json`
+- the same validation path now writes
+  `module.objc3-dashboard-status.json`
+- both sidecars are derived from the already-emitted report/publication pair
+  plus the validation artifact
+- no separate runtime-owned release-evidence executor or dashboard transport is
+  introduced
+
+The release-evidence operation sidecar records:
+
+- the `M275-D002` operation contract id
+- the gate command tokens:
+  `python`, `scripts/check_release_evidence.py`
+- the release-evidence checklist/schema references
+- the targeted advanced profile ids
+- the canonical advanced-feature corpus shard ids
+- the canonical release-evidence artifact ids
+
+The dashboard status sidecar records:
+
+- the `M275-D002` dashboard publication contract id
+- the dashboard schema path
+  `schemas/objc3-conformance-dashboard-status-v1.schema.json`
+- the current public/runnable truth boundary:
+  - `core` => `pass`
+  - `strict` => `blocked`
+  - `strict-concurrency` => `blocked`
+  - `strict-system` => `blocked`
+- the emitted artifact refs used by the operator flow
+
+Truth boundary:
+
+- these sidecars publish dashboard-ready and release-evidence-ready operator
+  state only
+- they do not promote strict, strict-concurrency, or strict-system into
+  runnable public profiles
+- they do not claim full CI execution ownership inside the compiler itself
+
 ## Driver publication contract (M264-D001)
 
 `M264-D001` freezes the current driver/publication boundary for truthful

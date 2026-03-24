@@ -311,6 +311,20 @@ struct Objc3ConformanceClaimValidationArtifactInputs {
   std::string publication_artifact_path;
 };
 
+struct Objc3ReleaseEvidenceOperationArtifactInputs {
+  std::string report_artifact_path;
+  std::string publication_artifact_path;
+  std::string validation_artifact_path;
+  std::string dashboard_artifact_path;
+};
+
+struct Objc3DashboardStatusArtifactInputs {
+  std::string report_artifact_path;
+  std::string publication_artifact_path;
+  std::string validation_artifact_path;
+  std::string release_evidence_operation_artifact_path;
+};
+
 int RunProcess(const std::string &executable, const std::vector<std::string> &args);
 
 int RunObjectiveCCompile(const std::filesystem::path &clang_path,
@@ -330,6 +344,21 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     const std::filesystem::path &ir_path,
     const std::filesystem::path &object_out,
     Objc3RuntimeMetadataLinkerRetentionArtifacts &artifacts,
+    std::string &error);
+bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
+    const Objc3ReleaseEvidenceOperationArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    const std::string &validation_json,
+    std::string &artifact_json,
+    std::string &error);
+bool TryBuildObjc3DashboardStatusArtifact(
+    const Objc3DashboardStatusArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    const std::string &validation_json,
+    const std::string &release_evidence_operation_json,
+    std::string &artifact_json,
     std::string &error);
 
 bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
