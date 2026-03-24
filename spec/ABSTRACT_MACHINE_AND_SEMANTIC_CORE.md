@@ -1214,3 +1214,17 @@ M275-C003 corpus sharding and release-evidence packaging note:
   flows
 - that payload remains bounded to packaging truth and does not promote
   advanced profiles to runnable public claims
+
+M275-D001 CI/runbook/dashboard operator contract note:
+
+- the driver/frontend publication layer now also freezes one explicit
+  advanced-feature operator reference surface across the existing conformance
+  publication and validation sidecars
+- that surface carries the advanced-feature operator contract id plus the
+  reporting/release-evidence dependency contract ids from `M275-C002` and
+  `M275-C003`
+- that surface also carries the release-evidence gate script, maintenance
+  runbook, dashboard schema path, and targeted advanced profile ids
+- the contract remains bounded to operator reference publication and does not
+  promote strict, strict-concurrency, or strict-system into runnable public
+  claims

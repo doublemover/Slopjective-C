@@ -5474,6 +5474,40 @@ Validation proves:
   manifest-only path
 - the public conformance report stays deterministic for replay and closeout
 
+## Part 12 CI/runbook/dashboard operator contract (M275-D001)
+
+`M275-D001` freezes the operator-facing advanced-feature references carried by
+the existing conformance publication and validation sidecars.
+
+The current live contract stays narrow and truthful:
+
+- it does not introduce a new report format, dashboard export, or CI claim
+  artifact
+- it extends the existing publication/validation authority chain with explicit
+  references to:
+  - the advanced-feature operator contract id
+  - the feature-aware reporting contract id from `M275-C002`
+  - the release-evidence packaging contract id from `M275-C003`
+  - the release-evidence gate script `scripts/check_release_evidence.py`
+  - the release-evidence maintenance runbook
+    `spec/conformance/release_evidence_gate_maintenance.md`
+  - the dashboard schema path
+    `schemas/objc3-conformance-dashboard-status-v1.schema.json`
+  - the targeted advanced profile ids
+- it preserves the current truthful publication boundary:
+  - `core` is still the only runnable public profile
+  - `strict`, `strict-concurrency`, and `strict-system` remain fail-closed
+    targets rather than promoted public claims
+
+Validation proves:
+
+- the native CLI publication sidecar carries the advanced-feature operator
+  references
+- the native validation sidecar echoes the same references after consuming the
+  emitted report/publication pair
+- the frontend C API runner publishes the same operator references on the
+  manifest-only path without widening the runtime claim surface
+
 ## Driver publication contract (M264-D001)
 
 `M264-D001` freezes the current driver/publication boundary for truthful

@@ -730,6 +730,20 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                      "objc3c-runtime-capability-reporting/m264-c002-v1",
                  .public_conformance_schema_id =
                      "objc3-conformance-report/v1",
+                 .advanced_feature_ops_contract_id =
+                     "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1",
+                 .advanced_feature_reporting_contract_id =
+                     "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1",
+                 .advanced_feature_release_evidence_contract_id =
+                     "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1",
+                 .ci_release_evidence_gate_script_path =
+                     "scripts/check_release_evidence.py",
+                 .runbook_reference_path =
+                     "spec/conformance/release_evidence_gate_maintenance.md",
+                 .dashboard_schema_path =
+                     "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+                 .advanced_feature_targeted_profile_ids =
+                     {"strict", "strict-concurrency", "strict-system"},
                  .report_artifact_relative_path =
                      (emit_prefix +
                       kObjc3VersionedConformanceReportLoweringArtifactSuffix)},

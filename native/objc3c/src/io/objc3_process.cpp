@@ -85,6 +85,18 @@ inline constexpr const char *kObjc3ToolchainConformanceClaimValidationModel =
     "driver-validates-versioned-conformance-report-and-publication-sidecars-before-toolchain-consumption";
 inline constexpr const char *kObjc3ToolchainConformanceClaimConsumptionModel =
     "validation-consumes-json-sidecars-only-and-keeps-unsupported-profiles-fail-closed";
+inline constexpr const char *kObjc3AdvancedFeatureOpsContractId =
+    "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1";
+inline constexpr const char *kObjc3AdvancedFeatureReportingContractId =
+    "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+inline constexpr const char *kObjc3AdvancedFeatureReleaseEvidenceContractId =
+    "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1";
+inline constexpr const char *kObjc3AdvancedFeatureEvidenceGateScriptPath =
+    "scripts/check_release_evidence.py";
+inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
+    "spec/conformance/release_evidence_gate_maintenance.md";
+inline constexpr const char *kObjc3AdvancedFeatureDashboardSchemaPath =
+    "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 // M269-D001 scheduler/executor runtime anchor: the driver/process layer still
 // does not own scheduling itself, but emitted IR/object evidence now carries a
 // frozen private task-runtime helper boundary that later runtime integration
@@ -2556,6 +2568,13 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
       inputs.lowered_report_contract_id.empty() ||
       inputs.runtime_capability_contract_id.empty() ||
       inputs.public_conformance_schema_id.empty() ||
+      inputs.advanced_feature_ops_contract_id.empty() ||
+      inputs.advanced_feature_reporting_contract_id.empty() ||
+      inputs.advanced_feature_release_evidence_contract_id.empty() ||
+      inputs.ci_release_evidence_gate_script_path.empty() ||
+      inputs.runbook_reference_path.empty() ||
+      inputs.dashboard_schema_path.empty() ||
+      inputs.advanced_feature_targeted_profile_ids.empty() ||
       inputs.report_artifact_relative_path.empty()) {
     error = "conformance report publication artifact inputs are incomplete";
     return false;
@@ -2593,6 +2612,25 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
       << EscapeJsonString(inputs.runtime_capability_contract_id) << "\",\n"
       << "  \"public_conformance_schema_id\": \""
       << EscapeJsonString(inputs.public_conformance_schema_id) << "\",\n"
+      << "  \"advanced_feature_ops_contract_id\": \""
+      << EscapeJsonString(inputs.advanced_feature_ops_contract_id) << "\",\n"
+      << "  \"advanced_feature_reporting_contract_id\": \""
+      << EscapeJsonString(inputs.advanced_feature_reporting_contract_id)
+      << "\",\n"
+      << "  \"advanced_feature_release_evidence_contract_id\": \""
+      << EscapeJsonString(inputs.advanced_feature_release_evidence_contract_id)
+      << "\",\n"
+      << "  \"advanced_feature_targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(inputs.advanced_feature_targeted_profile_ids,
+                                      "    ")
+      << ",\n"
+      << "  \"ci_release_evidence_gate_script_path\": \""
+      << EscapeJsonString(inputs.ci_release_evidence_gate_script_path)
+      << "\",\n"
+      << "  \"runbook_reference_path\": \""
+      << EscapeJsonString(inputs.runbook_reference_path) << "\",\n"
+      << "  \"dashboard_schema_path\": \""
+      << EscapeJsonString(inputs.dashboard_schema_path) << "\",\n"
       << "  \"report_artifact\": \""
       << EscapeJsonString(inputs.report_artifact_relative_path) << "\",\n"
       << "  \"ready\": true\n"
@@ -2629,6 +2667,13 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   std::vector<std::string> rejected_profile_ids;
   std::string publication_surface_kind;
   std::string report_artifact_relative_path;
+  std::string advanced_feature_ops_contract_id;
+  std::string advanced_feature_reporting_contract_id;
+  std::string advanced_feature_release_evidence_contract_id;
+  std::vector<std::string> advanced_feature_targeted_profile_ids;
+  std::string ci_release_evidence_gate_script_path;
+  std::string runbook_reference_path;
+  std::string dashboard_schema_path;
 
   if (!TryExtractJsonStringField(report_json, "schema_id", report_schema_id) ||
       report_schema_id != "objc3c-versioned-conformance-report-v1") {
@@ -2666,6 +2711,19 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     return false;
   }
   public_conformance_schema_id = "objc3-conformance-report/v1";
+  if (report_json.find("\"advanced_feature_reporting\"") == std::string::npos ||
+      report_json.find(kObjc3AdvancedFeatureReportingContractId) ==
+          std::string::npos) {
+    error = "advanced_feature_reporting payload is missing or drifted";
+    return false;
+  }
+  if (report_json.find("\"advanced_feature_release_evidence\"") ==
+          std::string::npos ||
+      report_json.find(kObjc3AdvancedFeatureReleaseEvidenceContractId) ==
+          std::string::npos) {
+    error = "advanced_feature_release_evidence payload is missing or drifted";
+    return false;
+  }
 
   if (!TryExtractJsonStringField(publication_json, "schema_id",
                                  publication_schema_id) ||
@@ -2717,6 +2775,60 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     error = "publication report_artifact does not match the validated report path";
     return false;
   }
+  if (!TryExtractJsonStringField(publication_json,
+                                 "advanced_feature_ops_contract_id",
+                                 advanced_feature_ops_contract_id) ||
+      advanced_feature_ops_contract_id != kObjc3AdvancedFeatureOpsContractId) {
+    error = "advanced_feature_ops_contract_id drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json,
+                                 "advanced_feature_reporting_contract_id",
+                                 advanced_feature_reporting_contract_id) ||
+      advanced_feature_reporting_contract_id !=
+          kObjc3AdvancedFeatureReportingContractId) {
+    error = "advanced_feature_reporting_contract_id drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringField(
+          publication_json, "advanced_feature_release_evidence_contract_id",
+          advanced_feature_release_evidence_contract_id) ||
+      advanced_feature_release_evidence_contract_id !=
+          kObjc3AdvancedFeatureReleaseEvidenceContractId) {
+    error = "advanced_feature_release_evidence_contract_id drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringArrayField(publication_json,
+                                      "advanced_feature_targeted_profile_ids",
+                                      advanced_feature_targeted_profile_ids) ||
+      advanced_feature_targeted_profile_ids !=
+          std::vector<std::string>{"strict", "strict-concurrency",
+                                   "strict-system"}) {
+    error = "advanced_feature_targeted_profile_ids drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json,
+                                 "ci_release_evidence_gate_script_path",
+                                 ci_release_evidence_gate_script_path) ||
+      ci_release_evidence_gate_script_path !=
+          kObjc3AdvancedFeatureEvidenceGateScriptPath) {
+    error = "ci_release_evidence_gate_script_path drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "runbook_reference_path",
+                                 runbook_reference_path) ||
+      runbook_reference_path !=
+          kObjc3AdvancedFeatureEvidenceRunbookPath) {
+    error = "runbook_reference_path drifted";
+    return false;
+  }
+  if (!TryExtractJsonStringField(publication_json, "dashboard_schema_path",
+                                 dashboard_schema_path) ||
+      dashboard_schema_path !=
+          kObjc3AdvancedFeatureDashboardSchemaPath) {
+    error = "dashboard_schema_path drifted";
+    return false;
+  }
   if (publication_json.find(
           "\"fail_closed_diagnostic_model\": \"core-profile-live-other-known-profiles-fail-closed-before-publication\"") ==
       std::string::npos) {
@@ -2751,6 +2863,24 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       << EscapeJsonString(runtime_capability_contract_id) << "\",\n"
       << "  \"public_conformance_schema_id\": \""
       << EscapeJsonString(public_conformance_schema_id) << "\",\n"
+      << "  \"advanced_feature_ops_contract_id\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureOpsContractId) << "\",\n"
+      << "  \"advanced_feature_reporting_contract_id\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureReportingContractId)
+      << "\",\n"
+      << "  \"advanced_feature_release_evidence_contract_id\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureReleaseEvidenceContractId)
+      << "\",\n"
+      << "  \"advanced_feature_targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(advanced_feature_targeted_profile_ids,
+                                      "    ")
+      << ",\n"
+      << "  \"ci_release_evidence_gate_script_path\": \""
+      << EscapeJsonString(ci_release_evidence_gate_script_path) << "\",\n"
+      << "  \"runbook_reference_path\": \""
+      << EscapeJsonString(runbook_reference_path) << "\",\n"
+      << "  \"dashboard_schema_path\": \""
+      << EscapeJsonString(dashboard_schema_path) << "\",\n"
       << "  \"selected_profile\": \"" << EscapeJsonString(selected_profile)
       << "\",\n"
       << "  \"selected_profile_supported\": true,\n"

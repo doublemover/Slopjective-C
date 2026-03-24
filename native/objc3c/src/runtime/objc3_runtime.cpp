@@ -25,6 +25,24 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
     "compatibility-mode-plus-migration-assist-drive-current-publication-surface";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimFailureModel =
     "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureOpsContractId =
+        "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureReportingContractId =
+        "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureReleaseEvidenceContractId =
+        "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureEvidenceGateScriptPath =
+        "scripts/check_release_evidence.py";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureEvidenceRunbookPath =
+        "spec/conformance/release_evidence_gate_maintenance.md";
+[[maybe_unused]] constexpr const char
+    *kObjc3AdvancedFeatureDashboardSchemaPath =
+        "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 
 struct SelectorSlot {
   std::string spelling_storage;

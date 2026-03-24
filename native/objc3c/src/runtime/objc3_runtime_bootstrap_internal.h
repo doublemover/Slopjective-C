@@ -400,6 +400,10 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
 // operation that publishes `module.objc3-conformance-validation.json`.
 // Strictness and strict concurrency remain fail-closed and unclaimed until a
 // later executable lane ships them end to end.
+// M275-D001 advanced-feature ops-contract anchor: the same operator-side
+// publication/validation pair now also carries the advanced-feature CI gate,
+// runbook, and dashboard references derived from the emitted Part 12 report
+// payloads instead of reconstructing that contract from docs alone.
 
 // M254-D002 runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening

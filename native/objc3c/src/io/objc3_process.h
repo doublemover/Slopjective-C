@@ -296,6 +296,13 @@ struct Objc3ConformanceReportPublicationArtifactInputs {
   std::string lowered_report_contract_id;
   std::string runtime_capability_contract_id;
   std::string public_conformance_schema_id;
+  std::string advanced_feature_ops_contract_id;
+  std::string advanced_feature_reporting_contract_id;
+  std::string advanced_feature_release_evidence_contract_id;
+  std::string ci_release_evidence_gate_script_path;
+  std::string runbook_reference_path;
+  std::string dashboard_schema_path;
+  std::vector<std::string> advanced_feature_targeted_profile_ids;
   std::string report_artifact_relative_path;
 };
 
