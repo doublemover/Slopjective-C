@@ -190,6 +190,8 @@ inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionC
     "objc3c-part10-macro-package-provenance-source-completion/m273-a002-v1";
 inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionContractId =
     "objc3c-part10-property-behavior-source-completion/m273-a003-v1";
+inline constexpr const char *kObjc3Part11ForeignImportSourceClosureContractId =
+    "objc3c-part11-foreign-declaration-import-source-closure/m274-a001-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDeriveMarkers =
     "source-only:derive-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroMarkers =
@@ -204,6 +206,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroProvenanceMarkers 
     "source-only:macro-provenance-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroExpansionVisibleState =
     "source-only:macro-expansion-visible-state";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimForeignDeclarationMarkers =
+    "source-only:foreign-declaration-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimImportedModuleAnnotations =
+    "source-only:imported-module-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropAnnotationMarkers =
+    "source-only:interop-annotation-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =

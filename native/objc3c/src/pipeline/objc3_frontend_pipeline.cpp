@@ -4571,6 +4571,20 @@ std::string BuildPart10PropertyBehaviorSourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart11ForeignImportSourceClosureReplayKey(
+    const Objc3FrontendPart11ForeignImportSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";sites=" << summary.foreign_callable_sites << ":"
+      << summary.extern_foreign_callable_sites << ":"
+      << summary.import_module_annotation_sites << ":"
+      << summary.imported_module_name_sites << ":"
+      << summary.interop_annotation_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6347,6 +6361,65 @@ BuildPart10PropertyBehaviorSourceCompletionSummary(const Objc3Program &program) 
   return summary;
 }
 
+Objc3FrontendPart11ForeignImportSourceClosureSummary
+BuildPart11ForeignImportSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendPart11ForeignImportSourceClosureSummary summary;
+
+  const auto accumulate_callable = [&summary](const auto &decl) {
+    if (decl.objc_foreign_declared) {
+      ++summary.foreign_callable_sites;
+      ++summary.interop_annotation_sites;
+      if constexpr (requires { decl.is_prototype; }) {
+        if (decl.is_prototype) {
+          ++summary.extern_foreign_callable_sites;
+        }
+      } else if constexpr (requires { decl.has_body; }) {
+        if (!decl.has_body) {
+          ++summary.extern_foreign_callable_sites;
+        }
+      }
+    }
+    if (decl.objc_import_module_declared) {
+      ++summary.import_module_annotation_sites;
+      ++summary.interop_annotation_sites;
+      if (!decl.objc_import_module_name.empty()) {
+        ++summary.imported_module_name_sites;
+      }
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      accumulate_callable(method);
+    }
+  }
+
+  summary.foreign_declaration_source_supported = true;
+  summary.imported_surface_source_supported = true;
+  summary.interop_annotation_source_supported = true;
+  summary.deterministic_handoff =
+      summary.extern_foreign_callable_sites <= summary.foreign_callable_sites &&
+      summary.imported_module_name_sites <= summary.import_module_annotation_sites &&
+      summary.interop_annotation_sites ==
+          summary.foreign_callable_sites + summary.import_module_annotation_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key = BuildPart11ForeignImportSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6585,6 +6658,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part10_property_behavior_source_completion_summary =
       BuildPart10PropertyBehaviorSourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part11_foreign_import_source_closure_summary =
+      BuildPart11ForeignImportSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

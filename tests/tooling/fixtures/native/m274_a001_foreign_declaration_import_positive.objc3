@@ -1,0 +1,8 @@
+module ForeignDeclarationImportPositive;
+
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+extern pure fn externForeignEntry() -> i32 __attribute__((objc_foreign));
+
+fn main() -> i32 {
+  return 0;
+}

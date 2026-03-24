@@ -1554,3 +1554,17 @@ Current implementation status (`M273-D002`):
   - `M273-E001`
 - next milestone issue:
   - `M274-A001`
+## M274 foreign declaration and import source closure (A001)
+
+Current implementation status (`M274-A001`):
+
+- foreign callable declarations are admitted as parser-owned callable
+  attributes rather than new keywords
+- canonical base spellings are:
+  - `__attribute__((objc_foreign))`
+  - `__attribute__((objc_import_module(named("..."))))`
+- foreign callable declarations, imported-module annotations, and the resulting
+  base interop annotation markers are now preserved in the frontend semantic
+  packet
+- this freeze does not yet claim C++/Swift-specific annotation completion,
+  interface emission, lowering, or runnable bridge generation

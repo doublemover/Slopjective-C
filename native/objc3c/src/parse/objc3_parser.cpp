@@ -7307,6 +7307,33 @@ class Objc3Parser {
       decl.objc_macro_provenance_declared = true;
       return true;
     }
+    if (attribute_name.text == "objc_foreign") {
+      if (decl.objc_foreign_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P349",
+                     "duplicate objc_foreign attribute"));
+        return false;
+      }
+      // M274-A001 source-closure anchor: base foreign declaration markers stay
+      // parser-owned callable attributes until later interop sema/lowering
+      // work lands.
+      decl.objc_foreign_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_import_module") {
+      if (decl.objc_import_module_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P350",
+                     "duplicate objc_import_module attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_import_module",
+                                            decl.objc_import_module_name)) {
+        return false;
+      }
+      decl.objc_import_module_declared = true;
+      return true;
+    }
     if (attribute_name.text == "objc_nonisolated") {
       // M270-A002 source-surface anchor: nonisolated actor-member admission is
       // parser-owned callable attribute handling, not a standalone keyword.

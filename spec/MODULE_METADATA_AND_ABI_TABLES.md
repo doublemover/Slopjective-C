@@ -8862,3 +8862,13 @@ widening runtime ABI tables into a generalized macro runtime package loader.
   plus host-cache continuity, property-behavior legality/replay continuity,
   and cross-module preservation
 - `M274-A001` is the next milestone issue
+## M274 foreign declaration/import note
+
+Current implementation status (`M274-A001`):
+
+- the frontend now emits one deterministic Part 11 source-closure packet:
+  `objc3c-part11-foreign-declaration-import-source-closure/m274-a001-v1`
+- that packet records foreign callable markers, imported-module annotations,
+  imported module-name payload sites, and aggregate interop annotation counts
+- header/module-interface preservation, FFI ABI lowering, and runtime bridge
+  packaging are intentionally not claimed by this source-closure freeze

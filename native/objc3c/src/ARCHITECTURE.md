@@ -11331,3 +11331,13 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - seeded-fast-path counters
   - seeded-entry direct/final/sealed flags
   - last-fast-path reason publication
+## M274 foreign declaration and import source closure (A001)
+
+- `M274-A001` keeps the truthful frontend boundary parser-owned:
+  - `objc_foreign`
+  - `objc_import_module(named("..."))`
+- the emitted frontend manifest publishes
+  `objc_part11_foreign_declaration_and_import_source_closure`
+- this tranche does not widen the lexer with new reserved interop keywords and
+  does not yet claim C++/Swift-specific annotation completion, interface
+  preservation, lowering, or runtime bridge generation

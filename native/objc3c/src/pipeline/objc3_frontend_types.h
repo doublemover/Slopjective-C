@@ -1543,6 +1543,12 @@ inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionSourceM
     "behavior-bearing-properties-and-their-deterministic-synthesized-binding-and-accessor-visibility-source-state-are-live-frontend-owned-surfaces-while-real-property-behavior-expansion-and-runtime-hooks-remain-deferred";
 inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionFailureModel =
     "part10-source-completion-does-not-yet-claim-property-behavior-expansion-runtime-hooks-or-executable-synthesized-declaration-materialization";
+inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part11_foreign_declaration_and_import_source_closure";
+inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSourceModel =
+    "foreign-callable-markers-import-module-annotations-and-base-interop-annotation-surfaces-are-live-frontend-owned-source-surfaces-while-cpp-swift-annotation-completion-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-m274-work";
+inline constexpr const char *kObjc3Part11ForeignImportSourceClosureFailureModel =
+    "part11-source-closure-does-not-yet-claim-cpp-swift-specific-annotation-completion-interface-emission-ffi-lowering-or-runnable-bridge-generation";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1772,6 +1778,33 @@ struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary {
   std::size_t synthesized_setter_visible_sites = 0;
   bool property_behavior_source_supported = false;
   bool synthesized_declaration_visibility_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart11ForeignImportSourceClosureSummary {
+  std::string contract_id = kObjc3Part11ForeignImportSourceClosureContractId;
+  std::string frontend_surface_path =
+      kObjc3Part11ForeignImportSourceClosureSurfacePath;
+  std::string source_model =
+      kObjc3Part11ForeignImportSourceClosureSourceModel;
+  std::string failure_model =
+      kObjc3Part11ForeignImportSourceClosureFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimForeignDeclarationMarkers,
+      kObjc3SourceOnlyFeatureClaimImportedModuleAnnotations,
+      kObjc3SourceOnlyFeatureClaimInteropAnnotationMarkers,
+  };
+  std::size_t foreign_callable_sites = 0;
+  std::size_t extern_foreign_callable_sites = 0;
+  std::size_t import_module_annotation_sites = 0;
+  std::size_t imported_module_name_sites = 0;
+  std::size_t interop_annotation_sites = 0;
+  bool foreign_declaration_source_supported = false;
+  bool imported_surface_source_supported = false;
+  bool interop_annotation_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5253,6 +5286,8 @@ struct Objc3FrontendPipelineResult {
       part10_macro_package_provenance_source_completion_summary;
   Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
       part10_property_behavior_source_completion_summary;
+  Objc3FrontendPart11ForeignImportSourceClosureSummary
+      part11_foreign_import_source_closure_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

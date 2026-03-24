@@ -1302,6 +1302,9 @@ struct Objc3MethodDecl {
   std::string objc_macro_package_name;
   bool objc_macro_provenance_declared = false;
   std::string objc_macro_provenance_name;
+  bool objc_foreign_declared = false;
+  bool objc_import_module_declared = false;
+  std::string objc_import_module_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;
@@ -1734,6 +1737,9 @@ struct FunctionDecl {
   std::string objc_macro_package_name;
   bool objc_macro_provenance_declared = false;
   std::string objc_macro_provenance_name;
+  bool objc_foreign_declared = false;
+  bool objc_import_module_declared = false;
+  std::string objc_import_module_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;

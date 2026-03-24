@@ -4367,3 +4367,17 @@ Current implementation status (`M271-E001`):
   - `O3S329` `Observed` behavior on readonly or setter-invisible properties
   - `O3S330` `Projected` behavior on writable or setter-visible properties
 - runnable property-behavior hooks and runtime materialization remain deferred to later M273 lanes
+## M274 foreign declaration and import source closure
+
+Current implementation status (`M274-A001`):
+
+- foreign callable declarations are admitted through parser-owned callable
+  attributes instead of a dedicated keyword family
+- the canonical base spellings are:
+  - `__attribute__((objc_foreign))`
+  - `__attribute__((objc_import_module(named("..."))))`
+- the emitted frontend manifest publishes
+  `frontend.pipeline.semantic_surface.objc_part11_foreign_declaration_and_import_source_closure`
+- this lane freezes source closure only; C++/Swift-specific annotations,
+  interface preservation, FFI lowering, and runtime bridge generation remain
+  later `M274` work
