@@ -8839,3 +8839,15 @@ widening runtime ABI tables into a generalized macro runtime package loader.
   - deterministic cache entries live under `tmp/artifacts/objc3c-native/cache/part10`
   - cross-module link plans preserve the same contract ids, runner path, cache root, and imported-module inventory
   - runtime package loading still remains deferred and fail-closed
+
+## M273 metaprogramming conformance gate note
+
+- lane-E contract id
+  `objc3c-part10-metaprogramming-conformance-gate/m273-e001-v1`
+- the integrated Part 10 gate is frozen on the published summary chain from
+  `M273-A003`, `M273-B004`, `M273-C003`, and the live executable proof from
+  `M273-D002`
+- `M273-D002` remains the executable evidence boundary because it proves the
+  actual native-driver host-process/cache path and its cross-module
+  preservation artifacts
+- `M273-E002` is the next closeout issue

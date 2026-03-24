@@ -1517,3 +1517,22 @@ Current implementation status (`M273-D002`):
 - cross-module link plans now preserve the same runner path, cache root, and
   imported-module inventory for Part 10 host/cache claims
 - runtime package loading still remains deferred and fail-closed
+
+## M273 metaprogramming conformance gate (E001)
+
+- the integrated Part 10 lane-E gate is now frozen on one truthful evidence
+  chain
+- gate contract id:
+  - `objc3c-part10-metaprogramming-conformance-gate/m273-e001-v1`
+- gate evidence model:
+  - `a003-b004-c003-static-summary-chain-plus-d002-live-host-cache-proof`
+- the gate consumes:
+  - `M273-A003` property-behavior source completion
+  - `M273-B004` property-behavior legality/interactions completion
+  - `M273-C003` module/interface replay preservation
+  - `M273-D002` live macro host-process/cache integration
+- `M273-D002` remains the executable evidence boundary for supported Part 10
+  behavior because it proves native-driver host launch, deterministic cache
+  reuse, and cross-module preservation
+- next closeout issue:
+  - `M273-E002`

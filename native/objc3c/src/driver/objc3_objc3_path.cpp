@@ -76,6 +76,13 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // consuming this same driver artifact surface while Part 9 closeout stays
 // pinned to the existing D002 runtime proof instead of inventing a new lane-E
 // publication channel.
+// M273-E001 metaprogramming conformance gate anchor: lane-E freezes the
+// currently supported Part 10 slice by consuming this same published driver
+// artifact surface while the D002 live macro host-process/cache proof remains
+// the canonical executable evidence boundary.
+// M273-E002 runnable metaprogramming closeout matrix anchor: Part 10 closeout
+// rows keep consuming this same driver artifact surface instead of inventing a
+// parallel lane-E publication channel for derives/macros/property behaviors.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

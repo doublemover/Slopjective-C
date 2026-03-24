@@ -58,6 +58,13 @@ std::filesystem::path BuildManifestArtifactPath(
   // closeout keeps consuming this same manifest sidecar and paired driver
   // artifacts; there is no second manifest-only closeout path for the runnable
   // dispatch-control matrix.
+  // M273-E001 metaprogramming conformance gate anchor: lane-E keeps consuming
+  // this same manifest sidecar and paired driver artifacts while the D002 live
+  // macro host-process/cache proof stays the canonical executable evidence
+  // boundary for the currently supported Part 10 slice.
+  // M273-E002 runnable metaprogramming closeout matrix anchor: Part 10
+  // closeout keeps consuming this same manifest sidecar instead of inventing a
+  // matrix-only publication path for derives/macros/property behaviors.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

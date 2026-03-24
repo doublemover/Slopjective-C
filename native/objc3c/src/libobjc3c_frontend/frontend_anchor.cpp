@@ -82,6 +82,12 @@ struct objc3c_frontend_context {
 // keeps consuming those same surfaced publication paths while reusing the D002
 // runtime proof for direct/final/sealed matrix rows instead of inventing a
 // second frontend-only summary surface.
+// M273-E001 metaprogramming conformance gate anchor: lane-E keeps consuming
+// those same surfaced publication paths while using the D002 live macro
+// host-process/cache proof as the truthful runnable Part 10 capability anchor.
+// M273-E002 runnable metaprogramming closeout matrix anchor: milestone
+// closeout keeps consuming those same surfaced publication paths instead of
+// inventing a second frontend-only Part 10 matrix reporting path.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

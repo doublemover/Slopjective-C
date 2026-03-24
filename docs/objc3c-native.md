@@ -9367,6 +9367,23 @@ native build surface.
   contract ids, runner path, cache root, and imported module inventory
 - runtime package loading still remains deferred and fail-closed
 
+## M273 metaprogramming conformance gate
+
+- lane E now freezes the currently supported Part 10 slice on one integrated
+  evidence chain
+- canonical gate contract id:
+  - `objc3c-part10-metaprogramming-conformance-gate/m273-e001-v1`
+- the gate consumes:
+  - `M273-A003` property-behavior source completion summary
+  - `M273-B004` property-behavior legality/interactions summary
+  - `M273-C003` module/interface replay-preservation summary
+  - `M273-D002` live macro host-process/cache summary
+- `M273-D002` remains the executable evidence boundary for supported
+  metaprogramming behavior because it proves the cold/warm host-process path,
+  deterministic cache reuse, and cross-module preservation
+- the next closeout step is:
+  - `M273-E002`
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in
