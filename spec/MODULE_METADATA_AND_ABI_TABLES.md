@@ -8897,3 +8897,16 @@ Current implementation status (`M274-A003`):
   separate compilation and interface inspection
 - live foreign ABI lowering, bridge shims, and runnable cross-language calls
   remain later `M274` work
+
+## M274 interop semantic-model note
+
+Current implementation status (`M274-B001`):
+
+- the frontend manifest now emits one deterministic Part 11 sema packet:
+  `objc3c-part11-interop-semantic-model/m274-b001-v1`
+- that packet freezes one shared legality/accounting boundary across Part 11
+  foreign/import metadata, Part 8 ownership interactions, Part 6 error-bridge
+  legality, and Part 7 concurrency legality reuse
+- runtime-import-surface preservation from `M274-A003` remains the dependency
+  token, while foreign ABI lowering and runnable bridge generation remain later
+  `M274` work

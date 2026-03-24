@@ -1600,3 +1600,18 @@ Current implementation status (`M274-A003`):
     aggregates
 - this preservation step still does not claim foreign ABI lowering, live bridge
   generation, or runnable cross-language call behavior
+
+## M274 Part 11 interop semantic model (B001)
+
+Current implementation status (`M274-B001`):
+
+- the semantic pipeline now publishes one deterministic Part 11 sema packet:
+  - `frontend.pipeline.semantic_surface.objc_part11_interop_semantic_model`
+- that packet freezes one shared interop legality model over:
+  - Part 11 foreign/import and Swift/C++ annotation source state
+  - Part 8 retainable-family legality reuse
+  - Part 6 error-bridge legality reuse
+  - Part 7 async-affinity and actor-hazard legality reuse
+  - metadata payload normalization
+- this freeze still does not claim foreign ABI lowering, bridge shim emission,
+  or runnable cross-language interop behavior

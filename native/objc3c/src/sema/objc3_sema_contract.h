@@ -872,6 +872,71 @@ IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part11InteropSemanticModelDependencyContractId =
+        "objc3c-part11-foreign-surface-interface-preservation/m274-a003-v1";
+inline constexpr const char *kObjc3Part11InteropSemanticModelContractId =
+    "objc3c-part11-interop-semantic-model/m274-b001-v1";
+inline constexpr const char *kObjc3Part11InteropSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part11_interop_semantic_model";
+inline constexpr const char *kObjc3Part11InteropSemanticModelRule =
+    "foreign-import-swift-cpp-facing-annotation-surfaces-now-freeze-one-deterministic-sema-model-over-existing-ownership-error-async-and-actor-interaction-profiles-while-ffi-lowering-and-runnable-bridge-generation-remain-later-m274-work";
+inline constexpr const char *kObjc3Part11InteropSemanticModelDeferredRule =
+    "ffi-abi-lowering-runtime-bridge-shims-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-m274-lanes";
+
+struct Objc3Part11InteropSemanticModelSummary {
+  std::string contract_id = kObjc3Part11InteropSemanticModelContractId;
+  std::string dependency_contract_id =
+      kObjc3Part11InteropSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3Part11InteropSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3Part11InteropSemanticModelRule;
+  std::string deferred_model = kObjc3Part11InteropSemanticModelDeferredRule;
+  std::size_t foreign_callable_sites = 0;
+  std::size_t import_module_annotation_sites = 0;
+  std::size_t imported_module_name_sites = 0;
+  std::size_t swift_name_annotation_sites = 0;
+  std::size_t swift_private_annotation_sites = 0;
+  std::size_t cpp_name_annotation_sites = 0;
+  std::size_t header_name_annotation_sites = 0;
+  std::size_t named_annotation_payload_sites = 0;
+  std::size_t retainable_family_callable_sites = 0;
+  std::size_t bridge_callable_sites = 0;
+  std::size_t async_executor_affinity_sites = 0;
+  std::size_t actor_hazard_sites = 0;
+  std::size_t interop_metadata_annotation_sites = 0;
+  bool source_dependency_required = false;
+  bool foreign_annotation_source_supported = false;
+  bool ownership_interaction_profile_frozen = false;
+  bool error_bridge_profile_reused = false;
+  bool async_affinity_profile_reused = false;
+  bool actor_hazard_profile_reused = false;
+  bool metadata_payload_profile_frozen = false;
+  bool ffi_abi_lowering_deferred = false;
+  bool runtime_bridge_generation_deferred = false;
+  bool deterministic = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part11InteropSemanticModelSummary(
+    const Objc3Part11InteropSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.source_dependency_required &&
+         summary.foreign_annotation_source_supported &&
+         summary.ownership_interaction_profile_frozen &&
+         summary.error_bridge_profile_reused &&
+         summary.async_affinity_profile_reused &&
+         summary.actor_hazard_profile_reused &&
+         summary.metadata_payload_profile_frozen &&
+         summary.ffi_abi_lowering_deferred &&
+         summary.runtime_bridge_generation_deferred && summary.deterministic &&
+         summary.ready_for_semantic_expansion && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
         "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =

@@ -11370,3 +11370,17 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - imported provider module inventories
 - foreign ABI lowering and runnable bridge generation remain later `M274`
   work
+
+## M274 Part 11 interop semantic model (B001)
+
+- `M274-B001` does not introduce a fresh diagnostics subsystem; it freezes one
+  sema packet over already-landed Part 6, Part 7, Part 8, and Part 11 surfaces
+- the emitted frontend manifest publishes
+  `objc_part11_interop_semantic_model`
+- that packet reuses:
+  - Part 11 foreign/import and Swift/C++ source packets
+  - Part 8 retainable-family legality completion
+  - Part 6 error-bridge legality
+  - Part 7 async diagnostics and actor hazard diagnostics
+- foreign ABI lowering, bridge shims, and runnable cross-language behavior
+  remain later `M274` work

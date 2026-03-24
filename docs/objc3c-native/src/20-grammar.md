@@ -3600,6 +3600,23 @@ Current implementation status:
 - dedicated actor-isolation diagnostics, sendability enforcement, and runnable
   actor/executor runtime behavior remain later `M270` work
 
+## M274 Part 11 interop semantic model
+
+The semantic pipeline now publishes a dedicated packet at
+`frontend.pipeline.semantic_surface.objc_part11_interop_semantic_model`.
+
+- the packet reuses the existing Part 11 foreign/import and Swift/C++ source
+  packets together with already-landed Part 6, Part 7, and Part 8 semantic
+  summaries
+- the packet freezes one truthful sema model for:
+  - foreign/import annotation dependency
+  - ownership-interaction profile reuse
+  - error-bridge legality reuse
+  - async-affinity and actor-hazard legality reuse
+  - metadata payload normalization
+- current support remains a deterministic sema/accounting boundary rather than
+  foreign ABI lowering or runnable bridge generation
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

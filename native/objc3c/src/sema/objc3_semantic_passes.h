@@ -15,6 +15,8 @@ struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary;
 struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary;
 struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary;
 struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary;
+struct Objc3FrontendPart11ForeignImportSourceClosureSummary;
+struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -68,6 +70,16 @@ BuildPart8SystemExtensionSemanticModelSummary(
         &completion_summary,
     const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
         &retainable_summary);
+Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
+    const Objc3FrontendPart11ForeignImportSourceClosureSummary
+        &foreign_source_summary,
+    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+        &interop_source_summary,
+    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+        &ownership_summary,
+    const Objc3Part6ErrorBridgeLegalitySummary &error_summary,
+    const Objc3Part7AsyncDiagnosticsCompatibilitySummary &async_summary,
+    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &actor_summary);
 Objc3Part9DispatchIntentSemanticModelSummary
 BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
