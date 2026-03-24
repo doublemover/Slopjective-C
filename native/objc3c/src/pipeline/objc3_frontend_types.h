@@ -1519,6 +1519,12 @@ inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureSourceModel =
     "direct-final-sealed-and-dynamism-control-attributes-are-live-frontend-owned-source-surfaces-while-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-m272-work";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-direct-dispatch-legality-final-sealed-enforcement-or-runnable-dispatch-boundary-behavior";
+inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_attribute_and_defaulting_source_completion";
+inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSourceModel =
+    "prefixed-container-attributes-direct-members-defaulting-and-dynamic-opt-out-surfaces-are-live-frontend-owned-source-surfaces-while-part9-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-m272-work";
+inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionFailureModel =
+    "frontend-source-completion-does-not-yet-claim-final-sealed-legality-enforcement-direct-call-lowering-or-runnable-dispatch-boundary-behavior";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1637,6 +1643,36 @@ struct Objc3FrontendPart9DispatchIntentSourceClosureSummary {
   std::size_t actor_container_sites = 0;
   bool callable_annotation_source_supported = false;
   bool container_annotation_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary {
+  std::string contract_id = kObjc3Part9DispatchIntentSourceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part9DispatchIntentSourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part9DispatchIntentSourceCompletionSourceModel;
+  std::string failure_model =
+      kObjc3Part9DispatchIntentSourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimPrefixedDispatchIntentAttributes,
+      kObjc3SourceOnlyFeatureClaimDirectMembersDefaultingSurfaces,
+      kObjc3SourceOnlyFeatureClaimDynamicOptOutDefaultingSurfaces,
+      kObjc3SourceOnlyFeatureClaimFinalAnnotations,
+      kObjc3SourceOnlyFeatureClaimSealedAnnotations,
+  };
+  std::size_t prefixed_container_attribute_sites = 0;
+  std::size_t direct_members_container_sites = 0;
+  std::size_t final_container_sites = 0;
+  std::size_t sealed_container_sites = 0;
+  std::size_t effective_direct_member_sites = 0;
+  std::size_t direct_members_defaulted_method_sites = 0;
+  std::size_t direct_members_dynamic_opt_out_sites = 0;
+  bool prefixed_attribute_source_supported = false;
+  bool defaulting_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5102,6 +5138,8 @@ struct Objc3FrontendPipelineResult {
       part8_retainable_c_family_source_completion_summary;
   Objc3FrontendPart9DispatchIntentSourceClosureSummary
       part9_dispatch_intent_source_closure_summary;
+  Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+      part9_dispatch_intent_source_completion_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

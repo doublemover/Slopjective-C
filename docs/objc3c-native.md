@@ -4216,6 +4216,17 @@ Current implementation status (`M271-E001`):
 - container `__attribute__((objc_sealed))` is admitted on Objective-C interface and `actor class` declarations
 - the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure`
 - this lane remains parser/frontend only; legality enforcement, direct-call lowering, metadata realization, and runtime dispatch-boundary behavior remain later `M272` work
+
+## M272 frontend attribute and defaulting surface completion
+
+- prefixed container `__attribute__((...))` lists are now admitted before `@interface` and `actor class` declarations for the supported Part 9 dispatch-intent attributes
+- `objc_direct_members` containers now publish one dedicated frontend completion packet at `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_attribute_and_defaulting_source_completion`
+- that packet preserves:
+  - prefixed container-attribute sites
+  - effective direct member sites
+  - direct-members defaulted method sites
+  - `objc_dynamic` opt-out sites inside direct-members containers
+- this lane remains parser/frontend only; Part 9 legality enforcement, direct-call lowering, metadata realization, and runtime dispatch-boundary behavior remain later `M272` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

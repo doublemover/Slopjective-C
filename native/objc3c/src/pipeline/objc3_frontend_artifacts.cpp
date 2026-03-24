@@ -924,6 +924,40 @@ std::string BuildPart9DispatchIntentSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentSourceCompletionSummaryJson(
+    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"prefixed_container_attribute_sites\":"
+      << summary.prefixed_container_attribute_sites
+      << ",\"direct_members_container_sites\":"
+      << summary.direct_members_container_sites
+      << ",\"final_container_sites\":" << summary.final_container_sites
+      << ",\"sealed_container_sites\":" << summary.sealed_container_sites
+      << ",\"effective_direct_member_sites\":"
+      << summary.effective_direct_member_sites
+      << ",\"direct_members_defaulted_method_sites\":"
+      << summary.direct_members_defaulted_method_sites
+      << ",\"direct_members_dynamic_opt_out_sites\":"
+      << summary.direct_members_dynamic_opt_out_sites
+      << ",\"prefixed_attribute_source_supported\":"
+      << (summary.prefixed_attribute_source_supported ? "true" : "false")
+      << ",\"defaulting_source_supported\":"
+      << (summary.defaulting_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -12227,6 +12261,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart9DispatchIntentSourceClosureSummary
       &part9_dispatch_intent_source_closure_summary =
           pipeline_result.part9_dispatch_intent_source_closure_summary;
+  const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+      &part9_dispatch_intent_source_completion_summary =
+          pipeline_result.part9_dispatch_intent_source_completion_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16688,6 +16725,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_and_dynamism_source_closure\":"
             << BuildPart9DispatchIntentSourceClosureSummaryJson(
                    part9_dispatch_intent_source_closure_summary)
+            << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
+            << BuildPart9DispatchIntentSourceCompletionSummaryJson(
+                   part9_dispatch_intent_source_completion_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18048,6 +18088,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_and_dynamism_source_closure\":"
             << BuildPart9DispatchIntentSourceClosureSummaryJson(
                    part9_dispatch_intent_source_closure_summary)
+            << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
+            << BuildPart9DispatchIntentSourceCompletionSummaryJson(
+                   part9_dispatch_intent_source_completion_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)

@@ -4449,6 +4449,22 @@ std::string BuildPart9DispatchIntentSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentSourceCompletionReplayKey(
+    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";prefixed_container_sites="
+      << summary.prefixed_container_attribute_sites
+      << ";container_sites=" << summary.direct_members_container_sites << ":"
+      << summary.final_container_sites << ":" << summary.sealed_container_sites
+      << ";defaulting_sites=" << summary.effective_direct_member_sites << ":"
+      << summary.direct_members_defaulted_method_sites << ":"
+      << summary.direct_members_dynamic_opt_out_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -5976,6 +5992,83 @@ BuildPart9DispatchIntentSourceClosureSummary(const Objc3Program &program) {
   return summary;
 }
 
+Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+BuildPart9DispatchIntentSourceCompletionSummary(const Objc3Program &program) {
+  Objc3FrontendPart9DispatchIntentSourceCompletionSummary summary;
+
+  std::unordered_map<std::string, bool> direct_members_by_container;
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.prefixed_dispatch_control_attributes_declared) {
+      ++summary.prefixed_container_attribute_sites;
+    }
+    if (interface_decl.objc_direct_members_declared) {
+      ++summary.direct_members_container_sites;
+    }
+    if (interface_decl.objc_final_declared) {
+      ++summary.final_container_sites;
+    }
+    if (interface_decl.objc_sealed_declared) {
+      ++summary.sealed_container_sites;
+    }
+    direct_members_by_container.emplace(interface_decl.name,
+                                        interface_decl.objc_direct_members_declared);
+
+    for (const auto &method : interface_decl.methods) {
+      const bool effective_direct =
+          method.objc_direct_declared ||
+          (interface_decl.objc_direct_members_declared &&
+           !method.objc_dynamic_declared);
+      if (effective_direct) {
+        ++summary.effective_direct_member_sites;
+      }
+      if (interface_decl.objc_direct_members_declared &&
+          !method.objc_direct_declared && !method.objc_dynamic_declared) {
+        ++summary.direct_members_defaulted_method_sites;
+      }
+      if (interface_decl.objc_direct_members_declared &&
+          method.objc_dynamic_declared) {
+        ++summary.direct_members_dynamic_opt_out_sites;
+      }
+    }
+  }
+
+  for (const auto &implementation : program.implementations) {
+    if (implementation.has_category) {
+      continue;
+    }
+    const auto found = direct_members_by_container.find(implementation.name);
+    const bool direct_members_enabled =
+        found != direct_members_by_container.end() && found->second;
+    for (const auto &method : implementation.methods) {
+      const bool effective_direct =
+          method.objc_direct_declared ||
+          (direct_members_enabled && !method.objc_dynamic_declared);
+      if (effective_direct) {
+        ++summary.effective_direct_member_sites;
+      }
+      if (direct_members_enabled && !method.objc_direct_declared &&
+          !method.objc_dynamic_declared) {
+        ++summary.direct_members_defaulted_method_sites;
+      }
+      if (direct_members_enabled && method.objc_dynamic_declared) {
+        ++summary.direct_members_dynamic_opt_out_sites;
+      }
+    }
+  }
+
+  summary.prefixed_attribute_source_supported = true;
+  summary.defaulting_source_supported = true;
+  summary.deterministic_handoff =
+      summary.direct_members_defaulted_method_sites +
+              summary.direct_members_dynamic_opt_out_sites <=
+          summary.effective_direct_member_sites +
+              summary.direct_members_dynamic_opt_out_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart9DispatchIntentSourceCompletionReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6203,6 +6296,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.part9_dispatch_intent_source_closure_summary =
       BuildPart9DispatchIntentSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
+  result.part9_dispatch_intent_source_completion_summary =
+      BuildPart9DispatchIntentSourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
@@ -6427,12 +6523,19 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
                      diagnostic.message));
       }
     } else {
+      std::string runtime_export_failure_reason =
+          result.runtime_export_enforcement_summary.failure_reason;
+      if (runtime_export_failure_reason ==
+              "runtime metadata export shape drift detected before lowering" &&
+          !result.runtime_export_legality_boundary.failure_reason.empty()) {
+        runtime_export_failure_reason +=
+            " (" + result.runtime_export_legality_boundary.failure_reason + ")";
+      }
       result.stage_diagnostics.semantic.push_back(MakeDiag(
           result.runtime_export_enforcement_summary.first_failure_line,
           result.runtime_export_enforcement_summary.first_failure_column,
           "O3S260",
-          "runtime metadata export blocked: " +
-              result.runtime_export_enforcement_summary.failure_reason));
+          "runtime metadata export blocked: " + runtime_export_failure_reason));
     }
   }
   result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold =

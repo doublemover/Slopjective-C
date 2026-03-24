@@ -5435,6 +5435,37 @@ class Objc3Parser {
         if (decl != nullptr) {
           ast_builder_.AddInterfaceDecl(program, std::move(*decl));
         }
+      } else if (AtIdentifierText("__attribute__")) {
+        // M272-A002 source-completion anchor: prefixed Part 9 container
+        // attributes are parser-owned wrappers around the existing interface /
+        // actor container forms rather than a widened top-level grammar family.
+        Objc3InterfaceDecl pending_container_attributes;
+        if (!ParseOptionalContainerDispatchAttributes(
+                pending_container_attributes)) {
+          SynchronizeTopLevel();
+          continue;
+        }
+        if (Match(TokenKind::KwAtInterface)) {
+          auto decl = ParseObjcInterfaceDecl(&pending_container_attributes);
+          if (decl != nullptr) {
+            ast_builder_.AddInterfaceDecl(program, std::move(*decl));
+          }
+        } else if (AtIdentifierText("actor") &&
+                   AtIdentifierTextOffset(1, "class")) {
+          const Token actor_token = Advance();
+          Advance();
+          auto decl = ParseObjcActorInterfaceDecl(actor_token,
+                                                  &pending_container_attributes);
+          if (decl != nullptr) {
+            ast_builder_.AddInterfaceDecl(program, std::move(*decl));
+          }
+        } else {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(
+              token.line, token.column, "O3P100",
+              "unsupported Objective-C 3 statement"));
+          SynchronizeTopLevel();
+        }
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync) ||
                  At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
@@ -8826,7 +8857,8 @@ class Objc3Parser {
     return decl;
   }
 
-  std::unique_ptr<Objc3InterfaceDecl> ParseObjcInterfaceDecl() {
+  std::unique_ptr<Objc3InterfaceDecl> ParseObjcInterfaceDecl(
+      const Objc3InterfaceDecl *prefixed_dispatch_attributes = nullptr) {
     auto decl = std::make_unique<Objc3InterfaceDecl>();
     decl->line = Previous().line;
     decl->column = Previous().column;
@@ -8857,6 +8889,15 @@ class Objc3Parser {
 
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
+    }
+    if (prefixed_dispatch_attributes != nullptr) {
+      decl->prefixed_dispatch_control_attributes_declared = true;
+      decl->objc_direct_members_declared =
+          prefixed_dispatch_attributes->objc_direct_members_declared;
+      decl->objc_final_declared =
+          prefixed_dispatch_attributes->objc_final_declared;
+      decl->objc_sealed_declared =
+          prefixed_dispatch_attributes->objc_sealed_declared;
     }
     if (!ParseOptionalContainerDispatchAttributes(*decl)) {
       SynchronizeObjcContainer();
@@ -8966,7 +9007,8 @@ class Objc3Parser {
   }
 
   std::unique_ptr<Objc3InterfaceDecl> ParseObjcActorInterfaceDecl(
-      const Token &actor_token) {
+      const Token &actor_token,
+      const Objc3InterfaceDecl *prefixed_dispatch_attributes = nullptr) {
     // M270-A002 actor-member source-closure anchor: actor interfaces now ride
     // the same interface parsing path while publishing one dedicated frontend
     // semantic packet for member/isolation annotations.
@@ -8999,6 +9041,15 @@ class Objc3Parser {
 
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
+    }
+    if (prefixed_dispatch_attributes != nullptr) {
+      decl->prefixed_dispatch_control_attributes_declared = true;
+      decl->objc_direct_members_declared =
+          prefixed_dispatch_attributes->objc_direct_members_declared;
+      decl->objc_final_declared =
+          prefixed_dispatch_attributes->objc_final_declared;
+      decl->objc_sealed_declared =
+          prefixed_dispatch_attributes->objc_sealed_declared;
     }
     if (!ParseOptionalContainerDispatchAttributes(*decl)) {
       SynchronizeObjcContainer();

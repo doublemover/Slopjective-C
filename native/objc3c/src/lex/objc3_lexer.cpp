@@ -111,6 +111,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // controls also remain parser-owned `__attribute__` spellings rather than
   // new reserved lexer keywords; the truthful Part 9 source boundary is
   // frontend-owned attribute profiling on top of this same token stream.
+  // M272-A002 source-completion note: prefixed container attribute lists ahead
+  // of `@interface` and `actor class` still reuse the same parser-owned
+  // identifier token stream rather than widening the lexer boundary.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

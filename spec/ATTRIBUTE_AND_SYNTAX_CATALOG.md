@@ -1161,3 +1161,18 @@ Current implementation status (`M272-A001`):
   `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure`
 - legality enforcement, direct-call lowering, metadata realization, and runtime
   dispatch-boundary behavior remain later `M272` work
+
+## M272 dispatch-intent attribute/defaulting completion (A002)
+
+Current implementation status (`M272-A002`):
+
+- prefixed container `__attribute__((...))` lists are now admitted before
+  `@interface` and `actor class` declarations for the supported Part 9
+  dispatch-intent attributes
+- `objc_direct_members` containers now publish
+  `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_attribute_and_defaulting_source_completion`
+- the frontend completion packet preserves prefixed container-attribute sites,
+  effective direct member sites, direct-members defaulted method sites, and
+  `objc_dynamic` opt-out sites inside direct-members containers
+- legality enforcement, direct-call lowering, metadata realization, and runtime
+  dispatch-boundary behavior remain later `M272` work

@@ -182,6 +182,8 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompat
     "source-only:retainable-c-family-compatibility-aliases";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureContractId =
     "objc3c-part9-dispatch-intent-source-closure/m272-a001-v1";
+inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionContractId =
+    "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =
@@ -192,6 +194,12 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimSealedAnnotations =
     "source-only:sealed-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDynamicMethodAnnotations =
     "source-only:dynamic-method-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimPrefixedDispatchIntentAttributes =
+    "source-only:prefixed-dispatch-intent-attributes";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersDefaultingSurfaces =
+    "source-only:direct-members-defaulting-surfaces";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimDynamicOptOutDefaultingSurfaces =
+    "source-only:dynamic-opt-out-defaulting-surfaces";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

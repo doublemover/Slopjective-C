@@ -1,0 +1,22 @@
+module DispatchIntentDefaulting;
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface DirectDefaults
+- (i32)implicitDirect;
+- (i32)dynamicEscape __attribute__((objc_dynamic));
+- (i32)explicitDirect __attribute__((objc_direct));
+@end
+
+@implementation DirectDefaults
+- (i32)implicitDirect {
+  return 1;
+}
+
+- (i32)dynamicEscape __attribute__((objc_dynamic)) {
+  return 2;
+}
+
+- (i32)explicitDirect __attribute__((objc_direct)) {
+  return 3;
+}
+@end

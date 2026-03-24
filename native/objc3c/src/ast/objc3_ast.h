@@ -1614,6 +1614,7 @@ struct Objc3InterfaceDecl {
   std::vector<std::string> method_lookup_symbols_lexicographic;
   std::vector<std::string> override_lookup_symbols_lexicographic;
   std::vector<std::string> conflict_lookup_symbols_lexicographic;
+  bool prefixed_dispatch_control_attributes_declared = false;
   bool objc_direct_members_declared = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;

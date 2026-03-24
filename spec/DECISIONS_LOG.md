@@ -275,6 +275,33 @@ later-stage Objective-C 3 feature families.
 
 ---
 
+## D-023: Direct-members defaulting must publish one frontend-owned completion packet before legality widens {#decisions-d-023}
+
+**Decision:** After the raw Part 9 dispatch-intent attribute spellings are
+admitted, the frontend shall also publish one explicit source-completion packet
+for the remaining parser-owned attribute/defaulting surface.
+
+That completion packet shall preserve, at minimum:
+
+- prefixed container attribute sites before `@interface` and `actor class`,
+- effective direct member sites under `objc_direct_members`,
+- defaulted direct-member sites that do not carry explicit method attributes,
+- explicit `objc_dynamic` opt-out sites inside `objc_direct_members`
+  containers.
+
+This packet remains frontend-only. It shall not yet claim subclass/override
+legality, direct-call lowering, metadata realization, or runtime dispatch
+behavior.
+
+**Rationale:** `objc_direct_members` changes the meaning of unannotated methods.
+That defaulting surface must become explicit in emitted frontend evidence before
+later `M272` lanes widen semantics and lowering.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable
