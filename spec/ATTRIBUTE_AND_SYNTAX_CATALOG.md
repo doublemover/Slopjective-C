@@ -1284,3 +1284,21 @@ Current implementation status (`M272-C003`):
   the widened class/method source-record fields for separate-compilation replay
 - emitted LLVM IR now publishes one replay-stable Part 9 preservation summary
   above the `M272-C002` direct-call lowering slice
+
+## M272 runtime fast-path integration contract (D001)
+
+Current implementation status (`M272-D001`):
+
+- Part 9 now freezes the existing runtime proof surface above direct-call
+  lowering rather than introducing a second dispatch runtime
+- direct `objc_direct` sends remain exact LLVM calls and therefore do not touch
+  the runtime cache surface
+- `objc_dynamic` opt-out sends and unresolved selectors continue to use:
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+- the cross-module link plan continues to publish imported direct-surface
+  artifact paths so later runtime work can widen the live fast path without
+  losing imported-module provenance
+- this issue freezes the current contract only; runnable runtime fast-path
+  widening remains `M272-D002`

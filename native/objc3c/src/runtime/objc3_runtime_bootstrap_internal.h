@@ -110,6 +110,11 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
   const char *generic_metadata_replay_key;
 } objc3_runtime_keypath_entry_snapshot;
 
+// M272-D001 runtime-fast-path-integration anchor: Part 9 freezes the
+// existing private method-cache snapshot and entry-query helpers as the
+// truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
+// and deterministic fallback dispatch behavior before D002 widens the live
+// fast-path runtime itself.
 typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t cache_entry_count;
   uint64_t cache_hit_count;
@@ -418,6 +423,9 @@ int objc3_runtime_copy_keypath_entry_for_testing(
 // snapshots remain the canonical proof surface for realized class/metaclass
 // resolution, category attachment, and protocol-aware negative runtime checks
 // without widening the public runtime header.
+// M272-D001 runtime-fast-path-integration anchor: Part 9 explicitly reuses this
+// same cache snapshot surface for direct-bypass/cache/fallback proof rather
+// than inventing a second runtime query API.
 int objc3_runtime_copy_method_cache_state_for_testing(
     objc3_runtime_method_cache_state_snapshot *snapshot);
 int objc3_runtime_copy_method_cache_entry_for_testing(

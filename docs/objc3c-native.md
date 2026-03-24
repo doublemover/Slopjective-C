@@ -4321,6 +4321,22 @@ Current implementation status (`M271-E001`):
 - emitted LLVM IR now carries a second Part 9 replay-stable metadata summary for
   dispatch metadata/interface preservation above the C002 direct-call lowering
   slice
+
+## M272 runtime fast-path integration contract
+
+- Part 9 now freezes one explicit runtime contract above the already-landed
+  `M272-C002` direct-call lowering slice and the existing runtime method-cache
+  surface
+- direct `objc_direct` sites remain exact LLVM calls and do not flow through the
+  runtime dispatch entrypoint
+- `objc_dynamic` opt-out sends and unresolved selectors continue to execute
+  through `objc3_runtime_dispatch_i32`, `objc3_runtime_copy_method_cache_state_for_testing`,
+  and `objc3_runtime_copy_method_cache_entry_for_testing`
+- the cross-module link plan keeps imported direct-surface artifact paths
+  visible so later runtime work can prove which imported modules participate in
+  the dispatch-boundary handoff
+- this lane freezes the current proof surface only; broader live runtime
+  fast-path widening remains the next `M272-D002` step
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

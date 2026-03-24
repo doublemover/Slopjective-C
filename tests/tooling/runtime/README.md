@@ -632,3 +632,19 @@ existing `M271-D002` linked `helperSurface` runtime proof and the upstream
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the
 existing `M269-D003` hardened runtime proof and the upstream `M269-A002`
 through `M269-D003` summary chain.
+
+## M272 runtime fast-path integration contract
+
+`M272-D001` proves the current Part 9 runtime boundary without widening it.
+
+- fixture:
+  `tests/tooling/fixtures/native/m272_d001_runtime_fast_path_contract_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m272_d001_runtime_fast_path_contract_probe.cpp`
+- proof checks:
+  - direct `objc_direct` wrappers do not perturb the runtime method-cache state
+  - mixed direct-plus-dynamic execution populates one positive cache entry and
+    then reuses it on the second call
+  - unresolved selectors still take the deterministic cached fallback path
+  - imported direct-surface artifact paths remain part of the same frozen
+    runtime/link-plan contract for `M272-D002`

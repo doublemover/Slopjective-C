@@ -246,6 +246,31 @@ support based on parser/sema or contract-only progress.
 
 ---
 
+## D-032: Part 9 freezes the existing runtime cache and fallback surface before widening live fast paths {#decisions-d-032}
+
+**Decision:** `M272-D001` shall freeze the existing runtime dispatch boundary as
+follows:
+
+- direct `objc_direct` sends lowered by `M272-C002` remain exact LLVM calls and
+  therefore do not enter the runtime dispatch/cache surface,
+- `objc_dynamic` opt-out sends and unresolved selectors continue to execute
+  through `objc3_runtime_dispatch_i32`,
+- the canonical runtime proof surface remains
+  `objc3_runtime_copy_method_cache_state_for_testing` plus
+  `objc3_runtime_copy_method_cache_entry_for_testing`,
+- cross-module link planning continues to retain imported direct-surface
+  artifact paths so later runtime widening can stay provenance-aware.
+
+**Rationale:** The current Part 9 runnable boundary is already truthful: exact
+LLVM direct calls bypass runtime, while the existing method-cache / slow-path /
+fallback runtime remains the only live dispatch engine. `M272-D001` should
+freeze that boundary before `M272-D002` widens the live fast path.
+
+**Spec impact:** [Part 9](#part-9) runtime behavior and [E](#e) conformance
+proof policy.
+
+---
+
 ## D-022: Dispatch-intent source admission stays parser-owned until legality and lowering land {#decisions-d-022}
 
 **Decision:** The native `objc3c` frontend shall admit Part 9 dispatch-intent

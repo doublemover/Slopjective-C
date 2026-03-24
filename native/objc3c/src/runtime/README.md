@@ -290,3 +290,17 @@ property graph:
   - `objc3_runtime_copy_property_registry_state_for_testing`
   - `objc3_runtime_copy_property_entry_for_testing`
   - `tests/tooling/runtime/m257_d003_property_metadata_reflection_probe.cpp`
+
+`M272-D001` freezes the existing Part 9 runtime boundary before any wider live
+fast-path work lands:
+
+- contract id `objc3c-part9-runtime-fast-path-integration-contract/m272-d001-v1`
+- runtime model
+  `direct-llvm-call-sites-bypass-runtime-while-dynamic-opt-out-and-unresolved-selectors-stay-on-the-existing-method-cache-slow-path-and-fallback-surface`
+- proof surface remains:
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+- cross-module provenance stays visible through retained direct import surface
+  paths in the runtime link-plan artifact
+- the live widening step remains `M272-D002`

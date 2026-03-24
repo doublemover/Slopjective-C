@@ -173,6 +173,8 @@ struct EmittedMethodListEntry {
   std::uint64_t parameter_count;
   const void *implementation;
   std::uint64_t has_body;
+  bool effective_direct_dispatch;
+  bool objc_final_declared;
 };
 
 struct EmittedKeyPathDescriptor {
@@ -192,6 +194,8 @@ struct EmittedClassRecord {
   const void *super_bundle;
   const EmittedMethodListRef *method_list_ref;
   const objc3_runtime_pointer_aggregate *adopted_protocol_refs;
+  bool objc_final_declared;
+  bool objc_sealed_declared;
 };
 
 struct EmittedClassBundle {
@@ -5042,6 +5046,10 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   }
 }
 
+// M272-D001 runtime-fast-path-integration anchor: Part 9 freezes the current
+// mixed dispatch boundary exactly as implemented here. IR-lowered direct sites
+// bypass this entrypoint, while objc_dynamic opt-out and unresolved sends still
+// flow through the canonical method-cache/slow-path/fallback surface below.
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   RuntimeState &state = State();

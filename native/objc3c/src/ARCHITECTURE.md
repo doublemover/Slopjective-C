@@ -11302,3 +11302,20 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - live cleanup helpers and retainable-family integration
   - lane-E strict system conformance gate
 - the next issue is `M272-A001`
+
+## M272 Part 9 Runtime Fast-Path Integration Contract (D001)
+
+- `M272-D001` freezes the existing runtime boundary above the already-landed
+  Part 9 direct-call lowering slice instead of creating a second dispatch
+  runtime
+- exact direct sites remain LLVM calls and therefore bypass
+  `objc3_runtime_dispatch_i32`
+- runtime-visible proof remains on the existing private method-cache helpers:
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+- `objc_dynamic` opt-out sends and unresolved selectors remain on the canonical
+  method-cache / slow-path / fallback runtime path
+- the cross-module runtime link plan keeps imported direct-surface artifact
+  paths visible so `M272-D002` can widen the live fast path without losing
+  imported-module provenance
+- the next issue is `M272-D002`
