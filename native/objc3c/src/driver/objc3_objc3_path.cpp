@@ -222,6 +222,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           cli_options.emit_prefix,
           artifacts.runtime_aware_import_module_artifact_json);
     }
+    // M274-E001 interop conformance gate anchor: the driver-side publication
+    // path includes the live D002 bridge sidecars consumed by the lane-E gate.
     if (!artifacts.part11_bridge_header_artifact_text.empty()) {
       WritePart11BridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
                                       artifacts.part11_bridge_header_artifact_text);

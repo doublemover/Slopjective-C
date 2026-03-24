@@ -9031,3 +9031,19 @@ Current implementation status (`M274-D002`):
 - emitted IR carries:
   - `; part11_header_module_and_bridge_generation = ...`
   - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`
+
+## M274 interop conformance gate note
+
+Current implementation status (`M274-E001`):
+
+- the current Part 11 lane-E gate contract is
+  `objc3c-part11-interop-conformance-gate/m274-e001-v1`
+- the gate consumes the published A003, B004, C003, and D002 summaries as one
+  integrated conformance boundary
+- `M274-D002` remains the authoritative executable proof for the supported
+  interop slice because it proves:
+  - deterministic generated bridge artifacts
+  - runtime-import surface continuity
+  - cross-module link-plan continuity
+  - private runtime snapshot continuity
+- the next issue is `M274-E002`

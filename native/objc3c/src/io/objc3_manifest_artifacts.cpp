@@ -306,6 +306,8 @@ void WritePart10MacroHostProcessCacheArtifact(
 void WritePart11BridgeHeaderArtifact(const std::filesystem::path &out_dir,
                                      const std::string &emit_prefix,
                                      const std::string &artifact_text) {
+  // M274-E001 interop conformance gate anchor: deterministic bridge header
+  // emission is part of the canonical lane-E evidence chain.
   WriteText(BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix),
             artifact_text);
 }
@@ -320,5 +322,7 @@ void WritePart11BridgeModuleArtifact(const std::filesystem::path &out_dir,
 void WritePart11BridgeArtifact(const std::filesystem::path &out_dir,
                                const std::string &emit_prefix,
                                const std::string &artifact_json) {
+  // M274-E001 interop conformance gate anchor: the bridge JSON remains
+  // operator-visible evidence for the supported Part 11 slice.
   WriteText(BuildPart11BridgeArtifactPath(out_dir, emit_prefix), artifact_json);
 }

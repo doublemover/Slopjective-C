@@ -9503,6 +9503,22 @@ native build surface.
 - the private runtime proof surface now includes:
   - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing`
 
+## M274 interop conformance gate
+
+- lane E now freezes the supported Part 11 slice on one integrated evidence
+  chain instead of a placeholder gate
+- the gate consumes:
+  - `M274-A003` foreign-surface/interface preservation
+  - `M274-B004` Swift metadata/isolation mapping completion
+  - `M274-C003` FFI metadata/interface preservation
+  - `M274-D002` live header/module/bridge generation proof
+- `M274-D002` remains the executable evidence boundary because it proves:
+  - generated Part 11 header/modulemap/bridge sidecars
+  - runtime-import surface preservation
+  - cross-module link-plan preservation
+  - the private runtime bridge-generation snapshot
+- the next closeout issue is `M274-E002`
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

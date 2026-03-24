@@ -687,6 +687,18 @@ live header/module/bridge generation yet.
     contract ids, replay keys, readiness bits, and canonical artifact-relative paths
   - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing` publishes
     the same ready/deterministic generated-bridge boundary
+
+## M274 interop conformance gate
+
+`M274-E001` does not add a new runtime probe.
+
+- it freezes one integrated Part 11 gate over:
+  - `M274-A003`
+  - `M274-B004`
+  - `M274-C003`
+  - `M274-D002`
+- `M274-D002` remains the executable proof boundary for the supported interop
+  slice
     runtime/link-plan contract for `M272-D002`
 
 ## M272 live dispatch fast-path and cache integration

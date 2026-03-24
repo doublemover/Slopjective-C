@@ -11490,3 +11490,14 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`
 - the private runtime proof surface now includes:
   - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing`
+
+## M274 interop conformance gate (E001)
+
+- `M274-E001` freezes the supported Part 11 slice on one lane-E gate over the
+  published A003, B004, C003, and D002 summaries
+- `M274-D002` remains the authoritative executable evidence boundary because it
+  proves the generated bridge sidecars, runtime-import surfaces, cross-module
+  link plans, and the private bridge-generation runtime snapshot together
+- `M274-E001` adds explicit driver/manifest/frontend publication anchors rather
+  than a new runtime helper surface
+- `M274-E002` is the closeout step after this gate

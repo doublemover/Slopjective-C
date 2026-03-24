@@ -1739,3 +1739,21 @@ Current implementation status (`M274-D002`):
 - emitted IR now carries:
   - `; part11_header_module_and_bridge_generation = ...`
   - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`
+
+## M274 interop conformance gate (E001)
+
+Current implementation status (`M274-E001`):
+
+- lane E now freezes the supported Part 11 interop slice on one integrated
+  evidence chain
+- the gate consumes:
+  - `M274-A003`
+  - `M274-B004`
+  - `M274-C003`
+  - `M274-D002`
+- `M274-D002` remains the live executable boundary because it proves:
+  - deterministic Part 11 bridge sidecar generation
+  - runtime-import preservation
+  - cross-module packaging continuity
+  - the private bridge-generation runtime snapshot
+- the next closeout issue is `M274-E002`
