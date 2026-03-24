@@ -215,6 +215,44 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           cli_options.emit_prefix,
           artifacts.runtime_aware_import_module_artifact_json);
     }
+    if (artifacts.part10_macro_host_process_cache_runtime_integration_ready) {
+      std::string part10_host_cache_artifact_json;
+      std::string part10_host_cache_error;
+      if (!TryBuildObjc3Part10MacroHostProcessCacheArtifact(
+              {.contract_id =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId,
+               .source_contract_id =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId,
+               .surface_path =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSurfacePath,
+               .artifact_relative_path =
+                   kObjc3Part10MacroHostProcessCacheArtifactRelativePath,
+               .host_executable_relative_path =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath,
+               .cache_root_relative_path =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath,
+               .host_model =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostModel,
+               .toolchain_model =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationToolchainModel,
+               .cache_model =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheModel,
+               .fail_closed_model =
+                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel,
+               .replay_key =
+                   artifacts
+                       .part10_macro_host_process_cache_runtime_integration_replay_key,
+               .deterministic = true},
+              cli_options.input,
+              part10_host_cache_artifact_json,
+              part10_host_cache_error)) {
+        std::cerr << part10_host_cache_error << "\n";
+        return 125;
+      }
+      WritePart10MacroHostProcessCacheArtifact(
+          cli_options.out_dir, cli_options.emit_prefix,
+          part10_host_cache_artifact_json);
+    }
     if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
             artifacts.versioned_conformance_report_lowering_summary)) {
       std::cerr << "versioned conformance-report lowering summary not ready\n";
@@ -856,6 +894,14 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
           link_plan_inputs.expected_part7_actor_source_contract_id =
               "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+          link_plan_inputs.expected_part10_host_cache_contract_id =
+              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId;
+          link_plan_inputs.expected_part10_host_cache_source_contract_id =
+              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId;
+          link_plan_inputs.expected_part10_host_cache_executable_relative_path =
+              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
+          link_plan_inputs.expected_part10_host_cache_root_relative_path =
+              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
           for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
             link_plan_inputs.direct_import_surface_artifact_paths.push_back(
                 imported_surfaces[index].source_path.generic_string());
@@ -926,6 +972,32 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 imported_surface.part7_actor_lowering_replay_key;
             imported_input.part7_actor_isolation_lowering_replay_key =
                 imported_surface.part7_actor_isolation_lowering_replay_key;
+            imported_input
+                .part10_macro_host_process_cache_runtime_integration_present =
+                imported_surface
+                    .part10_macro_host_process_cache_runtime_integration_present;
+            imported_input.part10_macro_host_process_cache_runtime_ready =
+                imported_surface.part10_macro_host_process_cache_runtime_ready;
+            imported_input
+                .part10_macro_host_process_cache_separate_compilation_ready =
+                imported_surface
+                    .part10_macro_host_process_cache_separate_compilation_ready;
+            imported_input.part10_macro_host_process_cache_deterministic =
+                imported_surface.part10_macro_host_process_cache_deterministic;
+            imported_input.part10_macro_host_process_cache_contract_id =
+                imported_surface.part10_macro_host_process_cache_contract_id;
+            imported_input.part10_macro_host_process_cache_source_contract_id =
+                imported_surface
+                    .part10_macro_host_process_cache_source_contract_id;
+            imported_input.part10_macro_host_process_cache_replay_key =
+                imported_surface.part10_macro_host_process_cache_replay_key;
+            imported_input
+                .part10_macro_host_process_cache_host_executable_relative_path =
+                imported_surface
+                    .part10_macro_host_process_cache_host_executable_relative_path;
+            imported_input.part10_macro_host_process_cache_root_relative_path =
+                imported_surface
+                    .part10_macro_host_process_cache_root_relative_path;
             link_plan_inputs.imported_inputs.push_back(std::move(imported_input));
           }
 

@@ -538,6 +538,21 @@ typedef struct objc3_runtime_part10_expansion_host_boundary_snapshot {
 } objc3_runtime_part10_expansion_host_boundary_snapshot;
 int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
     objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot);
+typedef struct objc3_runtime_part10_macro_host_process_cache_integration_snapshot {
+  uint64_t property_runtime_ready;
+  uint64_t macro_host_execution_ready;
+  uint64_t macro_host_process_launch_ready;
+  uint64_t runtime_package_loader_ready;
+  uint64_t deterministic;
+  const char *host_executable_relative_path;
+  const char *cache_root_relative_path;
+  const char *host_model;
+  const char *toolchain_model;
+  const char *cache_model;
+  const char *fail_closed_model;
+} objc3_runtime_part10_macro_host_process_cache_integration_snapshot;
+int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_testing(
+    objc3_runtime_part10_macro_host_process_cache_integration_snapshot *snapshot);
 // M262-D002 runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice

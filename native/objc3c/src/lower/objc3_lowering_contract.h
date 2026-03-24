@@ -1629,6 +1629,37 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part10ExpansionHostRuntimeBoundaryFailClosedModel =
         "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId =
+        "objc3c-part10-macro-host-process-cache-runtime-integration/m273-d002-v1";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId =
+        "objc3c-part10-expansion-host-runtime-boundary/m273-d001-v1";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part10_macro_host_process_and_cache_runtime_integration";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName =
+        "objc_part10_macro_host_process_and_cache_runtime_integration";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath =
+        "artifacts/bin/objc3c-frontend-c-api-runner.exe";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath =
+        "tmp/artifacts/objc3c-native/cache/part10";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostModel =
+        "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-part10-expansion-cache-materialization";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationToolchainModel =
+        "frontend-runner-executes-with-manifest-enabled-and-ir-object-emission-disabled-for-deterministic-cache-materialization";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheModel =
+        "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-part10-replay-surface-and-reused-on-subsequent-runs";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel =
+        "missing-runner-corrupt-cache-or-import-surface-drift-disables-part10-host-process-cache-claims";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2811,6 +2842,7 @@ std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10ModuleInterfaceReplayPreservationSummary();
 std::string Objc3Part10ExpansionHostRuntimeBoundarySummary();
+std::string Objc3Part10MacroHostProcessCacheRuntimeIntegrationSummary();
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);

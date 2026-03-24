@@ -985,6 +985,71 @@ bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
   return true;
 }
 
+bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *integration_value = FindMember(
+      root,
+      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName);
+  if (integration_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *integration_object = AsObject(*integration_value);
+  if (integration_object == nullptr) {
+    error =
+        "part10 macro host process/cache runtime integration surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  if (!ReadStringMember(*integration_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*integration_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadBoolMember(*integration_object, "runtime_import_artifact_ready",
+                      surface.part10_macro_host_process_cache_runtime_ready,
+                      error) ||
+      !ReadBoolMember(*integration_object, "separate_compilation_ready",
+                      surface.part10_macro_host_process_cache_separate_compilation_ready,
+                      error) ||
+      !ReadBoolMember(*integration_object, "deterministic",
+                      surface.part10_macro_host_process_cache_deterministic,
+                      error) ||
+      !ReadStringMember(
+          *integration_object, "replay_key",
+          surface.part10_macro_host_process_cache_replay_key, error) ||
+      !ReadStringMember(*integration_object, "host_executable_relative_path",
+                        surface
+                            .part10_macro_host_process_cache_host_executable_relative_path,
+                        error) ||
+      !ReadStringMember(*integration_object, "cache_root_relative_path",
+                        surface.part10_macro_host_process_cache_root_relative_path,
+                        error)) {
+    return false;
+  }
+
+  if (contract_id !=
+      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId) {
+    error =
+        "unexpected Part 10 macro host process/cache runtime integration contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId) {
+    error =
+        "unexpected Part 10 macro host process/cache runtime integration source contract id in import surface";
+    return false;
+  }
+
+  surface.part10_macro_host_process_cache_runtime_integration_present = true;
+  surface.part10_macro_host_process_cache_contract_id = std::move(contract_id);
+  surface.part10_macro_host_process_cache_source_contract_id =
+      std::move(source_contract_id);
+  return true;
+}
+
 bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
@@ -1235,6 +1300,11 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
   if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,
                                                                error)) {
+    return false;
+  }
+  if (!PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(root,
+                                                                     surface,
+                                                                     error)) {
     return false;
   }
   if (!PopulateImportedPart9DispatchMetadataInterfacePreservation(root, surface,

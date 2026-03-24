@@ -984,6 +984,12 @@ inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkerResponseArtifactRelativePath =
         "module.cross-module-runtime-linker-options.rsp";
 inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheArtifactSuffix =
+        ".part10-macro-host-cache.json";
+inline constexpr const char
+    *kObjc3Part10MacroHostProcessCacheArtifactRelativePath =
+        "module.part10-macro-host-cache.json";
+inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkPlanAuthorityModel =
         "runtime-import-surface-plus-imported-registration-manifest-peer-artifacts-drive-cross-module-link-plan";
 inline constexpr const char

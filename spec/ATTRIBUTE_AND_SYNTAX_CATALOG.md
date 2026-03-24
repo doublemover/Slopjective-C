@@ -1500,3 +1500,20 @@ Current implementation status (`M273-D001`):
 - packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
 - live macro host execution and runtime package loading remain later `M273`
   work
+
+Current implementation status (`M273-D002`):
+
+- lane D now lands one real host-process/cache integration surface:
+  - `objc3c-part10-macro-host-process-cache-runtime-integration/m273-d002-v1`
+- provider and consumer `module.runtime-import-surface.json` artifacts now
+  carry:
+  - `objc_part10_macro_host_process_and_cache_runtime_integration`
+- the native driver now publishes:
+  - `module.part10-macro-host-cache.json`
+- host execution uses:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- deterministic cache entries live under:
+  - `tmp/artifacts/objc3c-native/cache/part10`
+- cross-module link plans now preserve the same runner path, cache root, and
+  imported-module inventory for Part 10 host/cache claims
+- runtime package loading still remains deferred and fail-closed

@@ -186,6 +186,15 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string part7_actor_mailbox_runtime_replay_key;
   std::string part7_actor_lowering_replay_key;
   std::string part7_actor_isolation_lowering_replay_key;
+  bool part10_macro_host_process_cache_runtime_integration_present = false;
+  bool part10_macro_host_process_cache_runtime_ready = false;
+  bool part10_macro_host_process_cache_separate_compilation_ready = false;
+  bool part10_macro_host_process_cache_deterministic = false;
+  std::string part10_macro_host_process_cache_contract_id;
+  std::string part10_macro_host_process_cache_source_contract_id;
+  std::string part10_macro_host_process_cache_replay_key;
+  std::string part10_macro_host_process_cache_host_executable_relative_path;
+  std::string part10_macro_host_process_cache_root_relative_path;
 };
 
 struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
@@ -214,8 +223,27 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::string expected_part6_source_contract_id;
   std::string expected_part7_actor_contract_id;
   std::string expected_part7_actor_source_contract_id;
+  std::string expected_part10_host_cache_contract_id;
+  std::string expected_part10_host_cache_source_contract_id;
+  std::string expected_part10_host_cache_executable_relative_path;
+  std::string expected_part10_host_cache_root_relative_path;
   std::vector<std::string> direct_import_surface_artifact_paths;
   std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs;
+};
+
+struct Objc3Part10MacroHostProcessCacheArtifactInputs {
+  std::string contract_id;
+  std::string source_contract_id;
+  std::string surface_path;
+  std::string artifact_relative_path;
+  std::string host_executable_relative_path;
+  std::string cache_root_relative_path;
+  std::string host_model;
+  std::string toolchain_model;
+  std::string cache_model;
+  std::string fail_closed_model;
+  std::string replay_key;
+  bool deterministic = false;
 };
 
 struct Objc3ConformanceReportPublicationArtifactInputs {
@@ -277,6 +305,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
     std::string &plan_json,
     std::string &linker_response_payload,
+    std::string &error);
+bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
+    const Objc3Part10MacroHostProcessCacheArtifactInputs &inputs,
+    const std::filesystem::path &source_input_path,
+    std::string &artifact_json,
     std::string &error);
 bool TryBuildObjc3ConformanceReportPublicationArtifact(
     const Objc3ConformanceReportPublicationArtifactInputs &inputs,

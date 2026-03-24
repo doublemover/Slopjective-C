@@ -42,6 +42,9 @@ std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
 std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
@@ -93,3 +96,7 @@ void WriteCrossModuleRuntimeLinkerResponseArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &response_payload);
+void WritePart10MacroHostProcessCacheArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);

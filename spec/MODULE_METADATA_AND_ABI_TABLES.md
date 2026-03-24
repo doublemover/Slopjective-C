@@ -8824,3 +8824,18 @@ supported Part 10 property-behavior slice.
   - no live macro host execution, driver-side host process launch, or runtime package loader is claimed yet
   - packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
   - live macro host/runtime integration remains later `M273` work
+
+`M273-D002` now adds one real driver-owned host-process/cache handoff without
+widening runtime ABI tables into a generalized macro runtime package loader.
+
+- contract id
+  `objc3c-part10-macro-host-process-cache-runtime-integration/m273-d002-v1`
+- emitted import-sidecar proof
+  - `module.runtime-import-surface.json`
+    - `objc_part10_macro_host_process_and_cache_runtime_integration`
+  - `module.part10-macro-host-cache.json`
+- truthful runtime/toolchain boundary
+  - native driver launches `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - deterministic cache entries live under `tmp/artifacts/objc3c-native/cache/part10`
+  - cross-module link plans preserve the same contract ids, runner path, cache root, and imported-module inventory
+  - runtime package loading still remains deferred and fail-closed

@@ -4654,6 +4654,32 @@ int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_testing(
+    objc3_runtime_part10_macro_host_process_cache_integration_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->property_runtime_ready = 1;
+  snapshot->macro_host_execution_ready = 1;
+  snapshot->macro_host_process_launch_ready = 1;
+  snapshot->runtime_package_loader_ready = 0;
+  snapshot->deterministic = 1;
+  snapshot->host_executable_relative_path =
+      "artifacts/bin/objc3c-frontend-c-api-runner.exe";
+  snapshot->cache_root_relative_path =
+      "tmp/artifacts/objc3c-native/cache/part10";
+  snapshot->host_model =
+      "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-part10-expansion-cache-materialization";
+  snapshot->toolchain_model =
+      "frontend-runner-executes-with-manifest-enabled-and-ir-object-emission-disabled-for-deterministic-cache-materialization";
+  snapshot->cache_model =
+      "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-part10-replay-surface-and-reused-on-subsequent-runs";
+  snapshot->fail_closed_model =
+      "missing-runner-corrupt-cache-or-import-surface-drift-disables-part10-host-process-cache-claims";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);

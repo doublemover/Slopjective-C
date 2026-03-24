@@ -16,6 +16,7 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool part6_result_and_bridging_artifact_replay_present = false;
   bool part7_actor_mailbox_runtime_import_present = false;
   bool part10_module_interface_replay_preservation_present = false;
+  bool part10_macro_host_process_cache_runtime_integration_present = false;
   bool part9_dispatch_metadata_interface_preservation_present = false;
   std::size_t part3_optional_send_sites = 0;
   std::size_t part3_typed_keypath_literal_sites = 0;
@@ -54,6 +55,14 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::string part10_replay_key;
   std::string part10_expansion_lowering_replay_key;
   std::string part10_synthesized_emission_replay_key;
+  bool part10_macro_host_process_cache_runtime_ready = false;
+  bool part10_macro_host_process_cache_separate_compilation_ready = false;
+  bool part10_macro_host_process_cache_deterministic = false;
+  std::string part10_macro_host_process_cache_contract_id;
+  std::string part10_macro_host_process_cache_source_contract_id;
+  std::string part10_macro_host_process_cache_replay_key;
+  std::string part10_macro_host_process_cache_host_executable_relative_path;
+  std::string part10_macro_host_process_cache_root_relative_path;
   std::size_t part10_local_derive_method_count = 0;
   std::size_t part10_local_macro_artifact_count = 0;
   std::size_t part10_local_interface_property_behavior_artifact_count = 0;

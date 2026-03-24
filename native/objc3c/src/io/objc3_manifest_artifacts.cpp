@@ -162,6 +162,12 @@ std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
          (emit_prefix + kObjc3CrossModuleRuntimeLinkerResponseArtifactSuffix);
 }
 
+std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + kObjc3Part10MacroHostProcessCacheArtifactSuffix);
+}
+
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
                            const std::string &manifest_json) {
@@ -262,4 +268,12 @@ void WriteCrossModuleRuntimeLinkerResponseArtifact(
   WriteText(
       BuildCrossModuleRuntimeLinkerResponseArtifactPath(out_dir, emit_prefix),
       response_payload);
+}
+
+void WritePart10MacroHostProcessCacheArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildPart10MacroHostProcessCacheArtifactPath(out_dir, emit_prefix),
+            artifact_json);
 }

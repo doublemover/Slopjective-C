@@ -4526,6 +4526,36 @@ std::string Objc3Part10ExpansionHostRuntimeBoundarySummary() {
   return out.str();
 }
 
+std::string Objc3Part10MacroHostProcessCacheRuntimeIntegrationSummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId
+      << ";source_contract="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId
+      << ";surface_path="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSurfacePath
+      << ";artifact_member="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName
+      << ";host_executable_relative_path="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath
+      << ";cache_root_relative_path="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath
+      << ";host_model="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostModel
+      << ";toolchain_model="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationToolchainModel
+      << ";cache_model="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheModel
+      << ";fail_closed_model="
+      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel
+      << ";macro_host_execution_ready=true"
+      << ";macro_host_process_launch_ready=true"
+      << ";runtime_package_loader_ready=false"
+      << ";deterministic=true"
+      << ";next_issue=M273-D003";
+  return out.str();
+}
+
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // M272-C003 preservation anchor: lane-C extends the local C002 lowering win

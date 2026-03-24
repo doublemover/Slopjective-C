@@ -1,5 +1,6 @@
 #include "io/objc3_process.h"
 
+#include "io/objc3_manifest_artifacts.h"
 #include "lower/objc3_lowering_contract.h"
 
 #if defined(_WIN32)
@@ -349,6 +350,20 @@ std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
   }
   out << indent.substr(0, indent.size() >= 2u ? indent.size() - 2u : 0u)
       << "]";
+  return out.str();
+}
+
+std::string ComputeFnv1a64Hex(const std::string &text) {
+  std::uint64_t hash = 14695981039346656037ull;
+  for (unsigned char c : text) {
+    hash ^= static_cast<std::uint64_t>(c);
+    hash *= 1099511628211ull;
+  }
+  std::ostringstream out;
+  out << std::hex;
+  out.width(16);
+  out.fill('0');
+  out << hash;
   return out.str();
 }
 
@@ -1442,6 +1457,136 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
   return true;
 }
 
+bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
+    const Objc3Part10MacroHostProcessCacheArtifactInputs &inputs,
+    const std::filesystem::path &source_input_path,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.contract_id.empty() || inputs.source_contract_id.empty() ||
+      inputs.surface_path.empty() || inputs.artifact_relative_path.empty() ||
+      inputs.host_executable_relative_path.empty() ||
+      inputs.cache_root_relative_path.empty() || inputs.host_model.empty() ||
+      inputs.toolchain_model.empty() || inputs.cache_model.empty() ||
+      inputs.fail_closed_model.empty() || inputs.replay_key.empty()) {
+    error = "part10 macro host process/cache artifact inputs are incomplete";
+    return false;
+  }
+  if (!std::filesystem::exists(source_input_path)) {
+    error = "part10 macro host process/cache source input not found: " +
+            source_input_path.generic_string();
+    return false;
+  }
+
+  const std::filesystem::path host_executable =
+      std::filesystem::path(inputs.host_executable_relative_path);
+  if (!std::filesystem::exists(host_executable)) {
+    error = "part10 macro host process/cache host executable not found: " +
+            host_executable.generic_string();
+    return false;
+  }
+
+  const std::string cache_key = ComputeFnv1a64Hex(inputs.replay_key);
+  const std::filesystem::path cache_root =
+      std::filesystem::path(inputs.cache_root_relative_path);
+  const std::filesystem::path cache_entry = cache_root / cache_key;
+  const std::filesystem::path cache_summary_path =
+      cache_entry / "module.host-summary.json";
+  const std::filesystem::path cache_runtime_import_path =
+      BuildRuntimeAwareImportModuleArtifactPath(cache_entry, "module");
+  const std::filesystem::path cache_manifest_path =
+      BuildManifestArtifactPath(cache_entry, "module");
+
+  bool cache_hit = std::filesystem::exists(cache_summary_path) &&
+                   std::filesystem::exists(cache_runtime_import_path) &&
+                   std::filesystem::exists(cache_manifest_path);
+  bool launch_attempted = false;
+  int host_process_exit_code = 0;
+
+  if (!cache_hit) {
+    launch_attempted = true;
+    std::error_code create_error;
+    std::filesystem::create_directories(cache_entry, create_error);
+    if (create_error) {
+      error = "failed to create Part 10 cache entry directory: " +
+              cache_entry.generic_string() + ": " + create_error.message();
+      return false;
+    }
+    const std::vector<std::string> args = {
+        source_input_path.generic_string(),
+        "--out-dir",
+        cache_entry.generic_string(),
+        "--emit-prefix",
+        "module",
+        "--summary-out",
+        cache_summary_path.generic_string(),
+        "--no-emit-ir",
+        "--no-emit-object"};
+    host_process_exit_code = RunProcess(host_executable.generic_string(), args);
+    if (host_process_exit_code != 0) {
+      error = "part10 macro host process launch failed with exit code " +
+              std::to_string(host_process_exit_code);
+      return false;
+    }
+    cache_hit = std::filesystem::exists(cache_summary_path) &&
+                std::filesystem::exists(cache_runtime_import_path) &&
+                std::filesystem::exists(cache_manifest_path);
+    if (!cache_hit) {
+      error =
+          "part10 macro host process launch completed but cache artifacts are incomplete";
+      return false;
+    }
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
+      << "\",\n"
+      << "  \"source_contract_id\": \""
+      << EscapeJsonString(inputs.source_contract_id) << "\",\n"
+      << "  \"surface_path\": \"" << EscapeJsonString(inputs.surface_path)
+      << "\",\n"
+      << "  \"artifact\": \"" << EscapeJsonString(inputs.artifact_relative_path)
+      << "\",\n"
+      << "  \"host_executable_relative_path\": \""
+      << EscapeJsonString(inputs.host_executable_relative_path) << "\",\n"
+      << "  \"cache_root_relative_path\": \""
+      << EscapeJsonString(inputs.cache_root_relative_path) << "\",\n"
+      << "  \"cache_key\": \"" << EscapeJsonString(cache_key) << "\",\n"
+      << "  \"cache_entry_relative_path\": \""
+      << EscapeJsonString(cache_entry.generic_string()) << "\",\n"
+      << "  \"cache_summary_relative_path\": \""
+      << EscapeJsonString(cache_summary_path.generic_string()) << "\",\n"
+      << "  \"cache_runtime_import_surface_relative_path\": \""
+      << EscapeJsonString(cache_runtime_import_path.generic_string())
+      << "\",\n"
+      << "  \"cache_manifest_relative_path\": \""
+      << EscapeJsonString(cache_manifest_path.generic_string()) << "\",\n"
+      << "  \"host_model\": \"" << EscapeJsonString(inputs.host_model)
+      << "\",\n"
+      << "  \"toolchain_model\": \""
+      << EscapeJsonString(inputs.toolchain_model) << "\",\n"
+      << "  \"cache_model\": \"" << EscapeJsonString(inputs.cache_model)
+      << "\",\n"
+      << "  \"fail_closed_model\": \""
+      << EscapeJsonString(inputs.fail_closed_model) << "\",\n"
+      << "  \"source_input_path\": \""
+      << EscapeJsonString(source_input_path.generic_string()) << "\",\n"
+      << "  \"launch_attempted\": " << (launch_attempted ? "true" : "false")
+      << ",\n"
+      << "  \"cache_hit\": " << (cache_hit ? "true" : "false") << ",\n"
+      << "  \"host_process_exit_code\": " << host_process_exit_code << ",\n"
+      << "  \"deterministic\": " << (inputs.deterministic ? "true" : "false")
+      << ",\n"
+      << "  \"replay_key\": \"" << EscapeJsonString(inputs.replay_key)
+      << "\"\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
 bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
     std::string &plan_json,
@@ -1475,6 +1620,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part6_source_contract_id.empty() ||
       inputs.expected_part7_actor_contract_id.empty() ||
       inputs.expected_part7_actor_source_contract_id.empty() ||
+      inputs.expected_part10_host_cache_contract_id.empty() ||
+      inputs.expected_part10_host_cache_source_contract_id.empty() ||
+      inputs.expected_part10_host_cache_executable_relative_path.empty() ||
+      inputs.expected_part10_host_cache_root_relative_path.empty() ||
       inputs.local_driver_linker_flags.empty() ||
       inputs.direct_import_surface_artifact_paths.empty() ||
       inputs.imported_inputs.empty()) {
@@ -1520,10 +1669,12 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::string> seen_direct_import_surface_paths;
   std::unordered_set<std::string> seen_part6_replay_keys;
   std::unordered_set<std::string> seen_part7_actor_replay_keys;
+  std::unordered_set<std::string> seen_part10_host_cache_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
   std::vector<std::string> imported_part6_module_names;
   std::vector<std::string> imported_part7_actor_module_names;
+  std::vector<std::string> imported_part10_host_cache_module_names;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
   std::sort(direct_import_surface_artifact_paths.begin(),
@@ -1725,6 +1876,56 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part7_actor_module_names.push_back(imported_input.module_name);
     }
+    if (imported_input.part10_macro_host_process_cache_runtime_integration_present) {
+      if (imported_input.part10_macro_host_process_cache_contract_id !=
+          inputs.expected_part10_host_cache_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 10 host/cache contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part10_macro_host_process_cache_source_contract_id !=
+          inputs.expected_part10_host_cache_source_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 10 host/cache source contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!imported_input.part10_macro_host_process_cache_runtime_ready ||
+          !imported_input.part10_macro_host_process_cache_separate_compilation_ready ||
+          !imported_input.part10_macro_host_process_cache_deterministic ||
+          imported_input.part10_macro_host_process_cache_replay_key.empty() ||
+          imported_input.part10_macro_host_process_cache_host_executable_relative_path.empty() ||
+          imported_input.part10_macro_host_process_cache_root_relative_path.empty()) {
+        error =
+            "cross-module runtime link-plan Part 10 host/cache surface incomplete for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part10_macro_host_process_cache_host_executable_relative_path !=
+          inputs.expected_part10_host_cache_executable_relative_path) {
+        error =
+            "cross-module runtime link-plan Part 10 host/cache executable path mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part10_macro_host_process_cache_root_relative_path !=
+          inputs.expected_part10_host_cache_root_relative_path) {
+        error =
+            "cross-module runtime link-plan Part 10 host/cache root path mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!seen_part10_host_cache_replay_keys
+               .insert(imported_input.part10_macro_host_process_cache_replay_key)
+               .second) {
+        error =
+            "cross-module runtime link-plan duplicate imported Part 10 host/cache replay key: " +
+            imported_input.part10_macro_host_process_cache_replay_key;
+        return false;
+      }
+      imported_part10_host_cache_module_names.push_back(imported_input.module_name);
+    }
     ordered_link_inputs.push_back(
         {imported_input.translation_unit_registration_order_ordinal,
          imported_input.translation_unit_identity_key,
@@ -1876,6 +2077,39 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << EscapeJsonString(
                imported_input.part7_actor_isolation_lowering_replay_key)
         << "\",\n"
+        << "      \"part10_macro_host_process_cache_runtime_integration_present\": "
+        << (imported_input.part10_macro_host_process_cache_runtime_integration_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part10_macro_host_process_cache_runtime_ready\": "
+        << (imported_input.part10_macro_host_process_cache_runtime_ready ? "true"
+                                                                         : "false")
+        << ",\n"
+        << "      \"part10_macro_host_process_cache_separate_compilation_ready\": "
+        << (imported_input.part10_macro_host_process_cache_separate_compilation_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part10_macro_host_process_cache_deterministic\": "
+        << (imported_input.part10_macro_host_process_cache_deterministic ? "true"
+                                                                         : "false")
+        << ",\n"
+        << "      \"part10_macro_host_process_cache_contract_id\": \""
+        << EscapeJsonString(imported_input.part10_macro_host_process_cache_contract_id)
+        << "\",\n"
+        << "      \"part10_macro_host_process_cache_source_contract_id\": \""
+        << EscapeJsonString(imported_input.part10_macro_host_process_cache_source_contract_id)
+        << "\",\n"
+        << "      \"part10_macro_host_process_cache_replay_key\": \""
+        << EscapeJsonString(imported_input.part10_macro_host_process_cache_replay_key)
+        << "\",\n"
+        << "      \"part10_macro_host_process_cache_host_executable_relative_path\": \""
+        << EscapeJsonString(imported_input.part10_macro_host_process_cache_host_executable_relative_path)
+        << "\",\n"
+        << "      \"part10_macro_host_process_cache_root_relative_path\": \""
+        << EscapeJsonString(imported_input.part10_macro_host_process_cache_root_relative_path)
+        << "\",\n"
         << "      \"driver_linker_flags\": "
         << BuildIndentedStringArrayJson(imported_input.driver_linker_flags,
                                         "        ");
@@ -1889,6 +2123,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::sort(imported_part6_module_names.begin(), imported_part6_module_names.end());
   std::sort(imported_part7_actor_module_names.begin(),
             imported_part7_actor_module_names.end());
+  std::sort(imported_part10_host_cache_module_names.begin(),
+            imported_part10_host_cache_module_names.end());
 
   std::ostringstream out;
   out << "{\n"
@@ -1925,6 +2161,19 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"expected_part7_actor_source_contract_id\": \""
       << EscapeJsonString(inputs.expected_part7_actor_source_contract_id)
       << "\",\n"
+      << "  \"expected_part10_host_cache_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part10_host_cache_contract_id)
+      << "\",\n"
+      << "  \"expected_part10_host_cache_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part10_host_cache_source_contract_id)
+      << "\",\n"
+      << "  \"expected_part10_host_cache_executable_relative_path\": \""
+      << EscapeJsonString(
+             inputs.expected_part10_host_cache_executable_relative_path)
+      << "\",\n"
+      << "  \"expected_part10_host_cache_root_relative_path\": \""
+      << EscapeJsonString(inputs.expected_part10_host_cache_root_relative_path)
+      << "\",\n"
       << "  \"module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(module_names_lexicographic, "    ")
       << ",\n"
@@ -1936,6 +2185,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << imported_part6_module_names.size() << ",\n"
       << "  \"part7_actor_imported_module_count\": "
       << imported_part7_actor_module_names.size() << ",\n"
+      << "  \"part10_host_cache_imported_module_count\": "
+      << imported_part10_host_cache_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
       << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
                                       "    ")
@@ -1946,10 +2197,17 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"part7_actor_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part7_actor_module_names, "    ")
       << ",\n"
+      << "  \"part10_host_cache_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_part10_host_cache_module_names,
+                                      "    ")
+      << ",\n"
       << "  \"part6_cross_module_preservation_ready\": "
       << (!imported_part6_module_names.empty() ? "true" : "false") << ",\n"
       << "  \"part7_actor_cross_module_isolation_ready\": "
       << (!imported_part7_actor_module_names.empty() ? "true" : "false")
+      << ",\n"
+      << "  \"part10_host_cache_cross_module_preservation_ready\": "
+      << (!imported_part10_host_cache_module_names.empty() ? "true" : "false")
       << ",\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"

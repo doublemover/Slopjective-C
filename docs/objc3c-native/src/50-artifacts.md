@@ -372,6 +372,22 @@ native build surface.
   - packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
 - live macro execution and package loading remain later `M273` work
 
+## M273 macro host process and cache integration
+
+- Part 10 now has one real host-process/cache path driven by the native driver
+- provider and consumer `module.runtime-import-surface.json` artifacts now
+  carry:
+  - `objc_part10_macro_host_process_and_cache_runtime_integration`
+- the native driver now also publishes:
+  - `module.part10-macro-host-cache.json`
+- the host path is:
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+- the deterministic cache root is:
+  - `tmp/artifacts/objc3c-native/cache/part10`
+- cross-module link planning now preserves the same Part 10 host/cache
+  contract ids, runner path, cache root, and imported module inventory
+- runtime package loading still remains deferred and fail-closed
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in
