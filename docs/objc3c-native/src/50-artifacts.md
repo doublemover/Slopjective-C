@@ -340,6 +340,19 @@ native build surface.
   - `; part10_synthesized_ast_ir_emission = ...`
   - `; frontend_objc_part10_synthesized_emission_profile = ...`
   - `!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}`
+
+## M273 module, interface, and replay preservation
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_module_interface_and_replay_preservation`
+- provider and consumer `module.runtime-import-surface.json` artifacts now preserve:
+  - imported module names
+  - derive method counts
+  - macro artifact counts
+  - interface and implementation property-behavior counts
+  - runtime method-list counts
+- emitted LLVM IR now prints:
+  - `; part10_module_interface_replay_preservation = ...`
+  - `!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}`
 - cross-module preservation and macro host execution remain later `M273` work
 
 ## CI and closeout semantics (M276-E002)

@@ -898,10 +898,90 @@ bool PopulateImportedPart7ActorMailboxRuntimeImport(
     return false;
   }
 
+  if (!surface.part7_actor_mailbox_runtime_ready) {
+    return true;
+  }
+
   surface.part7_actor_mailbox_runtime_import_present = true;
   surface.part7_actor_mailbox_runtime_contract_id = std::move(contract_id);
   surface.part7_actor_mailbox_runtime_source_contract_id =
       std::move(source_contract_id);
+  return true;
+}
+
+bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *preservation_value = FindMember(
+      root, kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName);
+  if (preservation_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *preservation_object = AsObject(*preservation_value);
+  if (preservation_object == nullptr) {
+    error =
+        "part10 module/interface replay preservation surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  if (!ReadStringMember(*preservation_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*preservation_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
+                      surface.part10_runtime_import_artifact_ready, error) ||
+      !ReadBoolMember(*preservation_object,
+                      "separate_compilation_preservation_ready",
+                      surface.part10_separate_compilation_preservation_ready,
+                      error) ||
+      !ReadBoolMember(*preservation_object, "deterministic",
+                      surface.part10_deterministic, error) ||
+      !ReadStringMember(*preservation_object, "replay_key",
+                        surface.part10_replay_key, error) ||
+      !ReadStringMember(*preservation_object, "expansion_lowering_replay_key",
+                        surface.part10_expansion_lowering_replay_key, error) ||
+      !ReadStringMember(*preservation_object,
+                        "synthesized_emission_replay_key",
+                        surface.part10_synthesized_emission_replay_key,
+                        error) ||
+      !ReadSizeMember(*preservation_object, "local_derive_method_count",
+                      surface.part10_local_derive_method_count, error) ||
+      !ReadSizeMember(*preservation_object, "local_macro_artifact_count",
+                      surface.part10_local_macro_artifact_count, error) ||
+      !ReadSizeMember(
+          *preservation_object,
+          "local_interface_property_behavior_artifact_count",
+          surface.part10_local_interface_property_behavior_artifact_count,
+          error) ||
+      !ReadSizeMember(
+          *preservation_object,
+          "local_implementation_property_behavior_artifact_count",
+          surface.part10_local_implementation_property_behavior_artifact_count,
+          error) ||
+      !ReadSizeMember(*preservation_object, "local_runtime_method_list_count",
+                      surface.part10_local_runtime_method_list_count, error)) {
+    return false;
+  }
+
+  if (contract_id !=
+      kObjc3Part10ModuleInterfaceReplayPreservationContractId) {
+    error =
+        "unexpected Part 10 module/interface replay preservation contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      kObjc3Part10SynthesizedArtifactEmissionContractId) {
+    error =
+        "unexpected Part 10 module/interface replay preservation source contract id in import surface";
+    return false;
+  }
+
+  surface.part10_module_interface_replay_preservation_present = true;
+  surface.part10_contract_id = std::move(contract_id);
+  surface.part10_source_contract_id = std::move(source_contract_id);
   return true;
 }
 
@@ -1151,6 +1231,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     return false;
   }
   if (!PopulateImportedPart7ActorMailboxRuntimeImport(root, surface, error)) {
+    return false;
+  }
+  if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,
+                                                               error)) {
     return false;
   }
   if (!PopulateImportedPart9DispatchMetadataInterfacePreservation(root, surface,

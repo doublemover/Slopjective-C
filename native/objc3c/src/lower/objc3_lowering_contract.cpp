@@ -4482,6 +4482,26 @@ std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
          kObjc3Part10SynthesizedArtifactEmissionLaneContract;
 }
 
+std::string Objc3Part10ModuleInterfaceReplayPreservationSummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3Part10ModuleInterfaceReplayPreservationContractId
+      << ";source_contract="
+      << kObjc3Part10SynthesizedArtifactEmissionContractId
+      << ";surface_path="
+      << kObjc3Part10ModuleInterfaceReplayPreservationSurfacePath
+      << ";artifact_member="
+      << kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName
+      << ";source_model="
+      << kObjc3Part10ModuleInterfaceReplayPreservationSourceModel
+      << ";preservation_model="
+      << kObjc3Part10ModuleInterfaceReplayPreservationModel
+      << ";fail_closed_model="
+      << kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel
+      << ";next_issue=M273-D001";
+  return out.str();
+}
+
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // M272-C003 preservation anchor: lane-C extends the local C002 lowering win

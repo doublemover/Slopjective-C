@@ -8792,4 +8792,17 @@ runnable smoke matrix.
 - truthful boundary
   - supported derives now emit real synthesized method bodies
   - supported macros and property behaviors now emit replay-visible global artifacts
+
+## M273 module/interface replay preservation note
+
+`M273-C003` still does not widen runtime ABI tables into executable macro runtime or reflection tables, but it does freeze cross-module preservation proof in runtime-import-surface and module-inspection artifacts.
+
+- contract id
+  `objc3c-part10-module-interface-replay-preservation/m273-c003-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_module_interface_and_replay_preservation`
+- truthful boundary
+  - runtime import surfaces now carry deterministic local/imported replay counts and imported module names for the supported Part 10 slice
+  - LLVM IR now carries one replay-visible metadata node for that cross-module preservation proof
+  - no live macro executor, package loader, or property-behavior runtime ABI tables are claimed yet
   - cross-module preservation and macro host/runtime integration remain later `M273` work

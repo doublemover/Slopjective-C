@@ -1586,6 +1586,29 @@ inline constexpr const char
         "cross-module-preservation-expansion-host-execution-and-cached-macro-toolchain-integration-remain-deferred-to-later-m273-work";
 inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionLaneContract =
     "m273-part10-synthesized-ast-ir-emission-v1";
+// M273-C003 preservation anchor: lane-C extends the local C002 synthesis win by
+// preserving derive/macro/property-behavior replay facts, interface-facing
+// artifact splits, and deterministic import-surface summaries across module
+// boundaries before lane-D runtime execution work begins.
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationContractId =
+        "objc3c-part10-module-interface-replay-preservation/m273-c003-v1";
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part10_module_interface_and_replay_preservation";
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName =
+        "objc_part10_module_interface_and_replay_preservation";
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationSourceModel =
+        "runtime-import-surface-artifacts-preserve-part10-derived-method-macro-and-property-behavior-replay-facts-for-separate-compilation-and-interface-inspection";
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationModel =
+        "provider-and-consumer-import-surfaces-preserve-part10-synthesized-emission-counts-replay-keys-and-interface-vs-implementation-property-behavior-splits-beyond-local-ir-object-emission";
+inline constexpr const char
+    *kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel =
+        "missing-or-drifted-part10-preservation-packets-disable-cross-module-metaprogramming-preservation-claims";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2766,6 +2789,7 @@ bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
+std::string Objc3Part10ModuleInterfaceReplayPreservationSummary();
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);

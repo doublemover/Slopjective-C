@@ -944,6 +944,28 @@ struct Objc3IRFrontendMetadata {
       part10_macro_artifact_bundles_lexicographic;
   std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
       part10_property_behavior_artifact_bundles_lexicographic;
+  std::string lowering_part10_module_interface_replay_preservation_key;
+  std::size_t part10_module_replay_local_derive_method_count = 0;
+  std::size_t part10_module_replay_local_macro_artifact_count = 0;
+  std::size_t
+      part10_module_replay_local_interface_property_behavior_artifact_count = 0;
+  std::size_t
+      part10_module_replay_local_implementation_property_behavior_artifact_count =
+          0;
+  std::size_t part10_module_replay_local_runtime_method_list_count = 0;
+  std::size_t part10_module_replay_imported_module_count = 0;
+  std::size_t part10_module_replay_imported_derive_method_count = 0;
+  std::size_t part10_module_replay_imported_macro_artifact_count = 0;
+  std::size_t
+      part10_module_replay_imported_interface_property_behavior_artifact_count =
+          0;
+  std::size_t
+      part10_module_replay_imported_implementation_property_behavior_artifact_count =
+          0;
+  std::size_t part10_module_replay_imported_runtime_method_list_count = 0;
+  bool part10_module_replay_runtime_import_artifact_ready = false;
+  bool part10_module_replay_separate_compilation_preservation_ready = false;
+  bool deterministic_part10_module_interface_replay_handoff = false;
   std::string lowering_part9_dispatch_metadata_interface_preservation_key;
   std::size_t part9_dispatch_metadata_local_direct_callable_record_count = 0;
   std::size_t part9_dispatch_metadata_local_final_callable_record_count = 0;

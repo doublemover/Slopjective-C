@@ -1466,5 +1466,18 @@ Current implementation status (`M273-C002`):
   - synthesized derive method bodies in IR/object output
   - macro provenance/package globals in IR/object output
   - property-behavior globals in IR/object output
+
+## M273 module, interface, and replay preservation completion (C003)
+
+Current implementation status (`M273-C003`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_module_interface_and_replay_preservation`
+- the runtime import surface now preserves deterministic local/imported counts for:
+  - derived methods
+  - macro artifacts
+  - interface property-behavior artifacts
+  - implementation property-behavior artifacts
+  - runtime method lists
+- native separate compilation now consumes provider `module.runtime-import-surface.json` artifacts and preserves imported Part 10 replay facts in the consumer manifest and IR
 - emitted IR now carries one replay-stable Part 10 synthesized-emission summary and metadata node
 - cross-module preservation and macro host execution still remain deferred to later `M273` lanes

@@ -1009,6 +1009,13 @@ class Objc3IREmitter {
           << "\n";
     }
     if (!frontend_metadata_
+             .lowering_part10_module_interface_replay_preservation_key.empty()) {
+      out << "; part10_module_interface_replay_preservation = "
+          << frontend_metadata_
+                 .lowering_part10_module_interface_replay_preservation_key
+          << "\n";
+    }
+    if (!frontend_metadata_
              .lowering_part9_dispatch_metadata_interface_preservation_key.empty()) {
       out << "; part9_dispatch_metadata_interface_preservation = "
           << frontend_metadata_
@@ -3755,6 +3762,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
+    out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
     out << "!objc3.objc_part9_dispatch_metadata_and_interface_preservation = !{!103}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
@@ -6700,6 +6708,67 @@ class Objc3IREmitter {
                frontend_metadata_.part10_synthesized_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_part10_synthesized_emission_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!106 = !{!\""
+        << EscapeCStringLiteral(frontend_metadata_
+                                    .lowering_part10_module_interface_replay_preservation_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_module_replay_local_derive_method_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_local_macro_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_local_interface_property_behavior_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_local_implementation_property_behavior_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_local_runtime_method_list_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_module_replay_imported_module_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_imported_derive_method_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_imported_macro_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_imported_interface_property_behavior_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_imported_implementation_property_behavior_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_module_replay_imported_runtime_method_list_count)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part10_module_replay_runtime_import_artifact_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part10_module_replay_separate_compilation_preservation_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part10_module_interface_replay_handoff
                 ? 1
                 : 0)
         << "}\n\n";

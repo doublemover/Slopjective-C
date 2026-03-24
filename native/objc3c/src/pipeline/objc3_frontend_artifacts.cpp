@@ -2993,6 +2993,202 @@ std::string BuildPart10SynthesizedArtifactEmissionContractJson(
   return out.str();
 }
 
+struct Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary {
+  std::string contract_id =
+      kObjc3Part10ModuleInterfaceReplayPreservationContractId;
+  std::string source_contract_id =
+      kObjc3Part10SynthesizedArtifactEmissionContractId;
+  std::string surface_path =
+      kObjc3Part10ModuleInterfaceReplayPreservationSurfacePath;
+  std::string import_artifact_member_name =
+      kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName;
+  std::string source_model =
+      kObjc3Part10ModuleInterfaceReplayPreservationSourceModel;
+  std::string preservation_model =
+      kObjc3Part10ModuleInterfaceReplayPreservationModel;
+  std::string fail_closed_model =
+      kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel;
+  std::string replay_key;
+  std::string expansion_lowering_replay_key;
+  std::string synthesized_emission_replay_key;
+  std::vector<std::string> imported_module_names_lexicographic;
+  std::size_t local_derive_method_count = 0;
+  std::size_t local_macro_artifact_count = 0;
+  std::size_t local_interface_property_behavior_artifact_count = 0;
+  std::size_t local_implementation_property_behavior_artifact_count = 0;
+  std::size_t local_runtime_method_list_count = 0;
+  std::size_t imported_module_count = 0;
+  std::size_t imported_derive_method_count = 0;
+  std::size_t imported_macro_artifact_count = 0;
+  std::size_t imported_interface_property_behavior_artifact_count = 0;
+  std::size_t imported_implementation_property_behavior_artifact_count = 0;
+  std::size_t imported_runtime_method_list_count = 0;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_preservation_ready = false;
+  bool deterministic = false;
+};
+
+std::size_t CountPart10PropertyBehaviorArtifactBundlesByOwnerKind(
+    const std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle> &bundles,
+    std::string_view owner_kind) {
+  return static_cast<std::size_t>(std::count_if(
+      bundles.begin(), bundles.end(),
+      [owner_kind](const Objc3IRPart10PropertyBehaviorArtifactBundle &bundle) {
+        return bundle.owner_kind == owner_kind;
+      }));
+}
+
+Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary
+BuildPart10ModuleInterfaceReplayPreservationSummary(
+    const Objc3Part10ExpansionLoweringContract &expansion_contract,
+    const std::string &expansion_replay_key,
+    const Objc3Part10SynthesizedArtifactEmissionContract
+        &synthesized_contract,
+    const std::string &synthesized_replay_key,
+    const std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
+        &property_behavior_bundles,
+    bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces) {
+  Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary summary;
+  summary.expansion_lowering_replay_key = expansion_replay_key;
+  summary.synthesized_emission_replay_key = synthesized_replay_key;
+  summary.local_derive_method_count =
+      synthesized_contract.emitted_derive_method_sites;
+  summary.local_macro_artifact_count =
+      synthesized_contract.emitted_macro_artifact_sites;
+  summary.local_interface_property_behavior_artifact_count =
+      CountPart10PropertyBehaviorArtifactBundlesByOwnerKind(
+          property_behavior_bundles, "class-interface");
+  summary.local_implementation_property_behavior_artifact_count =
+      CountPart10PropertyBehaviorArtifactBundlesByOwnerKind(
+          property_behavior_bundles, "class-implementation");
+  summary.local_runtime_method_list_count =
+      synthesized_contract.emitted_runtime_method_list_sites;
+  summary.runtime_import_artifact_ready =
+      runtime_import_artifact_ready &&
+      IsValidObjc3Part10ExpansionLoweringContract(expansion_contract) &&
+      IsValidObjc3Part10SynthesizedArtifactEmissionContract(
+          synthesized_contract);
+  summary.deterministic =
+      expansion_contract.deterministic && synthesized_contract.deterministic;
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part10_module_interface_replay_preservation_present) {
+      continue;
+    }
+    ++summary.imported_module_count;
+    if (!surface.frontend_closure_summary.module_name.empty()) {
+      summary.imported_module_names_lexicographic.push_back(
+          surface.frontend_closure_summary.module_name);
+    }
+    summary.imported_derive_method_count +=
+        surface.part10_local_derive_method_count;
+    summary.imported_macro_artifact_count +=
+        surface.part10_local_macro_artifact_count;
+    summary.imported_interface_property_behavior_artifact_count +=
+        surface.part10_local_interface_property_behavior_artifact_count;
+    summary.imported_implementation_property_behavior_artifact_count +=
+        surface.part10_local_implementation_property_behavior_artifact_count;
+    summary.imported_runtime_method_list_count +=
+        surface.part10_local_runtime_method_list_count;
+    summary.deterministic =
+        summary.deterministic && surface.part10_deterministic;
+  }
+  std::sort(summary.imported_module_names_lexicographic.begin(),
+            summary.imported_module_names_lexicographic.end());
+  summary.separate_compilation_preservation_ready =
+      summary.runtime_import_artifact_ready &&
+      summary.imported_module_names_lexicographic.size() ==
+          summary.imported_module_count;
+  std::ostringstream replay_key;
+  replay_key << Objc3Part10ModuleInterfaceReplayPreservationSummary()
+             << ";runtime_import_artifact_ready="
+             << (summary.runtime_import_artifact_ready ? "true" : "false")
+             << ";separate_compilation_preservation_ready="
+             << (summary.separate_compilation_preservation_ready ? "true"
+                                                                 : "false")
+             << ";imported_module_count=" << summary.imported_module_count
+             << ";deterministic="
+             << (summary.deterministic ? "true" : "false")
+             << ";expansion_lowering_replay_key=" << expansion_replay_key
+             << ";synthesized_emission_replay_key=" << synthesized_replay_key
+             << ";local_derive_method_count="
+             << summary.local_derive_method_count
+             << ";local_macro_artifact_count="
+             << summary.local_macro_artifact_count
+             << ";local_interface_property_behavior_artifact_count="
+             << summary.local_interface_property_behavior_artifact_count
+             << ";local_implementation_property_behavior_artifact_count="
+             << summary.local_implementation_property_behavior_artifact_count
+             << ";local_runtime_method_list_count="
+             << summary.local_runtime_method_list_count
+             << ";imported_derive_method_count="
+             << summary.imported_derive_method_count
+             << ";imported_macro_artifact_count="
+             << summary.imported_macro_artifact_count
+             << ";imported_interface_property_behavior_artifact_count="
+             << summary.imported_interface_property_behavior_artifact_count
+             << ";imported_implementation_property_behavior_artifact_count="
+             << summary.imported_implementation_property_behavior_artifact_count
+             << ";imported_runtime_method_list_count="
+             << summary.imported_runtime_method_list_count;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+std::string BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
+    const Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"preservation_model\":\""
+      << EscapeJsonString(summary.preservation_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"expansion_lowering_replay_key\":\""
+      << EscapeJsonString(summary.expansion_lowering_replay_key)
+      << "\",\"synthesized_emission_replay_key\":\""
+      << EscapeJsonString(summary.synthesized_emission_replay_key)
+      << "\",\"imported_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.imported_module_names_lexicographic)
+      << ",\"local_derive_method_count\":"
+      << summary.local_derive_method_count
+      << ",\"local_macro_artifact_count\":"
+      << summary.local_macro_artifact_count
+      << ",\"local_interface_property_behavior_artifact_count\":"
+      << summary.local_interface_property_behavior_artifact_count
+      << ",\"local_implementation_property_behavior_artifact_count\":"
+      << summary.local_implementation_property_behavior_artifact_count
+      << ",\"local_runtime_method_list_count\":"
+      << summary.local_runtime_method_list_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"imported_derive_method_count\":"
+      << summary.imported_derive_method_count
+      << ",\"imported_macro_artifact_count\":"
+      << summary.imported_macro_artifact_count
+      << ",\"imported_interface_property_behavior_artifact_count\":"
+      << summary.imported_interface_property_behavior_artifact_count
+      << ",\"imported_implementation_property_behavior_artifact_count\":"
+      << summary.imported_implementation_property_behavior_artifact_count
+      << ",\"imported_runtime_method_list_count\":"
+      << summary.imported_runtime_method_list_count
+      << ",\"runtime_import_artifact_ready\":"
+      << (summary.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_preservation_ready\":"
+      << (summary.separate_compilation_preservation_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart8SystemExtensionLoweringContractJson(
     const Objc3Part8SystemExtensionSemanticModelSummary &semantic_summary,
     const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary &resource_summary,
@@ -6310,6 +6506,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part3_optional_keypath_runtime_helper_contract_json,
     const std::string &part6_result_and_bridging_artifact_replay_json,
     const std::string &part7_actor_mailbox_runtime_import_json,
+    const std::string &part10_module_interface_replay_preservation_json,
     const std::string &part9_dispatch_metadata_interface_preservation_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
@@ -6395,6 +6592,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part6_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_part7_actor_mailbox_and_isolation_runtime_import_surface\": "
       << part7_actor_mailbox_runtime_import_json << ",\n"
+      << "  \"objc_part10_module_interface_and_replay_preservation\": "
+      << part10_module_interface_replay_preservation_json << ",\n"
       << "  \"objc_part9_dispatch_metadata_and_interface_preservation\": "
       << part9_dispatch_metadata_interface_preservation_json << ",\n"
       << "  \""
@@ -14567,6 +14766,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
               runtime_aware_import_module_frontend_closure),
           imported_runtime_module_surfaces);
+  const auto part10_module_interface_replay_preservation_summary =
+      BuildPart10ModuleInterfaceReplayPreservationSummary(
+          part10_expansion_lowering_contract,
+          part10_expansion_lowering_replay_key,
+          part10_synthesized_artifact_emission_contract,
+          part10_synthesized_artifact_emission_replay_key,
+          part10_property_behavior_artifact_bundles,
+          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+              runtime_aware_import_module_frontend_closure),
+          imported_runtime_module_surfaces);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -18100,8 +18309,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    part10_expansion_lowering_contract,
                    part10_synthesized_artifact_emission_contract,
                    part10_synthesized_artifact_emission_replay_key)
-            << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
-            << BuildPart9DispatchIntentSemanticModelSummaryJson(
+            << ",\"objc_part10_module_interface_and_replay_preservation\":"
+            << BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
+                   part10_module_interface_replay_preservation_summary)
+           << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
+           << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
             << ",\"objc_part9_override_finality_and_sealing_legality\":"
             << BuildPart9DispatchIntentLegalitySummaryJson(
@@ -19516,9 +19728,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    part10_expansion_lowering_contract,
                    part10_synthesized_artifact_emission_contract,
                    part10_synthesized_artifact_emission_replay_key)
-            << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
-            << BuildPart9DispatchIntentSemanticModelSummaryJson(
-                   part9_dispatch_intent_semantic_model_summary)
+           << ",\"objc_part10_module_interface_and_replay_preservation\":"
+           << BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
+                  part10_module_interface_replay_preservation_summary)
+           << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
+           << BuildPart9DispatchIntentSemanticModelSummaryJson(
+                  part9_dispatch_intent_semantic_model_summary)
             << ",\"objc_part9_override_finality_and_sealing_legality\":"
             << BuildPart9DispatchIntentLegalitySummaryJson(
                    part9_dispatch_intent_legality_summary)
@@ -20194,6 +20409,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     part7_actor_lowering_metadata_contract,
                     part7_actor_lowering_metadata_replay_key,
                     part7_actor_isolation_sendability_lowering_replay_key)),
+            BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
+                part10_module_interface_replay_preservation_summary),
             BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
                 part9_dispatch_metadata_interface_preservation_summary),
             serialized_runtime_metadata_artifact_reuse,
@@ -20614,6 +20831,54 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part10_macro_artifact_bundles;
   ir_frontend_metadata.part10_property_behavior_artifact_bundles_lexicographic =
       part10_property_behavior_artifact_bundles;
+  ir_frontend_metadata.lowering_part10_module_interface_replay_preservation_key =
+      part10_module_interface_replay_preservation_summary.replay_key;
+  ir_frontend_metadata.part10_module_replay_local_derive_method_count =
+      part10_module_interface_replay_preservation_summary
+          .local_derive_method_count;
+  ir_frontend_metadata.part10_module_replay_local_macro_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .local_macro_artifact_count;
+  ir_frontend_metadata
+      .part10_module_replay_local_interface_property_behavior_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .local_interface_property_behavior_artifact_count;
+  ir_frontend_metadata
+      .part10_module_replay_local_implementation_property_behavior_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .local_implementation_property_behavior_artifact_count;
+  ir_frontend_metadata.part10_module_replay_local_runtime_method_list_count =
+      part10_module_interface_replay_preservation_summary
+          .local_runtime_method_list_count;
+  ir_frontend_metadata.part10_module_replay_imported_module_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_module_count;
+  ir_frontend_metadata.part10_module_replay_imported_derive_method_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_derive_method_count;
+  ir_frontend_metadata.part10_module_replay_imported_macro_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_macro_artifact_count;
+  ir_frontend_metadata
+      .part10_module_replay_imported_interface_property_behavior_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_interface_property_behavior_artifact_count;
+  ir_frontend_metadata
+      .part10_module_replay_imported_implementation_property_behavior_artifact_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_implementation_property_behavior_artifact_count;
+  ir_frontend_metadata.part10_module_replay_imported_runtime_method_list_count =
+      part10_module_interface_replay_preservation_summary
+          .imported_runtime_method_list_count;
+  ir_frontend_metadata.part10_module_replay_runtime_import_artifact_ready =
+      part10_module_interface_replay_preservation_summary
+          .runtime_import_artifact_ready;
+  ir_frontend_metadata
+      .part10_module_replay_separate_compilation_preservation_ready =
+      part10_module_interface_replay_preservation_summary
+          .separate_compilation_preservation_ready;
+  ir_frontend_metadata.deterministic_part10_module_interface_replay_handoff =
+      part10_module_interface_replay_preservation_summary.deterministic;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
       part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =

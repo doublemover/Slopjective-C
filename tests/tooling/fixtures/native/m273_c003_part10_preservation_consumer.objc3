@@ -1,0 +1,5 @@
+module Part10PreservationConsumer;
+
+fn main() -> i32 {
+  return 0;
+}
