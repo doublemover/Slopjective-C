@@ -902,6 +902,12 @@ class Objc3IREmitter {
       // helper cluster rather than a new runtime subsystem.
       out << "; part8_system_helper_runtime_contract = "
           << Objc3Part8SystemHelperRuntimeContractSummary() << "\n";
+      // M271-D002 live runtime-integration anchor: publish the executable Part
+      // 8 runtime boundary so linked probes can prove cleanup/resource and
+      // retainable-family helper traffic through the emitted function body
+      // rather than stopping at the frozen contract summary.
+      out << "; part8_live_cleanup_retainable_runtime_integration = "
+          << Objc3Part8LiveCleanupRetainableIntegrationSummary() << "\n";
     }
     if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
@@ -3460,6 +3466,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
     out << "!objc3.objc_part8_system_helper_runtime_contract = !{!100}\n";
+    out << "!objc3.objc_part8_live_cleanup_retainable_runtime_integration = !{!101}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -6381,6 +6388,22 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3Part8SystemHelperRuntimeContractId)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3Part8SystemExtensionLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
+        << "\", !\"objc3_runtime_copy_memory_management_state_for_testing\", !\"objc3_runtime_copy_arc_debug_state_for_testing\"}\n\n";
+    out << "!101 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3Part8LiveCleanupRetainableIntegrationContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part8SystemHelperRuntimeContractId)
         << "\", !\""
         << EscapeCStringLiteral(
                kObjc3Part8BorrowedRetainableAbiCompletionContractId)

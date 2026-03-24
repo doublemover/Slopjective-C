@@ -948,6 +948,18 @@ M271-D001 system-helper/runtime-contract note:
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later lane-D work
 
+M271-D002 live cleanup/runtime integration note:
+- the supported Part 8 fixture path now links and executes through the emitted
+  cleanup/resource function body and the same private ARC/autorelease helper
+  cluster frozen in `M271-D001`
+- linked runtime probes now observe retain/release/autorelease helper traffic
+  together with direct `CloseFd` / `ReleaseTemp` cleanup execution on the same
+  runnable path
+- the executable proof remains on the existing runtime archive plus emitted
+  module object path rather than a separate resource-runtime package
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later lane-D work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

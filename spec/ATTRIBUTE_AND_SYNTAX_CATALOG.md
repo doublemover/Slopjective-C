@@ -370,6 +370,17 @@ Current implementation status (`M271-D001`):
   public runtime header
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later `M271` lane-D work
+
+Current implementation status (`M271-D002`):
+- the supported Part 8 fixture path now links and executes through the emitted
+  cleanup/resource body and the same private ARC/autorelease helper cluster
+- linked runtime probes now call the emitted `helperSurface` function, route
+  `CFRetain` / `CFRelease` / `CFAutorelease` through the private helper
+  entrypoints, and observe `CloseFd` / `ReleaseTemp` cleanup execution directly
+- the executable proof stays on the existing packaged runtime archive and
+  emitted module object path
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later `M271` lane-D work
 ```
 
 This attribute may be applied to:

@@ -4091,3 +4091,18 @@ Current implementation status (`M271-D001`):
   inventing a second Part 8 runtime subsystem
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later `M271` lane-D work
+
+## M271 live cleanup helpers and retainable-family integration
+
+Current implementation status (`M271-D002`):
+
+- the supported Part 8 fixture path now links and executes through the emitted
+  cleanup/resource function body plus the existing private ARC/autorelease
+  helper cluster
+- linked runtime probes call the emitted `helperSurface` function, route
+  `CFRetain` / `CFRelease` / `CFAutorelease` through the private runtime
+  helpers, and observe `CloseFd` / `ReleaseTemp` cleanup execution directly
+- the live proof stays on the same packaged runtime archive and emitted module
+  object path; no separate resource-runtime package is introduced
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later `M271` lane-D work

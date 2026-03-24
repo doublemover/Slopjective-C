@@ -1565,6 +1565,19 @@ inline constexpr const char *kObjc3Part8SystemHelperRuntimePackagingModel =
     "same-packaged-runtime-archive-no-public-runtime-header-widening-and-no-new-part8-import-surface";
 inline constexpr const char *kObjc3Part8SystemHelperRuntimeFailClosedModel =
     "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
+// M271-D002 live runtime-integration anchor: the supported Part 8 cleanup /
+// retainable-family slice now proves actual linked execution through the same
+// private helper cluster frozen in D001 plus emitted scope-exit cleanup calls.
+inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationContractId =
+    "objc3c-part8-live-cleanup-retainable-runtime-integration/m271-d002-v1";
+inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationSourceModel =
+    "supported-part8-cleanup-resource-and-retainable-family-sites-now-link-and-execute-through-emitted-cleanup-calls-and-the-private-helper-cluster";
+inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationExecutionModel =
+    "linked-native-probes-execute-lifo-cleanup-resource-invalidation-and-retainable-family-helper-traffic-on-the-supported-slice";
+inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationPackagingModel =
+    "linked-module-object-plus-existing-runtime-support-archive-no-new-runtime-package-surface";
+inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationFailClosedModel =
+    "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
@@ -2436,6 +2449,7 @@ std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
 std::string Objc3Part8SystemHelperRuntimeContractSummary();
+std::string Objc3Part8LiveCleanupRetainableIntegrationSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(
     const std::string &object_format, const std::string &logical_section);
 std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(

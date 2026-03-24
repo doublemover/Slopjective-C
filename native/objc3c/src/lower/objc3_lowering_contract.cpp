@@ -1550,6 +1550,40 @@ std::string Objc3Part8SystemHelperRuntimeContractSummary() {
   return out.str();
 }
 
+std::string Objc3Part8LiveCleanupRetainableIntegrationSummary() {
+  std::ostringstream out;
+  // M271-D002 live runtime-integration anchor: the supported Part 8 cleanup /
+  // retainable-family slice now proves linked execution through emitted
+  // scope-exit cleanup calls and the private ARC/autorelease helper cluster
+  // frozen in D001. This remains a narrow executable slice, not a broader
+  // borrowed-lifetime or escaping-ownership runtime claim.
+  out << "contract=" << kObjc3Part8LiveCleanupRetainableIntegrationContractId
+      << ";helper_contract=" << kObjc3Part8SystemHelperRuntimeContractId
+      << ";abi_completion_contract="
+      << kObjc3Part8BorrowedRetainableAbiCompletionContractId
+      << ";source_model="
+      << kObjc3Part8LiveCleanupRetainableIntegrationSourceModel
+      << ";execution_model="
+      << kObjc3Part8LiveCleanupRetainableIntegrationExecutionModel
+      << ";packaging_model="
+      << kObjc3Part8LiveCleanupRetainableIntegrationPackagingModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";autoreleasepool_push_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";autoreleasepool_pop_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";memory_snapshot_symbol="
+      << "objc3_runtime_copy_memory_management_state_for_testing"
+      << ";arc_debug_snapshot_symbol="
+      << "objc3_runtime_copy_arc_debug_state_for_testing"
+      << ";fail_closed_model="
+      << kObjc3Part8LiveCleanupRetainableIntegrationFailClosedModel
+      << ";next_issue=M271-D003";
+  return out.str();
+}
+
 std::string Objc3Part7ContinuationRuntimeHelperSummary() {
   std::ostringstream out;
   // M268-D001 continuation/runtime-helper anchor: lane-D freezes the first

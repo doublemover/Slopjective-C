@@ -253,6 +253,12 @@ M271-D001 implementation note:
 - cleanup execution and resource invalidation still reuse the existing helper
   slice and packaged runtime archive rather than a new Part 8 runtime subsystem
 
+M271-D002 implementation note:
+- the supported Part 8 fixture path now links and executes through the emitted
+  cleanup/resource body and the same private ARC/autorelease helper cluster
+- live probes now observe both direct cleanup execution and retainable-family
+  helper traffic on the same runnable path
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

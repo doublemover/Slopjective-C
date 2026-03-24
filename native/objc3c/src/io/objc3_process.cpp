@@ -35,6 +35,9 @@ extern char **environ;
 // layer does not introduce a separate cleanup/resource runtime package or a
 // dedicated borrowed-pointer import surface for this freeze; there is still no
 // dedicated borrowed-pointer import surface here.
+// M271-D002 live cleanup/runtime integration anchor: the linked Part 8 runtime
+// probe also packages against that same runtime archive path plus the emitted
+// module object; there is still no separate resource-runtime package boundary.
 
 enum class ProducedObjectFormat : std::uint8_t {
   kUnknown = 0,

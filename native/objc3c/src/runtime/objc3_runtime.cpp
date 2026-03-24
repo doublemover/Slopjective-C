@@ -4754,6 +4754,9 @@ extern "C" int objc3_runtime_resume_async_continuation_i32(
 // M271-D001 system-helper/runtime-contract anchor: Part 8 runtime/helper proof
 // intentionally reuses the existing retain/release/autorelease helper cluster
 // instead of claiming a separate resource or borrowed-pointer runtime ABI.
+// M271-D002 live cleanup/runtime integration anchor: linked Part 8 probes now
+// also execute through this same helper cluster while emitted cleanup/resource
+// calls remain ordinary lowered function calls in the compiled module body.
 extern "C" int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag) {
   ++g_runtime_task_spawn_call_count;
   g_runtime_task_last_spawn_kind = task_kind;
@@ -5014,6 +5017,9 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
 // M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup/resource
 // proof still routes through these same private autoreleasepool frames and
 // memory-management snapshots, with no new public cleanup or invalidation ABI.
+// M271-D002 live cleanup/runtime integration anchor: the supported Part 8
+// fixture path now proves autoreleasepool traffic and cleanup-driven resource
+// invalidation through this same private pool-frame implementation.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
 }

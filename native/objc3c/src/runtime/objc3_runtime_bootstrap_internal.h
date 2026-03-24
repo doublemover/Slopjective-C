@@ -512,6 +512,10 @@ void objc3_runtime_clear_current_property_context_for_testing(void);
 // freeze this same private ARC/autorelease helper cluster plus the paired
 // memory-management and ARC-debug snapshots. Lane-D does not add a dedicated
 // borrowed-pointer runtime helper or widen the public runtime header.
+// M271-D002 live cleanup/runtime integration anchor: the supported Part 8
+// fixture path now links and executes through this same private helper slice,
+// with emitted cleanup calls and retainable-family stubs proving live helper
+// traffic rather than a contract-only boundary.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
 // M267-D001 error-runtime/bridge-helper anchor: the supported runnable Part 6

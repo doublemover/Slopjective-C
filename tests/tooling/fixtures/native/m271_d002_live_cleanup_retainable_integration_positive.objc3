@@ -1,0 +1,22 @@
+module m271d002probe;
+
+extern fn CloseFd(value: i32) -> void;
+extern fn ReleaseTemp(value: i32) -> void;
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), cf_returns_not_retained));
+
+fn helperSurface(owner: id, bytes: borrowed id *) -> id {
+  @cleanup(ReleaseTemp) let temp = 1;
+  @resource(CloseFd, invalid: -1) let fd = 4;
+  @autoreleasepool {
+    let retained = CFRetain(owner);
+    let autoreleased = CFAutorelease(retained);
+    CFRelease(autoreleased);
+    let borrowedAgain = bytes;
+  }
+  return owner;
+}
