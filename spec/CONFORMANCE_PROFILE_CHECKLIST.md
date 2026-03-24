@@ -267,6 +267,15 @@ M271-E001 strict system conformance gate note:
   resource-runtime claim
 - the runnable matrix closeout remains `M271-E002`
 
+M271-E002 runnable system-extension closeout note:
+- the milestone closeout now replays the published `M271-A003` through
+  `M271-E001` proof chain and freezes one explicit runnable matrix for the
+  already-landed Part 8 slice
+- supported closeout rows cover retainable-family source completion,
+  capture-list legality, borrowed/retainable ABI completion, live
+  cleanup/runtime integration, and the lane-E conformance gate
+- the next issue is `M272-A001`
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

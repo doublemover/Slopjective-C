@@ -65,6 +65,9 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // runnable Part 8 cleanup/resource/retainable slice by consuming this same
 // published driver artifact surface while the broader front-door publication
 // path remains fail-closed for deferred borrowed-lifetime runtime claims.
+// M271-E002 runnable system-extension closeout matrix anchor: milestone
+// closeout rows keep consuming this same driver artifact surface instead of
+// inventing a matrix-only publication path for the current Part 8 slice.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

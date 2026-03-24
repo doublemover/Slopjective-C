@@ -4192,6 +4192,19 @@ Current implementation status (`M271-E001`):
 - driver, manifest, and frontend publication anchors stay explicit so the
   current fail-closed front-door boundary remains visible to operators
 - the runnable matrix closeout remains `M271-E002`
+
+## M271 runnable system-extension matrix closeout (M271-E002)
+
+- `M271-E002` closes the milestone by replaying the published `M271-A003`
+  through `M271-E001` proof chain and freezing one explicit runnable matrix for
+  the already-landed Part 8 slice
+- supported closeout rows cover:
+  - retainable C-family declaration source completion
+  - capture-list and retainable-family legality completion
+  - borrowed-pointer and retainable-family ABI completion
+  - live cleanup helpers and retainable-family integration
+  - lane-E strict system conformance gate
+- the next issue is `M272-A001`
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

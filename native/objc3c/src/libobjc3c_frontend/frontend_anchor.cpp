@@ -70,6 +70,9 @@ struct objc3c_frontend_context {
 // same surfaced publication paths while using the D002 live cleanup/runtime proof
 // as the truthful runnable Part 8 capability anchor. The D002 live cleanup/runtime
 // proof remains the canonical linked helperSurface evidence.
+// M271-E002 runnable system-extension closeout matrix anchor: milestone
+// closeout keeps consuming those same surfaced publication paths instead of
+// inventing a second frontend matrix-only reporting path for Part 8.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

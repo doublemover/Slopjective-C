@@ -11289,3 +11289,16 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - driver, manifest, and frontend publication anchors stay explicit so the
   current fail-closed Part 8 front-door boundary remains visible to operators
 - the next issue is `M271-E002`
+
+## M271 Part 8 Runnable System-Extension Matrix Closeout (E002)
+
+- `M271-E002` closes the milestone by replaying the published `M271-A003`
+  through `M271-E001` proof chain and freezing one explicit runnable matrix for
+  the already-landed Part 8 slice
+- supported closeout rows cover:
+  - retainable C-family declaration source completion
+  - capture-list and retainable-family legality completion
+  - borrowed-pointer and retainable-family ABI completion
+  - live cleanup helpers and retainable-family integration
+  - lane-E strict system conformance gate
+- the next issue is `M272-A001`

@@ -389,6 +389,15 @@ Current implementation status (`M271-E001`):
   runtime probe rather than a widened front-door borrowed-pointer or
   resource-runtime claim
 - the runnable matrix closeout remains `M271-E002`
+
+Current implementation status (`M271-E002`):
+- the milestone closeout now replays the published `M271-A003` through
+  `M271-E001` proof chain and freezes one explicit runnable matrix for the
+  already-landed Part 8 slice
+- supported closeout rows cover retainable-family source completion,
+  capture-list legality, borrowed/retainable ABI completion, live
+  cleanup/runtime integration, and the lane-E conformance gate
+- the next issue is `M272-A001`
 ```
 
 This attribute may be applied to:

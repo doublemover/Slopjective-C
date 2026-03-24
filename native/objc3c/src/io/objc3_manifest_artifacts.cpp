@@ -47,6 +47,9 @@ std::filesystem::path BuildManifestArtifactPath(
   // this same manifest sidecar and paired driver artifacts while the broader
   // front-door Part 8 publication path remains intentionally fail-closed for
   // deferred borrowed-lifetime/runtime-enforcement claims.
+  // M271-E002 runnable system-extension closeout matrix anchor: the milestone
+  // closeout keeps consuming this same manifest sidecar instead of inventing a
+  // matrix-only reporting surface for the current Part 8 slice.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 
