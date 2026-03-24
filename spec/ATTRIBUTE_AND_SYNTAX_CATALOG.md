@@ -1427,3 +1427,19 @@ Current implementation status (`M273-B003`):
   - impure / prototype / async / throws macro callables rejected with `O3S324`
   - macro-marked methods rejected with `O3S325`
 - runnable macro execution and runtime package loading still remain deferred to later M273 lanes
+
+## M273 property behavior legality and interaction completion (B004)
+
+Current implementation status (`M273-B004`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion`
+- supported property behaviors are currently:
+  - `Observed`
+  - `Projected`
+- live fail-closed semantic behavior in this tranche includes:
+  - unsupported property behavior names are rejected with `O3S326`
+  - non-object property behavior usage is rejected with `O3S327`
+  - `Observed` protocol properties are rejected with `O3S328`
+  - `Observed` readonly or setter-invisible properties are rejected with `O3S329`
+  - `Projected` writable or setter-visible properties are rejected with `O3S330`
+- runnable property-behavior hooks and runtime materialization still remain deferred to later M273 lanes

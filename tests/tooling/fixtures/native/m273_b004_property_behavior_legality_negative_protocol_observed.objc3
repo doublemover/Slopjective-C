@@ -1,0 +1,5 @@
+module ProtocolObservedBehavior;
+
+@protocol BrokenProjection
+@property (strong, behavior=Observed) id value;
+@end

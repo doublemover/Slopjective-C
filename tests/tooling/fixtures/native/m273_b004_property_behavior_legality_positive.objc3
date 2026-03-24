@@ -1,0 +1,15 @@
+module PropertyBehaviorLegality;
+
+@protocol ProjectionProtocol
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end
+
+@interface Sample
+@property (strong, behavior=Observed) id value;
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end
+
+@implementation Sample
+@property (strong, behavior=Observed) id value;
+@property (readonly, strong, behavior=Projected, getter=currentValue) id currentValue;
+@end

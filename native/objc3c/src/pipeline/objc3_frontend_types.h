@@ -5276,6 +5276,8 @@ struct Objc3FrontendPipelineResult {
       part10_derive_expansion_inventory_summary;
   Objc3Part10MacroSafetySandboxDeterminismSummary
       part10_macro_safety_sandbox_determinism_summary;
+  Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
+      part10_property_behavior_legality_compatibility_summary;
     Objc3Part9DispatchIntentSemanticModelSummary
         part9_dispatch_intent_semantic_model_summary;
     Objc3Part9DispatchIntentLegalitySummary

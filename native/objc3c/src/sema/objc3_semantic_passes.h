@@ -92,6 +92,11 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
     const Objc3Program &program,
     const Objc3Part10DeriveExpansionInventorySummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
+BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
+    const Objc3Program &program,
+    const Objc3Part10MacroSafetySandboxDeterminismSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
   Objc3Part9DispatchIntentLegalitySummary
   BuildPart9DispatchIntentLegalitySummary(
       const Objc3Program &program,

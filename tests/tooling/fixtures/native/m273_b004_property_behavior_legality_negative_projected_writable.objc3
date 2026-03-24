@@ -1,0 +1,9 @@
+module ProjectedWritableBehavior;
+
+@interface Broken
+@property (strong, behavior=Projected) id value;
+@end
+
+@implementation Broken
+@property (strong, behavior=Projected) id value;
+@end

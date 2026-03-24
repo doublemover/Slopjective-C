@@ -3953,6 +3953,16 @@ static std::string NormalizePart10RawMacroToken(std::string token) {
   return token;
 }
 
+static std::string NormalizePart10RawPropertyBehaviorToken(std::string token) {
+  token = TrimAsciiWhitespace(token);
+  if (token.size() >= 2u &&
+      ((token.front() == '"' && token.back() == '"') ||
+       (token.front() == '\'' && token.back() == '\''))) {
+    token = token.substr(1, token.size() - 2u);
+  }
+  return token;
+}
+
 static std::string BuildPart10LowercaseDeriveToken(std::string token) {
   token = NormalizePart10RawDeriveToken(std::move(token));
   std::transform(token.begin(), token.end(), token.begin(),
@@ -3973,6 +3983,28 @@ static std::string NormalizePart10SupportedDeriveName(
   }
   if (lowered == "debugdescription") {
     return "DebugDescription";
+  }
+  return "";
+}
+
+static std::string BuildPart10LowercasePropertyBehaviorToken(std::string token) {
+  token = NormalizePart10RawPropertyBehaviorToken(std::move(token));
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char c) {
+                   return static_cast<char>(std::tolower(c));
+                 });
+  return token;
+}
+
+static std::string NormalizePart10SupportedPropertyBehaviorName(
+    const std::string &behavior_name) {
+  const std::string lowered =
+      BuildPart10LowercasePropertyBehaviorToken(behavior_name);
+  if (lowered == "observed") {
+    return "Observed";
+  }
+  if (lowered == "projected") {
+    return "Projected";
   }
   return "";
 }
@@ -5434,6 +5466,60 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         property.column,
         "type mismatch: readonly property '" + property.name + "' in " + owner_kind + " '" + owner_name +
             "' must not declare a setter modifier");
+  }
+  if (property.property_behavior_declared) {
+    const std::string canonical_behavior =
+        NormalizePart10SupportedPropertyBehaviorName(
+            property.property_behavior_name);
+    const auto emit_property_behavior_violation =
+        [&](std::string_view code, const std::string &message) {
+          diagnostics.push_back(MakeDiag(property.line, property.column,
+                                         std::string(code), message));
+          ++info.property_contract_violations;
+        };
+    if (canonical_behavior.empty()) {
+      emit_property_behavior_violation(
+          "O3S326",
+          "unsupported property behavior '" +
+              NormalizePart10RawPropertyBehaviorToken(
+                  property.property_behavior_name) +
+              "' for property '" + property.name + "' in " + owner_kind +
+              " '" + owner_name + "'");
+    } else {
+      if (!property_is_object_like(info)) {
+        emit_property_behavior_violation(
+            "O3S327",
+            "property behavior '" + canonical_behavior +
+                "' requires an Objective-C object property for property '" +
+                property.name + "' in " + owner_kind + " '" + owner_name +
+                "'");
+      }
+      if (canonical_behavior == "Observed") {
+        if (owner_kind == "protocol") {
+          emit_property_behavior_violation(
+              "O3S328",
+              "observed property behavior requires a concrete interface or implementation property for property '" +
+                  property.name + "' in " + owner_kind + " '" + owner_name +
+                  "'");
+        }
+        if (info.is_readonly || !info.effective_setter_available) {
+          emit_property_behavior_violation(
+              "O3S329",
+              "observed property behavior requires writable setter-visible storage for property '" +
+                  property.name + "' in " + owner_kind + " '" + owner_name +
+                  "'");
+        }
+      } else if (canonical_behavior == "Projected") {
+        if (!info.is_readonly || info.has_setter ||
+            info.effective_setter_available) {
+          emit_property_behavior_violation(
+              "O3S330",
+              "projected property behavior requires a readonly getter-only property for property '" +
+                  property.name + "' in " + owner_kind + " '" + owner_name +
+                  "'");
+        }
+      }
+    }
   }
 
   info.has_invalid_attribute_contract =
@@ -11142,6 +11228,141 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
       << ";invalid-provenance=" << summary.invalid_provenance_sites
       << ";nondeterministic=" << summary.nondeterministic_callable_sites
       << ";unsupported-topology=" << summary.unsupported_callable_topology_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
+BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
+    const Objc3Program &program,
+    const Objc3Part10MacroSafetySandboxDeterminismSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part10PropertyBehaviorLegalityCompatibilitySummary summary;
+
+  const auto count_diagnostic = [&diagnostics](std::string_view code,
+                                               std::string_view needle) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code, needle](const std::string &entry) {
+          return entry.find(code) != std::string::npos &&
+                 entry.find(needle) != std::string::npos;
+        }));
+  };
+  const auto property_is_object_like =
+      [](const Objc3PropertyDecl &property_decl) {
+        return property_decl.id_spelling || property_decl.instancetype_spelling ||
+               property_decl.object_pointer_type_spelling ||
+               property_decl.type == ValueType::ObjCId ||
+               property_decl.type == ValueType::ObjCClass ||
+               property_decl.type == ValueType::ObjCInstancetype ||
+               property_decl.type == ValueType::ObjCObjectPtr;
+      };
+  const auto accumulate_property =
+      [&](const Objc3PropertyDecl &property_decl, std::string_view owner_kind) {
+        if (!property_decl.property_behavior_declared) {
+          return;
+        }
+        ++summary.property_behavior_sites;
+        const std::string canonical_behavior =
+            NormalizePart10SupportedPropertyBehaviorName(
+                property_decl.property_behavior_name);
+        if (canonical_behavior.empty()) {
+          ++summary.unsupported_behavior_sites;
+          return;
+        }
+        ++summary.supported_behavior_sites;
+        if (canonical_behavior == "Observed") {
+          ++summary.observed_behavior_sites;
+          if (owner_kind == "protocol") {
+            ++summary.observed_on_protocol_sites;
+          }
+          if (property_decl.is_readonly ||
+              !property_decl.effective_setter_available) {
+            ++summary.observed_readonly_conflict_sites;
+          }
+        } else if (canonical_behavior == "Projected") {
+          ++summary.projected_behavior_sites;
+          if (!property_decl.is_readonly || property_decl.has_setter ||
+              property_decl.effective_setter_available) {
+            ++summary.projected_writable_conflict_sites;
+          }
+        }
+        if (!property_is_object_like(property_decl)) {
+          ++summary.non_object_behavior_sites;
+        }
+      };
+
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &property_decl : interface_decl.properties) {
+      accumulate_property(property_decl, interface_decl.has_category
+                                             ? "category-interface"
+                                             : "interface");
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &property_decl : protocol_decl.properties) {
+      accumulate_property(property_decl, "protocol");
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &property_decl : implementation_decl.properties) {
+      accumulate_property(property_decl, "implementation");
+    }
+  }
+
+  summary.semantic_dependency_required =
+      IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
+          dependency_summary);
+  summary.supported_behavior_inventory_landed =
+      summary.supported_behavior_sites ==
+          summary.observed_behavior_sites + summary.projected_behavior_sites &&
+      summary.supported_behavior_sites + summary.unsupported_behavior_sites ==
+          summary.property_behavior_sites;
+  summary.unsupported_behavior_fail_closed =
+      summary.unsupported_behavior_sites ==
+      count_diagnostic("O3S326", "unsupported property behavior");
+  summary.owner_topology_fail_closed =
+      summary.observed_on_protocol_sites ==
+      count_diagnostic("O3S328",
+                       "observed property behavior requires a concrete interface or implementation property");
+  summary.interaction_legality_fail_closed =
+      summary.observed_readonly_conflict_sites ==
+          count_diagnostic("O3S329",
+                           "observed property behavior requires writable setter-visible storage") &&
+      summary.projected_writable_conflict_sites ==
+          count_diagnostic("O3S330",
+                           "projected property behavior requires a readonly getter-only property");
+  summary.storage_legality_fail_closed =
+      summary.non_object_behavior_sites ==
+      count_diagnostic("O3S327",
+                       "requires an Objective-C object property");
+  summary.runtime_materialization_deferred = true;
+  summary.deterministic =
+      summary.semantic_dependency_required &&
+      summary.supported_behavior_inventory_landed &&
+      summary.unsupported_behavior_fail_closed &&
+      summary.owner_topology_fail_closed &&
+      summary.interaction_legality_fail_closed &&
+      summary.storage_legality_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "part10 property behavior legality and interaction semantics must remain deterministic and fail closed";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << dependency_summary.contract_id
+      << ";behavior-sites=" << summary.property_behavior_sites << ":"
+      << summary.supported_behavior_sites << ":"
+      << summary.unsupported_behavior_sites
+      << ";supported-behaviors=" << summary.observed_behavior_sites << ":"
+      << summary.projected_behavior_sites
+      << ";compatibility-conflicts=" << summary.observed_on_protocol_sites
+      << ":" << summary.observed_readonly_conflict_sites << ":"
+      << summary.projected_writable_conflict_sites << ":"
+      << summary.non_object_behavior_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;

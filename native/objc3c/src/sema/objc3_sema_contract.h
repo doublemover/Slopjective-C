@@ -1251,6 +1251,73 @@ inline bool IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part10PropertyBehaviorLegalityCompatibilityDependencyContractId =
+        "objc3c-part10-macro-safety-sandbox-determinism-semantics/m273-b003-v1";
+inline constexpr const char
+    *kObjc3Part10PropertyBehaviorLegalityCompatibilityContractId =
+        "objc3c-part10-property-behavior-legality-interaction-completion/m273-b004-v1";
+inline constexpr const char
+    *kObjc3Part10PropertyBehaviorLegalityCompatibilitySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion";
+inline constexpr const char
+    *kObjc3Part10PropertyBehaviorLegalityCompatibilityRule =
+        "supported-property-behavior-names-and-owner-interaction-legality-now-fail-closed-in-sema-while-runtime-backed-behavior-materialization-remains-deferred";
+inline constexpr const char
+    *kObjc3Part10PropertyBehaviorLegalityCompatibilityDeferredRule =
+        "runnable-property-behavior-hooks-observation-materialization-and-projection-runtime-support-remain-deferred-to-later-m273-lanes";
+
+struct Objc3Part10PropertyBehaviorLegalityCompatibilitySummary {
+  std::string contract_id =
+      kObjc3Part10PropertyBehaviorLegalityCompatibilityContractId;
+  std::string semantic_dependency_contract_id =
+      kObjc3Part10PropertyBehaviorLegalityCompatibilityDependencyContractId;
+  std::string surface_path =
+      kObjc3Part10PropertyBehaviorLegalityCompatibilitySurfacePath;
+  std::string semantic_model =
+      kObjc3Part10PropertyBehaviorLegalityCompatibilityRule;
+  std::string deferred_model =
+      kObjc3Part10PropertyBehaviorLegalityCompatibilityDeferredRule;
+  std::size_t property_behavior_sites = 0;
+  std::size_t supported_behavior_sites = 0;
+  std::size_t unsupported_behavior_sites = 0;
+  std::size_t observed_behavior_sites = 0;
+  std::size_t projected_behavior_sites = 0;
+  std::size_t observed_on_protocol_sites = 0;
+  std::size_t observed_readonly_conflict_sites = 0;
+  std::size_t projected_writable_conflict_sites = 0;
+  std::size_t non_object_behavior_sites = 0;
+  bool semantic_dependency_required = false;
+  bool supported_behavior_inventory_landed = false;
+  bool unsupported_behavior_fail_closed = false;
+  bool owner_topology_fail_closed = false;
+  bool interaction_legality_fail_closed = false;
+  bool storage_legality_fail_closed = false;
+  bool runtime_materialization_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part10PropertyBehaviorLegalityCompatibilitySummary(
+    const Objc3Part10PropertyBehaviorLegalityCompatibilitySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.semantic_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.semantic_dependency_required &&
+         summary.supported_behavior_inventory_landed &&
+         summary.unsupported_behavior_fail_closed &&
+         summary.owner_topology_fail_closed &&
+         summary.interaction_legality_fail_closed &&
+         summary.storage_legality_fail_closed &&
+         summary.runtime_materialization_deferred &&
+         summary.deterministic &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

@@ -1,0 +1,9 @@
+module UnsupportedPropertyBehavior;
+
+@interface Broken
+@property (strong, behavior=Cached) id value;
+@end
+
+@implementation Broken
+@property (strong, behavior=Cached) id value;
+@end

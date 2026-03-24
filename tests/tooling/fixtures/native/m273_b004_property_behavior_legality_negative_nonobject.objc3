@@ -1,0 +1,9 @@
+module NonObjectBehavior;
+
+@interface Broken
+@property (assign, behavior=Observed) i32 count;
+@end
+
+@implementation Broken
+@property (assign, behavior=Observed) i32 count;
+@end

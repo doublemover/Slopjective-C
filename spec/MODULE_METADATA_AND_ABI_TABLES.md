@@ -8754,3 +8754,16 @@ runnable smoke matrix.
   - Part 10 now publishes deterministic macro admission semantics over marker completeness, sandbox namespace gating, provenance normalization, and callable determinism
   - macro-marked methods fail closed before lowering
   - runnable macro execution, expanded bodies, and runtime package loading are still not claimed yet
+
+## M273 property-behavior legality/interactions note
+
+`M273-B004` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-property-behavior-legality-interaction-completion/m273-b004-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion`
+- truthful boundary
+  - Part 10 now publishes deterministic property-behavior legality over the supported `Observed` / `Projected` semantic slice
+  - unsupported names and incompatible owner/storage combinations fail closed before lowering
+  - runnable property-behavior hook materialization and ABI tables are still not claimed yet

@@ -4428,6 +4428,18 @@ Current implementation status (`M271-E001`):
   - `O3S324` non-pure / prototype / async / throws macro callable
   - `O3S325` macro-marked method topology rejection
 - runnable macro execution and runtime package loading remain deferred to later M273 lanes
+
+## M273 property behavior legality and interaction completion
+
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion`
+- supported property behaviors in sema are currently `Observed` and `Projected`
+- live fail-closed diagnostics in this slice are:
+  - `O3S326` unsupported property behavior name
+  - `O3S327` non-object property behavior usage
+  - `O3S328` `Observed` behavior on protocol properties
+  - `O3S329` `Observed` behavior on readonly or setter-invisible properties
+  - `O3S330` `Projected` behavior on writable or setter-visible properties
+- runnable property-behavior hooks and runtime materialization remain deferred to later M273 lanes
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):
