@@ -23,6 +23,8 @@ struct Objc3IRRuntimeMetadataClassMetaclassBundle {
   std::string instance_method_owner_identity;
   std::string class_method_owner_identity;
   bool has_super = false;
+  bool objc_final_declared = false;
+  bool objc_sealed_declared = false;
   std::size_t instance_method_count = 0;
   std::size_t class_method_count = 0;
 };
@@ -55,6 +57,8 @@ struct Objc3IRRuntimeMetadataMethodEntry {
   std::string return_type_name;
   std::size_t parameter_count = 0;
   bool has_body = false;
+  bool effective_direct_dispatch = false;
+  bool objc_final_declared = false;
 };
 
 struct Objc3IRRuntimeMetadataMethodListBundle {

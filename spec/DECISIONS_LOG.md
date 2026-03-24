@@ -273,6 +273,37 @@ later-stage Objective-C 3 feature families.
 **Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
 
+## D-030: Part 9 direct/final/sealed lowering executes direct sites only on the concrete supported slice {#decisions-d-030}
+
+**Decision:** `M272-C002` shall implement one narrow live lowering step:
+
+- effective `objc_direct` sends on concrete `self` receivers, and
+- effective `objc_direct` sends on known class receivers
+
+shall lower as exact LLVM direct calls to the already-bound
+`@objc3_method_*` implementation symbols.
+
+This lane shall also preserve dispatch intent in emitted metadata by carrying:
+
+- effective direct-dispatch bits on method-list entries,
+- method-level `objc_final` bits on method-list entries, and
+- container-level `objc_final` / `objc_sealed` bits on class/metaclass
+  descriptor bundles.
+
+This lane shall not claim:
+
+- broad direct dispatch for unknown dynamic receivers,
+- speculative optimizer-driven devirtualization, or
+- any new public runtime ABI.
+
+**Rationale:** the truthful capability here is a concrete lowering win on
+already-known targets, not a generalized dispatch rewrite. The metadata must
+carry the same intent bits so emitted artifacts do not drift from the lowered
+call path.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
 ---
 
 ## D-023: Direct-members defaulting must publish one frontend-owned completion packet before legality widens {#decisions-d-023}

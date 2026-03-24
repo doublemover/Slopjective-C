@@ -324,10 +324,12 @@ inline constexpr const char
 // class-family placeholder byte model with real class descriptor bundles while
 // keeping metaclass payloads inline with their class bundles and deferring real
 // method/property/ivar lists plus selector/string pools to later issues.
+// M272-C002 dispatch-control lowering anchor: class/metaclass payloads now
+// preserve objc_final/objc_sealed container intent as explicit metadata bits.
 inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionContractId =
     "objc3c-runtime-class-metaclass-data-emission/m253-c002-v1";
 inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionPayloadModel =
-    "class-source-record-descriptor-bundles-with-inline-metaclass-records";
+    "class-source-record-descriptor-bundles-with-inline-metaclass-records-and-final-sealed-flags";
 inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionNameModel =
     "shared-class-name-cstring-per-bundle";
 inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionSuperLinkModel =
@@ -355,10 +357,13 @@ inline constexpr const char *kObjc3RuntimeCategoryAttachmentModel =
 // without reopening the C002/C003 descriptor-family shapes. Class refs keep
 // their historical prefix stable while protocol/category descriptor bundles
 // remain shape-stable and gain adjacent emitted member-table payloads.
+// M272-C002 dispatch-control lowering anchor: method-table payloads now carry
+// effective direct-dispatch and objc_final intent bits alongside callable
+// implementation pointers.
 inline constexpr const char *kObjc3RuntimeMemberTableEmissionContractId =
     "objc3c-runtime-member-table-emission/m253-c004-v1";
 inline constexpr const char *kObjc3RuntimeMethodListEmissionPayloadModel =
-    "owner-scoped-method-table-globals-with-inline-entry-records";
+    "owner-scoped-method-table-globals-with-inline-entry-records-and-direct-final-flags";
 inline constexpr const char *kObjc3RuntimeMethodListEmissionGroupingModel =
     "declaration-owner-plus-class-kind-lexicographic";
 inline constexpr const char *kObjc3RuntimePropertyDescriptorEmissionPayloadModel =
@@ -397,7 +402,7 @@ inline constexpr const char
         "class-metaclass-and-category-descriptor-bundles-point-to-owner-scoped-method-list-ref-records";
 inline constexpr const char
     *kObjc3ExecutableObjectArtifactLoweringMethodEntryPayloadModel =
-        "selector-owner-return-arity-implementation-symbol-has-body";
+        "selector-owner-return-arity-implementation-symbol-has-body-direct-flag-final-flag";
 inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
     "parser-source-identities-sema-realization-closure-ir-object-binding";
 inline constexpr const char

@@ -896,6 +896,9 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     std::string implementation_owner_identity;
     std::string super_class_owner_identity;
     std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
+    bool objc_direct_members_declared = false;
+    bool objc_final_declared = false;
+    bool objc_sealed_declared = false;
     std::size_t interface_property_count = 0;
     std::size_t implementation_property_count = 0;
     std::size_t interface_method_count = 0;
@@ -1098,7 +1101,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                                                       const std::string &owner_name,
                                                       const std::string &declaration_owner_identity,
                                                       const std::string &instance_export_owner_identity,
-                                                      const std::string &class_export_owner_identity) {
+                                                      const std::string &class_export_owner_identity,
+                                                      bool direct_members_declared) {
         for (const auto &method : methods) {
           Objc3ExecutableMetadataMethodGraphNode node;
           node.owner_kind = owner_kind;
@@ -1112,6 +1116,10 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
           node.selector = method.selector;
           node.is_class_method = method.is_class_method;
           node.has_body = method.has_body;
+          node.effective_direct_dispatch =
+              method.objc_direct_declared ||
+              (direct_members_declared && !method.objc_dynamic_declared);
+          node.objc_final_declared = method.objc_final_declared;
           node.parameter_count = method.params.size();
           node.return_type_name = RuntimeMetadataTypeName(method.return_type);
           node.line = method.line;
@@ -1159,7 +1167,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                        BuildRuntimeCategoryOwnerIdentity(
                            interface_decl.name, interface_decl.category_name),
                        BuildRuntimeCategoryOwnerIdentity(
-                           interface_decl.name, interface_decl.category_name));
+                           interface_decl.name, interface_decl.category_name),
+                       false);
       continue;
     }
 
@@ -1206,6 +1215,10 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     aggregate.super_class_owner_identity = node.super_class_owner_identity;
     aggregate.adopted_protocol_owner_identities_lexicographic =
         interface_decl.adopted_protocols_lexicographic;
+    aggregate.objc_direct_members_declared =
+        interface_decl.objc_direct_members_declared;
+    aggregate.objc_final_declared = interface_decl.objc_final_declared;
+    aggregate.objc_sealed_declared = interface_decl.objc_sealed_declared;
     aggregate.interface_property_count = node.property_count;
     aggregate.interface_method_count = node.method_count;
     aggregate.interface_class_method_count = node.class_method_count;
@@ -1230,7 +1243,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                        node.class_owner_identity);
     add_method_nodes(interface_decl.methods, "class-interface", interface_decl.name,
                      interface_decl.semantic_link_symbol, node.class_owner_identity,
-                     node.metaclass_owner_identity);
+                     node.metaclass_owner_identity,
+                     interface_decl.objc_direct_members_declared);
   }
 
   for (const auto &implementation_decl : program.implementations) {
@@ -1266,7 +1280,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
           BuildRuntimeCategoryOwnerIdentity(implementation_decl.name,
                                             implementation_decl.category_name),
           BuildRuntimeCategoryOwnerIdentity(implementation_decl.name,
-                                            implementation_decl.category_name));
+                                            implementation_decl.category_name),
+          false);
       continue;
     }
 
@@ -1339,7 +1354,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     add_method_nodes(implementation_decl.methods, "class-implementation",
                      implementation_decl.name,
                      implementation_decl.semantic_link_symbol,
-                     node.class_owner_identity, node.metaclass_owner_identity);
+                     node.class_owner_identity, node.metaclass_owner_identity,
+                     aggregate.objc_direct_members_declared);
   }
 
   for (const auto &protocol_decl : program.protocols) {
@@ -1380,7 +1396,7 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     add_method_nodes(protocol_decl.methods, "protocol", protocol_decl.name,
                      protocol_decl.semantic_link_symbol,
                      protocol_decl.semantic_link_symbol,
-                     protocol_decl.semantic_link_symbol);
+                     protocol_decl.semantic_link_symbol, false);
   }
 
   std::vector<std::string> class_names;
@@ -1416,6 +1432,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     class_node.has_interface = aggregate.has_interface;
     class_node.has_implementation = aggregate.has_implementation;
     class_node.has_super = !aggregate.super_class_owner_identity.empty();
+    class_node.objc_final_declared = aggregate.objc_final_declared;
+    class_node.objc_sealed_declared = aggregate.objc_sealed_declared;
     class_node.realization_identity_complete =
         !class_node.owner_identity.empty() &&
         !class_node.metaclass_owner_identity.empty() &&

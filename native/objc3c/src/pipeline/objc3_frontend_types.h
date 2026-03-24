@@ -2540,6 +2540,8 @@ struct Objc3ExecutableMetadataClassGraphNode {
   bool has_interface = false;
   bool has_implementation = false;
   bool has_super = false;
+  bool objc_final_declared = false;
+  bool objc_sealed_declared = false;
   bool realization_identity_complete = false;
   std::size_t interface_property_count = 0;
   std::size_t implementation_property_count = 0;
@@ -2644,6 +2646,8 @@ struct Objc3ExecutableMetadataMethodGraphNode {
   std::string selector;
   bool is_class_method = false;
   bool has_body = false;
+  bool effective_direct_dispatch = false;
+  bool objc_final_declared = false;
   std::size_t parameter_count = 0;
   std::string return_type_name;
   unsigned line = 1;

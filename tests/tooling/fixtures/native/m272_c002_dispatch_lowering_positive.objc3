@@ -1,0 +1,22 @@
+module Part9C002Positive;
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface PolicyBox
++ (i32)implicitDirect;
++ (i32)dynamicEscape __attribute__((objc_dynamic));
++ (i32)explicitDirect __attribute__((objc_direct));
++ (i32)callers;
+@end
+
+@implementation PolicyBox
++ (i32)implicitDirect { return 3; }
++ (i32)dynamicEscape __attribute__((objc_dynamic)) { return 4; }
++ (i32)explicitDirect __attribute__((objc_direct)) { return 5; }
++ (i32)callers {
+  return [self implicitDirect] + [self dynamicEscape] + [PolicyBox explicitDirect];
+}
+@end
+
+fn main() -> i32 {
+  return [PolicyBox callers];
+}

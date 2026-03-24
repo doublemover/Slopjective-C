@@ -101,6 +101,13 @@ class Objc3IREmitter {
     return out;
   }
 
+  static std::string BuildDirectDispatchMethodKey(
+      const std::string &implementation_name, const std::string &selector,
+      bool is_class_method) {
+    return implementation_name + "|" + (is_class_method ? "class" : "instance") +
+           "|" + selector;
+  }
+
   static ValueType RuntimeMetadataValueType(const std::string &type_name) {
     if (type_name == "void") {
       return ValueType::Void;
@@ -135,16 +142,25 @@ class Objc3IREmitter {
       }
     }
     std::unordered_map<std::string, std::string> implementation_superclass_names;
+    std::unordered_map<std::string, bool> interface_direct_members_by_name;
     for (const auto &interface_decl : program_.interfaces) {
       if (interface_decl.has_category) {
         continue;
       }
       implementation_superclass_names.emplace(interface_decl.name,
                                               interface_decl.super_name);
+      interface_direct_members_by_name.emplace(
+          interface_decl.name, interface_decl.objc_direct_members_declared);
     }
     std::unordered_map<std::string, std::size_t> method_symbol_counts;
     std::unordered_set<std::string> method_owner_identities;
     for (const auto &implementation : program_.implementations) {
+      const auto direct_members_it =
+          interface_direct_members_by_name.find(implementation.name);
+      const bool direct_members_declared =
+          !implementation.has_category &&
+          direct_members_it != interface_direct_members_by_name.end() &&
+          direct_members_it->second;
       for (const auto &method : implementation.methods) {
         if (!method.has_body) {
           continue;
@@ -171,6 +187,16 @@ class Objc3IREmitter {
                              std::string{},
                              std::string{},
                              std::string{}});
+        const bool effective_direct_dispatch =
+            !implementation.has_category &&
+            (method.objc_direct_declared ||
+             (direct_members_declared && !method.objc_dynamic_declared));
+        if (effective_direct_dispatch) {
+          direct_dispatch_symbols_by_key_.emplace(
+              BuildDirectDispatchMethodKey(implementation.name, method.selector,
+                                           method.is_class_method),
+              "@" + symbol);
+        }
         if (!method.scope_path_symbol.empty()) {
           method_owner_identities.insert(method.scope_path_symbol);
         }
@@ -243,6 +269,18 @@ class Objc3IREmitter {
                 bundle.ownership_runtime_hook_profile,
                 bundle.accessor_ownership_profile,
             });
+            const auto direct_members_it =
+                interface_direct_members_by_name.find(bundle.owner_name);
+            const bool effective_direct_dispatch =
+                bundle.owner_kind == "class-implementation" &&
+                direct_members_it != interface_direct_members_by_name.end() &&
+                direct_members_it->second;
+            if (effective_direct_dispatch) {
+              direct_dispatch_symbols_by_key_.emplace(
+                  BuildDirectDispatchMethodKey(bundle.owner_name, selector,
+                                               false),
+                  "@" + symbol);
+            }
             ++synthesized_property_accessor_count_;
           };
       append_synthesized_method(bundle.effective_getter_selector,
@@ -2634,10 +2672,12 @@ class Objc3IREmitter {
     bool receiver_is_compile_time_zero = false;
     bool receiver_is_compile_time_nonzero = false;
     std::vector<std::string> args;
+    std::size_t explicit_arg_count = 0;
     std::string selector;
     std::string dispatch_surface_family;
     std::string dispatch_surface_entrypoint_family;
     std::string dispatch_symbol = kObjc3RuntimeDispatchSymbol;
+    std::string direct_call_symbol;
   };
 
   struct ControlLabels {
@@ -2717,6 +2757,9 @@ class Objc3IREmitter {
     bool async_runtime_helper_enabled = false;
     bool actor_runtime_helper_enabled = false;
     bool actor_nonisolated_entry_enabled = false;
+    std::string current_implementation_name;
+    std::string current_superclass_name;
+    bool current_method_is_class_method = false;
     int async_resume_entry_tag = 0;
     int async_executor_tag = 0;
     int temp_counter = 0;
@@ -8163,13 +8206,20 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
               std::ostringstream entry_initializer;
-              entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64 } { ptr "
+              // M272-C002 dispatch-control lowering anchor: method entries now
+              // preserve effective-direct and objc_final intent bits alongside
+              // implementation bindings so emitted metadata matches the live
+              // direct-call lowering surface.
+              entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64, i1, i1 } { ptr "
                                 << selector_symbol << ", ptr "
                                 << entry_owner_identity_symbol << ", ptr "
                                 << return_type_symbol << ", i64 "
                                 << entry.parameter_count << ", ptr "
                                 << implementation_symbol << ", i64 "
-                                << (entry.has_body ? 1 : 0) << " }";
+                                << (entry.has_body ? 1 : 0) << ", i1 "
+                                << (entry.effective_direct_dispatch ? 1 : 0)
+                                << ", i1 "
+                                << (entry.objc_final_declared ? 1 : 0) << " }";
               entry_initializers.push_back(entry_initializer.str());
             }
             out << list_symbol << " = private global ";
@@ -8178,12 +8228,12 @@ class Objc3IREmitter {
                   << ", ptr " << export_owner_identity_symbol << " }";
             } else {
               out << "{ i64, ptr, ptr, [" << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, ptr, i64 }] } { i64 "
+                  << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] } { i64 "
                   << entry_initializers.size() << ", ptr "
                   << owner_identity_symbol << ", ptr "
                   << export_owner_identity_symbol << ", ["
                   << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, ptr, i64 }] [";
+                  << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] [";
               for (std::size_t entry_index = 0;
                    entry_index < entry_initializers.size(); ++entry_index) {
                 if (entry_index != 0) {
@@ -8981,22 +9031,30 @@ class Objc3IREmitter {
             // class/metaclass record now preserves bundle-owner, object-owner,
             // and super-object identities in-line with the realized bundle
             // pointer plus the existing owner-scoped method-list ref.
+            // M272-C002 dispatch-control lowering anchor: realized
+            // class/metaclass descriptor bundles now preserve objc_final and
+            // objc_sealed container intent as explicit metadata bits.
             out << descriptor_symbol
-                << " = private global { { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr } } "
-                   "{ { ptr, ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << " = private global { { ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 } } "
+                   "{ { ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
                 << class_object_identity_symbol << ", ptr "
                 << class_super_object_identity_symbol << ", ptr "
                 << super_bundle_symbol << ", ptr "
                 << instance_method_list_ref_symbol << ", ptr "
-                << adopted_protocol_refs_symbol
-                << " }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr } { ptr "
+                << adopted_protocol_refs_symbol << ", i1 "
+                << (bundle.objc_final_declared ? 1 : 0) << ", i1 "
+                << (bundle.objc_sealed_declared ? 1 : 0)
+                << " }, { ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i1 } { ptr "
                 << name_symbol << ", ptr " << owner_identity_symbol << ", ptr "
                 << metaclass_object_identity_symbol << ", ptr "
                 << metaclass_super_object_identity_symbol << ", ptr "
                 << super_bundle_symbol << ", ptr "
                 << metaclass_method_list_ref_symbol << ", ptr "
-                << adopted_protocol_refs_symbol << " } }, section \""
+                << adopted_protocol_refs_symbol << ", i1 "
+                << (bundle.objc_final_declared ? 1 : 0) << ", i1 "
+                << (bundle.objc_sealed_declared ? 1 : 0)
+                << " } }, section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(descriptor_symbol);
           }
@@ -11829,6 +11887,7 @@ class Objc3IREmitter {
     lowered.dispatch_symbol =
         Objc3DispatchSurfaceRuntimeEntrypointSymbol(
             lowered.dispatch_surface_family);
+    lowered.direct_call_symbol = TryResolveDirectDispatchSymbol(expr, ctx);
     return lowered;
   }
 
@@ -11837,9 +11896,41 @@ class Objc3IREmitter {
     if (expr == nullptr) {
       return;
     }
+    lowered.explicit_arg_count = expr->args.size();
     for (std::size_t i = 0; i < expr->args.size() && i < lowered.args.size(); ++i) {
       lowered.args[i] = EmitExpr(expr->args[i].get(), ctx);
     }
+  }
+
+  std::string TryResolveDirectDispatchSymbol(const Expr *expr,
+                                             const FunctionContext &ctx) const {
+    if (expr == nullptr || expr->receiver == nullptr || expr->selector.empty()) {
+      return {};
+    }
+
+    std::string owner_name;
+    bool is_class_method = false;
+    if (expr->receiver->kind == Expr::Kind::Identifier &&
+        expr->receiver->ident == "self" &&
+        !ctx.current_implementation_name.empty()) {
+      owner_name = ctx.current_implementation_name;
+      is_class_method = ctx.current_method_is_class_method;
+    } else if (expr->receiver->kind == Expr::Kind::Identifier &&
+               class_receiver_constants_.find(expr->receiver->ident) !=
+                   class_receiver_constants_.end()) {
+      owner_name = expr->receiver->ident;
+      is_class_method = true;
+    } else {
+      return {};
+    }
+
+    const auto symbol_it = direct_dispatch_symbols_by_key_.find(
+        BuildDirectDispatchMethodKey(owner_name, expr->selector,
+                                     is_class_method));
+    if (symbol_it == direct_dispatch_symbols_by_key_.end()) {
+      return {};
+    }
+    return symbol_it->second;
   }
 
   LoweredMessageSend LowerMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
@@ -11849,6 +11940,26 @@ class Objc3IREmitter {
   }
 
   std::string EmitRuntimeDispatch(const LoweredMessageSend &lowered, FunctionContext &ctx) const {
+    if (!lowered.direct_call_symbol.empty()) {
+      // M272-C002 dispatch-control lowering anchor: concrete self/known-class
+      // sends that target effective objc_direct methods now lower as exact LLVM
+      // direct calls instead of routing through the runtime dispatch entrypoint.
+      const std::string direct_value = NewTemp(ctx);
+      std::ostringstream call;
+      call << "  " << direct_value << " = call i32 "
+           << lowered.direct_call_symbol << "(";
+      for (std::size_t i = 0; i < lowered.explicit_arg_count; ++i) {
+        if (i != 0) {
+          call << ", ";
+        }
+        call << "i32 " << lowered.args[i];
+      }
+      call << ")";
+      ctx.code_lines.push_back(call.str());
+      InvalidateGlobalProofState(ctx);
+      return direct_value;
+    }
+
     if (RequiresFailClosedObjc3RuntimeDispatchFallback(
             lowered.dispatch_surface_family)) {
       return EmitUnsupportedI32Value(
@@ -13424,6 +13535,9 @@ class Objc3IREmitter {
         IsActorImplementation(method_def.implementation_name);
     ctx.actor_nonisolated_entry_enabled =
         ctx.actor_runtime_helper_enabled && method.objc_nonisolated_declared;
+    ctx.current_implementation_name = method_def.implementation_name;
+    ctx.current_superclass_name = method_def.superclass_name;
+    ctx.current_method_is_class_method = method.is_class_method;
     ctx.async_resume_entry_tag = AsyncResumeEntryTag(method_def);
     ctx.async_executor_tag = ExecutorAffinityTag(method);
     if (method.throws_declared) {
@@ -13659,6 +13773,7 @@ class Objc3IREmitter {
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;
   std::map<std::string, LoweredFunctionSignature> function_signatures_;
+  std::unordered_map<std::string, std::string> direct_dispatch_symbols_by_key_;
   std::map<std::string, std::string> selector_pool_globals_;
   std::map<std::string, std::string> runtime_string_pool_globals_;
   std::map<std::string, TypedKeyPathArtifact> typed_keypath_artifacts_;

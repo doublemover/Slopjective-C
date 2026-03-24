@@ -1251,3 +1251,20 @@ Current implementation status (`M272-C001`):
 - emitted LLVM IR now carries the same replay-stable Part 9 lowering metadata
 - live direct-call selector bypass, runtime dispatch-boundary realization, and
   runnable metadata-driven dispatch behavior remain later `M272` work
+
+## M272 direct, final, and sealed dispatch lowering (C002)
+
+Current implementation status (`M272-C002`):
+
+- effective `objc_direct` sends on concrete `self` and known class receivers
+  now lower as exact LLVM direct calls to bound `@objc3_method_*`
+  implementation symbols
+- `objc_dynamic` opt-out sites remain on `@objc3_runtime_dispatch_i32`
+- emitted method-list payloads now preserve:
+  - effective direct-dispatch intent bits
+  - method-level `objc_final` bits
+- emitted class/metaclass descriptor bundles now preserve:
+  - container-level `objc_final` bits
+  - container-level `objc_sealed` bits
+- this does not claim broad dynamic-receiver direct dispatch or optimizer-led
+  devirtualization beyond the supported concrete receiver slice

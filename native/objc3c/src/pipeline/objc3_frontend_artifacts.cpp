@@ -20671,6 +20671,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             interface_node.instance_method_owner_identity;
         bundle.class_method_owner_identity =
             interface_node.class_method_owner_identity;
+        bundle.objc_final_declared = class_it->second->objc_final_declared;
+        bundle.objc_sealed_declared = class_it->second->objc_sealed_declared;
         bundle.instance_method_count = interface_node.instance_method_count;
         bundle.class_method_count =
             metaclass_it->second->interface_class_method_count;
@@ -20717,6 +20719,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             implementation_node.instance_method_owner_identity;
         bundle.class_method_owner_identity =
             implementation_node.class_method_owner_identity;
+        bundle.objc_final_declared = class_it->second->objc_final_declared;
+        bundle.objc_sealed_declared = class_it->second->objc_sealed_declared;
         bundle.instance_method_count = implementation_node.instance_method_count;
         bundle.class_method_count =
             metaclass_it->second->implementation_class_method_count;
@@ -21091,6 +21095,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           entry.return_type_name = method_node.return_type_name;
           entry.parameter_count = method_node.parameter_count;
           entry.has_body = method_node.has_body;
+          entry.effective_direct_dispatch =
+              method_node.effective_direct_dispatch;
+          entry.objc_final_declared = method_node.objc_final_declared;
           bundle.entries_lexicographic.push_back(std::move(entry));
           method_owner_identities.insert(method_node.owner_identity);
         }
@@ -21177,6 +21184,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 entry.return_type_name = return_type_name;
                 entry.parameter_count = parameter_count;
                 entry.has_body = true;
+                entry.effective_direct_dispatch = false;
+                entry.objc_final_declared = false;
                 bundle.entries_lexicographic.push_back(std::move(entry));
               };
 
@@ -21211,10 +21220,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                      const Objc3IRRuntimeMetadataMethodEntry &rhs) {
                     return std::tie(lhs.selector, lhs.owner_identity,
                                     lhs.parameter_count, lhs.return_type_name,
-                                    lhs.has_body) <
+                                    lhs.has_body,
+                                    lhs.effective_direct_dispatch,
+                                    lhs.objc_final_declared) <
                            std::tie(rhs.selector, rhs.owner_identity,
                                     rhs.parameter_count, rhs.return_type_name,
-                                    rhs.has_body);
+                                    rhs.has_body,
+                                    rhs.effective_direct_dispatch,
+                                    rhs.objc_final_declared);
                   });
       }
 
