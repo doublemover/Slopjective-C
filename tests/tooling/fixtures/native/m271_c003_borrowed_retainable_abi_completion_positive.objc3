@@ -1,0 +1,21 @@
+module m271c003;
+
+extern fn ConsumeBorrowed(bytes: borrowed id *) -> void;
+extern fn BorrowWindow(owner: id) -> borrowed id *
+    __attribute__((objc_returns_borrowed(owner_index=0)));
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+extern fn CFAutorelease(value: id) -> id
+    __attribute__((objc_family_autorelease(CoreThing), os_returns_not_retained));
+
+fn abiSurface(owner: id, bytes: borrowed id *) -> i32 {
+  let window = BorrowWindow(owner);
+  ConsumeBorrowed(window);
+  ConsumeBorrowed(bytes);
+  let retained = CFRetain(owner);
+  let autoreleased = CFAutorelease(retained);
+  CFRelease(retained);
+  return 0;
+}

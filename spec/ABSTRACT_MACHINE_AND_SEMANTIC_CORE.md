@@ -927,6 +927,16 @@ M271-C002 lowering note:
 - actual escaping promotion of move-based cleanup/resource captures remains
   fail-closed until later runtime ownership-transfer work lands
 
+M271-C003 Part 8 ABI completion note:
+- `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_and_retainable_family_abi_completion`
+  now publishes one dedicated artifact/replay packet above the frozen Part 8
+  lowering contract
+- emitted manifests and IR preserve borrowed-return attribute inventory and
+  retainable-family operation/compatibility-alias inventories on the supported
+  native direct-call path
+- borrowed lifetime runtime interop and runnable retainable-family execution
+  remain later lane-D work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

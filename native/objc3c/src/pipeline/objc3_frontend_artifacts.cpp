@@ -144,6 +144,12 @@ inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionArtifactModel =
     "helper-backed-task-runtime-lowering-now-publishes-a-dedicated-abi-and-runtime-proof-packet";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionProofModel =
     "scheduler-visible-runtime-proof-remains-private-and-snapshotted-through-objc3_runtime_copy_task_runtime_state_for_testing";
+inline constexpr const char
+    *kObjc3Part8BorrowedRetainableAbiCompletionArtifactModel =
+        "borrowed-return-contracts-and-retainable-family-call-boundaries-now-publish-a-dedicated-part8-abi-and-replay-packet-above-the-frozen-lowering-contract";
+inline constexpr const char
+    *kObjc3Part8BorrowedRetainableAbiCompletionProofModel =
+        "the-supported-proof-slice-remains-direct-call-abi-emission-and-replay-stability-without-claiming-lane-d-runtime-helper-integration";
 
 const char *TypeName(ValueType type) {
   switch (type) {
@@ -1924,6 +1930,98 @@ std::string BuildPart8SystemExtensionLoweringContractJson(
       << contract.contract_violation_sites
       << ",\"deterministic_handoff\":"
       << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+        << (ready_for_ir_emission ? "true" : "false")
+        << "}";
+  return out.str();
+}
+
+std::string BuildPart8BorrowedRetainableAbiCompletionReplayKey(
+    const Objc3Part8SystemExtensionLoweringContract &contract,
+    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &source_summary,
+    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+        &retainable_summary) {
+  std::ostringstream out;
+  out << "lowering_replay_key="
+      << Objc3Part8SystemExtensionLoweringReplayKey(contract)
+      << ";returns_borrowed_attribute_sites="
+      << source_summary.returns_borrowed_attribute_sites
+      << ";family_retain_sites=" << retainable_summary.family_retain_sites
+      << ";family_release_sites=" << retainable_summary.family_release_sites
+      << ";family_autorelease_sites="
+      << retainable_summary.family_autorelease_sites
+      << ";compatibility_returns_retained_sites="
+      << retainable_summary.compatibility_returns_retained_sites
+      << ";compatibility_returns_not_retained_sites="
+      << retainable_summary.compatibility_returns_not_retained_sites
+      << ";compatibility_consumed_sites="
+      << retainable_summary.compatibility_consumed_sites
+      << ";deterministic=true;lane_contract="
+      << kObjc3Part8BorrowedRetainableAbiCompletionLaneContract;
+  return out.str();
+}
+
+std::string BuildPart8BorrowedRetainableAbiCompletionJson(
+    const Objc3Part8SystemExtensionLoweringContract &contract,
+    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &source_summary,
+    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+        &retainable_summary,
+    const std::string &lowering_replay_key,
+    const std::string &abi_completion_replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3Part8SystemExtensionLoweringContract(contract) &&
+      source_summary.returns_borrowed_attribute_sites <=
+          contract.borrowed_return_callable_sites &&
+      retainable_summary.family_retain_sites +
+              retainable_summary.family_release_sites +
+              retainable_summary.family_autorelease_sites ==
+          contract.retainable_family_operation_callable_sites &&
+      retainable_summary.compatibility_returns_retained_sites +
+              retainable_summary.compatibility_returns_not_retained_sites +
+              retainable_summary.compatibility_consumed_sites ==
+          contract.retainable_family_alias_callable_sites;
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath)
+      << "\",\"lowering_contract_id\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringContractId)
+      << "\",\"artifact_model\":\""
+      << EscapeJsonString(kObjc3Part8BorrowedRetainableAbiCompletionArtifactModel)
+      << "\",\"proof_model\":\""
+      << EscapeJsonString(kObjc3Part8BorrowedRetainableAbiCompletionProofModel)
+      << "\",\"lowering_replay_key\":\""
+      << EscapeJsonString(lowering_replay_key)
+      << "\",\"replay_key\":\""
+      << EscapeJsonString(abi_completion_replay_key)
+      << "\",\"borrowed_parameter_sites\":"
+      << contract.borrowed_parameter_sites
+      << ",\"borrowed_return_callable_sites\":"
+      << contract.borrowed_return_callable_sites
+      << ",\"returns_borrowed_attribute_sites\":"
+      << source_summary.returns_borrowed_attribute_sites
+      << ",\"retainable_family_callable_sites\":"
+      << contract.retainable_family_callable_sites
+      << ",\"retainable_family_operation_callable_sites\":"
+      << contract.retainable_family_operation_callable_sites
+      << ",\"retainable_family_alias_callable_sites\":"
+      << contract.retainable_family_alias_callable_sites
+      << ",\"family_retain_sites\":"
+      << retainable_summary.family_retain_sites
+      << ",\"family_release_sites\":"
+      << retainable_summary.family_release_sites
+      << ",\"family_autorelease_sites\":"
+      << retainable_summary.family_autorelease_sites
+      << ",\"compatibility_returns_retained_sites\":"
+      << retainable_summary.compatibility_returns_retained_sites
+      << ",\"compatibility_returns_not_retained_sites\":"
+      << retainable_summary.compatibility_returns_not_retained_sites
+      << ",\"compatibility_consumed_sites\":"
+      << retainable_summary.compatibility_consumed_sites
+      << ",\"deterministic_handoff\":true"
       << ",\"ready_for_ir_emission\":"
       << (ready_for_ir_emission ? "true" : "false")
       << "}";
@@ -12146,6 +12244,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part8_system_extension_lowering_replay_key =
       Objc3Part8SystemExtensionLoweringReplayKey(
           part8_system_extension_lowering_contract);
+  const std::string part8_borrowed_retainable_abi_completion_replay_key =
+      BuildPart8BorrowedRetainableAbiCompletionReplayKey(
+          part8_system_extension_lowering_contract,
+          part8_system_extension_source_closure_summary,
+          part8_retainable_c_family_source_completion_summary);
   const Objc3Part7StructuredTaskCancellationSemanticSummary
       &part7_structured_task_cancellation_semantic_summary =
           pipeline_result.part7_structured_task_cancellation_semantic_summary;
@@ -16597,9 +16700,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part8_capture_list_retainable_family_legality_completion_summary,
                   part8_system_extension_lowering_contract,
                   part8_system_extension_lowering_replay_key)
-           << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
-           << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
-                  part7_structured_task_cancellation_semantic_summary)
+           << ",\"objc_part8_borrowed_pointer_and_retainable_family_abi_completion\":"
+           << BuildPart8BorrowedRetainableAbiCompletionJson(
+                  part8_system_extension_lowering_contract,
+                  part8_system_extension_source_closure_summary,
+                  part8_retainable_c_family_source_completion_summary,
+                  part8_system_extension_lowering_replay_key,
+                  part8_borrowed_retainable_abi_completion_replay_key)
+            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
+            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
+                   part7_structured_task_cancellation_semantic_summary)
            << ",\"objc_part7_executor_hop_and_affinity_compatibility_completion\":"
            << BuildPart7ExecutorHopAffinityCompatibilitySummaryJson(
                   part7_executor_hop_affinity_compatibility_summary)
@@ -17947,9 +18057,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part8_capture_list_retainable_family_legality_completion_summary,
                   part8_system_extension_lowering_contract,
                   part8_system_extension_lowering_replay_key)
-           << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
-           << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
-                  part7_structured_task_cancellation_semantic_summary)
+           << ",\"objc_part8_borrowed_pointer_and_retainable_family_abi_completion\":"
+           << BuildPart8BorrowedRetainableAbiCompletionJson(
+                  part8_system_extension_lowering_contract,
+                  part8_system_extension_source_closure_summary,
+                  part8_retainable_c_family_source_completion_summary,
+                  part8_system_extension_lowering_replay_key,
+                  part8_borrowed_retainable_abi_completion_replay_key)
+            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
+            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
+                   part7_structured_task_cancellation_semantic_summary)
            << ",\"objc_part7_executor_hop_and_affinity_compatibility_completion\":"
            << BuildPart7ExecutorHopAffinityCompatibilitySummaryJson(
                   part7_executor_hop_affinity_compatibility_summary)
@@ -18946,6 +19063,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part8_system_extension_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_part8_system_extension_lowering_handoff =
       part8_system_extension_lowering_contract.deterministic;
+  ir_frontend_metadata.part8_borrowed_retainable_abi_completion_replay_key =
+      part8_borrowed_retainable_abi_completion_replay_key;
+  ir_frontend_metadata.part8_borrowed_retainable_returns_borrowed_attribute_sites =
+      part8_system_extension_source_closure_summary
+          .returns_borrowed_attribute_sites;
+  ir_frontend_metadata.part8_borrowed_retainable_family_retain_sites =
+      part8_retainable_c_family_source_completion_summary.family_retain_sites;
+  ir_frontend_metadata.part8_borrowed_retainable_family_release_sites =
+      part8_retainable_c_family_source_completion_summary.family_release_sites;
+  ir_frontend_metadata.part8_borrowed_retainable_family_autorelease_sites =
+      part8_retainable_c_family_source_completion_summary
+          .family_autorelease_sites;
+  ir_frontend_metadata
+      .part8_borrowed_retainable_compatibility_returns_retained_sites =
+      part8_retainable_c_family_source_completion_summary
+          .compatibility_returns_retained_sites;
+  ir_frontend_metadata
+      .part8_borrowed_retainable_compatibility_returns_not_retained_sites =
+      part8_retainable_c_family_source_completion_summary
+          .compatibility_returns_not_retained_sites;
+  ir_frontend_metadata.part8_borrowed_retainable_compatibility_consumed_sites =
+      part8_retainable_c_family_source_completion_summary
+          .compatibility_consumed_sites;
+  ir_frontend_metadata
+      .deterministic_part8_borrowed_retainable_abi_completion_handoff =
+      true;
   ir_frontend_metadata.lowering_task_runtime_interop_cancellation_replay_key =
       part7_task_runtime_interop_cancellation_lowering_replay_key;
   ir_frontend_metadata.task_runtime_interop_cancellation_lowering_sites =

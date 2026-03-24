@@ -885,6 +885,17 @@ struct Objc3IRFrontendMetadata {
   std::size_t part8_system_extension_lowering_guard_blocked_sites = 0;
   std::size_t part8_system_extension_lowering_contract_violation_sites = 0;
   bool deterministic_part8_system_extension_lowering_handoff = false;
+  std::string part8_borrowed_retainable_abi_completion_replay_key;
+  std::size_t part8_borrowed_retainable_returns_borrowed_attribute_sites = 0;
+  std::size_t part8_borrowed_retainable_family_retain_sites = 0;
+  std::size_t part8_borrowed_retainable_family_release_sites = 0;
+  std::size_t part8_borrowed_retainable_family_autorelease_sites = 0;
+  std::size_t
+      part8_borrowed_retainable_compatibility_returns_retained_sites = 0;
+  std::size_t
+      part8_borrowed_retainable_compatibility_returns_not_retained_sites = 0;
+  std::size_t part8_borrowed_retainable_compatibility_consumed_sites = 0;
+  bool deterministic_part8_borrowed_retainable_abi_completion_handoff = false;
   std::string lowering_task_runtime_interop_cancellation_replay_key;
   std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
   std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =

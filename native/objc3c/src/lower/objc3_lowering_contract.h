@@ -1537,6 +1537,18 @@ inline constexpr const char *kObjc3Part8SystemExtensionLoweringDeferredModel =
     "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-m271-lane-d-work";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringLaneContract =
     "m271-part8-system-extension-lowering-contract-v1";
+// M271-C003 ABI/artifact completion anchor: keep the frozen Part 8 lowering
+// contract from C001 as the single lowering boundary, but publish one
+// dedicated ABI/replay packet above it for borrowed-return contracts and
+// retainable-family callable inventories so lane-D runtime work can consume a
+// stable artifact surface instead of re-deriving those call-boundary facts.
+inline constexpr const char *kObjc3Part8BorrowedRetainableAbiCompletionContractId =
+    "objc3c-part8-borrowed-retainable-family-abi-completion/m271-c003-v1";
+inline constexpr const char *kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part8_borrowed_pointer_and_retainable_family_abi_completion";
+inline constexpr const char *kObjc3Part8BorrowedRetainableAbiCompletionLaneContract =
+    "m271-part8-borrowed-retainable-family-abi-completion-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =

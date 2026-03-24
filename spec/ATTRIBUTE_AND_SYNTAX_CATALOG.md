@@ -343,6 +343,16 @@ Current implementation status (`M271-C002`):
   block dispose helpers on the supported non-promoting path
 - actual escaping promotion of move-based cleanup/resource captures remains
   fail-closed until later runtime ownership-transfer work lands
+
+Current implementation status (`M271-C003`):
+- `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_and_retainable_family_abi_completion`
+- emitted manifests and IR now preserve one dedicated borrowed/retainable ABI
+  packet above the frozen Part 8 lowering contract
+- the packet carries borrowed-return attribute inventory together with
+  retainable-family operation/compatibility-alias inventories on the supported
+  native direct-call path
+- borrowed lifetime runtime interop and runnable retainable-family behavior
+  remain later `M271` lane-D work
 ```
 
 This attribute may be applied to:

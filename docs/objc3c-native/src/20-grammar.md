@@ -4055,5 +4055,20 @@ Current implementation status (`M271-C002`):
   remain visible in native IR/object artifacts
 - actual escaping promotion of move-based cleanup/resource captures remains
   fail-closed until later runtime ownership transfer work lands
-  remain later `M271` work
+
+## M271 borrowed-pointer and retainable-family ABI completion
+
+Current implementation status (`M271-C003`):
+
+- `frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_and_retainable_family_abi_completion`
+  now publishes one dedicated Part 8 ABI/artifact packet above the frozen
+  `M271-C001` lowering contract
+- the packet preserves borrowed-return attribute inventory and
+  retainable-family operation/compatibility-alias inventories in emitted
+  manifests and IR metadata
+- supported native direct-call lowering for borrowed-return and retainable-family
+  call boundaries is now proven through emitted `module.ll`, `module.obj`, and
+  `module.object-backend.txt` artifacts
+- borrowed lifetime runtime interop and runnable retainable-family runtime
+  behavior remain later `M271` lane-D work
 

@@ -864,6 +864,39 @@ class Objc3IREmitter {
           << "\n";
     }
     if (!frontend_metadata_
+             .part8_borrowed_retainable_abi_completion_replay_key.empty()) {
+      // M271-C003 ABI/artifact completion anchor: publish the dedicated Part 8
+      // borrowed/retainable ABI packet above the frozen lowering contract so
+      // lane-D runtime work consumes stable borrowed-return and family-call
+      // inventories instead of rediscovering them from raw IR.
+      out << "; part8_borrowed_retainable_abi_completion = contract="
+          << kObjc3Part8BorrowedRetainableAbiCompletionContractId
+          << ";surface="
+          << kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath
+          << ";replay_key="
+          << frontend_metadata_.part8_borrowed_retainable_abi_completion_replay_key
+          << ";returns_borrowed_attribute_sites="
+          << frontend_metadata_
+                 .part8_borrowed_retainable_returns_borrowed_attribute_sites
+          << ";family_retain_sites="
+          << frontend_metadata_.part8_borrowed_retainable_family_retain_sites
+          << ";family_release_sites="
+          << frontend_metadata_.part8_borrowed_retainable_family_release_sites
+          << ";family_autorelease_sites="
+          << frontend_metadata_
+                 .part8_borrowed_retainable_family_autorelease_sites
+          << ";compatibility_returns_retained_sites="
+          << frontend_metadata_
+                 .part8_borrowed_retainable_compatibility_returns_retained_sites
+          << ";compatibility_returns_not_retained_sites="
+          << frontend_metadata_
+                 .part8_borrowed_retainable_compatibility_returns_not_retained_sites
+          << ";compatibility_consumed_sites="
+          << frontend_metadata_
+                 .part8_borrowed_retainable_compatibility_consumed_sites
+          << ";next_issue=M271-D001\n";
+    }
+    if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
       out << "; task_runtime_interop_cancellation_lowering = "
           << frontend_metadata_
@@ -2327,6 +2360,30 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_part8_borrowed_retainable_abi_profile = returns_borrowed_attribute_sites="
+        << frontend_metadata_
+               .part8_borrowed_retainable_returns_borrowed_attribute_sites
+        << ", family_retain_sites="
+        << frontend_metadata_.part8_borrowed_retainable_family_retain_sites
+        << ", family_release_sites="
+        << frontend_metadata_.part8_borrowed_retainable_family_release_sites
+        << ", family_autorelease_sites="
+        << frontend_metadata_.part8_borrowed_retainable_family_autorelease_sites
+        << ", compatibility_returns_retained_sites="
+        << frontend_metadata_
+               .part8_borrowed_retainable_compatibility_returns_retained_sites
+        << ", compatibility_returns_not_retained_sites="
+        << frontend_metadata_
+               .part8_borrowed_retainable_compatibility_returns_not_retained_sites
+        << ", compatibility_consumed_sites="
+        << frontend_metadata_
+               .part8_borrowed_retainable_compatibility_consumed_sites
+        << ", deterministic_part8_borrowed_retainable_abi_completion_handoff="
+        << (frontend_metadata_
+                    .deterministic_part8_borrowed_retainable_abi_completion_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_task_runtime_interop_cancellation_lowering_profile = task_runtime_sites="
         << frontend_metadata_.task_runtime_interop_cancellation_lowering_sites
         << ", task_runtime_interop_sites="
@@ -3394,6 +3451,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
+    out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -6267,6 +6325,47 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_part8_system_extension_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!99 = !{!\""
+        << EscapeCStringLiteral(
+               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.part8_borrowed_retainable_abi_completion_replay_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part8_borrowed_retainable_returns_borrowed_attribute_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part8_borrowed_retainable_family_retain_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part8_borrowed_retainable_family_release_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part8_borrowed_retainable_family_autorelease_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part8_borrowed_retainable_compatibility_returns_retained_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part8_borrowed_retainable_compatibility_returns_not_retained_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part8_borrowed_retainable_compatibility_consumed_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part8_borrowed_retainable_abi_completion_handoff
                 ? 1
                 : 0)
         << "}\n\n";
