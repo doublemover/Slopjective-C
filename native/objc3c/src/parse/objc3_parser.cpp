@@ -7032,6 +7032,117 @@ class Objc3Parser {
   }
 
   template <typename TCallableDecl>
+  bool ParseDispatchIntentCallableAttribute(TCallableDecl &decl,
+                                            const Token &attribute_name) {
+    auto record_duplicate =
+        [&](const char *code, const std::string &message) {
+          diagnostics_.push_back(
+              MakeDiag(attribute_name.line, attribute_name.column, code,
+                       message));
+          return false;
+        };
+
+    if (attribute_name.text == "objc_direct") {
+      if (decl.objc_direct_declared) {
+        return record_duplicate("O3P330", "duplicate objc_direct attribute");
+      }
+      decl.objc_direct_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_final") {
+      if (decl.objc_final_declared) {
+        return record_duplicate("O3P331", "duplicate objc_final attribute");
+      }
+      decl.objc_final_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_dynamic") {
+      if (decl.objc_dynamic_declared) {
+        return record_duplicate("O3P332", "duplicate objc_dynamic attribute");
+      }
+      decl.objc_dynamic_declared = true;
+      return true;
+    }
+    return false;
+  }
+
+  bool ParseSingleContainerDispatchAttribute(Objc3InterfaceDecl &decl) {
+    if (!At(TokenKind::Identifier)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P333",
+          "invalid Objective-C container attribute name"));
+      return false;
+    }
+
+    const Token attribute_name = Advance();
+    auto record_duplicate =
+        [&](const char *code, const std::string &message) {
+          diagnostics_.push_back(
+              MakeDiag(attribute_name.line, attribute_name.column, code,
+                       message));
+          return false;
+        };
+
+    if (attribute_name.text == "objc_direct_members") {
+      if (decl.objc_direct_members_declared) {
+        return record_duplicate("O3P334",
+                                "duplicate objc_direct_members attribute");
+      }
+      decl.objc_direct_members_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_final") {
+      if (decl.objc_final_declared) {
+        return record_duplicate("O3P335", "duplicate objc_final attribute");
+      }
+      decl.objc_final_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_sealed") {
+      if (decl.objc_sealed_declared) {
+        return record_duplicate("O3P336", "duplicate objc_sealed attribute");
+      }
+      decl.objc_sealed_declared = true;
+      return true;
+    }
+
+    diagnostics_.push_back(MakeDiag(
+        attribute_name.line, attribute_name.column, "O3P337",
+        "unsupported Objective-C container attribute '" + attribute_name.text +
+            "'"));
+    return false;
+  }
+
+  bool ParseOptionalContainerDispatchAttributes(Objc3InterfaceDecl &decl) {
+    while (AtIdentifierText("__attribute__")) {
+      Advance();
+      if (!Match(TokenKind::LParen) || !Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P338",
+            "malformed __attribute__ Objective-C container annotation"));
+        return false;
+      }
+
+      do {
+        if (!ParseSingleContainerDispatchAttribute(decl)) {
+          return false;
+        }
+      } while (Match(TokenKind::Comma));
+
+      if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(
+            token.line, token.column, "O3P339",
+            "missing '))' after Objective-C container attribute list"));
+        return false;
+      }
+    }
+    return true;
+  }
+
+  template <typename TCallableDecl>
   bool ParseSingleCallableBridgeAttribute(TCallableDecl &decl) {
     if (!At(TokenKind::Identifier)) {
       const Token &token = Peek();
@@ -7091,6 +7202,9 @@ class Objc3Parser {
       return ParseReturnsBorrowedAttributePayload(decl);
     }
     if (ParseRetainableCFamilyCallableAttribute(decl, attribute_name)) {
+      return true;
+    }
+    if (ParseDispatchIntentCallableAttribute(decl, attribute_name)) {
       return true;
     }
 
@@ -8744,6 +8858,9 @@ class Objc3Parser {
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
       SynchronizeObjcContainer();
     }
+    if (!ParseOptionalContainerDispatchAttributes(*decl)) {
+      SynchronizeObjcContainer();
+    }
     // M252-B002 anchor: interface superclass names plus the canonical
     // lexicographic adopted-protocol list remain the parser-owned inputs for
     // graph-backed inheritance and protocol-composition validation.
@@ -8881,6 +8998,9 @@ class Objc3Parser {
     }
 
     if (!ParseObjcProtocolCompositionClause(decl->adopted_protocols)) {
+      SynchronizeObjcContainer();
+    }
+    if (!ParseOptionalContainerDispatchAttributes(*decl)) {
       SynchronizeObjcContainer();
     }
     decl->adopted_protocols_lexicographic =

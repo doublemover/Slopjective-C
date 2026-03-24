@@ -4132,3 +4132,14 @@ Current implementation status (`M271-E001`):
   - live cleanup helpers and retainable-family integration
   - lane-E strict system conformance gate
 - the next issue is `M272-A001`
+
+## M272 direct, final, sealed, and dynamism-control source closure
+
+- callable `__attribute__((objc_direct))` is admitted on function and Objective-C method declarations
+- callable `__attribute__((objc_final))` is admitted on function and Objective-C method declarations
+- callable `__attribute__((objc_dynamic))` is admitted on function and Objective-C method declarations
+- container `__attribute__((objc_direct_members))` is admitted on Objective-C interface and `actor class` declarations
+- container `__attribute__((objc_final))` is admitted on Objective-C interface and `actor class` declarations
+- container `__attribute__((objc_sealed))` is admitted on Objective-C interface and `actor class` declarations
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure`
+- this lane remains parser/frontend only; legality enforcement, direct-call lowering, metadata realization, and runtime dispatch-boundary behavior remain later `M272` work

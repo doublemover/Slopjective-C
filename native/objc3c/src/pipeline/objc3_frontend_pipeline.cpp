@@ -4435,6 +4435,20 @@ std::string BuildPart8RetainableCFamilySourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentSourceClosureReplayKey(
+    const Objc3FrontendPart9DispatchIntentSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";callable_sites=" << summary.direct_callable_sites << ":"
+      << summary.final_callable_sites << ":" << summary.dynamic_callable_sites
+      << ";container_sites=" << summary.direct_members_container_sites << ":"
+      << summary.final_container_sites << ":" << summary.sealed_container_sites
+      << ":" << summary.actor_container_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -5912,6 +5926,56 @@ BuildPart8RetainableCFamilySourceCompletionSummary(
   return summary;
 }
 
+Objc3FrontendPart9DispatchIntentSourceClosureSummary
+BuildPart9DispatchIntentSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendPart9DispatchIntentSourceClosureSummary summary;
+
+  const auto accumulate_callable = [&summary](const auto &decl) {
+    if (decl.objc_direct_declared) {
+      ++summary.direct_callable_sites;
+    }
+    if (decl.objc_final_declared) {
+      ++summary.final_callable_sites;
+    }
+    if (decl.objc_dynamic_declared) {
+      ++summary.dynamic_callable_sites;
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.objc_direct_members_declared) {
+      ++summary.direct_members_container_sites;
+    }
+    if (interface_decl.objc_final_declared) {
+      ++summary.final_container_sites;
+    }
+    if (interface_decl.objc_sealed_declared) {
+      ++summary.sealed_container_sites;
+    }
+    if (interface_decl.is_actor) {
+      ++summary.actor_container_sites;
+    }
+    for (const auto &method : interface_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      accumulate_callable(method);
+    }
+  }
+
+  summary.callable_annotation_source_supported = true;
+  summary.container_annotation_source_supported = true;
+  summary.deterministic_handoff = true;
+  summary.ready_for_semantic_expansion = true;
+  summary.replay_key = BuildPart9DispatchIntentSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6135,6 +6199,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part8_retainable_c_family_source_completion_summary =
       BuildPart8RetainableCFamilySourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part9_dispatch_intent_source_closure_summary =
+      BuildPart9DispatchIntentSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

@@ -246,6 +246,35 @@ support based on parser/sema or contract-only progress.
 
 ---
 
+## D-022: Dispatch-intent source admission stays parser-owned until legality and lowering land {#decisions-d-022}
+
+**Decision:** The native `objc3c` frontend shall admit Part 9 dispatch-intent
+and dynamism-control attributes as parser-owned `__attribute__((...))`
+spellings on top of the existing token stream rather than widening the lexer
+surface.
+
+The truthful `M272-A001` source closure covers:
+
+- callable `objc_direct`, `objc_final`, and `objc_dynamic`,
+- container `objc_direct_members`, `objc_final`, and `objc_sealed`,
+- deterministic frontend manifest publication for the Part 9 source packet.
+
+That source closure shall not yet claim:
+
+- override/subclass/category legality enforcement,
+- direct-call lowering or selector-dispatch opt-out behavior,
+- metadata or runtime dispatch-boundary realization.
+
+**Rationale:** The source contract should become explicit before later `M272`
+issues widen semantics, lowering, metadata, and runtime behavior. Keeping the
+lane-A surface parser-owned also matches the existing truthful pattern for
+later-stage Objective-C 3 feature families.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable

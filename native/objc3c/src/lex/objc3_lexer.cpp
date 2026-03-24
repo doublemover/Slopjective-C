@@ -107,6 +107,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M271-A003 source-surface note: retainable C-family callable annotations
   // remain parser-owned `__attribute__` spellings rather than dedicated lexer
   // keywords; the lexer only needs to preserve their identifier tokens.
+  // M272-A001 source-surface note: direct/final/sealed/dynamic dispatch-intent
+  // controls also remain parser-owned `__attribute__` spellings rather than
+  // new reserved lexer keywords; the truthful Part 9 source boundary is
+  // frontend-owned attribute profiling on top of this same token stream.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

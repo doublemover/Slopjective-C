@@ -180,6 +180,18 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCallab
     "source-only:retainable-c-family-callable-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompatibilityAliases =
     "source-only:retainable-c-family-compatibility-aliases";
+inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureContractId =
+    "objc3c-part9-dispatch-intent-source-closure/m272-a001-v1";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
+    "source-only:direct-method-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =
+    "source-only:direct-members-class-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimFinalAnnotations =
+    "source-only:final-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimSealedAnnotations =
+    "source-only:sealed-annotations";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimDynamicMethodAnnotations =
+    "source-only:dynamic-method-annotations";
 
 // M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,

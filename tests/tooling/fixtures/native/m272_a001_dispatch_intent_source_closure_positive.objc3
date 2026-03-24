@@ -1,0 +1,34 @@
+module DispatchIntentSource;
+
+fn globalDirect() -> i32 __attribute__((objc_direct, objc_final)) {
+  return 1;
+}
+
+fn dynamicEntry() -> i32 __attribute__((objc_dynamic)) {
+  return globalDirect();
+}
+
+@interface DirectBox __attribute__((objc_direct_members, objc_final, objc_sealed))
+- (i32)fastPath __attribute__((objc_direct, objc_final));
+- (i32)fallbackPath __attribute__((objc_dynamic));
+@end
+
+actor class Worker __attribute__((objc_sealed))
+- (i32)tick __attribute__((objc_direct));
+@end
+
+@implementation DirectBox
+- (i32)fastPath __attribute__((objc_direct, objc_final)) {
+  return 7;
+}
+
+- (i32)fallbackPath __attribute__((objc_dynamic)) {
+  return dynamicEntry();
+}
+@end
+
+@implementation Worker
+- (i32)tick __attribute__((objc_direct)) {
+  return 9;
+}
+@end

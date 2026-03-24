@@ -1290,6 +1290,9 @@ struct Objc3MethodDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_direct_declared = false;
+  bool objc_final_declared = false;
+  bool objc_dynamic_declared = false;
   bool objc_returns_borrowed_declared = false;
   std::size_t objc_returns_borrowed_owner_index = 0;
   bool return_borrowed_pointer_qualified = false;
@@ -1611,6 +1614,9 @@ struct Objc3InterfaceDecl {
   std::vector<std::string> method_lookup_symbols_lexicographic;
   std::vector<std::string> override_lookup_symbols_lexicographic;
   std::vector<std::string> conflict_lookup_symbols_lexicographic;
+  bool objc_direct_members_declared = false;
+  bool objc_final_declared = false;
+  bool objc_sealed_declared = false;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
@@ -1705,6 +1711,9 @@ struct FunctionDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_direct_declared = false;
+  bool objc_final_declared = false;
+  bool objc_dynamic_declared = false;
   bool objc_returns_borrowed_declared = false;
   std::size_t objc_returns_borrowed_owner_index = 0;
   bool return_borrowed_pointer_qualified = false;

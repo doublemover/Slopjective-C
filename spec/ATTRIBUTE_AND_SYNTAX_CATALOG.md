@@ -1146,3 +1146,18 @@ Current implementation status (`M267-E001`):
   Part 6 slice
 - preserves the same published manifest/replay/link-plan evidence before the
   `M267-E002` closeout matrix
+
+## M272 dispatch-intent source closure (A001)
+
+Current implementation status (`M272-A001`):
+
+- callable `__attribute__((objc_direct))`, `__attribute__((objc_final))`, and
+  `__attribute__((objc_dynamic))` are now admitted on function and Objective-C
+  method declarations
+- container `__attribute__((objc_direct_members))`,
+  `__attribute__((objc_final))`, and `__attribute__((objc_sealed))` are now
+  admitted on Objective-C interface and `actor class` declarations
+- the emitted frontend packet now publishes
+  `frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure`
+- legality enforcement, direct-call lowering, metadata realization, and runtime
+  dispatch-boundary behavior remain later `M272` work
