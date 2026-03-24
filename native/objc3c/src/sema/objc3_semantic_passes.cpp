@@ -3933,6 +3933,54 @@ static std::string TrimAsciiWhitespace(const std::string &text) {
   return text.substr(start, end - start);
 }
 
+static std::string NormalizePart10RawDeriveToken(std::string token) {
+  token = TrimAsciiWhitespace(token);
+  if (token.size() >= 2u &&
+      ((token.front() == '"' && token.back() == '"') ||
+       (token.front() == '\'' && token.back() == '\''))) {
+    token = token.substr(1, token.size() - 2u);
+  }
+  return token;
+}
+
+static std::string BuildPart10LowercaseDeriveToken(std::string token) {
+  token = NormalizePart10RawDeriveToken(std::move(token));
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char c) {
+                   return static_cast<char>(std::tolower(c));
+                 });
+  return token;
+}
+
+static std::string NormalizePart10SupportedDeriveName(
+    const std::string &derive_name) {
+  const std::string lowered = BuildPart10LowercaseDeriveToken(derive_name);
+  if (lowered == "equatable" || lowered == "equality") {
+    return "Equality";
+  }
+  if (lowered == "hash") {
+    return "Hash";
+  }
+  if (lowered == "debugdescription") {
+    return "DebugDescription";
+  }
+  return "";
+}
+
+static std::string BuildPart10DerivedSelectorForInventoryRow(
+    const std::string &canonical_derive_name) {
+  if (canonical_derive_name == "Equality") {
+    return "isEqual:";
+  }
+  if (canonical_derive_name == "Hash") {
+    return "hash";
+  }
+  if (canonical_derive_name == "DebugDescription") {
+    return "debugDescription";
+  }
+  return "";
+}
+
 static bool IsValidProtocolIdentifier(const std::string &identifier) {
   if (identifier.empty()) {
     return false;
@@ -10767,6 +10815,128 @@ Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
       << ";throw=" << summary.throw_statement_sites
       << ";do-catch=" << summary.do_catch_sites
       << ";violations=" << summary.contract_violation_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part10DeriveExpansionInventorySummary
+BuildPart10DeriveExpansionInventorySummary(
+    const Objc3Program &program,
+    const Objc3Part10ExpansionBehaviorSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part10DeriveExpansionInventorySummary summary;
+
+  const auto count_diagnostic = [&diagnostics](std::string_view code,
+                                               std::string_view needle) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code, needle](const std::string &entry) {
+          return entry.find(code) != std::string::npos &&
+                 entry.find(needle) != std::string::npos;
+        }));
+  };
+
+  for (const auto &interface_decl : program.interfaces) {
+    if (!interface_decl.objc_derive_declared) {
+      continue;
+    }
+    ++summary.derive_request_sites;
+
+    const std::string canonical_derive_name =
+        NormalizePart10SupportedDeriveName(interface_decl.objc_derive_name);
+    if (interface_decl.has_category) {
+      ++summary.unsupported_topology_sites;
+      continue;
+    }
+    if (canonical_derive_name.empty()) {
+      ++summary.unsupported_derive_request_sites;
+      continue;
+    }
+
+    ++summary.supported_derive_request_sites;
+    const std::string lowered =
+        BuildPart10LowercaseDeriveToken(interface_decl.objc_derive_name);
+    if (lowered == "equatable") {
+      ++summary.equatable_alias_sites;
+    }
+    if (canonical_derive_name == "Equality") {
+      ++summary.equality_derive_sites;
+    } else if (canonical_derive_name == "Hash") {
+      ++summary.hash_derive_sites;
+    } else if (canonical_derive_name == "DebugDescription") {
+      ++summary.debug_description_derive_sites;
+    }
+
+    const std::string derived_selector =
+        BuildPart10DerivedSelectorForInventoryRow(canonical_derive_name);
+    const bool selector_conflict =
+        !derived_selector.empty() &&
+        std::any_of(interface_decl.methods.begin(), interface_decl.methods.end(),
+                    [&derived_selector](const Objc3MethodDecl &method_decl) {
+                      return BuildMethodSelectorNormalizationContractInfo(
+                                 method_decl)
+                                 .normalized_selector == derived_selector;
+                    });
+    if (selector_conflict) {
+      ++summary.selector_conflict_sites;
+      continue;
+    }
+
+    summary.expansion_inventory_rows_lexicographic.push_back(
+        interface_decl.name + ":" + canonical_derive_name + ":" +
+        derived_selector);
+    ++summary.generated_method_entry_count;
+  }
+
+  std::sort(summary.expansion_inventory_rows_lexicographic.begin(),
+            summary.expansion_inventory_rows_lexicographic.end());
+
+  summary.semantic_dependency_required =
+      IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
+          dependency_summary);
+  summary.supported_derive_inventory_landed =
+      summary.generated_method_entry_count + summary.selector_conflict_sites ==
+          summary.supported_derive_request_sites &&
+      summary.equality_derive_sites + summary.hash_derive_sites +
+              summary.debug_description_derive_sites ==
+          summary.supported_derive_request_sites;
+  summary.unsupported_derive_fail_closed =
+      summary.unsupported_derive_request_sites ==
+      count_diagnostic("O3S317", "unsupported derive");
+  summary.unsupported_topology_fail_closed =
+      summary.unsupported_topology_sites ==
+      count_diagnostic("O3S318", "primary interfaces");
+  summary.selector_conflicts_fail_closed =
+      summary.selector_conflict_sites ==
+      count_diagnostic("O3S319", "derive expansion selector conflict");
+  summary.runtime_materialization_deferred = true;
+  summary.deterministic =
+      summary.semantic_dependency_required &&
+      summary.supported_derive_inventory_landed &&
+      summary.unsupported_derive_fail_closed &&
+      summary.unsupported_topology_fail_closed &&
+      summary.selector_conflicts_fail_closed &&
+      IsSortedUniqueStrings(summary.expansion_inventory_rows_lexicographic);
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "part10 derive expansion inventory must remain deterministic and fail closed";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << dependency_summary.contract_id
+      << ";derive-sites=" << summary.derive_request_sites << ":"
+      << summary.supported_derive_request_sites << ":"
+      << summary.unsupported_derive_request_sites << ":"
+      << summary.unsupported_topology_sites
+      << ";derived-method-entries=" << summary.generated_method_entry_count
+      << ";selector-conflicts=" << summary.selector_conflict_sites
+      << ";equatable-alias-sites=" << summary.equatable_alias_sites
+      << ";canonical-derive-sites=" << summary.equality_derive_sites << ":"
+      << summary.hash_derive_sites << ":"
+      << summary.debug_description_derive_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -19144,6 +19314,41 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
         interface_decl.objc_direct_members_declared;
     interface_info.objc_final_declared = interface_decl.objc_final_declared;
     interface_info.objc_sealed_declared = interface_decl.objc_sealed_declared;
+    if (interface_decl.objc_derive_declared) {
+      const std::string derive_spelling =
+          NormalizePart10RawDeriveToken(interface_decl.objc_derive_name);
+      const std::string canonical_derive_name =
+          NormalizePart10SupportedDeriveName(derive_spelling);
+      if (is_category_interface) {
+        diagnostics.push_back(MakeDiag(
+            interface_decl.line, interface_decl.column, "O3S318",
+            "derive expansion is only supported on primary interfaces, not category interface '" +
+                container_name + "'"));
+      } else if (canonical_derive_name.empty()) {
+        diagnostics.push_back(MakeDiag(
+            interface_decl.line, interface_decl.column, "O3S317",
+            "unsupported derive '" + derive_spelling +
+                "' on interface '" + container_name + "'"));
+      } else {
+        const std::string derived_selector =
+            BuildPart10DerivedSelectorForInventoryRow(canonical_derive_name);
+        if (!derived_selector.empty()) {
+          const bool selector_conflict = std::any_of(
+              interface_decl.methods.begin(), interface_decl.methods.end(),
+              [&derived_selector](const Objc3MethodDecl &method_decl) {
+                return BuildMethodSelectorNormalizationContractInfo(method_decl)
+                           .normalized_selector == derived_selector;
+              });
+          if (selector_conflict) {
+            diagnostics.push_back(MakeDiag(
+                interface_decl.line, interface_decl.column, "O3S319",
+                "derive expansion selector conflict: interface '" +
+                    container_name + "' already declares selector '" +
+                    derived_selector + "'"));
+          }
+        }
+      }
+    }
     std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
         getter_owner_states;
     std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>

@@ -1,0 +1,33 @@
+module m273DeriveExpansionInventory;
+
+__attribute__((objc_derive(named("Equatable"))))
+@interface EquatableWidget
+@property (strong) id value;
+@end
+
+@implementation EquatableWidget
+@end
+
+__attribute__((objc_derive(named("Equality"))))
+@interface EqualityWidget
+@property (strong) id value;
+@end
+
+@implementation EqualityWidget
+@end
+
+__attribute__((objc_derive(named("Hash"))))
+@interface HashWidget
+@property (strong) id value;
+@end
+
+@implementation HashWidget
+@end
+
+__attribute__((objc_derive(named("DebugDescription"))))
+@interface DebugWidget
+@property (strong) id value;
+@end
+
+@implementation DebugWidget
+@end

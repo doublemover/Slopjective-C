@@ -8993,6 +8993,9 @@ class Objc3Parser {
       decl->prefixed_dispatch_control_attributes_declared = true;
       decl->objc_direct_members_declared =
           prefixed_dispatch_attributes->objc_direct_members_declared;
+      decl->objc_derive_declared =
+          prefixed_dispatch_attributes->objc_derive_declared;
+      decl->objc_derive_name = prefixed_dispatch_attributes->objc_derive_name;
       decl->objc_final_declared =
           prefixed_dispatch_attributes->objc_final_declared;
       decl->objc_sealed_declared =
@@ -9145,6 +9148,9 @@ class Objc3Parser {
       decl->prefixed_dispatch_control_attributes_declared = true;
       decl->objc_direct_members_declared =
           prefixed_dispatch_attributes->objc_direct_members_declared;
+      decl->objc_derive_declared =
+          prefixed_dispatch_attributes->objc_derive_declared;
+      decl->objc_derive_name = prefixed_dispatch_attributes->objc_derive_name;
       decl->objc_final_declared =
           prefixed_dispatch_attributes->objc_final_declared;
       decl->objc_sealed_declared =

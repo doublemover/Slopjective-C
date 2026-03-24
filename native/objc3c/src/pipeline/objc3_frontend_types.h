@@ -5272,6 +5272,8 @@ struct Objc3FrontendPipelineResult {
       part8_system_extension_semantic_model_summary;
   Objc3Part10ExpansionBehaviorSemanticModelSummary
       part10_expansion_behavior_semantic_model_summary;
+  Objc3Part10DeriveExpansionInventorySummary
+      part10_derive_expansion_inventory_summary;
     Objc3Part9DispatchIntentSemanticModelSummary
         part9_dispatch_intent_semantic_model_summary;
     Objc3Part9DispatchIntentLegalitySummary

@@ -1390,3 +1390,22 @@ Current implementation status (`M273-B001`):
 - live fail-closed semantic behavior in this tranche includes:
   - invalid `@property(..., behavior)` usage still rejected with `O3S206`
 - this issue still does not claim real derive expansion, macro sandbox execution, or property-behavior runtime materialization
+
+## M273 derive expansion inventory (B002)
+
+Current implementation status (`M273-B002`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory`
+- supported derive requests currently normalize into a deterministic expansion inventory for:
+  - `Equality`
+  - `Equatable` as an alias for `Equality`
+  - `Hash`
+  - `DebugDescription`
+- each supported derive currently contributes one derived selector inventory row:
+  - `Equality` -> `isEqual:`
+  - `Hash` -> `hash`
+  - `DebugDescription` -> `debugDescription`
+- unsupported derive names are rejected with `O3S317`
+- derive attributes on category interfaces are rejected with `O3S318`
+- selector conflicts between declared methods and derived selectors are rejected with `O3S319`
+- runtime-backed derived method body emission still remains deferred to later M273 lanes

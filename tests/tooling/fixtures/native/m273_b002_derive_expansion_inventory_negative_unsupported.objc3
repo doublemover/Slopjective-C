@@ -1,0 +1,9 @@
+module m273DeriveExpansionUnsupported;
+
+__attribute__((objc_derive(named("Networked"))))
+@interface BrokenWidget
+@property (strong) id value;
+@end
+
+@implementation BrokenWidget
+@end

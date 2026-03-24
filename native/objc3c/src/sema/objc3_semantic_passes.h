@@ -82,6 +82,11 @@ BuildPart10ExpansionBehaviorSemanticModelSummary(
     const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
         &property_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part10DeriveExpansionInventorySummary
+BuildPart10DeriveExpansionInventorySummary(
+    const Objc3Program &program,
+    const Objc3Part10ExpansionBehaviorSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
   Objc3Part9DispatchIntentLegalitySummary
   BuildPart9DispatchIntentLegalitySummary(
       const Objc3Program &program,

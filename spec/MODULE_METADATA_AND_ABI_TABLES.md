@@ -8728,3 +8728,16 @@ runnable smoke matrix.
 - truthful boundary
   - Part 10 now publishes one deterministic sema packet over the existing source surfaces and current property-behavior legality diagnostics
   - no derive-expansion descriptors, macro execution manifests, or property-behavior runtime ABI tables are claimed yet
+
+## M273 derive-expansion inventory note
+
+`M273-B002` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-derive-expansion-inventory/m273-b002-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory`
+- truthful boundary
+  - Part 10 now publishes deterministic derive-expansion inventory rows for the supported semantic derive slice
+  - unsupported derive names, category-interface derive usage, and derived-selector collisions fail closed before lowering
+  - runtime-backed derived method body emission and ABI materialization are still not claimed yet

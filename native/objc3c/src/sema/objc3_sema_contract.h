@@ -1123,6 +1123,68 @@ inline bool IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part10DeriveExpansionInventoryDependencyContractId =
+        "objc3c-part10-expansion-behavior-semantic-model/m273-b001-v1";
+inline constexpr const char
+    *kObjc3Part10DeriveExpansionInventoryContractId =
+        "objc3c-part10-derive-expansion-inventory/m273-b002-v1";
+inline constexpr const char
+    *kObjc3Part10DeriveExpansionInventorySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory";
+inline constexpr const char
+    *kObjc3Part10DeriveExpansionInventoryRule =
+        "supported-derive-requests-now-expand-into-a-deterministic-selector-inventory-while-unsupported-derive-names-category-topologies-and-selector-collisions-fail-closed-in-sema";
+inline constexpr const char
+    *kObjc3Part10DeriveExpansionInventoryDeferredRule =
+        "runtime-backed-derived-method-body-materialization-macro-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-m273-lanes";
+
+struct Objc3Part10DeriveExpansionInventorySummary {
+  std::string contract_id = kObjc3Part10DeriveExpansionInventoryContractId;
+  std::string semantic_dependency_contract_id =
+      kObjc3Part10DeriveExpansionInventoryDependencyContractId;
+  std::string surface_path = kObjc3Part10DeriveExpansionInventorySurfacePath;
+  std::string semantic_model = kObjc3Part10DeriveExpansionInventoryRule;
+  std::string deferred_model = kObjc3Part10DeriveExpansionInventoryDeferredRule;
+  std::size_t derive_request_sites = 0;
+  std::size_t supported_derive_request_sites = 0;
+  std::size_t unsupported_derive_request_sites = 0;
+  std::size_t unsupported_topology_sites = 0;
+  std::size_t equatable_alias_sites = 0;
+  std::size_t equality_derive_sites = 0;
+  std::size_t hash_derive_sites = 0;
+  std::size_t debug_description_derive_sites = 0;
+  std::size_t selector_conflict_sites = 0;
+  std::size_t generated_method_entry_count = 0;
+  std::vector<std::string> expansion_inventory_rows_lexicographic;
+  bool semantic_dependency_required = false;
+  bool supported_derive_inventory_landed = false;
+  bool unsupported_derive_fail_closed = false;
+  bool unsupported_topology_fail_closed = false;
+  bool selector_conflicts_fail_closed = false;
+  bool runtime_materialization_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part10DeriveExpansionInventorySummary(
+    const Objc3Part10DeriveExpansionInventorySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.semantic_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.semantic_dependency_required &&
+         summary.supported_derive_inventory_landed &&
+         summary.unsupported_derive_fail_closed &&
+         summary.unsupported_topology_fail_closed &&
+         summary.selector_conflicts_fail_closed &&
+         summary.runtime_materialization_deferred &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

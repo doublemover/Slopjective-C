@@ -6695,6 +6695,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.part10_macro_package_provenance_source_completion_summary,
           result.part10_property_behavior_source_completion_summary,
           result.stage_diagnostics.semantic);
+  result.part10_derive_expansion_inventory_summary =
+      BuildPart10DeriveExpansionInventorySummary(
+          result.program.ast,
+          result.part10_expansion_behavior_semantic_model_summary,
+          result.stage_diagnostics.semantic);
   result.part9_dispatch_intent_semantic_model_summary =
       BuildPart9DispatchIntentSemanticModelSummary(
           result.part9_dispatch_intent_source_completion_summary,

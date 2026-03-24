@@ -4319,3 +4319,20 @@ Current implementation status (`M271-E001`):
   - explicit macro package/provenance source state is reused as the truthful macro-safety boundary
   - invalid `behavior` property attributes still fail closed through sema diagnostics
 - real derive expansion, macro execution/sandboxing, and property-behavior runtime hooks remain deferred to later M273 lanes
+
+## M273 derive expansion inventory
+
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory`
+- supported derives currently normalize into a deterministic semantic inventory:
+  - `Equality`
+  - `Equatable` as an alias for `Equality`
+  - `Hash`
+  - `DebugDescription`
+- each supported derive currently expands to a tool-visible selector inventory row rather than a runnable emitted method body:
+  - `Equality` -> `isEqual:`
+  - `Hash` -> `hash`
+  - `DebugDescription` -> `debugDescription`
+- unsupported derive names fail closed with `O3S317`
+- derive usage on category interfaces fails closed with `O3S318`
+- selector collisions against derived selectors fail closed with `O3S319`
+- runtime-backed derived method materialization remains deferred to later M273 lanes
