@@ -23504,6 +23504,9 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
               handoff.unsafe_pointer_extension_summary,
               handoff.throws_propagation_summary);
+  // M275-B001 semantic freeze anchor: Part 12 advanced diagnostic taxonomy and
+  // portability publication consumes this existing deterministic ARC/fix-it
+  // semantic slice as the live baseline.
   const Objc3ArcDiagnosticsFixitSummary arc_diagnostics_fixit_summary =
       BuildArcDiagnosticsFixitSummaryFromTypeMetadataHandoff(handoff);
   const Objc3AutoreleasePoolScopeSummary autoreleasepool_scope_summary =

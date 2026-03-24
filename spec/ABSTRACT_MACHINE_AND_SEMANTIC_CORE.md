@@ -1155,3 +1155,12 @@ M275-A002 migration/canonicalization completion note:
   migrator candidate counts
 - it closes the remaining frontend/source-model surface without claiming
   automated rewrite application yet
+
+M275-B001 diagnostic taxonomy/portability freeze note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostic_taxonomy_and_portability_contract`
+- this packet freezes the live advanced diagnostic taxonomy over the existing
+  sema ARC/fix-it summary and the `M275-A002` migration surface
+- portability requirements are explicit completed closeout dependencies rather
+  than an implicit release assumption

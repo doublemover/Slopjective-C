@@ -1579,6 +1579,16 @@ inline constexpr const char
     *kObjc3Part12MigrationCanonicalizationSourceCompletionFailureModel =
         "part12-source-completion-does-not-yet-apply-rewrites-or-emit-machine-readable-fix-it-edits-beyond-deterministic-candidate-inventory";
 inline constexpr const char
+    *kObjc3Part12DiagnosticTaxonomyPortabilitySurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_diagnostic_taxonomy_and_portability_contract";
+inline constexpr const char
+    *kObjc3Part12DiagnosticTaxonomyPortabilitySemanticModel =
+        "advanced-sema-diagnostic-taxonomy-and-portability-freeze-publishes-one-deterministic-part12-packet-over-the-live-arc-fixit-and-migration-surfaces";
+inline constexpr const char
+    *kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel =
+        "advanced-feature-portability-claims-remain-anchored-to-completed-m264-through-m274-closeout-dependencies-while-part12-freezes-the-frontdoor-sema-contract";
+inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part11_foreign_surface_interface_and_module_preservation";
@@ -1999,6 +2009,44 @@ struct Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary {
   bool fixit_migration_surface_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3Part12DiagnosticTaxonomyPortabilityContractSummary {
+  std::string contract_id = kObjc3Part12DiagnosticTaxonomyPortabilityContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12DiagnosticTaxonomyPortabilitySurfacePath;
+  std::string semantic_model =
+      kObjc3Part12DiagnosticTaxonomyPortabilitySemanticModel;
+  std::string portability_model =
+      kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel;
+  std::vector<std::string> portability_dependency_issue_ids = {
+      "M264-E002", "M265-E002", "M266-E002", "M267-E002", "M268-E002",
+      "M269-E002", "M270-E002", "M271-E002", "M272-E002", "M273-E002",
+      "M274-E002",
+  };
+  std::string diagnostic_namespace =
+      kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace;
+  std::size_t portability_dependency_count = 0;
+  std::size_t diagnostics_total = 0;
+  std::size_t diagnostics_after_pass_final = 0;
+  std::size_t diagnostics_emitted_total = 0;
+  std::size_t ownership_arc_diagnostic_candidate_sites = 0;
+  std::size_t ownership_arc_fixit_available_sites = 0;
+  std::size_t ownership_arc_profiled_sites = 0;
+  std::size_t ownership_arc_weak_unowned_conflict_diagnostic_sites = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites = 0;
+  std::size_t ownership_arc_contract_violation_sites = 0;
+  std::size_t migration_canonicalization_candidate_sites = 0;
+  bool migration_surface_ready = false;
+  bool portability_dependencies_frozen = false;
+  bool deterministic_handoff = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string recovery_replay_key;
+  std::string arc_diagnostics_fixit_replay_key;
   std::string replay_key;
   std::string failure_reason;
 };
@@ -5566,6 +5614,8 @@ struct Objc3FrontendPipelineResult {
       part12_diagnostics_migrator_source_inventory_summary;
   Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
       part12_migration_canonicalization_source_completion_summary;
+  Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
+      part12_diagnostic_taxonomy_portability_contract_summary;
   Objc3Part11ForeignSurfaceInterfacePreservationSummary
       part11_foreign_surface_interface_preservation_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary

@@ -4567,6 +4567,15 @@ Current implementation status (`M275-A002`):
   migrator candidate counts
 - this remains a source-completion packet: it truthfully inventories rewrite
   candidates without claiming automated rewrite application yet
+
+Current implementation status (`M275-B001`):
+
+- the emitted frontend manifest now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostic_taxonomy_and_portability_contract`
+- this semantic packet freezes the live advanced diagnostic taxonomy over the
+  existing sema ARC/fix-it baseline plus the `M275-A002` migration surface
+- portability requirements are published as explicit completed milestone
+  dependencies rather than an implicit or undocumented policy surface
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

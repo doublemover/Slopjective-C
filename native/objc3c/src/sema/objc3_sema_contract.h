@@ -2513,6 +2513,9 @@ struct Objc3WeakUnownedSemanticsSummary {
 };
 
 struct Objc3ArcDiagnosticsFixitSummary {
+  // M275-B001 freezes the advanced diagnostics taxonomy/portability contract on
+  // top of this deterministic ARC/fix-it baseline rather than inventing a
+  // parallel semantic diagnostics summary.
   std::size_t ownership_arc_diagnostic_candidate_sites = 0;
   std::size_t ownership_arc_fixit_available_sites = 0;
   std::size_t ownership_arc_profiled_sites = 0;
@@ -2521,6 +2524,11 @@ struct Objc3ArcDiagnosticsFixitSummary {
   std::size_t contract_violation_sites = 0;
   bool deterministic = true;
 };
+
+inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityContractId =
+    "objc3c-part12-diagnostic-taxonomy-portability-contract/m275-b001-v1";
+inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace =
+    "O3S";
 
 struct Objc3BlockLiteralCaptureSiteMetadata {
   std::size_t parameter_count = 0;

@@ -676,6 +676,9 @@ Current truthful scope:
 - lexer-owned legacy `YES` / `NO` / `NULL` canonicalization now has a dedicated
   frontend completion packet for deterministic fix-it and migrator candidate
   planning
+- semantic taxonomy and portability freeze now publish
+  `frontend.pipeline.semantic_surface.objc_part12_diagnostic_taxonomy_and_portability_contract`
+  over the live sema diagnostics/fix-it baseline
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices
