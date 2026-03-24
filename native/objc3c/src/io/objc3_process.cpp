@@ -1488,6 +1488,7 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   // direct-surface artifact paths visible in the cross-module link plan so the
   // runtime/cache lane can prove exactly which imported modules participate in
   // dispatch-boundary preservation before D002 widens the live fast path.
+  // M272-D002 live-dispatch-fast-path anchor: imported direct-surface artifact paths feed the runtime cache seeding model once live direct/final/sealed fast paths are materialized after registration.
   if (inputs.direct_import_surface_artifact_paths.size() !=
       inputs.imported_inputs.size()) {
     error =

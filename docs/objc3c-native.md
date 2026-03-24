@@ -4337,6 +4337,15 @@ Current implementation status (`M271-E001`):
   the dispatch-boundary handoff
 - this lane freezes the current proof surface only; broader live runtime
   fast-path widening remains the next `M272-D002` step
+
+## M272 live dispatch fast-path and cache integration
+
+- Part 9 now widens the live runtime by preseeding deterministic cache entries for safe implementation-backed direct/final/sealed methods during registration-time class-graph rebuild
+- those seeded entries are the new live fast-path cache entries for Part 9 runtime dispatch
+- direct `objc_direct` sites still remain exact LLVM calls and therefore do not increment live-dispatch counters even when a matching seeded runtime cache entry exists
+- final/sealed live sends that remain on `objc3_runtime_dispatch_i32` can now hit a seeded cache entry on the first call instead of forcing a slow-path lookup
+- unresolved selectors still take the deterministic cached fallback path
+- the private runtime proof surface now includes `fast_path_seed_count`, seeded-entry flags, and the last fast-path reason
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

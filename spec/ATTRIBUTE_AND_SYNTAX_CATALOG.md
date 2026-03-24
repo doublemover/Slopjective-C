@@ -1302,3 +1302,18 @@ Current implementation status (`M272-D001`):
   losing imported-module provenance
 - this issue freezes the current contract only; runnable runtime fast-path
   widening remains `M272-D002`
+
+## M272 live dispatch fast-path and cache integration (D002)
+
+Current implementation status (`M272-D002`):
+
+- registration-time runtime rebuild now pre-seeds deterministic cache entries for safe implementation-backed direct/final/sealed methods
+- direct `objc_direct` call sites still bypass the runtime entrypoint even when a seeded cache entry exists for the same selector
+- `objc_dynamic` opt-out sends on final/sealed owners can hit a seeded cache entry on the first live dispatch
+- unresolved selectors still use the deterministic cached fallback path
+- the private proof surface now exposes:
+  - `fast_path_seed_count`
+  - `fast_path_hit_count`
+  - `last_dispatch_used_fast_path`
+  - `last_fast_path_reason`
+  - seeded-entry flags for direct/final/sealed intent

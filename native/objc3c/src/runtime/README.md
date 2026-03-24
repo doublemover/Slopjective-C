@@ -304,3 +304,15 @@ fast-path work lands:
 - cross-module provenance stays visible through retained direct import surface
   paths in the runtime link-plan artifact
 - the live widening step remains `M272-D002`
+
+`M272-D002` widens the private Part 9 runtime cache surface without reopening the public ABI:
+
+- contract id `objc3c-part9-live-dispatch-fast-path-and-cache-integration/m272-d002-v1`
+- registration-time runtime rebuild now seeds direct/final/sealed cache entries
+- the private testing surface now exposes:
+  - `fast_path_seed_count`
+  - `fast_path_hit_count`
+  - `last_dispatch_used_fast_path`
+  - `last_fast_path_reason`
+  - seeded-entry flags for direct/final/sealed intent
+- unresolved selectors remain on the deterministic cached fallback path

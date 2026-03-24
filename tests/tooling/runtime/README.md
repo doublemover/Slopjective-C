@@ -648,3 +648,17 @@ through `M269-D003` summary chain.
   - unresolved selectors still take the deterministic cached fallback path
   - imported direct-surface artifact paths remain part of the same frozen
     runtime/link-plan contract for `M272-D002`
+
+## M272 live dispatch fast-path and cache integration
+
+`M272-D002` proves the widened Part 9 runtime path.
+
+- fixture:
+  `tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3`
+- probe:
+  `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+- proof checks:
+  - baseline cache state already contains seeded direct/final/sealed entries
+  - first mixed live dispatch hits a seeded cache entry instead of forcing a slow-path lookup
+  - direct wrappers still leave runtime dispatch counters unchanged
+  - unresolved selectors still take the deterministic cached fallback path

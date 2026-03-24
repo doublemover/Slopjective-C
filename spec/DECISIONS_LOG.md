@@ -762,3 +762,11 @@ as unsupported after the fact.
 
 **Spec impact:** [Part 1](#part-1), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
+
+## D-033: Part 9 widens runtime dispatch by preseeding direct/final/sealed cache entries {#decisions-d-033}
+
+`M272-D002` turns the previously frozen runtime boundary into a real live fast path for safe implementation-backed direct/final/sealed methods.
+
+The runtime now pre-seeds deterministic cache entries during registration-time class-graph rebuild so first-call cache hits for eligible live dispatch are possible on the native dispatch path without reopening the public runtime ABI.
+
+Direct LLVM call sites remain outside the runtime dispatch entrypoint. The widened runtime path applies only to live sends that still enter `objc3_runtime_dispatch_i32`, where final/sealed intent and emitted direct/final metadata can now eliminate the first-call slow-path lookup.

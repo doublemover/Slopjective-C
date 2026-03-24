@@ -11319,3 +11319,15 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   paths visible so `M272-D002` can widen the live fast path without losing
   imported-module provenance
 - the next issue is `M272-D002`
+
+## M272 Part 9 Live Dispatch Fast-Path And Cache Integration (D002)
+
+- `M272-D002` widens the live runtime by preseeding deterministic cache entries for safe implementation-backed direct/final/sealed methods during registration-time class-graph rebuild
+- runtime seeding is centralized in `SeedDispatchIntentFastPathCacheUnlocked`
+- first-call cache hits are now possible on the live runtime path for final/sealed dispatch-intent sites that still lower through `objc3_runtime_dispatch_i32`
+- exact direct LLVM call sites still bypass the runtime entrypoint and therefore do not perturb live-dispatch counters
+- unresolved selectors still use the deterministic cached fallback path
+- the private proof surface now includes:
+  - seeded-fast-path counters
+  - seeded-entry direct/final/sealed flags
+  - last-fast-path reason publication

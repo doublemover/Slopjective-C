@@ -115,6 +115,10 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
 // truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
 // and deterministic fallback dispatch behavior before D002 widens the live
 // fast-path runtime itself.
+// M272-D002 live-dispatch-fast-path anchor: Part 9 now widens the same private
+// proof surface with seeded-fast-path counters, seeded-entry flags, and the
+// last fast-path reason so first-call cache-hit behavior remains observable
+// without reopening the public runtime ABI.
 typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t cache_entry_count;
   uint64_t cache_hit_count;
@@ -122,14 +126,18 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t slow_path_lookup_count;
   uint64_t live_dispatch_count;
   uint64_t fallback_dispatch_count;
+  uint64_t fast_path_seed_count;
+  uint64_t fast_path_hit_count;
   uint64_t last_selector_stable_id;
   uint64_t last_normalized_receiver_identity;
   uint64_t last_category_probe_count;
   uint64_t last_protocol_probe_count;
   int last_dispatch_used_cache;
+  int last_dispatch_used_fast_path;
   int last_dispatch_resolved_live_method;
   int last_dispatch_fell_back;
   const char *last_selector;
+  const char *last_fast_path_reason;
   const char *last_resolved_class_name;
   const char *last_resolved_owner_identity;
 } objc3_runtime_method_cache_state_snapshot;
@@ -143,7 +151,12 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   uint64_t parameter_count;
   uint64_t category_probe_count;
   uint64_t protocol_probe_count;
+  int fast_path_seeded;
+  int effective_direct_dispatch;
+  int objc_final_declared;
+  int objc_sealed_declared;
   const char *selector;
+  const char *fast_path_reason;
   const char *resolved_class_name;
   const char *resolved_owner_identity;
 } objc3_runtime_method_cache_entry_snapshot;
