@@ -3690,6 +3690,27 @@ The semantic pipeline now publishes a dedicated packet at
 - current support remains a deterministic sema/accounting boundary rather than
   foreign ABI lowering or runnable bridge generation
 
+## M274 Part 11 C and Objective-C runtime parity semantics
+
+Current implementation status (`M274-B002`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part11_c_and_objc_runtime_parity_semantics`
+- live fail-closed diagnostics now reject:
+  - `O3S331` `objc_foreign` function definitions that are not declaration-only
+    extern surfaces
+  - `O3S332` `objc_import_module(named("..."))` callables that do not also use
+    `objc_foreign`
+  - `O3S333` implementation or category-implementation methods that try to use
+    Part 11 foreign/import callable annotations
+- the packet classifies the currently supported base parity slice across:
+  - foreign C callables
+  - foreign Objective-C method declarations
+  - imported-module foreign callables
+  - Objective-C-runtime-typed foreign callable signatures
+- foreign ABI lowering, bridge shims, and runnable cross-language behavior
+  remain later `M274` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

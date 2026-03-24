@@ -1,0 +1,22 @@
+module Part11CAndObjcRuntimeParityPositive;
+
+extern fn cImportedEntry(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+extern pure fn cImportedPureEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+
+@protocol RuntimeParityProtocol
+- (id) protocolForeignCall __attribute__((objc_foreign));
+@end
+
+@interface RuntimeParityBridge
+- (id) interfaceForeignCall: (Class) owner __attribute__((objc_foreign));
+@end
+
+@implementation RuntimeParityBridge
+- (id) interfaceForeignCall: (Class) owner {
+  return nil;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

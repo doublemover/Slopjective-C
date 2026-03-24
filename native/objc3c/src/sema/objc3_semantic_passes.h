@@ -80,6 +80,11 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
     const Objc3Part6ErrorBridgeLegalitySummary &error_summary,
     const Objc3Part7AsyncDiagnosticsCompatibilitySummary &async_summary,
     const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &actor_summary);
+Objc3Part11InteropRuntimeParitySummary
+BuildPart11InteropRuntimeParitySummary(
+    const Objc3Program &program,
+    const Objc3Part11InteropSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part9DispatchIntentSemanticModelSummary
 BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary

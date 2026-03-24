@@ -11384,3 +11384,21 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - Part 7 async diagnostics and actor hazard diagnostics
 - foreign ABI lowering, bridge shims, and runnable cross-language behavior
   remain later `M274` work
+
+## M274 Part 11 C and Objective-C runtime parity semantics (B002)
+
+- `M274-B002` converts the first Part 11 legality slice from a freeze-only
+  summary into live fail-closed sema checks
+- the emitted frontend manifest publishes
+  `objc_part11_c_and_objc_runtime_parity_semantics`
+- live sema now rejects:
+  - `objc_foreign` function definitions that are not declaration-only extern
+    surfaces
+  - `objc_import_module(named(\"...\"))` without `objc_foreign`
+  - implementation/category-implementation methods that try to use Part 11
+    foreign/import callable annotations
+- the packet classifies the supported base parity slice across foreign C
+  callables, foreign Objective-C method declarations, imported-module foreign
+  callables, and Objective-C-runtime-typed foreign callable signatures
+- C++ ownership/throws/async interactions, Swift-facing metadata/isolation,
+  ABI lowering, and runnable bridge generation remain later `M274` work

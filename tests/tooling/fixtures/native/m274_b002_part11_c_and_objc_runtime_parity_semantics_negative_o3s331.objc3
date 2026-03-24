@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S331.
+module Part11CAndObjcRuntimeParityNegativeO3S331;
+
+fn foreignButNotDeclarationOnly() -> i32 __attribute__((objc_foreign)) {
+  return 1;
+}

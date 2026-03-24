@@ -9593,6 +9593,143 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
 }
 
 template <typename CallableDeclT>
+static bool HasPart11ObjcRuntimeTypeSurface(const CallableDeclT &decl) {
+  if (decl.return_id_spelling || decl.return_class_spelling ||
+      decl.return_sel_spelling || decl.return_instancetype_spelling ||
+      decl.return_object_pointer_type_spelling) {
+    return true;
+  }
+  return std::any_of(decl.params.begin(), decl.params.end(),
+                     [](const FuncParam &param) {
+                       return param.id_spelling || param.class_spelling ||
+                              param.sel_spelling || param.instancetype_spelling ||
+                              param.object_pointer_type_spelling;
+                     });
+}
+
+template <typename CallableDeclT>
+static bool HasPart11ForeignOrImportAnnotations(const CallableDeclT &decl) {
+  return decl.objc_foreign_declared || decl.objc_import_module_declared;
+}
+
+Objc3Part11InteropRuntimeParitySummary
+BuildPart11InteropRuntimeParitySummary(
+    const Objc3Program &program,
+    const Objc3Part11InteropSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part11InteropRuntimeParitySummary summary;
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) {
+          return entry.find(code) != std::string::npos;
+        });
+  };
+
+  summary.foreign_callable_sites = dependency_summary.foreign_callable_sites;
+  summary.import_module_annotation_sites =
+      dependency_summary.import_module_annotation_sites;
+
+  for (const auto &fn : program.functions) {
+    if (fn.objc_foreign_declared) {
+      ++summary.c_foreign_callable_sites;
+      if (HasPart11ObjcRuntimeTypeSurface(fn)) {
+        ++summary.objc_runtime_parity_callable_sites;
+      }
+    }
+    if (fn.objc_import_module_declared && fn.objc_foreign_declared) {
+      ++summary.import_module_foreign_callable_sites;
+    }
+  }
+
+  const auto accumulate_method_sites =
+      [&summary](const auto &method_decl) {
+        if (method_decl.objc_foreign_declared) {
+          ++summary.objc_method_foreign_callable_sites;
+          if (HasPart11ObjcRuntimeTypeSurface(method_decl)) {
+            ++summary.objc_runtime_parity_callable_sites;
+          }
+        }
+        if (method_decl.objc_import_module_declared &&
+            method_decl.objc_foreign_declared) {
+          ++summary.import_module_foreign_callable_sites;
+        }
+      };
+
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method_decl : interface_decl.methods) {
+      accumulate_method_sites(method_decl);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      accumulate_method_sites(method_decl);
+    }
+  }
+
+  summary.foreign_definition_rejection_sites = count_diagnostic_code("O3S331");
+  summary.import_without_foreign_rejection_sites =
+      count_diagnostic_code("O3S332");
+  summary.implementation_annotation_rejection_sites =
+      count_diagnostic_code("O3S333");
+
+  const bool dependency_surface_present =
+      IsReadyObjc3Part11InteropSemanticModelSummary(dependency_summary);
+  summary.dependency_required = true;
+  summary.declaration_only_foreign_c_enforced =
+      dependency_surface_present &&
+      summary.foreign_definition_rejection_sites <=
+          summary.c_foreign_callable_sites;
+  summary.import_module_requires_foreign_enforced =
+      dependency_surface_present &&
+      summary.import_module_foreign_callable_sites <=
+          summary.import_module_annotation_sites &&
+      summary.import_without_foreign_rejection_sites <=
+          summary.import_module_annotation_sites;
+  summary.implementation_annotations_fail_closed =
+      dependency_surface_present &&
+      summary.implementation_annotation_rejection_sites <=
+          summary.foreign_callable_sites +
+              summary.import_module_annotation_sites;
+  summary.objc_runtime_parity_classified =
+      dependency_surface_present &&
+      summary.c_foreign_callable_sites <= summary.foreign_callable_sites &&
+      summary.objc_method_foreign_callable_sites <=
+          summary.foreign_callable_sites &&
+      summary.objc_runtime_parity_callable_sites <=
+          summary.foreign_callable_sites;
+  summary.ffi_abi_lowering_deferred = true;
+  summary.runtime_bridge_generation_deferred = true;
+  summary.deterministic =
+      summary.declaration_only_foreign_c_enforced &&
+      summary.import_module_requires_foreign_enforced &&
+      summary.implementation_annotations_fail_closed &&
+      summary.objc_runtime_parity_classified;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "part11 c and objective-c runtime parity diagnostics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";foreign-sites=" << summary.foreign_callable_sites << ":"
+      << summary.c_foreign_callable_sites << ":"
+      << summary.objc_method_foreign_callable_sites
+      << ";import-sites=" << summary.import_module_annotation_sites << ":"
+      << summary.import_module_foreign_callable_sites
+      << ";objc-runtime-sites=" << summary.objc_runtime_parity_callable_sites
+      << ";rejections=" << summary.foreign_definition_rejection_sites << ":"
+      << summary.import_without_foreign_rejection_sites << ":"
+      << summary.implementation_annotation_rejection_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+template <typename CallableDeclT>
 static bool HasPart9CallableDispatchIntentAttributes(
     const CallableDeclT &decl);
 static bool HasPart9ContainerDispatchIntentAttributes(
@@ -14316,6 +14453,94 @@ static void ValidatePart9DispatchIntentCompatibility(
           method.line, method.column, "O3S315",
           "dispatch-control semantics failed: " + method_label +
               " cannot use Part 9 dispatch-control callable attributes"));
+    }
+  }
+}
+
+static void ValidatePart11InteropRuntimeParity(
+    const Objc3Program &ast, std::vector<std::string> &diagnostics) {
+  const auto format_function_label = [](const FunctionDecl &fn) {
+    return "function '" + fn.name + "'";
+  };
+  const auto format_method_label =
+      [](const Objc3MethodDecl &method, const std::string &owner_kind,
+         const std::string &owner_name) {
+        return "selector '" +
+               FormatMethodSelectorForDiagnostic(method.selector,
+                                                method.is_class_method) +
+               "' in " + owner_kind + " '" + owner_name + "'";
+      };
+  const auto diagnose_import_requires_foreign =
+      [&diagnostics](unsigned line, unsigned column,
+                     const std::string &callable_label) {
+        diagnostics.push_back(MakeDiag(
+            line, column, "O3S332",
+            "interop semantics failed: " + callable_label +
+                " cannot use objc_import_module without objc_foreign"));
+      };
+
+  for (const auto &fn : ast.functions) {
+    if (fn.objc_import_module_declared && !fn.objc_foreign_declared) {
+      diagnose_import_requires_foreign(fn.line, fn.column,
+                                       format_function_label(fn));
+      continue;
+    }
+    if (fn.objc_foreign_declared && !fn.is_prototype) {
+      diagnostics.push_back(MakeDiag(
+          fn.line, fn.column, "O3S331",
+          "interop semantics failed: " + format_function_label(fn) +
+              " must use a declaration-only extern surface under objc_foreign"));
+    }
+  }
+
+  const auto validate_declaration_method =
+      [&diagnose_import_requires_foreign, &format_method_label](
+          const Objc3MethodDecl &method_decl, const std::string &owner_kind,
+          const std::string &owner_name) {
+        if (method_decl.objc_import_module_declared &&
+            !method_decl.objc_foreign_declared) {
+          diagnose_import_requires_foreign(method_decl.line, method_decl.column,
+                                           format_method_label(method_decl,
+                                                               owner_kind,
+                                                               owner_name));
+        }
+      };
+
+  for (const auto &interface_decl : ast.interfaces) {
+    const std::string owner_name = interface_decl.has_category
+                                       ? interface_decl.name + "(" +
+                                             interface_decl.category_name + ")"
+                                       : interface_decl.name;
+    const std::string owner_kind =
+        interface_decl.has_category ? "category interface" : "interface";
+    for (const auto &method_decl : interface_decl.methods) {
+      validate_declaration_method(method_decl, owner_kind, owner_name);
+    }
+  }
+
+  for (const auto &protocol_decl : ast.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      validate_declaration_method(method_decl, "protocol", protocol_decl.name);
+    }
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    const std::string owner_name = implementation_decl.has_category
+                                       ? implementation_decl.name + "(" +
+                                             implementation_decl.category_name + ")"
+                                       : implementation_decl.name;
+    const std::string owner_kind =
+        implementation_decl.has_category ? "category implementation"
+                                         : "implementation";
+    for (const auto &method_decl : implementation_decl.methods) {
+      if (!HasPart11ForeignOrImportAnnotations(method_decl)) {
+        continue;
+      }
+      diagnostics.push_back(MakeDiag(
+          method_decl.line, method_decl.column, "O3S333",
+          "interop semantics failed: " +
+              format_method_label(method_decl, owner_kind, owner_name) +
+              " cannot use Part 11 foreign/import callable annotations on an implementation surface"));
     }
   }
 }
@@ -20271,6 +20496,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                       surface.category_interfaces,
                                       surface.category_implementations,
                                       diagnostics);
+  ValidatePart11InteropRuntimeParity(ast, diagnostics);
   ValidateInheritanceOverrideAndRealizationLegality(ast, surface, diagnostics);
   ValidatePart9DispatchIntentCompatibility(ast, diagnostics);
 

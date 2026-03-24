@@ -937,6 +937,69 @@ inline bool IsReadyObjc3Part11InteropSemanticModelSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part11InteropRuntimeParitySummaryDependencyContractId =
+        kObjc3Part11InteropSemanticModelContractId;
+inline constexpr const char
+    *kObjc3Part11InteropRuntimeParitySummaryContractId =
+        "objc3c-part11-c-and-objc-runtime-parity-semantics/m274-b002-v1";
+inline constexpr const char
+    *kObjc3Part11InteropRuntimeParitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part11_c_and_objc_runtime_parity_semantics";
+inline constexpr const char
+    *kObjc3Part11InteropRuntimeParitySummaryRule =
+        "declaration-only-foreign-c-surfaces-import-module-requires-foreign-and-implementation-annotation-rejections-are-now-live-fail-closed-sema-rules-while-ffi-abi-lowering-and-runnable-bridge-generation-remain-later-m274-work";
+inline constexpr const char
+    *kObjc3Part11InteropRuntimeParitySummaryDeferredRule =
+        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-m274-lanes";
+
+struct Objc3Part11InteropRuntimeParitySummary {
+  std::string contract_id = kObjc3Part11InteropRuntimeParitySummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part11InteropRuntimeParitySummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part11InteropRuntimeParitySummarySurfacePath;
+  std::string semantic_model = kObjc3Part11InteropRuntimeParitySummaryRule;
+  std::string deferred_model =
+      kObjc3Part11InteropRuntimeParitySummaryDeferredRule;
+  std::size_t foreign_callable_sites = 0;
+  std::size_t c_foreign_callable_sites = 0;
+  std::size_t objc_method_foreign_callable_sites = 0;
+  std::size_t import_module_annotation_sites = 0;
+  std::size_t import_module_foreign_callable_sites = 0;
+  std::size_t objc_runtime_parity_callable_sites = 0;
+  std::size_t foreign_definition_rejection_sites = 0;
+  std::size_t import_without_foreign_rejection_sites = 0;
+  std::size_t implementation_annotation_rejection_sites = 0;
+  bool dependency_required = false;
+  bool declaration_only_foreign_c_enforced = false;
+  bool import_module_requires_foreign_enforced = false;
+  bool implementation_annotations_fail_closed = false;
+  bool objc_runtime_parity_classified = false;
+  bool ffi_abi_lowering_deferred = false;
+  bool runtime_bridge_generation_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part11InteropRuntimeParitySummary(
+    const Objc3Part11InteropRuntimeParitySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.declaration_only_foreign_c_enforced &&
+         summary.import_module_requires_foreign_enforced &&
+         summary.implementation_annotations_fail_closed &&
+         summary.objc_runtime_parity_classified &&
+         summary.ffi_abi_lowering_deferred &&
+         summary.runtime_bridge_generation_deferred &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
         "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =

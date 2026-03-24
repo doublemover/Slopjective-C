@@ -8910,3 +8910,26 @@ Current implementation status (`M274-B001`):
 - runtime-import-surface preservation from `M274-A003` remains the dependency
   token, while foreign ABI lowering and runnable bridge generation remain later
   `M274` work
+
+## M274 C/Objective-C runtime parity semantics note
+
+Current implementation status (`M274-B002`):
+
+- the frontend manifest now emits one deterministic Part 11 legality packet:
+  `objc3c-part11-c-and-objc-runtime-parity-semantics/m274-b002-v1`
+- that packet records:
+  - foreign callable totals
+  - foreign C callable totals
+  - foreign Objective-C method-declaration totals
+  - imported-module foreign callable totals
+  - Objective-C-runtime-typed foreign callable totals
+  - rejection totals for foreign definitions, import-without-foreign usage, and
+    implementation-surface annotation misuse
+- live sema now fails closed before metadata publication when:
+  - `objc_foreign` is attached to a function definition rather than a
+    declaration-only extern surface
+  - `objc_import_module(named("..."))` appears without `objc_foreign`
+  - implementation or category-implementation methods carry Part 11
+    foreign/import callable annotations
+- foreign ABI lowering, bridge shims, and runnable cross-language behavior
+  remain later `M274` work

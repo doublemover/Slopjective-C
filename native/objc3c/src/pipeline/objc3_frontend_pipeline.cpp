@@ -6946,6 +6946,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.part6_error_bridge_legality_summary,
           result.part7_async_diagnostics_compatibility_summary,
           result.part7_actor_race_hazard_escape_diagnostics_summary);
+  result.part11_interop_runtime_parity_summary =
+      BuildPart11InteropRuntimeParitySummary(
+          Objc3ParsedProgramAst(result.program),
+          result.part11_interop_semantic_model_summary,
+          result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

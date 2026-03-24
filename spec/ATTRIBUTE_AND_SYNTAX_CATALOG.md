@@ -1615,3 +1615,22 @@ Current implementation status (`M274-B001`):
   - metadata payload normalization
 - this freeze still does not claim foreign ABI lowering, bridge shim emission,
   or runnable cross-language interop behavior
+
+## M274 Part 11 C and Objective-C runtime parity semantics (B002)
+
+Current implementation status (`M274-B002`):
+
+- the semantic pipeline now publishes one deterministic Part 11 legality packet:
+  - `frontend.pipeline.semantic_surface.objc_part11_c_and_objc_runtime_parity_semantics`
+- live fail-closed sema now enforces:
+  - declaration-only `objc_foreign` free-function surfaces
+  - `objc_import_module(named("..."))` only when paired with `objc_foreign`
+  - rejection of Part 11 foreign/import callable annotations on implementation
+    and category-implementation methods
+- that packet classifies:
+  - foreign C callable sites
+  - foreign Objective-C method-declaration sites
+  - imported-module foreign callable sites
+  - Objective-C-runtime-typed foreign callable signatures
+- C++ ownership/throws/async interactions plus Swift-facing metadata/isolation
+  remain later `M274` lane-B work

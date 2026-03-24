@@ -5427,6 +5427,8 @@ struct Objc3FrontendPipelineResult {
       part8_capture_list_retainable_family_legality_completion_summary;
   Objc3Part11InteropSemanticModelSummary
       part11_interop_semantic_model_summary;
+  Objc3Part11InteropRuntimeParitySummary
+      part11_interop_runtime_parity_summary;
   Objc3Part7StructuredTaskCancellationSemanticSummary
       part7_structured_task_cancellation_semantic_summary;
   Objc3Part7ExecutorHopAffinityCompatibilitySummary
