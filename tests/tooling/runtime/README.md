@@ -699,6 +699,19 @@ live header/module/bridge generation yet.
   - `M274-D002`
 - `M274-D002` remains the executable proof boundary for the supported interop
   slice
+
+## M274 cross-language execution matrix closeout
+
+`M274-E002` does not add a new runtime probe.
+
+- it publishes one integrated closeout matrix over:
+  - `M274-A003`
+  - `M274-B004`
+  - `M274-C003`
+  - `M274-D002`
+  - `M274-E001`
+- `M274-D002` remains the executable proof boundary for the supported interop
+  slice
     runtime/link-plan contract for `M272-D002`
 
 ## M272 live dispatch fast-path and cache integration

@@ -616,6 +616,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
 
   // M274-E001 interop conformance gate anchor: the frontend C API preserves
   // the same D002 generated-bridge artifacts as the native driver path.
+  // M274-E001/M274-E002 Part 11 lane-E anchors: the frontend C API preserves
+  // the same D002 generated-bridge artifacts as the native driver path.
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
       !product.artifact_bundle.part11_bridge_header_artifact_text.empty()) {
     const std::filesystem::path header_out =

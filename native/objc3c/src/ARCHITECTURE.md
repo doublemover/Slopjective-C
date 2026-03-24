@@ -11501,3 +11501,13 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - `M274-E001` adds explicit driver/manifest/frontend publication anchors rather
   than a new runtime helper surface
 - `M274-E002` is the closeout step after this gate
+
+## M274 cross-language execution matrix closeout (E002)
+
+- `M274-E002` publishes one integrated runnable Part 11 matrix over the A003,
+  B004, C003, D002, and E001 proof chain
+- `M274-D002` remains the executable evidence boundary for the supported
+  interop slice
+- `M274-E002` adds explicit driver/manifest/frontend publication anchors for
+  milestone closeout rather than widening the runtime helper surface again
+- `M275-A001` is the next sequential issue after this closeout

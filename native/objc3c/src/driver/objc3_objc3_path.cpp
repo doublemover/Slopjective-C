@@ -224,6 +224,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
     // M274-E001 interop conformance gate anchor: the driver-side publication
     // path includes the live D002 bridge sidecars consumed by the lane-E gate.
+    // M274-E001/M274-E002 Part 11 lane-E anchors: the driver-side publication
+    // path includes the live D002 bridge sidecars consumed by the gate and the closeout matrix.
     if (!artifacts.part11_bridge_header_artifact_text.empty()) {
       WritePart11BridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
                                       artifacts.part11_bridge_header_artifact_text);

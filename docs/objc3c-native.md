@@ -9519,6 +9519,28 @@ native build surface.
   - the private runtime bridge-generation snapshot
 - the next closeout issue is `M274-E002`
 
+## M274 cross-language execution matrix closeout (M274-E002)
+
+- lane E now publishes one integrated runnable Part 11 matrix instead of a
+  placeholder-only closeout
+- the matrix consumes the summary chain from:
+  - `M274-A003`
+  - `M274-B004`
+  - `M274-C003`
+  - `M274-D002`
+  - `M274-E001`
+- `M274-D002` remains the executable evidence boundary because it proves:
+  - deterministic generated bridge sidecars
+  - runtime-import preservation
+  - cross-module link-plan preservation
+  - the private runtime bridge-generation snapshot
+- the matrix explicitly publishes:
+  - C/C++ foreign-surface continuity
+  - Swift metadata/isolation continuity
+  - generated bridge artifact continuity
+  - cross-module runtime-import and link-plan continuity
+- the next issue is `M275-A001`
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

@@ -1757,3 +1757,24 @@ Current implementation status (`M274-E001`):
   - cross-module packaging continuity
   - the private bridge-generation runtime snapshot
 - the next closeout issue is `M274-E002`
+
+## M274 cross-language execution matrix closeout (E002)
+
+Current implementation status (`M274-E002`):
+
+- evidence model:
+  `a003-through-e001-summary-chain-plus-d002-live-header-module-bridge-proof`
+- lane E now publishes one integrated runnable Part 11 matrix over:
+  - `M274-A003`
+  - `M274-B004`
+  - `M274-C003`
+  - `M274-D002`
+  - `M274-E001`
+- `M274-D002` remains the executable evidence boundary for the supported
+  interop slice
+- the closeout matrix explicitly publishes rows for:
+  - C/C++ foreign-surface continuity
+  - Swift metadata/isolation continuity
+  - generated bridge artifact continuity
+  - cross-module runtime-import and link-plan continuity
+- the next issue is `M275-A001`
