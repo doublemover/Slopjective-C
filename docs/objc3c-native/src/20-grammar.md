@@ -4336,3 +4336,22 @@ Current implementation status (`M271-E001`):
 - derive usage on category interfaces fails closed with `O3S318`
 - selector collisions against derived selectors fail closed with `O3S319`
 - runtime-backed derived method materialization remains deferred to later M273 lanes
+
+## M273 macro safety, sandbox, and determinism semantics
+
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_macro_safety_sandbox_and_determinism_semantics`
+- macro callable admission is currently limited to pure, body-backed free functions
+- macro callables must carry all three markers:
+  - `objc_macro`
+  - `objc_macro_package`
+  - `objc_macro_provenance`
+- sandbox-admitted macro packages currently live under `std.metaprogramming`
+- macro provenance currently must be a lowercase `sha256:` digest token
+- live fail-closed diagnostics in this slice are:
+  - `O3S320` incomplete macro metadata
+  - `O3S321` orphan package/provenance metadata
+  - `O3S322` sandbox-rejected package
+  - `O3S323` non-deterministic provenance token
+  - `O3S324` non-pure / prototype / async / throws macro callable
+  - `O3S325` macro-marked method topology rejection
+- runnable macro execution and runtime package loading remain deferred to later M273 lanes

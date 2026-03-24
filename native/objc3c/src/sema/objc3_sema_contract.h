@@ -1185,6 +1185,72 @@ inline bool IsReadyObjc3Part10DeriveExpansionInventorySummary(
 }
 
 inline constexpr const char
+    *kObjc3Part10MacroSafetySandboxDeterminismDependencyContractId =
+        "objc3c-part10-derive-expansion-inventory/m273-b002-v1";
+inline constexpr const char
+    *kObjc3Part10MacroSafetySandboxDeterminismContractId =
+        "objc3c-part10-macro-safety-sandbox-determinism-semantics/m273-b003-v1";
+inline constexpr const char
+    *kObjc3Part10MacroSafetySandboxDeterminismSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part10_macro_safety_sandbox_and_determinism_semantics";
+inline constexpr const char
+    *kObjc3Part10MacroSafetySandboxDeterminismRule =
+        "macro-callable-safety-sandbox-namespace-and-deterministic-provenance-semantics-are-live-in-sema-while-runnable-macro-execution-remains-deferred";
+inline constexpr const char
+    *kObjc3Part10MacroSafetySandboxDeterminismDeferredRule =
+        "runnable-macro-execution-runtime-package-loading-and-expanded-body-materialization-remain-deferred-to-later-m273-lanes";
+
+struct Objc3Part10MacroSafetySandboxDeterminismSummary {
+  std::string contract_id =
+      kObjc3Part10MacroSafetySandboxDeterminismContractId;
+  std::string semantic_dependency_contract_id =
+      kObjc3Part10MacroSafetySandboxDeterminismDependencyContractId;
+  std::string surface_path =
+      kObjc3Part10MacroSafetySandboxDeterminismSurfacePath;
+  std::string semantic_model =
+      kObjc3Part10MacroSafetySandboxDeterminismRule;
+  std::string deferred_model =
+      kObjc3Part10MacroSafetySandboxDeterminismDeferredRule;
+  std::size_t macro_marker_sites = 0;
+  std::size_t macro_package_sites = 0;
+  std::size_t macro_provenance_sites = 0;
+  std::size_t expansion_visible_macro_sites = 0;
+  std::size_t safe_macro_callable_sites = 0;
+  std::size_t incomplete_macro_metadata_sites = 0;
+  std::size_t orphan_macro_metadata_sites = 0;
+  std::size_t invalid_package_sites = 0;
+  std::size_t invalid_provenance_sites = 0;
+  std::size_t nondeterministic_callable_sites = 0;
+  std::size_t unsupported_callable_topology_sites = 0;
+  bool semantic_dependency_required = false;
+  bool metadata_completeness_enforced = false;
+  bool sandbox_namespace_enforced = false;
+  bool provenance_determinism_enforced = false;
+  bool callable_determinism_enforced = false;
+  bool macro_execution_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
+    const Objc3Part10MacroSafetySandboxDeterminismSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.semantic_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.semantic_dependency_required &&
+         summary.metadata_completeness_enforced &&
+         summary.sandbox_namespace_enforced &&
+         summary.provenance_determinism_enforced &&
+         summary.callable_determinism_enforced &&
+         summary.macro_execution_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

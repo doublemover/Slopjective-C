@@ -3943,6 +3943,16 @@ static std::string NormalizePart10RawDeriveToken(std::string token) {
   return token;
 }
 
+static std::string NormalizePart10RawMacroToken(std::string token) {
+  token = TrimAsciiWhitespace(token);
+  if (token.size() >= 2u &&
+      ((token.front() == '"' && token.back() == '"') ||
+       (token.front() == '\'' && token.back() == '\''))) {
+    token = token.substr(1, token.size() - 2u);
+  }
+  return token;
+}
+
 static std::string BuildPart10LowercaseDeriveToken(std::string token) {
   token = NormalizePart10RawDeriveToken(std::move(token));
   std::transform(token.begin(), token.end(), token.begin(),
@@ -3965,6 +3975,42 @@ static std::string NormalizePart10SupportedDeriveName(
     return "DebugDescription";
   }
   return "";
+}
+
+static std::string BuildPart10LowercaseMacroToken(std::string token) {
+  token = NormalizePart10RawMacroToken(std::move(token));
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char c) {
+                   return static_cast<char>(std::tolower(c));
+                 });
+  return token;
+}
+
+static bool IsSupportedPart10MacroPackageName(const std::string &package_name) {
+  const std::string lowered = BuildPart10LowercaseMacroToken(package_name);
+  return lowered == "std.metaprogramming" ||
+         lowered.rfind("std.metaprogramming.", 0) == 0u;
+}
+
+static bool IsSupportedPart10MacroProvenanceToken(
+    const std::string &provenance_name) {
+  const std::string normalized =
+      NormalizePart10RawMacroToken(provenance_name);
+  const std::string lowered = BuildPart10LowercaseMacroToken(provenance_name);
+  if (normalized != lowered) {
+    return false;
+  }
+  constexpr std::string_view prefix = "sha256:";
+  if (lowered.rfind(prefix, 0) != 0u) {
+    return false;
+  }
+  const std::string_view digest = std::string_view(lowered).substr(prefix.size());
+  if (digest.size() < 6u || digest.size() > 64u) {
+    return false;
+  }
+  return std::all_of(digest.begin(), digest.end(), [](char c) {
+    return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+  });
 }
 
 static std::string BuildPart10DerivedSelectorForInventoryRow(
@@ -5957,6 +6003,15 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
                                        kContainerLabel, diagnostics);
       ValidateMethodParameterTypeSuffixes(method_decl, container_name,
                                           kContainerLabel, diagnostics);
+      if (method_decl.objc_macro_declared ||
+          method_decl.objc_macro_package_declared ||
+          method_decl.objc_macro_provenance_declared) {
+        diagnostics.push_back(MakeDiag(
+            method_decl.line, method_decl.column, "O3S325",
+            "macro expansion is currently limited to free functions; " +
+                std::string(kContainerLabel) + " selector in '" +
+                container_name + "' is not sandbox-admitted"));
+      }
       if (method_decl.has_body) {
         diagnostics.push_back(MakeDiag(
             method_decl.line, method_decl.column, "O3S206",
@@ -10937,6 +10992,156 @@ BuildPart10DeriveExpansionInventorySummary(
       << ";canonical-derive-sites=" << summary.equality_derive_sites << ":"
       << summary.hash_derive_sites << ":"
       << summary.debug_description_derive_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part10MacroSafetySandboxDeterminismSummary
+BuildPart10MacroSafetySandboxDeterminismSummary(
+    const Objc3Program &program,
+    const Objc3Part10DeriveExpansionInventorySummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part10MacroSafetySandboxDeterminismSummary summary;
+
+  const auto count_diagnostic = [&diagnostics](std::string_view code,
+                                               std::string_view needle) {
+    return static_cast<std::size_t>(std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code, needle](const std::string &entry) {
+          return entry.find(code) != std::string::npos &&
+                 entry.find(needle) != std::string::npos;
+        }));
+  };
+
+  const auto accumulate_function = [&summary](const FunctionDecl &fn) {
+    const bool has_macro_marker = fn.objc_macro_declared;
+    const bool has_macro_package = fn.objc_macro_package_declared;
+    const bool has_macro_provenance = fn.objc_macro_provenance_declared;
+    if (has_macro_marker) {
+      ++summary.macro_marker_sites;
+    }
+    if (has_macro_package) {
+      ++summary.macro_package_sites;
+    }
+    if (has_macro_provenance) {
+      ++summary.macro_provenance_sites;
+    }
+    if (has_macro_marker && has_macro_package && has_macro_provenance) {
+      ++summary.expansion_visible_macro_sites;
+    }
+
+    if (!has_macro_marker && !(has_macro_package || has_macro_provenance)) {
+      return;
+    }
+    if (!has_macro_marker && (has_macro_package || has_macro_provenance)) {
+      ++summary.orphan_macro_metadata_sites;
+      return;
+    }
+    if (!has_macro_package || !has_macro_provenance) {
+      ++summary.incomplete_macro_metadata_sites;
+      return;
+    }
+    if (!IsSupportedPart10MacroPackageName(fn.objc_macro_package_name)) {
+      ++summary.invalid_package_sites;
+      return;
+    }
+    if (!IsSupportedPart10MacroProvenanceToken(fn.objc_macro_provenance_name)) {
+      ++summary.invalid_provenance_sites;
+      return;
+    }
+    if (!fn.is_pure || fn.is_prototype || fn.async_declared ||
+        fn.throws_declared) {
+      ++summary.nondeterministic_callable_sites;
+      return;
+    }
+    ++summary.safe_macro_callable_sites;
+  };
+
+  const auto accumulate_method = [&summary](const Objc3MethodDecl &method) {
+    if (method.objc_macro_declared) {
+      ++summary.macro_marker_sites;
+    }
+    if (method.objc_macro_package_declared) {
+      ++summary.macro_package_sites;
+    }
+    if (method.objc_macro_provenance_declared) {
+      ++summary.macro_provenance_sites;
+    }
+    if (method.objc_macro_declared && method.objc_macro_package_declared &&
+        method.objc_macro_provenance_declared) {
+      ++summary.expansion_visible_macro_sites;
+    }
+    if (method.objc_macro_declared || method.objc_macro_package_declared ||
+        method.objc_macro_provenance_declared) {
+      ++summary.unsupported_callable_topology_sites;
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_function(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method_decl : interface_decl.methods) {
+      accumulate_method(method_decl);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      accumulate_method(method_decl);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      accumulate_method(method_decl);
+    }
+  }
+
+  summary.semantic_dependency_required =
+      IsReadyObjc3Part10DeriveExpansionInventorySummary(dependency_summary);
+  summary.metadata_completeness_enforced =
+      summary.incomplete_macro_metadata_sites ==
+          count_diagnostic("O3S320", "requires both objc_macro_package and objc_macro_provenance") &&
+      summary.orphan_macro_metadata_sites ==
+          count_diagnostic("O3S321", "macro package/provenance markers require objc_macro");
+  summary.sandbox_namespace_enforced =
+      summary.invalid_package_sites ==
+      count_diagnostic("O3S322", "macro sandbox rejected package");
+  summary.provenance_determinism_enforced =
+      summary.invalid_provenance_sites ==
+      count_diagnostic("O3S323", "macro provenance must be a lowercase sha256 digest");
+  summary.callable_determinism_enforced =
+      summary.nondeterministic_callable_sites ==
+          count_diagnostic("O3S324", "must be pure, body-backed, non-async, and non-throws") &&
+      summary.unsupported_callable_topology_sites ==
+          count_diagnostic("O3S325", "not sandbox-admitted");
+  summary.macro_execution_deferred = true;
+  summary.deterministic =
+      summary.semantic_dependency_required &&
+      summary.metadata_completeness_enforced &&
+      summary.sandbox_namespace_enforced &&
+      summary.provenance_determinism_enforced &&
+      summary.callable_determinism_enforced &&
+      summary.safe_macro_callable_sites <= summary.expansion_visible_macro_sites;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "part10 macro safety/sandbox/determinism semantics must remain deterministic and fail closed";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << dependency_summary.contract_id
+      << ";macro-sites=" << summary.macro_marker_sites << ":"
+      << summary.macro_package_sites << ":" << summary.macro_provenance_sites
+      << ":" << summary.expansion_visible_macro_sites
+      << ";safe=" << summary.safe_macro_callable_sites
+      << ";incomplete=" << summary.incomplete_macro_metadata_sites
+      << ";orphan=" << summary.orphan_macro_metadata_sites
+      << ";invalid-package=" << summary.invalid_package_sites
+      << ";invalid-provenance=" << summary.invalid_provenance_sites
+      << ";nondeterministic=" << summary.nondeterministic_callable_sites
+      << ";unsupported-topology=" << summary.unsupported_callable_topology_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -18950,6 +19155,48 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
           fn.ns_error_bridging_contract_violation_sites;
       info.has_definition = !fn.is_prototype;
       info.is_pure_annotation = fn.is_pure;
+      const bool has_macro_marker = fn.objc_macro_declared;
+      const bool has_macro_package = fn.objc_macro_package_declared;
+      const bool has_macro_provenance = fn.objc_macro_provenance_declared;
+      if (has_macro_package || has_macro_provenance) {
+        if (!has_macro_marker) {
+          diagnostics.push_back(MakeDiag(
+              fn.line, fn.column, "O3S321",
+              "macro package/provenance markers require objc_macro on function '" +
+                  fn.name + "'"));
+        }
+      }
+      if (has_macro_marker) {
+        if (!has_macro_package || !has_macro_provenance) {
+          diagnostics.push_back(MakeDiag(
+              fn.line, fn.column, "O3S320",
+              "macro callable '" + fn.name +
+                  "' requires both objc_macro_package and objc_macro_provenance"));
+        }
+        if (has_macro_package &&
+            !IsSupportedPart10MacroPackageName(fn.objc_macro_package_name)) {
+          diagnostics.push_back(MakeDiag(
+              fn.line, fn.column, "O3S322",
+              "macro sandbox rejected package '" +
+                  NormalizePart10RawMacroToken(fn.objc_macro_package_name) +
+                  "' on function '" + fn.name + "'"));
+        }
+        if (has_macro_provenance &&
+            !IsSupportedPart10MacroProvenanceToken(
+                fn.objc_macro_provenance_name)) {
+          diagnostics.push_back(MakeDiag(
+              fn.line, fn.column, "O3S323",
+              "macro provenance must be a lowercase sha256 digest on function '" +
+                  fn.name + "'"));
+        }
+        if (!fn.is_pure || fn.is_prototype || fn.async_declared ||
+            fn.throws_declared) {
+          diagnostics.push_back(MakeDiag(
+              fn.line, fn.column, "O3S324",
+              "macro callable '" + fn.name +
+                  "' must be pure, body-backed, non-async, and non-throws"));
+        }
+      }
       surface.functions.emplace(fn.name, std::move(info));
       continue;
     }
@@ -19393,6 +19640,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                        container_label, diagnostics);
       ValidateMethodParameterTypeSuffixes(method_decl, container_name,
                                           container_label, diagnostics);
+      if (method_decl.objc_macro_declared ||
+          method_decl.objc_macro_package_declared ||
+          method_decl.objc_macro_provenance_declared) {
+        diagnostics.push_back(MakeDiag(
+            method_decl.line, method_decl.column, "O3S325",
+            "macro expansion is currently limited to free functions; " +
+                container_label + " selector in '" + container_name +
+                "' is not sandbox-admitted"));
+      }
 
       const std::string selector = selector_contract.normalized_selector;
       if (method_decl.has_body) {
@@ -19593,6 +19849,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                        container_label, diagnostics);
       ValidateMethodParameterTypeSuffixes(method_decl, container_name,
                                           container_label, diagnostics);
+      if (method_decl.objc_macro_declared ||
+          method_decl.objc_macro_package_declared ||
+          method_decl.objc_macro_provenance_declared) {
+        diagnostics.push_back(MakeDiag(
+            method_decl.line, method_decl.column, "O3S325",
+            "macro expansion is currently limited to free functions; " +
+                container_label + " selector in '" + container_name +
+                "' is not sandbox-admitted"));
+      }
 
       const std::string selector = selector_contract.normalized_selector;
       if (!method_decl.has_body) {

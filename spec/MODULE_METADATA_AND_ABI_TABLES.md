@@ -8741,3 +8741,16 @@ runnable smoke matrix.
   - Part 10 now publishes deterministic derive-expansion inventory rows for the supported semantic derive slice
   - unsupported derive names, category-interface derive usage, and derived-selector collisions fail closed before lowering
   - runtime-backed derived method body emission and ABI materialization are still not claimed yet
+
+## M273 macro safety/sandbox semantics note
+
+`M273-B003` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-macro-safety-sandbox-determinism-semantics/m273-b003-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_macro_safety_sandbox_and_determinism_semantics`
+- truthful boundary
+  - Part 10 now publishes deterministic macro admission semantics over marker completeness, sandbox namespace gating, provenance normalization, and callable determinism
+  - macro-marked methods fail closed before lowering
+  - runnable macro execution, expanded bodies, and runtime package loading are still not claimed yet
