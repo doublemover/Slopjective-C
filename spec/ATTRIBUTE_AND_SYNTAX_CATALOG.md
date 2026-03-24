@@ -381,6 +381,14 @@ Current implementation status (`M271-D002`):
   emitted module object path
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later `M271` lane-D work
+
+Current implementation status (`M271-E001`):
+- lane-E now freezes the current runnable Part 8 slice on top of `M271-A003`,
+  `M271-B004`, `M271-C003`, and `M271-D002`
+- the truthful runnable proof remains the linked `M271-D002` `helperSurface`
+  runtime probe rather than a widened front-door borrowed-pointer or
+  resource-runtime claim
+- the runnable matrix closeout remains `M271-E002`
 ```
 
 This attribute may be applied to:

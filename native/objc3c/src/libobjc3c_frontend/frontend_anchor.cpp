@@ -66,6 +66,10 @@ struct objc3c_frontend_context {
 // M270-E002 runnable actor/isolation closeout matrix anchor: milestone
 // closeout keeps consuming those same surfaced publication paths instead of
 // inventing a second frontend matrix-only reporting path.
+// M271-E001 strict system conformance gate anchor: lane-E keeps consuming the
+// same surfaced publication paths while using the D002 live cleanup/runtime proof
+// as the truthful runnable Part 8 capability anchor. The D002 live cleanup/runtime
+// proof remains the canonical linked helperSurface evidence.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

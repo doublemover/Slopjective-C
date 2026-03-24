@@ -259,6 +259,14 @@ M271-D002 implementation note:
 - live probes now observe both direct cleanup execution and retainable-family
   helper traffic on the same runnable path
 
+M271-E001 strict system conformance gate note:
+- lane-E now freezes the current runnable Part 8 slice on top of
+  `M271-A003`, `M271-B004`, `M271-C003`, and `M271-D002`
+- the truthful runnable proof remains the linked `M271-D002` `helperSurface`
+  runtime probe rather than a widened front-door borrowed-pointer or
+  resource-runtime claim
+- the runnable matrix closeout remains `M271-E002`
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

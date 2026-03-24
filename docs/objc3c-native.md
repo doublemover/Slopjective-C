@@ -4179,6 +4179,19 @@ Current implementation status (`M271-D002`):
   object path; no separate resource-runtime package is introduced
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later `M271` lane-D work
+
+## M271 strict system conformance gate
+
+Current implementation status (`M271-E001`):
+
+- lane-E now freezes the current runnable Part 8 slice on top of `M271-A003`,
+  `M271-B004`, `M271-C003`, and `M271-D002`
+- the gate stays truthful: the runnable proof is still the `M271-D002` linked
+  `helperSurface` runtime probe, not a widened front-door borrowed-pointer or
+  resource-runtime claim
+- driver, manifest, and frontend publication anchors stay explicit so the
+  current fail-closed front-door boundary remains visible to operators
+- the runnable matrix closeout remains `M271-E002`
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

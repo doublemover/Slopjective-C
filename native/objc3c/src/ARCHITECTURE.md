@@ -11271,3 +11271,21 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - cross-module actor isolation preservation
   - lane-E strict concurrency conformance gate
 - the next issue is `M271-A001`
+
+## M271 Part 8 Strict System Conformance Gate (E001)
+
+- `M271-E001` freezes the milestone gate for the currently runnable Part 8
+  cleanup/resource/retainable slice on top of the already-landed source, sema,
+  lowering, ABI, and live runtime integration evidence
+- the gate consumes:
+  - `M271-A003`
+  - `M271-B004`
+  - `M271-C003`
+  - `M271-D002`
+- the truthful runnable proof remains the linked `M271-D002` `helperSurface`
+  runtime probe; lane-E does not widen the front-door publication boundary
+  into borrowed-lifetime runtime enforcement or a second resource-runtime
+  package
+- driver, manifest, and frontend publication anchors stay explicit so the
+  current fail-closed Part 8 front-door boundary remains visible to operators
+- the next issue is `M271-E002`

@@ -960,6 +960,16 @@ M271-D002 live cleanup/runtime integration note:
 - borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
   transfer remain later lane-D work
 
+M271-E001 strict system conformance gate note:
+- lane-E now freezes the current runnable Part 8 slice on top of
+  `M271-A003`, `M271-B004`, `M271-C003`, and `M271-D002`
+- the truthful runnable proof remains the linked `M271-D002` `helperSurface`
+  runtime probe rather than a widened front-door borrowed-pointer or
+  resource-runtime claim
+- the gate consumes the same driver, manifest, and frontend publication
+  surfaces while leaving deferred borrowed-lifetime runtime enforcement
+  explicitly fail-closed
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

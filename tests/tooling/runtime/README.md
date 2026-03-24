@@ -621,6 +621,12 @@ existing `M270-D002` live mailbox runtime proof, the `M270-D003` imported actor
 replay artifacts, and the upstream `M270-A002` through `M270-D003` summary
 chain.
 
+## M271 strict system conformance gate
+
+`M271-E001` does not add a new runtime probe. It freezes lane-E on top of the
+existing `M271-D002` linked `helperSurface` runtime proof and the upstream
+`M271-A003` through `M271-D002` summary chain.
+
 ## M269 task and executor conformance gate
 
 `M269-E001` does not add a new runtime probe. It freezes lane-E on top of the
