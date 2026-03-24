@@ -370,6 +370,21 @@ native build surface.
 - this lane still does not claim foreign ABI lowering or runnable bridge
   generation
 
+## M274 interop lowering and ABI contract
+
+- the frontend manifest now publishes
+  `frontend.pipeline.semantic_surface.objc_part11_interop_lowering_and_abi_contract`
+- emitted LLVM IR now prints:
+  - `; part11_interop_lowering_abi_contract = ...`
+  - `!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}`
+- this lowering packet freezes one deterministic handoff over:
+  - foreign callable counts
+  - ownership/error bridge interaction counts
+  - Swift-facing concurrency metadata counts
+  - interface/module-preserved Part 11 annotation totals
+- live FFI call lowering, bridge helper emission, and runnable cross-language
+  execution remain later `M274` work
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

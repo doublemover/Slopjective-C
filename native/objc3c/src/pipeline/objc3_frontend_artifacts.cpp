@@ -2700,6 +2700,72 @@ Objc3Part10ExpansionLoweringContract BuildPart10ExpansionLoweringContract(
   return contract;
 }
 
+Objc3Part11InteropLoweringContract BuildPart11InteropLoweringContract(
+    const Objc3Part11InteropSemanticModelSummary &semantic_summary,
+    const Objc3Part11InteropRuntimeParitySummary &runtime_parity_summary,
+    const Objc3Part11CppInteropInteractionSummary &cpp_summary,
+    const Objc3Part11SwiftInteropIsolationSummary &swift_summary,
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary
+        &preservation_summary) {
+  Objc3Part11InteropLoweringContract contract;
+  contract.foreign_callable_sites = semantic_summary.foreign_callable_sites;
+  contract.c_foreign_callable_sites = runtime_parity_summary.c_foreign_callable_sites;
+  contract.objc_runtime_parity_callable_sites =
+      runtime_parity_summary.objc_runtime_parity_callable_sites;
+  contract.ownership_bridge_callable_sites =
+      semantic_summary.bridge_callable_sites +
+      cpp_summary.ownership_interaction_sites;
+  contract.error_surface_sites = cpp_summary.throws_interaction_sites;
+  contract.async_boundary_sites =
+      semantic_summary.async_executor_affinity_sites +
+      cpp_summary.async_interaction_sites;
+  contract.swift_concurrency_metadata_sites =
+      swift_summary.actor_owned_swift_callable_sites +
+      swift_summary.nonisolated_swift_callable_sites;
+  contract.interface_preserved_foreign_callable_sites =
+      preservation_summary.local_foreign_callable_count +
+      preservation_summary.imported_foreign_callable_count;
+  contract.interface_preserved_metadata_annotation_sites =
+      preservation_summary.local_import_module_annotation_count +
+      preservation_summary.local_imported_module_name_count +
+      preservation_summary.local_swift_name_annotation_count +
+      preservation_summary.local_swift_private_annotation_count +
+      preservation_summary.local_cpp_name_annotation_count +
+      preservation_summary.local_header_name_annotation_count +
+      preservation_summary.local_named_annotation_payload_count +
+      preservation_summary.imported_import_module_annotation_count +
+      preservation_summary.imported_imported_module_name_count +
+      preservation_summary.imported_swift_name_annotation_count +
+      preservation_summary.imported_swift_private_annotation_count +
+      preservation_summary.imported_cpp_name_annotation_count +
+      preservation_summary.imported_header_name_annotation_count +
+      preservation_summary.imported_named_annotation_payload_count;
+  contract.guard_blocked_sites =
+      runtime_parity_summary.foreign_definition_rejection_sites +
+      runtime_parity_summary.import_without_foreign_rejection_sites +
+      runtime_parity_summary.implementation_annotation_rejection_sites +
+      cpp_summary.ownership_rejection_sites + cpp_summary.throws_rejection_sites +
+      cpp_summary.async_rejection_sites +
+      swift_summary.swift_private_without_name_rejection_sites +
+      swift_summary.actor_isolation_mapping_rejection_sites +
+      swift_summary.nonisolated_mapping_rejection_sites +
+      swift_summary.implementation_surface_rejection_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      semantic_summary.deterministic &&
+      semantic_summary.ready_for_semantic_expansion &&
+      runtime_parity_summary.deterministic &&
+      runtime_parity_summary.ready_for_lowering_and_runtime &&
+      cpp_summary.deterministic &&
+      cpp_summary.ready_for_lowering_and_runtime &&
+      swift_summary.deterministic &&
+      swift_summary.ready_for_lowering_and_runtime &&
+      preservation_summary.deterministic &&
+      preservation_summary.runtime_import_artifact_ready &&
+      preservation_summary.separate_compilation_preservation_ready;
+  return contract;
+}
+
 static std::string SanitizePart10ArtifactToken(const std::string &text) {
   std::string out;
   out.reserve(text.size());
@@ -3231,6 +3297,66 @@ std::string BuildPart10ExpansionLoweringContractJson(
       << contract.synthesized_setter_sites
       << ",\"replay_visible_metadata_sites\":"
       << contract.replay_visible_metadata_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart11InteropLoweringContractJson(
+    const Objc3Part11InteropSemanticModelSummary &semantic_summary,
+    const Objc3Part11InteropRuntimeParitySummary &runtime_parity_summary,
+    const Objc3Part11CppInteropInteractionSummary &cpp_summary,
+    const Objc3Part11SwiftInteropIsolationSummary &swift_summary,
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3Part11InteropLoweringContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3Part11InteropLoweringContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part11InteropLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part11InteropLoweringSurfacePath)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"runtime_parity_contract_id\":\""
+      << EscapeJsonString(runtime_parity_summary.contract_id)
+      << "\",\"cpp_interaction_contract_id\":\""
+      << EscapeJsonString(cpp_summary.contract_id)
+      << "\",\"swift_isolation_contract_id\":\""
+      << EscapeJsonString(swift_summary.contract_id)
+      << "\",\"preservation_contract_id\":\""
+      << EscapeJsonString(preservation_summary.contract_id)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3Part11InteropLoweringLaneContract)
+      << "\",\"lowering_model\":\""
+      << EscapeJsonString(kObjc3Part11InteropLoweringModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part11InteropLoweringDeferredModel)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"foreign_callable_sites\":" << contract.foreign_callable_sites
+      << ",\"c_foreign_callable_sites\":" << contract.c_foreign_callable_sites
+      << ",\"objc_runtime_parity_callable_sites\":"
+      << contract.objc_runtime_parity_callable_sites
+      << ",\"ownership_bridge_callable_sites\":"
+      << contract.ownership_bridge_callable_sites
+      << ",\"error_surface_sites\":" << contract.error_surface_sites
+      << ",\"async_boundary_sites\":" << contract.async_boundary_sites
+      << ",\"swift_concurrency_metadata_sites\":"
+      << contract.swift_concurrency_metadata_sites
+      << ",\"interface_preserved_foreign_callable_sites\":"
+      << contract.interface_preserved_foreign_callable_sites
+      << ",\"interface_preserved_metadata_annotation_sites\":"
+      << contract.interface_preserved_metadata_annotation_sites
       << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
       << ",\"contract_violation_sites\":"
       << contract.contract_violation_sites
@@ -15435,6 +15561,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
               runtime_aware_import_module_frontend_closure),
           imported_runtime_module_surfaces);
+  const Objc3Part11InteropLoweringContract part11_interop_lowering_contract =
+      BuildPart11InteropLoweringContract(
+          part11_interop_semantic_model_summary,
+          part11_interop_runtime_parity_summary,
+          part11_cpp_interop_interaction_summary,
+          part11_swift_interop_isolation_summary,
+          part11_foreign_surface_interface_preservation_summary);
+  if (!IsValidObjc3Part11InteropLoweringContract(
+          part11_interop_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid Part 11 interop lowering contract");
+  }
+  const std::string part11_interop_lowering_replay_key =
+      Objc3Part11InteropLoweringReplayKey(part11_interop_lowering_contract);
   const auto part9_dispatch_metadata_interface_preservation_summary =
       BuildPart9DispatchMetadataInterfacePreservationSummary(
           runtime_metadata_source_records, part9_dispatch_control_lowering_replay_key,
@@ -18984,6 +19125,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
             << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                    part11_foreign_surface_interface_preservation_summary)
+            << ",\"objc_part11_interop_lowering_and_abi_contract\":"
+            << BuildPart11InteropLoweringContractJson(
+                   part11_interop_semantic_model_summary,
+                   part11_interop_runtime_parity_summary,
+                   part11_cpp_interop_interaction_summary,
+                   part11_swift_interop_isolation_summary,
+                   part11_foreign_surface_interface_preservation_summary,
+                   part11_interop_lowering_contract,
+                   part11_interop_lowering_replay_key)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -20424,6 +20574,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
            << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                   part11_foreign_surface_interface_preservation_summary)
+           << ",\"objc_part11_interop_lowering_and_abi_contract\":"
+           << BuildPart11InteropLoweringContractJson(
+                  part11_interop_semantic_model_summary,
+                  part11_interop_runtime_parity_summary,
+                  part11_cpp_interop_interaction_summary,
+                  part11_swift_interop_isolation_summary,
+                  part11_foreign_surface_interface_preservation_summary,
+                  part11_interop_lowering_contract,
+                  part11_interop_lowering_replay_key)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -21609,6 +21768,32 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .separate_compilation_preservation_ready;
   ir_frontend_metadata.deterministic_part10_module_interface_replay_handoff =
       part10_module_interface_replay_preservation_summary.deterministic;
+  ir_frontend_metadata.lowering_part11_interop_replay_key =
+      part11_interop_lowering_replay_key;
+  ir_frontend_metadata.part11_interop_lowering_foreign_callable_sites =
+      part11_interop_lowering_contract.foreign_callable_sites;
+  ir_frontend_metadata.part11_interop_lowering_c_foreign_callable_sites =
+      part11_interop_lowering_contract.c_foreign_callable_sites;
+  ir_frontend_metadata.part11_interop_lowering_objc_runtime_parity_callable_sites =
+      part11_interop_lowering_contract.objc_runtime_parity_callable_sites;
+  ir_frontend_metadata.part11_interop_lowering_ownership_bridge_callable_sites =
+      part11_interop_lowering_contract.ownership_bridge_callable_sites;
+  ir_frontend_metadata.part11_interop_lowering_error_surface_sites =
+      part11_interop_lowering_contract.error_surface_sites;
+  ir_frontend_metadata.part11_interop_lowering_async_boundary_sites =
+      part11_interop_lowering_contract.async_boundary_sites;
+  ir_frontend_metadata.part11_interop_lowering_swift_concurrency_metadata_sites =
+      part11_interop_lowering_contract.swift_concurrency_metadata_sites;
+  ir_frontend_metadata.part11_interop_lowering_interface_preserved_foreign_callable_sites =
+      part11_interop_lowering_contract.interface_preserved_foreign_callable_sites;
+  ir_frontend_metadata.part11_interop_lowering_interface_preserved_metadata_annotation_sites =
+      part11_interop_lowering_contract.interface_preserved_metadata_annotation_sites;
+  ir_frontend_metadata.part11_interop_lowering_guard_blocked_sites =
+      part11_interop_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata.part11_interop_lowering_contract_violation_sites =
+      part11_interop_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_part11_interop_lowering_handoff =
+      part11_interop_lowering_contract.deterministic;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
       part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =

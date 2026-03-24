@@ -999,6 +999,10 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_part9_dispatch_control_replay_key
           << "\n";
     }
+    if (!frontend_metadata_.lowering_part11_interop_replay_key.empty()) {
+      out << "; part11_interop_lowering_abi_contract = "
+          << frontend_metadata_.lowering_part11_interop_replay_key << "\n";
+    }
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
           << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
@@ -2536,6 +2540,33 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_part11_interop_lowering_profile = foreign_callable_sites="
+        << frontend_metadata_.part11_interop_lowering_foreign_callable_sites
+        << ", c_foreign_callable_sites="
+        << frontend_metadata_.part11_interop_lowering_c_foreign_callable_sites
+        << ", objc_runtime_parity_callable_sites="
+        << frontend_metadata_.part11_interop_lowering_objc_runtime_parity_callable_sites
+        << ", ownership_bridge_callable_sites="
+        << frontend_metadata_.part11_interop_lowering_ownership_bridge_callable_sites
+        << ", error_surface_sites="
+        << frontend_metadata_.part11_interop_lowering_error_surface_sites
+        << ", async_boundary_sites="
+        << frontend_metadata_.part11_interop_lowering_async_boundary_sites
+        << ", swift_concurrency_metadata_sites="
+        << frontend_metadata_.part11_interop_lowering_swift_concurrency_metadata_sites
+        << ", interface_preserved_foreign_callable_sites="
+        << frontend_metadata_.part11_interop_lowering_interface_preserved_foreign_callable_sites
+        << ", interface_preserved_metadata_annotation_sites="
+        << frontend_metadata_.part11_interop_lowering_interface_preserved_metadata_annotation_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.part11_interop_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.part11_interop_lowering_contract_violation_sites
+        << ", deterministic_part11_interop_lowering_handoff="
+        << (frontend_metadata_.deterministic_part11_interop_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_part10_expansion_lowering_profile = derive_inventory_sites="
         << frontend_metadata_.part10_expansion_lowering_derive_inventory_sites
         << ", derived_selector_artifact_sites="
@@ -3766,6 +3797,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
+    out << "!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
@@ -6639,6 +6671,46 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_part9_dispatch_control_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!108 = !{!\""
+        << EscapeCStringLiteral(frontend_metadata_.lowering_part11_interop_replay_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_foreign_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_c_foreign_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_interop_lowering_objc_runtime_parity_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_interop_lowering_ownership_bridge_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_error_surface_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_async_boundary_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_interop_lowering_swift_concurrency_metadata_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_interop_lowering_interface_preserved_foreign_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_interop_lowering_interface_preserved_metadata_annotation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part11_interop_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_part11_interop_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

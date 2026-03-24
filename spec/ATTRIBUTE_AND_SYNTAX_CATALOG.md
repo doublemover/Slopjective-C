@@ -1674,3 +1674,22 @@ Current implementation status (`M274-B004`):
   - actor-owned / `objc_nonisolated` / implementation-surface unsupported totals
 - ABI lowering, isolation export, and runnable bridge generation remain later
   `M274` work
+
+## M274 Part 11 interop lowering and ABI contract (C001)
+
+Current implementation status (`M274-C001`):
+
+- the frontend manifest now publishes one deterministic lowering packet:
+  - `frontend.pipeline.semantic_surface.objc_part11_interop_lowering_and_abi_contract`
+- that packet lowers the current supported Part 11 boundary into one replayable
+  ABI handoff over:
+  - foreign callable totals
+  - Objective-C runtime parity callable totals
+  - ownership bridge and error-surface interaction totals
+  - async / actor-facing Swift metadata totals
+  - interface/module-preserved foreign callable and annotation totals
+- emitted IR now carries:
+  - `; part11_interop_lowering_abi_contract = ...`
+  - `!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}`
+- live FFI call lowering, bridge helper emission, and runnable cross-language
+  behavior remain later `M274` work

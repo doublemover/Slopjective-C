@@ -4436,6 +4436,52 @@ std::string Objc3Part10ExpansionLoweringReplayKey(
          ";lane_contract=" + kObjc3Part10ExpansionLoweringLaneContract;
 }
 
+bool IsValidObjc3Part11InteropLoweringContract(
+    const Objc3Part11InteropLoweringContract &contract) {
+  if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
+      contract.objc_runtime_parity_callable_sites >
+          contract.foreign_callable_sites ||
+      contract.interface_preserved_foreign_callable_sites <
+          contract.foreign_callable_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part11InteropLoweringReplayKey(
+    const Objc3Part11InteropLoweringContract &contract) {
+  return std::string("foreign_callable_sites=") +
+             std::to_string(contract.foreign_callable_sites) +
+         ";c_foreign_callable_sites=" +
+         std::to_string(contract.c_foreign_callable_sites) +
+         ";objc_runtime_parity_callable_sites=" +
+         std::to_string(contract.objc_runtime_parity_callable_sites) +
+         ";ownership_bridge_callable_sites=" +
+         std::to_string(contract.ownership_bridge_callable_sites) +
+         ";error_surface_sites=" +
+         std::to_string(contract.error_surface_sites) +
+         ";async_boundary_sites=" +
+         std::to_string(contract.async_boundary_sites) +
+         ";swift_concurrency_metadata_sites=" +
+         std::to_string(contract.swift_concurrency_metadata_sites) +
+         ";interface_preserved_foreign_callable_sites=" +
+         std::to_string(contract.interface_preserved_foreign_callable_sites) +
+         ";interface_preserved_metadata_annotation_sites=" +
+         std::to_string(contract.interface_preserved_metadata_annotation_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3Part11InteropLoweringLaneContract;
+}
+
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {

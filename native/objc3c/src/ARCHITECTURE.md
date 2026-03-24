@@ -11432,3 +11432,21 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - implementation-surface Swift metadata (`O3S340`)
 - ABI lowering, Swift-facing isolation export, and runnable bridge generation
   remain later `M274` work
+
+## M274 interop lowering and ABI contract (C001)
+
+- `M274-C001` is the first Part 11 lowering-owned handoff rather than another
+  parser or sema-only packet
+- the emitted frontend manifest publishes
+  `objc_part11_interop_lowering_and_abi_contract`
+- emitted LLVM IR now carries:
+  - `; part11_interop_lowering_abi_contract = ...`
+  - `!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}`
+- the lowering packet freezes one deterministic ABI boundary over:
+  - foreign callable totals
+  - Objective-C runtime parity callable totals
+  - ownership-bridge and error-surface interaction totals
+  - async-boundary and Swift concurrency metadata totals
+  - interface/module-preserved foreign callable and annotation totals
+- live FFI call lowering, bridge helper emission, and runnable cross-language
+  behavior remain later `M274` lane-C and lane-D work

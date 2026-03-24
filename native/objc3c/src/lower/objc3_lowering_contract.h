@@ -1660,6 +1660,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-part10-host-process-cache-claims";
+// M274-C001 lowering-freeze anchor: Part 11 now freezes one explicit emitted
+// lowering contract for foreign callable ABI carriage, ownership/error bridge
+// interaction counts, Swift-facing concurrency metadata, and interface/import
+// preservation facts across FFI boundaries. Live bridge helper emission and
+// runnable foreign-call execution remain later M274 lane-C and lane-D work.
+inline constexpr const char *kObjc3Part11InteropLoweringContractId =
+    "objc3c-part11-interop-lowering-and-abi-contract/m274-c001-v1";
+inline constexpr const char *kObjc3Part11InteropLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part11_interop_lowering_and_abi_contract";
+inline constexpr const char *kObjc3Part11InteropLoweringModel =
+    "part11-foreign-callable-sema-runtime-parity-cpp-interaction-swift-isolation-and-interface-preservation-packets-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
+inline constexpr const char *kObjc3Part11InteropLoweringDeferredModel =
+    "live-ffi-call-lowering-ownership-bridge-helper-emission-error-runtime-integration-and-cross-module-runtime-consumption-remain-later-m274-lane-c-and-lane-d-work";
+inline constexpr const char *kObjc3Part11InteropLoweringLaneContract =
+    "m274-part11-interop-lowering-abi-contract-v1";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2449,6 +2465,21 @@ struct Objc3Part10ExpansionLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part11InteropLoweringContract {
+  std::size_t foreign_callable_sites = 0;
+  std::size_t c_foreign_callable_sites = 0;
+  std::size_t objc_runtime_parity_callable_sites = 0;
+  std::size_t ownership_bridge_callable_sites = 0;
+  std::size_t error_surface_sites = 0;
+  std::size_t async_boundary_sites = 0;
+  std::size_t swift_concurrency_metadata_sites = 0;
+  std::size_t interface_preserved_foreign_callable_sites = 0;
+  std::size_t interface_preserved_metadata_annotation_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3Part10SynthesizedArtifactEmissionContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t emitted_derive_method_sites = 0;
@@ -2836,6 +2867,10 @@ bool IsValidObjc3Part10ExpansionLoweringContract(
     const Objc3Part10ExpansionLoweringContract &contract);
 std::string Objc3Part10ExpansionLoweringReplayKey(
     const Objc3Part10ExpansionLoweringContract &contract);
+bool IsValidObjc3Part11InteropLoweringContract(
+    const Objc3Part11InteropLoweringContract &contract);
+std::string Objc3Part11InteropLoweringReplayKey(
+    const Objc3Part11InteropLoweringContract &contract);
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(

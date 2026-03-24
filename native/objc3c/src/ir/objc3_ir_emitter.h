@@ -917,6 +917,21 @@ struct Objc3IRFrontendMetadata {
   std::size_t part9_dispatch_control_lowering_guard_blocked_sites = 0;
   std::size_t part9_dispatch_control_lowering_contract_violation_sites = 0;
   bool deterministic_part9_dispatch_control_lowering_handoff = false;
+  std::string lowering_part11_interop_replay_key;
+  std::size_t part11_interop_lowering_foreign_callable_sites = 0;
+  std::size_t part11_interop_lowering_c_foreign_callable_sites = 0;
+  std::size_t part11_interop_lowering_objc_runtime_parity_callable_sites = 0;
+  std::size_t part11_interop_lowering_ownership_bridge_callable_sites = 0;
+  std::size_t part11_interop_lowering_error_surface_sites = 0;
+  std::size_t part11_interop_lowering_async_boundary_sites = 0;
+  std::size_t part11_interop_lowering_swift_concurrency_metadata_sites = 0;
+  std::size_t part11_interop_lowering_interface_preserved_foreign_callable_sites =
+      0;
+  std::size_t
+      part11_interop_lowering_interface_preserved_metadata_annotation_sites = 0;
+  std::size_t part11_interop_lowering_guard_blocked_sites = 0;
+  std::size_t part11_interop_lowering_contract_violation_sites = 0;
+  bool deterministic_part11_interop_lowering_handoff = false;
   std::string lowering_part10_expansion_replay_key;
   std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
   std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;

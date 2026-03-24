@@ -8964,3 +8964,20 @@ Current implementation status (`M274-B004`):
   - rejection totals for the `O3S337` / `O3S338` / `O3S339` / `O3S340` families
 - ABI lowering, Swift-facing isolation export, and runnable cross-language
   behavior remain deferred
+
+## M274 interop lowering and ABI contract note
+
+Current implementation status (`M274-C001`):
+
+- the frontend manifest now emits one deterministic Part 11 lowering packet:
+  `objc3c-part11-interop-lowering-and-abi-contract/m274-c001-v1`
+- that packet records:
+  - foreign callable totals and Objective-C runtime parity totals
+  - ownership-bridge and error-surface interaction totals
+  - async-boundary and Swift concurrency-metadata totals
+  - interface/module-preserved foreign-callable and annotation totals
+- emitted IR carries the same handoff through:
+  - `; part11_interop_lowering_abi_contract = ...`
+  - `!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}`
+- live FFI call lowering, bridge helper emission, and runnable cross-language
+  behavior remain deferred
