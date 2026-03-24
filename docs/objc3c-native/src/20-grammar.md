@@ -4273,3 +4273,10 @@ Current implementation status (`M271-E001`):
 - final/sealed live sends that remain on `objc3_runtime_dispatch_i32` can now hit a seeded cache entry on the first call instead of forcing a slow-path lookup
 - unresolved selectors still take the deterministic cached fallback path
 - the private runtime proof surface now includes `fast_path_seed_count`, seeded-entry flags, and the last fast-path reason
+
+## M272 performance and dynamism conformance gate
+
+- lane E now freezes one integrated Part 9 gate over `M272-A002`, `M272-B003`, `M272-C003`, and `M272-D002`
+- the gate consumes the same driver/manifest/frontend publication surface as the operator-facing evidence path
+- the `M272-D002` live summary remains the executable live-runtime proof for the current Part 9 slice
+- the next issue is `M272-E002`

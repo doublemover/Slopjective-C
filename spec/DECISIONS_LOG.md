@@ -770,3 +770,9 @@ as unsupported after the fact.
 The runtime now pre-seeds deterministic cache entries during registration-time class-graph rebuild so first-call cache hits for eligible live dispatch are possible on the native dispatch path without reopening the public runtime ABI.
 
 Direct LLVM call sites remain outside the runtime dispatch entrypoint. The widened runtime path applies only to live sends that still enter `objc3_runtime_dispatch_i32`, where final/sealed intent and emitted direct/final metadata can now eliminate the first-call slow-path lookup.
+
+## D-034: Part 9 lane E freezes the integrated dispatch-control gate on the published D002 runtime proof {#decisions-d-034}
+
+`M272-E001` does not invent a new runtime proof channel. Lane E freezes the current Part 9 gate by consuming the standard driver/manifest/frontend publication surface plus the already-landed `M272-D002` live summary.
+
+That means the Part 9 conformance gate remains tied to the published D002 runtime evidence for seeded fast-path baseline state, first-call cache hits, and deterministic fallback continuity.

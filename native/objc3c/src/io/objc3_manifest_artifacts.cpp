@@ -50,6 +50,10 @@ std::filesystem::path BuildManifestArtifactPath(
   // M271-E002 runnable system-extension closeout matrix anchor: the milestone
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only reporting surface for the current Part 8 slice.
+  // M272-E001 performance/dynamism conformance gate anchor: lane-E keeps
+  // consuming this same manifest sidecar and paired driver artifacts while the
+  // front-door Part 9 publication path remains intentionally singular and the
+  // D002 live fast-path/runtime proof stays the executable evidence boundary.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

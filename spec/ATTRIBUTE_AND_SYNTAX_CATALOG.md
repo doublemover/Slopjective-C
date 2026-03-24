@@ -1317,3 +1317,13 @@ Current implementation status (`M272-D002`):
   - `last_dispatch_used_fast_path`
   - `last_fast_path_reason`
   - seeded-entry flags for direct/final/sealed intent
+
+## M272 performance and dynamism conformance gate (E001)
+
+Current implementation status (`M272-E001`):
+
+- lane E now freezes one integrated Part 9 gate over `M272-A002`, `M272-B003`, `M272-C003`, and the `M272-D002` live summary
+- the gate remains fail-closed on upstream summary drift or missing evidence
+- the gate explicitly consumes the seeded fast-path baseline proved by `M272-D002`
+- no new runtime probe is introduced here; `M272-D002` remains the executable proof boundary
+- the next issue is `M272-E002`

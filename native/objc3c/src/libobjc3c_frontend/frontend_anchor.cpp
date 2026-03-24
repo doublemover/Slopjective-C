@@ -73,6 +73,11 @@ struct objc3c_frontend_context {
 // M271-E002 runnable system-extension closeout matrix anchor: milestone
 // closeout keeps consuming those same surfaced publication paths instead of
 // inventing a second frontend matrix-only reporting path for Part 8.
+// M272-E001 performance/dynamism conformance gate anchor: lane-E keeps
+// consuming those same surfaced publication paths while using the D002 live
+// fast-path/runtime proof as the truthful runnable Part 9 capability anchor.
+// The D002 live fast-path/runtime proof remains the canonical executable
+// evidence boundary for the current dispatch-control slice.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {

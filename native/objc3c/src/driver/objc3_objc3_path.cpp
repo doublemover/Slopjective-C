@@ -68,6 +68,10 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // M271-E002 runnable system-extension closeout matrix anchor: milestone
 // closeout rows keep consuming this same driver artifact surface instead of
 // inventing a matrix-only publication path for the current Part 8 slice.
+// M272-E001 performance/dynamism conformance gate anchor: lane-E now freezes
+// the current runnable Part 9 dispatch-control slice by consuming this same
+// published driver artifact surface while the widened D002 runtime proof
+// remains the canonical executable evidence boundary.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {
