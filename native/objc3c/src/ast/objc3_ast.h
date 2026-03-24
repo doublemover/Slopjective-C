@@ -1290,6 +1290,8 @@ struct Objc3MethodDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_macro_declared = false;
+  std::string objc_macro_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;
@@ -1567,6 +1569,8 @@ struct Objc3PropertyDecl {
   std::string executable_synthesized_binding_kind;
   std::string executable_synthesized_binding_symbol;
   std::string property_attribute_profile;
+  bool property_behavior_declared = false;
+  std::string property_behavior_name;
   std::string effective_getter_selector;
   bool effective_setter_available = false;
   std::string effective_setter_selector;
@@ -1618,6 +1622,8 @@ struct Objc3InterfaceDecl {
   bool objc_direct_members_declared = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;
+  bool objc_derive_declared = false;
+  std::string objc_derive_name;
   std::vector<Objc3PropertyDecl> properties;
   std::vector<Objc3MethodDecl> methods;
   unsigned line = 1;
@@ -1712,6 +1718,8 @@ struct FunctionDecl {
   bool executor_affinity_named = false;
   std::string executor_affinity_kind;
   std::string executor_affinity_name;
+  bool objc_macro_declared = false;
+  std::string objc_macro_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;

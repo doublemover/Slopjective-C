@@ -114,6 +114,11 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M272-A002 source-completion note: prefixed container attribute lists ahead
   // of `@interface` and `actor class` still reuse the same parser-owned
   // identifier token stream rather than widening the lexer boundary.
+  // M273-A001 source-closure note: derive, macro, and property-behavior work
+  // likewise stays identifier/attribute-profile driven here. Do not add
+  // dedicated derive/macro/property-behavior lexer keywords yet; the truthful
+  // Part 10 source boundary is still parser-owned profiling on top of this
+  // same token stream.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

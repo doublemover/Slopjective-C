@@ -1337,3 +1337,15 @@ Current implementation status (`M272-E002`):
 - the seeded runtime fast path for final/sealed live sends remains the executable Part 9 boundary
 - deterministic fallback caching remains part of the same closeout matrix instead of becoming a separate publication channel
 - the next issue is `M273-A001`
+
+## M273 derive, macro, and property-behavior source closure (A001)
+
+Current implementation status (`M273-A001`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_derive_macro_property_behavior_source_closure`
+- admitted parser-owned markers are:
+  - `__attribute__((objc_derive(named("..."))))` on `@interface`
+  - `__attribute__((objc_macro(named("..."))))` on callable declarations
+  - `behavior=...` inside `@property(...)`
+- this issue only freezes the source-closure contract
+- it does not yet claim macro expansion, derive synthesis, property accessor synthesis, or runtime metadata widening

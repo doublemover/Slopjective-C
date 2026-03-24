@@ -6561,6 +6561,44 @@ class Objc3Parser {
     return text;
   }
 
+  bool ParseNamedStringAttributePayload(const Token &attribute_name,
+                                        const char *attribute_spelling,
+                                        std::string &named_value_out) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P340",
+                                      std::string("missing '(' after ") + attribute_spelling + " attribute"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier) || Peek().text != "named") {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P341",
+                                      std::string(attribute_spelling) + " requires named(\"...\") payload"));
+      return false;
+    }
+    Advance();
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P342",
+                                      std::string("missing '(' after ") + attribute_spelling + " named payload"));
+      return false;
+    }
+    if (!At(TokenKind::String)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P343",
+                                      std::string(attribute_spelling) + " named payload requires string literal"));
+      return false;
+    }
+    named_value_out = Advance().text;
+    if (!Match(TokenKind::RParen) || !Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P344",
+                                      std::string("missing '))' after ") + attribute_spelling + " named payload"));
+      return false;
+    }
+    return true;
+  }
+
   bool IsBorrowedQualifierSpelling(const std::string &text) const {
     return text == "borrowed";
   }
@@ -7123,6 +7161,19 @@ class Objc3Parser {
       decl.objc_direct_members_declared = true;
       return true;
     }
+    if (attribute_name.text == "objc_derive") {
+      if (decl.objc_derive_declared) {
+        return record_duplicate("O3P345", "duplicate objc_derive attribute");
+      }
+      // M273-A001 source-closure anchor: derive admission remains parser-owned
+      // container attribute handling on top of the existing identifier stream.
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_derive",
+                                            decl.objc_derive_name)) {
+        return false;
+      }
+      decl.objc_derive_declared = true;
+      return true;
+    }
     if (attribute_name.text == "objc_final") {
       if (decl.objc_final_declared) {
         return record_duplicate("O3P335", "duplicate objc_final attribute");
@@ -7210,6 +7261,22 @@ class Objc3Parser {
         return false;
       }
       return ParseExecutorAttributePayload(decl, attribute_name);
+    }
+    if (attribute_name.text == "objc_macro") {
+      if (decl.objc_macro_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P346",
+                     "duplicate objc_macro attribute"));
+        return false;
+      }
+      // M273-A001 source-closure anchor: macro admission remains parser-owned
+      // callable attribute handling without claiming expansion/runtime behavior.
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_macro",
+                                            decl.objc_macro_name)) {
+        return false;
+      }
+      decl.objc_macro_declared = true;
+      return true;
     }
     if (attribute_name.text == "objc_nonisolated") {
       // M270-A002 source-surface anchor: nonisolated actor-member admission is
@@ -8633,6 +8700,9 @@ class Objc3Parser {
       } else if (attribute.name == "setter") {
         property.has_setter = true;
         property.setter_selector = attribute.value;
+      } else if (attribute.name == "behavior") {
+        property.property_behavior_declared = attribute.has_value;
+        property.property_behavior_name = attribute.value;
       }
     }
   }

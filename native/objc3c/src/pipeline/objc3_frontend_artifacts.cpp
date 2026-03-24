@@ -958,6 +958,33 @@ std::string BuildPart9DispatchIntentSourceCompletionSummaryJson(
   return out.str();
 }
 
+std::string BuildPart10MetaprogrammingSourceClosureSummaryJson(
+    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"derive_marker_sites\":" << summary.derive_marker_sites
+      << ",\"macro_marker_sites\":" << summary.macro_marker_sites
+      << ",\"property_behavior_sites\":" << summary.property_behavior_sites
+      << ",\"derive_marker_source_supported\":"
+      << (summary.derive_marker_source_supported ? "true" : "false")
+      << ",\"macro_marker_source_supported\":"
+      << (summary.macro_marker_source_supported ? "true" : "false")
+      << ",\"property_behavior_source_supported\":"
+      << (summary.property_behavior_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildPart9DispatchIntentSemanticModelSummaryJson(
     const Objc3Part9DispatchIntentSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -12684,6 +12711,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
       &part9_dispatch_intent_source_completion_summary =
           pipeline_result.part9_dispatch_intent_source_completion_summary;
+  const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+      &part10_metaprogramming_source_closure_summary =
+          pipeline_result.part10_metaprogramming_source_closure_summary;
   const Objc3Part9DispatchIntentSemanticModelSummary
       &part9_dispatch_intent_semantic_model_summary =
           pipeline_result.part9_dispatch_intent_semantic_model_summary;
@@ -17178,6 +17208,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
             << BuildPart9DispatchIntentSourceCompletionSummaryJson(
                    part9_dispatch_intent_source_completion_summary)
+            << ",\"objc_part10_derive_macro_property_behavior_source_closure\":"
+            << BuildPart10MetaprogrammingSourceClosureSummaryJson(
+                   part10_metaprogramming_source_closure_summary)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
@@ -18560,6 +18593,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
             << BuildPart9DispatchIntentSourceCompletionSummaryJson(
                    part9_dispatch_intent_source_completion_summary)
+            << ",\"objc_part10_derive_macro_property_behavior_source_closure\":"
+            << BuildPart10MetaprogrammingSourceClosureSummaryJson(
+                   part10_metaprogramming_source_closure_summary)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)

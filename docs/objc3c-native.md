@@ -4360,6 +4360,13 @@ Current implementation status (`M271-E001`):
 - the closeout matrix captures direct exact-call continuity, final/sealed seeded runtime fast path behavior, and deterministic fallback caching on the existing `M272-D002` proof surface
 - the same driver/manifest/frontend publication path remains authoritative; no second closeout-only runtime channel is introduced
 - the next issue is `M273-A001`
+
+## M273 derive, macro, and property-behavior source closure
+
+- the frontend now admits parser-owned Part 10 source markers for `objc_derive`, `objc_macro`, and `behavior=...`
+- the emitted frontend manifest publishes `frontend.pipeline.semantic_surface.objc_part10_derive_macro_property_behavior_source_closure`
+- this lane is source-closure only
+- it does not claim macro expansion, derived conformance synthesis, or property runtime behavior yet
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

@@ -1,0 +1,17 @@
+module m273DeriveMacroPropertyBehavior;
+
+__attribute__((objc_derive(named("Equatable"))))
+@interface Widget
+@property (strong, behavior=Observed) id value;
+@end
+
+@implementation Widget
+@end
+
+fn traced() -> i32 __attribute__((objc_macro(named("Trace")))) {
+  return 7;
+}
+
+fn main() -> i32 {
+  return traced();
+}

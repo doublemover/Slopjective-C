@@ -4448,7 +4448,7 @@ static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
 static bool IsKnownPropertyAttributeName(const std::string &name) {
   return name == "readonly" || name == "readwrite" || name == "atomic" || name == "nonatomic" || name == "copy" ||
          name == "strong" || name == "weak" || name == "unowned" || name == "assign" || name == "getter" ||
-         name == "setter";
+         name == "setter" || name == "behavior";
 }
 
 static bool IsValidPropertyGetterSelector(const std::string &selector) {
@@ -5148,7 +5148,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       emit_invalid_attribute("type mismatch: duplicate @property attribute '" + attribute.name +
                              "' for property '" + property.name + "' in " + owner_kind + " '" + owner_name + "'");
     }
-    if ((attribute.name != "getter" && attribute.name != "setter") && attribute.has_value) {
+    if ((attribute.name != "getter" && attribute.name != "setter" &&
+         attribute.name != "behavior") &&
+        attribute.has_value) {
       emit_invalid_attribute("type mismatch: @property attribute '" + attribute.name +
                              "' must not specify a value for property '" + property.name + "' in " + owner_kind +
                              " '" + owner_name + "'");
@@ -5158,6 +5160,11 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       emit_invalid_attribute("type mismatch: @property accessor attribute '" + attribute.name +
                              "' requires a selector value for property '" + property.name + "' in " + owner_kind +
                              " '" + owner_name + "'");
+    }
+    if (attribute.name == "behavior" &&
+        (!attribute.has_value || TrimAsciiWhitespace(attribute.value).empty())) {
+      emit_invalid_attribute("type mismatch: @property behavior attribute requires a non-empty value for property '" +
+                             property.name + "' in " + owner_kind + " '" + owner_name + "'");
     }
 
     if (invalid_attribute) {

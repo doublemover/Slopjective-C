@@ -8681,4 +8681,15 @@ runnable smoke matrix.
 
 <!-- SITE:EXCLUDE-END -->
 
+## M273 source-closure note
+
+`M273-A001` does not widen module metadata or ABI tables yet.
+
+- contract id
+  `objc3c-part10-metaprogramming-source-closure/m273-a001-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_derive_macro_property_behavior_source_closure`
+- truthful boundary
+  - Part 10 is still source-closure only at this stage
+  - no macro-expansion records, derive-synthesis descriptors, or property-behavior runtime tables are claimed yet
 

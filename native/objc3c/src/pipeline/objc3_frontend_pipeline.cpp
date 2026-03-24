@@ -4528,6 +4528,18 @@ std::string BuildPart9DispatchIntentSourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart10MetaprogrammingSourceClosureReplayKey(
+    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";sites=" << summary.derive_marker_sites << ":"
+      << summary.macro_marker_sites << ":"
+      << summary.property_behavior_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6132,6 +6144,65 @@ BuildPart9DispatchIntentSourceCompletionSummary(const Objc3Program &program) {
   return summary;
 }
 
+Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+BuildPart10MetaprogrammingSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendPart10MetaprogrammingSourceClosureSummary summary;
+
+  for (const auto &fn : program.functions) {
+    if (fn.objc_macro_declared) {
+      ++summary.macro_marker_sites;
+    }
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.objc_derive_declared) {
+      ++summary.derive_marker_sites;
+    }
+    for (const auto &property : interface_decl.properties) {
+      if (property.property_behavior_declared) {
+        ++summary.property_behavior_sites;
+      }
+    }
+    for (const auto &method : interface_decl.methods) {
+      if (method.objc_macro_declared) {
+        ++summary.macro_marker_sites;
+      }
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &property : protocol_decl.properties) {
+      if (property.property_behavior_declared) {
+        ++summary.property_behavior_sites;
+      }
+    }
+    for (const auto &method : protocol_decl.methods) {
+      if (method.objc_macro_declared) {
+        ++summary.macro_marker_sites;
+      }
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &property : implementation.properties) {
+      if (property.property_behavior_declared) {
+        ++summary.property_behavior_sites;
+      }
+    }
+    for (const auto &method : implementation.methods) {
+      if (method.objc_macro_declared) {
+        ++summary.macro_marker_sites;
+      }
+    }
+  }
+
+  summary.derive_marker_source_supported = true;
+  summary.macro_marker_source_supported = true;
+  summary.property_behavior_source_supported = true;
+  summary.deterministic_handoff = true;
+  summary.ready_for_semantic_expansion = true;
+  summary.replay_key =
+      BuildPart10MetaprogrammingSourceClosureReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6361,6 +6432,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part9_dispatch_intent_source_completion_summary =
       BuildPart9DispatchIntentSourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part10_metaprogramming_source_closure_summary =
+      BuildPart10MetaprogrammingSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(
