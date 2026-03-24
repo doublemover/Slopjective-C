@@ -1655,3 +1655,22 @@ Current implementation status (`M274-B003`):
   - ownership / `throws` / `async` interaction totals and their rejection totals
 - Swift-facing metadata/isolation completion, ABI lowering, and runnable bridge
   generation remain later `M274` work
+
+## M274 Part 11 Swift-facing metadata and isolation mapping completion (B004)
+
+Current implementation status (`M274-B004`):
+
+- the semantic pipeline now publishes one deterministic legality packet:
+  - `frontend.pipeline.semantic_surface.objc_part11_swift_metadata_and_isolation_mapping`
+- live fail-closed sema now enforces:
+  - `objc_swift_private` requires `objc_swift_name(named("..."))` (`O3S337`)
+  - actor-owned Swift-facing callable surfaces remain unsupported (`O3S338`)
+  - `objc_nonisolated` Swift-facing callable surfaces remain unsupported (`O3S339`)
+  - implementation-surface Swift metadata remains unsupported (`O3S340`)
+- that packet classifies:
+  - total Swift-facing callable sites
+  - `objc_swift_name` callable totals
+  - `objc_swift_private` callable totals
+  - actor-owned / `objc_nonisolated` / implementation-surface unsupported totals
+- ABI lowering, isolation export, and runnable bridge generation remain later
+  `M274` work

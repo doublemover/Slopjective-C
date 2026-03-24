@@ -1291,6 +1291,65 @@ std::string BuildPart11CppInteropInteractionSummaryJson(
   return out.str();
 }
 
+std::string BuildPart11SwiftInteropIsolationSummaryJson(
+    const Objc3Part11SwiftInteropIsolationSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\""
+      << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(summary.deferred_model)
+      << "\",\"swift_interop_callable_sites\":"
+      << summary.swift_interop_callable_sites
+      << ",\"swift_named_callable_sites\":"
+      << summary.swift_named_callable_sites
+      << ",\"swift_private_callable_sites\":"
+      << summary.swift_private_callable_sites
+      << ",\"swift_private_without_name_sites\":"
+      << summary.swift_private_without_name_sites
+      << ",\"actor_owned_swift_callable_sites\":"
+      << summary.actor_owned_swift_callable_sites
+      << ",\"nonisolated_swift_callable_sites\":"
+      << summary.nonisolated_swift_callable_sites
+      << ",\"implementation_swift_callable_sites\":"
+      << summary.implementation_swift_callable_sites
+      << ",\"swift_private_without_name_rejection_sites\":"
+      << summary.swift_private_without_name_rejection_sites
+      << ",\"actor_isolation_mapping_rejection_sites\":"
+      << summary.actor_isolation_mapping_rejection_sites
+      << ",\"nonisolated_mapping_rejection_sites\":"
+      << summary.nonisolated_mapping_rejection_sites
+      << ",\"implementation_surface_rejection_sites\":"
+      << summary.implementation_surface_rejection_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"swift_metadata_profile_reused\":"
+      << (summary.swift_metadata_profile_reused ? "true" : "false")
+      << ",\"swift_private_requires_name_enforced\":"
+      << (summary.swift_private_requires_name_enforced ? "true" : "false")
+      << ",\"actor_isolation_mapping_fail_closed\":"
+      << (summary.actor_isolation_mapping_fail_closed ? "true" : "false")
+      << ",\"nonisolated_mapping_fail_closed\":"
+      << (summary.nonisolated_mapping_fail_closed ? "true" : "false")
+      << ",\"implementation_surface_fail_closed\":"
+      << (summary.implementation_surface_fail_closed ? "true" : "false")
+      << ",\"ffi_abi_lowering_deferred\":"
+      << (summary.ffi_abi_lowering_deferred ? "true" : "false")
+      << ",\"runtime_bridge_generation_deferred\":"
+      << (summary.runtime_bridge_generation_deferred ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
     const Objc3Part10ExpansionBehaviorSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -14325,6 +14384,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part11CppInteropInteractionSummary
       &part11_cpp_interop_interaction_summary =
           pipeline_result.part11_cpp_interop_interaction_summary;
+  const Objc3Part11SwiftInteropIsolationSummary
+      &part11_swift_interop_isolation_summary =
+          pipeline_result.part11_swift_interop_isolation_summary;
   const Objc3Part10ExpansionBehaviorSemanticModelSummary
       &part10_expansion_behavior_semantic_model_summary =
           pipeline_result.part10_expansion_behavior_semantic_model_summary;
@@ -18916,6 +18978,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_cpp_ownership_throws_and_async_interactions\":"
             << BuildPart11CppInteropInteractionSummaryJson(
                    part11_cpp_interop_interaction_summary)
+            << ",\"objc_part11_swift_metadata_and_isolation_mapping\":"
+            << BuildPart11SwiftInteropIsolationSummaryJson(
+                   part11_swift_interop_isolation_summary)
             << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
             << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                    part11_foreign_surface_interface_preservation_summary)
@@ -20353,6 +20418,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part11_cpp_ownership_throws_and_async_interactions\":"
            << BuildPart11CppInteropInteractionSummaryJson(
                   part11_cpp_interop_interaction_summary)
+           << ",\"objc_part11_swift_metadata_and_isolation_mapping\":"
+           << BuildPart11SwiftInteropIsolationSummaryJson(
+                  part11_swift_interop_isolation_summary)
            << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
            << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                   part11_foreign_surface_interface_preservation_summary)

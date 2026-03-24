@@ -6956,6 +6956,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program),
           result.part11_interop_runtime_parity_summary,
           result.stage_diagnostics.semantic);
+  result.part11_swift_interop_isolation_summary =
+      BuildPart11SwiftInteropIsolationSummary(
+          Objc3ParsedProgramAst(result.program),
+          result.part11_cpp_interop_interaction_summary,
+          result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
   result.executable_metadata_source_graph = BuildExecutableMetadataSourceGraph(

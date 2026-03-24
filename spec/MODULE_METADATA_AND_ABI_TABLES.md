@@ -8948,3 +8948,19 @@ Current implementation status (`M274-B003`):
   - rejection totals for the `O3S334` / `O3S335` / `O3S336` families
 - ABI lowering, bridge shims, and runnable ObjC++ interop behavior remain
   deferred
+
+## M274 Swift metadata and isolation mapping semantics note
+
+Current implementation status (`M274-B004`):
+
+- the frontend manifest now emits one deterministic Part 11 legality packet:
+  `objc3c-part11-swift-metadata-and-isolation-mapping-completion/m274-b004-v1`
+- that packet records:
+  - total Swift-facing callable sites
+  - `objc_swift_name` callable totals
+  - `objc_swift_private` callable totals
+  - unsupported private-without-name / actor-owned / `objc_nonisolated` /
+    implementation-surface totals
+  - rejection totals for the `O3S337` / `O3S338` / `O3S339` / `O3S340` families
+- ABI lowering, Swift-facing isolation export, and runnable cross-language
+  behavior remain deferred

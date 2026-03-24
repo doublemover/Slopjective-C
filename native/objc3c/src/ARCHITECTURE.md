@@ -11418,3 +11418,17 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
     `objc_executor(...)` (`O3S336`)
 - Swift-facing metadata/isolation completion, ABI lowering, and runnable bridge
   generation remain later `M274` work
+
+## M274 Part 11 Swift-facing metadata and isolation mapping completion (B004)
+
+- `M274-B004` turns the remaining Swift-facing metadata/isolation slice into
+  live fail-closed sema rules
+- the emitted frontend manifest publishes
+  `objc_part11_swift_metadata_and_isolation_mapping`
+- live sema now rejects:
+  - `objc_swift_private` without `objc_swift_name(named("..."))` (`O3S337`)
+  - actor-owned Swift-facing callable surfaces (`O3S338`)
+  - `objc_nonisolated` Swift-facing callable surfaces (`O3S339`)
+  - implementation-surface Swift metadata (`O3S340`)
+- ABI lowering, Swift-facing isolation export, and runnable bridge generation
+  remain later `M274` work

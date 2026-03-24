@@ -3654,6 +3654,21 @@ Current implementation status (`M274-B003`):
 - cross-language ABI lowering, bridge shims, and runnable ObjC++ interop
   behavior remain later `M274` work
 
+## M274 Part 11 Swift-facing metadata and isolation mapping completion
+
+Current implementation status (`M274-B004`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part11_swift_metadata_and_isolation_mapping`
+- live fail-closed diagnostics now reject:
+  - `O3S337` `objc_swift_private` callables that do not also carry
+    `objc_swift_name(named("..."))`
+  - `O3S338` Swift-facing metadata on actor-owned callable surfaces
+  - `O3S339` Swift-facing metadata on `objc_nonisolated` callable surfaces
+  - `O3S340` Swift-facing metadata placed directly on implementation surfaces
+- Swift-facing lowering, bridge shims, and runnable cross-language isolation
+  export remain later `M274` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

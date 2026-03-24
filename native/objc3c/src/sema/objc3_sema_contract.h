@@ -1063,6 +1063,73 @@ inline bool IsReadyObjc3Part11CppInteropInteractionSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part11SwiftInteropIsolationSummaryDependencyContractId =
+        kObjc3Part11CppInteropInteractionSummaryContractId;
+inline constexpr const char
+    *kObjc3Part11SwiftInteropIsolationSummaryContractId =
+        "objc3c-part11-swift-metadata-and-isolation-mapping-completion/m274-b004-v1";
+inline constexpr const char
+    *kObjc3Part11SwiftInteropIsolationSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part11_swift_metadata_and_isolation_mapping";
+inline constexpr const char
+    *kObjc3Part11SwiftInteropIsolationSummaryRule =
+        "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-m274-work";
+inline constexpr const char
+    *kObjc3Part11SwiftInteropIsolationSummaryDeferredRule =
+        "ffi-abi-lowering-runtime-bridge-shims-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-m274-lanes";
+
+struct Objc3Part11SwiftInteropIsolationSummary {
+  std::string contract_id = kObjc3Part11SwiftInteropIsolationSummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part11SwiftInteropIsolationSummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part11SwiftInteropIsolationSummarySurfacePath;
+  std::string semantic_model = kObjc3Part11SwiftInteropIsolationSummaryRule;
+  std::string deferred_model =
+      kObjc3Part11SwiftInteropIsolationSummaryDeferredRule;
+  std::size_t swift_interop_callable_sites = 0;
+  std::size_t swift_named_callable_sites = 0;
+  std::size_t swift_private_callable_sites = 0;
+  std::size_t swift_private_without_name_sites = 0;
+  std::size_t actor_owned_swift_callable_sites = 0;
+  std::size_t nonisolated_swift_callable_sites = 0;
+  std::size_t implementation_swift_callable_sites = 0;
+  std::size_t swift_private_without_name_rejection_sites = 0;
+  std::size_t actor_isolation_mapping_rejection_sites = 0;
+  std::size_t nonisolated_mapping_rejection_sites = 0;
+  std::size_t implementation_surface_rejection_sites = 0;
+  bool dependency_required = false;
+  bool swift_metadata_profile_reused = false;
+  bool swift_private_requires_name_enforced = false;
+  bool actor_isolation_mapping_fail_closed = false;
+  bool nonisolated_mapping_fail_closed = false;
+  bool implementation_surface_fail_closed = false;
+  bool ffi_abi_lowering_deferred = false;
+  bool runtime_bridge_generation_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part11SwiftInteropIsolationSummary(
+    const Objc3Part11SwiftInteropIsolationSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.swift_metadata_profile_reused &&
+         summary.swift_private_requires_name_enforced &&
+         summary.actor_isolation_mapping_fail_closed &&
+         summary.nonisolated_mapping_fail_closed &&
+         summary.implementation_surface_fail_closed &&
+         summary.ffi_abi_lowering_deferred &&
+         summary.runtime_bridge_generation_deferred &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
         "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =

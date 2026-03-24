@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S337.
+module Part11SwiftPrivateWithoutNameRejected;
+
+fn hiddenBridge() -> i32 __attribute__((objc_swift_private)) {
+  return 0;
+}
