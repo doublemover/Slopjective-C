@@ -4385,6 +4385,29 @@ std::string Objc3Part9DispatchControlLoweringReplayKey(
          ";lane_contract=" + kObjc3Part9DispatchControlLoweringLaneContract;
 }
 
+std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
+  std::ostringstream out;
+  // M272-C003 preservation anchor: lane-C extends the local C002 lowering win
+  // by preserving direct/final/sealed intent through runtime metadata source
+  // records, emitted runtime-import-surface artifacts, and imported replay
+  // summaries before lane-D runtime boundary work begins.
+  out << "contract="
+      << kObjc3Part9DispatchMetadataInterfacePreservationContractId
+      << ";source_contract=" << kObjc3Part9DispatchControlLoweringContractId
+      << ";surface_path="
+      << kObjc3Part9DispatchMetadataInterfacePreservationSurfacePath
+      << ";artifact_member="
+      << kObjc3Part9DispatchMetadataInterfacePreservationImportArtifactMemberName
+      << ";source_model="
+      << kObjc3Part9DispatchMetadataInterfacePreservationSourceModel
+      << ";preservation_model="
+      << kObjc3Part9DispatchMetadataInterfacePreservationModel
+      << ";fail_closed_model="
+      << kObjc3Part9DispatchMetadataInterfacePreservationFailClosedModel
+      << ";next_issue=M272-D001";
+  return out.str();
+}
+
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract) {
   if (contract.task_runtime_interop_sites > contract.task_runtime_sites ||

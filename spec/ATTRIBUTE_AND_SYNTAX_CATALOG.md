@@ -1268,3 +1268,19 @@ Current implementation status (`M272-C002`):
   - container-level `objc_sealed` bits
 - this does not claim broad dynamic-receiver direct dispatch or optimizer-led
   devirtualization beyond the supported concrete receiver slice
+
+## M272 dispatch metadata and interface preservation (C003)
+
+Current implementation status (`M272-C003`):
+
+- runtime metadata source records now preserve:
+  - effective direct-dispatch intent on methods
+  - method-level `objc_final` intent
+  - class-level `objc_final` / `objc_sealed` intent
+- emitted `module.runtime-import-surface.json` artifacts now carry a dedicated
+  Part 9 preservation packet at
+  `frontend.pipeline.semantic_surface.objc_part9_dispatch_metadata_and_interface_preservation`
+- imported runtime surfaces now reload the same Part 9 preservation packet and
+  the widened class/method source-record fields for separate-compilation replay
+- emitted LLVM IR now publishes one replay-stable Part 9 preservation summary
+  above the `M272-C002` direct-call lowering slice

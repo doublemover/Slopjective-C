@@ -1558,6 +1558,29 @@ inline constexpr const char *kObjc3Part9DispatchControlLoweringDeferredModel =
     "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-m272-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part9DispatchControlLoweringLaneContract =
     "m272-part9-dispatch-control-lowering-contract-v1";
+// M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
+// intent introduced by C002 through runtime metadata source records, emitted
+// runtime-import-surface artifacts, and replay-stable frontend metadata instead
+// of restricting those facts to local IR/object payloads only.
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationContractId =
+        "objc3c-part9-dispatch-metadata-interface-preservation/m272-c003-v1";
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part9_dispatch_metadata_and_interface_preservation";
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationImportArtifactMemberName =
+        "objc_part9_dispatch_metadata_and_interface_preservation";
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationSourceModel =
+        "runtime-metadata-source-records-and-runtime-import-surface-artifacts-preserve-direct-final-sealed-intent-for-separate-compilation-and-interface-replay";
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationModel =
+        "provider-and-consumer-runtime-import-surface-artifacts-preserve-direct-final-sealed-dispatch-intent-beyond-local-ir-object-emission";
+inline constexpr const char
+    *kObjc3Part9DispatchMetadataInterfacePreservationFailClosedModel =
+        "missing-or-drifted-dispatch-intent-preservation-packets-disable-cross-module-part9-preservation-claims";
 // M271-C003 ABI/artifact completion anchor: keep the frozen Part 8 lowering
 // contract from C001 as the single lowering boundary, but publish one
 // dedicated ABI/replay packet above it for borrowed-return contracts and
@@ -2681,6 +2704,7 @@ bool IsValidObjc3Part9DispatchControlLoweringContract(
     const Objc3Part9DispatchControlLoweringContract &contract);
 std::string Objc3Part9DispatchControlLoweringReplayKey(
     const Objc3Part9DispatchControlLoweringContract &contract);
+std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(

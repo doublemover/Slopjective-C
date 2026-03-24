@@ -304,6 +304,33 @@ call path.
 **Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
 [E](#e) conformance evidence policy.
 
+## D-031: Part 9 dispatch intent must survive runtime metadata and import-surface replay after live lowering lands {#decisions-d-031}
+
+**Decision:** `M272-C003` shall preserve the `M272-C002` dispatch-intent facts
+through the compiler-owned metadata/interface surfaces that remain relevant for
+separate compilation:
+
+- runtime metadata source records,
+- emitted `module.runtime-import-surface.json` artifacts, and
+- replay-stable frontend IR metadata.
+
+The preserved Part 9 facts are:
+
+- method-level effective direct-dispatch intent,
+- method-level `objc_final` intent, and
+- class-level `objc_final` / `objc_sealed` intent.
+
+This lane shall fail closed on drifted or missing imported preservation packets
+instead of silently claiming cross-module Part 9 preservation.
+
+This lane shall not claim any new runtime dispatch boundary or optimizer
+behavior beyond the `M272-C002` concrete direct-call slice.
+
+**Rationale:** once direct-call lowering is live, the next truthful gap is
+artifact/interface drift. Separate compilation cannot be considered stable if
+the source-record and import-surface layers drop the same Part 9 intent bits
+that local IR/object emission already preserves.
+
 ---
 
 ## D-023: Direct-members defaulting must publish one frontend-owned completion packet before legality widens {#decisions-d-023}

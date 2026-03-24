@@ -4962,6 +4962,10 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << "\",\"name\":\"" << EscapeJsonString(class_record.name)
         << "\",\"super_name\":\"" << EscapeJsonString(class_record.super_name)
         << "\",\"has_super\":" << (class_record.has_super ? "true" : "false")
+        << ",\"objc_final_declared\":"
+        << (class_record.objc_final_declared ? "true" : "false")
+        << ",\"objc_sealed_declared\":"
+        << (class_record.objc_sealed_declared ? "true" : "false")
         << ",\"adopted_protocols\":"
         << BuildStringArrayJson(class_record.adopted_protocols_lexicographic)
         << ",\"property_count\":" << class_record.property_count
@@ -5062,6 +5066,10 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << "\",\"is_class_method\":"
         << (method_record.is_class_method ? "true" : "false")
         << ",\"has_body\":" << (method_record.has_body ? "true" : "false")
+        << ",\"effective_direct_dispatch\":"
+        << (method_record.effective_direct_dispatch ? "true" : "false")
+        << ",\"objc_final_declared\":"
+        << (method_record.objc_final_declared ? "true" : "false")
         << ",\"parameter_count\":" << method_record.parameter_count
         << ",\"return_type\":\""
         << EscapeJsonString(method_record.return_type_name)
@@ -5288,6 +5296,186 @@ std::string BuildPart7ActorMailboxRuntimeImportSummaryJson(
   return out.str();
 }
 
+struct Objc3Part9DispatchMetadataInterfacePreservationSurfaceSummary {
+  std::string contract_id =
+      kObjc3Part9DispatchMetadataInterfacePreservationContractId;
+  std::string source_contract_id = kObjc3Part9DispatchControlLoweringContractId;
+  std::string surface_path =
+      kObjc3Part9DispatchMetadataInterfacePreservationSurfacePath;
+  std::string import_artifact_member_name =
+      kObjc3Part9DispatchMetadataInterfacePreservationImportArtifactMemberName;
+  std::string source_model =
+      kObjc3Part9DispatchMetadataInterfacePreservationSourceModel;
+  std::string preservation_model =
+      kObjc3Part9DispatchMetadataInterfacePreservationModel;
+  std::string fail_closed_model =
+      kObjc3Part9DispatchMetadataInterfacePreservationFailClosedModel;
+  std::string replay_key;
+  std::string lowering_replay_key;
+  std::size_t local_direct_callable_record_count = 0;
+  std::size_t local_final_callable_record_count = 0;
+  std::size_t local_final_container_record_count = 0;
+  std::size_t local_sealed_container_record_count = 0;
+  std::size_t imported_module_count = 0;
+  std::size_t imported_direct_callable_record_count = 0;
+  std::size_t imported_final_callable_record_count = 0;
+  std::size_t imported_final_container_record_count = 0;
+  std::size_t imported_sealed_container_record_count = 0;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_preservation_ready = false;
+  bool deterministic = false;
+};
+
+std::size_t CountDirectCallableRuntimeMethodRecords(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  return static_cast<std::size_t>(std::count_if(
+      records.methods_lexicographic.begin(), records.methods_lexicographic.end(),
+      [](const Objc3RuntimeMetadataMethodSourceRecord &record) {
+        return record.effective_direct_dispatch;
+      }));
+}
+
+std::size_t CountFinalCallableRuntimeMethodRecords(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  return static_cast<std::size_t>(std::count_if(
+      records.methods_lexicographic.begin(), records.methods_lexicographic.end(),
+      [](const Objc3RuntimeMetadataMethodSourceRecord &record) {
+        return record.objc_final_declared;
+      }));
+}
+
+std::size_t CountFinalRuntimeClassRecords(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  return static_cast<std::size_t>(std::count_if(
+      records.classes_lexicographic.begin(), records.classes_lexicographic.end(),
+      [](const Objc3RuntimeMetadataClassSourceRecord &record) {
+        return record.objc_final_declared;
+      }));
+}
+
+std::size_t CountSealedRuntimeClassRecords(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  return static_cast<std::size_t>(std::count_if(
+      records.classes_lexicographic.begin(), records.classes_lexicographic.end(),
+      [](const Objc3RuntimeMetadataClassSourceRecord &record) {
+        return record.objc_sealed_declared;
+      }));
+}
+
+Objc3Part9DispatchMetadataInterfacePreservationSurfaceSummary
+BuildPart9DispatchMetadataInterfacePreservationSummary(
+    const Objc3RuntimeMetadataSourceRecordSet &local_runtime_metadata_source_records,
+    const std::string &lowering_replay_key, bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces) {
+  Objc3Part9DispatchMetadataInterfacePreservationSurfaceSummary summary;
+  summary.lowering_replay_key = lowering_replay_key;
+  summary.local_direct_callable_record_count =
+      CountDirectCallableRuntimeMethodRecords(local_runtime_metadata_source_records);
+  summary.local_final_callable_record_count =
+      CountFinalCallableRuntimeMethodRecords(local_runtime_metadata_source_records);
+  summary.local_final_container_record_count =
+      CountFinalRuntimeClassRecords(local_runtime_metadata_source_records);
+  summary.local_sealed_container_record_count =
+      CountSealedRuntimeClassRecords(local_runtime_metadata_source_records);
+  summary.runtime_import_artifact_ready =
+      runtime_import_artifact_ready &&
+      IsReadyObjc3RuntimeMetadataSourceRecordSet(
+          local_runtime_metadata_source_records);
+  summary.deterministic = local_runtime_metadata_source_records.deterministic;
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part9_dispatch_metadata_interface_preservation_present) {
+      continue;
+    }
+    ++summary.imported_module_count;
+    summary.imported_direct_callable_record_count +=
+        CountDirectCallableRuntimeMethodRecords(surface.runtime_metadata_source_records);
+    summary.imported_final_callable_record_count +=
+        CountFinalCallableRuntimeMethodRecords(surface.runtime_metadata_source_records);
+    summary.imported_final_container_record_count +=
+        CountFinalRuntimeClassRecords(surface.runtime_metadata_source_records);
+    summary.imported_sealed_container_record_count +=
+        CountSealedRuntimeClassRecords(surface.runtime_metadata_source_records);
+    summary.deterministic = summary.deterministic && surface.part9_deterministic;
+  }
+  summary.separate_compilation_preservation_ready =
+      summary.runtime_import_artifact_ready;
+  std::ostringstream replay_key;
+  replay_key << Objc3Part9DispatchMetadataInterfacePreservationSummary()
+             << ";runtime_import_artifact_ready="
+             << (summary.runtime_import_artifact_ready ? "true" : "false")
+             << ";separate_compilation_preservation_ready="
+             << (summary.separate_compilation_preservation_ready ? "true"
+                                                                 : "false")
+             << ";imported_module_count=" << summary.imported_module_count
+             << ";deterministic="
+             << (summary.deterministic ? "true" : "false")
+             << ";lowering_replay_key=" << lowering_replay_key
+             << ";local_direct_callable_record_count="
+             << summary.local_direct_callable_record_count
+             << ";local_final_callable_record_count="
+             << summary.local_final_callable_record_count
+             << ";local_final_container_record_count="
+             << summary.local_final_container_record_count
+             << ";local_sealed_container_record_count="
+             << summary.local_sealed_container_record_count
+             << ";imported_direct_callable_record_count="
+             << summary.imported_direct_callable_record_count
+             << ";imported_final_callable_record_count="
+             << summary.imported_final_callable_record_count
+             << ";imported_final_container_record_count="
+             << summary.imported_final_container_record_count
+             << ";imported_sealed_container_record_count="
+             << summary.imported_sealed_container_record_count;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+std::string BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
+    const Objc3Part9DispatchMetadataInterfacePreservationSurfaceSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"preservation_model\":\""
+      << EscapeJsonString(summary.preservation_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"lowering_replay_key\":\""
+      << EscapeJsonString(summary.lowering_replay_key)
+      << "\",\"local_direct_callable_record_count\":"
+      << summary.local_direct_callable_record_count
+      << ",\"local_final_callable_record_count\":"
+      << summary.local_final_callable_record_count
+      << ",\"local_final_container_record_count\":"
+      << summary.local_final_container_record_count
+      << ",\"local_sealed_container_record_count\":"
+      << summary.local_sealed_container_record_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"imported_direct_callable_record_count\":"
+      << summary.imported_direct_callable_record_count
+      << ",\"imported_final_callable_record_count\":"
+      << summary.imported_final_callable_record_count
+      << ",\"imported_final_container_record_count\":"
+      << summary.imported_final_container_record_count
+      << ",\"imported_sealed_container_record_count\":"
+      << summary.imported_sealed_container_record_count
+      << ",\"runtime_import_artifact_ready\":"
+      << (summary.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_preservation_ready\":"
+      << (summary.separate_compilation_preservation_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
@@ -5295,6 +5483,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part3_optional_keypath_runtime_helper_contract_json,
     const std::string &part6_result_and_bridging_artifact_replay_json,
     const std::string &part7_actor_mailbox_runtime_import_json,
+    const std::string &part9_dispatch_metadata_interface_preservation_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
     const Objc3RuntimeMetadataSourceRecordSet
@@ -5379,6 +5568,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part6_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_part7_actor_mailbox_and_isolation_runtime_import_surface\": "
       << part7_actor_mailbox_runtime_import_json << ",\n"
+      << "  \"objc_part9_dispatch_metadata_and_interface_preservation\": "
+      << part9_dispatch_metadata_interface_preservation_json << ",\n"
       << "  \""
       << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
       << "\": "
@@ -13482,6 +13673,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
               runtime_aware_import_module_frontend_closure),
           imported_runtime_module_surfaces);
+  const auto part9_dispatch_metadata_interface_preservation_summary =
+      BuildPart9DispatchMetadataInterfacePreservationSummary(
+          runtime_metadata_source_records, part9_dispatch_control_lowering_replay_key,
+          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+              runtime_aware_import_module_frontend_closure),
+          imported_runtime_module_surfaces);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -16997,6 +17194,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part9_dispatch_intent_compatibility_summary,
                   part9_dispatch_control_lowering_contract,
                   part9_dispatch_control_lowering_replay_key)
+           << ",\"objc_part9_dispatch_metadata_and_interface_preservation\":"
+           << BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
+                  part9_dispatch_metadata_interface_preservation_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18376,6 +18576,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part9_dispatch_intent_compatibility_summary,
                   part9_dispatch_control_lowering_contract,
                   part9_dispatch_control_lowering_replay_key)
+           << ",\"objc_part9_dispatch_metadata_and_interface_preservation\":"
+           << BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
+                  part9_dispatch_metadata_interface_preservation_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -19035,6 +19238,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     part7_actor_lowering_metadata_contract,
                     part7_actor_lowering_metadata_replay_key,
                     part7_actor_isolation_sendability_lowering_replay_key)),
+            BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
+                part9_dispatch_metadata_interface_preservation_summary),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
   }
@@ -19426,6 +19631,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part9_dispatch_control_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_part9_dispatch_control_lowering_handoff =
       part9_dispatch_control_lowering_contract.deterministic;
+  ir_frontend_metadata
+      .lowering_part9_dispatch_metadata_interface_preservation_key =
+      part9_dispatch_metadata_interface_preservation_summary.replay_key;
+  ir_frontend_metadata.part9_dispatch_metadata_local_direct_callable_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .local_direct_callable_record_count;
+  ir_frontend_metadata.part9_dispatch_metadata_local_final_callable_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .local_final_callable_record_count;
+  ir_frontend_metadata.part9_dispatch_metadata_local_final_container_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .local_final_container_record_count;
+  ir_frontend_metadata
+      .part9_dispatch_metadata_local_sealed_container_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .local_sealed_container_record_count;
+  ir_frontend_metadata.part9_dispatch_metadata_imported_module_count =
+      part9_dispatch_metadata_interface_preservation_summary.imported_module_count;
+  ir_frontend_metadata.part9_dispatch_metadata_imported_direct_callable_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .imported_direct_callable_record_count;
+  ir_frontend_metadata.part9_dispatch_metadata_imported_final_callable_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .imported_final_callable_record_count;
+  ir_frontend_metadata
+      .part9_dispatch_metadata_imported_final_container_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .imported_final_container_record_count;
+  ir_frontend_metadata
+      .part9_dispatch_metadata_imported_sealed_container_record_count =
+      part9_dispatch_metadata_interface_preservation_summary
+          .imported_sealed_container_record_count;
+  ir_frontend_metadata.part9_dispatch_metadata_runtime_import_artifact_ready =
+      part9_dispatch_metadata_interface_preservation_summary
+          .runtime_import_artifact_ready;
+  ir_frontend_metadata
+      .part9_dispatch_metadata_separate_compilation_preservation_ready =
+      part9_dispatch_metadata_interface_preservation_summary
+          .separate_compilation_preservation_ready;
+  ir_frontend_metadata.deterministic_part9_dispatch_metadata_interface_handoff =
+      part9_dispatch_metadata_interface_preservation_summary.deterministic;
   ir_frontend_metadata.lowering_part8_system_extension_replay_key =
       part8_system_extension_lowering_replay_key;
   ir_frontend_metadata.part8_system_extension_lowering_cleanup_hook_sites =

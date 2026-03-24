@@ -395,6 +395,24 @@ bool ReadOptionalStringMember(const JsonValue::Object &object,
   return true;
 }
 
+bool ReadOptionalBoolMember(const JsonValue::Object &object,
+                            const std::string &name,
+                            bool &value,
+                            std::string &error) {
+  const JsonValue *member = FindMember(object, name);
+  if (member == nullptr) {
+    value = false;
+    return true;
+  }
+  const bool *bool_value = AsBool(*member);
+  if (bool_value == nullptr) {
+    error = "JSON member '" + name + "' must be a bool";
+    return false;
+  }
+  value = *bool_value;
+  return true;
+}
+
 bool ReadOptionalSizeMember(const JsonValue::Object &object,
                             const std::string &name,
                             std::size_t &value,
@@ -503,6 +521,10 @@ bool ParseClassRecord(const JsonValue::Object &object,
          ReadStringMember(object, "name", record.name, error) &&
          ReadOptionalStringMember(object, "super_name", record.super_name, error) &&
          ReadBoolMember(object, "has_super", record.has_super, error) &&
+         ReadOptionalBoolMember(object, "objc_final_declared",
+                                record.objc_final_declared, error) &&
+         ReadOptionalBoolMember(object, "objc_sealed_declared",
+                                record.objc_sealed_declared, error) &&
          ReadStringArrayMember(object, "adopted_protocols", record.adopted_protocols_lexicographic, error) &&
          ReadSizeMember(object, "property_count", record.property_count, error) &&
          ReadSizeMember(object, "method_count", record.method_count, error) &&
@@ -568,6 +590,10 @@ bool ParseMethodRecord(const JsonValue::Object &object,
          ReadStringMember(object, "selector", record.selector, error) &&
          ReadBoolMember(object, "is_class_method", record.is_class_method, error) &&
          ReadBoolMember(object, "has_body", record.has_body, error) &&
+         ReadOptionalBoolMember(object, "effective_direct_dispatch",
+                                record.effective_direct_dispatch, error) &&
+         ReadOptionalBoolMember(object, "objc_final_declared",
+                                record.objc_final_declared, error) &&
          ReadSizeMember(object, "parameter_count", record.parameter_count, error) &&
          ReadStringMember(object, "return_type", record.return_type_name, error) &&
          ReadUnsignedMember(object, "line", record.line, error) &&
@@ -879,6 +905,75 @@ bool PopulateImportedPart7ActorMailboxRuntimeImport(
   return true;
 }
 
+bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *preservation_value = FindMember(
+      root, "objc_part9_dispatch_metadata_and_interface_preservation");
+  if (preservation_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *preservation_object = AsObject(*preservation_value);
+  if (preservation_object == nullptr) {
+    error =
+        "part9 dispatch metadata/interface preservation surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  if (!ReadStringMember(*preservation_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*preservation_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
+                      surface.part9_runtime_import_artifact_ready, error) ||
+      !ReadBoolMember(*preservation_object,
+                      "separate_compilation_preservation_ready",
+                      surface.part9_separate_compilation_preservation_ready,
+                      error) ||
+      !ReadBoolMember(*preservation_object, "deterministic",
+                      surface.part9_deterministic, error) ||
+      !ReadStringMember(*preservation_object, "replay_key",
+                        surface.part9_replay_key, error) ||
+      !ReadStringMember(*preservation_object, "lowering_replay_key",
+                        surface.part9_lowering_replay_key, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_direct_callable_record_count",
+                      surface.part9_local_direct_callable_record_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_final_callable_record_count",
+                      surface.part9_local_final_callable_record_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_final_container_record_count",
+                      surface.part9_local_final_container_record_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_sealed_container_record_count",
+                      surface.part9_local_sealed_container_record_count,
+                      error)) {
+    return false;
+  }
+
+  if (contract_id !=
+      "objc3c-part9-dispatch-metadata-interface-preservation/m272-c003-v1") {
+    error =
+        "unexpected Part 9 dispatch metadata/interface preservation contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      "objc3c-part9-dispatch-control-lowering-contract/m272-c001-v1") {
+    error =
+        "unexpected Part 9 dispatch metadata/interface preservation source contract id in import surface";
+    return false;
+  }
+
+  surface.part9_dispatch_metadata_interface_preservation_present = true;
+  surface.part9_contract_id = std::move(contract_id);
+  surface.part9_source_contract_id = std::move(source_contract_id);
+  return true;
+}
+
 bool ParseRuntimeMetadataSourceRecordSet(
     const JsonValue::Object &root, const std::string &declarations_name,
     Objc3RuntimeMetadataSourceRecordSet &record_set, std::string &error) {
@@ -1056,6 +1151,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     return false;
   }
   if (!PopulateImportedPart7ActorMailboxRuntimeImport(root, surface, error)) {
+    return false;
+  }
+  if (!PopulateImportedPart9DispatchMetadataInterfacePreservation(root, surface,
+                                                                  error)) {
     return false;
   }
   Objc3RuntimeMetadataSourceRecordSet local_runtime_metadata_source_records;

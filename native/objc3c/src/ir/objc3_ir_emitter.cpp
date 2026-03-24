@@ -901,6 +901,13 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_part9_dispatch_control_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_part9_dispatch_metadata_interface_preservation_key.empty()) {
+      out << "; part9_dispatch_metadata_interface_preservation = "
+          << frontend_metadata_
+                 .lowering_part9_dispatch_metadata_interface_preservation_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_part8_system_extension_replay_key.empty()) {
       out << "; system_extension_lowering_contract = "
           << frontend_metadata_.lowering_part8_system_extension_replay_key
@@ -2409,6 +2416,48 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_dispatch_metadata_interface_profile = local_direct_callable_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_local_direct_callable_record_count
+        << ", local_final_callable_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_local_final_callable_record_count
+        << ", local_final_container_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_local_final_container_record_count
+        << ", local_sealed_container_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_local_sealed_container_record_count
+        << ", imported_module_count="
+        << frontend_metadata_.part9_dispatch_metadata_imported_module_count
+        << ", imported_direct_callable_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_imported_direct_callable_record_count
+        << ", imported_final_callable_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_imported_final_callable_record_count
+        << ", imported_final_container_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_imported_final_container_record_count
+        << ", imported_sealed_container_record_count="
+        << frontend_metadata_
+               .part9_dispatch_metadata_imported_sealed_container_record_count
+        << ", runtime_import_artifact_ready="
+        << (frontend_metadata_
+                    .part9_dispatch_metadata_runtime_import_artifact_ready
+                ? "true"
+                : "false")
+        << ", separate_compilation_preservation_ready="
+        << (frontend_metadata_
+                    .part9_dispatch_metadata_separate_compilation_preservation_ready
+                ? "true"
+                : "false")
+        << ", deterministic_part9_dispatch_metadata_interface_handoff="
+        << (frontend_metadata_
+                    .deterministic_part9_dispatch_metadata_interface_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_system_extension_lowering_profile = cleanup_hook_sites="
         << frontend_metadata_.part8_system_extension_lowering_cleanup_hook_sites
         << ", resource_local_sites="
@@ -3547,6 +3596,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
+    out << "!objc3.objc_part9_dispatch_metadata_and_interface_preservation = !{!103}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
     out << "!objc3.objc_part8_system_helper_runtime_contract = !{!100}\n";
@@ -6415,6 +6465,60 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_part9_dispatch_control_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!103 = !{!\""
+        << EscapeCStringLiteral(frontend_metadata_
+                                    .lowering_part9_dispatch_metadata_interface_preservation_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_local_direct_callable_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_local_final_callable_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_local_final_container_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_local_sealed_container_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part9_dispatch_metadata_imported_module_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_imported_direct_callable_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_imported_final_callable_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_imported_final_container_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_metadata_imported_sealed_container_record_count)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part9_dispatch_metadata_runtime_import_artifact_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part9_dispatch_metadata_separate_compilation_preservation_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part9_dispatch_metadata_interface_handoff
                 ? 1
                 : 0)
         << "}\n\n";

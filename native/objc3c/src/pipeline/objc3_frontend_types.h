@@ -1755,6 +1755,8 @@ struct Objc3RuntimeMetadataClassSourceRecord {
   std::string super_name;
   std::vector<std::string> adopted_protocols_lexicographic;
   bool has_super = false;
+  bool objc_final_declared = false;
+  bool objc_sealed_declared = false;
   std::size_t property_count = 0;
   std::size_t method_count = 0;
   unsigned line = 1;
@@ -1815,6 +1817,8 @@ struct Objc3RuntimeMetadataMethodSourceRecord {
   std::string selector;
   bool is_class_method = false;
   bool has_body = false;
+  bool effective_direct_dispatch = false;
+  bool objc_final_declared = false;
   std::size_t parameter_count = 0;
   std::string return_type_name;
   unsigned line = 1;

@@ -458,8 +458,10 @@ std::string BuildCategoryOwnerName(const std::string &class_name,
 
 bool IsClassSourceRecordLess(const Objc3RuntimeMetadataClassSourceRecord &lhs,
                              const Objc3RuntimeMetadataClassSourceRecord &rhs) {
-  return std::tie(lhs.name, lhs.record_kind, lhs.line, lhs.column) <
-         std::tie(rhs.name, rhs.record_kind, rhs.line, rhs.column);
+  return std::tie(lhs.name, lhs.record_kind, lhs.objc_final_declared,
+                  lhs.objc_sealed_declared, lhs.line, lhs.column) <
+         std::tie(rhs.name, rhs.record_kind, rhs.objc_final_declared,
+                  rhs.objc_sealed_declared, rhs.line, rhs.column);
 }
 
 bool IsProtocolSourceRecordLess(const Objc3RuntimeMetadataProtocolSourceRecord &lhs,
@@ -482,8 +484,12 @@ bool IsPropertySourceRecordLess(const Objc3RuntimeMetadataPropertySourceRecord &
 
 bool IsMethodSourceRecordLess(const Objc3RuntimeMetadataMethodSourceRecord &lhs,
                               const Objc3RuntimeMetadataMethodSourceRecord &rhs) {
-  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.selector, lhs.line, lhs.column) <
-         std::tie(rhs.owner_kind, rhs.owner_name, rhs.selector, rhs.line, rhs.column);
+  return std::tie(lhs.owner_kind, lhs.owner_name, lhs.selector,
+                  lhs.effective_direct_dispatch, lhs.objc_final_declared,
+                  lhs.line, lhs.column) <
+         std::tie(rhs.owner_kind, rhs.owner_name, rhs.selector,
+                  rhs.effective_direct_dispatch, rhs.objc_final_declared,
+                  rhs.line, rhs.column);
 }
 
 bool IsIvarSourceRecordLess(const Objc3RuntimeMetadataIvarSourceRecord &lhs,
@@ -748,7 +754,9 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
       };
 
   const auto append_method_records =
-      [&records](const auto &methods, const std::string &owner_kind, const std::string &owner_name) {
+      [&records](const auto &methods, const std::string &owner_kind,
+                 const std::string &owner_name,
+                 bool direct_members_declared = false) {
         for (const auto &method : methods) {
           Objc3RuntimeMetadataMethodSourceRecord method_record;
           method_record.owner_kind = owner_kind;
@@ -756,6 +764,10 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
           method_record.selector = method.selector;
           method_record.is_class_method = method.is_class_method;
           method_record.has_body = method.has_body;
+          method_record.effective_direct_dispatch =
+              method.objc_direct_declared ||
+              (direct_members_declared && !method.objc_dynamic_declared);
+          method_record.objc_final_declared = method.objc_final_declared;
           method_record.parameter_count = method.params.size();
           method_record.return_type_name = RuntimeMetadataTypeName(method.return_type);
           method_record.line = method.line;
@@ -763,6 +775,23 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
           records.methods_lexicographic.push_back(std::move(method_record));
         }
       };
+
+  struct Objc3ClassDispatchProfile {
+    bool objc_direct_members_declared = false;
+    bool objc_final_declared = false;
+    bool objc_sealed_declared = false;
+  };
+  std::unordered_map<std::string, Objc3ClassDispatchProfile> class_dispatch_profiles;
+  class_dispatch_profiles.reserve(program.interfaces.size());
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.has_category) {
+      continue;
+    }
+    class_dispatch_profiles[interface_decl.name] = Objc3ClassDispatchProfile{
+        interface_decl.objc_direct_members_declared,
+        interface_decl.objc_final_declared,
+        interface_decl.objc_sealed_declared};
+  }
 
   for (const auto &protocol : program.protocols) {
     Objc3RuntimeMetadataProtocolSourceRecord record;
@@ -805,13 +834,17 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     record.adopted_protocols_lexicographic =
         interface_decl.adopted_protocols_lexicographic;
     record.has_super = !interface_decl.super_name.empty();
+    record.objc_final_declared = interface_decl.objc_final_declared;
+    record.objc_sealed_declared = interface_decl.objc_sealed_declared;
     record.property_count = interface_decl.properties.size();
     record.method_count = interface_decl.methods.size();
     record.line = interface_decl.line;
     record.column = interface_decl.column;
     records.classes_lexicographic.push_back(record);
     append_property_records(interface_decl.properties, "class-interface", interface_decl.name);
-    append_method_records(interface_decl.methods, "class-interface", interface_decl.name);
+    append_method_records(interface_decl.methods, "class-interface",
+                          interface_decl.name,
+                          interface_decl.objc_direct_members_declared);
   }
 
   for (const auto &implementation : program.implementations) {
@@ -833,15 +866,23 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     }
 
     Objc3RuntimeMetadataClassSourceRecord record;
+    const auto profile_it = class_dispatch_profiles.find(implementation.name);
     record.record_kind = "implementation";
     record.name = implementation.name;
+    if (profile_it != class_dispatch_profiles.end()) {
+      record.objc_final_declared = profile_it->second.objc_final_declared;
+      record.objc_sealed_declared = profile_it->second.objc_sealed_declared;
+    }
     record.property_count = implementation.properties.size();
     record.method_count = implementation.methods.size();
     record.line = implementation.line;
     record.column = implementation.column;
     records.classes_lexicographic.push_back(record);
     append_property_records(implementation.properties, "class-implementation", implementation.name);
-    append_method_records(implementation.methods, "class-implementation", implementation.name);
+    append_method_records(
+        implementation.methods, "class-implementation", implementation.name,
+        profile_it != class_dispatch_profiles.end() &&
+            profile_it->second.objc_direct_members_declared);
   }
 
   std::sort(records.classes_lexicographic.begin(),
@@ -3329,6 +3370,10 @@ bool AreCompatibleRuntimeMethodRedeclarations(
     const Objc3RuntimeMetadataMethodSourceRecord &implementation_record) {
   return interface_record.is_class_method == implementation_record.is_class_method &&
          interface_record.selector == implementation_record.selector &&
+         interface_record.effective_direct_dispatch ==
+             implementation_record.effective_direct_dispatch &&
+         interface_record.objc_final_declared ==
+             implementation_record.objc_final_declared &&
          interface_record.parameter_count == implementation_record.parameter_count &&
          interface_record.return_type_name == implementation_record.return_type_name &&
          !interface_record.has_body && implementation_record.has_body;
