@@ -222,6 +222,18 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           cli_options.emit_prefix,
           artifacts.runtime_aware_import_module_artifact_json);
     }
+    if (!artifacts.part11_bridge_header_artifact_text.empty()) {
+      WritePart11BridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                      artifacts.part11_bridge_header_artifact_text);
+    }
+    if (!artifacts.part11_bridge_module_artifact_text.empty()) {
+      WritePart11BridgeModuleArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                      artifacts.part11_bridge_module_artifact_text);
+    }
+    if (!artifacts.part11_bridge_artifact_json.empty()) {
+      WritePart11BridgeArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                artifacts.part11_bridge_artifact_json);
+    }
     if (artifacts.part10_macro_host_process_cache_runtime_integration_ready) {
       std::string part10_host_cache_artifact_json;
       std::string part10_host_cache_error;
@@ -907,6 +919,19 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
           link_plan_inputs.expected_part11_ffi_preservation_contract_id =
               kObjc3Part11ForeignSurfaceInterfacePreservationContractId;
+          link_plan_inputs.expected_part11_header_module_bridge_contract_id =
+              kObjc3Part11HeaderModuleBridgeGenerationContractId;
+          link_plan_inputs.expected_part11_header_module_bridge_source_contract_id =
+              kObjc3Part11HeaderModuleBridgeGenerationSourceContractId;
+          link_plan_inputs
+              .expected_part11_header_module_bridge_preservation_contract_id =
+              kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId;
+          link_plan_inputs.expected_part11_bridge_header_artifact_relative_path =
+              kObjc3Part11BridgeHeaderArtifactRelativePath;
+          link_plan_inputs.expected_part11_bridge_module_artifact_relative_path =
+              kObjc3Part11BridgeModuleArtifactRelativePath;
+          link_plan_inputs.expected_part11_bridge_artifact_relative_path =
+              kObjc3Part11BridgeArtifactRelativePath;
           link_plan_inputs.expected_part10_host_cache_contract_id =
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId;
           link_plan_inputs.expected_part10_host_cache_source_contract_id =
@@ -1012,6 +1037,38 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 imported_surface.part11_ffi_local_metadata_preservation_sites;
             imported_input.part11_ffi_local_interface_annotation_sites =
                 imported_surface.part11_ffi_local_interface_annotation_sites;
+            imported_input.part11_header_module_bridge_generation_present =
+                imported_surface.part11_header_module_bridge_generation_present;
+            imported_input.part11_header_module_bridge_runtime_generation_ready =
+                imported_surface
+                    .part11_header_module_bridge_runtime_generation_ready;
+            imported_input
+                .part11_header_module_bridge_cross_module_packaging_ready =
+                imported_surface
+                    .part11_header_module_bridge_cross_module_packaging_ready;
+            imported_input.part11_header_module_bridge_deterministic =
+                imported_surface.part11_header_module_bridge_deterministic;
+            imported_input.part11_header_module_bridge_contract_id =
+                imported_surface.part11_header_module_bridge_contract_id;
+            imported_input.part11_header_module_bridge_source_contract_id =
+                imported_surface.part11_header_module_bridge_source_contract_id;
+            imported_input.part11_header_module_bridge_preservation_contract_id =
+                imported_surface
+                    .part11_header_module_bridge_preservation_contract_id;
+            imported_input.part11_header_module_bridge_replay_key =
+                imported_surface.part11_header_module_bridge_replay_key;
+            imported_input.part11_header_module_bridge_preservation_replay_key =
+                imported_surface
+                    .part11_header_module_bridge_preservation_replay_key;
+            imported_input.part11_bridge_header_artifact_relative_path =
+                imported_surface.part11_bridge_header_artifact_relative_path;
+            imported_input.part11_bridge_module_artifact_relative_path =
+                imported_surface.part11_bridge_module_artifact_relative_path;
+            imported_input.part11_bridge_artifact_relative_path =
+                imported_surface.part11_bridge_artifact_relative_path;
+            imported_input.part11_header_module_bridge_local_foreign_callable_count =
+                imported_surface
+                    .part11_header_module_bridge_local_foreign_callable_count;
             imported_input
                 .part10_macro_host_process_cache_runtime_integration_present =
                 imported_surface

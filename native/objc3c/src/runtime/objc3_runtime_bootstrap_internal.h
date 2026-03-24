@@ -568,6 +568,22 @@ typedef struct objc3_runtime_part11_bridge_packaging_toolchain_snapshot {
 } objc3_runtime_part11_bridge_packaging_toolchain_snapshot;
 int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
     objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot);
+typedef struct objc3_runtime_part11_bridge_generation_snapshot {
+  uint64_t runtime_generation_ready;
+  uint64_t cross_module_packaging_ready;
+  uint64_t header_generation_ready;
+  uint64_t module_generation_ready;
+  uint64_t bridge_generation_ready;
+  uint64_t deterministic;
+  const char *header_artifact_relative_path;
+  const char *module_artifact_relative_path;
+  const char *bridge_artifact_relative_path;
+  const char *generation_model;
+  const char *packaging_model;
+  const char *fail_closed_model;
+} objc3_runtime_part11_bridge_generation_snapshot;
+int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
+    objc3_runtime_part11_bridge_generation_snapshot *snapshot);
 // M262-D002 runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice

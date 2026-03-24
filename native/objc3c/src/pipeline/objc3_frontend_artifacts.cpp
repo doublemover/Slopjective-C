@@ -178,6 +178,57 @@ const char *TypeName(ValueType type) {
   }
 }
 
+std::string BuildPart11BridgeCType(ValueType type, unsigned pointer_depth,
+                                   bool object_pointer_type_spelling) {
+  std::string base;
+  switch (type) {
+    case ValueType::I32:
+      base = "int32_t";
+      break;
+    case ValueType::Bool:
+      base = "bool";
+      break;
+    case ValueType::Void:
+      base = "void";
+      break;
+    case ValueType::ObjCId:
+    case ValueType::ObjCClass:
+    case ValueType::ObjCSel:
+    case ValueType::ObjCProtocol:
+    case ValueType::ObjCInstancetype:
+    case ValueType::ObjCObjectPtr:
+    case ValueType::Function:
+    default:
+      base = "void";
+      pointer_depth = std::max(pointer_depth, 1u);
+      break;
+  }
+  if (object_pointer_type_spelling) {
+    base = "void";
+    pointer_depth = std::max(pointer_depth, 1u);
+  }
+  for (unsigned i = 0; i < pointer_depth; ++i) {
+    base += "*";
+  }
+  return base;
+}
+
+std::string BuildPart11BridgeReturnType(const FunctionDecl &function) {
+  return BuildPart11BridgeCType(function.return_type,
+                                function.has_return_pointer_declarator
+                                    ? function.return_pointer_declarator_depth
+                                    : 0u,
+                                function.return_object_pointer_type_spelling);
+}
+
+std::string BuildPart11BridgeParameterType(const FuncParam &param) {
+  return BuildPart11BridgeCType(param.type,
+                                param.has_pointer_declarator
+                                    ? param.pointer_declarator_depth
+                                    : 0u,
+                                param.object_pointer_type_spelling);
+}
+
 const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
   switch (mode) {
     case Objc3FrontendCompatibilityMode::kLegacy:
@@ -3769,6 +3820,293 @@ std::string BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
       << (summary.deterministic ? "true" : "false")
       << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
       << "\"}";
+  return out.str();
+}
+
+Objc3Part11HeaderModuleBridgeGenerationSummary
+BuildPart11HeaderModuleBridgeGenerationSummary(
+    const Objc3Program &program,
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3Part11FfiMetadataInterfacePreservationContract
+        &ffi_preservation_contract,
+    const std::string &ffi_preservation_replay_key,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces) {
+  Objc3Part11HeaderModuleBridgeGenerationSummary summary;
+  summary.local_import_module_names_lexicographic =
+      preservation_summary.local_import_module_names_lexicographic;
+  summary.local_foreign_callable_count =
+      ffi_preservation_contract.local_foreign_callable_count;
+  summary.local_import_module_name_count =
+      preservation_summary.local_imported_module_name_count;
+  summary.local_cpp_name_annotation_count =
+      preservation_summary.local_cpp_name_annotation_count;
+  summary.local_header_name_annotation_count =
+      preservation_summary.local_header_name_annotation_count;
+  summary.local_swift_name_annotation_count =
+      preservation_summary.local_swift_name_annotation_count;
+  summary.runtime_generation_ready =
+      ffi_preservation_contract.runtime_import_artifact_ready &&
+      ffi_preservation_contract.separate_compilation_preservation_ready &&
+      ffi_preservation_contract.deterministic &&
+      summary.local_foreign_callable_count > 0;
+  summary.deterministic =
+      preservation_summary.deterministic &&
+      ffi_preservation_contract.deterministic &&
+      summary.local_import_module_names_lexicographic.size() <=
+          summary.local_import_module_name_count;
+  summary.preservation_replay_key = ffi_preservation_replay_key;
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part11_header_module_bridge_generation_present) {
+      continue;
+    }
+    ++summary.imported_module_count;
+    if (!surface.frontend_closure_summary.module_name.empty()) {
+      summary.imported_provider_module_names_lexicographic.push_back(
+          surface.frontend_closure_summary.module_name);
+    }
+    summary.deterministic =
+        summary.deterministic &&
+        surface.part11_header_module_bridge_deterministic;
+  }
+  std::sort(summary.imported_provider_module_names_lexicographic.begin(),
+            summary.imported_provider_module_names_lexicographic.end());
+  summary.cross_module_packaging_ready =
+      summary.runtime_generation_ready &&
+      summary.imported_provider_module_names_lexicographic.size() ==
+          summary.imported_module_count;
+
+  std::ostringstream replay_key;
+  replay_key << summary.contract_id
+             << ";source_contract_id=" << summary.source_contract_id
+             << ";preservation_contract_id="
+             << summary.preservation_contract_id
+             << ";header_artifact_relative_path="
+             << summary.header_artifact_relative_path
+             << ";module_artifact_relative_path="
+             << summary.module_artifact_relative_path
+             << ";bridge_artifact_relative_path="
+             << summary.bridge_artifact_relative_path
+             << ";local_foreign_callable_count="
+             << summary.local_foreign_callable_count
+             << ";local_import_module_name_count="
+             << summary.local_import_module_name_count
+             << ";local_cpp_name_annotation_count="
+             << summary.local_cpp_name_annotation_count
+             << ";local_header_name_annotation_count="
+             << summary.local_header_name_annotation_count
+             << ";local_swift_name_annotation_count="
+             << summary.local_swift_name_annotation_count
+             << ";imported_module_count=" << summary.imported_module_count
+             << ";runtime_generation_ready="
+             << (summary.runtime_generation_ready ? "true" : "false")
+             << ";cross_module_packaging_ready="
+             << (summary.cross_module_packaging_ready ? "true" : "false")
+             << ";deterministic="
+             << (summary.deterministic ? "true" : "false")
+             << ";preservation_replay_key="
+             << summary.preservation_replay_key;
+  summary.replay_key = replay_key.str();
+  (void)program;
+  return summary;
+}
+
+std::string BuildPart11HeaderModuleBridgeGenerationSummaryJson(
+    const Objc3Part11HeaderModuleBridgeGenerationSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"preservation_contract_id\":\""
+      << EscapeJsonString(summary.preservation_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"generation_model\":\""
+      << EscapeJsonString(summary.generation_model)
+      << "\",\"packaging_model\":\""
+      << EscapeJsonString(summary.packaging_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"header_artifact_relative_path\":\""
+      << EscapeJsonString(summary.header_artifact_relative_path)
+      << "\",\"module_artifact_relative_path\":\""
+      << EscapeJsonString(summary.module_artifact_relative_path)
+      << "\",\"bridge_artifact_relative_path\":\""
+      << EscapeJsonString(summary.bridge_artifact_relative_path)
+      << "\",\"local_import_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.local_import_module_names_lexicographic)
+      << ",\"imported_provider_module_names_lexicographic\":"
+      << BuildStringArrayJson(
+             summary.imported_provider_module_names_lexicographic)
+      << ",\"local_foreign_callable_count\":"
+      << summary.local_foreign_callable_count
+      << ",\"local_import_module_name_count\":"
+      << summary.local_import_module_name_count
+      << ",\"local_cpp_name_annotation_count\":"
+      << summary.local_cpp_name_annotation_count
+      << ",\"local_header_name_annotation_count\":"
+      << summary.local_header_name_annotation_count
+      << ",\"local_swift_name_annotation_count\":"
+      << summary.local_swift_name_annotation_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"runtime_generation_ready\":"
+      << (summary.runtime_generation_ready ? "true" : "false")
+      << ",\"cross_module_packaging_ready\":"
+      << (summary.cross_module_packaging_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"preservation_replay_key\":\""
+      << EscapeJsonString(summary.preservation_replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildPart11BridgeHeaderArtifactText(
+    const Objc3Program &program,
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    const Objc3Part11HeaderModuleBridgeGenerationSummary &bridge_summary) {
+  std::vector<const FunctionDecl *> foreign_functions;
+  for (const auto &function : program.functions) {
+    if (function.objc_foreign_declared) {
+      foreign_functions.push_back(&function);
+    }
+  }
+  std::sort(foreign_functions.begin(), foreign_functions.end(),
+            [](const FunctionDecl *lhs, const FunctionDecl *rhs) {
+              return lhs->name < rhs->name;
+            });
+
+  std::ostringstream out;
+  out << "/* Part 11 bridge header: generated by objc3c-native. */\n"
+      << "#pragma once\n"
+      << "#include <stdbool.h>\n"
+      << "#include <stdint.h>\n\n"
+      << "/* module: " << summary.module_name << " */\n"
+      << "/* replay: " << bridge_summary.replay_key << " */\n";
+  for (const auto &module_name :
+       bridge_summary.local_import_module_names_lexicographic) {
+    out << "/* objc_import_module: " << module_name << " */\n";
+  }
+  if (!bridge_summary.local_import_module_names_lexicographic.empty()) {
+    out << "\n";
+  }
+  for (const FunctionDecl *function : foreign_functions) {
+    out << "/* objc_foreign";
+    if (function->objc_header_name_declared &&
+        !function->objc_header_name.empty()) {
+      out << " header_name=" << function->objc_header_name;
+    }
+    if (function->objc_cxx_name_declared && !function->objc_cxx_name.empty()) {
+      out << " cxx_name=" << function->objc_cxx_name;
+    }
+    if (function->objc_swift_name_declared &&
+        !function->objc_swift_name.empty()) {
+      out << " swift_name=" << function->objc_swift_name;
+    }
+    if (function->objc_import_module_declared &&
+        !function->objc_import_module_name.empty()) {
+      out << " import_module=" << function->objc_import_module_name;
+    }
+    out << " */\n";
+    out << BuildPart11BridgeReturnType(*function) << " " << function->name
+        << "(";
+    for (std::size_t index = 0; index < function->params.size(); ++index) {
+      const auto &param = function->params[index];
+      out << BuildPart11BridgeParameterType(param) << " " << param.name;
+      if (index + 1 != function->params.size()) {
+        out << ", ";
+      }
+    }
+    if (function->params.empty()) {
+      out << "void";
+    }
+    out << ");\n\n";
+  }
+  return out.str();
+}
+
+std::string BuildPart11BridgeModuleArtifactText(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    const Objc3Part11HeaderModuleBridgeGenerationSummary &bridge_summary) {
+  std::ostringstream out;
+  out << "module " << summary.module_name << "_objc3_part11_bridge {\n"
+      << "  header \"" << bridge_summary.header_artifact_relative_path
+      << "\"\n"
+      << "  export *\n"
+      << "}\n";
+  return out.str();
+}
+
+std::string BuildPart11BridgeArtifactJson(
+    const Objc3Program &program,
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
+    const Objc3Part11HeaderModuleBridgeGenerationSummary &bridge_summary) {
+  std::vector<const FunctionDecl *> foreign_functions;
+  for (const auto &function : program.functions) {
+    if (function.objc_foreign_declared) {
+      foreign_functions.push_back(&function);
+    }
+  }
+  std::sort(foreign_functions.begin(), foreign_functions.end(),
+            [](const FunctionDecl *lhs, const FunctionDecl *rhs) {
+              return lhs->name < rhs->name;
+            });
+
+  std::ostringstream callables;
+  callables << "[";
+  for (std::size_t index = 0; index < foreign_functions.size(); ++index) {
+    const FunctionDecl &function = *foreign_functions[index];
+    callables << "{"
+              << "\"name\":\"" << EscapeJsonString(function.name) << "\""
+              << ",\"return_type\":\""
+              << EscapeJsonString(BuildPart11BridgeReturnType(function)) << "\""
+              << ",\"parameter_count\":" << function.params.size()
+              << ",\"objc_import_module_name\":\""
+              << EscapeJsonString(function.objc_import_module_name) << "\""
+              << ",\"objc_header_name\":\""
+              << EscapeJsonString(function.objc_header_name) << "\""
+              << ",\"objc_cxx_name\":\""
+              << EscapeJsonString(function.objc_cxx_name) << "\""
+              << ",\"objc_swift_name\":\""
+              << EscapeJsonString(function.objc_swift_name) << "\""
+              << "}";
+    if (index + 1 != foreign_functions.size()) {
+      callables << ",";
+    }
+  }
+  callables << "]";
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(bridge_summary.contract_id) << "\",\n"
+      << "  \"module_name\": \"" << EscapeJsonString(summary.module_name)
+      << "\",\n"
+      << "  \"header_artifact_relative_path\": \""
+      << EscapeJsonString(bridge_summary.header_artifact_relative_path)
+      << "\",\n"
+      << "  \"module_artifact_relative_path\": \""
+      << EscapeJsonString(bridge_summary.module_artifact_relative_path)
+      << "\",\n"
+      << "  \"bridge_artifact_relative_path\": \""
+      << EscapeJsonString(bridge_summary.bridge_artifact_relative_path)
+      << "\",\n"
+      << "  \"runtime_generation_ready\": "
+      << (bridge_summary.runtime_generation_ready ? "true" : "false")
+      << ",\n"
+      << "  \"cross_module_packaging_ready\": "
+      << (bridge_summary.cross_module_packaging_ready ? "true" : "false")
+      << ",\n"
+      << "  \"deterministic\": "
+      << (bridge_summary.deterministic ? "true" : "false") << ",\n"
+      << "  \"replay_key\": \""
+      << EscapeJsonString(bridge_summary.replay_key) << "\",\n"
+      << "  \"foreign_callables\": " << callables.str() << "\n"
+      << "}\n";
   return out.str();
 }
 
@@ -7530,6 +7868,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part6_result_and_bridging_artifact_replay_json,
     const std::string &part7_actor_mailbox_runtime_import_json,
     const std::string &part11_foreign_surface_interface_preservation_json,
+    const std::string &part11_header_module_bridge_generation_json,
     const std::string &part11_ffi_metadata_interface_preservation_json,
     const std::string &part10_module_interface_replay_preservation_json,
     const std::string &part10_macro_host_process_cache_runtime_integration_json,
@@ -7620,6 +7959,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part7_actor_mailbox_runtime_import_json << ",\n"
       << "  \"objc_part11_foreign_surface_interface_and_module_preservation\": "
       << part11_foreign_surface_interface_preservation_json << ",\n"
+      << "  \"objc_part11_header_module_and_bridge_generation\": "
+      << part11_header_module_bridge_generation_json << ",\n"
       << "  \"objc_part11_ffi_metadata_and_interface_preservation\": "
       << part11_ffi_metadata_interface_preservation_json << ",\n"
       << "  \"objc_part10_module_interface_and_replay_preservation\": "
@@ -15862,6 +16203,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         "O3L300",
         "LLVM IR emission failed: invalid Part 11 ffi metadata/interface preservation contract");
   }
+  const auto part11_header_module_bridge_generation_summary =
+      BuildPart11HeaderModuleBridgeGenerationSummary(
+          program, part11_foreign_surface_interface_preservation_summary,
+          part11_ffi_metadata_interface_preservation_contract,
+          part11_ffi_metadata_interface_preservation_replay_key,
+          imported_runtime_module_surfaces);
   const auto part9_dispatch_metadata_interface_preservation_summary =
       BuildPart9DispatchMetadataInterfacePreservationSummary(
           runtime_metadata_source_records, part9_dispatch_control_lowering_replay_key,
@@ -19411,6 +19758,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
             << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                    part11_foreign_surface_interface_preservation_summary)
+            << ",\"objc_part11_header_module_and_bridge_generation\":"
+            << BuildPart11HeaderModuleBridgeGenerationSummaryJson(
+                   part11_header_module_bridge_generation_summary)
             << ",\"objc_part11_interop_lowering_and_abi_contract\":"
             << BuildPart11InteropLoweringContractJson(
                    part11_interop_semantic_model_summary,
@@ -20874,6 +21224,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
            << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                   part11_foreign_surface_interface_preservation_summary)
+           << ",\"objc_part11_header_module_and_bridge_generation\":"
+           << BuildPart11HeaderModuleBridgeGenerationSummaryJson(
+                  part11_header_module_bridge_generation_summary)
            << ",\"objc_part11_interop_lowering_and_abi_contract\":"
            << BuildPart11InteropLoweringContractJson(
                   part11_interop_semantic_model_summary,
@@ -21605,6 +21958,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     part7_actor_isolation_sendability_lowering_replay_key)),
             BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                 part11_foreign_surface_interface_preservation_summary),
+            BuildPart11HeaderModuleBridgeGenerationSummaryJson(
+                part11_header_module_bridge_generation_summary),
             BuildPart11FfiMetadataInterfacePreservationContractJson(
                 part11_foreign_call_lifetime_lowering_contract,
                 part11_foreign_call_lifetime_lowering_replay_key,
@@ -21619,6 +21974,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 part9_dispatch_metadata_interface_preservation_summary),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
+  }
+  if (part11_header_module_bridge_generation_summary.runtime_generation_ready &&
+      part11_header_module_bridge_generation_summary.deterministic) {
+    bundle.part11_bridge_header_artifact_text = BuildPart11BridgeHeaderArtifactText(
+        program, runtime_aware_import_module_frontend_closure,
+        part11_header_module_bridge_generation_summary);
+    bundle.part11_bridge_module_artifact_text = BuildPart11BridgeModuleArtifactText(
+        runtime_aware_import_module_frontend_closure,
+        part11_header_module_bridge_generation_summary);
+    bundle.part11_bridge_artifact_json = BuildPart11BridgeArtifactJson(
+        program, runtime_aware_import_module_frontend_closure,
+        part11_header_module_bridge_generation_summary);
   }
   bundle.part10_macro_host_process_cache_runtime_integration_ready =
       part10_macro_host_process_cache_runtime_integration_summary
@@ -22185,6 +22552,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .deterministic_part11_ffi_metadata_interface_preservation_handoff =
       part11_ffi_metadata_interface_preservation_contract.deterministic;
+  ir_frontend_metadata.lowering_part11_header_module_bridge_generation_key =
+      part11_header_module_bridge_generation_summary.replay_key;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
       part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =

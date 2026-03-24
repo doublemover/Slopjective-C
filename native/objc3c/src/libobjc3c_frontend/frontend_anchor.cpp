@@ -614,6 +614,49 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
 
+  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
+      !product.artifact_bundle.part11_bridge_header_artifact_text.empty()) {
+    const std::filesystem::path header_out =
+        BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix);
+    std::string io_error;
+    if (!WriteTextFile(header_out,
+                       product.artifact_bundle.part11_bridge_header_artifact_text,
+                       io_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, io_error.c_str());
+    }
+  }
+  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
+      !product.artifact_bundle.part11_bridge_module_artifact_text.empty()) {
+    const std::filesystem::path module_out =
+        BuildPart11BridgeModuleArtifactPath(out_dir, emit_prefix);
+    std::string io_error;
+    if (!WriteTextFile(module_out,
+                       product.artifact_bundle.part11_bridge_module_artifact_text,
+                       io_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, io_error.c_str());
+    }
+  }
+  if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
+      !product.artifact_bundle.part11_bridge_artifact_json.empty()) {
+    const std::filesystem::path bridge_out =
+        BuildPart11BridgeArtifactPath(out_dir, emit_prefix);
+    std::string io_error;
+    if (!WriteTextFile(bridge_out,
+                       product.artifact_bundle.part11_bridge_artifact_json,
+                       io_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+      result->success = 0;
+      objc3c_frontend_set_error(context, io_error.c_str());
+    }
+  }
+
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir) {
     if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
             product.artifact_bundle

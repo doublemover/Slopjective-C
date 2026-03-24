@@ -973,6 +973,7 @@ struct Objc3IRFrontendMetadata {
       false;
   bool deterministic_part11_ffi_metadata_interface_preservation_handoff =
       false;
+  std::string lowering_part11_header_module_bridge_generation_key;
   std::string lowering_part10_expansion_replay_key;
   std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
   std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;

@@ -1628,6 +1628,13 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part11_ffi_contract_id.empty() ||
       inputs.expected_part11_ffi_source_contract_id.empty() ||
       inputs.expected_part11_ffi_preservation_contract_id.empty() ||
+      inputs.expected_part11_header_module_bridge_contract_id.empty() ||
+      inputs.expected_part11_header_module_bridge_source_contract_id.empty() ||
+      inputs.expected_part11_header_module_bridge_preservation_contract_id
+          .empty() ||
+      inputs.expected_part11_bridge_header_artifact_relative_path.empty() ||
+      inputs.expected_part11_bridge_module_artifact_relative_path.empty() ||
+      inputs.expected_part11_bridge_artifact_relative_path.empty() ||
       inputs.expected_part10_host_cache_contract_id.empty() ||
       inputs.expected_part10_host_cache_source_contract_id.empty() ||
       inputs.expected_part10_host_cache_executable_relative_path.empty() ||
@@ -1678,12 +1685,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::string> seen_part6_replay_keys;
   std::unordered_set<std::string> seen_part7_actor_replay_keys;
   std::unordered_set<std::string> seen_part11_ffi_replay_keys;
+  std::unordered_set<std::string> seen_part11_header_module_bridge_replay_keys;
   std::unordered_set<std::string> seen_part10_host_cache_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
   std::vector<std::string> imported_part6_module_names;
   std::vector<std::string> imported_part7_actor_module_names;
   std::vector<std::string> imported_part11_ffi_module_names;
+  std::vector<std::string> imported_part11_header_module_bridge_module_names;
   std::vector<std::string> imported_part10_host_cache_module_names;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
@@ -1933,6 +1942,65 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part11_ffi_module_names.push_back(imported_input.module_name);
     }
+    if (imported_input.part11_header_module_bridge_generation_present) {
+      if (imported_input.part11_header_module_bridge_contract_id !=
+          inputs.expected_part11_header_module_bridge_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 bridge-generation contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part11_header_module_bridge_source_contract_id !=
+          inputs.expected_part11_header_module_bridge_source_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 bridge-generation source contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part11_header_module_bridge_preservation_contract_id !=
+          inputs.expected_part11_header_module_bridge_preservation_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 bridge-generation preservation contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!imported_input.part11_header_module_bridge_runtime_generation_ready ||
+          !imported_input
+               .part11_header_module_bridge_cross_module_packaging_ready ||
+          !imported_input.part11_header_module_bridge_deterministic ||
+          imported_input.part11_header_module_bridge_replay_key.empty() ||
+          imported_input.part11_header_module_bridge_preservation_replay_key
+              .empty() ||
+          imported_input.part11_bridge_header_artifact_relative_path.empty() ||
+          imported_input.part11_bridge_module_artifact_relative_path.empty() ||
+          imported_input.part11_bridge_artifact_relative_path.empty()) {
+        error =
+            "cross-module runtime link-plan Part 11 bridge-generation surface incomplete for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part11_bridge_header_artifact_relative_path !=
+              inputs.expected_part11_bridge_header_artifact_relative_path ||
+          imported_input.part11_bridge_module_artifact_relative_path !=
+              inputs.expected_part11_bridge_module_artifact_relative_path ||
+          imported_input.part11_bridge_artifact_relative_path !=
+              inputs.expected_part11_bridge_artifact_relative_path) {
+        error =
+            "cross-module runtime link-plan Part 11 bridge-generation artifact path mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!seen_part11_header_module_bridge_replay_keys
+               .insert(imported_input.part11_header_module_bridge_replay_key)
+               .second) {
+        error =
+            "cross-module runtime link-plan duplicate imported Part 11 bridge-generation replay key: " +
+            imported_input.part11_header_module_bridge_replay_key;
+        return false;
+      }
+      imported_part11_header_module_bridge_module_names.push_back(
+          imported_input.module_name);
+    }
     if (imported_input.part10_macro_host_process_cache_runtime_integration_present) {
       if (imported_input.part10_macro_host_process_cache_contract_id !=
           inputs.expected_part10_host_cache_contract_id) {
@@ -2177,6 +2245,60 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "      \"part11_ffi_local_interface_annotation_sites\": "
         << imported_input.part11_ffi_local_interface_annotation_sites
         << ",\n"
+        << "      \"part11_header_module_bridge_generation_present\": "
+        << (imported_input.part11_header_module_bridge_generation_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part11_header_module_bridge_runtime_generation_ready\": "
+        << (imported_input.part11_header_module_bridge_runtime_generation_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part11_header_module_bridge_cross_module_packaging_ready\": "
+        << (imported_input
+                    .part11_header_module_bridge_cross_module_packaging_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part11_header_module_bridge_deterministic\": "
+        << (imported_input.part11_header_module_bridge_deterministic ? "true"
+                                                                     : "false")
+        << ",\n"
+        << "      \"part11_header_module_bridge_contract_id\": \""
+        << EscapeJsonString(
+               imported_input.part11_header_module_bridge_contract_id)
+        << "\",\n"
+        << "      \"part11_header_module_bridge_source_contract_id\": \""
+        << EscapeJsonString(
+               imported_input.part11_header_module_bridge_source_contract_id)
+        << "\",\n"
+        << "      \"part11_header_module_bridge_preservation_contract_id\": \""
+        << EscapeJsonString(imported_input
+                                .part11_header_module_bridge_preservation_contract_id)
+        << "\",\n"
+        << "      \"part11_header_module_bridge_replay_key\": \""
+        << EscapeJsonString(imported_input.part11_header_module_bridge_replay_key)
+        << "\",\n"
+        << "      \"part11_header_module_bridge_preservation_replay_key\": \""
+        << EscapeJsonString(
+               imported_input
+                   .part11_header_module_bridge_preservation_replay_key)
+        << "\",\n"
+        << "      \"part11_bridge_header_artifact_relative_path\": \""
+        << EscapeJsonString(
+               imported_input.part11_bridge_header_artifact_relative_path)
+        << "\",\n"
+        << "      \"part11_bridge_module_artifact_relative_path\": \""
+        << EscapeJsonString(
+               imported_input.part11_bridge_module_artifact_relative_path)
+        << "\",\n"
+        << "      \"part11_bridge_artifact_relative_path\": \""
+        << EscapeJsonString(imported_input.part11_bridge_artifact_relative_path)
+        << "\",\n"
+        << "      \"part11_header_module_bridge_local_foreign_callable_count\": "
+        << imported_input.part11_header_module_bridge_local_foreign_callable_count
+        << ",\n"
         << "      \"part10_macro_host_process_cache_runtime_integration_present\": "
         << (imported_input.part10_macro_host_process_cache_runtime_integration_present
                 ? "true"
@@ -2225,6 +2347,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
             imported_part7_actor_module_names.end());
   std::sort(imported_part11_ffi_module_names.begin(),
             imported_part11_ffi_module_names.end());
+  std::sort(imported_part11_header_module_bridge_module_names.begin(),
+            imported_part11_header_module_bridge_module_names.end());
   std::sort(imported_part10_host_cache_module_names.begin(),
             imported_part10_host_cache_module_names.end());
 
@@ -2271,6 +2395,29 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"expected_part11_ffi_preservation_contract_id\": \""
       << EscapeJsonString(inputs.expected_part11_ffi_preservation_contract_id)
       << "\",\n"
+      << "  \"expected_part11_header_module_bridge_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_part11_header_module_bridge_contract_id)
+      << "\",\n"
+      << "  \"expected_part11_header_module_bridge_source_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_part11_header_module_bridge_source_contract_id)
+      << "\",\n"
+      << "  \"expected_part11_header_module_bridge_preservation_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_part11_header_module_bridge_preservation_contract_id)
+      << "\",\n"
+      << "  \"expected_part11_bridge_header_artifact_relative_path\": \""
+      << EscapeJsonString(
+             inputs.expected_part11_bridge_header_artifact_relative_path)
+      << "\",\n"
+      << "  \"expected_part11_bridge_module_artifact_relative_path\": \""
+      << EscapeJsonString(
+             inputs.expected_part11_bridge_module_artifact_relative_path)
+      << "\",\n"
+      << "  \"expected_part11_bridge_artifact_relative_path\": \""
+      << EscapeJsonString(inputs.expected_part11_bridge_artifact_relative_path)
+      << "\",\n"
       << "  \"expected_part10_host_cache_contract_id\": \""
       << EscapeJsonString(inputs.expected_part10_host_cache_contract_id)
       << "\",\n"
@@ -2297,6 +2444,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << imported_part7_actor_module_names.size() << ",\n"
       << "  \"part11_ffi_imported_module_count\": "
       << imported_part11_ffi_module_names.size() << ",\n"
+      << "  \"part11_header_module_bridge_imported_module_count\": "
+      << imported_part11_header_module_bridge_module_names.size() << ",\n"
       << "  \"part10_host_cache_imported_module_count\": "
       << imported_part10_host_cache_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
@@ -2312,6 +2461,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"part11_ffi_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part11_ffi_module_names, "    ")
       << ",\n"
+      << "  \"part11_header_module_bridge_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(
+             imported_part11_header_module_bridge_module_names, "    ")
+      << ",\n"
       << "  \"part10_host_cache_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part10_host_cache_module_names,
                                       "    ")
@@ -2323,6 +2476,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << ",\n"
       << "  \"part11_ffi_cross_module_packaging_ready\": "
       << (!imported_part11_ffi_module_names.empty() ? "true" : "false")
+      << ",\n"
+      << "  \"part11_header_module_bridge_cross_module_packaging_ready\": "
+      << (!imported_part11_header_module_bridge_module_names.empty() ? "true"
+                                                                     : "false")
       << ",\n"
       << "  \"part10_host_cache_cross_module_preservation_ready\": "
       << (!imported_part10_host_cache_module_names.empty() ? "true" : "false")

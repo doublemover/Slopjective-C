@@ -9006,3 +9006,28 @@ Current implementation status (`M274-D001`):
   - `!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}`
 - header generation, module generation, and bridge generation remain deferred
   to `M274-D002`
+
+## M274 header, module, and bridge generation implementation note
+
+Current implementation status (`M274-D002`):
+
+- the current Part 11 generated-bridge contract is
+  `objc3c-part11-header-module-and-bridge-generation/m274-d002-v1`
+- the compiler now emits one deterministic sidecar family for supported Part 11
+  foreign-callable surfaces:
+  - `module.part11-bridge.h`
+  - `module.part11-bridge.modulemap`
+  - `module.part11-bridge.json`
+- provider and consumer runtime-import surfaces preserve the same D002 contract
+  ids, replay keys, readiness bits, and canonical artifact-relative paths
+- mixed-module link-plan construction now validates imported Part 11 generated
+  bridge packets and fails closed on:
+  - contract drift
+  - source-contract drift
+  - preservation-contract drift
+  - missing readiness bits
+  - mismatched artifact-relative paths
+  - duplicate replay keys
+- emitted IR carries:
+  - `; part11_header_module_and_bridge_generation = ...`
+  - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`

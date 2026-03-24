@@ -1743,6 +1743,21 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11BridgePackagingToolchainFailClosedModel =
         "header-module-and-bridge-generation-remain-unclaimed-until-m274-d002";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationLoweringContractId =
+        "objc3c-part11-header-module-and-bridge-generation/m274-d002-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationLoweringSourceContractId =
+        "objc3c-part11-bridge-packaging-and-toolchain-contract/m274-d001-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationLoweringPreservationContractId =
+        "objc3c-part11-ffi-metadata-interface-preservation/m274-c003-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationLoweringPackagingModel =
+        "compiler-emits-deterministic-part11-bridge-header-modulemap-and-bridge-json-artifacts-and-preserves-them-through-runtime-import-surfaces-and-cross-module-link-plans";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationLoweringFailClosedModel =
+        "missing-generated-bridge-artifacts-or-drifted-import-surface-paths-disable-live-part11-bridge-generation-claims";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2981,6 +2996,7 @@ bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
 std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
     const Objc3Part11FfiMetadataInterfacePreservationContract &contract);
 std::string Objc3Part11BridgePackagingToolchainSummary();
+std::string Objc3Part11HeaderModuleBridgeGenerationBoundarySummary();
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(

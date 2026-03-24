@@ -667,6 +667,26 @@ live header/module/bridge generation yet.
     then reuses it on the second call
   - unresolved selectors still take the deterministic cached fallback path
   - imported direct-surface artifact paths remain part of the same frozen
+
+## M274 header/module/bridge generation probe
+
+`M274-D002` proves the currently supported Part 11 generated-bridge surface.
+
+- provider fixture:
+  `tests/tooling/fixtures/native/m274_d002_header_module_bridge_provider.objc3`
+- consumer fixture:
+  `tests/tooling/fixtures/native/m274_d002_header_module_bridge_consumer.objc3`
+- runtime probe:
+  `tests/tooling/runtime/m274_d002_header_module_bridge_generation_probe.cpp`
+- proof checks:
+  - providers emit `module.part11-bridge.h`,
+    `module.part11-bridge.modulemap`, and `module.part11-bridge.json`
+  - provider and consumer runtime-import surfaces publish
+    `objc_part11_header_module_and_bridge_generation`
+  - consumer `module.cross-module-runtime-link-plan.json` preserves imported D002
+    contract ids, replay keys, readiness bits, and canonical artifact-relative paths
+  - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing` publishes
+    the same ready/deterministic generated-bridge boundary
     runtime/link-plan contract for `M272-D002`
 
 ## M272 live dispatch fast-path and cache integration

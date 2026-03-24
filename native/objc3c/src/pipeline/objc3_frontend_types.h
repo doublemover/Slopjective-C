@@ -1571,6 +1571,31 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationFailClosedModel =
         "missing-or-drifted-part11-preservation-packets-disable-cross-module-foreign-surface-preservation-claims";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationContractId =
+        "objc3c-part11-header-module-and-bridge-generation/m274-d002-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationSourceContractId =
+        "objc3c-part11-bridge-packaging-and-toolchain-contract/m274-d001-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId =
+        "objc3c-part11-ffi-metadata-interface-preservation/m274-c003-v1";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part11_header_module_and_bridge_generation";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName =
+        "objc_part11_header_module_and_bridge_generation";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationModel =
+        "compiler-emits-deterministic-header-modulemap-and-bridge-json-artifacts-for-supported-part11-foreign-callable-surfaces";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationPackagingModel =
+        "runtime-import-surfaces-and-cross-module-link-plans-preserve-generated-part11-header-module-and-bridge-artifact-paths";
+inline constexpr const char
+    *kObjc3Part11HeaderModuleBridgeGenerationFailClosedModel =
+        "missing-generated-artifacts-or-drifted-import-surface-bridge-packets-disable-live-part11-bridge-generation-claims";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1904,6 +1929,42 @@ struct Objc3Part11ForeignSurfaceInterfacePreservationSummary {
   bool runtime_import_artifact_ready = false;
   bool separate_compilation_preservation_ready = false;
   bool deterministic = false;
+  std::string replay_key;
+};
+
+struct Objc3Part11HeaderModuleBridgeGenerationSummary {
+  std::string contract_id = kObjc3Part11HeaderModuleBridgeGenerationContractId;
+  std::string source_contract_id =
+      kObjc3Part11HeaderModuleBridgeGenerationSourceContractId;
+  std::string preservation_contract_id =
+      kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId;
+  std::string surface_path =
+      kObjc3Part11HeaderModuleBridgeGenerationSurfacePath;
+  std::string import_artifact_member_name =
+      kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName;
+  std::string generation_model = kObjc3Part11HeaderModuleBridgeGenerationModel;
+  std::string packaging_model =
+      kObjc3Part11HeaderModuleBridgeGenerationPackagingModel;
+  std::string fail_closed_model =
+      kObjc3Part11HeaderModuleBridgeGenerationFailClosedModel;
+  std::string header_artifact_relative_path =
+      kObjc3Part11BridgeHeaderArtifactRelativePath;
+  std::string module_artifact_relative_path =
+      kObjc3Part11BridgeModuleArtifactRelativePath;
+  std::string bridge_artifact_relative_path =
+      kObjc3Part11BridgeArtifactRelativePath;
+  std::vector<std::string> local_import_module_names_lexicographic;
+  std::vector<std::string> imported_provider_module_names_lexicographic;
+  std::size_t local_foreign_callable_count = 0;
+  std::size_t local_import_module_name_count = 0;
+  std::size_t local_cpp_name_annotation_count = 0;
+  std::size_t local_header_name_annotation_count = 0;
+  std::size_t local_swift_name_annotation_count = 0;
+  std::size_t imported_module_count = 0;
+  bool runtime_generation_ready = false;
+  bool cross_module_packaging_ready = false;
+  bool deterministic = false;
+  std::string preservation_replay_key;
   std::string replay_key;
 };
 

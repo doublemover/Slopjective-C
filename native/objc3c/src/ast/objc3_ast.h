@@ -990,6 +990,20 @@ inline constexpr const char
     *kObjc3Part10MacroHostProcessCacheArtifactRelativePath =
         "module.part10-macro-host-cache.json";
 inline constexpr const char
+    *kObjc3Part11BridgeHeaderArtifactSuffix = ".part11-bridge.h";
+inline constexpr const char
+    *kObjc3Part11BridgeHeaderArtifactRelativePath =
+        "module.part11-bridge.h";
+inline constexpr const char
+    *kObjc3Part11BridgeModuleArtifactSuffix = ".part11-bridge.modulemap";
+inline constexpr const char
+    *kObjc3Part11BridgeModuleArtifactRelativePath =
+        "module.part11-bridge.modulemap";
+inline constexpr const char
+    *kObjc3Part11BridgeArtifactSuffix = ".part11-bridge.json";
+inline constexpr const char
+    *kObjc3Part11BridgeArtifactRelativePath = "module.part11-bridge.json";
+inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkPlanAuthorityModel =
         "runtime-import-surface-plus-imported-registration-manifest-peer-artifacts-drive-cross-module-link-plan";
 inline constexpr const char

@@ -405,6 +405,27 @@ native build surface.
   - header generation, module generation, and bridge generation remain
     fail-closed until `M274-D002`
 
+## M274 header, module, and bridge generation implementation
+
+- Part 11 now emits deterministic generated bridge sidecars for the currently
+  supported foreign-callable surface:
+  - `module.part11-bridge.h`
+  - `module.part11-bridge.modulemap`
+  - `module.part11-bridge.json`
+- provider and consumer `module.runtime-import-surface.json` artifacts now
+  publish `objc_part11_header_module_and_bridge_generation`
+- mixed-module link plans now preserve:
+  - `expected_part11_header_module_bridge_contract_id`
+  - `expected_part11_header_module_bridge_source_contract_id`
+  - `expected_part11_header_module_bridge_preservation_contract_id`
+  - the canonical bridge header/module/JSON relative paths
+  - imported-module inventories and replay keys
+- emitted LLVM IR now prints:
+  - `; part11_header_module_and_bridge_generation = ...`
+  - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`
+- the private runtime proof surface now includes:
+  - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing`
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

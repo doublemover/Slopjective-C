@@ -1225,6 +1225,87 @@ bool PopulateImportedPart11FfiMetadataInterfacePreservation(
   return true;
 }
 
+bool PopulateImportedPart11HeaderModuleBridgeGeneration(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *generation_value = FindMember(
+      root, kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName);
+  if (generation_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *generation_object = AsObject(*generation_value);
+  if (generation_object == nullptr) {
+    error =
+        "part11 header/module/bridge generation surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  std::string preservation_contract_id;
+  if (!ReadStringMember(*generation_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*generation_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadStringMember(*generation_object, "preservation_contract_id",
+                        preservation_contract_id, error) ||
+      !ReadStringMember(*generation_object, "header_artifact_relative_path",
+                        surface.part11_bridge_header_artifact_relative_path,
+                        error) ||
+      !ReadStringMember(*generation_object, "module_artifact_relative_path",
+                        surface.part11_bridge_module_artifact_relative_path,
+                        error) ||
+      !ReadStringMember(*generation_object, "bridge_artifact_relative_path",
+                        surface.part11_bridge_artifact_relative_path, error) ||
+      !ReadBoolMember(*generation_object, "runtime_generation_ready",
+                      surface.part11_header_module_bridge_runtime_generation_ready,
+                      error) ||
+      !ReadBoolMember(
+          *generation_object, "cross_module_packaging_ready",
+          surface.part11_header_module_bridge_cross_module_packaging_ready,
+          error) ||
+      !ReadBoolMember(*generation_object, "deterministic",
+                      surface.part11_header_module_bridge_deterministic,
+                      error) ||
+      !ReadStringMember(*generation_object, "replay_key",
+                        surface.part11_header_module_bridge_replay_key, error) ||
+      !ReadStringMember(*generation_object, "preservation_replay_key",
+                        surface.part11_header_module_bridge_preservation_replay_key,
+                        error) ||
+      !ReadSizeMember(*generation_object, "local_foreign_callable_count",
+                      surface.part11_header_module_bridge_local_foreign_callable_count,
+                      error)) {
+    return false;
+  }
+
+  if (contract_id != kObjc3Part11HeaderModuleBridgeGenerationContractId) {
+    error =
+        "unexpected Part 11 header/module/bridge generation contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      kObjc3Part11HeaderModuleBridgeGenerationSourceContractId) {
+    error =
+        "unexpected Part 11 header/module/bridge generation source contract id in import surface";
+    return false;
+  }
+  if (preservation_contract_id !=
+      kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId) {
+    error =
+        "unexpected Part 11 header/module/bridge generation preservation contract id in import surface";
+    return false;
+  }
+
+  surface.part11_header_module_bridge_generation_present = true;
+  surface.part11_header_module_bridge_contract_id = std::move(contract_id);
+  surface.part11_header_module_bridge_source_contract_id =
+      std::move(source_contract_id);
+  surface.part11_header_module_bridge_preservation_contract_id =
+      std::move(preservation_contract_id);
+  return true;
+}
+
 bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
@@ -1479,6 +1560,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
   if (!PopulateImportedPart11FfiMetadataInterfacePreservation(root, surface,
                                                               error)) {
+    return false;
+  }
+  if (!PopulateImportedPart11HeaderModuleBridgeGeneration(root, surface,
+                                                          error)) {
     return false;
   }
   if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,

@@ -4709,6 +4709,30 @@ int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
+    objc3_runtime_part11_bridge_generation_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->runtime_generation_ready = 1;
+  snapshot->cross_module_packaging_ready = 1;
+  snapshot->header_generation_ready = 1;
+  snapshot->module_generation_ready = 1;
+  snapshot->bridge_generation_ready = 1;
+  snapshot->deterministic = 1;
+  snapshot->header_artifact_relative_path = "module.part11-bridge.h";
+  snapshot->module_artifact_relative_path = "module.part11-bridge.modulemap";
+  snapshot->bridge_artifact_relative_path = "module.part11-bridge.json";
+  snapshot->generation_model =
+      "compiler-emits-deterministic-part11-bridge-header-modulemap-and-bridge-json-artifacts-for-supported-foreign-callable-surfaces";
+  snapshot->packaging_model =
+      "runtime-import-surfaces-and-cross-module-link-plans-preserve-part11-bridge-artifact-paths-for-mixed-module-consumption";
+  snapshot->fail_closed_model =
+      "missing-generated-artifacts-or-drifted-import-surface-paths-disable-live-part11-bridge-generation-claims";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);

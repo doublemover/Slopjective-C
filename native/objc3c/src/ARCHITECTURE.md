@@ -11471,3 +11471,22 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - the linker-response sidecar derived from that plan
 - header generation, module generation, and bridge generation remain deferred
   until `M274-D002`
+
+## M274 header, module, and bridge generation implementation (D002)
+
+- `M274-D002` turns the frozen packaging topology into one live generated-artifact
+  surface for the currently supported Part 11 foreign-callable slice
+- the frontend artifact pipeline now emits:
+  - `module.part11-bridge.h`
+  - `module.part11-bridge.modulemap`
+  - `module.part11-bridge.json`
+- provider/consumer `module.runtime-import-surface.json` artifacts now preserve
+  the D002 contract ids, replay keys, readiness bits, canonical artifact-relative
+  paths, and imported-module inventories
+- `TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(...)` now also validates the
+  imported Part 11 generated-bridge packet across mixed-module link plans
+- emitted LLVM IR now carries:
+  - `; part11_header_module_and_bridge_generation = ...`
+  - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`
+- the private runtime proof surface now includes:
+  - `objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing`

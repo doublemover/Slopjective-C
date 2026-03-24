@@ -4596,6 +4596,26 @@ std::string Objc3Part11BridgePackagingToolchainSummary() {
   return out.str();
 }
 
+std::string Objc3Part11HeaderModuleBridgeGenerationBoundarySummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3Part11HeaderModuleBridgeGenerationLoweringContractId
+      << ";source_contract="
+      << kObjc3Part11HeaderModuleBridgeGenerationLoweringSourceContractId
+      << ";preservation_contract="
+      << kObjc3Part11HeaderModuleBridgeGenerationLoweringPreservationContractId
+      << ";packaging_model="
+      << kObjc3Part11HeaderModuleBridgeGenerationLoweringPackagingModel
+      << ";fail_closed_model="
+      << kObjc3Part11HeaderModuleBridgeGenerationLoweringFailClosedModel
+      << ";header_generation_ready=true"
+      << ";module_generation_ready=true"
+      << ";bridge_generation_ready=true"
+      << ";cross_module_packaging_ready=true"
+      << ";deterministic=true";
+  return out.str();
+}
+
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {

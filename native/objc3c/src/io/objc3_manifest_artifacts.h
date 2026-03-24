@@ -45,6 +45,15 @@ std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
 std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildPart11BridgeHeaderArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildPart11BridgeModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+std::filesystem::path BuildPart11BridgeArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
@@ -97,6 +106,18 @@ void WriteCrossModuleRuntimeLinkerResponseArtifact(
     const std::string &emit_prefix,
     const std::string &response_payload);
 void WritePart10MacroHostProcessCacheArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
+void WritePart11BridgeHeaderArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_text);
+void WritePart11BridgeModuleArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_text);
+void WritePart11BridgeArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);

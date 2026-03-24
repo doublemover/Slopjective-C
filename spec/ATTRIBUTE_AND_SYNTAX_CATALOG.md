@@ -1715,3 +1715,27 @@ Current implementation status (`M274-D001`):
   - imported Part 11 replay keys and readiness bits
 - header generation, module generation, and bridge generation remain deferred
   to `M274-D002`
+
+## M274 header, module, and bridge generation implementation (D002)
+
+Current implementation status (`M274-D002`):
+
+- the frontend/runtime-import surface now publishes
+  `objc_part11_header_module_and_bridge_generation`
+- supported Part 11 foreign-callable inputs now generate:
+  - `module.part11-bridge.h`
+  - `module.part11-bridge.modulemap`
+  - `module.part11-bridge.json`
+- the generated bridge packet preserves:
+  - local foreign-callable counts
+  - local/imported module names
+  - canonical artifact-relative paths
+  - preservation replay continuity with `M274-C003`
+- mixed-module link plans now preserve and validate:
+  - `expected_part11_header_module_bridge_contract_id`
+  - `expected_part11_header_module_bridge_source_contract_id`
+  - `expected_part11_header_module_bridge_preservation_contract_id`
+  - imported D002 replay keys and canonical artifact-relative paths
+- emitted IR now carries:
+  - `; part11_header_module_and_bridge_generation = ...`
+  - `!objc3.objc_part11_header_module_and_bridge_generation = !{!112}`

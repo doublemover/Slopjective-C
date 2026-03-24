@@ -1019,6 +1019,13 @@ class Objc3IREmitter {
       out << "; part11_bridge_packaging_toolchain_contract = "
           << Objc3Part11BridgePackagingToolchainSummary() << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_part11_header_module_bridge_generation_key.empty()) {
+      out << "; part11_header_module_and_bridge_generation = "
+          << frontend_metadata_
+                 .lowering_part11_header_module_bridge_generation_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
           << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
@@ -3869,6 +3876,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part11_foreign_call_and_lifetime_lowering = !{!109}\n";
     out << "!objc3.objc_part11_ffi_metadata_and_interface_preservation = !{!110}\n";
     out << "!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}\n";
+    out << "!objc3.objc_part11_header_module_and_bridge_generation = !{!112}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
@@ -6866,6 +6874,10 @@ class Objc3IREmitter {
         << "}\n\n";
     out << "!111 = !{!\""
         << EscapeCStringLiteral(Objc3Part11BridgePackagingToolchainSummary())
+        << "\"}\n\n";
+    out << "!112 = !{!\""
+        << EscapeCStringLiteral(
+               Objc3Part11HeaderModuleBridgeGenerationBoundarySummary())
         << "\"}\n\n";
     out << "!104 = !{i64 "
         << static_cast<unsigned long long>(

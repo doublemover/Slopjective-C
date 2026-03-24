@@ -1,0 +1,8 @@
+module m274_d002_header_module_bridge_provider;
+
+extern fn ffiInbound(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("BridgeProviderKit")), objc_header_name(named("BridgeProvider.h")), objc_cxx_name(named("BridgeProviderShim")), objc_swift_name(named("BridgeProvider.forward"))));
+extern fn ffiHeaderBridge(value: i32) -> i32 __attribute__((objc_foreign, objc_header_name(named("BridgeProviderExtras.h")), objc_cxx_name(named("BridgeProviderExtrasShim"))));
+
+fn main() -> i32 {
+  return ffiInbound(nil) + ffiHeaderBridge(3);
+}

@@ -175,6 +175,24 @@ std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
   return out_dir / (emit_prefix + kObjc3Part10MacroHostProcessCacheArtifactSuffix);
 }
 
+std::filesystem::path BuildPart11BridgeHeaderArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + kObjc3Part11BridgeHeaderArtifactSuffix);
+}
+
+std::filesystem::path BuildPart11BridgeModuleArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + kObjc3Part11BridgeModuleArtifactSuffix);
+}
+
+std::filesystem::path BuildPart11BridgeArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + kObjc3Part11BridgeArtifactSuffix);
+}
+
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
                            const std::string &emit_prefix,
                            const std::string &manifest_json) {
@@ -283,4 +301,24 @@ void WritePart10MacroHostProcessCacheArtifact(
     const std::string &artifact_json) {
   WriteText(BuildPart10MacroHostProcessCacheArtifactPath(out_dir, emit_prefix),
             artifact_json);
+}
+
+void WritePart11BridgeHeaderArtifact(const std::filesystem::path &out_dir,
+                                     const std::string &emit_prefix,
+                                     const std::string &artifact_text) {
+  WriteText(BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix),
+            artifact_text);
+}
+
+void WritePart11BridgeModuleArtifact(const std::filesystem::path &out_dir,
+                                     const std::string &emit_prefix,
+                                     const std::string &artifact_text) {
+  WriteText(BuildPart11BridgeModuleArtifactPath(out_dir, emit_prefix),
+            artifact_text);
+}
+
+void WritePart11BridgeArtifact(const std::filesystem::path &out_dir,
+                               const std::string &emit_prefix,
+                               const std::string &artifact_json) {
+  WriteText(BuildPart11BridgeArtifactPath(out_dir, emit_prefix), artifact_json);
 }

@@ -14,6 +14,9 @@ struct Objc3FrontendArtifactBundle {
   std::string manifest_json;
   std::string runtime_metadata_binary;
   std::string runtime_aware_import_module_artifact_json;
+  std::string part11_bridge_header_artifact_text;
+  std::string part11_bridge_module_artifact_text;
+  std::string part11_bridge_artifact_json;
   std::string part6_result_bridge_artifact_replay_json;
   bool part10_macro_host_process_cache_runtime_integration_ready = false;
   std::string part10_macro_host_process_cache_runtime_integration_replay_key;
