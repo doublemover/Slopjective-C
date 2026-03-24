@@ -54,6 +54,10 @@ std::filesystem::path BuildManifestArtifactPath(
   // consuming this same manifest sidecar and paired driver artifacts while the
   // front-door Part 9 publication path remains intentionally singular and the
   // D002 live fast-path/runtime proof stays the executable evidence boundary.
+  // M272-E002 runnable dispatch-control matrix closeout anchor: Part 9
+  // closeout keeps consuming this same manifest sidecar and paired driver
+  // artifacts; there is no second manifest-only closeout path for the runnable
+  // dispatch-control matrix.
   return out_dir / (emit_prefix + ".manifest.json");
 }
 

@@ -72,6 +72,10 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 // the current runnable Part 9 dispatch-control slice by consuming this same
 // published driver artifact surface while the widened D002 runtime proof
 // remains the canonical executable evidence boundary.
+// M272-E002 runnable dispatch-control matrix closeout anchor: matrix rows keep
+// consuming this same driver artifact surface while Part 9 closeout stays
+// pinned to the existing D002 runtime proof instead of inventing a new lane-E
+// publication channel.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (cli_options.emit_objc3_conformance_format != "json") {

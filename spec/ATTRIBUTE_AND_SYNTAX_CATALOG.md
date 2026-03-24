@@ -1327,3 +1327,13 @@ Current implementation status (`M272-E001`):
 - the gate explicitly consumes the seeded fast-path baseline proved by `M272-D002`
 - no new runtime probe is introduced here; `M272-D002` remains the executable proof boundary
 - the next issue is `M272-E002`
+
+## M272 runnable dispatch-control matrix closeout (E002)
+
+Current implementation status (`M272-E002`):
+
+- lane E now publishes one runnable Part 9 closeout matrix over `M272-A002`, `M272-B003`, `M272-C003`, `M272-D002`, and `M272-E001`
+- direct exact-call continuity remains part of the supported surface and is revalidated on the `M272-D002` runtime proof
+- the seeded runtime fast path for final/sealed live sends remains the executable Part 9 boundary
+- deterministic fallback caching remains part of the same closeout matrix instead of becoming a separate publication channel
+- the next issue is `M273-A001`

@@ -4353,6 +4353,13 @@ Current implementation status (`M271-E001`):
 - the gate consumes the same driver/manifest/frontend publication surface as the operator-facing evidence path
 - the `M272-D002` live summary remains the executable live-runtime proof for the current Part 9 slice
 - the next issue is `M272-E002`
+
+## M272 runnable dispatch-control matrix closeout (M272-E002)
+
+- lane E now closes Part 9 by replaying `M272-A002` through `M272-E001` and freezing one explicit runnable dispatch-control matrix
+- the closeout matrix captures direct exact-call continuity, final/sealed seeded runtime fast path behavior, and deterministic fallback caching on the existing `M272-D002` proof surface
+- the same driver/manifest/frontend publication path remains authoritative; no second closeout-only runtime channel is introduced
+- the next issue is `M273-A001`
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

@@ -78,6 +78,10 @@ struct objc3c_frontend_context {
 // fast-path/runtime proof as the truthful runnable Part 9 capability anchor.
 // The D002 live fast-path/runtime proof remains the canonical executable
 // evidence boundary for the current dispatch-control slice.
+// M272-E002 runnable dispatch-control matrix closeout anchor: Part 9 closeout
+// keeps consuming those same surfaced publication paths while reusing the D002
+// runtime proof for direct/final/sealed matrix rows instead of inventing a
+// second frontend-only summary surface.
 
 static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const char *message) {
   if (context == nullptr) {
