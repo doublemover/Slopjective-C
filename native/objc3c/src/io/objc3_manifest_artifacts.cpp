@@ -143,6 +143,12 @@ std::filesystem::path BuildDashboardStatusArtifactPath(
   return out_dir / (emit_prefix + ".objc3-dashboard-status.json");
 }
 
+std::filesystem::path BuildAdvancedFeatureGateArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".objc3-advanced-feature-gate.json");
+}
+
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
@@ -286,6 +292,14 @@ void WriteDashboardStatusArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
                                   const std::string &artifact_json) {
   WriteText(BuildDashboardStatusArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WriteAdvancedFeatureGateArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildAdvancedFeatureGateArtifactPath(out_dir, emit_prefix),
             artifact_json);
 }
 

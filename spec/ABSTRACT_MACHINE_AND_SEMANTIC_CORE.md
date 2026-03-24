@@ -1242,3 +1242,14 @@ M275-D002 release-evidence operations and dashboard publication note:
   - `strict`, `strict-concurrency`, and `strict-system` remain blocked
 - the implementation does not claim that the compiler owns CI execution; it
   publishes deterministic operator-ready sidecars instead
+
+M275-E001 integrated advanced-feature gate note:
+
+- the native CLI and frontend C API surfaces now also publish
+  `module.objc3-advanced-feature-gate.json`
+- that sidecar freezes one integrated lane-E contract over the current report,
+  publication, validation, release-evidence, and dashboard artifact family
+- the sidecar stays bounded to readiness/publication truth:
+  - it references the native validation-time sidecars from `M275-D002`
+  - it does not bypass or replace the native validation path
+  - it does not promote advanced profiles into runnable public claims

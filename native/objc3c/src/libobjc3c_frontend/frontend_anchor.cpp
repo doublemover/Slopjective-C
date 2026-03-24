@@ -763,6 +763,49 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
             result->process_exit_code = 2;
             result->success = 0;
             objc3c_frontend_set_error(context, io_error.c_str());
+          } else {
+            std::string advanced_feature_gate_artifact_json;
+            std::string advanced_feature_gate_error;
+            if (!TryBuildObjc3AdvancedFeatureGateArtifact(
+                    {.surface_kind = "frontend-c-api",
+                     .report_artifact_path =
+                         (emit_prefix +
+                          kObjc3VersionedConformanceReportLoweringArtifactSuffix),
+                     .publication_artifact_path =
+                         conformance_publication_out.filename().string(),
+                     .validation_artifact_path =
+                         BuildConformanceValidationArtifactPath(out_dir,
+                                                               emit_prefix)
+                             .filename()
+                             .string(),
+                     .release_evidence_operation_artifact_path =
+                         BuildReleaseEvidenceOperationArtifactPath(out_dir,
+                                                                   emit_prefix)
+                             .filename()
+                             .string(),
+                     .dashboard_artifact_path =
+                         BuildDashboardStatusArtifactPath(out_dir, emit_prefix)
+                             .filename()
+                             .string()},
+                    product.artifact_bundle
+                        .versioned_conformance_report_artifact_json,
+                    conformance_publication_artifact_json,
+                    advanced_feature_gate_artifact_json,
+                    advanced_feature_gate_error)) {
+              result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+              result->process_exit_code = 2;
+              result->success = 0;
+              objc3c_frontend_set_error(context,
+                                        advanced_feature_gate_error.c_str());
+            } else if (!WriteTextFile(
+                           BuildAdvancedFeatureGateArtifactPath(out_dir,
+                                                                emit_prefix),
+                           advanced_feature_gate_artifact_json, io_error)) {
+              result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+              result->process_exit_code = 2;
+              result->success = 0;
+              objc3c_frontend_set_error(context, io_error.c_str());
+            }
           }
         }
       }

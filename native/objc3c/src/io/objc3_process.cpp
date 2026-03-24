@@ -105,6 +105,10 @@ inline constexpr const char *kObjc3DashboardStatusPublicationContractId =
     "objc3c-part12-dashboard-status-publication/m275-d002-v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationSchemaId =
     "objc3c-part12-dashboard-status-publication-v1";
+inline constexpr const char *kObjc3AdvancedFeatureGateContractId =
+    "objc3c-part12-integrated-advanced-feature-gate/m275-e001-v1";
+inline constexpr const char *kObjc3AdvancedFeatureGateSchemaId =
+    "objc3c-part12-integrated-advanced-feature-gate-v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
 inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
@@ -3099,6 +3103,76 @@ bool TryBuildObjc3DashboardStatusArtifact(
       << "\"spec/conformance/profile_release_evidence_checklist.md\",\n"
       << "  \"release_evidence_schema_path\": "
       << "\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\",\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3AdvancedFeatureGateArtifact(
+    const Objc3AdvancedFeatureGateArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.surface_kind.empty() || inputs.report_artifact_path.empty() ||
+      inputs.publication_artifact_path.empty() ||
+      inputs.validation_artifact_path.empty() ||
+      inputs.release_evidence_operation_artifact_path.empty() ||
+      inputs.dashboard_artifact_path.empty()) {
+    error = "advanced feature gate artifact inputs are incomplete";
+    return false;
+  }
+  if (report_json.find("\"advanced_feature_reporting\"") ==
+          std::string::npos ||
+      report_json.find("\"advanced_feature_release_evidence\"") ==
+          std::string::npos ||
+      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos) {
+    error = "advanced feature gate inputs drifted";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureGateContractId) << "\",\n"
+      << "  \"schema_id\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureGateSchemaId) << "\",\n"
+      << "  \"dependency_contract_ids\": "
+      << BuildIndentedStringArrayJson(
+             {"objc3c-part12-frontend-migration-canonicalization-source-completion/m275-a002-v1",
+              "objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1",
+              kObjc3AdvancedFeatureReleaseEvidenceContractId,
+              kObjc3ReleaseEvidenceOperationContractId},
+             "    ")
+      << ",\n"
+      << "  \"surface_kind\": \"" << EscapeJsonString(inputs.surface_kind)
+      << "\",\n"
+      << "  \"report_artifact\": \""
+      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
+      << "  \"publication_artifact\": \""
+      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
+      << "  \"validation_artifact_expected\": \""
+      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
+      << "  \"release_evidence_operation_artifact_expected\": \""
+      << EscapeJsonString(inputs.release_evidence_operation_artifact_path)
+      << "\",\n"
+      << "  \"dashboard_artifact_expected\": \""
+      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
+      << "  \"gate_model\": \""
+      << "integrated-advanced-feature-gate-consumes-report-publication-and-native-validation-sidecars"
+      << "\",\n"
+      << "  \"targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(
+             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << ",\n"
+      << "  \"native_validation_required\": true,\n"
+      << "  \"report_payload_ready\": true,\n"
+      << "  \"release_evidence_ready\": true,\n"
       << "  \"ready\": true\n"
       << "}\n";
   artifact_json = out.str();

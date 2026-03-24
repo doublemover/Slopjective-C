@@ -701,8 +701,11 @@ Current truthful scope:
 - Part 12 release-evidence operations and dashboard publication now emit one
   release-evidence operation sidecar and one dashboard-ready status sidecar
   from the native validation path
+- Part 12 integrated advanced-feature gate now emits one gate sidecar from the
+  native CLI and frontend C API surfaces over the existing Part 12 report and
+  publication chain
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
-  machine-readable conformance reports, integrated conformance gating, and
-  release matrices remain later `M275` work
+  machine-readable conformance reports and release matrices remain later `M275`
+  work
 

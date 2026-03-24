@@ -5554,6 +5554,47 @@ Truth boundary:
   runnable public profiles
 - they do not claim full CI execution ownership inside the compiler itself
 
+## Part 12 integrated advanced-feature gate (M275-E001)
+
+`M275-E001` freezes one integrated gate sidecar over the existing Part 12
+report/publication/validation authority chain.
+
+Current live behavior:
+
+- both the native CLI path and the frontend C API runner now publish
+  `module.objc3-advanced-feature-gate.json`
+- the gate sidecar references:
+  - the emitted conformance report
+  - the emitted publication sidecar
+  - the expected validation artifact name
+  - the expected release-evidence operation sidecar name
+  - the expected dashboard sidecar name
+- the native validation path from `M275-D002` remains the source of truth for
+  the actual release-evidence/dashboard publication sidecars
+
+The gate sidecar records:
+
+- the `M275-E001` integrated gate contract id
+- dependency contract ids from:
+  - `M275-A002`
+  - `M275-B003`
+  - `M275-C003`
+  - `M275-D002`
+- publication surface kind (`native-cli` or `frontend-c-api`)
+- targeted advanced profile ids
+- deterministic readiness flags for:
+  - report payload readiness
+  - release-evidence readiness
+  - native validation requirement
+
+Truth boundary:
+
+- the gate sidecar does not bypass the native validation path
+- it freezes the integrated operator contract over the existing sidecar family
+  rather than inventing a separate lane-E transport
+- advanced profiles remain targeted release-evidence/gate profiles, not
+  runnable public claims
+
 ## Driver publication contract (M264-D001)
 
 `M264-D001` freezes the current driver/publication boundary for truthful
