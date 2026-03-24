@@ -46,10 +46,13 @@ static bool ParsePart8ResourceInvalidLiteral(const std::string &text, int &value
 
 class Objc3IREmitter {
  public:
-  enum class SynthesizedAccessorKind {
+  enum class SyntheticMethodKind {
     None,
-    Getter,
-    Setter,
+    PropertyGetter,
+    PropertySetter,
+    Part10DerivedEquality,
+    Part10DerivedHash,
+    Part10DerivedDebugDescription,
   };
 
   struct MethodDefinition {
@@ -58,10 +61,10 @@ class Objc3IREmitter {
     std::string method_owner_identity;
     std::string superclass_name;
     const Objc3MethodDecl *method = nullptr;
-    SynthesizedAccessorKind synthesized_accessor_kind =
-        SynthesizedAccessorKind::None;
+    SyntheticMethodKind synthetic_method_kind = SyntheticMethodKind::None;
     std::string synthesized_storage_symbol;
     ValueType synthesized_value_type = ValueType::Unknown;
+    std::size_t synthesized_parameter_count = 0;
     std::string synthesized_ownership_lifetime_profile;
     std::string synthesized_ownership_runtime_hook_profile;
     std::string synthesized_accessor_ownership_profile;
@@ -70,6 +73,11 @@ class Objc3IREmitter {
   struct SynthesizedPropertyStorage {
     std::string symbol;
     std::string binding_symbol;
+  };
+
+  struct Part10GlobalArtifact {
+    std::string symbol;
+    std::string payload;
   };
 
   static bool IsImplementationOwnedPropertyBundle(
@@ -181,9 +189,10 @@ class Objc3IREmitter {
                              method.scope_path_symbol,
                              superclass_name,
                              &method,
-                             SynthesizedAccessorKind::None,
+                             SyntheticMethodKind::None,
                              std::string{},
                              ValueType::Unknown,
+                             0u,
                              std::string{},
                              std::string{},
                              std::string{}});
@@ -235,7 +244,7 @@ class Objc3IREmitter {
                                        bundle.executable_synthesized_binding_symbol});
       }
       const auto append_synthesized_method =
-          [&](const std::string &selector, SynthesizedAccessorKind kind) {
+          [&](const std::string &selector, SyntheticMethodKind kind) {
             if (selector.empty()) {
               boundary_error_ =
                   "missing synthesized property accessor selector for owner '" +
@@ -265,6 +274,7 @@ class Objc3IREmitter {
                 kind,
                 storage_it->second,
                 property_type,
+                kind == SyntheticMethodKind::PropertySetter ? 1u : 0u,
                 bundle.ownership_lifetime_profile,
                 bundle.ownership_runtime_hook_profile,
                 bundle.accessor_ownership_profile,
@@ -284,17 +294,95 @@ class Objc3IREmitter {
             ++synthesized_property_accessor_count_;
           };
       append_synthesized_method(bundle.effective_getter_selector,
-                                SynthesizedAccessorKind::Getter);
+                                SyntheticMethodKind::PropertyGetter);
       if (!boundary_error_.empty()) {
         return;
       }
       if (bundle.effective_setter_available) {
         append_synthesized_method(bundle.effective_setter_selector,
-                                  SynthesizedAccessorKind::Setter);
+                                  SyntheticMethodKind::PropertySetter);
         if (!boundary_error_.empty()) {
           return;
         }
       }
+    }
+    for (const auto &bundle :
+         frontend_metadata_.part10_derived_method_bundles_lexicographic) {
+      if (bundle.implementation_name.empty() ||
+          bundle.declaration_owner_identity.empty() || bundle.selector.empty() ||
+          bundle.emitted_symbol.empty()) {
+        boundary_error_ =
+            "incomplete Part 10 derived method lowering bundle";
+        return;
+      }
+      const std::string method_owner_identity =
+          BuildSynthesizedInstanceMethodOwnerIdentity(
+              bundle.declaration_owner_identity, bundle.selector);
+      if (!method_owner_identities.insert(method_owner_identity).second) {
+        continue;
+      }
+      SyntheticMethodKind synthetic_kind = SyntheticMethodKind::None;
+      if (bundle.derive_name == "Equality") {
+        synthetic_kind = SyntheticMethodKind::Part10DerivedEquality;
+      } else if (bundle.derive_name == "Hash") {
+        synthetic_kind = SyntheticMethodKind::Part10DerivedHash;
+      } else if (bundle.derive_name == "DebugDescription") {
+        synthetic_kind = SyntheticMethodKind::Part10DerivedDebugDescription;
+      } else {
+        boundary_error_ = "unsupported Part 10 derive kind '" +
+                          bundle.derive_name + "'";
+        return;
+      }
+      method_definitions_.push_back(MethodDefinition{
+          bundle.emitted_symbol,
+          bundle.implementation_name,
+          method_owner_identity,
+          std::string{},
+          nullptr,
+          synthetic_kind,
+          std::string{},
+          ValueType::I32,
+          bundle.parameter_count,
+          std::string{},
+          std::string{},
+          std::string{},
+      });
+      ++part10_derived_method_count_;
+      part10_global_artifacts_.push_back(
+          Part10GlobalArtifact{BuildSynthesizedPropertyStorageSymbol(
+                                   bundle.emitted_symbol + "_selector"),
+                               "derive=" + bundle.derive_name + ";owner=" +
+                                   bundle.implementation_name + ";selector=" +
+                                   bundle.selector + ";symbol=" +
+                                   bundle.emitted_symbol});
+    }
+    for (const auto &bundle :
+         frontend_metadata_.part10_macro_artifact_bundles_lexicographic) {
+      if (bundle.emitted_symbol.empty()) {
+        boundary_error_ = "incomplete Part 10 macro artifact lowering bundle";
+        return;
+      }
+      part10_global_artifacts_.push_back(
+          Part10GlobalArtifact{bundle.emitted_symbol,
+                               "function=" + bundle.function_name +
+                                   ";macro=" + bundle.macro_name +
+                                   ";package=" + bundle.package_name +
+                                   ";provenance=" + bundle.provenance_name});
+    }
+    for (const auto &bundle :
+         frontend_metadata_.part10_property_behavior_artifact_bundles_lexicographic) {
+      if (bundle.emitted_symbol.empty()) {
+        boundary_error_ =
+            "incomplete Part 10 property behavior lowering bundle";
+        return;
+      }
+      part10_global_artifacts_.push_back(
+          Part10GlobalArtifact{bundle.emitted_symbol,
+                               "owner_kind=" + bundle.owner_kind + ";owner=" +
+                                   bundle.owner_name + ";property=" +
+                                   bundle.property_name + ";behavior=" +
+                                   bundle.behavior_name + ";binding=" +
+                                   bundle.binding_symbol});
     }
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
     CollectKnownClassReceiverConstants();
@@ -352,6 +440,16 @@ class Objc3IREmitter {
       body << "@" << storage.symbol << " = private global i32 0, align 4\n";
     }
     if (!synthesized_property_storages_.empty()) {
+      body << "\n";
+    }
+    for (const auto &artifact : part10_global_artifacts_) {
+      std::string payload = artifact.payload;
+      payload.push_back('\0');
+      body << "@" << artifact.symbol << " = private constant ["
+           << payload.size() << " x i8] c\""
+           << EscapeCStringLiteral(payload) << "\", align 1\n";
+    }
+    if (!part10_global_artifacts_.empty()) {
       body << "\n";
     }
 
@@ -904,6 +1002,11 @@ class Objc3IREmitter {
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
           << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
+    }
+    if (!frontend_metadata_.lowering_part10_synthesized_emission_replay_key.empty()) {
+      out << "; part10_synthesized_ast_ir_emission = "
+          << frontend_metadata_.lowering_part10_synthesized_emission_replay_key
+          << "\n";
     }
     if (!frontend_metadata_
              .lowering_part9_dispatch_metadata_interface_preservation_key.empty()) {
@@ -2449,6 +2552,27 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_part10_synthesized_emission_profile = emitted_derive_method_sites="
+        << frontend_metadata_.part10_synthesized_emitted_derive_method_sites
+        << ", emitted_macro_artifact_sites="
+        << frontend_metadata_.part10_synthesized_emitted_macro_artifact_sites
+        << ", emitted_property_behavior_artifact_sites="
+        << frontend_metadata_
+               .part10_synthesized_emitted_property_behavior_artifact_sites
+        << ", emitted_global_artifact_sites="
+        << frontend_metadata_.part10_synthesized_emitted_global_artifact_sites
+        << ", emitted_runtime_method_list_sites="
+        << frontend_metadata_
+               .part10_synthesized_emitted_runtime_method_list_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.part10_synthesized_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_.part10_synthesized_contract_violation_sites
+        << ", deterministic_part10_synthesized_emission_handoff="
+        << (frontend_metadata_.deterministic_part10_synthesized_emission_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_dispatch_metadata_interface_profile = local_direct_callable_record_count="
         << frontend_metadata_
                .part9_dispatch_metadata_local_direct_callable_record_count
@@ -3630,6 +3754,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
+    out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part9_dispatch_metadata_and_interface_preservation = !{!103}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
@@ -6544,6 +6669,37 @@ class Objc3IREmitter {
                    .part10_expansion_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_part10_expansion_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!105 = !{!\""
+        << EscapeCStringLiteral(
+               frontend_metadata_.lowering_part10_synthesized_emission_replay_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_synthesized_emitted_derive_method_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_synthesized_emitted_macro_artifact_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_synthesized_emitted_property_behavior_artifact_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_synthesized_emitted_global_artifact_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_synthesized_emitted_runtime_method_list_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_synthesized_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.part10_synthesized_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_part10_synthesized_emission_handoff
                 ? 1
                 : 0)
         << "}\n\n";
@@ -13688,7 +13844,7 @@ class Objc3IREmitter {
   void EmitMethod(const MethodDefinition &method_def,
                   std::ostringstream &out) const {
     if (method_def.method == nullptr) {
-      EmitSynthesizedAccessorMethod(method_def, out);
+      EmitSyntheticMethod(method_def, out);
       return;
     }
     const Objc3MethodDecl &method = *method_def.method;
@@ -13781,17 +13937,44 @@ class Objc3IREmitter {
     out << "}\n";
   }
 
-  void EmitSynthesizedAccessorMethod(const MethodDefinition &method_def,
-                                     std::ostringstream &out) const {
-    if (method_def.synthesized_accessor_kind == SynthesizedAccessorKind::None ||
-        method_def.synthesized_storage_symbol.empty()) {
-      return;
-    }
+  void EmitSyntheticMethod(const MethodDefinition &method_def,
+                           std::ostringstream &out) const {
     const auto profile_contains = [](const std::string &profile,
                                      const char *needle) {
       return !profile.empty() && needle != nullptr &&
              profile.find(needle) != std::string::npos;
     };
+    if (method_def.synthetic_method_kind ==
+        SyntheticMethodKind::Part10DerivedEquality) {
+      out << "define i32 @" << method_def.symbol << "(i32 %arg0) {\n";
+      out << "entry:\n";
+      out << "  ret i32 1\n";
+      out << "}\n";
+      return;
+    }
+    if (method_def.synthetic_method_kind ==
+            SyntheticMethodKind::Part10DerivedHash ||
+        method_def.synthetic_method_kind ==
+            SyntheticMethodKind::Part10DerivedDebugDescription) {
+      std::uint32_t seed = 2166136261u;
+      for (unsigned char ch : method_def.symbol) {
+        seed ^= static_cast<std::uint32_t>(ch);
+        seed *= 16777619u;
+      }
+      out << "define i32 @" << method_def.symbol << "() {\n";
+      out << "entry:\n";
+      out << "  ret i32 " << static_cast<unsigned long long>(seed & 0x7fffffffu)
+          << "\n";
+      out << "}\n";
+      return;
+    }
+    if ((method_def.synthetic_method_kind !=
+         SyntheticMethodKind::PropertyGetter &&
+         method_def.synthetic_method_kind !=
+             SyntheticMethodKind::PropertySetter) ||
+        method_def.synthesized_storage_symbol.empty()) {
+      return;
+    }
     const bool uses_weak_runtime_hooks =
         method_def.synthesized_ownership_runtime_hook_profile ==
         "objc-weak-side-table";
@@ -13800,7 +13983,8 @@ class Objc3IREmitter {
         profile_contains(method_def.synthesized_accessor_ownership_profile,
                          "ownership_lifetime=strong-owned");
     const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
-    if (method_def.synthesized_accessor_kind == SynthesizedAccessorKind::Getter) {
+    if (method_def.synthetic_method_kind ==
+        SyntheticMethodKind::PropertyGetter) {
       out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
       out << "entry:\n";
       const std::string loaded_value = "%objc3_property_slot";
@@ -13952,6 +14136,8 @@ class Objc3IREmitter {
   std::vector<MethodDefinition> method_definitions_;
   std::vector<SynthesizedPropertyStorage> synthesized_property_storages_;
   std::size_t synthesized_property_accessor_count_ = 0;
+  std::vector<Part10GlobalArtifact> part10_global_artifacts_;
+  std::size_t part10_derived_method_count_ = 0;
   std::unordered_map<std::string, FunctionEffectInfo> function_effects_;
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;

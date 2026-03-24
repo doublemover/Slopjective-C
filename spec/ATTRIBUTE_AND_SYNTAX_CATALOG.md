@@ -1456,3 +1456,15 @@ Current implementation status (`M273-C001`):
   - one aggregate replay-visible metadata count
 - emitted IR now carries one replay-stable Part 10 lowering summary and metadata node
 - runnable derive bodies, macro execution, and property-behavior runtime hooks still remain deferred to later M273 lanes
+
+## M273 synthesized AST and IR emission (C002)
+
+Current implementation status (`M273-C002`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_synthesized_ast_and_ir_emission`
+- supported Part 10 lowering now emits:
+  - synthesized derive method bodies in IR/object output
+  - macro provenance/package globals in IR/object output
+  - property-behavior globals in IR/object output
+- emitted IR now carries one replay-stable Part 10 synthesized-emission summary and metadata node
+- cross-module preservation and macro host execution still remain deferred to later `M273` lanes

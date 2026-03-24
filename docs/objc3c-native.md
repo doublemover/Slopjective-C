@@ -9308,6 +9308,19 @@ native build surface.
   - `!objc3.objc_part10_expansion_and_lowering_contract = !{!104}`
 - runnable derive bodies, macro execution, and property-behavior runtime hooks remain deferred in this tranche
 
+## M273 synthesized AST and IR emission
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_synthesized_ast_and_ir_emission`
+- the supported Part 10 slice now emits:
+  - synthesized derive method bodies in LLVM IR and object output
+  - macro package/provenance globals in LLVM IR and object output
+  - property-behavior globals in LLVM IR and object output
+- emitted LLVM IR now prints:
+  - `; part10_synthesized_ast_ir_emission = ...`
+  - `; frontend_objc_part10_synthesized_emission_profile = ...`
+  - `!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}`
+- cross-module preservation and macro host execution remain later `M273` work
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in

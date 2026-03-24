@@ -8780,3 +8780,16 @@ runnable smoke matrix.
   - Part 10 now publishes one deterministic lowering packet over derive selector inventory, macro replay visibility, and synthesized property metadata carriage
   - LLVM IR now carries one replay-visible metadata node for that packet
   - runnable derive bodies, macro execution, and property-behavior runtime ABI tables are still not claimed yet
+
+## M273 synthesized AST/IR metadata note
+
+`M273-C002` adds concrete emitted artifacts for the supported Part 10 slice without yet widening the runtime ABI table families.
+
+- contract id
+  `objc3c-part10-synthesized-ast-ir-emission/m273-c002-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_synthesized_ast_and_ir_emission`
+- truthful boundary
+  - supported derives now emit real synthesized method bodies
+  - supported macros and property behaviors now emit replay-visible global artifacts
+  - cross-module preservation and macro host/runtime integration remain later `M273` work

@@ -1574,6 +1574,18 @@ inline constexpr const char *kObjc3Part10ExpansionLoweringDeferredModel =
     "runnable-derive-body-emission-macro-execution-and-property-behavior-runtime-materialization-remain-later-m273-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part10ExpansionLoweringLaneContract =
     "m273-part10-expansion-lowering-contract-v1";
+inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionContractId =
+    "objc3c-part10-synthesized-ast-ir-emission/m273-c002-v1";
+inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part10_synthesized_ast_and_ir_emission";
+inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionModel =
+    "supported-derive-macro-and-property-behavior-sites-now-materialize-deterministic-synthesized-ir-artifacts-and-runtime-visible-method-bodies";
+inline constexpr const char
+    *kObjc3Part10SynthesizedArtifactEmissionDeferredModel =
+        "cross-module-preservation-expansion-host-execution-and-cached-macro-toolchain-integration-remain-deferred-to-later-m273-work";
+inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionLaneContract =
+    "m273-part10-synthesized-ast-ir-emission-v1";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2363,6 +2375,18 @@ struct Objc3Part10ExpansionLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part10SynthesizedArtifactEmissionContract {
+  std::size_t derive_inventory_sites = 0;
+  std::size_t emitted_derive_method_sites = 0;
+  std::size_t emitted_macro_artifact_sites = 0;
+  std::size_t emitted_property_behavior_artifact_sites = 0;
+  std::size_t emitted_global_artifact_sites = 0;
+  std::size_t emitted_runtime_method_list_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -2738,6 +2762,10 @@ bool IsValidObjc3Part10ExpansionLoweringContract(
     const Objc3Part10ExpansionLoweringContract &contract);
 std::string Objc3Part10ExpansionLoweringReplayKey(
     const Objc3Part10ExpansionLoweringContract &contract);
+bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
+    const Objc3Part10SynthesizedArtifactEmissionContract &contract);
+std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
+    const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);

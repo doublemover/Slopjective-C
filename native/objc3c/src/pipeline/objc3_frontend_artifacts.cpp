@@ -2404,6 +2404,383 @@ Objc3Part10ExpansionLoweringContract BuildPart10ExpansionLoweringContract(
   return contract;
 }
 
+static std::string SanitizePart10ArtifactToken(const std::string &text) {
+  std::string out;
+  out.reserve(text.size());
+  for (unsigned char ch : text) {
+    if (std::isalnum(ch) != 0) {
+      out.push_back(static_cast<char>(ch));
+    } else {
+      out.push_back('_');
+    }
+  }
+  if (out.empty()) {
+    out = "anonymous";
+  }
+  return out;
+}
+
+static std::string BuildPart10RuntimeClassOwnerIdentity(
+    const std::string &class_name) {
+  return "class:" + class_name;
+}
+
+static std::string BuildPart10RuntimeCategoryOwnerIdentity(
+    const std::string &class_name, const std::string &category_name) {
+  return "category:" + class_name + "(" + category_name + ")";
+}
+
+static std::string BuildPart10CategoryOwnerName(const std::string &class_name,
+                                                const std::string &category_name) {
+  return class_name + "(" + category_name + ")";
+}
+
+static std::string BuildPart10DerivedMethodFunctionSymbol(
+    const std::string &implementation_name, const std::string &selector) {
+  return "objc3_method_" + SanitizePart10ArtifactToken(implementation_name) +
+         "_instance_" + SanitizePart10ArtifactToken(selector);
+}
+
+static std::string BuildPart10MacroArtifactSymbol(
+    const std::string &function_name, const std::string &macro_name) {
+  return "objc3_part10_macro_artifact_" +
+         SanitizePart10ArtifactToken(function_name) + "_" +
+         SanitizePart10ArtifactToken(macro_name);
+}
+
+static std::string BuildPart10PropertyBehaviorArtifactSymbol(
+    const std::string &owner_kind, const std::string &owner_name,
+    const std::string &property_name, const std::string &behavior_name) {
+  return "objc3_part10_property_behavior_" +
+         SanitizePart10ArtifactToken(owner_kind) + "_" +
+         SanitizePart10ArtifactToken(owner_name) + "_" +
+         SanitizePart10ArtifactToken(property_name) + "_" +
+         SanitizePart10ArtifactToken(behavior_name);
+}
+
+static std::string NormalizePart10NamedStringToken(std::string token) {
+  token.erase(std::remove_if(token.begin(), token.end(),
+                             [](unsigned char ch) { return std::isspace(ch) != 0; }),
+              token.end());
+  if (token.size() >= 2u && token.front() == '"' && token.back() == '"') {
+    token = token.substr(1u, token.size() - 2u);
+  }
+  return token;
+}
+
+static std::string NormalizePart10PropertyBehaviorNameForEmission(
+    std::string token) {
+  token = NormalizePart10NamedStringToken(std::move(token));
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  if (token == "observed") {
+    return "Observed";
+  }
+  if (token == "projected") {
+    return "Projected";
+  }
+  return {};
+}
+
+static std::string NormalizePart10DeriveNameForEmission(std::string token) {
+  token = NormalizePart10NamedStringToken(std::move(token));
+  std::transform(token.begin(), token.end(), token.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  if (token == "equality" || token == "equatable") {
+    return "Equality";
+  }
+  if (token == "hash") {
+    return "Hash";
+  }
+  if (token == "debugdescription") {
+    return "DebugDescription";
+  }
+  return {};
+}
+
+static bool IsSupportedPart10MacroPackageNameForEmission(
+    std::string package_name) {
+  package_name = NormalizePart10NamedStringToken(std::move(package_name));
+  std::transform(package_name.begin(), package_name.end(), package_name.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  return package_name == "std.metaprogramming" ||
+         package_name == "std.metaprogramming.trace";
+}
+
+static bool IsSupportedPart10MacroProvenanceNameForEmission(
+    std::string provenance_name) {
+  provenance_name = NormalizePart10NamedStringToken(std::move(provenance_name));
+  std::transform(provenance_name.begin(), provenance_name.end(),
+                 provenance_name.begin(),
+                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+  constexpr std::string_view prefix = "sha256:";
+  if (provenance_name.size() < prefix.size() ||
+      provenance_name.compare(0u, prefix.size(), prefix) != 0) {
+    return false;
+  }
+  const std::string_view digest(provenance_name.c_str() + prefix.size(),
+                                provenance_name.size() - prefix.size());
+  return digest.size() >= 6u && digest.size() <= 64u &&
+         std::all_of(digest.begin(), digest.end(), [](char c) {
+           return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+         });
+}
+
+static bool IsPart10PropertyBehaviorObjectLike(const Objc3PropertyDecl &property) {
+  return property.id_spelling || property.instancetype_spelling ||
+         property.object_pointer_type_spelling ||
+         property.type == ValueType::ObjCId ||
+         property.type == ValueType::ObjCClass ||
+         property.type == ValueType::ObjCInstancetype ||
+         property.type == ValueType::ObjCObjectPtr;
+}
+
+std::vector<Objc3IRPart10DerivedMethodBundle> BuildPart10DerivedMethodBundles(
+    const Objc3Program &program) {
+  std::unordered_map<std::string, const Objc3ImplementationDecl *> implementations;
+  implementations.reserve(program.implementations.size());
+  for (const auto &implementation_decl : program.implementations) {
+    if (!implementation_decl.has_category) {
+      implementations.emplace(implementation_decl.name, &implementation_decl);
+    }
+  }
+
+  std::vector<Objc3IRPart10DerivedMethodBundle> bundles;
+  for (const auto &interface_decl : program.interfaces) {
+    if (interface_decl.has_category) {
+      continue;
+    }
+    const bool has_derive_marker =
+        interface_decl.objc_derive_declared ||
+        !interface_decl.objc_derive_name.empty();
+    if (!has_derive_marker) {
+      continue;
+    }
+    const auto impl_it = implementations.find(interface_decl.name);
+    if (impl_it == implementations.end()) {
+      continue;
+    }
+    const std::string derive_name =
+        NormalizePart10DeriveNameForEmission(interface_decl.objc_derive_name);
+    if (derive_name.empty()) {
+      continue;
+    }
+
+    std::string selector;
+    std::size_t parameter_count = 0u;
+    if (derive_name == "Equality") {
+      selector = "isEqual:";
+      parameter_count = 1u;
+    } else if (derive_name == "Hash") {
+      selector = "hash";
+    } else if (derive_name == "DebugDescription") {
+      selector = "debugDescription";
+    }
+    const auto selector_exists = [&selector](const auto &methods) {
+      return std::any_of(methods.begin(), methods.end(),
+                         [&selector](const Objc3MethodDecl &method_decl) {
+                           return !method_decl.is_class_method &&
+                                  method_decl.selector == selector;
+                         });
+    };
+    if (selector.empty() || selector_exists(interface_decl.methods) ||
+        selector_exists(impl_it->second->methods)) {
+      continue;
+    }
+
+    Objc3IRPart10DerivedMethodBundle bundle;
+    bundle.implementation_name = impl_it->second->name;
+    bundle.declaration_owner_identity = impl_it->second->semantic_link_symbol;
+    bundle.export_owner_identity =
+        BuildPart10RuntimeClassOwnerIdentity(interface_decl.name);
+    bundle.derive_name = derive_name;
+    bundle.selector = selector;
+    bundle.emitted_symbol =
+        BuildPart10DerivedMethodFunctionSymbol(bundle.implementation_name,
+                                               bundle.selector);
+    bundle.parameter_count = parameter_count;
+    bundle.line = interface_decl.line;
+    bundle.column = interface_decl.column;
+    bundles.push_back(std::move(bundle));
+  }
+
+  std::sort(bundles.begin(), bundles.end(),
+            [](const Objc3IRPart10DerivedMethodBundle &lhs,
+               const Objc3IRPart10DerivedMethodBundle &rhs) {
+              return std::tie(lhs.implementation_name, lhs.selector, lhs.derive_name) <
+                     std::tie(rhs.implementation_name, rhs.selector, rhs.derive_name);
+            });
+  return bundles;
+}
+
+std::vector<Objc3IRPart10MacroArtifactBundle> BuildPart10MacroArtifactBundles(
+    const Objc3Program &program) {
+  std::vector<Objc3IRPart10MacroArtifactBundle> bundles;
+  for (const auto &fn : program.functions) {
+    const bool has_macro_marker =
+        fn.objc_macro_declared || !fn.objc_macro_name.empty();
+    const bool has_macro_package =
+        fn.objc_macro_package_declared || !fn.objc_macro_package_name.empty();
+    const bool has_macro_provenance =
+        fn.objc_macro_provenance_declared ||
+        !fn.objc_macro_provenance_name.empty();
+    if (!has_macro_marker || !has_macro_package || !has_macro_provenance ||
+        !fn.is_pure || fn.is_prototype || fn.async_declared ||
+        fn.throws_declared ||
+        !IsSupportedPart10MacroPackageNameForEmission(fn.objc_macro_package_name) ||
+        !IsSupportedPart10MacroProvenanceNameForEmission(
+            fn.objc_macro_provenance_name)) {
+      continue;
+    }
+    Objc3IRPart10MacroArtifactBundle bundle;
+    bundle.function_name = fn.name;
+    bundle.macro_name = fn.objc_macro_name;
+    bundle.package_name = fn.objc_macro_package_name;
+    bundle.provenance_name = fn.objc_macro_provenance_name;
+    bundle.emitted_symbol =
+        BuildPart10MacroArtifactSymbol(fn.name, fn.objc_macro_name);
+    bundle.line = fn.line;
+    bundle.column = fn.column;
+    bundles.push_back(std::move(bundle));
+  }
+  std::sort(bundles.begin(), bundles.end(),
+            [](const Objc3IRPart10MacroArtifactBundle &lhs,
+               const Objc3IRPart10MacroArtifactBundle &rhs) {
+              return std::tie(lhs.function_name, lhs.macro_name,
+                              lhs.provenance_name) <
+                     std::tie(rhs.function_name, rhs.macro_name,
+                              rhs.provenance_name);
+            });
+  return bundles;
+}
+
+std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
+BuildPart10PropertyBehaviorArtifactBundles(const Objc3Program &program) {
+  std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle> bundles;
+  const auto append_properties =
+      [&bundles](const auto &properties, const std::string &owner_kind,
+                 const std::string &owner_name,
+                 const std::string &declaration_owner_identity,
+                 const std::string &export_owner_identity) {
+        for (const auto &property : properties) {
+          if (!property.property_behavior_declared) {
+            continue;
+          }
+          const std::string behavior_name =
+              NormalizePart10PropertyBehaviorNameForEmission(
+                  property.property_behavior_name);
+          if (behavior_name.empty() ||
+              !IsPart10PropertyBehaviorObjectLike(property)) {
+            continue;
+          }
+          if (behavior_name == "Observed" &&
+              (owner_kind == "protocol" || property.is_readonly ||
+               !property.effective_setter_available)) {
+            continue;
+          }
+          if (behavior_name == "Projected" &&
+              (!property.is_readonly || property.has_setter ||
+               property.effective_setter_available)) {
+            continue;
+          }
+
+          Objc3IRPart10PropertyBehaviorArtifactBundle bundle;
+          bundle.owner_kind = owner_kind;
+          bundle.owner_name = owner_name;
+          bundle.declaration_owner_identity = declaration_owner_identity;
+          bundle.export_owner_identity = export_owner_identity;
+          bundle.property_name = property.name;
+          bundle.behavior_name = behavior_name;
+          bundle.binding_symbol = property.executable_synthesized_binding_symbol;
+          if (bundle.binding_symbol.empty()) {
+            bundle.binding_symbol = property.ivar_binding_symbol;
+          }
+          bundle.emitted_symbol = BuildPart10PropertyBehaviorArtifactSymbol(
+              owner_kind, owner_name, property.name, behavior_name);
+          bundle.line = property.line;
+          bundle.column = property.column;
+          bundles.push_back(std::move(bundle));
+        }
+      };
+
+  for (const auto &interface_decl : program.interfaces) {
+    append_properties(
+        interface_decl.properties,
+        interface_decl.has_category ? "category-interface" : "class-interface",
+        interface_decl.has_category
+            ? BuildPart10CategoryOwnerName(interface_decl.name,
+                                           interface_decl.category_name)
+            : interface_decl.name,
+        interface_decl.semantic_link_symbol,
+        interface_decl.has_category
+            ? BuildPart10RuntimeCategoryOwnerIdentity(interface_decl.name,
+                                                      interface_decl.category_name)
+            : BuildPart10RuntimeClassOwnerIdentity(interface_decl.name));
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    append_properties(protocol_decl.properties, "protocol", protocol_decl.name,
+                      protocol_decl.semantic_link_symbol,
+                      protocol_decl.semantic_link_symbol);
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    append_properties(
+        implementation_decl.properties,
+        implementation_decl.has_category ? "category-implementation"
+                                         : "class-implementation",
+        implementation_decl.has_category
+            ? BuildPart10CategoryOwnerName(implementation_decl.name,
+                                           implementation_decl.category_name)
+            : implementation_decl.name,
+        implementation_decl.semantic_link_symbol,
+        implementation_decl.has_category
+            ? BuildPart10RuntimeCategoryOwnerIdentity(
+                  implementation_decl.name, implementation_decl.category_name)
+            : BuildPart10RuntimeClassOwnerIdentity(implementation_decl.name));
+  }
+
+  std::sort(bundles.begin(), bundles.end(),
+            [](const Objc3IRPart10PropertyBehaviorArtifactBundle &lhs,
+               const Objc3IRPart10PropertyBehaviorArtifactBundle &rhs) {
+              return std::tie(lhs.owner_kind, lhs.owner_name, lhs.property_name,
+                              lhs.behavior_name) <
+                     std::tie(rhs.owner_kind, rhs.owner_name, rhs.property_name,
+                              rhs.behavior_name);
+            });
+  return bundles;
+}
+
+Objc3Part10SynthesizedArtifactEmissionContract
+BuildPart10SynthesizedArtifactEmissionContract(
+    const Objc3Part10ExpansionLoweringContract &dependency_contract,
+    const std::vector<Objc3IRPart10DerivedMethodBundle> &derive_bundles,
+    const std::vector<Objc3IRPart10MacroArtifactBundle> &macro_bundles,
+    const std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
+        &property_behavior_bundles) {
+  Objc3Part10SynthesizedArtifactEmissionContract contract;
+  contract.derive_inventory_sites = dependency_contract.derive_inventory_sites;
+  contract.emitted_derive_method_sites = derive_bundles.size();
+  contract.emitted_macro_artifact_sites = macro_bundles.size();
+  contract.emitted_property_behavior_artifact_sites =
+      property_behavior_bundles.size();
+  contract.emitted_global_artifact_sites =
+      contract.emitted_derive_method_sites +
+      contract.emitted_macro_artifact_sites +
+      contract.emitted_property_behavior_artifact_sites;
+  contract.emitted_runtime_method_list_sites =
+      contract.emitted_derive_method_sites;
+  contract.guard_blocked_sites = dependency_contract.guard_blocked_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      dependency_contract.deterministic &&
+      contract.emitted_derive_method_sites <=
+          dependency_contract.derived_selector_artifact_sites &&
+      contract.emitted_macro_artifact_sites <=
+          dependency_contract.macro_replay_visible_sites &&
+      contract.emitted_property_behavior_artifact_sites <=
+          dependency_contract.property_behavior_sites;
+  return contract;
+}
+
 std::string BuildPart7ActorLoweringMetadataContractJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
         &source_summary,
@@ -2558,6 +2935,53 @@ std::string BuildPart10ExpansionLoweringContractJson(
       << contract.synthesized_setter_sites
       << ",\"replay_visible_metadata_sites\":"
       << contract.replay_visible_metadata_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart10SynthesizedArtifactEmissionContractJson(
+    const Objc3Part10ExpansionLoweringContract &dependency_contract,
+    const Objc3Part10SynthesizedArtifactEmissionContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3Part10SynthesizedArtifactEmissionContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part10SynthesizedArtifactEmissionContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part10SynthesizedArtifactEmissionSurfacePath)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(kObjc3Part10ExpansionLoweringContractId)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3Part10SynthesizedArtifactEmissionLaneContract)
+      << "\",\"emission_model\":\""
+      << EscapeJsonString(kObjc3Part10SynthesizedArtifactEmissionModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part10SynthesizedArtifactEmissionDeferredModel)
+      << "\",\"dependency_replay_key\":\""
+      << EscapeJsonString(Objc3Part10ExpansionLoweringReplayKey(
+             dependency_contract))
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"derive_inventory_sites\":" << contract.derive_inventory_sites
+      << ",\"emitted_derive_method_sites\":"
+      << contract.emitted_derive_method_sites
+      << ",\"emitted_macro_artifact_sites\":"
+      << contract.emitted_macro_artifact_sites
+      << ",\"emitted_property_behavior_artifact_sites\":"
+      << contract.emitted_property_behavior_artifact_sites
+      << ",\"emitted_global_artifact_sites\":"
+      << contract.emitted_global_artifact_sites
+      << ",\"emitted_runtime_method_list_sites\":"
+      << contract.emitted_runtime_method_list_sites
       << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
       << ",\"contract_violation_sites\":"
       << contract.contract_violation_sites
@@ -13181,6 +13605,31 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part10_expansion_lowering_replay_key =
       Objc3Part10ExpansionLoweringReplayKey(
           part10_expansion_lowering_contract);
+  const std::vector<Objc3IRPart10DerivedMethodBundle>
+      part10_derived_method_bundles =
+          BuildPart10DerivedMethodBundles(program);
+  const std::vector<Objc3IRPart10MacroArtifactBundle>
+      part10_macro_artifact_bundles =
+          BuildPart10MacroArtifactBundles(program);
+  const std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
+      part10_property_behavior_artifact_bundles =
+          BuildPart10PropertyBehaviorArtifactBundles(program);
+  const Objc3Part10SynthesizedArtifactEmissionContract
+      part10_synthesized_artifact_emission_contract =
+          BuildPart10SynthesizedArtifactEmissionContract(
+              part10_expansion_lowering_contract,
+              part10_derived_method_bundles,
+              part10_macro_artifact_bundles,
+              part10_property_behavior_artifact_bundles);
+  if (!IsValidObjc3Part10SynthesizedArtifactEmissionContract(
+          part10_synthesized_artifact_emission_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid Part 10 synthesized artifact emission contract");
+  }
+  const std::string part10_synthesized_artifact_emission_replay_key =
+      Objc3Part10SynthesizedArtifactEmissionReplayKey(
+          part10_synthesized_artifact_emission_contract);
   const Objc3Part8SystemExtensionLoweringContract
       part8_system_extension_lowering_contract =
           BuildPart8SystemExtensionLoweringContract(
@@ -17646,6 +18095,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    part10_property_behavior_legality_compatibility_summary,
                    part10_expansion_lowering_contract,
                    part10_expansion_lowering_replay_key)
+            << ",\"objc_part10_synthesized_ast_and_ir_emission\":"
+            << BuildPart10SynthesizedArtifactEmissionContractJson(
+                   part10_expansion_lowering_contract,
+                   part10_synthesized_artifact_emission_contract,
+                   part10_synthesized_artifact_emission_replay_key)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
@@ -19057,6 +19511,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    part10_property_behavior_legality_compatibility_summary,
                    part10_expansion_lowering_contract,
                    part10_expansion_lowering_replay_key)
+            << ",\"objc_part10_synthesized_ast_and_ir_emission\":"
+            << BuildPart10SynthesizedArtifactEmissionContractJson(
+                   part10_expansion_lowering_contract,
+                   part10_synthesized_artifact_emission_contract,
+                   part10_synthesized_artifact_emission_replay_key)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
@@ -20128,6 +20587,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part10_expansion_lowering_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_part10_expansion_lowering_handoff =
       part10_expansion_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_part10_synthesized_emission_replay_key =
+      part10_synthesized_artifact_emission_replay_key;
+  ir_frontend_metadata.part10_synthesized_emitted_derive_method_sites =
+      part10_synthesized_artifact_emission_contract.emitted_derive_method_sites;
+  ir_frontend_metadata.part10_synthesized_emitted_macro_artifact_sites =
+      part10_synthesized_artifact_emission_contract.emitted_macro_artifact_sites;
+  ir_frontend_metadata
+      .part10_synthesized_emitted_property_behavior_artifact_sites =
+      part10_synthesized_artifact_emission_contract
+          .emitted_property_behavior_artifact_sites;
+  ir_frontend_metadata.part10_synthesized_emitted_global_artifact_sites =
+      part10_synthesized_artifact_emission_contract.emitted_global_artifact_sites;
+  ir_frontend_metadata.part10_synthesized_emitted_runtime_method_list_sites =
+      part10_synthesized_artifact_emission_contract
+          .emitted_runtime_method_list_sites;
+  ir_frontend_metadata.part10_synthesized_guard_blocked_sites =
+      part10_synthesized_artifact_emission_contract.guard_blocked_sites;
+  ir_frontend_metadata.part10_synthesized_contract_violation_sites =
+      part10_synthesized_artifact_emission_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_part10_synthesized_emission_handoff =
+      part10_synthesized_artifact_emission_contract.deterministic;
+  ir_frontend_metadata.part10_derived_method_bundles_lexicographic =
+      part10_derived_method_bundles;
+  ir_frontend_metadata.part10_macro_artifact_bundles_lexicographic =
+      part10_macro_artifact_bundles;
+  ir_frontend_metadata.part10_property_behavior_artifact_bundles_lexicographic =
+      part10_property_behavior_artifact_bundles;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
       part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =
@@ -21971,6 +22457,62 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               break;
             }
           }
+        }
+      }
+      if (member_table_payload_complete) {
+        for (const auto &derive_bundle :
+             ir_frontend_metadata.part10_derived_method_bundles_lexicographic) {
+          if (derive_bundle.implementation_name.empty() ||
+              derive_bundle.declaration_owner_identity.empty() ||
+              derive_bundle.export_owner_identity.empty() ||
+              derive_bundle.selector.empty() || derive_bundle.emitted_symbol.empty()) {
+            member_table_payload_complete = false;
+            break;
+          }
+          const std::string method_owner_identity =
+              build_instance_method_owner_identity(
+                  derive_bundle.declaration_owner_identity,
+                  derive_bundle.selector);
+          if (!method_owner_identities.insert(method_owner_identity).second) {
+            continue;
+          }
+          const std::string bundle_key =
+              derive_bundle.declaration_owner_identity + "|instance";
+          auto bundle_it = method_bundle_indexes.find(bundle_key);
+          if (bundle_it == method_bundle_indexes.end()) {
+            Objc3IRRuntimeMetadataMethodListBundle bundle;
+            bundle.owner_kind = "class-implementation";
+            bundle.owner_name = derive_bundle.implementation_name;
+            bundle.owner_family_kind = "class";
+            bundle.declaration_owner_identity =
+                derive_bundle.declaration_owner_identity;
+            bundle.export_owner_identity = derive_bundle.export_owner_identity;
+            bundle.list_kind = "instance";
+            method_list_bundles.push_back(std::move(bundle));
+            bundle_it = method_bundle_indexes
+                            .emplace(bundle_key, method_list_bundles.size() - 1u)
+                            .first;
+          }
+
+          auto &bundle = method_list_bundles[bundle_it->second];
+          if (bundle.owner_kind != "class-implementation" ||
+              bundle.owner_name != derive_bundle.implementation_name ||
+              bundle.owner_family_kind != "class" ||
+              bundle.export_owner_identity != derive_bundle.export_owner_identity ||
+              bundle.list_kind != "instance") {
+            member_table_payload_complete = false;
+            break;
+          }
+
+          Objc3IRRuntimeMetadataMethodEntry entry;
+          entry.owner_identity = method_owner_identity;
+          entry.selector = derive_bundle.selector;
+          entry.return_type_name = "i32";
+          entry.parameter_count = derive_bundle.parameter_count;
+          entry.has_body = true;
+          entry.effective_direct_dispatch = false;
+          entry.objc_final_declared = false;
+          bundle.entries_lexicographic.push_back(std::move(entry));
         }
       }
       std::sort(

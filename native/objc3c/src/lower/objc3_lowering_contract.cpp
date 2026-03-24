@@ -4436,6 +4436,52 @@ std::string Objc3Part10ExpansionLoweringReplayKey(
          ";lane_contract=" + kObjc3Part10ExpansionLoweringLaneContract;
 }
 
+bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
+    const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
+  if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {
+    return false;
+  }
+  if (contract.emitted_global_artifact_sites <
+      contract.emitted_macro_artifact_sites +
+          contract.emitted_property_behavior_artifact_sites) {
+    return false;
+  }
+  if (contract.emitted_runtime_method_list_sites <
+      contract.emitted_derive_method_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
+    const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
+  return std::string("derive_inventory_sites=") +
+             std::to_string(contract.derive_inventory_sites) +
+         ";emitted_derive_method_sites=" +
+         std::to_string(contract.emitted_derive_method_sites) +
+         ";emitted_macro_artifact_sites=" +
+         std::to_string(contract.emitted_macro_artifact_sites) +
+         ";emitted_property_behavior_artifact_sites=" +
+         std::to_string(contract.emitted_property_behavior_artifact_sites) +
+         ";emitted_global_artifact_sites=" +
+         std::to_string(contract.emitted_global_artifact_sites) +
+         ";emitted_runtime_method_list_sites=" +
+         std::to_string(contract.emitted_runtime_method_list_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3Part10SynthesizedArtifactEmissionLaneContract;
+}
+
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // M272-C003 preservation anchor: lane-C extends the local C002 lowering win

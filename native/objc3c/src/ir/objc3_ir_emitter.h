@@ -116,6 +116,41 @@ struct Objc3IRRuntimeMetadataIvarBundle {
   std::size_t executable_ivar_layout_alignment_bytes = 0;
 };
 
+struct Objc3IRPart10DerivedMethodBundle {
+  std::string implementation_name;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string derive_name;
+  std::string selector;
+  std::string emitted_symbol;
+  std::size_t parameter_count = 0;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3IRPart10MacroArtifactBundle {
+  std::string function_name;
+  std::string macro_name;
+  std::string package_name;
+  std::string provenance_name;
+  std::string emitted_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3IRPart10PropertyBehaviorArtifactBundle {
+  std::string owner_kind;
+  std::string owner_name;
+  std::string declaration_owner_identity;
+  std::string export_owner_identity;
+  std::string property_name;
+  std::string behavior_name;
+  std::string binding_symbol;
+  std::string emitted_symbol;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
   std::string compatibility_mode = "canonical";
@@ -894,6 +929,21 @@ struct Objc3IRFrontendMetadata {
   std::size_t part10_expansion_lowering_guard_blocked_sites = 0;
   std::size_t part10_expansion_lowering_contract_violation_sites = 0;
   bool deterministic_part10_expansion_lowering_handoff = false;
+  std::string lowering_part10_synthesized_emission_replay_key;
+  std::size_t part10_synthesized_emitted_derive_method_sites = 0;
+  std::size_t part10_synthesized_emitted_macro_artifact_sites = 0;
+  std::size_t part10_synthesized_emitted_property_behavior_artifact_sites = 0;
+  std::size_t part10_synthesized_emitted_global_artifact_sites = 0;
+  std::size_t part10_synthesized_emitted_runtime_method_list_sites = 0;
+  std::size_t part10_synthesized_guard_blocked_sites = 0;
+  std::size_t part10_synthesized_contract_violation_sites = 0;
+  bool deterministic_part10_synthesized_emission_handoff = false;
+  std::vector<Objc3IRPart10DerivedMethodBundle>
+      part10_derived_method_bundles_lexicographic;
+  std::vector<Objc3IRPart10MacroArtifactBundle>
+      part10_macro_artifact_bundles_lexicographic;
+  std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
+      part10_property_behavior_artifact_bundles_lexicographic;
   std::string lowering_part9_dispatch_metadata_interface_preservation_key;
   std::size_t part9_dispatch_metadata_local_direct_callable_record_count = 0;
   std::size_t part9_dispatch_metadata_local_final_callable_record_count = 0;

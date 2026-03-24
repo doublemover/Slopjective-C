@@ -1,0 +1,13 @@
+module Part10SynthesizedArtifacts;
+
+@interface Widget __attribute__((objc_derive(named("Equality"))))
+@property (strong, behavior=Observed) id value;
+@end
+
+@implementation Widget
+@property (strong, behavior=Observed) id value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}
