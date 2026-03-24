@@ -3638,6 +3638,22 @@ Current implementation status (`M274-B002`):
 - foreign ABI lowering, bridge shims, and runnable cross-language behavior
   remain later `M274` work
 
+## M274 Part 11 C++ ownership, throws, and async interaction completion
+
+Current implementation status (`M274-B003`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part11_cpp_ownership_throws_and_async_interactions`
+- live fail-closed diagnostics now reject:
+  - `O3S334` `objc_cxx_name` / `objc_header_name` callables that also carry
+    ownership-managed callable surfaces
+  - `O3S335` `objc_cxx_name` / `objc_header_name` callables that also use
+    `throws`
+  - `O3S336` `objc_cxx_name` / `objc_header_name` callables that also use
+    `async` or `objc_executor(...)`
+- cross-language ABI lowering, bridge shims, and runnable ObjC++ interop
+  behavior remain later `M274` work
+
 ## M269 task executor and cancellation semantic model
 
 The frontend now publishes a dedicated semantic packet at

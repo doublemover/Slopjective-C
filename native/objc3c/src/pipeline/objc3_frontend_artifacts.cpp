@@ -1239,6 +1239,58 @@ std::string BuildPart11InteropRuntimeParitySummaryJson(
   return out.str();
 }
 
+std::string BuildPart11CppInteropInteractionSummaryJson(
+    const Objc3Part11CppInteropInteractionSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\""
+      << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(summary.deferred_model)
+      << "\",\"cpp_interop_callable_sites\":"
+      << summary.cpp_interop_callable_sites
+      << ",\"cpp_named_callable_sites\":" << summary.cpp_named_callable_sites
+      << ",\"header_named_callable_sites\":"
+      << summary.header_named_callable_sites
+      << ",\"ownership_interaction_sites\":"
+      << summary.ownership_interaction_sites
+      << ",\"throws_interaction_sites\":"
+      << summary.throws_interaction_sites
+      << ",\"async_interaction_sites\":"
+      << summary.async_interaction_sites
+      << ",\"ownership_rejection_sites\":"
+      << summary.ownership_rejection_sites
+      << ",\"throws_rejection_sites\":"
+      << summary.throws_rejection_sites
+      << ",\"async_rejection_sites\":"
+      << summary.async_rejection_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"cpp_annotation_profile_reused\":"
+      << (summary.cpp_annotation_profile_reused ? "true" : "false")
+      << ",\"ownership_interactions_fail_closed\":"
+      << (summary.ownership_interactions_fail_closed ? "true" : "false")
+      << ",\"throws_interactions_fail_closed\":"
+      << (summary.throws_interactions_fail_closed ? "true" : "false")
+      << ",\"async_interactions_fail_closed\":"
+      << (summary.async_interactions_fail_closed ? "true" : "false")
+      << ",\"ffi_abi_lowering_deferred\":"
+      << (summary.ffi_abi_lowering_deferred ? "true" : "false")
+      << ",\"runtime_bridge_generation_deferred\":"
+      << (summary.runtime_bridge_generation_deferred ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
     const Objc3Part10ExpansionBehaviorSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -14270,6 +14322,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part11InteropRuntimeParitySummary
       &part11_interop_runtime_parity_summary =
           pipeline_result.part11_interop_runtime_parity_summary;
+  const Objc3Part11CppInteropInteractionSummary
+      &part11_cpp_interop_interaction_summary =
+          pipeline_result.part11_cpp_interop_interaction_summary;
   const Objc3Part10ExpansionBehaviorSemanticModelSummary
       &part10_expansion_behavior_semantic_model_summary =
           pipeline_result.part10_expansion_behavior_semantic_model_summary;
@@ -18858,6 +18913,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_c_and_objc_runtime_parity_semantics\":"
             << BuildPart11InteropRuntimeParitySummaryJson(
                    part11_interop_runtime_parity_summary)
+            << ",\"objc_part11_cpp_ownership_throws_and_async_interactions\":"
+            << BuildPart11CppInteropInteractionSummaryJson(
+                   part11_cpp_interop_interaction_summary)
             << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
             << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                    part11_foreign_surface_interface_preservation_summary)
@@ -20292,6 +20350,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part11_c_and_objc_runtime_parity_semantics\":"
            << BuildPart11InteropRuntimeParitySummaryJson(
                   part11_interop_runtime_parity_summary)
+           << ",\"objc_part11_cpp_ownership_throws_and_async_interactions\":"
+           << BuildPart11CppInteropInteractionSummaryJson(
+                  part11_cpp_interop_interaction_summary)
            << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
            << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                   part11_foreign_surface_interface_preservation_summary)

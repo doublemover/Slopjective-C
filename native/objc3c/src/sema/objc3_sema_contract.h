@@ -1000,6 +1000,69 @@ inline bool IsReadyObjc3Part11InteropRuntimeParitySummary(
 }
 
 inline constexpr const char
+    *kObjc3Part11CppInteropInteractionSummaryDependencyContractId =
+        kObjc3Part11InteropRuntimeParitySummaryContractId;
+inline constexpr const char
+    *kObjc3Part11CppInteropInteractionSummaryContractId =
+        "objc3c-part11-cpp-ownership-throws-and-async-interaction-completion/m274-b003-v1";
+inline constexpr const char
+    *kObjc3Part11CppInteropInteractionSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part11_cpp_ownership_throws_and_async_interactions";
+inline constexpr const char
+    *kObjc3Part11CppInteropInteractionSummaryRule =
+        "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-m274-work";
+inline constexpr const char
+    *kObjc3Part11CppInteropInteractionSummaryDeferredRule =
+        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-m274-lanes";
+
+struct Objc3Part11CppInteropInteractionSummary {
+  std::string contract_id = kObjc3Part11CppInteropInteractionSummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part11CppInteropInteractionSummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part11CppInteropInteractionSummarySurfacePath;
+  std::string semantic_model = kObjc3Part11CppInteropInteractionSummaryRule;
+  std::string deferred_model =
+      kObjc3Part11CppInteropInteractionSummaryDeferredRule;
+  std::size_t cpp_interop_callable_sites = 0;
+  std::size_t cpp_named_callable_sites = 0;
+  std::size_t header_named_callable_sites = 0;
+  std::size_t ownership_interaction_sites = 0;
+  std::size_t throws_interaction_sites = 0;
+  std::size_t async_interaction_sites = 0;
+  std::size_t ownership_rejection_sites = 0;
+  std::size_t throws_rejection_sites = 0;
+  std::size_t async_rejection_sites = 0;
+  bool dependency_required = false;
+  bool cpp_annotation_profile_reused = false;
+  bool ownership_interactions_fail_closed = false;
+  bool throws_interactions_fail_closed = false;
+  bool async_interactions_fail_closed = false;
+  bool ffi_abi_lowering_deferred = false;
+  bool runtime_bridge_generation_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part11CppInteropInteractionSummary(
+    const Objc3Part11CppInteropInteractionSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.cpp_annotation_profile_reused &&
+         summary.ownership_interactions_fail_closed &&
+         summary.throws_interactions_fail_closed &&
+         summary.async_interactions_fail_closed &&
+         summary.ffi_abi_lowering_deferred &&
+         summary.runtime_bridge_generation_deferred &&
+         summary.deterministic && summary.ready_for_lowering_and_runtime &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
         "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =

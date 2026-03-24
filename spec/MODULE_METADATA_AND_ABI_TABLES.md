@@ -8933,3 +8933,18 @@ Current implementation status (`M274-B002`):
     foreign/import callable annotations
 - foreign ABI lowering, bridge shims, and runnable cross-language behavior
   remain later `M274` work
+
+## M274 C++ ownership / throws / async interaction semantics note
+
+Current implementation status (`M274-B003`):
+
+- the frontend manifest now emits one deterministic Part 11 legality packet:
+  `objc3c-part11-cpp-ownership-throws-and-async-interaction-completion/m274-b003-v1`
+- that packet records:
+  - total C++-facing callable sites
+  - `objc_cxx_name` callable totals
+  - `objc_header_name` callable totals
+  - ownership / `throws` / `async` interaction totals
+  - rejection totals for the `O3S334` / `O3S335` / `O3S336` families
+- ABI lowering, bridge shims, and runnable ObjC++ interop behavior remain
+  deferred

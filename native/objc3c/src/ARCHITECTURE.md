@@ -11402,3 +11402,19 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   callables, and Objective-C-runtime-typed foreign callable signatures
 - C++ ownership/throws/async interactions, Swift-facing metadata/isolation,
   ABI lowering, and runnable bridge generation remain later `M274` work
+
+## M274 Part 11 C++ ownership, throws, and async interaction completion (B003)
+
+- `M274-B003` turns the remaining C++-facing interaction slice into live
+  fail-closed sema rules
+- the emitted frontend manifest publishes
+  `objc_part11_cpp_ownership_throws_and_async_interactions`
+- live sema now rejects:
+  - `objc_cxx_name` / `objc_header_name` callables that also carry
+    ownership-managed callable surfaces (`O3S334`)
+  - `objc_cxx_name` / `objc_header_name` callables that also use `throws`
+    (`O3S335`)
+  - `objc_cxx_name` / `objc_header_name` callables that also use `async` or
+    `objc_executor(...)` (`O3S336`)
+- Swift-facing metadata/isolation completion, ABI lowering, and runnable bridge
+  generation remain later `M274` work

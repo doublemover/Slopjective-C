@@ -5429,6 +5429,8 @@ struct Objc3FrontendPipelineResult {
       part11_interop_semantic_model_summary;
   Objc3Part11InteropRuntimeParitySummary
       part11_interop_runtime_parity_summary;
+  Objc3Part11CppInteropInteractionSummary
+      part11_cpp_interop_interaction_summary;
   Objc3Part7StructuredTaskCancellationSemanticSummary
       part7_structured_task_cancellation_semantic_summary;
   Objc3Part7ExecutorHopAffinityCompatibilitySummary

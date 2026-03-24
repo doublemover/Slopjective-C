@@ -9612,6 +9612,29 @@ static bool HasPart11ForeignOrImportAnnotations(const CallableDeclT &decl) {
   return decl.objc_foreign_declared || decl.objc_import_module_declared;
 }
 
+template <typename CallableDeclT>
+static bool HasPart11CppInteropAnnotations(const CallableDeclT &decl) {
+  return decl.objc_cxx_name_declared || decl.objc_header_name_declared;
+}
+
+template <typename CallableDeclT>
+static bool HasPart11OwnershipInteractionSurface(const CallableDeclT &decl) {
+  if (decl.has_return_ownership_qualifier ||
+      decl.objc_returns_borrowed_declared ||
+      decl.return_borrowed_pointer_qualified ||
+      !decl.retainable_c_family_callable_attributes.empty()) {
+    return true;
+  }
+  return std::any_of(
+      decl.params.begin(), decl.params.end(),
+      [](const FuncParam &param) { return param.has_ownership_qualifier; });
+}
+
+template <typename CallableDeclT>
+static bool HasPart11AsyncInteractionSurface(const CallableDeclT &decl) {
+  return decl.async_declared || decl.executor_affinity_declared;
+}
+
 Objc3Part11InteropRuntimeParitySummary
 BuildPart11InteropRuntimeParitySummary(
     const Objc3Program &program,
@@ -9724,6 +9747,112 @@ BuildPart11InteropRuntimeParitySummary(
       << ";rejections=" << summary.foreign_definition_rejection_sites << ":"
       << summary.import_without_foreign_rejection_sites << ":"
       << summary.implementation_annotation_rejection_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
+    const Objc3Program &program,
+    const Objc3Part11InteropRuntimeParitySummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part11CppInteropInteractionSummary summary;
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) {
+          return entry.find(code) != std::string::npos;
+        });
+  };
+
+  const auto accumulate_callable = [&summary](const auto &decl) {
+    if (!HasPart11CppInteropAnnotations(decl)) {
+      return;
+    }
+    ++summary.cpp_interop_callable_sites;
+    if (decl.objc_cxx_name_declared) {
+      ++summary.cpp_named_callable_sites;
+    }
+    if (decl.objc_header_name_declared) {
+      ++summary.header_named_callable_sites;
+    }
+    if (HasPart11OwnershipInteractionSurface(decl)) {
+      ++summary.ownership_interaction_sites;
+    }
+    if (decl.throws_declared) {
+      ++summary.throws_interaction_sites;
+    }
+    if (HasPart11AsyncInteractionSurface(decl)) {
+      ++summary.async_interaction_sites;
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method_decl : interface_decl.methods) {
+      accumulate_callable(method_decl);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      accumulate_callable(method_decl);
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method_decl : implementation_decl.methods) {
+      accumulate_callable(method_decl);
+    }
+  }
+
+  summary.ownership_rejection_sites = count_diagnostic_code("O3S334");
+  summary.throws_rejection_sites = count_diagnostic_code("O3S335");
+  summary.async_rejection_sites = count_diagnostic_code("O3S336");
+
+  const bool dependency_surface_present =
+      IsReadyObjc3Part11InteropRuntimeParitySummary(dependency_summary);
+  summary.dependency_required = true;
+  summary.cpp_annotation_profile_reused =
+      dependency_surface_present &&
+      summary.cpp_named_callable_sites <= summary.cpp_interop_callable_sites &&
+      summary.header_named_callable_sites <=
+          summary.cpp_interop_callable_sites;
+  summary.ownership_interactions_fail_closed =
+      dependency_surface_present &&
+      summary.ownership_rejection_sites == summary.ownership_interaction_sites;
+  summary.throws_interactions_fail_closed =
+      dependency_surface_present &&
+      summary.throws_rejection_sites == summary.throws_interaction_sites;
+  summary.async_interactions_fail_closed =
+      dependency_surface_present &&
+      summary.async_rejection_sites == summary.async_interaction_sites;
+  summary.ffi_abi_lowering_deferred = true;
+  summary.runtime_bridge_generation_deferred = true;
+  summary.deterministic =
+      summary.cpp_annotation_profile_reused &&
+      summary.ownership_interactions_fail_closed &&
+      summary.throws_interactions_fail_closed &&
+      summary.async_interactions_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "part11 cxx-facing ownership, throws, and async diagnostics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";cpp-callables=" << summary.cpp_interop_callable_sites << ":"
+      << summary.cpp_named_callable_sites << ":"
+      << summary.header_named_callable_sites
+      << ";interactions=" << summary.ownership_interaction_sites << ":"
+      << summary.throws_interaction_sites << ":"
+      << summary.async_interaction_sites
+      << ";rejections=" << summary.ownership_rejection_sites << ":"
+      << summary.throws_rejection_sites << ":"
+      << summary.async_rejection_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -14541,6 +14670,95 @@ static void ValidatePart11InteropRuntimeParity(
           "interop semantics failed: " +
               format_method_label(method_decl, owner_kind, owner_name) +
               " cannot use Part 11 foreign/import callable annotations on an implementation surface"));
+    }
+  }
+}
+
+static void ValidatePart11CppInteropInteractions(
+    const Objc3Program &ast, std::vector<std::string> &diagnostics) {
+  const auto format_function_label = [](const FunctionDecl &fn) {
+    return "function '" + fn.name + "'";
+  };
+  const auto format_method_label =
+      [](const Objc3MethodDecl &method, const std::string &owner_kind,
+         const std::string &owner_name) {
+        return "selector '" +
+               FormatMethodSelectorForDiagnostic(method.selector,
+                                                method.is_class_method) +
+               "' in " + owner_kind + " '" + owner_name + "'";
+      };
+  const auto diagnose_cpp_interaction =
+      [&diagnostics](unsigned line, unsigned column,
+                     const std::string &callable_label, const char *code,
+                     const char *message) {
+        diagnostics.push_back(
+            MakeDiag(line, column, code,
+                     "interop semantics failed: " + callable_label + " " +
+                         message));
+      };
+
+  const auto validate_callable = [&diagnose_cpp_interaction](const auto &decl,
+                                                             unsigned line,
+                                                             unsigned column,
+                                                             const std::string &callable_label) {
+    if (!HasPart11CppInteropAnnotations(decl)) {
+      return;
+    }
+    if (HasPart11OwnershipInteractionSurface(decl)) {
+      diagnose_cpp_interaction(
+          line, column, callable_label, "O3S334",
+          "cannot currently combine C++-facing interop annotations with ownership-managed callable surfaces");
+    }
+    if (decl.throws_declared) {
+      diagnose_cpp_interaction(
+          line, column, callable_label, "O3S335",
+          "cannot currently combine C++-facing interop annotations with throws");
+    }
+    if (HasPart11AsyncInteractionSurface(decl)) {
+      diagnose_cpp_interaction(
+          line, column, callable_label, "O3S336",
+          "cannot currently combine C++-facing interop annotations with async or objc_executor affinity");
+    }
+  };
+
+  for (const auto &fn : ast.functions) {
+    validate_callable(fn, fn.line, fn.column, format_function_label(fn));
+  }
+
+  for (const auto &interface_decl : ast.interfaces) {
+    const std::string owner_name = interface_decl.has_category
+                                       ? interface_decl.name + "(" +
+                                             interface_decl.category_name + ")"
+                                       : interface_decl.name;
+    const std::string owner_kind =
+        interface_decl.has_category ? "category interface" : "interface";
+    for (const auto &method_decl : interface_decl.methods) {
+      validate_callable(method_decl, method_decl.line, method_decl.column,
+                        format_method_label(method_decl, owner_kind,
+                                            owner_name));
+    }
+  }
+
+  for (const auto &protocol_decl : ast.protocols) {
+    for (const auto &method_decl : protocol_decl.methods) {
+      validate_callable(method_decl, method_decl.line, method_decl.column,
+                        format_method_label(method_decl, "protocol",
+                                            protocol_decl.name));
+    }
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    const std::string owner_name = implementation_decl.has_category
+                                       ? implementation_decl.name + "(" +
+                                             implementation_decl.category_name + ")"
+                                       : implementation_decl.name;
+    const std::string owner_kind =
+        implementation_decl.has_category ? "category implementation"
+                                         : "implementation";
+    for (const auto &method_decl : implementation_decl.methods) {
+      validate_callable(method_decl, method_decl.line, method_decl.column,
+                        format_method_label(method_decl, owner_kind,
+                                            owner_name));
     }
   }
 }
@@ -20497,6 +20715,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                       surface.category_implementations,
                                       diagnostics);
   ValidatePart11InteropRuntimeParity(ast, diagnostics);
+  ValidatePart11CppInteropInteractions(ast, diagnostics);
   ValidateInheritanceOverrideAndRealizationLegality(ast, surface, diagnostics);
   ValidatePart9DispatchIntentCompatibility(ast, diagnostics);
 

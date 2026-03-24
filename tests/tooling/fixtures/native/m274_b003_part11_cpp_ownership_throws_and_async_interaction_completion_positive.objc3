@@ -1,0 +1,11 @@
+module Part11CppInteropInteractionsPositive;
+
+extern fn cppBridge(value: i32) -> i32 __attribute__((objc_cxx_name(named("CppBridge")), objc_header_name(named("Bridge.hpp"))));
+
+fn localCppBridge() -> i32 __attribute__((objc_cxx_name(named("LocalBridge")))) {
+  return 7;
+}
+
+fn main() -> i32 {
+  return localCppBridge();
+}

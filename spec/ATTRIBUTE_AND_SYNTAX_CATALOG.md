@@ -1634,3 +1634,24 @@ Current implementation status (`M274-B002`):
   - Objective-C-runtime-typed foreign callable signatures
 - C++ ownership/throws/async interactions plus Swift-facing metadata/isolation
   remain later `M274` lane-B work
+
+## M274 Part 11 C++ ownership, throws, and async interaction completion (B003)
+
+Current implementation status (`M274-B003`):
+
+- the semantic pipeline now publishes one deterministic legality packet:
+  - `frontend.pipeline.semantic_surface.objc_part11_cpp_ownership_throws_and_async_interactions`
+- live fail-closed sema now enforces:
+  - rejection of `objc_cxx_name` / `objc_header_name` callables that also
+    carry ownership-managed callable surfaces (`O3S334`)
+  - rejection of `objc_cxx_name` / `objc_header_name` callables that also use
+    `throws` (`O3S335`)
+  - rejection of `objc_cxx_name` / `objc_header_name` callables that also use
+    `async` or `objc_executor(...)` (`O3S336`)
+- that packet classifies:
+  - total C++-facing callable sites
+  - `objc_cxx_name` callable totals
+  - `objc_header_name` callable totals
+  - ownership / `throws` / `async` interaction totals and their rejection totals
+- Swift-facing metadata/isolation completion, ABI lowering, and runnable bridge
+  generation remain later `M274` work

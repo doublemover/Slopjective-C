@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S336.
+module Part11CppInteropAsyncRejected;
+
+async fn asyncBridge() -> i32 __attribute__((objc_cxx_name(named("AsyncBridge")), objc_header_name(named("AsyncBridge.hpp")), objc_executor(main))) {
+  return 0;
+}

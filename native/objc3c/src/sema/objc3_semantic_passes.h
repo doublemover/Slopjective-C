@@ -85,6 +85,11 @@ BuildPart11InteropRuntimeParitySummary(
     const Objc3Program &program,
     const Objc3Part11InteropSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
+Objc3Part11CppInteropInteractionSummary
+BuildPart11CppInteropInteractionSummary(
+    const Objc3Program &program,
+    const Objc3Part11InteropRuntimeParitySummary &dependency_summary,
+    const std::vector<std::string> &diagnostics);
 Objc3Part9DispatchIntentSemanticModelSummary
 BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
