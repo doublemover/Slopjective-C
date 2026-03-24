@@ -192,6 +192,8 @@ inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionContrac
     "objc3c-part10-property-behavior-source-completion/m273-a003-v1";
 inline constexpr const char *kObjc3Part11ForeignImportSourceClosureContractId =
     "objc3c-part11-foreign-declaration-import-source-closure/m274-a001-v1";
+inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId =
+    "objc3c-part11-cpp-swift-interop-annotation-source-completion/m274-a002-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDeriveMarkers =
     "source-only:derive-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroMarkers =
@@ -212,6 +214,14 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimImportedModuleAnnotatio
     "source-only:imported-module-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropAnnotationMarkers =
     "source-only:interop-annotation-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimSwiftFacingAnnotationMarkers =
+    "source-only:swift-facing-annotation-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimCppFacingAnnotationMarkers =
+    "source-only:cpp-facing-annotation-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropMetadataAnnotationMarkers =
+    "source-only:interop-metadata-annotation-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropNamedMetadataPayloads =
+    "source-only:interop-named-metadata-payloads";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =

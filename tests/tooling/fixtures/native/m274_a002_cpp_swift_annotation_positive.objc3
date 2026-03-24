@@ -1,0 +1,10 @@
+module CppSwiftAnnotationPositive;
+
+fn annotatedBridge() -> i32 __attribute__((objc_swift_name(named("SwiftBridge")), objc_swift_private, objc_cxx_name(named("CppBridge")), objc_header_name(named("HeaderBridge")))) {
+  return 7;
+}
+
+fn main() -> i32 {
+  return annotatedBridge();
+}
+

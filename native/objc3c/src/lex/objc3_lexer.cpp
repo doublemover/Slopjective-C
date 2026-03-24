@@ -110,6 +110,10 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M274-A001 source-closure note: base interop closure keeps
   // `objc_foreign`/`objc_import_module` parser-owned and identifier-based
   // here; do not promote them into dedicated lexer keywords.
+  // M274-A002 source-completion note: C++/Swift-facing interop annotations are
+  // also parser-owned callable attributes. Keep `objc_swift_name`,
+  // `objc_swift_private`, `objc_cxx_name`, and `objc_header_name` as
+  // identifier tokens here.
   // M272-A001 source-surface note: direct/final/sealed/dynamic dispatch-intent
   // controls also remain parser-owned `__attribute__` spellings rather than
   // new reserved lexer keywords; the truthful Part 9 source boundary is

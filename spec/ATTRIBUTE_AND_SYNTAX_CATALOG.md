@@ -1568,3 +1568,17 @@ Current implementation status (`M274-A001`):
   packet
 - this freeze does not yet claim C++/Swift-specific annotation completion,
   interface emission, lowering, or runnable bridge generation
+
+## M274 C++ and Swift interop annotation source completion (A002)
+
+Current implementation status (`M274-A002`):
+
+- callable annotation completion now recognizes:
+  - `__attribute__((objc_swift_name(named("..."))))`
+  - `__attribute__((objc_swift_private))`
+  - `__attribute__((objc_cxx_name(named("..."))))`
+  - `__attribute__((objc_header_name(named("..."))))`
+- those spellings are parser-owned callable annotations and metadata payload
+  carriers only in this tranche
+- this source-completion step does not yet claim textual/module interface
+  preservation, lowering, or runnable bridge generation

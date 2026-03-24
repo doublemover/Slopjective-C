@@ -11341,3 +11341,16 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - this tranche does not widen the lexer with new reserved interop keywords and
   does not yet claim C++/Swift-specific annotation completion, interface
   preservation, lowering, or runtime bridge generation
+
+## M274 C++ and Swift interop annotation source completion (A002)
+
+- `M274-A002` extends the same parser-owned callable-attribute path with:
+  - `objc_swift_name(named("..."))`
+  - `objc_swift_private`
+  - `objc_cxx_name(named("..."))`
+  - `objc_header_name(named("..."))`
+- the emitted frontend manifest publishes
+  `objc_part11_cpp_and_swift_interop_annotation_source_completion`
+- this tranche still does not widen the lexer with dedicated interop keywords
+  and does not yet claim textual/module interface preservation, lowering, or
+  runtime bridge generation

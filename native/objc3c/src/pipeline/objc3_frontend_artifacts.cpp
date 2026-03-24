@@ -1088,6 +1088,44 @@ std::string BuildPart11ForeignImportSourceClosureSummaryJson(
   return out.str();
 }
 
+std::string BuildPart11CppSwiftInteropAnnotationSourceCompletionSummaryJson(
+    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"failure_model\":\"" << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"swift_name_annotation_sites\":"
+      << summary.swift_name_annotation_sites
+      << ",\"swift_private_annotation_sites\":"
+      << summary.swift_private_annotation_sites
+      << ",\"cpp_name_annotation_sites\":"
+      << summary.cpp_name_annotation_sites
+      << ",\"header_name_annotation_sites\":"
+      << summary.header_name_annotation_sites
+      << ",\"interop_metadata_annotation_sites\":"
+      << summary.interop_metadata_annotation_sites
+      << ",\"named_annotation_payload_sites\":"
+      << summary.named_annotation_payload_sites
+      << ",\"swift_annotation_source_supported\":"
+      << (summary.swift_annotation_source_supported ? "true" : "false")
+      << ",\"cpp_annotation_source_supported\":"
+      << (summary.cpp_annotation_source_supported ? "true" : "false")
+      << ",\"interop_metadata_source_supported\":"
+      << (summary.interop_metadata_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
     const Objc3Part10ExpansionBehaviorSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -13875,6 +13913,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart11ForeignImportSourceClosureSummary
       &part11_foreign_import_source_closure_summary =
           pipeline_result.part11_foreign_import_source_closure_summary;
+  const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+      &part11_cpp_swift_interop_annotation_source_completion_summary =
+          pipeline_result.part11_cpp_swift_interop_annotation_source_completion_summary;
   const Objc3Part10ExpansionBehaviorSemanticModelSummary
       &part10_expansion_behavior_semantic_model_summary =
           pipeline_result.part10_expansion_behavior_semantic_model_summary;
@@ -18447,6 +18488,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_foreign_declaration_and_import_source_closure\":"
             << BuildPart11ForeignImportSourceClosureSummaryJson(
                    part11_foreign_import_source_closure_summary)
+            << ",\"objc_part11_cpp_and_swift_interop_annotation_source_completion\":"
+            << BuildPart11CppSwiftInteropAnnotationSourceCompletionSummaryJson(
+                   part11_cpp_swift_interop_annotation_source_completion_summary)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -19869,6 +19913,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_foreign_declaration_and_import_source_closure\":"
             << BuildPart11ForeignImportSourceClosureSummaryJson(
                    part11_foreign_import_source_closure_summary)
+            << ",\"objc_part11_cpp_and_swift_interop_annotation_source_completion\":"
+            << BuildPart11CppSwiftInteropAnnotationSourceCompletionSummaryJson(
+                   part11_cpp_swift_interop_annotation_source_completion_summary)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)

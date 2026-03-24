@@ -7334,6 +7334,58 @@ class Objc3Parser {
       decl.objc_import_module_declared = true;
       return true;
     }
+    if (attribute_name.text == "objc_swift_name") {
+      if (decl.objc_swift_name_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P351",
+                     "duplicate objc_swift_name attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_swift_name",
+                                            decl.objc_swift_name)) {
+        return false;
+      }
+      decl.objc_swift_name_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_swift_private") {
+      if (decl.objc_swift_private_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P352",
+                     "duplicate objc_swift_private attribute"));
+        return false;
+      }
+      decl.objc_swift_private_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_cxx_name") {
+      if (decl.objc_cxx_name_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P353",
+                     "duplicate objc_cxx_name attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_cxx_name",
+                                            decl.objc_cxx_name)) {
+        return false;
+      }
+      decl.objc_cxx_name_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_header_name") {
+      if (decl.objc_header_name_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P354",
+                     "duplicate objc_header_name attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_header_name",
+                                            decl.objc_header_name)) {
+        return false;
+      }
+      decl.objc_header_name_declared = true;
+      return true;
+    }
     if (attribute_name.text == "objc_nonisolated") {
       // M270-A002 source-surface anchor: nonisolated actor-member admission is
       // parser-owned callable attribute handling, not a standalone keyword.

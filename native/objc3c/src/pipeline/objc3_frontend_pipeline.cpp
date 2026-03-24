@@ -4585,6 +4585,22 @@ std::string BuildPart11ForeignImportSourceClosureReplayKey(
   return out.str();
 }
 
+std::string BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(
+    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";sites=" << summary.swift_name_annotation_sites << ":"
+      << summary.swift_private_annotation_sites << ":"
+      << summary.cpp_name_annotation_sites << ":"
+      << summary.header_name_annotation_sites << ":"
+      << summary.interop_metadata_annotation_sites << ":"
+      << summary.named_annotation_payload_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6420,6 +6436,77 @@ BuildPart11ForeignImportSourceClosureSummary(const Objc3Program &program) {
   return summary;
 }
 
+Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
+    const Objc3Program &program) {
+  Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary summary;
+
+  const auto accumulate_callable = [&summary](const auto &decl) {
+    if (decl.objc_swift_name_declared) {
+      ++summary.swift_name_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+      if (!decl.objc_swift_name.empty()) {
+        ++summary.named_annotation_payload_sites;
+      }
+    }
+    if (decl.objc_swift_private_declared) {
+      ++summary.swift_private_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+    }
+    if (decl.objc_cxx_name_declared) {
+      ++summary.cpp_name_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+      if (!decl.objc_cxx_name.empty()) {
+        ++summary.named_annotation_payload_sites;
+      }
+    }
+    if (decl.objc_header_name_declared) {
+      ++summary.header_name_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+      if (!decl.objc_header_name.empty()) {
+        ++summary.named_annotation_payload_sites;
+      }
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      accumulate_callable(method);
+    }
+  }
+
+  summary.swift_annotation_source_supported = true;
+  summary.cpp_annotation_source_supported = true;
+  summary.interop_metadata_source_supported = true;
+  summary.deterministic_handoff =
+      summary.named_annotation_payload_sites ==
+          summary.swift_name_annotation_sites +
+              summary.cpp_name_annotation_sites +
+              summary.header_name_annotation_sites &&
+      summary.interop_metadata_annotation_sites ==
+          summary.swift_name_annotation_sites +
+              summary.swift_private_annotation_sites +
+              summary.cpp_name_annotation_sites +
+              summary.header_name_annotation_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6661,6 +6748,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part11_foreign_import_source_closure_summary =
       BuildPart11ForeignImportSourceClosureSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part11_cpp_swift_interop_annotation_source_completion_summary =
+      BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

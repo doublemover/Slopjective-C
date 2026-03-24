@@ -1549,6 +1549,12 @@ inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSourceModel =
     "foreign-callable-markers-import-module-annotations-and-base-interop-annotation-surfaces-are-live-frontend-owned-source-surfaces-while-cpp-swift-annotation-completion-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-m274-work";
 inline constexpr const char *kObjc3Part11ForeignImportSourceClosureFailureModel =
     "part11-source-closure-does-not-yet-claim-cpp-swift-specific-annotation-completion-interface-emission-ffi-lowering-or-runnable-bridge-generation";
+inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part11_cpp_and_swift_interop_annotation_source_completion";
+inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSourceModel =
+    "swift-facing-name-private-markers-cpp-facing-name-markers-and-header-name-metadata-surfaces-are-live-frontend-owned-source-surfaces-while-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-m274-work";
+inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel =
+    "part11-source-completion-does-not-yet-claim-interface-emission-cpp-swift-runtime-bridging-or-runnable-cross-language-call-behavior";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1805,6 +1811,36 @@ struct Objc3FrontendPart11ForeignImportSourceClosureSummary {
   bool foreign_declaration_source_supported = false;
   bool imported_surface_source_supported = false;
   bool interop_annotation_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary {
+  std::string contract_id =
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSourceModel;
+  std::string failure_model =
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimSwiftFacingAnnotationMarkers,
+      kObjc3SourceOnlyFeatureClaimCppFacingAnnotationMarkers,
+      kObjc3SourceOnlyFeatureClaimInteropMetadataAnnotationMarkers,
+      kObjc3SourceOnlyFeatureClaimInteropNamedMetadataPayloads,
+  };
+  std::size_t swift_name_annotation_sites = 0;
+  std::size_t swift_private_annotation_sites = 0;
+  std::size_t cpp_name_annotation_sites = 0;
+  std::size_t header_name_annotation_sites = 0;
+  std::size_t interop_metadata_annotation_sites = 0;
+  std::size_t named_annotation_payload_sites = 0;
+  bool swift_annotation_source_supported = false;
+  bool cpp_annotation_source_supported = false;
+  bool interop_metadata_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5288,6 +5324,8 @@ struct Objc3FrontendPipelineResult {
       part10_property_behavior_source_completion_summary;
   Objc3FrontendPart11ForeignImportSourceClosureSummary
       part11_foreign_import_source_closure_summary;
+  Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+      part11_cpp_swift_interop_annotation_source_completion_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

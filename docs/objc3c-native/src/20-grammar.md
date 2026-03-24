@@ -4381,3 +4381,18 @@ Current implementation status (`M274-A001`):
 - this lane freezes source closure only; C++/Swift-specific annotations,
   interface preservation, FFI lowering, and runtime bridge generation remain
   later `M274` work
+
+## M274 C++ and Swift interop annotation source completion
+
+Current implementation status (`M274-A002`):
+
+- callable annotation completion now admits:
+  - `__attribute__((objc_swift_name(named("..."))))`
+  - `__attribute__((objc_swift_private))`
+  - `__attribute__((objc_cxx_name(named("..."))))`
+  - `__attribute__((objc_header_name(named("..."))))`
+- the emitted frontend manifest publishes
+  `frontend.pipeline.semantic_surface.objc_part11_cpp_and_swift_interop_annotation_source_completion`
+- this lane still stops at source completion; textual/module interface
+  preservation, FFI lowering, and runtime bridge generation remain later
+  `M274` work

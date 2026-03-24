@@ -1305,6 +1305,13 @@ struct Objc3MethodDecl {
   bool objc_foreign_declared = false;
   bool objc_import_module_declared = false;
   std::string objc_import_module_name;
+  bool objc_swift_name_declared = false;
+  std::string objc_swift_name;
+  bool objc_swift_private_declared = false;
+  bool objc_cxx_name_declared = false;
+  std::string objc_cxx_name;
+  bool objc_header_name_declared = false;
+  std::string objc_header_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;
@@ -1740,6 +1747,13 @@ struct FunctionDecl {
   bool objc_foreign_declared = false;
   bool objc_import_module_declared = false;
   std::string objc_import_module_name;
+  bool objc_swift_name_declared = false;
+  std::string objc_swift_name;
+  bool objc_swift_private_declared = false;
+  bool objc_cxx_name_declared = false;
+  std::string objc_cxx_name;
+  bool objc_header_name_declared = false;
+  std::string objc_header_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;

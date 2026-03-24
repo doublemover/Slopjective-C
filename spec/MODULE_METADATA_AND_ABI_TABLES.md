@@ -8872,3 +8872,15 @@ Current implementation status (`M274-A001`):
   imported module-name payload sites, and aggregate interop annotation counts
 - header/module-interface preservation, FFI ABI lowering, and runtime bridge
   packaging are intentionally not claimed by this source-closure freeze
+
+## M274 C++/Swift interop annotation note
+
+Current implementation status (`M274-A002`):
+
+- the frontend now emits one deterministic Part 11 source-completion packet:
+  `objc3c-part11-cpp-swift-interop-annotation-source-completion/m274-a002-v1`
+- that packet records Swift-name markers, Swift-private markers, C++-name
+  markers, header-name markers, aggregate metadata annotation sites, and named
+  payload-site counts
+- textual/module interface preservation, FFI ABI lowering, and runtime bridge
+  packaging remain intentionally unclaimed by this frontend-only completion step
