@@ -1761,6 +1761,9 @@ BuildPart8SystemExtensionLoweringContract(
     const Objc3Part8BorrowedPointerEscapeAnalysisSummary &borrowed_summary,
     const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
         &family_summary) {
+  // M271-C002 lowering-implementation anchor: the live cleanup/resource
+  // helper-emission path continues to consume the single C001 Part 8 lowering
+  // contract; this issue does not mint a second manifest surface.
   Objc3Part8SystemExtensionLoweringContract contract;
   contract.cleanup_hook_sites = semantic_summary.cleanup_attribute_sites +
                                 semantic_summary.cleanup_sugar_sites;

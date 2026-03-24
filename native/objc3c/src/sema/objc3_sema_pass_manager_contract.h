@@ -2485,7 +2485,7 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.block_copy_dispose_semantics_summary.capture_entries_total &&
          surface.block_copy_dispose_semantics_summary.byref_slot_count_total <=
              surface.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
-         surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+         surface.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
              surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
          surface.block_copy_dispose_semantics_summary.deterministic &&
          surface.deterministic_block_copy_dispose_handoff &&

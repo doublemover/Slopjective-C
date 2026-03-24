@@ -4116,6 +4116,18 @@ Current implementation status:
   - live cleanup/runtime carriers
   - borrowed lifetime runtime interop
   - runnable retainable-family execution behavior
+
+## M271 resource cleanup and capture lowering
+
+Current implementation status (`M271-C002`):
+
+- native lowering is now live for stack/local cleanup-resource paths
+- explicit `move` captures from cleanup-backed locals lower through emitted
+  block dispose helpers and deterministic lexical cleanup unwinding
+- resource locals now lower through emitted cleanup calls on the happy path and
+  remain visible in native IR/object artifacts
+- actual escaping promotion of move-based cleanup/resource captures remains
+  fail-closed until later runtime ownership transfer work lands
   remain later `M271` work
 
 ## M27 loop/control surface (`while`, `break`, `continue`)
@@ -19371,4 +19383,3 @@ int main(void) {
 ```
 
 For pure C environments that prefer `*_c_*` symbol names, use `c_api.h`; it forwards to the same underlying ABI and behavior.
-

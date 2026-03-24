@@ -919,6 +919,14 @@ M271-C001 lowering note:
   without claiming live cleanup/runtime carriers, borrowed lifetime runtime
   interop, or runnable retainable-family execution behavior
 
+M271-C002 lowering note:
+- the live lowering path now consumes the frozen `M271-C001` Part 8 contract
+  directly instead of introducing a second lowering surface
+- stack/local cleanup and resource locals now emit real cleanup calls and block
+  dispose helpers in native IR/object artifacts
+- actual escaping promotion of move-based cleanup/resource captures remains
+  fail-closed until later runtime ownership-transfer work lands
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

@@ -14,8 +14,35 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
+#include "parse/objc3_parse_support.h"
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
+
+static bool ParsePart8ResourceInvalidLiteral(const std::string &text, int &value) {
+  std::string normalized;
+  normalized.reserve(text.size());
+  for (unsigned char ch : text) {
+    if (!std::isspace(ch)) {
+      normalized.push_back(static_cast<char>(ch));
+    }
+  }
+  if (normalized.empty()) {
+    return false;
+  }
+  bool negative = false;
+  if (normalized.front() == '+' || normalized.front() == '-') {
+    negative = normalized.front() == '-';
+    normalized.erase(normalized.begin());
+  }
+  if (normalized.empty() ||
+      !objc3c::parse::support::ParseIntegerLiteralValue(normalized, value)) {
+    return false;
+  }
+  if (negative) {
+    value = -value;
+  }
+  return true;
+}
 
 class Objc3IREmitter {
  public:
@@ -2510,6 +2537,7 @@ class Objc3IREmitter {
     std::size_t scope_depth = 0;
     std::size_t autoreleasepool_depth = 0;
     std::size_t pending_block_dispose_depth = 0;
+    std::size_t part8_cleanup_depth = 0;
     std::size_t arc_cleanup_depth = 0;
   };
 
@@ -2533,16 +2561,28 @@ class Objc3IREmitter {
     std::string storage_ptr;
   };
 
+  struct PendingPart8CleanupCall {
+    std::string binding_name;
+    std::string storage_ptr;
+    std::string cleanup_function_symbol;
+    std::string resource_close_symbol;
+    bool has_resource_invalid_value = false;
+    int resource_invalid_value = 0;
+    bool active = true;
+  };
+
   struct FunctionContext {
     std::vector<std::string> entry_lines;
     std::vector<std::string> code_lines;
     std::vector<std::unordered_map<std::string, std::string>> scopes;
     std::unordered_map<std::string, BlockBinding> block_bindings;
     std::vector<PendingBlockDisposeCall> pending_block_dispose_calls;
+    std::vector<PendingPart8CleanupCall> pending_part8_cleanup_calls;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
     std::vector<std::vector<const BlockStmt *>> pending_defer_scope_blocks;
     std::vector<std::size_t> pending_block_dispose_scope_depths;
+    std::vector<std::size_t> pending_part8_cleanup_scope_depths;
     std::vector<std::size_t> arc_cleanup_scope_depths;
     std::unordered_set<std::string> nil_bound_ptrs;
     std::unordered_set<std::string> nonzero_bound_ptrs;
@@ -2551,12 +2591,14 @@ class Objc3IREmitter {
     std::vector<std::string> arc_owned_cleanup_ptrs;
     std::unordered_set<std::string> arc_owned_cleanup_ptr_set;
     std::unordered_set<std::string> arc_owned_storage_ptrs;
+    std::unordered_map<std::string, std::size_t> part8_cleanup_call_indices;
     struct ErrorHandlerFrame {
       std::string error_slot_ptr;
       std::string dispatch_label;
       std::size_t scope_depth = 0;
       std::size_t autoreleasepool_depth = 0;
       std::size_t pending_block_dispose_depth = 0;
+      std::size_t part8_cleanup_depth = 0;
       std::size_t arc_cleanup_depth = 0;
     };
     std::vector<ErrorHandlerFrame> error_handler_stack;
@@ -9521,6 +9563,8 @@ class Objc3IREmitter {
     ctx.pending_defer_scope_blocks.push_back({});
     ctx.pending_block_dispose_scope_depths.push_back(
         ctx.pending_block_dispose_calls.size());
+    ctx.pending_part8_cleanup_scope_depths.push_back(
+        ctx.pending_part8_cleanup_calls.size());
     ctx.arc_cleanup_scope_depths.push_back(ctx.arc_owned_cleanup_ptrs.size());
   }
 
@@ -9605,6 +9649,104 @@ class Objc3IREmitter {
     }
   }
 
+  void EmitPart8CleanupCall(const PendingPart8CleanupCall &call,
+                            FunctionContext &ctx) const {
+    if (!call.active || call.storage_ptr.empty()) {
+      return;
+    }
+    const std::string loaded_value = NewTemp(ctx);
+    ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
+                             call.storage_ptr + ", align 4");
+    if (!call.resource_close_symbol.empty()) {
+      if (call.has_resource_invalid_value) {
+        const std::string resource_live = NewTemp(ctx);
+        const std::string resource_close_label =
+            NewLabel(ctx, "part8_resource_close_");
+        const std::string resource_skip_label =
+            NewLabel(ctx, "part8_resource_skip_");
+        ctx.code_lines.push_back("  " + resource_live + " = icmp ne i32 " +
+                                 loaded_value + ", " +
+                                 std::to_string(call.resource_invalid_value));
+        ctx.code_lines.push_back("  br i1 " + resource_live + ", label %" +
+                                 resource_close_label + ", label %" +
+                                 resource_skip_label);
+        ctx.code_lines.push_back(resource_close_label + ":");
+        ctx.code_lines.push_back("  call void @" + call.resource_close_symbol +
+                                 "(i32 " + loaded_value + ")");
+        ctx.code_lines.push_back("  br label %" + resource_skip_label);
+        ctx.code_lines.push_back(resource_skip_label + ":");
+      } else {
+        ctx.code_lines.push_back("  call void @" + call.resource_close_symbol +
+                                 "(i32 " + loaded_value + ")");
+      }
+    }
+    if (!call.cleanup_function_symbol.empty()) {
+      ctx.code_lines.push_back("  call void @" + call.cleanup_function_symbol +
+                               "(i32 " + loaded_value + ")");
+    }
+  }
+
+  void EmitPart8CleanupTerminalCall(const PendingPart8CleanupCall &call,
+                                    std::vector<std::string> &out_lines,
+                                    int &temp_counter) const {
+    if (!call.active || call.storage_ptr.empty()) {
+      return;
+    }
+    const std::string loaded_value = "%t" + std::to_string(temp_counter++);
+    out_lines.push_back("  " + loaded_value + " = load i32, ptr " +
+                        call.storage_ptr + ", align 4");
+    if (!call.resource_close_symbol.empty()) {
+      if (call.has_resource_invalid_value) {
+        const std::string resource_live = "%t" + std::to_string(temp_counter++);
+        const std::string resource_close_label =
+            "part8_resource_close_" + std::to_string(temp_counter++);
+        const std::string resource_skip_label =
+            "part8_resource_skip_" + std::to_string(temp_counter++);
+        out_lines.push_back("  " + resource_live + " = icmp ne i32 " +
+                            loaded_value + ", " +
+                            std::to_string(call.resource_invalid_value));
+        out_lines.push_back("  br i1 " + resource_live + ", label %" +
+                            resource_close_label + ", label %" +
+                            resource_skip_label);
+        out_lines.push_back(resource_close_label + ":");
+        out_lines.push_back("  call void @" + call.resource_close_symbol +
+                            "(i32 " + loaded_value + ")");
+        out_lines.push_back("  br label %" + resource_skip_label);
+        out_lines.push_back(resource_skip_label + ":");
+      } else {
+        out_lines.push_back("  call void @" + call.resource_close_symbol +
+                            "(i32 " + loaded_value + ")");
+      }
+    }
+    if (!call.cleanup_function_symbol.empty()) {
+      out_lines.push_back("  call void @" + call.cleanup_function_symbol +
+                          "(i32 " + loaded_value + ")");
+    }
+  }
+
+  void EmitPart8CleanupUnwindToDepth(FunctionContext &ctx,
+                                     std::size_t target_depth) const {
+    while (ctx.pending_part8_cleanup_calls.size() > target_depth) {
+      const PendingPart8CleanupCall call = ctx.pending_part8_cleanup_calls.back();
+      if (!call.binding_name.empty()) {
+        ctx.part8_cleanup_call_indices.erase(call.binding_name);
+      }
+      ctx.pending_part8_cleanup_calls.pop_back();
+      EmitPart8CleanupCall(call, ctx);
+    }
+  }
+
+  void EmitPart8CleanupTerminalCleanupToDepth(const FunctionContext &ctx,
+                                              std::size_t target_depth,
+                                              std::vector<std::string> &out_lines,
+                                              int &temp_counter) const {
+    for (std::size_t index = ctx.pending_part8_cleanup_calls.size();
+         index > target_depth; --index) {
+      EmitPart8CleanupTerminalCall(ctx.pending_part8_cleanup_calls[index - 1u],
+                                   out_lines, temp_counter);
+    }
+  }
+
   void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
     if (ctx.scopes.empty()) {
       return;
@@ -9625,6 +9767,13 @@ class Objc3IREmitter {
     if (!ctx.pending_block_dispose_scope_depths.empty()) {
       ctx.pending_block_dispose_scope_depths.pop_back();
     }
+    const std::size_t target_part8_cleanup_depth =
+        ctx.pending_part8_cleanup_scope_depths.empty()
+            ? 0u
+            : ctx.pending_part8_cleanup_scope_depths.back();
+    if (!ctx.pending_part8_cleanup_scope_depths.empty()) {
+      ctx.pending_part8_cleanup_scope_depths.pop_back();
+    }
     const std::size_t target_arc_cleanup_depth =
         ctx.arc_cleanup_scope_depths.empty() ? 0u : ctx.arc_cleanup_scope_depths.back();
     if (!ctx.arc_cleanup_scope_depths.empty()) {
@@ -9632,11 +9781,13 @@ class Objc3IREmitter {
     }
     if (emit_cleanup) {
       EmitDeferredCleanupForScopeBucket(deferred_blocks, ctx);
+      EmitPart8CleanupUnwindToDepth(ctx, target_part8_cleanup_depth);
       EmitPendingBlockDisposeUnwindToDepth(ctx, target_block_dispose_depth);
       EmitArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth);
     }
     for (const auto &binding : scope_bindings) {
       ctx.block_bindings.erase(binding.first);
+      ctx.part8_cleanup_call_indices.erase(binding.first);
     }
   }
 
@@ -9859,7 +10010,8 @@ class Objc3IREmitter {
     block_function_definitions_.push_back(out.str());
   }
 
-  void EmitBlockDisposeHelper(const Expr &expr) const {
+  void EmitBlockDisposeHelper(const Expr &expr,
+                              const FunctionContext &ctx) const {
     if (!BlockLiteralUsesPointerCaptureStorage(expr) ||
         !expr.block_runtime_dispose_helper_required) {
       return;
@@ -9879,9 +10031,19 @@ class Objc3IREmitter {
          ++i) {
       const std::string &capture_name =
           expr.block_capture_names_lexicographic[i];
+      const auto moved_capture_it = std::find_if(
+          expr.block_explicit_capture_items_source_order.begin(),
+          expr.block_explicit_capture_items_source_order.end(),
+          [&capture_name](const Expr::ExplicitBlockCaptureItem &item) {
+            return item.name == capture_name && item.mode == "move";
+          });
+      const bool moved_capture =
+          moved_capture_it != expr.block_explicit_capture_items_source_order.end();
+      const auto cleanup_it = ctx.part8_cleanup_call_indices.find(capture_name);
       if (!SortedStringListContains(
               expr.block_runtime_owned_object_capture_names_lexicographic,
-              capture_name)) {
+              capture_name) &&
+          (!moved_capture || cleanup_it == ctx.part8_cleanup_call_indices.end())) {
         continue;
       }
       const std::string slot_ptr =
@@ -9898,8 +10060,44 @@ class Objc3IREmitter {
           << ", align 8\n";
       out << "  " << loaded_value << " = load i32, ptr " << capture_ptr
           << ", align 4\n";
-      out << "  " << released_value << " = call i32 @"
-          << kObjc3RuntimeReleaseI32Symbol << "(i32 " << loaded_value << ")\n";
+      if (SortedStringListContains(
+              expr.block_runtime_owned_object_capture_names_lexicographic,
+              capture_name)) {
+        out << "  " << released_value << " = call i32 @"
+            << kObjc3RuntimeReleaseI32Symbol << "(i32 " << loaded_value
+            << ")\n";
+      }
+      if (moved_capture && cleanup_it != ctx.part8_cleanup_call_indices.end()) {
+        const PendingPart8CleanupCall &cleanup_call =
+            ctx.pending_part8_cleanup_calls[cleanup_it->second];
+        if (!cleanup_call.resource_close_symbol.empty()) {
+          if (cleanup_call.has_resource_invalid_value) {
+            const std::string resource_live =
+                "%block.dispose.resource.live." + std::to_string(temp_counter++);
+            const std::string resource_close_label =
+                "block.dispose.resource.close." + std::to_string(temp_counter++);
+            const std::string resource_skip_label =
+                "block.dispose.resource.skip." + std::to_string(temp_counter++);
+            out << "  " << resource_live << " = icmp ne i32 " << loaded_value
+                << ", " << cleanup_call.resource_invalid_value << "\n";
+            out << "  br i1 " << resource_live << ", label %"
+                << resource_close_label << ", label %" << resource_skip_label
+                << "\n";
+            out << resource_close_label << ":\n";
+            out << "  call void @" << cleanup_call.resource_close_symbol
+                << "(i32 " << loaded_value << ")\n";
+            out << "  br label %" << resource_skip_label << "\n";
+            out << resource_skip_label << ":\n";
+          } else {
+            out << "  call void @" << cleanup_call.resource_close_symbol
+                << "(i32 " << loaded_value << ")\n";
+          }
+        }
+        if (!cleanup_call.cleanup_function_symbol.empty()) {
+          out << "  call void @" << cleanup_call.cleanup_function_symbol
+              << "(i32 " << loaded_value << ")\n";
+        }
+      }
       (void)released_value;
     }
     out << "  ret void\n";
@@ -9922,6 +10120,13 @@ class Objc3IREmitter {
     if (!supported) {
       return EmitUnsupportedI32Value(
           "escaping block value still requires normalized block runtime helper metadata that lands in later M261 runtime issues");
+    }
+    // M271-C002 lowering-implementation anchor: actual promotion of move-based
+    // cleanup/resource captures remains fail-closed until runtime ownership
+    // transfer exists. Plain stack/local helper lowering is implemented now.
+    if (expr.block_explicit_capture_move_count > 0u) {
+      return EmitUnsupportedI32Value(
+          "escaping move captures for cleanup/resource-backed locals still require later Part 8 runtime ownership transfer support");
     }
     const bool pointer_capture_storage =
         BlockLiteralUsesPointerCaptureStorage(expr);
@@ -10071,6 +10276,7 @@ class Objc3IREmitter {
 
     if (!ctx.terminated) {
       EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
+      EmitPart8CleanupUnwindToDepth(ctx, 0u);
       EmitPendingBlockDisposeHelpers(ctx);
       EmitArcOwnedCleanupReleases(ctx);
       ctx.code_lines.push_back("  ret i32 0");
@@ -10091,6 +10297,9 @@ class Objc3IREmitter {
     // M261-C003 byref-cell/copy-helper/dispose-helper anchor: the current live
     // lowering slice now supports non-escaping byref and owned-capture block
     // objects through stack snapshot/byref cells plus emitted helper bodies.
+    // M271-C002 lowering-implementation anchor: cleanup/resource-backed move
+    // captures now lower through the same stack/local helper path. The
+    // unsupported boundary is promotion, not local helper materialization.
     if (BlockLiteralRequiresFutureRuntimeLanes(expr)) {
       return EmitUnsupportedI32Value(
           "block literal requires escaping heap-promotion or runtime-managed copy/dispose lowering that lands in later M261 issues");
@@ -10102,7 +10311,7 @@ class Objc3IREmitter {
 
     EmitBlockInvokeThunk(expr);
     EmitBlockCopyHelper(expr);
-    EmitBlockDisposeHelper(expr);
+    EmitBlockDisposeHelper(expr, ctx);
 
     const std::string storage_type = BuildBlockStorageType(expr);
     const bool pointer_capture_storage =
@@ -10143,7 +10352,24 @@ class Objc3IREmitter {
       const std::string capture_slot = NewTemp(ctx);
       if (pointer_capture_storage) {
         std::string capture_cell_ptr;
-        if (SortedStringListContains(
+        const auto moved_capture_it = std::find_if(
+            expr.block_explicit_capture_items_source_order.begin(),
+            expr.block_explicit_capture_items_source_order.end(),
+            [&capture_name](const Expr::ExplicitBlockCaptureItem &item) {
+              return item.name == capture_name && item.mode == "move";
+            });
+        if (moved_capture_it != expr.block_explicit_capture_items_source_order.end()) {
+          const auto cleanup_it = ctx.part8_cleanup_call_indices.find(capture_name);
+          if (cleanup_it == ctx.part8_cleanup_call_indices.end()) {
+            return EmitUnsupportedI32Value(
+                "move capture '" + capture_name +
+                "' was not registered as a cleanup/resource-backed local");
+          }
+          PendingPart8CleanupCall &cleanup_call =
+              ctx.pending_part8_cleanup_calls[cleanup_it->second];
+          cleanup_call.active = false;
+          capture_cell_ptr = cleanup_call.storage_ptr;
+        } else if (SortedStringListContains(
                 expr.block_byref_capture_names_lexicographic, capture_name)) {
           capture_cell_ptr = LookupVarPtr(ctx, capture_name);
           if (capture_cell_ptr.empty()) {
@@ -10344,6 +10570,7 @@ class Objc3IREmitter {
       EmitTerminalCleanupToDepth(ctx, handler.scope_depth,
                                  handler.autoreleasepool_depth,
                                  handler.pending_block_dispose_depth,
+                                 handler.part8_cleanup_depth,
                                  handler.arc_cleanup_depth);
       ctx.code_lines.push_back("  br label %" + handler.dispatch_label);
       ctx.terminated = true;
@@ -10548,9 +10775,12 @@ class Objc3IREmitter {
   void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t scope_depth,
                                   std::size_t autoreleasepool_depth,
                                   std::size_t pending_block_dispose_depth,
+                                  std::size_t part8_cleanup_depth,
                                   std::size_t arc_cleanup_depth) const {
     EmitDeferredCleanupTerminalToDepth(ctx, scope_depth);
     EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
+    EmitPart8CleanupTerminalCleanupToDepth(
+        ctx, part8_cleanup_depth, ctx.code_lines, ctx.temp_counter);
     EmitPendingBlockDisposeTerminalCleanupToDepth(
         ctx, pending_block_dispose_depth, ctx.code_lines);
     EmitArcOwnedTerminalCleanupToDepth(
@@ -10560,6 +10790,8 @@ class Objc3IREmitter {
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
     if (ctx.return_type == ValueType::Void) {
       EmitDeferredCleanupTerminalToDepth(ctx, 0u);
+      EmitPart8CleanupTerminalCleanupToDepth(
+          ctx, 0u, ctx.code_lines, ctx.temp_counter);
       EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
       EmitArcOwnedTerminalCleanupToDepth(
           ctx, 0u, ctx.code_lines, ctx.temp_counter);
@@ -10582,6 +10814,8 @@ class Objc3IREmitter {
       returned_value = autoreleased_value;
     }
     EmitDeferredCleanupTerminalToDepth(ctx, 0u);
+    EmitPart8CleanupTerminalCleanupToDepth(
+        ctx, 0u, ctx.code_lines, ctx.temp_counter);
     EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
     EmitArcOwnedTerminalCleanupToDepth(
         ctx, 0u, ctx.code_lines, ctx.temp_counter);
@@ -11882,6 +12116,31 @@ class Objc3IREmitter {
           ctx.nonzero_bound_ptrs.insert(ptr);
         }
         ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
+        if (let->cleanup_attribute_declared || let->cleanup_sugar_declared ||
+            let->resource_attribute_declared || let->resource_sugar_declared) {
+          PendingPart8CleanupCall cleanup_call;
+          cleanup_call.binding_name = let->name;
+          cleanup_call.storage_ptr = ptr;
+          cleanup_call.cleanup_function_symbol = let->cleanup_function_symbol;
+          cleanup_call.resource_close_symbol = let->resource_close_symbol;
+          if (!let->resource_close_symbol.empty()) {
+            int invalid_value = 0;
+            if (!let->resource_invalid_expression.empty() &&
+                !ParsePart8ResourceInvalidLiteral(
+                    let->resource_invalid_expression, invalid_value)) {
+              (void)EmitUnsupportedI32Value(
+                  "resource invalid expression for '" + let->name +
+                  "' must stay an integer literal in the current Part 8 lowering slice");
+              return;
+            }
+            cleanup_call.has_resource_invalid_value =
+                !let->resource_invalid_expression.empty();
+            cleanup_call.resource_invalid_value = invalid_value;
+          }
+          ctx.part8_cleanup_call_indices[let->name] =
+              ctx.pending_part8_cleanup_calls.size();
+          ctx.pending_part8_cleanup_calls.push_back(std::move(cleanup_call));
+        }
         return;
       }
       case Stmt::Kind::Return: {
@@ -11919,13 +12178,14 @@ class Objc3IREmitter {
       }
       case Stmt::Kind::Break: {
         if (ctx.control_stack.empty()) {
-          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           EmitTerminalCleanupToDepth(
               ctx, ctx.control_stack.back().scope_depth,
               ctx.control_stack.back().autoreleasepool_depth,
               ctx.control_stack.back().pending_block_dispose_depth,
+              ctx.control_stack.back().part8_cleanup_depth,
               ctx.control_stack.back().arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
         }
@@ -11944,7 +12204,7 @@ class Objc3IREmitter {
           }
         }
         if (continue_label.empty()) {
-          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u);
+          EmitTerminalCleanupToDepth(ctx, 0u, 0u, 0u, 0u, 0u);
           ctx.code_lines.push_back("  ret " + std::string(LLVMScalarType(ctx.return_type)) + " 0");
         } else {
           const ControlLabels &target = *std::find_if(
@@ -11955,7 +12215,8 @@ class Objc3IREmitter {
               });
           EmitTerminalCleanupToDepth(
               ctx, target.scope_depth, continue_autoreleasepool_depth,
-              target.pending_block_dispose_depth, target.arc_cleanup_depth);
+              target.pending_block_dispose_depth, target.part8_cleanup_depth,
+              target.arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
         ctx.terminated = true;
@@ -11984,6 +12245,7 @@ class Objc3IREmitter {
                                              ctx.scopes.size() - 1u,
                                              ctx.autoreleasepool_scope_symbols.size(),
                                              ctx.pending_block_dispose_calls.size(),
+                                             ctx.pending_part8_cleanup_calls.size(),
                                              ctx.arc_owned_cleanup_ptrs.size()});
           for (const auto &nested_stmt : block_stmt->body) {
             EmitStatement(nested_stmt.get(), ctx);
@@ -12115,6 +12377,7 @@ class Objc3IREmitter {
             {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
+             ctx.pending_part8_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : while_stmt->body) {
@@ -12147,6 +12410,7 @@ class Objc3IREmitter {
             {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
+             ctx.pending_part8_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : do_while_stmt->body) {
@@ -12200,6 +12464,7 @@ class Objc3IREmitter {
             {step_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
+             ctx.pending_part8_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : for_stmt->body) {
@@ -12301,6 +12566,7 @@ class Objc3IREmitter {
                 {"", end_label, false, ctx.scopes.size() - 1u,
                  ctx.autoreleasepool_scope_symbols.size(),
                  ctx.pending_block_dispose_calls.size(),
+                 ctx.pending_part8_cleanup_calls.size(),
                  ctx.arc_owned_cleanup_ptrs.size()});
             ctx.terminated = false;
             for (const auto &case_body_stmt : case_stmt.body) {
@@ -12374,6 +12640,7 @@ class Objc3IREmitter {
             {"", end_label, false, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
+             ctx.pending_part8_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
           ctx.terminated = false;
           for (const auto &case_body_stmt : case_stmt.body) {

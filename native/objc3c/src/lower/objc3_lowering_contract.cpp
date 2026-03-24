@@ -3235,7 +3235,7 @@ bool IsValidObjc3BlockCopyDisposeLoweringContract(
   }
   if (contract.mutable_capture_count_total > contract.capture_entries_total ||
       contract.byref_slot_count_total > contract.mutable_capture_count_total ||
-      contract.copy_helper_required_sites != contract.dispose_helper_required_sites) {
+      contract.copy_helper_required_sites > contract.dispose_helper_required_sites) {
     return false;
   }
   if ((contract.contract_violation_sites > 0 || contract.profile_normalized_sites !=

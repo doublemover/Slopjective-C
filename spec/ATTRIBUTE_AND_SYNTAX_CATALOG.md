@@ -335,6 +335,14 @@ Current implementation status (`M271-C001`):
   inventories, and retainable-family callable inventories
 - live cleanup/runtime carriers, borrowed lifetime runtime interop, and
   runnable retainable-family execution behavior remain later `M271` work
+
+Current implementation status (`M271-C002`):
+- stack/local cleanup and resource lowering is now live in emitted native IR
+  and object artifacts
+- explicit `move` captures from cleanup-backed locals now lower through emitted
+  block dispose helpers on the supported non-promoting path
+- actual escaping promotion of move-based cleanup/resource captures remains
+  fail-closed until later runtime ownership-transfer work lands
 ```
 
 This attribute may be applied to:

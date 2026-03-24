@@ -1521,6 +1521,11 @@ inline constexpr const char *kObjc3Part7ActorLoweringMetadataLaneContract =
 // metadata without overclaiming live runtime cleanup or borrowed lifetime
 // execution. Lane-D must widen this exact contract family rather than inventing
 // a second system-extension lowering boundary.
+// M271-C002 lowering-implementation anchor: live Part 8 lowering now consumes
+// this frozen contract directly for native helper emission and object proof.
+// Stack/local cleanup-resource capture lowering is implemented; actual escaping
+// move-capture promotion stays fail-closed until later runtime ownership
+// transfer work widens the same boundary explicitly.
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringContractId =
     "objc3c-part8-system-extension-lowering-contract/m271-c001-v1";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringSurfacePath =

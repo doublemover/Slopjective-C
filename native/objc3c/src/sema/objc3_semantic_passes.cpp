@@ -6261,10 +6261,13 @@ static void ValidateBlockLiteralCaptureLegality(
       unowned_object_capture_count;
   const bool runtime_copy_dispose_required =
       expr->block_byref_capture_count > 0u || owned_object_capture_count > 0u;
+  const bool runtime_dispose_required =
+      runtime_copy_dispose_required ||
+      expr->block_explicit_capture_move_count > 0u;
   mutable_expr->block_runtime_copy_helper_required =
       runtime_copy_dispose_required;
   mutable_expr->block_runtime_dispose_helper_required =
-      runtime_copy_dispose_required;
+      runtime_dispose_required;
   mutable_expr->block_runtime_capture_ownership_is_normalized =
       expr->block_capture_names_lexicographic.size() == expr->block_capture_count &&
       expr->block_mutated_capture_names_lexicographic.size() ==
@@ -15221,14 +15224,16 @@ static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const
   auto build_block_copy_dispose_profile = [](bool copy_helper_required,
                                              bool dispose_helper_required,
                                              bool escape_to_heap,
-                                             std::size_t body_statement_count) {
+                                             std::size_t body_statement_count,
+                                             std::size_t explicit_move_capture_count) {
     std::ostringstream out;
     out << "block-copy-dispose:copy-helper="
         << (copy_helper_required ? "enabled" : "elided")
         << ";dispose-helper="
         << (dispose_helper_required ? "enabled" : "elided")
         << ";escape=" << (escape_to_heap ? "heap" : "stack")
-        << ";body-statements=" << body_statement_count;
+        << ";body-statements=" << body_statement_count
+        << ";move-captures=" << explicit_move_capture_count;
     return out.str();
   };
   auto build_block_copy_helper_symbol = [](unsigned line,
@@ -15267,6 +15272,7 @@ static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const
       expr.block_runtime_weak_object_capture_count;
   metadata.unowned_object_capture_count =
       expr.block_runtime_unowned_object_capture_count;
+  metadata.explicit_move_capture_count = expr.block_explicit_capture_move_count;
   metadata.copy_helper_required =
       expr.block_runtime_capture_ownership_is_normalized
           ? expr.block_runtime_copy_helper_required
@@ -15274,7 +15280,8 @@ static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const
   metadata.dispose_helper_required =
       expr.block_runtime_capture_ownership_is_normalized
           ? expr.block_runtime_dispose_helper_required
-          : metadata.byref_slot_count > 0u;
+          : metadata.byref_slot_count > 0u ||
+                metadata.explicit_move_capture_count > 0u;
   metadata.copy_dispose_profile_is_normalized =
       expr.block_source_storage_annotations_are_normalized &&
       (!expr.block_runtime_capture_ownership_is_normalized ||
@@ -15289,12 +15296,14 @@ static Objc3BlockCopyDisposeSiteMetadata BuildBlockCopyDisposeSiteMetadata(const
                     metadata.copy_helper_required,
                     metadata.dispose_helper_required,
                     expr.block_escape_shape_promotes_to_heap_candidate,
-                    metadata.body_statement_count)
+                    metadata.body_statement_count,
+                    metadata.explicit_move_capture_count)
           : build_block_copy_dispose_profile(
                 metadata.copy_helper_required,
                 metadata.dispose_helper_required,
                 expr.block_escape_shape_promotes_to_heap_candidate,
-                metadata.body_statement_count);
+                metadata.body_statement_count,
+                metadata.explicit_move_capture_count);
   metadata.copy_helper_symbol =
       metadata.copy_helper_required
           ? build_block_copy_helper_symbol(expr.line,
@@ -15442,6 +15451,9 @@ static bool IsBlockCopyDisposeSiteMetadataLess(
   if (lhs.body_statement_count != rhs.body_statement_count) {
     return lhs.body_statement_count < rhs.body_statement_count;
   }
+  if (lhs.explicit_move_capture_count != rhs.explicit_move_capture_count) {
+    return lhs.explicit_move_capture_count < rhs.explicit_move_capture_count;
+  }
   if (lhs.copy_helper_required != rhs.copy_helper_required) {
     return lhs.copy_helper_required < rhs.copy_helper_required;
   }
@@ -15507,7 +15519,8 @@ static Objc3BlockCopyDisposeSemanticsSummary BuildBlockCopyDisposeSemanticsSumma
         (site.byref_slot_count > 0u || site.owned_object_capture_count > 0u);
     const bool dispose_helper_requirement_mismatch =
         site.dispose_helper_required !=
-        (site.byref_slot_count > 0u || site.owned_object_capture_count > 0u);
+        (site.byref_slot_count > 0u || site.owned_object_capture_count > 0u ||
+         site.explicit_move_capture_count > 0u);
     const bool count_mismatch = site.mutable_capture_count > site.capture_count ||
                                 site.byref_slot_count > site.mutable_capture_count;
     const bool site_contract_violation =
@@ -15530,7 +15543,7 @@ static Objc3BlockCopyDisposeSemanticsSummary BuildBlockCopyDisposeSemanticsSumma
       summary.contract_violation_sites <= summary.block_literal_sites &&
       summary.mutable_capture_count_total <= summary.capture_entries_total &&
       summary.byref_slot_count_total <= summary.mutable_capture_count_total &&
-      summary.copy_helper_required_sites == summary.dispose_helper_required_sites;
+      summary.copy_helper_required_sites <= summary.dispose_helper_required_sites;
   return summary;
 }
 
@@ -22794,7 +22807,7 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
              handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
          handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
              handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
-         handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+         handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
              handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
          handoff.block_determinism_perf_baseline_summary.deterministic &&
          handoff.block_determinism_perf_baseline_summary.block_literal_sites ==

@@ -2097,7 +2097,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.capture_entries_total &&
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.byref_slot_count_total <=
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
-      result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+      result.type_metadata_handoff.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.dispose_helper_required_sites;
   result.block_determinism_perf_baseline_summary =
       result.integration_surface.block_determinism_perf_baseline_summary;
@@ -5056,7 +5056,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.parity_surface.block_copy_dispose_semantics_summary.capture_entries_total &&
       result.parity_surface.block_copy_dispose_semantics_summary.byref_slot_count_total <=
           result.parity_surface.block_copy_dispose_semantics_summary.mutable_capture_count_total &&
-      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites ==
+      result.parity_surface.block_copy_dispose_semantics_summary.copy_helper_required_sites <=
           result.parity_surface.block_copy_dispose_semantics_summary.dispose_helper_required_sites &&
       result.parity_surface.block_copy_dispose_semantics_summary.deterministic;
   result.parity_surface.deterministic_block_determinism_perf_baseline_handoff =

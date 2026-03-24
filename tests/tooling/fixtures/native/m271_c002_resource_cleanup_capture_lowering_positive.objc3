@@ -1,0 +1,25 @@
+module m271c002probe;
+
+extern fn ReleaseTemp(value: i32) -> void;
+extern fn CloseFd(value: i32) -> void;
+extern fn BorrowIt(value: borrowed id *) -> borrowed id *
+    __attribute__((objc_returns_borrowed(owner_index=0)));
+extern fn CFRetain(value: id) -> id
+    __attribute__((objc_family_retain(CoreThing), cf_returns_retained));
+extern fn CFRelease(value: id) -> void
+    __attribute__((objc_family_release(CoreThing), cf_consumed));
+
+fn loweringSurface(owner: id, bytes: borrowed id *) -> i32 {
+  @cleanup(ReleaseTemp) let temp = 1;
+  @resource(CloseFd, invalid: -1) let fd = 3;
+  let peer = owner;
+  let block = ^[move temp, weak owner, unowned peer] (i32 x) {
+    let strongRef = owner;
+    let peerRef = peer;
+    return x + temp;
+  };
+  let retained = CFRetain(owner);
+  CFRelease(retained);
+  let same = BorrowIt(bytes);
+  return fd;
+}
