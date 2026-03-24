@@ -9547,6 +9547,108 @@ std::string BuildPart12AdvancedFeatureReportingJson(
   return BuildPart12FeatureAwareConformanceReportEmissionSummaryJson(summary);
 }
 
+std::string BuildPart12CorpusShardingReleaseEvidencePackagingReplayKey(
+    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary &summary) {
+  std::ostringstream out;
+  out << "mode=" << summary.effective_compatibility_mode
+      << ";migration-assist="
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ";profiles=" << summary.targeted_profile_count
+      << ";corpus-shards=" << summary.corpus_shard_count
+      << ";release-artifacts=" << summary.release_evidence_artifact_count
+      << ";ready="
+      << (summary.ready_for_release_evidence_packaging ? "true" : "false");
+  return out.str();
+}
+
+Objc3Part12CorpusShardingReleaseEvidencePackagingSummary
+BuildPart12CorpusShardingReleaseEvidencePackagingSummary(
+    const Objc3Part12FeatureAwareConformanceReportEmissionSummary
+        &feature_summary) {
+  Objc3Part12CorpusShardingReleaseEvidencePackagingSummary summary;
+  summary.effective_compatibility_mode =
+      feature_summary.effective_compatibility_mode;
+  summary.migration_assist_enabled =
+      feature_summary.migration_assist_enabled;
+  summary.feature_report_payload_emitted =
+      feature_summary.report_payload_emitted;
+  summary.deterministic_handoff =
+      IsReadyObjc3Part12FeatureAwareConformanceReportEmissionSummary(
+          feature_summary) &&
+      summary.targeted_profile_count == summary.targeted_profile_ids.size() &&
+      summary.corpus_shard_count == summary.corpus_shard_ids.size() &&
+      summary.corpus_shard_count ==
+          summary.corpus_shard_manifest_paths.size() &&
+      summary.release_evidence_artifact_count ==
+          summary.release_evidence_artifact_ids.size();
+  summary.ready_for_release_evidence_packaging =
+      summary.deterministic_handoff;
+  if (!summary.feature_report_payload_emitted) {
+    summary.failure_reason =
+        "part12 feature-aware conformance report emission prerequisite is not ready";
+  }
+  summary.replay_key =
+      BuildPart12CorpusShardingReleaseEvidencePackagingReplayKey(summary);
+  return summary;
+}
+
+std::string BuildPart12CorpusShardingReleaseEvidencePackagingSummaryJson(
+    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"feature_aware_report_contract_id\":\""
+      << EscapeJsonString(summary.feature_aware_report_contract_id)
+      << "\",\"machine_readable_report_contract_id\":\""
+      << EscapeJsonString(summary.machine_readable_report_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"payload_model\":\""
+      << EscapeJsonString(summary.payload_model)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"targeted_profile_ids\":"
+      << BuildStringArrayJson(summary.targeted_profile_ids)
+      << ",\"targeted_profile_count\":" << summary.targeted_profile_count
+      << ",\"corpus_shard_ids\":"
+      << BuildStringArrayJson(summary.corpus_shard_ids)
+      << ",\"corpus_shard_manifest_paths\":"
+      << BuildStringArrayJson(summary.corpus_shard_manifest_paths)
+      << ",\"corpus_shard_count\":" << summary.corpus_shard_count
+      << ",\"release_evidence_artifact_ids\":"
+      << BuildStringArrayJson(summary.release_evidence_artifact_ids)
+      << ",\"release_evidence_artifact_count\":"
+      << summary.release_evidence_artifact_count
+      << ",\"release_evidence_checklist_path\":\""
+      << EscapeJsonString(summary.release_evidence_checklist_path)
+      << "\",\"release_evidence_schema_path\":\""
+      << EscapeJsonString(summary.release_evidence_schema_path)
+      << "\",\"report_artifact_suffix\":\""
+      << EscapeJsonString(summary.report_artifact_suffix)
+      << "\",\"effective_compatibility_mode\":\""
+      << EscapeJsonString(summary.effective_compatibility_mode)
+      << "\",\"migration_assist_enabled\":"
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ",\"feature_report_payload_emitted\":"
+      << (summary.feature_report_payload_emitted ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_release_evidence_packaging\":"
+      << (summary.ready_for_release_evidence_packaging ? "true" : "false")
+      << ",\"failure_reason\":\""
+      << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildPart12AdvancedFeatureReleaseEvidenceJson(
+    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary &summary) {
+  return BuildPart12CorpusShardingReleaseEvidencePackagingSummaryJson(summary);
+}
+
 std::string BuildRuntimeCapabilityReportJson(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const std::vector<std::string> claimed_profile_ids =
@@ -9678,7 +9780,9 @@ std::string BuildVersionedConformanceReportArtifactJson(
     const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
         &semantic_summary,
     const Objc3Part12FeatureAwareConformanceReportEmissionSummary
-        &feature_summary) {
+        &feature_summary,
+    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary
+        &packaging_summary) {
   std::ostringstream out;
   out << "{\n"
       << "  \"schema_id\": \"" << EscapeJsonString(summary.artifact_schema_id)
@@ -9752,6 +9856,9 @@ std::string BuildVersionedConformanceReportArtifactJson(
       << ",\n"
       << "  \"advanced_feature_reporting\": "
       << BuildPart12AdvancedFeatureReportingJson(feature_summary)
+      << ",\n"
+      << "  \"advanced_feature_release_evidence\": "
+      << BuildPart12AdvancedFeatureReleaseEvidenceJson(packaging_summary)
       << ",\n"
       << "  \"runnable_feature_claim_inventory_replay_key\": \""
       << EscapeJsonString(summary.runnable_feature_claim_inventory_replay_key)
@@ -16036,6 +16143,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               part12_feature_specific_fixit_synthesis_summary,
               part12_legacy_canonical_migration_semantics_summary,
               part12_machine_readable_conformance_report_contract_summary);
+  const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary
+      part12_corpus_sharding_release_evidence_packaging_summary =
+          BuildPart12CorpusShardingReleaseEvidencePackagingSummary(
+              part12_feature_aware_conformance_report_emission_summary);
   if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
           versioned_conformance_report_lowering)) {
     record_post_pipeline_failure(
@@ -20515,6 +20626,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_feature_aware_conformance_report_emission\":"
            << BuildPart12FeatureAwareConformanceReportEmissionSummaryJson(
                   part12_feature_aware_conformance_report_emission_summary)
+           << ",\"objc_part12_corpus_sharding_release_evidence_packaging\":"
+           << BuildPart12CorpusShardingReleaseEvidencePackagingSummaryJson(
+                  part12_corpus_sharding_release_evidence_packaging_summary)
            // M264-C001 lowering freeze anchor: lane-C lowers the existing
            // runnable/source-only/unsupported truth packets into one emitted
            // machine-readable conformance sidecar instead of reconstructing
@@ -21781,6 +21895,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_feature_aware_conformance_report_emission\":"
                   << BuildPart12FeatureAwareConformanceReportEmissionSummaryJson(
                       part12_feature_aware_conformance_report_emission_summary)
+           << ",\"objc_part12_corpus_sharding_release_evidence_packaging\":"
+                  << BuildPart12CorpusShardingReleaseEvidencePackagingSummaryJson(
+                      part12_corpus_sharding_release_evidence_packaging_summary)
            << ",\"objc_part11_interop_semantic_model\":"
            << BuildPart11InteropSemanticModelSummaryJson(
                   part11_interop_semantic_model_summary)
@@ -22576,7 +22693,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         BuildVersionedConformanceReportArtifactJson(
             versioned_conformance_report_lowering, options, pipeline_result,
             frontend_compatibility_strictness_claim_semantics,
-            part12_feature_aware_conformance_report_emission_summary);
+            part12_feature_aware_conformance_report_emission_summary,
+            part12_corpus_sharding_release_evidence_packaging_summary);
   }
   bundle.runtime_aware_import_module_frontend_closure_summary =
       runtime_aware_import_module_frontend_closure;
@@ -22602,6 +22720,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part12_machine_readable_conformance_report_contract_summary;
   bundle.part12_feature_aware_conformance_report_emission_summary =
       part12_feature_aware_conformance_report_emission_summary;
+  bundle.part12_corpus_sharding_release_evidence_packaging_summary =
+      part12_corpus_sharding_release_evidence_packaging_summary;
   bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;

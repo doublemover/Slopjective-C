@@ -1380,6 +1380,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part12FeatureAwareConformanceReportEmissionAuthorityModel =
         "part12-feature-aware-reporting-remains-bounded-to-live-fixit-migration-and-machine-readable-report-contract-surfaces";
+inline constexpr const char
+    *kObjc3Part12CorpusShardingReleaseEvidencePackagingContractId =
+        "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1";
+inline constexpr const char
+    *kObjc3Part12CorpusShardingReleaseEvidencePackagingDependencyContractId =
+        "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+inline constexpr const char
+    *kObjc3Part12CorpusShardingReleaseEvidencePackagingSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_corpus_sharding_release_evidence_packaging";
+inline constexpr const char
+    *kObjc3Part12CorpusShardingReleaseEvidencePackagingPayloadModel =
+        "versioned-conformance-report-now-embeds-part12-corpus-shard-and-release-evidence-packaging-without-introducing-a-parallel-report-format";
+inline constexpr const char
+    *kObjc3Part12CorpusShardingReleaseEvidencePackagingAuthorityModel =
+        "part12-release-evidence-packaging-remains-bounded-to-emitted-report-payloads-checklist-refs-and-stable-conformance-bucket-manifests";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
@@ -2813,6 +2829,7 @@ std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3Part12FeatureAwareConformanceReportEmissionLoweringSummary();
+std::string Objc3Part12CorpusShardingReleaseEvidencePackagingLoweringSummary();
 std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
 std::string Objc3Part8SystemHelperRuntimeContractSummary();

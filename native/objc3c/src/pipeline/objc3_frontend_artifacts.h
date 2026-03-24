@@ -45,6 +45,8 @@ struct Objc3FrontendArtifactBundle {
       part12_machine_readable_conformance_report_contract_summary;
   Objc3Part12FeatureAwareConformanceReportEmissionSummary
       part12_feature_aware_conformance_report_emission_summary;
+  Objc3Part12CorpusShardingReleaseEvidencePackagingSummary
+      part12_corpus_sharding_release_evidence_packaging_summary;
   Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api_summary;
   Objc3RuntimeBootstrapSemanticsSummary runtime_bootstrap_semantics_summary;
   Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering_summary;

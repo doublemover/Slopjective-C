@@ -692,6 +692,9 @@ Current truthful scope:
 - Part 12 feature-aware report emission now publishes
   `frontend.pipeline.semantic_surface.objc_part12_feature_aware_conformance_report_emission`
   and extends the emitted report with `advanced_feature_reporting`
+- Part 12 corpus sharding/release-evidence packaging now publishes
+  `frontend.pipeline.semantic_surface.objc_part12_corpus_sharding_release_evidence_packaging`
+  and extends the emitted report with `advanced_feature_release_evidence`
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices

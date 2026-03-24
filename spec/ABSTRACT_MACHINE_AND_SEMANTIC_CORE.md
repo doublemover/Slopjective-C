@@ -1202,3 +1202,15 @@ M275-C002 feature-aware conformance report emission note:
   `advanced_feature_reporting` payload
 - that payload remains bounded to the live Part 12 fix-it and migration
   surfaces rather than claiming broader report automation
+
+M275-C003 corpus sharding and release-evidence packaging note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_corpus_sharding_release_evidence_packaging`
+- the emitted versioned conformance report now carries one top-level
+  `advanced_feature_release_evidence` payload
+- that payload inventories the canonical conformance bucket shards and
+  release-evidence checklist/schema references needed by later CI and release
+  flows
+- that payload remains bounded to packaging truth and does not promote
+  advanced profiles to runnable public claims

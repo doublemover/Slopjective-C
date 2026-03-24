@@ -5443,6 +5443,29 @@ The current emitted block stays narrow and truthful:
 - not-claimed optional features: `throws`, `async-await`, `actors`, `blocks`,
   `arc`
 
+## Part 12 corpus sharding and release-evidence packaging (M275-C003)
+
+`M275-C003` keeps the existing versioned conformance sidecar as the single
+advanced-feature report surface and adds one explicit packaging block for
+release-facing conformance automation.
+
+- `frontend.pipeline.semantic_surface.objc_part12_corpus_sharding_release_evidence_packaging`
+- top-level report payload key `advanced_feature_release_evidence`
+
+The current emitted block stays narrow and truthful:
+
+- it publishes the canonical conformance bucket shard IDs:
+  `parser`, `semantic`, `lowering_abi`, `module_roundtrip`, `diagnostics`
+- it publishes the stable manifest paths for those shards
+- it publishes the advanced-feature release evidence artifact IDs consumed by
+  later CI and release flows
+- it publishes the checklist/schema references used by the release evidence
+  gate
+- it does not claim that strict, strict-concurrency, or strict-system are
+  currently shipped as runnable public profiles
+- it does not introduce a second report sidecar or a second release-evidence
+  report authority
+
 Validation proves:
 
 - the native hello path emits both nested payloads alongside the existing

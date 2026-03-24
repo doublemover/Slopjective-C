@@ -5516,6 +5516,53 @@ struct Objc3Part12FeatureAwareConformanceReportEmissionSummary {
   std::string failure_reason;
 };
 
+struct Objc3Part12CorpusShardingReleaseEvidencePackagingSummary {
+  std::string contract_id =
+      kObjc3Part12CorpusShardingReleaseEvidencePackagingContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12CorpusShardingReleaseEvidencePackagingDependencyContractId;
+  std::string feature_aware_report_contract_id =
+      kObjc3Part12FeatureAwareConformanceReportEmissionContractId;
+  std::string machine_readable_report_contract_id =
+      kObjc3Part12MachineReadableConformanceReportContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12CorpusShardingReleaseEvidencePackagingSurfacePath;
+  std::string payload_model =
+      kObjc3Part12CorpusShardingReleaseEvidencePackagingPayloadModel;
+  std::string authority_model =
+      kObjc3Part12CorpusShardingReleaseEvidencePackagingAuthorityModel;
+  std::vector<std::string> targeted_profile_ids = {
+      "strict", "strict-concurrency", "strict-system"};
+  std::size_t targeted_profile_count = 3;
+  std::vector<std::string> corpus_shard_ids = {
+      "parser", "semantic", "lowering_abi", "module_roundtrip",
+      "diagnostics"};
+  std::vector<std::string> corpus_shard_manifest_paths = {
+      "tests/conformance/parser/manifest.json",
+      "tests/conformance/semantic/manifest.json",
+      "tests/conformance/lowering_abi/manifest.json",
+      "tests/conformance/module_roundtrip/manifest.json",
+      "tests/conformance/diagnostics/manifest.json"};
+  std::size_t corpus_shard_count = 5;
+  std::vector<std::string> release_evidence_artifact_ids = {
+      "EVID-01", "EVID-02", "EVID-03", "EVID-04", "EVID-07",
+      "EVID-08", "EVID-09", "EVID-10", "EVID-11"};
+  std::size_t release_evidence_artifact_count = 9;
+  std::string release_evidence_checklist_path =
+      "spec/conformance/profile_release_evidence_checklist.md";
+  std::string release_evidence_schema_path =
+      "spec/conformance/objc3_conformance_evidence_bundle_schema.md";
+  std::string report_artifact_suffix =
+      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  bool feature_report_payload_emitted = false;
+  bool deterministic_handoff = false;
+  bool ready_for_release_evidence_packaging = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool compatibility_mode_valid =
@@ -5602,6 +5649,33 @@ inline bool IsReadyObjc3Part12FeatureAwareConformanceReportEmissionSummary(
          summary.report_payload_emitted && summary.deterministic_handoff &&
          summary.ready_for_runtime_publication && !summary.replay_key.empty() &&
          summary.failure_reason.empty();
+}
+
+inline bool IsReadyObjc3Part12CorpusShardingReleaseEvidencePackagingSummary(
+    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary &summary) {
+  const bool compatibility_mode_valid =
+      summary.effective_compatibility_mode == "canonical" ||
+      summary.effective_compatibility_mode == "legacy";
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.feature_aware_report_contract_id.empty() &&
+         !summary.machine_readable_report_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.payload_model.empty() &&
+         !summary.authority_model.empty() && compatibility_mode_valid &&
+         summary.targeted_profile_count == summary.targeted_profile_ids.size() &&
+         summary.corpus_shard_count == summary.corpus_shard_ids.size() &&
+         summary.corpus_shard_count ==
+             summary.corpus_shard_manifest_paths.size() &&
+         summary.release_evidence_artifact_count ==
+             summary.release_evidence_artifact_ids.size() &&
+         !summary.release_evidence_checklist_path.empty() &&
+         !summary.release_evidence_schema_path.empty() &&
+         !summary.report_artifact_suffix.empty() &&
+         summary.feature_report_payload_emitted &&
+         summary.deterministic_handoff &&
+         summary.ready_for_release_evidence_packaging &&
+         !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
 struct Objc3RuntimeBootstrapApiSummary {
