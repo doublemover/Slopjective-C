@@ -1582,3 +1582,21 @@ Current implementation status (`M274-A002`):
   carriers only in this tranche
 - this source-completion step does not yet claim textual/module interface
   preservation, lowering, or runnable bridge generation
+
+## M274 foreign surfaces interface and module preservation completion (A003)
+
+Current implementation status (`M274-A003`):
+
+- provider and consumer `module.runtime-import-surface.json` artifacts now
+  preserve one dedicated Part 11 packet:
+  - `objc_part11_foreign_surface_interface_and_module_preservation`
+- that packet preserves:
+  - local foreign-callable counts
+  - local import-module annotation counts
+  - local imported module-name payload counts
+  - local Swift/C++/header-facing annotation counts
+  - local named metadata payload counts
+  - imported provider module inventories and imported Part 11 local-count
+    aggregates
+- this preservation step still does not claim foreign ABI lowering, live bridge
+  generation, or runnable cross-language call behavior

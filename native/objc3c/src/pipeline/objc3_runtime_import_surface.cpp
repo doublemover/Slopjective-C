@@ -985,6 +985,103 @@ bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
   return true;
 }
 
+bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  // M274-A003 import-surface anchor: Part 11 preservation stays at the
+  // manifest/runtime-import-surface layer so provider foreign/import and
+  // C++/Swift-facing annotation facts survive separate compilation before any
+  // ABI lowering or runnable bridge generation claims land.
+  const JsonValue *preservation_value = FindMember(
+      root, kObjc3Part11ForeignSurfaceInterfacePreservationImportArtifactMemberName);
+  if (preservation_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *preservation_object = AsObject(*preservation_value);
+  if (preservation_object == nullptr) {
+    error =
+        "part11 foreign surface interface preservation surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  if (!ReadStringMember(*preservation_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*preservation_object,
+                        "foreign_import_source_contract_id",
+                        surface.part11_foreign_import_source_contract_id,
+                        error) ||
+      !ReadStringMember(*preservation_object, "cpp_swift_source_contract_id",
+                        surface.part11_cpp_swift_source_contract_id, error) ||
+      !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
+                      surface.part11_runtime_import_artifact_ready, error) ||
+      !ReadBoolMember(*preservation_object,
+                      "separate_compilation_preservation_ready",
+                      surface.part11_separate_compilation_preservation_ready,
+                      error) ||
+      !ReadBoolMember(*preservation_object, "deterministic",
+                      surface.part11_deterministic, error) ||
+      !ReadStringMember(*preservation_object, "replay_key",
+                        surface.part11_replay_key, error) ||
+      !ReadStringMember(*preservation_object,
+                        "foreign_import_source_replay_key",
+                        surface.part11_foreign_import_source_replay_key,
+                        error) ||
+      !ReadStringMember(*preservation_object, "cpp_swift_source_replay_key",
+                        surface.part11_cpp_swift_source_replay_key, error) ||
+      !ReadSizeMember(*preservation_object, "local_foreign_callable_count",
+                      surface.part11_local_foreign_callable_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_import_module_annotation_count",
+                      surface.part11_local_import_module_annotation_count,
+                      error) ||
+      !ReadSizeMember(*preservation_object, "local_imported_module_name_count",
+                      surface.part11_local_imported_module_name_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_swift_name_annotation_count",
+                      surface.part11_local_swift_name_annotation_count,
+                      error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_swift_private_annotation_count",
+                      surface.part11_local_swift_private_annotation_count,
+                      error) ||
+      !ReadSizeMember(*preservation_object, "local_cpp_name_annotation_count",
+                      surface.part11_local_cpp_name_annotation_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_header_name_annotation_count",
+                      surface.part11_local_header_name_annotation_count,
+                      error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_named_annotation_payload_count",
+                      surface.part11_local_named_annotation_payload_count,
+                      error)) {
+    return false;
+  }
+
+  if (contract_id != kObjc3Part11ForeignSurfaceInterfacePreservationContractId) {
+    error =
+        "unexpected Part 11 foreign surface interface preservation contract id in import surface";
+    return false;
+  }
+  if (surface.part11_foreign_import_source_contract_id !=
+      kObjc3Part11ForeignImportSourceClosureContractId) {
+    error =
+        "unexpected Part 11 foreign/import source contract id in import surface";
+    return false;
+  }
+  if (surface.part11_cpp_swift_source_contract_id !=
+      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId) {
+    error =
+        "unexpected Part 11 C++/Swift annotation source contract id in import surface";
+    return false;
+  }
+
+  surface.part11_foreign_surface_interface_preservation_present = true;
+  surface.part11_contract_id = std::move(contract_id);
+  return true;
+}
+
 bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
@@ -1296,6 +1393,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
     return false;
   }
   if (!PopulateImportedPart7ActorMailboxRuntimeImport(root, surface, error)) {
+    return false;
+  }
+  if (!PopulateImportedPart11ForeignSurfaceInterfacePreservation(root, surface,
+                                                                 error)) {
     return false;
   }
   if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,

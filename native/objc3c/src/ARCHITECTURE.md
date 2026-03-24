@@ -11354,3 +11354,19 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
 - this tranche still does not widen the lexer with dedicated interop keywords
   and does not yet claim textual/module interface preservation, lowering, or
   runtime bridge generation
+
+## M274 foreign surfaces interface and module preservation completion (A003)
+
+- `M274-A003` keeps Part 11 preservation frontend-owned and import-artifact
+  driven rather than inventing a new lowering or runtime bridge lane early
+- the emitted frontend manifest publishes
+  `objc_part11_foreign_surface_interface_and_module_preservation`
+- emitted `module.runtime-import-surface.json` artifacts now preserve one
+  dedicated Part 11 packet for:
+  - foreign-callable counts
+  - import-module annotation counts
+  - imported module-name payload counts
+  - Swift/C++/header-facing annotation counts
+  - imported provider module inventories
+- foreign ABI lowering and runnable bridge generation remain later `M274`
+  work

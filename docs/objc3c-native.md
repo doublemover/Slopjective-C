@@ -9363,6 +9363,21 @@ native build surface.
   - `!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}`
 - cross-module preservation and macro host execution remain later `M273` work
 
+## M274 foreign surfaces interface and module preservation
+
+- the frontend manifest now publishes
+  `frontend.pipeline.semantic_surface.objc_part11_foreign_surface_interface_and_module_preservation`
+- provider and consumer `module.runtime-import-surface.json` artifacts now
+  preserve:
+  - local foreign-callable counts
+  - local import-module annotation counts
+  - local imported module-name payload counts
+  - local Swift/C++/header-facing annotation counts
+  - local named metadata payload counts
+  - imported provider module inventories
+- this lane still does not claim foreign ABI lowering or runnable bridge
+  generation
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

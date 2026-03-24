@@ -194,6 +194,9 @@ inline constexpr const char *kObjc3Part11ForeignImportSourceClosureContractId =
     "objc3c-part11-foreign-declaration-import-source-closure/m274-a001-v1";
 inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId =
     "objc3c-part11-cpp-swift-interop-annotation-source-completion/m274-a002-v1";
+inline constexpr const char
+    *kObjc3Part11ForeignSurfaceInterfacePreservationContractId =
+        "objc3c-part11-foreign-surface-interface-preservation/m274-a003-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDeriveMarkers =
     "source-only:derive-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroMarkers =

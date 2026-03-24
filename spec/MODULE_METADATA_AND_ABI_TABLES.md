@@ -8884,3 +8884,16 @@ Current implementation status (`M274-A002`):
   payload-site counts
 - textual/module interface preservation, FFI ABI lowering, and runtime bridge
   packaging remain intentionally unclaimed by this frontend-only completion step
+
+## M274 foreign surface preservation note
+
+Current implementation status (`M274-A003`):
+
+- the frontend now emits one deterministic Part 11 preservation packet inside
+  `module.runtime-import-surface.json`:
+  `objc3c-part11-foreign-surface-interface-preservation/m274-a003-v1`
+- that packet preserves local foreign/import annotation counts, imported
+  provider module inventories, and imported Part 11 aggregate counts for
+  separate compilation and interface inspection
+- live foreign ABI lowering, bridge shims, and runnable cross-language calls
+  remain later `M274` work

@@ -3065,6 +3065,238 @@ std::string BuildPart10SynthesizedArtifactEmissionContractJson(
   return out.str();
 }
 
+std::vector<std::string> CollectPart11LocalImportModuleNames(
+    const Objc3Program &program) {
+  std::vector<std::string> names;
+  const auto accumulate_callable = [&names](const auto &decl) {
+    if (decl.objc_import_module_declared &&
+        !decl.objc_import_module_name.empty()) {
+      names.push_back(decl.objc_import_module_name);
+    }
+  };
+
+  for (const auto &fn : program.functions) {
+    accumulate_callable(fn);
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &method : interface_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      accumulate_callable(method);
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &method : implementation.methods) {
+      accumulate_callable(method);
+    }
+  }
+
+  std::sort(names.begin(), names.end());
+  names.erase(std::unique(names.begin(), names.end()), names.end());
+  return names;
+}
+
+Objc3Part11ForeignSurfaceInterfacePreservationSummary
+BuildPart11ForeignSurfaceInterfacePreservationSummary(
+    const Objc3Program &program,
+    const Objc3FrontendPart11ForeignImportSourceClosureSummary
+        &foreign_import_source_summary,
+    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+        &cpp_swift_source_summary,
+    bool runtime_import_artifact_ready,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces) {
+  // M274-A003 preservation anchor: keep Part 11 truthful at the frontend
+  // manifest/runtime-import-surface layer by preserving provider counts,
+  // module-name payloads, and imported provider inventories before lane-B
+  // semantic expansion or later ABI/runtime interop work.
+  Objc3Part11ForeignSurfaceInterfacePreservationSummary summary;
+  summary.foreign_import_source_replay_key =
+      foreign_import_source_summary.replay_key;
+  summary.cpp_swift_source_replay_key = cpp_swift_source_summary.replay_key;
+  summary.local_import_module_names_lexicographic =
+      CollectPart11LocalImportModuleNames(program);
+  summary.local_foreign_callable_count =
+      foreign_import_source_summary.foreign_callable_sites;
+  summary.local_import_module_annotation_count =
+      foreign_import_source_summary.import_module_annotation_sites;
+  summary.local_imported_module_name_count =
+      foreign_import_source_summary.imported_module_name_sites;
+  summary.local_swift_name_annotation_count =
+      cpp_swift_source_summary.swift_name_annotation_sites;
+  summary.local_swift_private_annotation_count =
+      cpp_swift_source_summary.swift_private_annotation_sites;
+  summary.local_cpp_name_annotation_count =
+      cpp_swift_source_summary.cpp_name_annotation_sites;
+  summary.local_header_name_annotation_count =
+      cpp_swift_source_summary.header_name_annotation_sites;
+  summary.local_named_annotation_payload_count =
+      cpp_swift_source_summary.named_annotation_payload_sites;
+  summary.runtime_import_artifact_ready =
+      runtime_import_artifact_ready &&
+      foreign_import_source_summary.ready_for_semantic_expansion &&
+      cpp_swift_source_summary.ready_for_semantic_expansion;
+  summary.deterministic =
+      foreign_import_source_summary.deterministic_handoff &&
+      cpp_swift_source_summary.deterministic_handoff &&
+      summary.local_import_module_names_lexicographic.size() <=
+          summary.local_imported_module_name_count;
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part11_foreign_surface_interface_preservation_present) {
+      continue;
+    }
+    ++summary.imported_module_count;
+    if (!surface.frontend_closure_summary.module_name.empty()) {
+      summary.imported_provider_module_names_lexicographic.push_back(
+          surface.frontend_closure_summary.module_name);
+    }
+    summary.imported_foreign_callable_count +=
+        surface.part11_local_foreign_callable_count;
+    summary.imported_import_module_annotation_count +=
+        surface.part11_local_import_module_annotation_count;
+    summary.imported_imported_module_name_count +=
+        surface.part11_local_imported_module_name_count;
+    summary.imported_swift_name_annotation_count +=
+        surface.part11_local_swift_name_annotation_count;
+    summary.imported_swift_private_annotation_count +=
+        surface.part11_local_swift_private_annotation_count;
+    summary.imported_cpp_name_annotation_count +=
+        surface.part11_local_cpp_name_annotation_count;
+    summary.imported_header_name_annotation_count +=
+        surface.part11_local_header_name_annotation_count;
+    summary.imported_named_annotation_payload_count +=
+        surface.part11_local_named_annotation_payload_count;
+    summary.deterministic = summary.deterministic && surface.part11_deterministic;
+  }
+  std::sort(summary.imported_provider_module_names_lexicographic.begin(),
+            summary.imported_provider_module_names_lexicographic.end());
+  summary.separate_compilation_preservation_ready =
+      summary.runtime_import_artifact_ready &&
+      summary.imported_provider_module_names_lexicographic.size() ==
+          summary.imported_module_count;
+  std::ostringstream replay_key;
+  replay_key << summary.contract_id
+             << ";runtime_import_artifact_ready="
+             << (summary.runtime_import_artifact_ready ? "true" : "false")
+             << ";separate_compilation_preservation_ready="
+             << (summary.separate_compilation_preservation_ready ? "true"
+                                                                 : "false")
+             << ";imported_module_count=" << summary.imported_module_count
+             << ";deterministic="
+             << (summary.deterministic ? "true" : "false")
+             << ";foreign_import_source_replay_key="
+             << summary.foreign_import_source_replay_key
+             << ";cpp_swift_source_replay_key="
+             << summary.cpp_swift_source_replay_key
+             << ";local_foreign_callable_count="
+             << summary.local_foreign_callable_count
+             << ";local_import_module_annotation_count="
+             << summary.local_import_module_annotation_count
+             << ";local_imported_module_name_count="
+             << summary.local_imported_module_name_count
+             << ";local_swift_name_annotation_count="
+             << summary.local_swift_name_annotation_count
+             << ";local_swift_private_annotation_count="
+             << summary.local_swift_private_annotation_count
+             << ";local_cpp_name_annotation_count="
+             << summary.local_cpp_name_annotation_count
+             << ";local_header_name_annotation_count="
+             << summary.local_header_name_annotation_count
+             << ";local_named_annotation_payload_count="
+             << summary.local_named_annotation_payload_count
+             << ";imported_foreign_callable_count="
+             << summary.imported_foreign_callable_count
+             << ";imported_import_module_annotation_count="
+             << summary.imported_import_module_annotation_count
+             << ";imported_imported_module_name_count="
+             << summary.imported_imported_module_name_count
+             << ";imported_swift_name_annotation_count="
+             << summary.imported_swift_name_annotation_count
+             << ";imported_swift_private_annotation_count="
+             << summary.imported_swift_private_annotation_count
+             << ";imported_cpp_name_annotation_count="
+             << summary.imported_cpp_name_annotation_count
+             << ";imported_header_name_annotation_count="
+             << summary.imported_header_name_annotation_count
+             << ";imported_named_annotation_payload_count="
+             << summary.imported_named_annotation_payload_count;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+std::string BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"foreign_import_source_contract_id\":\""
+      << EscapeJsonString(summary.foreign_import_source_contract_id)
+      << "\",\"cpp_swift_source_contract_id\":\""
+      << EscapeJsonString(summary.cpp_swift_source_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"preservation_model\":\""
+      << EscapeJsonString(summary.preservation_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"foreign_import_source_replay_key\":\""
+      << EscapeJsonString(summary.foreign_import_source_replay_key)
+      << "\",\"cpp_swift_source_replay_key\":\""
+      << EscapeJsonString(summary.cpp_swift_source_replay_key)
+      << "\",\"local_import_module_names_lexicographic\":"
+      << BuildStringArrayJson(summary.local_import_module_names_lexicographic)
+      << ",\"imported_provider_module_names_lexicographic\":"
+      << BuildStringArrayJson(
+             summary.imported_provider_module_names_lexicographic)
+      << ",\"local_foreign_callable_count\":"
+      << summary.local_foreign_callable_count
+      << ",\"local_import_module_annotation_count\":"
+      << summary.local_import_module_annotation_count
+      << ",\"local_imported_module_name_count\":"
+      << summary.local_imported_module_name_count
+      << ",\"local_swift_name_annotation_count\":"
+      << summary.local_swift_name_annotation_count
+      << ",\"local_swift_private_annotation_count\":"
+      << summary.local_swift_private_annotation_count
+      << ",\"local_cpp_name_annotation_count\":"
+      << summary.local_cpp_name_annotation_count
+      << ",\"local_header_name_annotation_count\":"
+      << summary.local_header_name_annotation_count
+      << ",\"local_named_annotation_payload_count\":"
+      << summary.local_named_annotation_payload_count
+      << ",\"imported_module_count\":" << summary.imported_module_count
+      << ",\"imported_foreign_callable_count\":"
+      << summary.imported_foreign_callable_count
+      << ",\"imported_import_module_annotation_count\":"
+      << summary.imported_import_module_annotation_count
+      << ",\"imported_imported_module_name_count\":"
+      << summary.imported_imported_module_name_count
+      << ",\"imported_swift_name_annotation_count\":"
+      << summary.imported_swift_name_annotation_count
+      << ",\"imported_swift_private_annotation_count\":"
+      << summary.imported_swift_private_annotation_count
+      << ",\"imported_cpp_name_annotation_count\":"
+      << summary.imported_cpp_name_annotation_count
+      << ",\"imported_header_name_annotation_count\":"
+      << summary.imported_header_name_annotation_count
+      << ",\"imported_named_annotation_payload_count\":"
+      << summary.imported_named_annotation_payload_count
+      << ",\"runtime_import_artifact_ready\":"
+      << (summary.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_preservation_ready\":"
+      << (summary.separate_compilation_preservation_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 struct Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary {
   std::string contract_id =
       kObjc3Part10ModuleInterfaceReplayPreservationContractId;
@@ -6694,6 +6926,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part3_optional_keypath_runtime_helper_contract_json,
     const std::string &part6_result_and_bridging_artifact_replay_json,
     const std::string &part7_actor_mailbox_runtime_import_json,
+    const std::string &part11_foreign_surface_interface_preservation_json,
     const std::string &part10_module_interface_replay_preservation_json,
     const std::string &part10_macro_host_process_cache_runtime_integration_json,
     const std::string &part9_dispatch_metadata_interface_preservation_json,
@@ -6781,6 +7014,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part6_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_part7_actor_mailbox_and_isolation_runtime_import_surface\": "
       << part7_actor_mailbox_runtime_import_json << ",\n"
+      << "  \"objc_part11_foreign_surface_interface_and_module_preservation\": "
+      << part11_foreign_surface_interface_preservation_json << ",\n"
       << "  \"objc_part10_module_interface_and_replay_preservation\": "
       << part10_module_interface_replay_preservation_json << ",\n"
       << "  \"objc_part10_macro_host_process_and_cache_runtime_integration\": "
@@ -14957,6 +15192,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
               runtime_aware_import_module_frontend_closure),
           imported_runtime_module_surfaces);
+  const auto part11_foreign_surface_interface_preservation_summary =
+      BuildPart11ForeignSurfaceInterfacePreservationSummary(
+          program, part11_foreign_import_source_closure_summary,
+          part11_cpp_swift_interop_annotation_source_completion_summary,
+          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+              runtime_aware_import_module_frontend_closure),
+          imported_runtime_module_surfaces);
   const auto part9_dispatch_metadata_interface_preservation_summary =
       BuildPart9DispatchMetadataInterfacePreservationSummary(
           runtime_metadata_source_records, part9_dispatch_control_lowering_replay_key,
@@ -18491,6 +18733,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_cpp_and_swift_interop_annotation_source_completion\":"
             << BuildPart11CppSwiftInteropAnnotationSourceCompletionSummaryJson(
                    part11_cpp_swift_interop_annotation_source_completion_summary)
+            << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
+            << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
+                   part11_foreign_surface_interface_preservation_summary)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -19916,6 +20161,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part11_cpp_and_swift_interop_annotation_source_completion\":"
             << BuildPart11CppSwiftInteropAnnotationSourceCompletionSummaryJson(
                    part11_cpp_swift_interop_annotation_source_completion_summary)
+           << ",\"objc_part11_foreign_surface_interface_and_module_preservation\":"
+           << BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
+                  part11_foreign_surface_interface_preservation_summary)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -20622,6 +20870,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     part7_actor_lowering_metadata_contract,
                     part7_actor_lowering_metadata_replay_key,
                     part7_actor_isolation_sendability_lowering_replay_key)),
+            BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
+                part11_foreign_surface_interface_preservation_summary),
             BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
                 part10_module_interface_replay_preservation_summary),
             BuildPart10MacroHostProcessCacheRuntimeIntegrationSummaryJson(

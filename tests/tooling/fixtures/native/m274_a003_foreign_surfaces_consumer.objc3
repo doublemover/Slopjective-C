@@ -1,0 +1,5 @@
+module Part11ForeignSurfacesConsumer;
+
+fn main() -> i32 {
+  return 0;
+}
