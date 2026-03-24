@@ -4385,6 +4385,57 @@ std::string Objc3Part9DispatchControlLoweringReplayKey(
          ";lane_contract=" + kObjc3Part9DispatchControlLoweringLaneContract;
 }
 
+bool IsValidObjc3Part10ExpansionLoweringContract(
+    const Objc3Part10ExpansionLoweringContract &contract) {
+  if (contract.derived_selector_artifact_sites > contract.derive_inventory_sites ||
+      contract.synthesized_binding_sites > contract.property_behavior_sites ||
+      contract.synthesized_getter_sites > contract.property_behavior_sites ||
+      contract.synthesized_setter_sites > contract.property_behavior_sites) {
+    return false;
+  }
+  const std::size_t required_replay_visible_sites =
+      contract.derived_selector_artifact_sites +
+      contract.macro_replay_visible_sites + contract.property_behavior_sites +
+      contract.synthesized_binding_sites + contract.synthesized_getter_sites +
+      contract.synthesized_setter_sites;
+  if (contract.replay_visible_metadata_sites != required_replay_visible_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part10ExpansionLoweringReplayKey(
+    const Objc3Part10ExpansionLoweringContract &contract) {
+  return std::string("derive_inventory_sites=") +
+             std::to_string(contract.derive_inventory_sites) +
+         ";derived_selector_artifact_sites=" +
+         std::to_string(contract.derived_selector_artifact_sites) +
+         ";macro_replay_visible_sites=" +
+         std::to_string(contract.macro_replay_visible_sites) +
+         ";property_behavior_sites=" +
+         std::to_string(contract.property_behavior_sites) +
+         ";synthesized_binding_sites=" +
+         std::to_string(contract.synthesized_binding_sites) +
+         ";synthesized_getter_sites=" +
+         std::to_string(contract.synthesized_getter_sites) +
+         ";synthesized_setter_sites=" +
+         std::to_string(contract.synthesized_setter_sites) +
+         ";replay_visible_metadata_sites=" +
+         std::to_string(contract.replay_visible_metadata_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3Part10ExpansionLoweringLaneContract;
+}
+
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // M272-C003 preservation anchor: lane-C extends the local C002 lowering win

@@ -9294,6 +9294,20 @@ native build surface.
 - next issue
   - `M276-E002`
 
+## M273 expansion and lowering contract
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_expansion_and_lowering_contract`
+- the lowered Part 10 packet currently carries:
+  - derive selector inventory counts
+  - macro replay-visible callable counts
+  - synthesized property binding/getter/setter visibility counts
+  - one aggregate replay-visible metadata count
+- emitted LLVM IR now prints:
+  - `; part10_expansion_lowering_contract = ...`
+  - `; frontend_objc_part10_expansion_lowering_profile = ...`
+  - `!objc3.objc_part10_expansion_and_lowering_contract = !{!104}`
+- runnable derive bodies, macro execution, and property-behavior runtime hooks remain deferred in this tranche
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in

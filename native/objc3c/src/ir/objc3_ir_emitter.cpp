@@ -901,6 +901,10 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_part9_dispatch_control_replay_key
           << "\n";
     }
+    if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
+      out << "; part10_expansion_lowering_contract = "
+          << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
+    }
     if (!frontend_metadata_
              .lowering_part9_dispatch_metadata_interface_preservation_key.empty()) {
       out << "; part9_dispatch_metadata_interface_preservation = "
@@ -2416,6 +2420,35 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_part10_expansion_lowering_profile = derive_inventory_sites="
+        << frontend_metadata_.part10_expansion_lowering_derive_inventory_sites
+        << ", derived_selector_artifact_sites="
+        << frontend_metadata_
+               .part10_expansion_lowering_derived_selector_artifact_sites
+        << ", macro_replay_visible_sites="
+        << frontend_metadata_
+               .part10_expansion_lowering_macro_replay_visible_sites
+        << ", property_behavior_sites="
+        << frontend_metadata_.part10_expansion_lowering_property_behavior_sites
+        << ", synthesized_binding_sites="
+        << frontend_metadata_.part10_expansion_lowering_synthesized_binding_sites
+        << ", synthesized_getter_sites="
+        << frontend_metadata_.part10_expansion_lowering_synthesized_getter_sites
+        << ", synthesized_setter_sites="
+        << frontend_metadata_.part10_expansion_lowering_synthesized_setter_sites
+        << ", replay_visible_metadata_sites="
+        << frontend_metadata_
+               .part10_expansion_lowering_replay_visible_metadata_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.part10_expansion_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .part10_expansion_lowering_contract_violation_sites
+        << ", deterministic_part10_expansion_lowering_handoff="
+        << (frontend_metadata_.deterministic_part10_expansion_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_dispatch_metadata_interface_profile = local_direct_callable_record_count="
         << frontend_metadata_
                .part9_dispatch_metadata_local_direct_callable_record_count
@@ -3596,6 +3629,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
+    out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part9_dispatch_metadata_and_interface_preservation = !{!103}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
@@ -6465,6 +6499,51 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_part9_dispatch_control_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!104 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_derive_inventory_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_derived_selector_artifact_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_macro_replay_visible_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_property_behavior_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_synthesized_binding_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_synthesized_getter_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_synthesized_setter_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_replay_visible_metadata_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part10_expansion_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_.deterministic_part10_expansion_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

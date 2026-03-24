@@ -1443,3 +1443,16 @@ Current implementation status (`M273-B004`):
   - `Observed` readonly or setter-invisible properties are rejected with `O3S329`
   - `Projected` writable or setter-visible properties are rejected with `O3S330`
 - runnable property-behavior hooks and runtime materialization still remain deferred to later M273 lanes
+
+## M273 expansion and lowering contract (C001)
+
+Current implementation status (`M273-C001`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_expansion_and_lowering_contract`
+- the lowered Part 10 packet currently carries:
+  - derive selector inventory counts
+  - macro replay-visible callable counts
+  - synthesized property binding/getter/setter visibility counts
+  - one aggregate replay-visible metadata count
+- emitted IR now carries one replay-stable Part 10 lowering summary and metadata node
+- runnable derive bodies, macro execution, and property-behavior runtime hooks still remain deferred to later M273 lanes

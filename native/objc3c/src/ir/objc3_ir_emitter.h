@@ -882,6 +882,18 @@ struct Objc3IRFrontendMetadata {
   std::size_t part9_dispatch_control_lowering_guard_blocked_sites = 0;
   std::size_t part9_dispatch_control_lowering_contract_violation_sites = 0;
   bool deterministic_part9_dispatch_control_lowering_handoff = false;
+  std::string lowering_part10_expansion_replay_key;
+  std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
+  std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;
+  std::size_t part10_expansion_lowering_macro_replay_visible_sites = 0;
+  std::size_t part10_expansion_lowering_property_behavior_sites = 0;
+  std::size_t part10_expansion_lowering_synthesized_binding_sites = 0;
+  std::size_t part10_expansion_lowering_synthesized_getter_sites = 0;
+  std::size_t part10_expansion_lowering_synthesized_setter_sites = 0;
+  std::size_t part10_expansion_lowering_replay_visible_metadata_sites = 0;
+  std::size_t part10_expansion_lowering_guard_blocked_sites = 0;
+  std::size_t part10_expansion_lowering_contract_violation_sites = 0;
+  bool deterministic_part10_expansion_lowering_handoff = false;
   std::string lowering_part9_dispatch_metadata_interface_preservation_key;
   std::size_t part9_dispatch_metadata_local_direct_callable_record_count = 0;
   std::size_t part9_dispatch_metadata_local_final_callable_record_count = 0;

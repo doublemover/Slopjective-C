@@ -1558,6 +1558,22 @@ inline constexpr const char *kObjc3Part9DispatchControlLoweringDeferredModel =
     "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-m272-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part9DispatchControlLoweringLaneContract =
     "m272-part9-dispatch-control-lowering-contract-v1";
+// M273-C001 expansion/lowering freeze anchor: lane-C freezes one deterministic
+// Part 10 lowering packet over derived selector inventory, macro replay
+// visibility, and synthesized property metadata carriage. Runnable derive body
+// emission, macro execution, and property-behavior runtime hooks remain later
+// M273 work.
+inline constexpr const char *kObjc3Part10ExpansionLoweringContractId =
+    "objc3c-part10-expansion-lowering-contract/m273-c001-v1";
+inline constexpr const char *kObjc3Part10ExpansionLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part10_expansion_and_lowering_contract";
+inline constexpr const char *kObjc3Part10ExpansionLoweringModel =
+    "part10-derived-selector-inventory-macro-replay-visibility-and-synthesized-property-metadata-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
+inline constexpr const char *kObjc3Part10ExpansionLoweringDeferredModel =
+    "runnable-derive-body-emission-macro-execution-and-property-behavior-runtime-materialization-remain-later-m273-lane-c-and-lane-d-work";
+inline constexpr const char *kObjc3Part10ExpansionLoweringLaneContract =
+    "m273-part10-expansion-lowering-contract-v1";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2333,6 +2349,20 @@ struct Objc3Part9DispatchControlLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part10ExpansionLoweringContract {
+  std::size_t derive_inventory_sites = 0;
+  std::size_t derived_selector_artifact_sites = 0;
+  std::size_t macro_replay_visible_sites = 0;
+  std::size_t property_behavior_sites = 0;
+  std::size_t synthesized_binding_sites = 0;
+  std::size_t synthesized_getter_sites = 0;
+  std::size_t synthesized_setter_sites = 0;
+  std::size_t replay_visible_metadata_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -2704,6 +2734,10 @@ bool IsValidObjc3Part9DispatchControlLoweringContract(
     const Objc3Part9DispatchControlLoweringContract &contract);
 std::string Objc3Part9DispatchControlLoweringReplayKey(
     const Objc3Part9DispatchControlLoweringContract &contract);
+bool IsValidObjc3Part10ExpansionLoweringContract(
+    const Objc3Part10ExpansionLoweringContract &contract);
+std::string Objc3Part10ExpansionLoweringReplayKey(
+    const Objc3Part10ExpansionLoweringContract &contract);
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);

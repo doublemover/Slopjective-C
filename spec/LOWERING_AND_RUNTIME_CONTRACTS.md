@@ -8551,3 +8551,18 @@ Runtime import surfaces may now carry both
 summaries and cross-module orchestration summaries aggregate those packets so
 separate-compilation proofs can validate that optional/key-path runtime support
 survives module boundaries without widening the public runtime ABI.
+
+## M273 part 10 expansion lowering contract
+
+`M273-C001` freezes the first truthful Part 10 lowering boundary.
+
+- contract id
+  `objc3c-part10-expansion-lowering-contract/m273-c001-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_expansion_and_lowering_contract`
+- IR proof
+  - `; part10_expansion_lowering_contract = ...`
+  - `!objc3.objc_part10_expansion_and_lowering_contract = !{!104}`
+- truthful boundary
+  - derive selector inventory, macro replay visibility, and synthesized property metadata now share one deterministic lowering packet
+  - runnable derive bodies, macro execution, and property-behavior runtime hooks are still not claimed yet

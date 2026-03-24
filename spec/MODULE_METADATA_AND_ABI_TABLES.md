@@ -8767,3 +8767,16 @@ runnable smoke matrix.
   - Part 10 now publishes deterministic property-behavior legality over the supported `Observed` / `Projected` semantic slice
   - unsupported names and incompatible owner/storage combinations fail closed before lowering
   - runnable property-behavior hook materialization and ABI tables are still not claimed yet
+
+## M273 expansion/lowering metadata note
+
+`M273-C001` still does not widen runtime ABI tables beyond replay-visible proof metadata.
+
+- contract id
+  `objc3c-part10-expansion-lowering-contract/m273-c001-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_expansion_and_lowering_contract`
+- truthful boundary
+  - Part 10 now publishes one deterministic lowering packet over derive selector inventory, macro replay visibility, and synthesized property metadata carriage
+  - LLVM IR now carries one replay-visible metadata node for that packet
+  - runnable derive bodies, macro execution, and property-behavior runtime ABI tables are still not claimed yet
