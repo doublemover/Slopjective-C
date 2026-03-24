@@ -863,6 +863,28 @@ struct Objc3IRFrontendMetadata {
   std::size_t actor_lowering_metadata_guard_blocked_sites = 0;
   std::size_t actor_lowering_metadata_contract_violation_sites = 0;
   bool deterministic_actor_lowering_metadata_handoff = false;
+  std::string lowering_part8_system_extension_replay_key;
+  std::size_t part8_system_extension_lowering_cleanup_hook_sites = 0;
+  std::size_t part8_system_extension_lowering_resource_local_sites = 0;
+  std::size_t part8_system_extension_lowering_cleanup_owned_local_sites = 0;
+  std::size_t part8_system_extension_lowering_resource_move_capture_sites = 0;
+  std::size_t part8_system_extension_lowering_borrowed_parameter_sites = 0;
+  std::size_t
+      part8_system_extension_lowering_borrowed_return_callable_sites = 0;
+  std::size_t
+      part8_system_extension_lowering_borrowed_escape_candidate_sites = 0;
+  std::size_t part8_system_extension_lowering_explicit_capture_item_sites = 0;
+  std::size_t part8_system_extension_lowering_retainable_family_callable_sites =
+      0;
+  std::size_t
+      part8_system_extension_lowering_retainable_family_operation_callable_sites =
+          0;
+  std::size_t
+      part8_system_extension_lowering_retainable_family_alias_callable_sites =
+          0;
+  std::size_t part8_system_extension_lowering_guard_blocked_sites = 0;
+  std::size_t part8_system_extension_lowering_contract_violation_sites = 0;
+  bool deterministic_part8_system_extension_lowering_handoff = false;
   std::string lowering_task_runtime_interop_cancellation_replay_key;
   std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
   std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =

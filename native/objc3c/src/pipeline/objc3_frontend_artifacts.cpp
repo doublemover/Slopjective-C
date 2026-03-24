@@ -1754,6 +1754,60 @@ Objc3ActorLoweringMetadataContract BuildPart7ActorLoweringMetadataContract(
   return contract;
 }
 
+Objc3Part8SystemExtensionLoweringContract
+BuildPart8SystemExtensionLoweringContract(
+    const Objc3Part8SystemExtensionSemanticModelSummary &semantic_summary,
+    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary &resource_summary,
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &borrowed_summary,
+    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+        &family_summary) {
+  Objc3Part8SystemExtensionLoweringContract contract;
+  contract.cleanup_hook_sites = semantic_summary.cleanup_attribute_sites +
+                                semantic_summary.cleanup_sugar_sites;
+  contract.resource_local_sites = semantic_summary.resource_attribute_sites +
+                                  semantic_summary.resource_sugar_sites;
+  contract.cleanup_owned_local_sites = resource_summary.cleanup_owned_local_sites;
+  contract.resource_move_capture_sites =
+      resource_summary.resource_move_capture_sites;
+  contract.borrowed_parameter_sites = borrowed_summary.borrowed_parameter_sites;
+  contract.borrowed_return_callable_sites =
+      borrowed_summary.borrowed_return_callable_sites;
+  contract.borrowed_escape_candidate_sites =
+      borrowed_summary.borrowed_escape_candidate_sites;
+  contract.explicit_capture_item_sites =
+      family_summary.explicit_capture_item_sites;
+  contract.retainable_family_callable_sites =
+      family_summary.retainable_family_callable_sites;
+  contract.retainable_family_operation_callable_sites =
+      family_summary.retainable_family_operation_callable_sites;
+  contract.retainable_family_alias_callable_sites =
+      family_summary.retainable_family_alias_callable_sites;
+  contract.guard_blocked_sites =
+      resource_summary.illegal_non_resource_move_sites +
+      resource_summary.illegal_use_after_move_sites +
+      resource_summary.illegal_duplicate_move_sites +
+      borrowed_summary.illegal_unproven_call_escape_sites +
+      borrowed_summary.illegal_escaping_block_capture_sites +
+      borrowed_summary.illegal_borrowed_return_sites +
+      family_summary.illegal_duplicate_explicit_capture_sites +
+      family_summary.illegal_non_object_capture_mode_sites +
+      family_summary.illegal_unused_explicit_capture_sites +
+      family_summary.illegal_conflicting_retainable_family_sites +
+      family_summary.illegal_invalid_family_operation_shape_sites +
+      family_summary.illegal_invalid_family_alias_shape_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      semantic_summary.deterministic &&
+      semantic_summary.ready_for_lowering_and_runtime &&
+      resource_summary.deterministic &&
+      resource_summary.ready_for_lowering_and_runtime &&
+      borrowed_summary.deterministic &&
+      borrowed_summary.ready_for_lowering_and_runtime &&
+      family_summary.deterministic &&
+      family_summary.ready_for_lowering_and_runtime;
+  return contract;
+}
+
 std::string BuildPart7ActorLoweringMetadataContractJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
         &source_summary,
@@ -1799,6 +1853,69 @@ std::string BuildPart7ActorLoweringMetadataContractJson(
       << ",\"race_guard_dependency_sites\":"
       << contract.race_guard_dependency_sites
       << ",\"task_handoff_sites\":" << contract.task_handoff_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart8SystemExtensionLoweringContractJson(
+    const Objc3Part8SystemExtensionSemanticModelSummary &semantic_summary,
+    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary &resource_summary,
+    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &borrowed_summary,
+    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+        &family_summary,
+    const Objc3Part8SystemExtensionLoweringContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3Part8SystemExtensionLoweringContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringSurfacePath)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"resource_semantic_contract_id\":\""
+      << EscapeJsonString(resource_summary.contract_id)
+      << "\",\"borrowed_semantic_contract_id\":\""
+      << EscapeJsonString(borrowed_summary.contract_id)
+      << "\",\"family_semantic_contract_id\":\""
+      << EscapeJsonString(family_summary.contract_id)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringLaneContract)
+      << "\",\"lowering_model\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part8SystemExtensionLoweringDeferredModel)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"cleanup_hook_sites\":" << contract.cleanup_hook_sites
+      << ",\"resource_local_sites\":" << contract.resource_local_sites
+      << ",\"cleanup_owned_local_sites\":"
+      << contract.cleanup_owned_local_sites
+      << ",\"resource_move_capture_sites\":"
+      << contract.resource_move_capture_sites
+      << ",\"borrowed_parameter_sites\":"
+      << contract.borrowed_parameter_sites
+      << ",\"borrowed_return_callable_sites\":"
+      << contract.borrowed_return_callable_sites
+      << ",\"borrowed_escape_candidate_sites\":"
+      << contract.borrowed_escape_candidate_sites
+      << ",\"explicit_capture_item_sites\":"
+      << contract.explicit_capture_item_sites
+      << ",\"retainable_family_callable_sites\":"
+      << contract.retainable_family_callable_sites
+      << ",\"retainable_family_operation_callable_sites\":"
+      << contract.retainable_family_operation_callable_sites
+      << ",\"retainable_family_alias_callable_sites\":"
+      << contract.retainable_family_alias_callable_sites
       << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
       << ",\"contract_violation_sites\":"
       << contract.contract_violation_sites
@@ -12010,6 +12127,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &part8_capture_list_retainable_family_legality_completion_summary =
           pipeline_result
               .part8_capture_list_retainable_family_legality_completion_summary;
+  const Objc3Part8SystemExtensionLoweringContract
+      part8_system_extension_lowering_contract =
+          BuildPart8SystemExtensionLoweringContract(
+              part8_system_extension_semantic_model_summary,
+              part8_resource_move_use_after_move_semantics_summary,
+              part8_borrowed_pointer_escape_analysis_summary,
+              part8_capture_list_retainable_family_legality_completion_summary);
+  if (!IsValidObjc3Part8SystemExtensionLoweringContract(
+          part8_system_extension_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid system-extension lowering contract");
+  }
+  const std::string part8_system_extension_lowering_replay_key =
+      Objc3Part8SystemExtensionLoweringReplayKey(
+          part8_system_extension_lowering_contract);
   const Objc3Part7StructuredTaskCancellationSemanticSummary
       &part7_structured_task_cancellation_semantic_summary =
           pipeline_result.part7_structured_task_cancellation_semantic_summary;
@@ -16453,6 +16586,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part8_capture_list_and_retainable_family_legality_completion\":"
            << BuildPart8CaptureListRetainableFamilyLegalityCompletionSummaryJson(
                   part8_capture_list_retainable_family_legality_completion_summary)
+           << ",\"objc_part8_system_extension_lowering_contract\":"
+           << BuildPart8SystemExtensionLoweringContractJson(
+                  part8_system_extension_semantic_model_summary,
+                  part8_resource_move_use_after_move_semantics_summary,
+                  part8_borrowed_pointer_escape_analysis_summary,
+                  part8_capture_list_retainable_family_legality_completion_summary,
+                  part8_system_extension_lowering_contract,
+                  part8_system_extension_lowering_replay_key)
            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
                   part7_structured_task_cancellation_semantic_summary)
@@ -17795,6 +17936,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part8_capture_list_and_retainable_family_legality_completion\":"
            << BuildPart8CaptureListRetainableFamilyLegalityCompletionSummaryJson(
                   part8_capture_list_retainable_family_legality_completion_summary)
+           << ",\"objc_part8_system_extension_lowering_contract\":"
+           << BuildPart8SystemExtensionLoweringContractJson(
+                  part8_system_extension_semantic_model_summary,
+                  part8_resource_move_use_after_move_semantics_summary,
+                  part8_borrowed_pointer_escape_analysis_summary,
+                  part8_capture_list_retainable_family_legality_completion_summary,
+                  part8_system_extension_lowering_contract,
+                  part8_system_extension_lowering_replay_key)
            << ",\"objc_part7_structured_task_and_cancellation_semantics\":"
            << BuildPart7StructuredTaskCancellationSemanticSummaryJson(
                   part7_structured_task_cancellation_semantic_summary)
@@ -18762,6 +18911,38 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_actor_lowering_metadata_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_actor_lowering_metadata_handoff =
       part7_actor_lowering_metadata_contract.deterministic;
+  ir_frontend_metadata.lowering_part8_system_extension_replay_key =
+      part8_system_extension_lowering_replay_key;
+  ir_frontend_metadata.part8_system_extension_lowering_cleanup_hook_sites =
+      part8_system_extension_lowering_contract.cleanup_hook_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_resource_local_sites =
+      part8_system_extension_lowering_contract.resource_local_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_cleanup_owned_local_sites =
+      part8_system_extension_lowering_contract.cleanup_owned_local_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_resource_move_capture_sites =
+      part8_system_extension_lowering_contract.resource_move_capture_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_borrowed_parameter_sites =
+      part8_system_extension_lowering_contract.borrowed_parameter_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_borrowed_return_callable_sites =
+      part8_system_extension_lowering_contract.borrowed_return_callable_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_borrowed_escape_candidate_sites =
+      part8_system_extension_lowering_contract.borrowed_escape_candidate_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_explicit_capture_item_sites =
+      part8_system_extension_lowering_contract.explicit_capture_item_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_retainable_family_callable_sites =
+      part8_system_extension_lowering_contract.retainable_family_callable_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_retainable_family_operation_callable_sites =
+      part8_system_extension_lowering_contract
+          .retainable_family_operation_callable_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_retainable_family_alias_callable_sites =
+      part8_system_extension_lowering_contract
+          .retainable_family_alias_callable_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_guard_blocked_sites =
+      part8_system_extension_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata.part8_system_extension_lowering_contract_violation_sites =
+      part8_system_extension_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_part8_system_extension_lowering_handoff =
+      part8_system_extension_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_task_runtime_interop_cancellation_replay_key =
       part7_task_runtime_interop_cancellation_lowering_replay_key;
   ir_frontend_metadata.task_runtime_interop_cancellation_lowering_sites =

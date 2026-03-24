@@ -4024,3 +4024,24 @@ Current implementation status:
   - compatibility aliases without supporting object-return family surfaces
 - lowering and runtime behavior remain later `M271` work
 
+## M271 system-extension lowering contract
+
+The frontend pipeline now publishes one deterministic Part 8 lowering packet at
+`frontend.pipeline.semantic_surface.objc_part8_system_extension_lowering_contract`.
+
+Current implementation status:
+
+- the packet consumes the already-landed `M271-B001` through `M271-B004`
+  semantic summaries
+- emitted manifests and IR now carry one explicit lowering handoff for:
+  - cleanup hook locals and resource locals
+  - cleanup-owned locals and explicit `move` capture transfer sites
+  - borrowed parameter / borrowed return callable / borrowed escape candidate
+    sites
+  - explicit capture item and retainable-family callable inventories
+- this is a truthful lowering-freeze only:
+  - live cleanup/runtime carriers
+  - borrowed lifetime runtime interop
+  - runnable retainable-family execution behavior
+  remain later `M271` work
+

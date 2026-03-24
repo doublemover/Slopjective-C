@@ -908,6 +908,17 @@ M271-B004 capture-list/family legality note:
   compatibility aliases without supporting object-return family surfaces
 - lowering and runtime behavior remain later `M271` work
 
+M271-C001 lowering note:
+- the frontend pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part8_system_extension_lowering_contract`
+- the packet consumes the already-landed `M271-B001` through `M271-B004`
+  semantic summaries and freezes one truthful lowering handoff for cleanup
+  locals, resource locals, borrowed boundaries, explicit capture inventories,
+  and retainable-family callable inventories
+- emitted manifests and IR now carry replay-stable Part 8 lowering metadata
+  without claiming live cleanup/runtime carriers, borrowed lifetime runtime
+  interop, or runnable retainable-family execution behavior
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes

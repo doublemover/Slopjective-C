@@ -327,6 +327,14 @@ M271-B004 semantic note:
 - duplicate explicit captures, weak/unowned explicit captures on non-object
   bindings, conflicting retainable-family annotations, and compatibility
   aliases without supporting object-return family surfaces now fail closed
+
+Current implementation status (`M271-C001`):
+- `frontend.pipeline.semantic_surface.objc_part8_system_extension_lowering_contract`
+- emitted manifests and IR now carry one replay-stable lowering packet for
+  cleanup/resource ownership counts, borrowed boundary counts, explicit capture
+  inventories, and retainable-family callable inventories
+- live cleanup/runtime carriers, borrowed lifetime runtime interop, and
+  runnable retainable-family execution behavior remain later `M271` work
 ```
 
 This attribute may be applied to:

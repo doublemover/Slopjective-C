@@ -1515,6 +1515,23 @@ inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
     "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataLaneContract =
     "m270-actor-lowering-metadata-contract-v1";
+// M271-C001 lowering-freeze anchor: Part 8 now freezes one explicit emitted
+// lowering contract that carries cleanup/resource ownership counts, borrowed
+// boundary counts, and retainable-family callable counts into manifests and IR
+// metadata without overclaiming live runtime cleanup or borrowed lifetime
+// execution. Lane-D must widen this exact contract family rather than inventing
+// a second system-extension lowering boundary.
+inline constexpr const char *kObjc3Part8SystemExtensionLoweringContractId =
+    "objc3c-part8-system-extension-lowering-contract/m271-c001-v1";
+inline constexpr const char *kObjc3Part8SystemExtensionLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part8_system_extension_lowering_contract";
+inline constexpr const char *kObjc3Part8SystemExtensionLoweringModel =
+    "cleanup-resource-borrowed-and-retainable-family-sema-packets-now-feed-one-deterministic-part8-lowering-contract-for-manifest-and-ir-carriage";
+inline constexpr const char *kObjc3Part8SystemExtensionLoweringDeferredModel =
+    "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-m271-lane-d-work";
+inline constexpr const char *kObjc3Part8SystemExtensionLoweringLaneContract =
+    "m271-part8-system-extension-lowering-contract-v1";
 inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneContract =
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
@@ -2195,6 +2212,23 @@ struct Objc3ActorLoweringMetadataContract {
   bool deterministic = true;
 };
 
+struct Objc3Part8SystemExtensionLoweringContract {
+  std::size_t cleanup_hook_sites = 0;
+  std::size_t resource_local_sites = 0;
+  std::size_t cleanup_owned_local_sites = 0;
+  std::size_t resource_move_capture_sites = 0;
+  std::size_t borrowed_parameter_sites = 0;
+  std::size_t borrowed_return_callable_sites = 0;
+  std::size_t borrowed_escape_candidate_sites = 0;
+  std::size_t explicit_capture_item_sites = 0;
+  std::size_t retainable_family_callable_sites = 0;
+  std::size_t retainable_family_operation_callable_sites = 0;
+  std::size_t retainable_family_alias_callable_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -2556,6 +2590,10 @@ bool IsValidObjc3ActorLoweringMetadataContract(
     const Objc3ActorLoweringMetadataContract &contract);
 std::string Objc3ActorLoweringMetadataReplayKey(
     const Objc3ActorLoweringMetadataContract &contract);
+bool IsValidObjc3Part8SystemExtensionLoweringContract(
+    const Objc3Part8SystemExtensionLoweringContract &contract);
+std::string Objc3Part8SystemExtensionLoweringReplayKey(
+    const Objc3Part8SystemExtensionLoweringContract &contract);
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
