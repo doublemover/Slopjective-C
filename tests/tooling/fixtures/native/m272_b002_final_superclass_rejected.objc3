@@ -1,0 +1,19 @@
+// Expected diagnostic code(s): O3S307.
+module Part9FinalSuperclass;
+
+__attribute__((objc_final))
+@interface FinalBase
+- (i32)value;
+@end
+
+@implementation FinalBase
+- (i32)value { return 1; }
+@end
+
+@interface FinalChild : FinalBase
+- (i32)value;
+@end
+
+@implementation FinalChild
+- (i32)value { return 2; }
+@end

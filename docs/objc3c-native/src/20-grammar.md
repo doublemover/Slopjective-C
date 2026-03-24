@@ -4167,3 +4167,18 @@ Current implementation status (`M271-E001`):
   - `objc_dynamic` opt-out sites
   - override lookup hits, misses, conflicts, and unresolved base-interface counts
 - this lane is still sema/accounting only; direct-call lowering, final/sealed enforcement, metadata realization, and runnable dispatch-boundary behavior remain later `M272` work
+
+## M272 override, finality, and sealing legality enforcement
+
+- the semantic pipeline now publishes `frontend.pipeline.semantic_surface.objc_part9_override_finality_and_sealing_legality`
+- Part 9 legality now fails closed on:
+  - inheriting from an `objc_final` superclass
+  - inheriting from an `objc_sealed` superclass
+  - overriding an `objc_final` superclass method
+  - participating in an override chain that uses `objc_direct` dispatch
+- the current legality slice uses diagnostic codes:
+  - `O3S307`
+  - `O3S308`
+  - `O3S309`
+  - `O3S310`
+- this lane is still sema-only; direct-call lowering, metadata realization, and runnable dispatch-boundary behavior remain later `M272` work

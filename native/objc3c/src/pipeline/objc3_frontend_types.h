@@ -5159,6 +5159,8 @@ struct Objc3FrontendPipelineResult {
       part8_system_extension_semantic_model_summary;
   Objc3Part9DispatchIntentSemanticModelSummary
       part9_dispatch_intent_semantic_model_summary;
+  Objc3Part9DispatchIntentLegalitySummary
+      part9_dispatch_intent_legality_summary;
   Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
       part8_resource_move_use_after_move_semantics_summary;
   Objc3Part8BorrowedPointerEscapeAnalysisSummary

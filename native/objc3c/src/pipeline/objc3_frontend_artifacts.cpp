@@ -1007,6 +1007,47 @@ std::string BuildPart9DispatchIntentSemanticModelSummaryJson(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentLegalitySummaryJson(
+    const Objc3Part9DispatchIntentLegalitySummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"subclass_sites\":" << summary.subclass_sites
+      << ",\"override_sites\":" << summary.override_sites
+      << ",\"illegal_final_superclass_sites\":"
+      << summary.illegal_final_superclass_sites
+      << ",\"illegal_sealed_superclass_sites\":"
+      << summary.illegal_sealed_superclass_sites
+      << ",\"illegal_final_override_sites\":"
+      << summary.illegal_final_override_sites
+      << ",\"illegal_direct_override_sites\":"
+      << summary.illegal_direct_override_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"final_superclass_fail_closed\":"
+      << (summary.final_superclass_fail_closed ? "true" : "false")
+      << ",\"sealed_superclass_fail_closed\":"
+      << (summary.sealed_superclass_fail_closed ? "true" : "false")
+      << ",\"final_override_fail_closed\":"
+      << (summary.final_override_fail_closed ? "true" : "false")
+      << ",\"direct_override_fail_closed\":"
+      << (summary.direct_override_fail_closed ? "true" : "false")
+      << ",\"lowering_runtime_deferred\":"
+      << (summary.lowering_runtime_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -12316,6 +12357,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part9DispatchIntentSemanticModelSummary
       &part9_dispatch_intent_semantic_model_summary =
           pipeline_result.part9_dispatch_intent_semantic_model_summary;
+  const Objc3Part9DispatchIntentLegalitySummary
+      &part9_dispatch_intent_legality_summary =
+          pipeline_result.part9_dispatch_intent_legality_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16783,6 +16827,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
+            << ",\"objc_part9_override_finality_and_sealing_legality\":"
+            << BuildPart9DispatchIntentLegalitySummaryJson(
+                   part9_dispatch_intent_legality_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18149,6 +18196,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
+            << ",\"objc_part9_override_finality_and_sealing_legality\":"
+            << BuildPart9DispatchIntentLegalitySummaryJson(
+                   part9_dispatch_intent_legality_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)

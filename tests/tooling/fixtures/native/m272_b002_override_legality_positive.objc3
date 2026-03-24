@@ -1,13 +1,11 @@
-module DispatchIntentSemanticModel;
+module Part9B002Positive;
 
 @interface BaseBox
 - (i32)shared;
 @end
 
 @implementation BaseBox
-- (i32)shared {
-  return 1;
-}
+- (i32)shared { return 1; }
 @end
 
 @interface ChildBox : BaseBox
@@ -15,9 +13,7 @@ module DispatchIntentSemanticModel;
 @end
 
 @implementation ChildBox
-- (i32)shared {
-  return 2;
-}
+- (i32)shared { return 2; }
 @end
 
 __attribute__((objc_direct_members, objc_final, objc_sealed))
@@ -28,13 +24,7 @@ __attribute__((objc_direct_members, objc_final, objc_sealed))
 @end
 
 @implementation PolicyBox
-- (i32)implicitDirect {
-  return 3;
-}
-- (i32)dynamicEscape __attribute__((objc_dynamic)) {
-  return 4;
-}
-- (i32)explicitDirect __attribute__((objc_direct)) {
-  return 5;
-}
+- (i32)implicitDirect { return 3; }
+- (i32)dynamicEscape __attribute__((objc_dynamic)) { return 4; }
+- (i32)explicitDirect __attribute__((objc_direct)) { return 5; }
 @end

@@ -336,6 +336,36 @@ inventing a second override model before lowering/runtime work lands.
 
 ---
 
+## D-027: Part 9 legality must fail closed on superclass finality/sealing and objc_direct override chains before lowering begins {#decisions-d-027}
+
+**Decision:** `M272-B002` shall turn the Part 9 lane-B packet into live
+semantic enforcement for:
+
+- inheriting from an `objc_final` superclass,
+- inheriting from an `objc_sealed` superclass,
+- overriding an `objc_final` superclass method,
+- participating in an override chain that uses `objc_direct` dispatch.
+
+Those rules shall fail closed in sema with deterministic diagnostics before
+direct-call lowering, metadata realization, or runnable dispatch-boundary work
+is allowed to widen.
+
+The active diagnostics are:
+
+- `O3S307`
+- `O3S308`
+- `O3S309`
+- `O3S310`
+
+**Rationale:** finality, sealing, and direct-dispatch override restrictions are
+language-level legality boundaries. They must be enforced before later `M272`
+lanes start treating Part 9 intent as a lowering/runtime contract.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable

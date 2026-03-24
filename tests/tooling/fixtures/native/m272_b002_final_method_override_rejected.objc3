@@ -1,0 +1,18 @@
+// Expected diagnostic code(s): O3S309.
+module Part9FinalMethod;
+
+@interface FinalMethodBase
+- (i32)shared __attribute__((objc_final));
+@end
+
+@implementation FinalMethodBase
+- (i32)shared __attribute__((objc_final)) { return 1; }
+@end
+
+@interface FinalMethodChild : FinalMethodBase
+- (i32)shared;
+@end
+
+@implementation FinalMethodChild
+- (i32)shared { return 2; }
+@end

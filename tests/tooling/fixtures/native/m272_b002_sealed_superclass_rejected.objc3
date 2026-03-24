@@ -1,0 +1,19 @@
+// Expected diagnostic code(s): O3S308.
+module Part9SealedSuperclass;
+
+__attribute__((objc_sealed))
+@interface SealedBase
+- (i32)value;
+@end
+
+@implementation SealedBase
+- (i32)value { return 1; }
+@end
+
+@interface SealedChild : SealedBase
+- (i32)value;
+@end
+
+@implementation SealedChild
+- (i32)value { return 2; }
+@end

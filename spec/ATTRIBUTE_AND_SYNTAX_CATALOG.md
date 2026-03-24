@@ -1191,3 +1191,22 @@ Current implementation status (`M272-B001`):
   hits/misses/conflicts plus unresolved base-interface counts
 - direct-call lowering, final/sealed enforcement, metadata realization, and
   runtime dispatch-boundary behavior remain later `M272` work
+
+## M272 override/finality/sealing legality enforcement (B002)
+
+Current implementation status (`M272-B002`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part9_override_finality_and_sealing_legality`
+- Part 9 legality now fails closed on:
+  - inheriting from an `objc_final` superclass,
+  - inheriting from an `objc_sealed` superclass,
+  - overriding an `objc_final` superclass method,
+  - participating in an override chain that uses `objc_direct` dispatch
+- the active diagnostics are:
+  - `O3S307`
+  - `O3S308`
+  - `O3S309`
+  - `O3S310`
+- direct-call lowering, metadata realization, and runtime dispatch-boundary
+  behavior remain later `M272` work

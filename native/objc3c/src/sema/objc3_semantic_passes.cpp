@@ -5724,6 +5724,9 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.ns_error_bridge_boundary_sites = method.ns_error_bridge_boundary_sites;
   info.ns_error_bridging_contract_violation_sites =
       method.ns_error_bridging_contract_violation_sites;
+  info.objc_direct_declared = method.objc_direct_declared;
+  info.objc_final_declared = method.objc_final_declared;
+  info.objc_dynamic_declared = method.objc_dynamic_declared;
   info.is_class_method = method.is_class_method;
   info.has_definition = method.has_body;
   return info;
@@ -9348,6 +9351,76 @@ BuildPart9DispatchIntentSemanticModelSummary(
       << summary.override_lookup_misses << ":"
       << summary.override_conflicts << ":"
       << summary.unresolved_base_interfaces
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part9DispatchIntentLegalitySummary
+BuildPart9DispatchIntentLegalitySummary(
+    const Objc3Program &program,
+    const Objc3Part9DispatchIntentSemanticModelSummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part9DispatchIntentLegalitySummary summary;
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) {
+          return entry.find(code) != std::string::npos;
+        });
+  };
+
+  for (const auto &interface_decl : program.interfaces) {
+    if (!interface_decl.has_category && !interface_decl.super_name.empty()) {
+      ++summary.subclass_sites;
+    }
+  }
+
+  summary.override_sites = dependency_summary.override_lookup_sites;
+  summary.illegal_final_superclass_sites = count_diagnostic_code("O3S307");
+  summary.illegal_sealed_superclass_sites = count_diagnostic_code("O3S308");
+  summary.illegal_final_override_sites = count_diagnostic_code("O3S309");
+  summary.illegal_direct_override_sites = count_diagnostic_code("O3S310");
+
+  const bool dependency_surface_present =
+      !dependency_summary.contract_id.empty() &&
+      !dependency_summary.surface_path.empty() &&
+      dependency_summary.ready_for_core_implementation;
+  summary.dependency_required = true;
+  summary.final_superclass_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_final_superclass_sites <= summary.subclass_sites;
+  summary.sealed_superclass_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_sealed_superclass_sites <= summary.subclass_sites;
+  summary.final_override_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_final_override_sites <= summary.override_sites;
+  summary.direct_override_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_direct_override_sites <= summary.override_sites;
+  summary.lowering_runtime_deferred = true;
+  summary.deterministic =
+      summary.final_superclass_fail_closed &&
+      summary.sealed_superclass_fail_closed &&
+      summary.final_override_fail_closed &&
+      summary.direct_override_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "dispatch-control legality diagnostics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";subclass-sites=" << summary.subclass_sites
+      << ";override-sites=" << summary.override_sites
+      << ";illegal-sites=" << summary.illegal_final_superclass_sites << ":"
+      << summary.illegal_sealed_superclass_sites << ":"
+      << summary.illegal_final_override_sites << ":"
+      << summary.illegal_direct_override_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -13162,6 +13235,12 @@ static Objc3SuperclassRealizationClosure ResolveSuperclassRealizationClosure(
   return closure;
 }
 
+static bool IsPart9EffectivelyDirectMethod(const Objc3MethodInfo &method,
+                                           const Objc3InterfaceInfo &owner) {
+  return method.objc_direct_declared ||
+         (owner.objc_direct_members_declared && !method.objc_dynamic_declared);
+}
+
 static const Objc3InterfaceDecl *FindAstInterfaceDecl(
     const Objc3Program &ast,
     const std::string &name) {
@@ -13205,6 +13284,30 @@ static void ValidateInheritanceOverrideAndRealizationLegality(
     }
     if (interface_it->second.super_name.empty()) {
       continue;
+    }
+
+    // M272-B002 legality anchor: fail closed on superclass finality/sealing
+    // and on override chains that cross objc_final / objc_direct boundaries
+    // before Part 9 lowering or runnable dispatch behavior is allowed to widen.
+    const auto direct_super_it =
+        surface.interfaces.find(interface_it->second.super_name);
+    if (direct_super_it != surface.interfaces.end()) {
+      if (direct_super_it->second.objc_final_declared) {
+        diagnostics.push_back(MakeDiag(
+            interface_decl->line, interface_decl->column, "O3S307",
+            "dispatch-control semantics failed: interface '" +
+                interface_decl->name +
+                "' cannot inherit from objc_final superclass '" +
+                direct_super_it->first + "'"));
+      }
+      if (direct_super_it->second.objc_sealed_declared) {
+        diagnostics.push_back(MakeDiag(
+            interface_decl->line, interface_decl->column, "O3S308",
+            "dispatch-control semantics failed: interface '" +
+                interface_decl->name +
+                "' cannot inherit from objc_sealed superclass '" +
+                direct_super_it->first + "'"));
+      }
     }
 
     const Objc3SuperclassRealizationClosure closure =
@@ -13285,6 +13388,36 @@ static void ValidateInheritanceOverrideAndRealizationLegality(
                 "' in interface '" + interface_decl->name +
                 "' relative to superclass '" +
                 inherited_method.owner_name + "'"));
+      }
+
+      if (inherited_method.method != nullptr) {
+        const auto inherited_owner_it =
+            surface.interfaces.find(inherited_method.owner_name);
+        if (inherited_owner_it != surface.interfaces.end()) {
+          if (inherited_method.method->objc_final_declared) {
+            diagnostics.push_back(MakeDiag(
+                method_decl.line, method_decl.column, "O3S309",
+                "dispatch-control semantics failed: selector '" +
+                    FormatMethodSelectorForDiagnostic(
+                        selector_contract.normalized_selector,
+                        method_it->second.is_class_method) +
+                    "' in interface '" + interface_decl->name +
+                    "' cannot override objc_final superclass method in '" +
+                    inherited_method.owner_name + "'"));
+          }
+          if (method_it->second.effective_direct_dispatch ||
+              IsPart9EffectivelyDirectMethod(*inherited_method.method,
+                                             inherited_owner_it->second)) {
+            diagnostics.push_back(MakeDiag(
+                method_decl.line, method_decl.column, "O3S310",
+                "dispatch-control semantics failed: selector '" +
+                    FormatMethodSelectorForDiagnostic(
+                        selector_contract.normalized_selector,
+                        method_it->second.is_class_method) +
+                    "' in interface '" + interface_decl->name +
+                    "' cannot participate in an override chain that uses objc_direct dispatch"));
+          }
+        }
       }
     }
 
@@ -18639,6 +18772,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     // namespace so later executable accessors never inherit ambiguous getter
     // or setter bindings from source.
     interface_info.super_name = interface_decl.super_name;
+    interface_info.objc_direct_members_declared =
+        interface_decl.objc_direct_members_declared;
+    interface_info.objc_final_declared = interface_decl.objc_final_declared;
+    interface_info.objc_sealed_declared = interface_decl.objc_sealed_declared;
     std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
         getter_owner_states;
     std::unordered_map<std::string, PropertyAccessorSelectorOwnerState>
@@ -18705,6 +18842,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                            container_name + "'"));
         continue;
       }
+
+      method_insert.first->second.effective_direct_dispatch =
+          IsPart9EffectivelyDirectMethod(method_insert.first->second,
+                                         interface_info);
 
       if (!is_category_interface) {
         ++interface_implementation_summary.interface_method_symbols;

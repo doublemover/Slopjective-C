@@ -933,6 +933,64 @@ inline bool IsReadyObjc3Part9DispatchIntentSemanticModelSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part9DispatchIntentLegalitySummaryDependencyContractId =
+        "objc3c-part9-dynamism-dispatch-control-semantic-model/m272-b001-v1";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentLegalitySummaryContractId =
+        "objc3c-part9-override-finality-sealing-legality/m272-b002-v1";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentLegalitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part9_override_finality_and_sealing_legality";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentLegalitySummaryRule =
+        "superclass-finality-superclass-sealing-and-direct-final-override-restrictions-are-now-live-fail-closed-sema-rules-while-direct-call-lowering-and-runnable-dispatch-boundary-realization-remain-later-m272-work";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentLegalitySummaryDeferredRule =
+        "direct-call-lowering-selector-dispatch-bypass-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+
+struct Objc3Part9DispatchIntentLegalitySummary {
+  std::string contract_id = kObjc3Part9DispatchIntentLegalitySummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part9DispatchIntentLegalitySummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part9DispatchIntentLegalitySummarySurfacePath;
+  std::string semantic_model = kObjc3Part9DispatchIntentLegalitySummaryRule;
+  std::string deferred_model =
+      kObjc3Part9DispatchIntentLegalitySummaryDeferredRule;
+  std::size_t subclass_sites = 0;
+  std::size_t override_sites = 0;
+  std::size_t illegal_final_superclass_sites = 0;
+  std::size_t illegal_sealed_superclass_sites = 0;
+  std::size_t illegal_final_override_sites = 0;
+  std::size_t illegal_direct_override_sites = 0;
+  bool dependency_required = false;
+  bool final_superclass_fail_closed = false;
+  bool sealed_superclass_fail_closed = false;
+  bool final_override_fail_closed = false;
+  bool direct_override_fail_closed = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part9DispatchIntentLegalitySummary(
+    const Objc3Part9DispatchIntentLegalitySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.final_superclass_fail_closed &&
+         summary.sealed_superclass_fail_closed &&
+         summary.final_override_fail_closed &&
+         summary.direct_override_fail_closed &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char
@@ -2293,6 +2351,10 @@ struct Objc3MethodInfo {
   std::size_t ns_error_bridging_normalized_sites = 0;
   std::size_t ns_error_bridge_boundary_sites = 0;
   std::size_t ns_error_bridging_contract_violation_sites = 0;
+  bool objc_direct_declared = false;
+  bool objc_final_declared = false;
+  bool objc_dynamic_declared = false;
+  bool effective_direct_dispatch = false;
   bool is_class_method = false;
   bool has_definition = false;
 };
@@ -2370,6 +2432,9 @@ struct Objc3PropertyInfo {
 
 struct Objc3InterfaceInfo {
   std::string super_name;
+  bool objc_direct_members_declared = false;
+  bool objc_final_declared = false;
+  bool objc_sealed_declared = false;
   std::unordered_map<std::string, Objc3PropertyInfo> properties;
   std::unordered_map<std::string, Objc3MethodInfo> methods;
 };
