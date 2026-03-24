@@ -4626,6 +4626,28 @@ std::string BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(
   return out.str();
 }
 
+std::string BuildPart12MigrationCanonicalizationSourceCompletionReplayKey(
+    const Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "compat=" << summary.compatibility_mode
+      << ";migration-assist="
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ";legacy=" << summary.legacy_yes_sites << ":" << summary.legacy_no_sites
+      << ":" << summary.legacy_null_sites << ":" << summary.legacy_total_sites
+      << ";canonical=" << summary.canonical_true_rewrite_sites << ":"
+      << summary.canonical_false_rewrite_sites << ":"
+      << summary.canonical_nil_rewrite_sites
+      << ";candidates=" << summary.canonicalization_candidate_sites << ":"
+      << summary.fixit_candidate_sites << ":"
+      << summary.migrator_candidate_sites
+      << ";ready="
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6693,6 +6715,58 @@ BuildPart12DiagnosticsMigratorSourceInventorySummary(
   return summary;
 }
 
+Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+BuildPart12MigrationCanonicalizationSourceCompletionSummary(
+    const Objc3FrontendOptions &options,
+    const Objc3FrontendMigrationHints &migration_hints,
+    const Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+        &inventory_summary) {
+  Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary summary;
+  summary.compatibility_mode =
+      options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy
+          ? "legacy"
+          : "canonical";
+  summary.migration_assist_enabled = options.migration_assist;
+  summary.legacy_yes_sites = migration_hints.legacy_yes_count;
+  summary.legacy_no_sites = migration_hints.legacy_no_count;
+  summary.legacy_null_sites = migration_hints.legacy_null_count;
+  summary.legacy_total_sites = migration_hints.legacy_total();
+  summary.canonical_true_rewrite_sites = summary.legacy_yes_sites;
+  summary.canonical_false_rewrite_sites = summary.legacy_no_sites;
+  summary.canonical_nil_rewrite_sites = summary.legacy_null_sites;
+  summary.canonicalization_candidate_sites = summary.legacy_total_sites;
+  summary.fixit_candidate_sites = summary.legacy_total_sites;
+  summary.migrator_candidate_sites = summary.legacy_total_sites;
+  summary.dependency_inventory_ready =
+      inventory_summary.ready_for_semantic_expansion;
+  summary.canonicalization_surface_supported = summary.dependency_inventory_ready;
+  summary.fixit_migration_surface_supported =
+      summary.dependency_inventory_ready && summary.migration_assist_enabled;
+  const bool counts_consistent =
+      summary.legacy_total_sites ==
+          summary.legacy_yes_sites + summary.legacy_no_sites +
+              summary.legacy_null_sites &&
+      summary.canonicalization_candidate_sites ==
+          summary.canonical_true_rewrite_sites +
+              summary.canonical_false_rewrite_sites +
+              summary.canonical_nil_rewrite_sites &&
+      summary.fixit_candidate_sites == summary.canonicalization_candidate_sites &&
+      summary.migrator_candidate_sites ==
+          summary.canonicalization_candidate_sites;
+  summary.deterministic_handoff =
+      summary.dependency_inventory_ready && counts_consistent &&
+      inventory_summary.canonicalization_hint_sites ==
+          summary.canonicalization_candidate_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  if (!summary.dependency_inventory_ready) {
+    summary.failure_reason =
+        "part12 diagnostics/fix-it/migrator inventory prerequisite is not ready";
+  }
+  summary.replay_key =
+      BuildPart12MigrationCanonicalizationSourceCompletionReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6960,6 +7034,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.part10_property_behavior_source_completion_summary,
           result.part11_foreign_import_source_closure_summary,
           result.part11_cpp_swift_interop_annotation_source_completion_summary);
+  result.part12_migration_canonicalization_source_completion_summary =
+      BuildPart12MigrationCanonicalizationSourceCompletionSummary(
+          options, result.migration_hints,
+          result.part12_diagnostics_migrator_source_inventory_summary);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,

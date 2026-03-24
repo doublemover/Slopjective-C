@@ -1228,6 +1228,60 @@ std::string BuildPart12DiagnosticsMigratorSourceInventorySummaryJson(
   return out.str();
 }
 
+std::string BuildPart12MigrationCanonicalizationSourceCompletionSummaryJson(
+    const Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"completion_model\":\""
+      << EscapeJsonString(summary.completion_model)
+      << "\",\"failure_model\":\""
+      << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"compatibility_mode\":\""
+      << EscapeJsonString(summary.compatibility_mode)
+      << "\",\"migration_assist_enabled\":"
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ",\"migration_assist_required\":"
+      << (summary.migration_assist_required ? "true" : "false")
+      << ",\"legacy_yes_sites\":" << summary.legacy_yes_sites
+      << ",\"legacy_no_sites\":" << summary.legacy_no_sites
+      << ",\"legacy_null_sites\":" << summary.legacy_null_sites
+      << ",\"legacy_total_sites\":" << summary.legacy_total_sites
+      << ",\"canonical_true_rewrite_sites\":"
+      << summary.canonical_true_rewrite_sites
+      << ",\"canonical_false_rewrite_sites\":"
+      << summary.canonical_false_rewrite_sites
+      << ",\"canonical_nil_rewrite_sites\":"
+      << summary.canonical_nil_rewrite_sites
+      << ",\"canonicalization_candidate_sites\":"
+      << summary.canonicalization_candidate_sites
+      << ",\"fixit_candidate_sites\":" << summary.fixit_candidate_sites
+      << ",\"migrator_candidate_sites\":"
+      << summary.migrator_candidate_sites
+      << ",\"dependency_inventory_ready\":"
+      << (summary.dependency_inventory_ready ? "true" : "false")
+      << ",\"canonicalization_surface_supported\":"
+      << (summary.canonicalization_surface_supported ? "true" : "false")
+      << ",\"fixit_migration_surface_supported\":"
+      << (summary.fixit_migration_surface_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart11InteropSemanticModelSummaryJson(
     const Objc3Part11InteropSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -15152,6 +15206,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
       &part12_diagnostics_migrator_source_inventory_summary =
           pipeline_result.part12_diagnostics_migrator_source_inventory_summary;
+  const Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+      &part12_migration_canonicalization_source_completion_summary =
+          pipeline_result
+              .part12_migration_canonicalization_source_completion_summary;
   const Objc3Part11InteropSemanticModelSummary
       &part11_interop_semantic_model_summary =
           pipeline_result.part11_interop_semantic_model_summary;
@@ -19800,6 +19858,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part12_diagnostics_fixit_and_migrator_source_inventory\":"
                    << BuildPart12DiagnosticsMigratorSourceInventorySummaryJson(
                    part12_diagnostics_migrator_source_inventory_summary)
+            << ",\"objc_part12_migration_and_canonicalization_source_completion\":"
+                   << BuildPart12MigrationCanonicalizationSourceCompletionSummaryJson(
+                   part12_migration_canonicalization_source_completion_summary)
             << ",\"objc_part11_interop_semantic_model\":"
             << BuildPart11InteropSemanticModelSummaryJson(
                    part11_interop_semantic_model_summary)
@@ -21269,6 +21330,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_diagnostics_fixit_and_migrator_source_inventory\":"
                   << BuildPart12DiagnosticsMigratorSourceInventorySummaryJson(
                   part12_diagnostics_migrator_source_inventory_summary)
+           << ",\"objc_part12_migration_and_canonicalization_source_completion\":"
+                  << BuildPart12MigrationCanonicalizationSourceCompletionSummaryJson(
+                  part12_migration_canonicalization_source_completion_summary)
            << ",\"objc_part11_interop_semantic_model\":"
            << BuildPart11InteropSemanticModelSummaryJson(
                   part11_interop_semantic_model_summary)

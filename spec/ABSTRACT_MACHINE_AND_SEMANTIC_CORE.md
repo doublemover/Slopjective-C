@@ -1145,3 +1145,13 @@ M275-A001 source-inventory note:
   diagnostics/fix-it/migrator planning surface
 - it does not yet claim feature-specific fix-it synthesis, migrator rewrite
   application, machine-readable conformance reporting, or release automation
+
+M275-A002 migration/canonicalization completion note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_migration_and_canonicalization_source_completion`
+- this packet reports the live lexer-owned migration-assist behavior for legacy
+  `YES` / `NO` / `NULL` spellings as deterministic canonicalization, fix-it, and
+  migrator candidate counts
+- it closes the remaining frontend/source-model surface without claiming
+  automated rewrite application yet

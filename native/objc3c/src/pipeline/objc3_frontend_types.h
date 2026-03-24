@@ -1566,6 +1566,19 @@ inline constexpr const char
     *kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel =
         "part12-source-inventory-does-not-yet-claim-feature-specific-fix-it-rewrites-legacy-to-canonical-migration-application-or-machine-readable-release-report-emission";
 inline constexpr const char
+    *kObjc3Part12MigrationCanonicalizationSourceCompletionSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_migration_and_canonicalization_source_completion";
+inline constexpr const char
+    *kObjc3Part12MigrationCanonicalizationSourceCompletionSourceModel =
+        "migration-assist-enabled-legacy-yes-no-null-token-sites-are-canonicalized-by-the-lexer-and-published-as-a-deterministic-frontend-source-completion-packet";
+inline constexpr const char
+    *kObjc3Part12MigrationCanonicalizationSourceCompletionCompletionModel =
+        "frontend-manifest-and-c-api-artifacts-now-publish-feature-aware-canonicalization-candidate-counts-and-rewrite-kind-counts-for-migrator-planning";
+inline constexpr const char
+    *kObjc3Part12MigrationCanonicalizationSourceCompletionFailureModel =
+        "part12-source-completion-does-not-yet-apply-rewrites-or-emit-machine-readable-fix-it-edits-beyond-deterministic-candidate-inventory";
+inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part11_foreign_surface_interface_and_module_preservation";
@@ -1945,6 +1958,45 @@ struct Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary {
   bool diagnostics_inventory_source_supported = false;
   bool fixit_inventory_source_supported = false;
   bool migrator_inventory_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary {
+  std::string contract_id =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12DiagnosticsMigratorSourceInventoryContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionSourceModel;
+  std::string completion_model =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionCompletionModel;
+  std::string failure_model =
+      kObjc3Part12MigrationCanonicalizationSourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimAdvancedCanonicalizationInventory,
+      kObjc3SourceOnlyFeatureClaimAdvancedMigrationAssistFlow,
+  };
+  std::string compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  bool migration_assist_required = true;
+  std::size_t legacy_yes_sites = 0;
+  std::size_t legacy_no_sites = 0;
+  std::size_t legacy_null_sites = 0;
+  std::size_t legacy_total_sites = 0;
+  std::size_t canonical_true_rewrite_sites = 0;
+  std::size_t canonical_false_rewrite_sites = 0;
+  std::size_t canonical_nil_rewrite_sites = 0;
+  std::size_t canonicalization_candidate_sites = 0;
+  std::size_t fixit_candidate_sites = 0;
+  std::size_t migrator_candidate_sites = 0;
+  bool dependency_inventory_ready = false;
+  bool canonicalization_surface_supported = false;
+  bool fixit_migration_surface_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5512,6 +5564,8 @@ struct Objc3FrontendPipelineResult {
       part11_cpp_swift_interop_annotation_source_completion_summary;
   Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
       part12_diagnostics_migrator_source_inventory_summary;
+  Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+      part12_migration_canonicalization_source_completion_summary;
   Objc3Part11ForeignSurfaceInterfacePreservationSummary
       part11_foreign_surface_interface_preservation_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary

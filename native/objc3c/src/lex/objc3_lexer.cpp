@@ -114,10 +114,11 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // also parser-owned callable attributes. Keep `objc_swift_name`,
   // `objc_swift_private`, `objc_cxx_name`, and `objc_header_name` as
   // identifier tokens here.
-  // M275-A001 source-inventory note: Part 12 also stays token-stable. The
-  // advanced diagnostics/fix-it/migrator source inventory is derived from the
-  // existing Part 6 through Part 11 parser-owned surfaces plus the migration
-  // hint counters emitted here for legacy `yes` / `no` / `null` spellings.
+  // M275-A001/A002 source note: Part 12 stays token-stable. The advanced
+  // diagnostics/fix-it/migrator inventory and the migration/canonicalization
+  // completion packet are both derived from the existing Part 6 through Part
+  // 11 parser-owned surfaces plus the migration hint counters emitted here for
+  // legacy `YES` / `NO` / `NULL` spellings.
   // M272-A001 source-surface note: direct/final/sealed/dynamic dispatch-intent
   // controls also remain parser-owned `__attribute__` spellings rather than
   // new reserved lexer keywords; the truthful Part 9 source boundary is

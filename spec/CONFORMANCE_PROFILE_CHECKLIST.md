@@ -664,6 +664,8 @@ The advanced runnable tranche now has one explicit frontend inventory packet:
 
 - semantic surface
   `frontend.pipeline.semantic_surface.objc_part12_diagnostics_fixit_and_migrator_source_inventory`
+- semantic surface
+  `frontend.pipeline.semantic_surface.objc_part12_migration_and_canonicalization_source_completion`
 
 Current truthful scope:
 
@@ -671,6 +673,9 @@ Current truthful scope:
   closure/completion packets
 - legacy migration-hint counters for `yes` / `no` / `null` are included when
   migration assist is enabled
+- lexer-owned legacy `YES` / `NO` / `NULL` canonicalization now has a dedicated
+  frontend completion packet for deterministic fix-it and migrator candidate
+  planning
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices

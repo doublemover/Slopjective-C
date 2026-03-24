@@ -4557,6 +4557,16 @@ Current implementation status (`M275-A001`):
 - this lane inventories source surfaces only; feature-specific fix-it synthesis,
   migrator rewrites, conformance report emission, and release automation remain
   later `M275` work
+
+Current implementation status (`M275-A002`):
+
+- the emitted frontend manifest now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_migration_and_canonicalization_source_completion`
+- when `--objc3-migration-assist` is enabled, lexer-owned legacy `YES` / `NO` /
+  `NULL` spellings are surfaced as deterministic canonicalization, fix-it, and
+  migrator candidate counts
+- this remains a source-completion packet: it truthfully inventories rewrite
+  candidates without claiming automated rewrite application yet
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

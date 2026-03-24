@@ -18,10 +18,10 @@
 
 namespace {
 
-// M275-A001 source-inventory note: Part 12 does not admit new syntax here.
-// The diagnostics/fix-it/migrator inventory is an aggregate over the already
-// admitted Part 6 through Part 11 parser-owned surfaces and their frontend
-// summary packets.
+// M275-A001/A002 source note: Part 12 does not admit new syntax here. Both the
+// diagnostics/fix-it/migrator inventory and the migration/canonicalization
+// completion packet aggregate existing Part 6 through Part 11 parser-owned
+// surfaces and frontend summary packets.
 
 using Token = Objc3LexToken;
 using TokenKind = Objc3LexTokenKind;
