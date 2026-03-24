@@ -1210,3 +1210,26 @@ Current implementation status (`M272-B002`):
   - `O3S310`
 - direct-call lowering, metadata realization, and runtime dispatch-boundary
   behavior remain later `M272` work
+
+## M272 dispatch-control compatibility diagnostics (B003)
+
+Current implementation status (`M272-B003`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part9_dynamism_control_compatibility_diagnostics`
+- Part 9 compatibility now fails closed on:
+  - combining `objc_direct` with `objc_dynamic`,
+  - combining `objc_final` with `objc_dynamic`,
+  - using Part 9 dispatch-control callable attributes on free functions,
+  - using Part 9 dispatch-control callable attributes on protocol methods,
+  - using Part 9 dispatch-control callable attributes on category methods,
+  - using `objc_direct_members`, `objc_final`, or `objc_sealed` on categories
+- the active diagnostics are:
+  - `O3S311`
+  - `O3S312`
+  - `O3S313`
+  - `O3S314`
+  - `O3S315`
+  - `O3S316`
+- direct-call lowering, metadata realization, and runtime dispatch-boundary
+  behavior remain later `M272` work

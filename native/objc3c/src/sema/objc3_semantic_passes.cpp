@@ -9281,6 +9281,12 @@ BuildPart8SystemExtensionSemanticModelSummary(
   return summary;
 }
 
+template <typename CallableDeclT>
+static bool HasPart9CallableDispatchIntentAttributes(
+    const CallableDeclT &decl);
+static bool HasPart9ContainerDispatchIntentAttributes(
+    const Objc3InterfaceDecl &decl);
+
 Objc3Part9DispatchIntentSemanticModelSummary
 BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
@@ -9421,6 +9427,114 @@ BuildPart9DispatchIntentLegalitySummary(
       << summary.illegal_sealed_superclass_sites << ":"
       << summary.illegal_final_override_sites << ":"
       << summary.illegal_direct_override_sites
+      << ";deterministic=" << (summary.deterministic ? "true" : "false");
+  summary.replay_key = out.str();
+  return summary;
+}
+
+Objc3Part9DispatchIntentCompatibilitySummary
+BuildPart9DispatchIntentCompatibilitySummary(
+    const Objc3Program &program,
+    const Objc3Part9DispatchIntentLegalitySummary &dependency_summary,
+    const std::vector<std::string> &diagnostics) {
+  Objc3Part9DispatchIntentCompatibilitySummary summary;
+
+  const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
+    return std::count_if(
+        diagnostics.begin(), diagnostics.end(),
+        [code](const std::string &entry) {
+          return entry.find(code) != std::string::npos;
+        });
+  };
+
+  for (const auto &fn : program.functions) {
+    if (HasPart9CallableDispatchIntentAttributes(fn)) {
+      ++summary.callable_dispatch_intent_sites;
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      if (HasPart9CallableDispatchIntentAttributes(method)) {
+        ++summary.callable_dispatch_intent_sites;
+      }
+    }
+  }
+  for (const auto &interface_decl : program.interfaces) {
+    if (HasPart9ContainerDispatchIntentAttributes(interface_decl)) {
+      ++summary.container_dispatch_intent_sites;
+    }
+    for (const auto &method : interface_decl.methods) {
+      if (HasPart9CallableDispatchIntentAttributes(method)) {
+        ++summary.callable_dispatch_intent_sites;
+      }
+    }
+  }
+  for (const auto &implementation_decl : program.implementations) {
+    for (const auto &method : implementation_decl.methods) {
+      if (HasPart9CallableDispatchIntentAttributes(method)) {
+        ++summary.callable_dispatch_intent_sites;
+      }
+    }
+  }
+
+  summary.illegal_direct_dynamic_conflict_sites =
+      count_diagnostic_code("O3S311");
+  summary.illegal_final_dynamic_conflict_sites =
+      count_diagnostic_code("O3S312");
+  summary.illegal_non_method_callable_sites =
+      count_diagnostic_code("O3S313");
+  summary.illegal_protocol_method_sites =
+      count_diagnostic_code("O3S314");
+  summary.illegal_category_method_sites =
+      count_diagnostic_code("O3S315");
+  summary.illegal_category_container_sites =
+      count_diagnostic_code("O3S316");
+
+  const bool dependency_surface_present =
+      !dependency_summary.contract_id.empty() &&
+      !dependency_summary.surface_path.empty() &&
+      dependency_summary.ready_for_lowering_and_runtime;
+  summary.dependency_required = true;
+  summary.callable_conflict_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_direct_dynamic_conflict_sites <=
+          summary.callable_dispatch_intent_sites &&
+      summary.illegal_final_dynamic_conflict_sites <=
+          summary.callable_dispatch_intent_sites;
+  summary.unsupported_callable_topology_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_non_method_callable_sites <=
+          summary.callable_dispatch_intent_sites &&
+      summary.illegal_protocol_method_sites <=
+          summary.callable_dispatch_intent_sites &&
+      summary.illegal_category_method_sites <=
+          summary.callable_dispatch_intent_sites;
+  summary.unsupported_container_topology_fail_closed =
+      dependency_surface_present &&
+      summary.illegal_category_container_sites <=
+          summary.container_dispatch_intent_sites;
+  summary.lowering_runtime_deferred = true;
+  summary.deterministic =
+      summary.callable_conflict_fail_closed &&
+      summary.unsupported_callable_topology_fail_closed &&
+      summary.unsupported_container_topology_fail_closed;
+  summary.ready_for_lowering_and_runtime = summary.deterministic;
+  if (!summary.deterministic) {
+    summary.failure_reason =
+        "dispatch-control compatibility diagnostics must remain deterministic";
+  }
+
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";dependency=" << summary.dependency_contract_id
+      << ";callable-sites=" << summary.callable_dispatch_intent_sites
+      << ";container-sites=" << summary.container_dispatch_intent_sites
+      << ";illegal-sites=" << summary.illegal_direct_dynamic_conflict_sites
+      << ":" << summary.illegal_final_dynamic_conflict_sites << ":"
+      << summary.illegal_non_method_callable_sites << ":"
+      << summary.illegal_protocol_method_sites << ":"
+      << summary.illegal_category_method_sites << ":"
+      << summary.illegal_category_container_sites
       << ";deterministic=" << (summary.deterministic ? "true" : "false");
   summary.replay_key = out.str();
   return summary;
@@ -13239,6 +13353,141 @@ static bool IsPart9EffectivelyDirectMethod(const Objc3MethodInfo &method,
                                            const Objc3InterfaceInfo &owner) {
   return method.objc_direct_declared ||
          (owner.objc_direct_members_declared && !method.objc_dynamic_declared);
+}
+
+template <typename CallableDeclT>
+static bool HasPart9CallableDispatchIntentAttributes(
+    const CallableDeclT &decl) {
+  return decl.objc_direct_declared || decl.objc_final_declared ||
+         decl.objc_dynamic_declared;
+}
+
+static bool HasPart9ContainerDispatchIntentAttributes(
+    const Objc3InterfaceDecl &decl) {
+  return decl.objc_direct_members_declared || decl.objc_final_declared ||
+         decl.objc_sealed_declared;
+}
+
+template <typename CallableDeclT>
+static void DiagnosePart9CallableDispatchIntentConflicts(
+    const CallableDeclT &decl, const std::string &callable_label,
+    std::vector<std::string> &diagnostics) {
+  if (decl.objc_direct_declared && decl.objc_dynamic_declared) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S311",
+        "dispatch-control semantics failed: " + callable_label +
+            " cannot combine objc_direct and objc_dynamic"));
+  }
+  if (decl.objc_final_declared && decl.objc_dynamic_declared) {
+    diagnostics.push_back(MakeDiag(
+        decl.line, decl.column, "O3S312",
+        "dispatch-control semantics failed: " + callable_label +
+            " cannot combine objc_final and objc_dynamic"));
+  }
+}
+
+static void ValidatePart9DispatchIntentCompatibility(
+    const Objc3Program &ast, std::vector<std::string> &diagnostics) {
+  auto format_method_label =
+      [](const Objc3MethodDecl &method, const std::string &owner_kind,
+         const std::string &owner_name) {
+        return "selector '" +
+               FormatMethodSelectorForDiagnostic(
+                   BuildMethodSelectorNormalizationContractInfo(method)
+                       .normalized_selector,
+                   method.is_class_method) +
+               "' in " + owner_kind + " '" + owner_name + "'";
+      };
+
+  for (const auto &fn : ast.functions) {
+    if (!HasPart9CallableDispatchIntentAttributes(fn)) {
+      continue;
+    }
+    DiagnosePart9CallableDispatchIntentConflicts(
+        fn, "function '" + fn.name + "'", diagnostics);
+    diagnostics.push_back(MakeDiag(
+        fn.line, fn.column, "O3S313",
+        "dispatch-control semantics failed: function '" + fn.name +
+            "' cannot use Part 9 dispatch-control callable attributes outside Objective-C methods"));
+  }
+
+  for (const auto &protocol_decl : ast.protocols) {
+    for (const auto &method : protocol_decl.methods) {
+      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+        continue;
+      }
+      const std::string method_label =
+          format_method_label(method, "protocol", protocol_decl.name);
+      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+                                                   diagnostics);
+      diagnostics.push_back(MakeDiag(
+          method.line, method.column, "O3S314",
+          "dispatch-control semantics failed: " + method_label +
+              " cannot use Part 9 dispatch-control callable attributes"));
+    }
+  }
+
+  for (const auto &interface_decl : ast.interfaces) {
+    const std::string category_identity = interface_decl.name + "(" +
+                                          interface_decl.category_name + ")";
+    if (interface_decl.has_category &&
+        HasPart9ContainerDispatchIntentAttributes(interface_decl)) {
+      diagnostics.push_back(MakeDiag(
+          interface_decl.line, interface_decl.column, "O3S316",
+          "dispatch-control semantics failed: category '" +
+              category_identity +
+              "' cannot use objc_direct_members, objc_final, or objc_sealed container attributes"));
+    }
+
+    if (!interface_decl.has_category) {
+      continue;
+    }
+    for (const auto &method : interface_decl.methods) {
+      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+        continue;
+      }
+      const std::string method_label =
+          format_method_label(method, "category", category_identity);
+      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+                                                   diagnostics);
+      diagnostics.push_back(MakeDiag(
+          method.line, method.column, "O3S315",
+          "dispatch-control semantics failed: " + method_label +
+              " cannot use Part 9 dispatch-control callable attributes"));
+    }
+  }
+
+  for (const auto &implementation_decl : ast.implementations) {
+    if (!implementation_decl.has_category) {
+      for (const auto &method : implementation_decl.methods) {
+        if (!HasPart9CallableDispatchIntentAttributes(method)) {
+          continue;
+        }
+        DiagnosePart9CallableDispatchIntentConflicts(
+            method,
+            format_method_label(method, "implementation",
+                                implementation_decl.name),
+            diagnostics);
+      }
+      continue;
+    }
+
+    const std::string category_identity = implementation_decl.name + "(" +
+                                          implementation_decl.category_name + ")";
+    for (const auto &method : implementation_decl.methods) {
+      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+        continue;
+      }
+      const std::string method_label =
+          format_method_label(method, "category", category_identity);
+      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+                                                   diagnostics);
+      diagnostics.push_back(MakeDiag(
+          method.line, method.column, "O3S315",
+          "dispatch-control semantics failed: " + method_label +
+              " cannot use Part 9 dispatch-control callable attributes"));
+    }
+  }
 }
 
 static const Objc3InterfaceDecl *FindAstInterfaceDecl(
@@ -19098,6 +19347,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                       surface.category_implementations,
                                       diagnostics);
   ValidateInheritanceOverrideAndRealizationLegality(ast, surface, diagnostics);
+  ValidatePart9DispatchIntentCompatibility(ast, diagnostics);
 
   interface_implementation_summary.resolved_interfaces = surface.interfaces.size();
   interface_implementation_summary.resolved_implementations = surface.implementations.size();

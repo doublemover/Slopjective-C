@@ -6411,6 +6411,11 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program),
           result.part9_dispatch_intent_semantic_model_summary,
           result.stage_diagnostics.semantic);
+  result.part9_dispatch_intent_compatibility_summary =
+      BuildPart9DispatchIntentCompatibilitySummary(
+          Objc3ParsedProgramAst(result.program),
+          result.part9_dispatch_intent_legality_summary,
+          result.stage_diagnostics.semantic);
   result.part8_resource_move_use_after_move_semantics_summary =
       BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
           Objc3ParsedProgramAst(result.program),

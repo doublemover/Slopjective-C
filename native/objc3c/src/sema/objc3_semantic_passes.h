@@ -70,14 +70,19 @@ BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part9DispatchIntentLegalitySummary
-BuildPart9DispatchIntentLegalitySummary(
-    const Objc3Program &program,
-    const Objc3Part9DispatchIntentSemanticModelSummary &dependency_summary,
-    const std::vector<std::string> &diagnostics);
-Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
-BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
-    const Objc3Program &program,
+  Objc3Part9DispatchIntentLegalitySummary
+  BuildPart9DispatchIntentLegalitySummary(
+      const Objc3Program &program,
+      const Objc3Part9DispatchIntentSemanticModelSummary &dependency_summary,
+      const std::vector<std::string> &diagnostics);
+  Objc3Part9DispatchIntentCompatibilitySummary
+  BuildPart9DispatchIntentCompatibilitySummary(
+      const Objc3Program &program,
+      const Objc3Part9DispatchIntentLegalitySummary &dependency_summary,
+      const std::vector<std::string> &diagnostics);
+  Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+  BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+      const Objc3Program &program,
     const Objc3Part8SystemExtensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
 Objc3Part8BorrowedPointerEscapeAnalysisSummary

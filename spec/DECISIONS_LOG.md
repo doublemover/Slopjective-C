@@ -346,6 +346,26 @@ semantic enforcement for:
 - overriding an `objc_final` superclass method,
 - participating in an override chain that uses `objc_direct` dispatch.
 
+## D-028: Part 9 dispatch-intent compatibility must fail closed on unsupported topologies before lowering begins {#decisions-d-028}
+
+**Decision:** `M272-B003` shall close the remaining compatibility slice for
+Part 9 dispatch-intent markers by rejecting:
+
+- `objc_direct` + `objc_dynamic` callable conflicts,
+- `objc_final` + `objc_dynamic` callable conflicts,
+- free functions carrying Part 9 dispatch-control callable attributes,
+- protocol methods carrying Part 9 dispatch-control callable attributes,
+- category methods carrying Part 9 dispatch-control callable attributes,
+- categories carrying `objc_direct_members`, `objc_final`, or `objc_sealed`.
+
+**Rationale:** `M272-B002` made inheritance and override legality truthful, but
+the compiler still admitted dispatch-intent markers on topologies that Part 9
+does not lower or realize yet. Those surfaces must fail closed in sema before
+lane-C can claim a narrower, truthful lowering boundary.
+
+**Diagnostic set:** `O3S311`, `O3S312`, `O3S313`, `O3S314`, `O3S315`,
+and `O3S316`.
+
 Those rules shall fail closed in sema with deterministic diagnostics before
 direct-call lowering, metadata realization, or runnable dispatch-boundary work
 is allowed to widen.

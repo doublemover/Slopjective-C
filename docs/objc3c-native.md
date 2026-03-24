@@ -4255,6 +4255,25 @@ Current implementation status (`M271-E001`):
   - `O3S309`
   - `O3S310`
 - this lane is still sema-only; direct-call lowering, metadata realization, and runnable dispatch-boundary behavior remain later `M272` work
+
+## M272 compatibility diagnostics for dynamism controls
+
+- the semantic pipeline now publishes `frontend.pipeline.semantic_surface.objc_part9_dynamism_control_compatibility_diagnostics`
+- Part 9 compatibility now fails closed on:
+  - combining `objc_direct` with `objc_dynamic`
+  - combining `objc_final` with `objc_dynamic`
+  - using Part 9 dispatch-control callable attributes on free functions
+  - using Part 9 dispatch-control callable attributes on protocol methods
+  - using Part 9 dispatch-control callable attributes on category methods
+  - using `objc_direct_members`, `objc_final`, or `objc_sealed` on categories
+- the current compatibility slice uses diagnostic codes:
+  - `O3S311`
+  - `O3S312`
+  - `O3S313`
+  - `O3S314`
+  - `O3S315`
+  - `O3S316`
+- this lane is still sema-only; direct-call lowering, metadata realization, and runnable dispatch-boundary behavior remain later `M272` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

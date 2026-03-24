@@ -991,6 +991,66 @@ inline bool IsReadyObjc3Part9DispatchIntentLegalitySummary(
 }
 
 inline constexpr const char
+    *kObjc3Part9DispatchIntentCompatibilitySummaryDependencyContractId =
+        "objc3c-part9-override-finality-sealing-legality/m272-b002-v1";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentCompatibilitySummaryContractId =
+        "objc3c-part9-dynamism-control-compatibility-diagnostics/m272-b003-v1";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentCompatibilitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part9_dynamism_control_compatibility_diagnostics";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentCompatibilitySummaryRule =
+        "part9-dispatch-intent-now-fails-closed-on-conflicting-direct-dynamic-final-dynamic-callable-markers-plus-unsupported-function-protocol-and-category-topologies-before-lowering-and-runtime-dispatch-boundary-realization";
+inline constexpr const char *
+    kObjc3Part9DispatchIntentCompatibilitySummaryDeferredRule =
+        "direct-call-lowering-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+
+struct Objc3Part9DispatchIntentCompatibilitySummary {
+  std::string contract_id =
+      kObjc3Part9DispatchIntentCompatibilitySummaryContractId;
+  std::string dependency_contract_id =
+      kObjc3Part9DispatchIntentCompatibilitySummaryDependencyContractId;
+  std::string surface_path =
+      kObjc3Part9DispatchIntentCompatibilitySummarySurfacePath;
+  std::string semantic_model =
+      kObjc3Part9DispatchIntentCompatibilitySummaryRule;
+  std::string deferred_model =
+      kObjc3Part9DispatchIntentCompatibilitySummaryDeferredRule;
+  std::size_t callable_dispatch_intent_sites = 0;
+  std::size_t container_dispatch_intent_sites = 0;
+  std::size_t illegal_direct_dynamic_conflict_sites = 0;
+  std::size_t illegal_final_dynamic_conflict_sites = 0;
+  std::size_t illegal_non_method_callable_sites = 0;
+  std::size_t illegal_protocol_method_sites = 0;
+  std::size_t illegal_category_method_sites = 0;
+  std::size_t illegal_category_container_sites = 0;
+  bool dependency_required = false;
+  bool callable_conflict_fail_closed = false;
+  bool unsupported_callable_topology_fail_closed = false;
+  bool unsupported_container_topology_fail_closed = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part9DispatchIntentCompatibilitySummary(
+    const Objc3Part9DispatchIntentCompatibilitySummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() && summary.dependency_required &&
+         summary.callable_conflict_fail_closed &&
+         summary.unsupported_callable_topology_fail_closed &&
+         summary.unsupported_container_topology_fail_closed &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_lowering_and_runtime && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

@@ -1048,6 +1048,53 @@ std::string BuildPart9DispatchIntentLegalitySummaryJson(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentCompatibilitySummaryJson(
+    const Objc3Part9DispatchIntentCompatibilitySummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"callable_dispatch_intent_sites\":"
+      << summary.callable_dispatch_intent_sites
+      << ",\"container_dispatch_intent_sites\":"
+      << summary.container_dispatch_intent_sites
+      << ",\"illegal_direct_dynamic_conflict_sites\":"
+      << summary.illegal_direct_dynamic_conflict_sites
+      << ",\"illegal_final_dynamic_conflict_sites\":"
+      << summary.illegal_final_dynamic_conflict_sites
+      << ",\"illegal_non_method_callable_sites\":"
+      << summary.illegal_non_method_callable_sites
+      << ",\"illegal_protocol_method_sites\":"
+      << summary.illegal_protocol_method_sites
+      << ",\"illegal_category_method_sites\":"
+      << summary.illegal_category_method_sites
+      << ",\"illegal_category_container_sites\":"
+      << summary.illegal_category_container_sites
+      << ",\"dependency_required\":"
+      << (summary.dependency_required ? "true" : "false")
+      << ",\"callable_conflict_fail_closed\":"
+      << (summary.callable_conflict_fail_closed ? "true" : "false")
+      << ",\"unsupported_callable_topology_fail_closed\":"
+      << (summary.unsupported_callable_topology_fail_closed ? "true"
+                                                            : "false")
+      << ",\"unsupported_container_topology_fail_closed\":"
+      << (summary.unsupported_container_topology_fail_closed ? "true"
+                                                             : "false")
+      << ",\"lowering_runtime_deferred\":"
+      << (summary.lowering_runtime_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -12360,6 +12407,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part9DispatchIntentLegalitySummary
       &part9_dispatch_intent_legality_summary =
           pipeline_result.part9_dispatch_intent_legality_summary;
+  const Objc3Part9DispatchIntentCompatibilitySummary
+      &part9_dispatch_intent_compatibility_summary =
+          pipeline_result.part9_dispatch_intent_compatibility_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16830,6 +16880,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_override_finality_and_sealing_legality\":"
             << BuildPart9DispatchIntentLegalitySummaryJson(
                    part9_dispatch_intent_legality_summary)
+            << ",\"objc_part9_dynamism_control_compatibility_diagnostics\":"
+            << BuildPart9DispatchIntentCompatibilitySummaryJson(
+                   part9_dispatch_intent_compatibility_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18199,6 +18252,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_override_finality_and_sealing_legality\":"
             << BuildPart9DispatchIntentLegalitySummaryJson(
                    part9_dispatch_intent_legality_summary)
+            << ",\"objc_part9_dynamism_control_compatibility_diagnostics\":"
+            << BuildPart9DispatchIntentCompatibilitySummaryJson(
+                   part9_dispatch_intent_compatibility_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
