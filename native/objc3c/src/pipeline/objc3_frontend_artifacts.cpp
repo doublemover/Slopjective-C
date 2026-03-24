@@ -3772,6 +3772,134 @@ std::string BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
   return out.str();
 }
 
+std::size_t CountPart11InterfaceAnnotationSites(
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary &summary,
+    bool imported) {
+  if (imported) {
+    return summary.imported_import_module_annotation_count +
+           summary.imported_imported_module_name_count +
+           summary.imported_swift_name_annotation_count +
+           summary.imported_swift_private_annotation_count +
+           summary.imported_cpp_name_annotation_count +
+           summary.imported_header_name_annotation_count +
+           summary.imported_named_annotation_payload_count;
+  }
+  return summary.local_import_module_annotation_count +
+         summary.local_imported_module_name_count +
+         summary.local_swift_name_annotation_count +
+         summary.local_swift_private_annotation_count +
+         summary.local_cpp_name_annotation_count +
+         summary.local_header_name_annotation_count +
+         summary.local_named_annotation_payload_count;
+}
+
+Objc3Part11FfiMetadataInterfacePreservationContract
+BuildPart11FfiMetadataInterfacePreservationContract(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &lowering_contract,
+    const std::string &lowering_replay_key,
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const std::vector<Objc3ImportedRuntimeModuleSurface>
+        &imported_runtime_module_surfaces,
+    bool runtime_import_artifact_ready,
+    std::string &replay_key_out) {
+  Objc3Part11FfiMetadataInterfacePreservationContract contract;
+  contract.local_foreign_callable_count =
+      lowering_contract.foreign_callable_sites;
+  contract.local_metadata_preservation_sites =
+      lowering_contract.metadata_preservation_sites;
+  contract.local_interface_annotation_sites =
+      CountPart11InterfaceAnnotationSites(preservation_summary, false);
+  contract.runtime_import_artifact_ready =
+      runtime_import_artifact_ready && lowering_contract.deterministic &&
+      preservation_summary.runtime_import_artifact_ready;
+  contract.deterministic =
+      lowering_contract.deterministic && preservation_summary.deterministic;
+
+  for (const auto &surface : imported_runtime_module_surfaces) {
+    if (!surface.part11_ffi_metadata_interface_preservation_present) {
+      continue;
+    }
+    ++contract.imported_module_count;
+    contract.imported_foreign_callable_count +=
+        surface.part11_ffi_local_foreign_callable_count;
+    contract.imported_metadata_preservation_sites +=
+        surface.part11_ffi_local_metadata_preservation_sites;
+    contract.imported_interface_annotation_sites +=
+        surface.part11_ffi_local_interface_annotation_sites;
+    contract.deterministic =
+        contract.deterministic && surface.part11_ffi_deterministic;
+  }
+  contract.separate_compilation_preservation_ready =
+      contract.runtime_import_artifact_ready;
+
+  std::ostringstream replay_key;
+  replay_key
+      << Objc3Part11FfiMetadataInterfacePreservationReplayKey(contract)
+      << ";lowering_replay_key=" << lowering_replay_key
+      << ";preservation_replay_key=" << preservation_summary.replay_key;
+  replay_key_out = replay_key.str();
+  return contract;
+}
+
+std::string BuildPart11FfiMetadataInterfacePreservationContractJson(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &lowering_contract,
+    const std::string &lowering_replay_key,
+    const Objc3Part11ForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3Part11FfiMetadataInterfacePreservationContract &contract,
+    const std::string &replay_key) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part11FfiMetadataInterfacePreservationContractId)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3Part11FfiMetadataInterfacePreservationSourceContractId)
+      << "\",\"preservation_contract_id\":\""
+      << EscapeJsonString(
+             kObjc3Part11ForeignSurfaceInterfacePreservationContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(
+             kObjc3Part11FfiMetadataInterfacePreservationSurfacePath)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(
+             kObjc3Part11FfiMetadataInterfacePreservationImportArtifactMemberName)
+      << "\",\"source_model\":\""
+      << EscapeJsonString(kObjc3Part11FfiMetadataInterfacePreservationSourceModel)
+      << "\",\"preservation_model\":\""
+      << EscapeJsonString(
+             kObjc3Part11FfiMetadataInterfacePreservationPreservationModel)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(
+             kObjc3Part11FfiMetadataInterfacePreservationFailClosedModel)
+      << "\",\"lowering_replay_key\":\""
+      << EscapeJsonString(lowering_replay_key)
+      << "\",\"preservation_replay_key\":\""
+      << EscapeJsonString(preservation_summary.replay_key)
+      << "\",\"local_foreign_callable_count\":"
+      << contract.local_foreign_callable_count
+      << ",\"local_metadata_preservation_sites\":"
+      << contract.local_metadata_preservation_sites
+      << ",\"local_interface_annotation_sites\":"
+      << contract.local_interface_annotation_sites
+      << ",\"imported_module_count\":" << contract.imported_module_count
+      << ",\"imported_foreign_callable_count\":"
+      << contract.imported_foreign_callable_count
+      << ",\"imported_metadata_preservation_sites\":"
+      << contract.imported_metadata_preservation_sites
+      << ",\"imported_interface_annotation_sites\":"
+      << contract.imported_interface_annotation_sites
+      << ",\"runtime_import_artifact_ready\":"
+      << (contract.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_preservation_ready\":"
+      << (contract.separate_compilation_preservation_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(replay_key) << "\"}";
+  return out.str();
+}
+
 struct Objc3Part10ModuleInterfaceReplayPreservationSurfaceSummary {
   std::string contract_id =
       kObjc3Part10ModuleInterfaceReplayPreservationContractId;
@@ -7402,6 +7530,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part6_result_and_bridging_artifact_replay_json,
     const std::string &part7_actor_mailbox_runtime_import_json,
     const std::string &part11_foreign_surface_interface_preservation_json,
+    const std::string &part11_ffi_metadata_interface_preservation_json,
     const std::string &part10_module_interface_replay_preservation_json,
     const std::string &part10_macro_host_process_cache_runtime_integration_json,
     const std::string &part9_dispatch_metadata_interface_preservation_json,
@@ -7491,6 +7620,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part7_actor_mailbox_runtime_import_json << ",\n"
       << "  \"objc_part11_foreign_surface_interface_and_module_preservation\": "
       << part11_foreign_surface_interface_preservation_json << ",\n"
+      << "  \"objc_part11_ffi_metadata_and_interface_preservation\": "
+      << part11_ffi_metadata_interface_preservation_json << ",\n"
       << "  \"objc_part10_module_interface_and_replay_preservation\": "
       << part10_module_interface_replay_preservation_json << ",\n"
       << "  \"objc_part10_macro_host_process_and_cache_runtime_integration\": "
@@ -15715,6 +15846,22 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string part11_foreign_call_lifetime_lowering_replay_key =
       Objc3Part11ForeignCallLifetimeLoweringReplayKey(
           part11_foreign_call_lifetime_lowering_contract);
+  std::string part11_ffi_metadata_interface_preservation_replay_key;
+  const auto part11_ffi_metadata_interface_preservation_contract =
+      BuildPart11FfiMetadataInterfacePreservationContract(
+          part11_foreign_call_lifetime_lowering_contract,
+          part11_foreign_call_lifetime_lowering_replay_key,
+          part11_foreign_surface_interface_preservation_summary,
+          imported_runtime_module_surfaces,
+          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+              runtime_aware_import_module_frontend_closure),
+          part11_ffi_metadata_interface_preservation_replay_key);
+  if (!IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
+          part11_ffi_metadata_interface_preservation_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid Part 11 ffi metadata/interface preservation contract");
+  }
   const auto part9_dispatch_metadata_interface_preservation_summary =
       BuildPart9DispatchMetadataInterfacePreservationSummary(
           runtime_metadata_source_records, part9_dispatch_control_lowering_replay_key,
@@ -19280,6 +19427,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    part11_foreign_surface_interface_preservation_summary,
                    part11_foreign_call_lifetime_lowering_contract,
                    part11_foreign_call_lifetime_lowering_replay_key)
+            << ",\"objc_part11_ffi_metadata_and_interface_preservation\":"
+            << BuildPart11FfiMetadataInterfacePreservationContractJson(
+                   part11_foreign_call_lifetime_lowering_contract,
+                   part11_foreign_call_lifetime_lowering_replay_key,
+                   part11_foreign_surface_interface_preservation_summary,
+                   part11_ffi_metadata_interface_preservation_contract,
+                   part11_ffi_metadata_interface_preservation_replay_key)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -20736,6 +20890,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part11_foreign_surface_interface_preservation_summary,
                   part11_foreign_call_lifetime_lowering_contract,
                   part11_foreign_call_lifetime_lowering_replay_key)
+           << ",\"objc_part11_ffi_metadata_and_interface_preservation\":"
+           << BuildPart11FfiMetadataInterfacePreservationContractJson(
+                  part11_foreign_call_lifetime_lowering_contract,
+                  part11_foreign_call_lifetime_lowering_replay_key,
+                  part11_foreign_surface_interface_preservation_summary,
+                  part11_ffi_metadata_interface_preservation_contract,
+                  part11_ffi_metadata_interface_preservation_replay_key)
             << ",\"objc_part10_expansion_and_behavior_semantic_model\":"
             << BuildPart10ExpansionBehaviorSemanticModelSummaryJson(
                    part10_expansion_behavior_semantic_model_summary)
@@ -21444,6 +21605,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                     part7_actor_isolation_sendability_lowering_replay_key)),
             BuildPart11ForeignSurfaceInterfacePreservationSummaryJson(
                 part11_foreign_surface_interface_preservation_summary),
+            BuildPart11FfiMetadataInterfacePreservationContractJson(
+                part11_foreign_call_lifetime_lowering_contract,
+                part11_foreign_call_lifetime_lowering_replay_key,
+                part11_foreign_surface_interface_preservation_summary,
+                part11_ffi_metadata_interface_preservation_contract,
+                part11_ffi_metadata_interface_preservation_replay_key),
             BuildPart10ModuleInterfaceReplayPreservationSummaryJson(
                 part10_module_interface_replay_preservation_summary),
             BuildPart10MacroHostProcessCacheRuntimeIntegrationSummaryJson(
@@ -21978,6 +22145,46 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata
       .deterministic_part11_foreign_call_lifetime_lowering_handoff =
       part11_foreign_call_lifetime_lowering_contract.deterministic;
+  ir_frontend_metadata.lowering_part11_ffi_metadata_interface_preservation_key =
+      part11_ffi_metadata_interface_preservation_replay_key;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_local_foreign_callable_count =
+      part11_ffi_metadata_interface_preservation_contract
+          .local_foreign_callable_count;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_local_metadata_preservation_sites =
+      part11_ffi_metadata_interface_preservation_contract
+          .local_metadata_preservation_sites;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_local_interface_annotation_sites =
+      part11_ffi_metadata_interface_preservation_contract
+          .local_interface_annotation_sites;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_imported_module_count =
+      part11_ffi_metadata_interface_preservation_contract.imported_module_count;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_imported_foreign_callable_count =
+      part11_ffi_metadata_interface_preservation_contract
+          .imported_foreign_callable_count;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_imported_metadata_preservation_sites =
+      part11_ffi_metadata_interface_preservation_contract
+          .imported_metadata_preservation_sites;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_imported_interface_annotation_sites =
+      part11_ffi_metadata_interface_preservation_contract
+          .imported_interface_annotation_sites;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_runtime_import_artifact_ready =
+      part11_ffi_metadata_interface_preservation_contract
+          .runtime_import_artifact_ready;
+  ir_frontend_metadata
+      .part11_ffi_metadata_interface_preservation_separate_compilation_preservation_ready =
+      part11_ffi_metadata_interface_preservation_contract
+          .separate_compilation_preservation_ready;
+  ir_frontend_metadata
+      .deterministic_part11_ffi_metadata_interface_preservation_handoff =
+      part11_ffi_metadata_interface_preservation_contract.deterministic;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
       part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
   ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =

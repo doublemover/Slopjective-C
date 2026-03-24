@@ -1147,6 +1147,84 @@ bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
   return true;
 }
 
+bool PopulateImportedPart11FfiMetadataInterfacePreservation(
+    const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
+    std::string &error) {
+  const JsonValue *preservation_value = FindMember(
+      root, kObjc3Part11FfiMetadataInterfacePreservationImportArtifactMemberName);
+  if (preservation_value == nullptr) {
+    return true;
+  }
+
+  const JsonValue::Object *preservation_object = AsObject(*preservation_value);
+  if (preservation_object == nullptr) {
+    error =
+        "part11 ffi metadata/interface preservation surface must be a JSON object";
+    return false;
+  }
+
+  std::string contract_id;
+  std::string source_contract_id;
+  std::string preservation_contract_id;
+  if (!ReadStringMember(*preservation_object, "contract_id", contract_id,
+                        error) ||
+      !ReadStringMember(*preservation_object, "source_contract_id",
+                        source_contract_id, error) ||
+      !ReadStringMember(*preservation_object, "preservation_contract_id",
+                        preservation_contract_id, error) ||
+      !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
+                      surface.part11_ffi_runtime_import_artifact_ready, error) ||
+      !ReadBoolMember(*preservation_object,
+                      "separate_compilation_preservation_ready",
+                      surface.part11_ffi_separate_compilation_preservation_ready,
+                      error) ||
+      !ReadBoolMember(*preservation_object, "deterministic",
+                      surface.part11_ffi_deterministic, error) ||
+      !ReadStringMember(*preservation_object, "replay_key",
+                        surface.part11_ffi_replay_key, error) ||
+      !ReadStringMember(*preservation_object, "lowering_replay_key",
+                        surface.part11_ffi_lowering_replay_key, error) ||
+      !ReadStringMember(*preservation_object, "preservation_replay_key",
+                        surface.part11_ffi_preservation_replay_key, error) ||
+      !ReadSizeMember(*preservation_object, "local_foreign_callable_count",
+                      surface.part11_ffi_local_foreign_callable_count, error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_metadata_preservation_sites",
+                      surface.part11_ffi_local_metadata_preservation_sites,
+                      error) ||
+      !ReadSizeMember(*preservation_object,
+                      "local_interface_annotation_sites",
+                      surface.part11_ffi_local_interface_annotation_sites,
+                      error)) {
+    return false;
+  }
+
+  if (contract_id != kObjc3Part11FfiMetadataInterfacePreservationContractId) {
+    error =
+        "unexpected Part 11 ffi metadata/interface preservation contract id in import surface";
+    return false;
+  }
+  if (source_contract_id !=
+      kObjc3Part11FfiMetadataInterfacePreservationSourceContractId) {
+    error =
+        "unexpected Part 11 ffi metadata/interface preservation source contract id in import surface";
+    return false;
+  }
+  if (preservation_contract_id !=
+      kObjc3Part11ForeignSurfaceInterfacePreservationContractId) {
+    error =
+        "unexpected Part 11 ffi metadata/interface preservation dependency contract id in import surface";
+    return false;
+  }
+
+  surface.part11_ffi_metadata_interface_preservation_present = true;
+  surface.part11_ffi_contract_id = std::move(contract_id);
+  surface.part11_ffi_source_contract_id = std::move(source_contract_id);
+  surface.part11_ffi_preservation_contract_id =
+      std::move(preservation_contract_id);
+  return true;
+}
+
 bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
@@ -1397,6 +1475,10 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
   }
   if (!PopulateImportedPart11ForeignSurfaceInterfacePreservation(root, surface,
                                                                  error)) {
+    return false;
+  }
+  if (!PopulateImportedPart11FfiMetadataInterfacePreservation(root, surface,
+                                                              error)) {
     return false;
   }
   if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,

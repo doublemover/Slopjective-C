@@ -947,6 +947,32 @@ struct Objc3IRFrontendMetadata {
   std::size_t
       part11_foreign_call_lifetime_lowering_contract_violation_sites = 0;
   bool deterministic_part11_foreign_call_lifetime_lowering_handoff = false;
+  std::string lowering_part11_ffi_metadata_interface_preservation_key;
+  std::size_t part11_ffi_metadata_interface_preservation_local_foreign_callable_count =
+      0;
+  std::size_t
+      part11_ffi_metadata_interface_preservation_local_metadata_preservation_sites =
+          0;
+  std::size_t
+      part11_ffi_metadata_interface_preservation_local_interface_annotation_sites =
+          0;
+  std::size_t part11_ffi_metadata_interface_preservation_imported_module_count =
+      0;
+  std::size_t
+      part11_ffi_metadata_interface_preservation_imported_foreign_callable_count =
+          0;
+  std::size_t
+      part11_ffi_metadata_interface_preservation_imported_metadata_preservation_sites =
+          0;
+  std::size_t
+      part11_ffi_metadata_interface_preservation_imported_interface_annotation_sites =
+          0;
+  bool part11_ffi_metadata_interface_preservation_runtime_import_artifact_ready =
+      false;
+  bool part11_ffi_metadata_interface_preservation_separate_compilation_preservation_ready =
+      false;
+  bool deterministic_part11_ffi_metadata_interface_preservation_handoff =
+      false;
   std::string lowering_part10_expansion_replay_key;
   std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
   std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;

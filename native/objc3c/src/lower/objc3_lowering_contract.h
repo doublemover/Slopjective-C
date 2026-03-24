@@ -1694,6 +1694,32 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId =
         kObjc3Part11InteropLoweringContractId;
+// M274-C003 preservation-expansion anchor: lane-C now publishes one explicit
+// replay/import packet proving Part 11 callable and annotation metadata survive
+// separate compilation through the runtime-import-surface artifact and emitted
+// IR payloads instead of remaining local-only facts from A003/C002.
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationContractId =
+        "objc3c-part11-ffi-metadata-interface-preservation/m274-c003-v1";
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part11_ffi_metadata_and_interface_preservation";
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationImportArtifactMemberName =
+        "objc_part11_ffi_metadata_and_interface_preservation";
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationSourceContractId =
+        kObjc3Part11ForeignCallLifetimeLoweringContractId;
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationPreservationModel =
+        "provider-runtime-import-surfaces-now-preserve-part11-callable-and-annotation-metadata-beyond-local-manifest-ir-and-object-emission";
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationSourceModel =
+        "local-lane-c-part11-lowering-and-lane-a-preservation-packets-feed-one-runtime-import-surface-summary-for-separate-compilation-replay";
+inline constexpr const char
+    *kObjc3Part11FfiMetadataInterfacePreservationFailClosedModel =
+        "missing-import-surface-packet-drifted-replay-keys-or-non-deterministic-provider-preservation-disables-cross-module-part11-preservation-claims";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2510,6 +2536,19 @@ struct Objc3Part11ForeignCallLifetimeLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part11FfiMetadataInterfacePreservationContract {
+  std::size_t local_foreign_callable_count = 0;
+  std::size_t local_metadata_preservation_sites = 0;
+  std::size_t local_interface_annotation_sites = 0;
+  std::size_t imported_module_count = 0;
+  std::size_t imported_foreign_callable_count = 0;
+  std::size_t imported_metadata_preservation_sites = 0;
+  std::size_t imported_interface_annotation_sites = 0;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_preservation_ready = false;
+  bool deterministic = false;
+};
+
 struct Objc3Part10SynthesizedArtifactEmissionContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t emitted_derive_method_sites = 0;
@@ -2905,6 +2944,10 @@ bool IsValidObjc3Part11ForeignCallLifetimeLoweringContract(
     const Objc3Part11ForeignCallLifetimeLoweringContract &contract);
 std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
     const Objc3Part11ForeignCallLifetimeLoweringContract &contract);
+bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
+    const Objc3Part11FfiMetadataInterfacePreservationContract &contract);
+std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
+    const Objc3Part11FfiMetadataInterfacePreservationContract &contract);
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(

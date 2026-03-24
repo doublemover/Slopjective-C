@@ -1,0 +1,29 @@
+module m274_c003_ffi_metadata_interface_preservation_provider;
+
+extern fn cForeignBridge(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("ForeignKit"))));
+extern pure fn cForeignPureBridge() -> i32 __attribute__((objc_foreign, objc_import_module(named("ForeignKit"))));
+extern fn cppLifetimeBridge(value: i32) -> i32 __attribute__((objc_cxx_name(named("CppLifetimeBridge")), objc_header_name(named("LifetimeBridge.hpp"))));
+
+fn swiftLifetimeBridge() -> i32 __attribute__((objc_swift_name(named("SwiftLifetimeBridge")), objc_swift_private)) {
+  return cppLifetimeBridge(5);
+}
+
+@protocol ForeignCallLifetimeProtocol
+- (id) protocolForeignCall __attribute__((objc_foreign));
+@end
+
+@interface ForeignCallLifetimeBridge
+@property (nonatomic, strong) id currentValue;
+@property (nonatomic, weak) id observer;
+- (id) interfaceForeignCall: (Class) owner __attribute__((objc_foreign));
+@end
+
+@implementation ForeignCallLifetimeBridge
+- (id) interfaceForeignCall: (Class) owner {
+  return nil;
+}
+@end
+
+fn main() -> i32 {
+  return cForeignBridge(nil) + cForeignPureBridge() + cppLifetimeBridge(2) + swiftLifetimeBridge();
+}

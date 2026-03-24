@@ -1010,6 +1010,13 @@ class Objc3IREmitter {
                  .lowering_part11_foreign_call_lifetime_replay_key
           << "\n";
     }
+    if (!frontend_metadata_
+             .lowering_part11_ffi_metadata_interface_preservation_key.empty()) {
+      out << "; part11_ffi_metadata_interface_preservation = "
+          << frontend_metadata_
+                 .lowering_part11_ffi_metadata_interface_preservation_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
           << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
@@ -3858,6 +3865,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
     out << "!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}\n";
     out << "!objc3.objc_part11_foreign_call_and_lifetime_lowering = !{!109}\n";
+    out << "!objc3.objc_part11_ffi_metadata_and_interface_preservation = !{!110}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
@@ -6810,6 +6818,46 @@ class Objc3IREmitter {
         << ", i1 "
         << (frontend_metadata_
                     .deterministic_part11_foreign_call_lifetime_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!110 = !{!\""
+        << EscapeCStringLiteral(frontend_metadata_
+                                    .lowering_part11_ffi_metadata_interface_preservation_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_local_foreign_callable_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_local_metadata_preservation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_local_interface_annotation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_imported_module_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_imported_foreign_callable_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_imported_metadata_preservation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_ffi_metadata_interface_preservation_imported_interface_annotation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part11_ffi_metadata_interface_preservation_runtime_import_artifact_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .part11_ffi_metadata_interface_preservation_separate_compilation_preservation_ready
+                ? 1
+                : 0)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part11_ffi_metadata_interface_preservation_handoff
                 ? 1
                 : 0)
         << "}\n\n";

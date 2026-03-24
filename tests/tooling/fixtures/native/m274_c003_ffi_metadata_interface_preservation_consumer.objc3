@@ -1,0 +1,7 @@
+module m274_c003_ffi_metadata_interface_preservation_consumer;
+
+extern fn localForeignBridge(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("ConsumerKit"))));
+
+fn main() -> i32 {
+  return localForeignBridge(nil);
+}

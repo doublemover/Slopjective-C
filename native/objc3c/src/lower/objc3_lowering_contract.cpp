@@ -4525,6 +4525,50 @@ std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
          kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId;
 }
 
+bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
+    const Objc3Part11FfiMetadataInterfacePreservationContract &contract) {
+  if (contract.imported_module_count == 0 &&
+      (contract.imported_foreign_callable_count != 0 ||
+       contract.imported_metadata_preservation_sites != 0 ||
+       contract.imported_interface_annotation_sites != 0)) {
+    return false;
+  }
+  if (contract.separate_compilation_preservation_ready &&
+      !contract.runtime_import_artifact_ready) {
+    return false;
+  }
+  if (contract.separate_compilation_preservation_ready &&
+      !contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
+    const Objc3Part11FfiMetadataInterfacePreservationContract &contract) {
+  return std::string("local_foreign_callable_count=") +
+             std::to_string(contract.local_foreign_callable_count) +
+         ";local_metadata_preservation_sites=" +
+         std::to_string(contract.local_metadata_preservation_sites) +
+         ";local_interface_annotation_sites=" +
+         std::to_string(contract.local_interface_annotation_sites) +
+         ";imported_module_count=" +
+         std::to_string(contract.imported_module_count) +
+         ";imported_foreign_callable_count=" +
+         std::to_string(contract.imported_foreign_callable_count) +
+         ";imported_metadata_preservation_sites=" +
+         std::to_string(contract.imported_metadata_preservation_sites) +
+         ";imported_interface_annotation_sites=" +
+         std::to_string(contract.imported_interface_annotation_sites) +
+         ";runtime_import_artifact_ready=" +
+         BoolToken(contract.runtime_import_artifact_ready) +
+         ";separate_compilation_preservation_ready=" +
+         BoolToken(contract.separate_compilation_preservation_ready) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";source_contract=" +
+         kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
+}
+
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {
