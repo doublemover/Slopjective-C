@@ -1536,3 +1536,21 @@ Current implementation status (`M273-D002`):
   reuse, and cross-module preservation
 - next closeout issue:
   - `M273-E002`
+
+## M273 runnable metaprogramming matrix closeout (E002)
+
+- the integrated Part 10 lane-E closeout now publishes one runnable matrix over
+  the supported metaprogramming slice
+- closeout contract id:
+  - `objc3c-part10-runnable-metaprogramming-matrix/m273-e002-v1`
+- closeout evidence model:
+  - `a003-through-e001-summary-chain-plus-d002-live-host-cache-proof`
+- matrix rows freeze:
+  - derive expansion and replay continuity
+  - macro package/provenance and host-cache continuity
+  - property-behavior legality and replay continuity
+  - cross-module preservation and deterministic host-cache reuse
+- upstream handoff issue:
+  - `M273-E001`
+- next milestone issue:
+  - `M274-A001`

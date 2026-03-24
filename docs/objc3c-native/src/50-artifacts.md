@@ -405,6 +405,22 @@ native build surface.
 - the next closeout step is:
   - `M273-E002`
 
+## M273 runnable metaprogramming matrix closeout (M273-E002)
+
+- lane E closeout now publishes one runnable Part 10 matrix over the supported
+  metaprogramming slice
+- canonical closeout contract id:
+  - `objc3c-part10-runnable-metaprogramming-matrix/m273-e002-v1`
+- matrix rows freeze:
+  - derive expansion and replay continuity
+  - macro package/provenance and host-cache continuity
+  - property-behavior legality and replay continuity
+  - cross-module preservation and deterministic host-cache reuse
+- upstream handoff issue:
+  - `M273-E001`
+- next milestone issue:
+  - `M274-A001`
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in

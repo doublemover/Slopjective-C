@@ -8851,3 +8851,14 @@ widening runtime ABI tables into a generalized macro runtime package loader.
   actual native-driver host-process/cache path and its cross-module
   preservation artifacts
 - `M273-E002` is the next closeout issue
+
+## M273 runnable metaprogramming matrix closeout note
+
+- lane-E closeout contract id
+  `objc3c-part10-runnable-metaprogramming-matrix/m273-e002-v1`
+- the published closeout matrix consumes the `M273-A003` through `M273-E001`
+  summary chain while keeping `M273-D002` as the executable evidence boundary
+- the matrix rows cover derive expansion continuity, macro package/provenance
+  plus host-cache continuity, property-behavior legality/replay continuity,
+  and cross-module preservation
+- `M274-A001` is the next milestone issue

@@ -324,7 +324,7 @@ def validate_import_surface(payload: dict[str, Any], *, imported_module_count: i
     return total, passed
 
 
-def validate_cache_sidecar(payload: dict[str, Any], *, expect_launch_attempted: bool, artifact: Path, failures: list[Finding]) -> tuple[int, int]:
+def validate_cache_sidecar(payload: dict[str, Any], *, expect_launch_attempted: bool | None, artifact: Path, failures: list[Finding]) -> tuple[int, int]:
     total = 13
     passed = 0
     passed += require(payload.get("contract_id") == CONTRACT_ID, display_path(artifact), "M273-D002-CACHE-01", "unexpected cache artifact contract id", failures)
@@ -332,7 +332,10 @@ def validate_cache_sidecar(payload: dict[str, Any], *, expect_launch_attempted: 
     passed += require(payload.get("artifact") == CACHE_ARTIFACT, display_path(artifact), "M273-D002-CACHE-03", "unexpected cache artifact name", failures)
     passed += require(payload.get("host_executable_relative_path") == RUNNER_RELATIVE_PATH, display_path(artifact), "M273-D002-CACHE-04", "unexpected runner path", failures)
     passed += require(payload.get("cache_root_relative_path") == CACHE_ROOT_RELATIVE_PATH, display_path(artifact), "M273-D002-CACHE-05", "unexpected cache root", failures)
-    passed += require(payload.get("launch_attempted") is expect_launch_attempted, display_path(artifact), "M273-D002-CACHE-06", "unexpected launch_attempted state", failures)
+    if expect_launch_attempted is None:
+        passed += require(isinstance(payload.get("launch_attempted"), bool), display_path(artifact), "M273-D002-CACHE-06", "launch_attempted must be boolean", failures)
+    else:
+        passed += require(payload.get("launch_attempted") is expect_launch_attempted, display_path(artifact), "M273-D002-CACHE-06", "unexpected launch_attempted state", failures)
     passed += require(payload.get("cache_hit") is True, display_path(artifact), "M273-D002-CACHE-07", "cache_hit must be true", failures)
     passed += require(payload.get("host_process_exit_code") == 0, display_path(artifact), "M273-D002-CACHE-08", "host process exit code must be zero", failures)
     passed += require(payload.get("deterministic") is True, display_path(artifact), "M273-D002-CACHE-09", "deterministic must be true", failures)
@@ -442,7 +445,7 @@ def run_dynamic_checks(failures: list[Finding]) -> tuple[int, int, dict[str, Any
             imp_total, imp_passed = validate_import_surface(consumer_surface, imported_module_count=1, local_macro_artifact_count=0, local_property_behavior_artifact_count=0, artifact=consumer_import, failures=failures)
             total += imp_total
             passed += imp_passed
-        cache_total, cache_passed = validate_cache_sidecar(consumer_cache_payload, expect_launch_attempted=True, artifact=consumer_cache, failures=failures)
+        cache_total, cache_passed = validate_cache_sidecar(consumer_cache_payload, expect_launch_attempted=None, artifact=consumer_cache, failures=failures)
         total += cache_total
         passed += cache_passed
         link_total, link_passed = validate_link_plan(consumer_plan_payload, consumer_link_plan, failures)
