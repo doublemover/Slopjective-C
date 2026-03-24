@@ -1164,3 +1164,13 @@ M275-B001 diagnostic taxonomy/portability freeze note:
   sema ARC/fix-it summary and the `M275-A002` migration surface
 - portability requirements are explicit completed closeout dependencies rather
   than an implicit release assumption
+
+M275-B002 feature-specific fix-it synthesis note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_feature_specific_fixit_synthesis`
+- this packet truthfully narrows the current live fix-it family set to:
+  - migration canonicalization for legacy `YES` / `NO` / `NULL`
+  - ownership ARC fix-it availability already exported by the sema baseline
+- it does not yet claim generalized automated rewrites for every advanced
+  feature family

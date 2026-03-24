@@ -2529,6 +2529,8 @@ inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityContractId
     "objc3c-part12-diagnostic-taxonomy-portability-contract/m275-b001-v1";
 inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace =
     "O3S";
+inline constexpr const char *kObjc3Part12FeatureSpecificFixitSynthesisContractId =
+    "objc3c-part12-feature-specific-fixit-synthesis/m275-b002-v1";
 
 struct Objc3BlockLiteralCaptureSiteMetadata {
   std::size_t parameter_count = 0;

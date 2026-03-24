@@ -1589,6 +1589,13 @@ inline constexpr const char
     *kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel =
         "advanced-feature-portability-claims-remain-anchored-to-completed-m264-through-m274-closeout-dependencies-while-part12-freezes-the-frontdoor-sema-contract";
 inline constexpr const char
+    *kObjc3Part12FeatureSpecificFixitSynthesisSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_feature_specific_fixit_synthesis";
+inline constexpr const char
+    *kObjc3Part12FeatureSpecificFixitSynthesisSemanticModel =
+        "part12-now-publishes-one-deterministic-implementation-packet-over-the-live-migration-canonicalization-and-ownership-arc-fixit-slices";
+inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part11_foreign_surface_interface_and_module_preservation";
@@ -2047,6 +2054,30 @@ struct Objc3Part12DiagnosticTaxonomyPortabilityContractSummary {
   bool ready_for_lowering_and_runtime = false;
   std::string recovery_replay_key;
   std::string arc_diagnostics_fixit_replay_key;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3Part12FeatureSpecificFixitSynthesisSummary {
+  std::string contract_id = kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12DiagnosticTaxonomyPortabilityContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12FeatureSpecificFixitSynthesisSurfacePath;
+  std::string semantic_model =
+      kObjc3Part12FeatureSpecificFixitSynthesisSemanticModel;
+  std::vector<std::string> fixit_family_ids = {
+      "migration-canonicalization",
+      "ownership-arc",
+  };
+  std::size_t fixit_family_count = 0;
+  std::size_t migration_fixit_candidate_sites = 0;
+  std::size_t migrator_candidate_sites = 0;
+  std::size_t ownership_arc_fixit_available_sites = 0;
+  std::size_t ownership_arc_empty_fixit_hint_sites = 0;
+  bool diagnostic_taxonomy_ready = false;
+  bool deterministic_handoff = false;
+  bool ready_for_lowering_and_runtime = false;
   std::string replay_key;
   std::string failure_reason;
 };
@@ -5616,6 +5647,8 @@ struct Objc3FrontendPipelineResult {
       part12_migration_canonicalization_source_completion_summary;
   Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
       part12_diagnostic_taxonomy_portability_contract_summary;
+  Objc3Part12FeatureSpecificFixitSynthesisSummary
+      part12_feature_specific_fixit_synthesis_summary;
   Objc3Part11ForeignSurfaceInterfacePreservationSummary
       part11_foreign_surface_interface_preservation_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary

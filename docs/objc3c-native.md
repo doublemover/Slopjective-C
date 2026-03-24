@@ -4576,6 +4576,16 @@ Current implementation status (`M275-B001`):
   existing sema ARC/fix-it baseline plus the `M275-A002` migration surface
 - portability requirements are published as explicit completed milestone
   dependencies rather than an implicit or undocumented policy surface
+
+Current implementation status (`M275-B002`):
+
+- the emitted frontend manifest now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_feature_specific_fixit_synthesis`
+- the current truthful fix-it family set is explicit:
+  - migration canonicalization for legacy `YES` / `NO` / `NULL`
+  - ownership ARC fix-it availability exported from the live sema baseline
+- this remains a truthful implementation packet rather than a claim that every
+  advanced feature family already has automated rewrite support
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

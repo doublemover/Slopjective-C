@@ -4670,6 +4670,21 @@ std::string BuildPart12DiagnosticTaxonomyPortabilityContractReplayKey(
   return out.str();
 }
 
+std::string BuildPart12FeatureSpecificFixitSynthesisReplayKey(
+    const Objc3Part12FeatureSpecificFixitSynthesisSummary &summary) {
+  std::ostringstream out;
+  out << "families=" << summary.fixit_family_count
+      << ";migration=" << summary.migration_fixit_candidate_sites << ":"
+      << summary.migrator_candidate_sites
+      << ";ownership-arc=" << summary.ownership_arc_fixit_available_sites << ":"
+      << summary.ownership_arc_empty_fixit_hint_sites
+      << ";ready="
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6854,6 +6869,38 @@ BuildPart12DiagnosticTaxonomyPortabilityContractSummary(
   return summary;
 }
 
+Objc3Part12FeatureSpecificFixitSynthesisSummary
+BuildPart12FeatureSpecificFixitSynthesisSummary(
+    const Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
+        &taxonomy_summary) {
+  Objc3Part12FeatureSpecificFixitSynthesisSummary summary;
+  summary.fixit_family_count = summary.fixit_family_ids.size();
+  summary.migration_fixit_candidate_sites =
+      taxonomy_summary.migration_canonicalization_candidate_sites;
+  summary.migrator_candidate_sites =
+      taxonomy_summary.migration_canonicalization_candidate_sites;
+  summary.ownership_arc_fixit_available_sites =
+      taxonomy_summary.ownership_arc_fixit_available_sites;
+  summary.ownership_arc_empty_fixit_hint_sites =
+      taxonomy_summary.ownership_arc_empty_fixit_hint_sites;
+  summary.diagnostic_taxonomy_ready =
+      taxonomy_summary.ready_for_lowering_and_runtime;
+  summary.deterministic_handoff =
+      summary.diagnostic_taxonomy_ready && summary.fixit_family_count == 2 &&
+      summary.migration_fixit_candidate_sites ==
+          summary.migrator_candidate_sites &&
+      summary.ownership_arc_empty_fixit_hint_sites <=
+          summary.ownership_arc_fixit_available_sites;
+  summary.ready_for_lowering_and_runtime = summary.deterministic_handoff;
+  if (!summary.diagnostic_taxonomy_ready) {
+    summary.failure_reason =
+        "part12 diagnostic taxonomy and portability contract prerequisite is not ready";
+  }
+  summary.replay_key =
+      BuildPart12FeatureSpecificFixitSynthesisReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -7432,6 +7479,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.part12_migration_canonicalization_source_completion_summary,
           result
               .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface);
+  result.part12_feature_specific_fixit_synthesis_summary =
+      BuildPart12FeatureSpecificFixitSynthesisSummary(
+          result.part12_diagnostic_taxonomy_portability_contract_summary);
   result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface =
       BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface(
           result.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface,

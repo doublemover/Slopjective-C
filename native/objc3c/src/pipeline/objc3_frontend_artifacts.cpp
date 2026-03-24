@@ -1339,6 +1339,39 @@ std::string BuildPart12DiagnosticTaxonomyPortabilityContractSummaryJson(
   return out.str();
 }
 
+std::string BuildPart12FeatureSpecificFixitSynthesisSummaryJson(
+    const Objc3Part12FeatureSpecificFixitSynthesisSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"semantic_model\":\""
+      << EscapeJsonString(summary.semantic_model)
+      << "\",\"fixit_family_ids\":"
+      << BuildStringArrayJson(summary.fixit_family_ids)
+      << ",\"fixit_family_count\":" << summary.fixit_family_count
+      << ",\"migration_fixit_candidate_sites\":"
+      << summary.migration_fixit_candidate_sites
+      << ",\"migrator_candidate_sites\":" << summary.migrator_candidate_sites
+      << ",\"ownership_arc_fixit_available_sites\":"
+      << summary.ownership_arc_fixit_available_sites
+      << ",\"ownership_arc_empty_fixit_hint_sites\":"
+      << summary.ownership_arc_empty_fixit_hint_sites
+      << ",\"diagnostic_taxonomy_ready\":"
+      << (summary.diagnostic_taxonomy_ready ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart11InteropSemanticModelSummaryJson(
     const Objc3Part11InteropSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -15270,6 +15303,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
       &part12_diagnostic_taxonomy_portability_contract_summary =
           pipeline_result.part12_diagnostic_taxonomy_portability_contract_summary;
+  const Objc3Part12FeatureSpecificFixitSynthesisSummary
+      &part12_feature_specific_fixit_synthesis_summary =
+          pipeline_result.part12_feature_specific_fixit_synthesis_summary;
   const Objc3Part11InteropSemanticModelSummary
       &part11_interop_semantic_model_summary =
           pipeline_result.part11_interop_semantic_model_summary;
@@ -19924,6 +19960,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part12_diagnostic_taxonomy_and_portability_contract\":"
                    << BuildPart12DiagnosticTaxonomyPortabilityContractSummaryJson(
                    part12_diagnostic_taxonomy_portability_contract_summary)
+            << ",\"objc_part12_feature_specific_fixit_synthesis\":"
+                   << BuildPart12FeatureSpecificFixitSynthesisSummaryJson(
+                   part12_feature_specific_fixit_synthesis_summary)
             << ",\"objc_part11_interop_semantic_model\":"
             << BuildPart11InteropSemanticModelSummaryJson(
                    part11_interop_semantic_model_summary)
@@ -21399,6 +21438,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_diagnostic_taxonomy_and_portability_contract\":"
                   << BuildPart12DiagnosticTaxonomyPortabilityContractSummaryJson(
                   part12_diagnostic_taxonomy_portability_contract_summary)
+           << ",\"objc_part12_feature_specific_fixit_synthesis\":"
+                  << BuildPart12FeatureSpecificFixitSynthesisSummaryJson(
+                  part12_feature_specific_fixit_synthesis_summary)
            << ",\"objc_part11_interop_semantic_model\":"
            << BuildPart11InteropSemanticModelSummaryJson(
                   part11_interop_semantic_model_summary)
