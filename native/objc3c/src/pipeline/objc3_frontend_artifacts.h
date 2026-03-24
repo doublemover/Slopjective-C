@@ -39,6 +39,8 @@ struct Objc3FrontendArtifactBundle {
       runtime_bootstrap_failure_restart_semantics_summary;
   Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
       frontend_compatibility_strictness_claim_semantics_summary;
+  Objc3Part12LegacyCanonicalMigrationSemanticsSummary
+      part12_legacy_canonical_migration_semantics_summary;
   Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api_summary;
   Objc3RuntimeBootstrapSemanticsSummary runtime_bootstrap_semantics_summary;
   Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering_summary;

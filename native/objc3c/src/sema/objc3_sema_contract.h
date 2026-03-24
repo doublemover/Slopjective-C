@@ -2531,6 +2531,11 @@ inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityDiagnostic
     "O3S";
 inline constexpr const char *kObjc3Part12FeatureSpecificFixitSynthesisContractId =
     "objc3c-part12-feature-specific-fixit-synthesis/m275-b002-v1";
+inline constexpr const char
+    *kObjc3Part12LegacyCanonicalMigrationSemanticsContractId =
+        "objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1";
+inline constexpr const char
+    *kObjc3Part12LegacyCanonicalMigrationDiagnosticCode = "O3S216";
 
 struct Objc3BlockLiteralCaptureSiteMetadata {
   std::size_t parameter_count = 0;

@@ -4513,3 +4513,12 @@ Current implementation status (`M275-B002`):
   - ownership ARC fix-it availability exported from the live sema baseline
 - this remains a truthful implementation packet rather than a claim that every
   advanced feature family already has automated rewrite support
+
+Current implementation status (`M275-B003`):
+
+- the emitted frontend manifest now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
+- the packet is tied to the live canonical-mode migration-assist rejection path
+  rather than a docs-only claim
+- canonical mode with migration assist fails closed on legacy `YES` / `NO` /
+  `NULL` usage with `O3S216`, while canonical literals remain the happy path

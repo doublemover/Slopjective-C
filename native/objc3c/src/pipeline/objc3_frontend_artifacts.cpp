@@ -1372,6 +1372,121 @@ std::string BuildPart12FeatureSpecificFixitSynthesisSummaryJson(
   return out.str();
 }
 
+std::string BuildPart12LegacyCanonicalMigrationSemanticsReplayKey(
+    const Objc3Part12LegacyCanonicalMigrationSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << "mode=" << summary.effective_compatibility_mode
+      << ";migration-assist="
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ";legacy-sites=" << summary.current_run_legacy_literal_sites
+      << ";candidates=" << summary.current_run_canonicalization_candidate_sites
+      << ";families=" << summary.fixit_family_count
+      << ";fail-closed=" << (summary.fail_closed ? "true" : "false")
+      << ";rejection-code=" << summary.canonical_mode_rejection_code
+      << ";ready="
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false");
+  return out.str();
+}
+
+Objc3Part12LegacyCanonicalMigrationSemanticsSummary
+BuildPart12LegacyCanonicalMigrationSemanticsSummary(
+    const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary
+        &compatibility_summary,
+    const Objc3Part12FeatureSpecificFixitSynthesisSummary &fixit_summary) {
+  Objc3Part12LegacyCanonicalMigrationSemanticsSummary summary;
+  summary.effective_compatibility_mode =
+      compatibility_summary.effective_compatibility_mode;
+  summary.migration_assist_enabled =
+      compatibility_summary.migration_assist_enabled;
+  summary.current_run_legacy_literal_sites =
+      fixit_summary.migration_fixit_candidate_sites;
+  summary.current_run_canonicalization_candidate_sites =
+      fixit_summary.migration_fixit_candidate_sites;
+  summary.fixit_family_count = fixit_summary.fixit_family_count;
+  summary.fail_closed = compatibility_summary.fail_closed;
+  summary.selected_configuration_valid =
+      compatibility_summary.selected_configuration_valid;
+  summary.compatibility_mode_semantics_landed =
+      compatibility_summary.compatibility_mode_semantics_landed;
+  summary.migration_assist_semantics_landed =
+      compatibility_summary.migration_assist_semantics_landed;
+  summary.canonical_mode_rejection_ready =
+      compatibility_summary.fail_closed &&
+      compatibility_summary.compatibility_mode_semantics_landed &&
+      compatibility_summary.migration_assist_semantics_landed &&
+      summary.canonical_mode_rejection_code ==
+          kObjc3Part12LegacyCanonicalMigrationDiagnosticCode;
+  summary.feature_specific_fixit_surface_ready =
+      fixit_summary.ready_for_lowering_and_runtime;
+  summary.deterministic_handoff =
+      IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
+          compatibility_summary) &&
+      summary.feature_specific_fixit_surface_ready &&
+      summary.selected_configuration_valid &&
+      !compatibility_summary.selected_configuration_downgraded &&
+      !compatibility_summary.selected_configuration_rejected &&
+      summary.canonical_mode_rejection_ready;
+  summary.ready_for_lowering_and_runtime = summary.deterministic_handoff;
+  if (!summary.feature_specific_fixit_surface_ready) {
+    summary.failure_reason =
+        "part12 feature-specific fix-it synthesis prerequisite is not ready";
+  } else if (!IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
+                 compatibility_summary)) {
+    summary.failure_reason =
+        "frontend compatibility/strictness semantics prerequisite is not ready";
+  }
+  summary.replay_key =
+      BuildPart12LegacyCanonicalMigrationSemanticsReplayKey(summary);
+  return summary;
+}
+
+std::string BuildPart12LegacyCanonicalMigrationSemanticsSummaryJson(
+    const Objc3Part12LegacyCanonicalMigrationSemanticsSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"compatibility_semantics_contract_id\":\""
+      << EscapeJsonString(summary.compatibility_semantics_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"semantic_model\":\""
+      << EscapeJsonString(summary.semantic_model)
+      << "\",\"compatibility_model\":\""
+      << EscapeJsonString(summary.compatibility_model)
+      << "\",\"effective_compatibility_mode\":\""
+      << EscapeJsonString(summary.effective_compatibility_mode)
+      << "\",\"migration_assist_enabled\":"
+      << (summary.migration_assist_enabled ? "true" : "false")
+      << ",\"current_run_legacy_literal_sites\":"
+      << summary.current_run_legacy_literal_sites
+      << ",\"current_run_canonicalization_candidate_sites\":"
+      << summary.current_run_canonicalization_candidate_sites
+      << ",\"fixit_family_count\":" << summary.fixit_family_count
+      << ",\"fail_closed\":" << (summary.fail_closed ? "true" : "false")
+      << ",\"selected_configuration_valid\":"
+      << (summary.selected_configuration_valid ? "true" : "false")
+      << ",\"compatibility_mode_semantics_landed\":"
+      << (summary.compatibility_mode_semantics_landed ? "true" : "false")
+      << ",\"migration_assist_semantics_landed\":"
+      << (summary.migration_assist_semantics_landed ? "true" : "false")
+      << ",\"canonical_mode_rejection_code\":\""
+      << EscapeJsonString(summary.canonical_mode_rejection_code)
+      << "\",\"canonical_mode_rejection_ready\":"
+      << (summary.canonical_mode_rejection_ready ? "true" : "false")
+      << ",\"feature_specific_fixit_surface_ready\":"
+      << (summary.feature_specific_fixit_surface_ready ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_lowering_and_runtime\":"
+      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart11InteropSemanticModelSummaryJson(
     const Objc3Part11InteropSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -15709,6 +15824,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
               pipeline_result.sema_parity_surface
                   .compatibility_strictness_claim_semantics_summary);
+  const Objc3Part12LegacyCanonicalMigrationSemanticsSummary
+      part12_legacy_canonical_migration_semantics_summary =
+          BuildPart12LegacyCanonicalMigrationSemanticsSummary(
+              frontend_compatibility_strictness_claim_semantics,
+              part12_feature_specific_fixit_synthesis_summary);
   const Objc3VersionedConformanceReportLoweringSummary
       versioned_conformance_report_lowering =
           BuildVersionedConformanceReportLoweringSummary(
@@ -20184,6 +20304,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_compatibility_strictness_claim_semantics\":"
            << BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
                   frontend_compatibility_strictness_claim_semantics)
+           << ",\"objc_part12_legacy_canonical_migration_semantics\":"
+           << BuildPart12LegacyCanonicalMigrationSemanticsSummaryJson(
+                  part12_legacy_canonical_migration_semantics_summary)
            // M264-C001 lowering freeze anchor: lane-C lowers the existing
            // runnable/source-only/unsupported truth packets into one emitted
            // machine-readable conformance sidecar instead of reconstructing
@@ -21441,6 +21564,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_feature_specific_fixit_synthesis\":"
                   << BuildPart12FeatureSpecificFixitSynthesisSummaryJson(
                   part12_feature_specific_fixit_synthesis_summary)
+           << ",\"objc_part12_legacy_canonical_migration_semantics\":"
+                  << BuildPart12LegacyCanonicalMigrationSemanticsSummaryJson(
+                      part12_legacy_canonical_migration_semantics_summary)
            << ",\"objc_part11_interop_semantic_model\":"
            << BuildPart11InteropSemanticModelSummaryJson(
                   part11_interop_semantic_model_summary)
@@ -22255,6 +22381,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_bootstrap_failure_restart_semantics;
   bundle.frontend_compatibility_strictness_claim_semantics_summary =
       frontend_compatibility_strictness_claim_semantics;
+  bundle.part12_legacy_canonical_migration_semantics_summary =
+      part12_legacy_canonical_migration_semantics_summary;
   bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;

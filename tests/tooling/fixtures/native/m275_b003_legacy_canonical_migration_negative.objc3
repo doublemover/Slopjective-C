@@ -1,0 +1,11 @@
+module M275B003Negative;
+
+extern fn consume(value: id) -> void;
+
+fn main() -> i32 {
+  consume(NULL);
+  if (YES) {
+    return NO ? 2 : 1;
+  }
+  return 0;
+}

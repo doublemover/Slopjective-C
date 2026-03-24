@@ -683,6 +683,9 @@ Current truthful scope:
   `frontend.pipeline.semantic_surface.objc_part12_feature_specific_fixit_synthesis`
   over the current live migration-canonicalization and ownership-ARC fix-it
   families
+- legacy/canonical migration semantics now publish
+  `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
+  over the live canonical-mode migration-assist rejection path
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices

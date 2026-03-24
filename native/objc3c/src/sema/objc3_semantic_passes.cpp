@@ -453,6 +453,9 @@ static Objc3BootstrapLegalityFailureContractSummary
 BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3BootstrapLegalityFailureContractSummary summary;
+  // M275-B003 semantic migration anchor: canonical-mode migration assist stays
+  // truthful only if the live fail-closed legacy-literal rejection surface is
+  // preserved through the compatibility/strictness summary exported here.
   summary.fail_closed = true;
   summary.duplicate_registration_policy_frozen = true;
   summary.image_order_invariant_frozen = true;

@@ -1174,3 +1174,13 @@ M275-B002 feature-specific fix-it synthesis note:
   - ownership ARC fix-it availability already exported by the sema baseline
 - it does not yet claim generalized automated rewrites for every advanced
   feature family
+
+M275-B003 legacy/canonical migration semantics note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
+- this packet is tied to the live semantic migration path rather than a
+  placeholder contract:
+  - canonical mode plus migration assist rejects legacy `YES` / `NO` / `NULL`
+    with `O3S216`
+  - canonical literals remain accepted on the happy path

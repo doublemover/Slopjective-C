@@ -1596,6 +1596,16 @@ inline constexpr const char
     *kObjc3Part12FeatureSpecificFixitSynthesisSemanticModel =
         "part12-now-publishes-one-deterministic-implementation-packet-over-the-live-migration-canonicalization-and-ownership-arc-fixit-slices";
 inline constexpr const char
+    *kObjc3Part12LegacyCanonicalMigrationSemanticsSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_legacy_canonical_migration_semantics";
+inline constexpr const char
+    *kObjc3Part12LegacyCanonicalMigrationSemanticsSemanticModel =
+        "part12-now-publishes-one-deterministic-compatibility-packet-over-the-live-canonical-mode-migration-assist-diagnostics-and-feature-specific-fixit-baseline";
+inline constexpr const char
+    *kObjc3Part12LegacyCanonicalMigrationSemanticsCompatibilityModel =
+        "legacy-mode-keeps-inventory-only-while-canonical-mode-fails-closed-on-legacy-yes-no-null-literals-with-o3s216-and-preserves-the-canonical-literal-happy-path";
+inline constexpr const char
     *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
         "objc_part11_foreign_surface_interface_and_module_preservation";
@@ -2076,6 +2086,38 @@ struct Objc3Part12FeatureSpecificFixitSynthesisSummary {
   std::size_t ownership_arc_fixit_available_sites = 0;
   std::size_t ownership_arc_empty_fixit_hint_sites = 0;
   bool diagnostic_taxonomy_ready = false;
+  bool deterministic_handoff = false;
+  bool ready_for_lowering_and_runtime = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3Part12LegacyCanonicalMigrationSemanticsSummary {
+  std::string contract_id =
+      kObjc3Part12LegacyCanonicalMigrationSemanticsContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+  std::string compatibility_semantics_contract_id =
+      kObjc3CompatibilityStrictnessClaimSemanticsContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12LegacyCanonicalMigrationSemanticsSurfacePath;
+  std::string semantic_model =
+      kObjc3Part12LegacyCanonicalMigrationSemanticsSemanticModel;
+  std::string compatibility_model =
+      kObjc3Part12LegacyCanonicalMigrationSemanticsCompatibilityModel;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  std::size_t current_run_legacy_literal_sites = 0;
+  std::size_t current_run_canonicalization_candidate_sites = 0;
+  std::size_t fixit_family_count = 0;
+  bool fail_closed = false;
+  bool selected_configuration_valid = false;
+  bool compatibility_mode_semantics_landed = false;
+  bool migration_assist_semantics_landed = false;
+  std::string canonical_mode_rejection_code =
+      kObjc3Part12LegacyCanonicalMigrationDiagnosticCode;
+  bool canonical_mode_rejection_ready = false;
+  bool feature_specific_fixit_surface_ready = false;
   bool deterministic_handoff = false;
   bool ready_for_lowering_and_runtime = false;
   std::string replay_key;
