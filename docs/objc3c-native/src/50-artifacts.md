@@ -5406,6 +5406,22 @@ versioned conformance sidecar. They do not introduce a second authority.
 The current published state is intentionally narrow:
 
 - claimed profile: `core`
+
+## Part 12 machine-readable conformance/report contract (M275-C001)
+
+`M275-C001` freezes the Part 12 report contract on top of the already-live
+versioned conformance sidecar and runtime capability payloads.
+
+- `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
+- `module.objc3-conformance-report.json`
+
+The current boundary keeps three things explicit:
+
+- Part 12 reuses the existing lowered report path rather than inventing a
+  second report format
+- the contract depends on the live Part 12 legacy/canonical migration semantics
+  rather than a docs-only migration claim
+- runtime capability publication stays part of the same report authority chain
 - not-claimed profiles: `strict`, `strict-concurrency`, `strict-system`
 - strictness mode: `permissive`
 - concurrency mode: `off`

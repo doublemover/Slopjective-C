@@ -41,6 +41,8 @@ struct Objc3FrontendArtifactBundle {
       frontend_compatibility_strictness_claim_semantics_summary;
   Objc3Part12LegacyCanonicalMigrationSemanticsSummary
       part12_legacy_canonical_migration_semantics_summary;
+  Objc3Part12MachineReadableConformanceReportContractSummary
+      part12_machine_readable_conformance_report_contract_summary;
   Objc3RuntimeBootstrapApiSummary runtime_bootstrap_api_summary;
   Objc3RuntimeBootstrapSemanticsSummary runtime_bootstrap_semantics_summary;
   Objc3RuntimeBootstrapLoweringSummary runtime_bootstrap_lowering_summary;

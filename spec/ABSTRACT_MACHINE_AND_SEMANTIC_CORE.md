@@ -1184,3 +1184,12 @@ M275-B003 legacy/canonical migration semantics note:
   - canonical mode plus migration assist rejects legacy `YES` / `NO` / `NULL`
     with `O3S216`
   - canonical literals remain accepted on the happy path
+
+M275-C001 machine-readable conformance/report contract note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
+- this packet reuses the existing versioned conformance sidecar and runtime
+  capability publication path rather than introducing a second report format
+- Part 12 reporting remains explicitly bounded to the live migration semantics
+  and lowered conformance truth surface

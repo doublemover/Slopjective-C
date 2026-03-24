@@ -1348,6 +1348,22 @@ inline constexpr const char *kObjc3RuntimeCapabilitySpecRevision = "v1";
 inline constexpr const char *kObjc3RuntimeCapabilityStrictnessMode =
     "permissive";
 inline constexpr const char *kObjc3RuntimeCapabilityConcurrencyMode = "off";
+inline constexpr const char
+    *kObjc3Part12MachineReadableConformanceReportContractId =
+        "objc3c-part12-machine-readable-conformance-report-contract/m275-c001-v1";
+inline constexpr const char
+    *kObjc3Part12MachineReadableConformanceReportDependencyContractId =
+        "objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1";
+inline constexpr const char
+    *kObjc3Part12MachineReadableConformanceReportSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_machine_readable_conformance_report_contract";
+inline constexpr const char
+    *kObjc3Part12MachineReadableConformanceReportPayloadModel =
+        "part12-advanced-feature-truth-reuses-the-existing-versioned-conformance-sidecar-and-runtime-capability-publication-path";
+inline constexpr const char
+    *kObjc3Part12MachineReadableConformanceReportAuthorityModel =
+        "part12-machine-readable-reporting-remains-bounded-to-the-lowered-versioned-conformance-sidecar-and-live-migration-semantics";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
@@ -2779,6 +2795,7 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
+std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
 std::string Objc3Part8SystemHelperRuntimeContractSummary();

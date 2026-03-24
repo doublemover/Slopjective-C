@@ -2275,6 +2275,27 @@ std::string Objc3VersionedConformanceReportLoweringContractSummary() {
   return out.str();
 }
 
+std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary() {
+  std::ostringstream out;
+  out << "contract=" << kObjc3Part12MachineReadableConformanceReportContractId
+      << ";dependency_contract_id="
+      << kObjc3Part12MachineReadableConformanceReportDependencyContractId
+      << ";surface_path="
+      << kObjc3Part12MachineReadableConformanceReportSurfacePath
+      << ";payload_model="
+      << kObjc3Part12MachineReadableConformanceReportPayloadModel
+      << ";authority_model="
+      << kObjc3Part12MachineReadableConformanceReportAuthorityModel
+      << ";artifact_suffix="
+      << kObjc3VersionedConformanceReportLoweringArtifactSuffix
+      << ";artifact_schema_id="
+      << kObjc3VersionedConformanceReportLoweringArtifactSchemaId
+      << ";runtime_capability_schema_id="
+      << kObjc3RuntimeCapabilityReportingSchemaId
+      << ";non_goals=no-second-report-format-or-release-truth-surface";
+  return out.str();
+}
+
 std::string Objc3RuntimeCapabilityReportingContractSummary() {
   std::ostringstream out;
   // M264-C002 capability-reporting anchor: lane-C must publish one truthful

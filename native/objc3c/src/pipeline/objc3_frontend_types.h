@@ -5454,6 +5454,37 @@ struct Objc3VersionedConformanceReportLoweringSummary {
   std::string failure_reason;
 };
 
+struct Objc3Part12MachineReadableConformanceReportContractSummary {
+  std::string contract_id =
+      kObjc3Part12MachineReadableConformanceReportContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12MachineReadableConformanceReportDependencyContractId;
+  std::string lowering_contract_id =
+      kObjc3VersionedConformanceReportLoweringContractId;
+  std::string runtime_capability_contract_id =
+      kObjc3RuntimeCapabilityReportingContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12MachineReadableConformanceReportSurfacePath;
+  std::string payload_model =
+      kObjc3Part12MachineReadableConformanceReportPayloadModel;
+  std::string authority_model =
+      kObjc3Part12MachineReadableConformanceReportAuthorityModel;
+  std::string artifact_suffix =
+      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
+  std::string artifact_schema_id =
+      kObjc3VersionedConformanceReportLoweringArtifactSchemaId;
+  std::string runtime_capability_schema_id =
+      kObjc3RuntimeCapabilityReportingSchemaId;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_semantics_ready = false;
+  bool lowering_contract_ready = false;
+  bool runtime_capability_surface_published = false;
+  bool deterministic_handoff = false;
+  bool ready_for_runtime_publication = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool compatibility_mode_valid =
@@ -5497,6 +5528,29 @@ inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
          !summary.feature_claim_truth_surface_replay_key.empty() &&
          !summary.semantic_boundary_replay_key.empty() &&
          !summary.replay_key.empty() && summary.failure_reason.empty();
+}
+
+inline bool IsReadyObjc3Part12MachineReadableConformanceReportContractSummary(
+    const Objc3Part12MachineReadableConformanceReportContractSummary &summary) {
+  const bool compatibility_mode_valid =
+      summary.effective_compatibility_mode == "canonical" ||
+      summary.effective_compatibility_mode == "legacy";
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.lowering_contract_id.empty() &&
+         !summary.runtime_capability_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.payload_model.empty() &&
+         !summary.authority_model.empty() &&
+         !summary.artifact_suffix.empty() &&
+         !summary.artifact_schema_id.empty() &&
+         !summary.runtime_capability_schema_id.empty() &&
+         compatibility_mode_valid && summary.migration_semantics_ready &&
+         summary.lowering_contract_ready &&
+         summary.runtime_capability_surface_published &&
+         summary.deterministic_handoff &&
+         summary.ready_for_runtime_publication && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
 }
 
 struct Objc3RuntimeBootstrapApiSummary {

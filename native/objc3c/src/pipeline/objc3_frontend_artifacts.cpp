@@ -9361,6 +9361,97 @@ std::string BuildRuntimeCapabilityVersionsJson() {
   return out.str();
 }
 
+std::string BuildPart12MachineReadableConformanceReportContractReplayKey(
+    const Objc3Part12MachineReadableConformanceReportContractSummary
+        &summary) {
+  std::ostringstream out;
+  out << "mode=" << summary.effective_compatibility_mode
+      << ";migration=" << (summary.migration_semantics_ready ? "true" : "false")
+      << ";lowering=" << (summary.lowering_contract_ready ? "true" : "false")
+      << ";runtime-capability="
+      << (summary.runtime_capability_surface_published ? "true" : "false")
+      << ";ready="
+      << (summary.ready_for_runtime_publication ? "true" : "false");
+  return out.str();
+}
+
+Objc3Part12MachineReadableConformanceReportContractSummary
+BuildPart12MachineReadableConformanceReportContractSummary(
+    const Objc3Part12LegacyCanonicalMigrationSemanticsSummary
+        &migration_summary,
+    const Objc3VersionedConformanceReportLoweringSummary &lowering_summary) {
+  Objc3Part12MachineReadableConformanceReportContractSummary summary;
+  summary.effective_compatibility_mode =
+      lowering_summary.effective_compatibility_mode;
+  summary.migration_semantics_ready =
+      migration_summary.ready_for_lowering_and_runtime;
+  summary.lowering_contract_ready =
+      IsReadyObjc3VersionedConformanceReportLoweringSummary(lowering_summary);
+  summary.runtime_capability_surface_published =
+      summary.lowering_contract_ready &&
+      lowering_summary.ready_for_runtime_conformance_publication;
+  summary.deterministic_handoff =
+      summary.migration_semantics_ready && summary.lowering_contract_ready &&
+      summary.runtime_capability_surface_published &&
+      lowering_summary.artifact_suffix ==
+          kObjc3VersionedConformanceReportLoweringArtifactSuffix &&
+      lowering_summary.artifact_schema_id ==
+          kObjc3VersionedConformanceReportLoweringArtifactSchemaId;
+  summary.ready_for_runtime_publication = summary.deterministic_handoff;
+  if (!summary.migration_semantics_ready) {
+    summary.failure_reason =
+        "part12 legacy/canonical migration semantics prerequisite is not ready";
+  } else if (!summary.lowering_contract_ready) {
+    summary.failure_reason =
+        "versioned conformance-report lowering prerequisite is not ready";
+  }
+  summary.replay_key =
+      BuildPart12MachineReadableConformanceReportContractReplayKey(summary);
+  return summary;
+}
+
+std::string BuildPart12MachineReadableConformanceReportContractSummaryJson(
+    const Objc3Part12MachineReadableConformanceReportContractSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"dependency_contract_id\":\""
+      << EscapeJsonString(summary.dependency_contract_id)
+      << "\",\"lowering_contract_id\":\""
+      << EscapeJsonString(summary.lowering_contract_id)
+      << "\",\"runtime_capability_contract_id\":\""
+      << EscapeJsonString(summary.runtime_capability_contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"payload_model\":\""
+      << EscapeJsonString(summary.payload_model)
+      << "\",\"authority_model\":\""
+      << EscapeJsonString(summary.authority_model)
+      << "\",\"artifact_suffix\":\""
+      << EscapeJsonString(summary.artifact_suffix)
+      << "\",\"artifact_schema_id\":\""
+      << EscapeJsonString(summary.artifact_schema_id)
+      << "\",\"runtime_capability_schema_id\":\""
+      << EscapeJsonString(summary.runtime_capability_schema_id)
+      << "\",\"effective_compatibility_mode\":\""
+      << EscapeJsonString(summary.effective_compatibility_mode)
+      << "\",\"migration_semantics_ready\":"
+      << (summary.migration_semantics_ready ? "true" : "false")
+      << ",\"lowering_contract_ready\":"
+      << (summary.lowering_contract_ready ? "true" : "false")
+      << ",\"runtime_capability_surface_published\":"
+      << (summary.runtime_capability_surface_published ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_runtime_publication\":"
+      << (summary.ready_for_runtime_publication ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeCapabilityReportJson(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const std::vector<std::string> claimed_profile_ids =
@@ -15834,6 +15925,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildVersionedConformanceReportLoweringSummary(
               options, pipeline_result,
               frontend_compatibility_strictness_claim_semantics);
+  const Objc3Part12MachineReadableConformanceReportContractSummary
+      part12_machine_readable_conformance_report_contract_summary =
+          BuildPart12MachineReadableConformanceReportContractSummary(
+              part12_legacy_canonical_migration_semantics_summary,
+              versioned_conformance_report_lowering);
   if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
           versioned_conformance_report_lowering)) {
     record_post_pipeline_failure(
@@ -20307,6 +20403,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_legacy_canonical_migration_semantics\":"
            << BuildPart12LegacyCanonicalMigrationSemanticsSummaryJson(
                   part12_legacy_canonical_migration_semantics_summary)
+           << ",\"objc_part12_machine_readable_conformance_report_contract\":"
+           << BuildPart12MachineReadableConformanceReportContractSummaryJson(
+                  part12_machine_readable_conformance_report_contract_summary)
            // M264-C001 lowering freeze anchor: lane-C lowers the existing
            // runnable/source-only/unsupported truth packets into one emitted
            // machine-readable conformance sidecar instead of reconstructing
@@ -21567,6 +21666,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_legacy_canonical_migration_semantics\":"
                   << BuildPart12LegacyCanonicalMigrationSemanticsSummaryJson(
                       part12_legacy_canonical_migration_semantics_summary)
+           << ",\"objc_part12_machine_readable_conformance_report_contract\":"
+                  << BuildPart12MachineReadableConformanceReportContractSummaryJson(
+                      part12_machine_readable_conformance_report_contract_summary)
            << ",\"objc_part11_interop_semantic_model\":"
            << BuildPart11InteropSemanticModelSummaryJson(
                   part11_interop_semantic_model_summary)
@@ -22383,6 +22485,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       frontend_compatibility_strictness_claim_semantics;
   bundle.part12_legacy_canonical_migration_semantics_summary =
       part12_legacy_canonical_migration_semantics_summary;
+  bundle.part12_machine_readable_conformance_report_contract_summary =
+      part12_machine_readable_conformance_report_contract_summary;
   bundle.runtime_bootstrap_api_summary = runtime_bootstrap_api;
   bundle.runtime_bootstrap_semantics_summary = runtime_bootstrap_semantics;
   bundle.runtime_bootstrap_lowering_summary = runtime_bootstrap_lowering;

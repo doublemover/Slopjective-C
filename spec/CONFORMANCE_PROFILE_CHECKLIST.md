@@ -686,6 +686,9 @@ Current truthful scope:
 - legacy/canonical migration semantics now publish
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
   over the live canonical-mode migration-assist rejection path
+- Part 12 machine-readable report contract now publishes
+  `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
+  over the existing versioned conformance sidecar and runtime capability path
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices
