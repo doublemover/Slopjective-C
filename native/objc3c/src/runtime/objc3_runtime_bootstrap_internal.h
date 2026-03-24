@@ -507,6 +507,11 @@ void objc3_runtime_clear_current_property_context_for_testing(void);
 // cleanup/unwind proof still reuses these same private autoreleasepool hooks
 // plus the memory-management snapshot surface instead of widening the public
 // runtime ABI with a standalone cleanup stack API.
+// M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup execution,
+// resource invalidation proof, and retainable-family helper integration now
+// freeze this same private ARC/autorelease helper cluster plus the paired
+// memory-management and ARC-debug snapshots. Lane-D does not add a dedicated
+// borrowed-pointer runtime helper or widen the public runtime header.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
 // M267-D001 error-runtime/bridge-helper anchor: the supported runnable Part 6
@@ -595,6 +600,10 @@ int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1, int a2,
 // M266-D002 runtime cleanup/unwind implementation anchor: wider runnable
 // cleanup execution still uses this same private helper cluster rather than
 // widening a public cleanup/unwind ABI surface.
+// M271-D001 system-helper/runtime-contract anchor: the current Part 8 runtime
+// proof keeps cleanup/resource behavior on these same private autoreleasepool
+// hooks and snapshot helpers rather than introducing a second resource-runtime
+// stack or public helper surface.
 void objc3_runtime_push_autoreleasepool_scope(void);
 void objc3_runtime_pop_autoreleasepool_scope(void);
 int objc3_runtime_copy_memory_management_state_for_testing(

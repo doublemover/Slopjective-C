@@ -895,6 +895,13 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .part8_borrowed_retainable_compatibility_consumed_sites
           << ";next_issue=M271-D001\n";
+      // M271-D001 runtime/helper-freeze anchor: publish the private Part 8
+      // runtime/helper contract above the existing lowering and ABI packets so
+      // emitted IR truthfully advertises that cleanup/resource proof and
+      // retainable-family interop still reuse the existing ARC/autorelease
+      // helper cluster rather than a new runtime subsystem.
+      out << "; part8_system_helper_runtime_contract = "
+          << Objc3Part8SystemHelperRuntimeContractSummary() << "\n";
     }
     if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
@@ -3452,6 +3459,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
+    out << "!objc3.objc_part8_system_helper_runtime_contract = !{!100}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -6369,6 +6377,21 @@ class Objc3IREmitter {
                 ? 1
                 : 0)
         << "}\n\n";
+    out << "!100 = !{!\""
+        << EscapeCStringLiteral(kObjc3Part8SystemHelperRuntimeContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3Part8SystemExtensionLoweringContractId)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
+        << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePushAutoreleasepoolScopeSymbol)
+        << "\", !\""
+        << EscapeCStringLiteral(kObjc3RuntimePopAutoreleasepoolScopeSymbol)
+        << "\", !\"objc3_runtime_copy_memory_management_state_for_testing\", !\"objc3_runtime_copy_arc_debug_state_for_testing\"}\n\n";
     out << "!42 = !{i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_.await_lowering_suspension_state_lowering_sites)

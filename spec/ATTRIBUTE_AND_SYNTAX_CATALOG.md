@@ -353,6 +353,23 @@ Current implementation status (`M271-C003`):
   native direct-call path
 - borrowed lifetime runtime interop and runnable retainable-family behavior
   remain later `M271` lane-D work
+
+Current implementation status (`M271-D001`):
+- the current Part 8 runtime/helper freeze reuses the private ARC helper
+  cluster:
+  `objc3_runtime_retain_i32`,
+  `objc3_runtime_release_i32`,
+  `objc3_runtime_autorelease_i32`,
+  `objc3_runtime_push_autoreleasepool_scope`,
+  `objc3_runtime_pop_autoreleasepool_scope`
+- runtime proof also reuses
+  `objc3_runtime_copy_memory_management_state_for_testing` and
+  `objc3_runtime_copy_arc_debug_state_for_testing`
+- cleanup execution, resource invalidation proof, and retainable-family helper
+  integration now freeze that existing helper/runtime slice without widening the
+  public runtime header
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later `M271` lane-D work
 ```
 
 This attribute may be applied to:
@@ -1101,4 +1118,3 @@ Current implementation status (`M267-E001`):
   Part 6 slice
 - preserves the same published manifest/replay/link-plan evidence before the
   `M267-E002` closeout matrix
-

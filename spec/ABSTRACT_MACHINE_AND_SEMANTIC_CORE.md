@@ -937,6 +937,17 @@ M271-C003 Part 8 ABI completion note:
 - borrowed lifetime runtime interop and runnable retainable-family execution
   remain later lane-D work
 
+M271-D001 system-helper/runtime-contract note:
+- the current Part 8 runtime proof now freezes one truthful reuse boundary over
+  the private ARC/autorelease helper cluster and the paired memory-management /
+  ARC-debug snapshots
+- cleanup execution and resource invalidation still ride existing cleanup
+  lowering plus autoreleasepool state rather than a new cleanup runtime stack
+- retainable-family helper integration rides the same private
+  retain/release/autorelease entrypoints instead of a separate Part 8 helper ABI
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later lane-D work
+
 M270-B001 actor/sendability semantic-model note:
 
 - the semantic pipeline now publishes
@@ -1092,4 +1103,3 @@ M266-B002 implementation note:
 
 - admitted match statements now fail closed unless they are exhaustive for the supported surface.
 - currently supported exhaustive forms are catch-all branches, 	rue plus alse, and .Ok(...) plus .Err(...).
-

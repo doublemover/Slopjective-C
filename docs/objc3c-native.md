@@ -4145,6 +4145,25 @@ Current implementation status (`M271-C003`):
 - borrowed lifetime runtime interop and runnable retainable-family runtime
   behavior remain later `M271` lane-D work
 
+## M271 system helper and runtime contract
+
+Current implementation status (`M271-D001`):
+
+- the current Part 8 lane-D freeze reuses the existing private ARC helper
+  cluster:
+  `objc3_runtime_retain_i32`,
+  `objc3_runtime_release_i32`,
+  `objc3_runtime_autorelease_i32`,
+  `objc3_runtime_push_autoreleasepool_scope`,
+  `objc3_runtime_pop_autoreleasepool_scope`
+- runtime proof also reuses the paired testing snapshots:
+  `objc3_runtime_copy_memory_management_state_for_testing` and
+  `objc3_runtime_copy_arc_debug_state_for_testing`
+- cleanup execution, resource invalidation proof, and retainable-family helper
+  integration now freeze that existing helper/runtime slice instead of
+  inventing a second Part 8 runtime subsystem
+- borrowed lifetime runtime enforcement and escaping cleanup/resource ownership
+  transfer remain later `M271` lane-D work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

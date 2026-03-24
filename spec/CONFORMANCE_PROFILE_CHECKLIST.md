@@ -246,6 +246,13 @@ M271-B004 implementation note:
   annotations, and compatibility aliases without a supporting object return
   before later `M271` lowering and runtime work
 
+M271-D001 implementation note:
+- Part 8 runtime/helper proof now freezes one truthful reuse boundary over the
+  private ARC/autorelease helper cluster plus memory-management / ARC-debug
+  snapshots
+- cleanup execution and resource invalidation still reuse the existing helper
+  slice and packaged runtime archive rather than a new Part 8 runtime subsystem
+
 M270-B001 implementation note:
 
 - the semantic pipeline now publishes one dedicated actor/sendability packet at

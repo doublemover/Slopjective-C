@@ -30,6 +30,11 @@ extern char **environ;
 // separate public scheduler/runtime package is introduced here.
 // M269-D003 hardening anchor: replay/hardening probes for the same task
 // runtime continue to package against that existing runtime archive path.
+// M271-D001 system-helper/runtime-contract anchor: Part 8 runtime/helper proof
+// likewise stays on the same packaged runtime archive path. The driver/process
+// layer does not introduce a separate cleanup/resource runtime package or a
+// dedicated borrowed-pointer import surface for this freeze; there is still no
+// dedicated borrowed-pointer import surface here.
 
 enum class ProducedObjectFormat : std::uint8_t {
   kUnknown = 0,
@@ -1596,6 +1601,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // traffic still links through that same packaged runtime archive, so mixed
     // actor-runtime link plans must keep one archive identity even after the
     // mailbox helpers become runnable.
+    // M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup/resource
+    // and retainable-family runtime proof also stays on that same packaged
+    // runtime archive path. Mixed-module link plans may not diverge on archive
+    // identity while lane-D still reuses the existing private helper cluster.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =

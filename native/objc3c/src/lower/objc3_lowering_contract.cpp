@@ -1518,6 +1518,38 @@ std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
   return out.str();
 }
 
+std::string Objc3Part8SystemHelperRuntimeContractSummary() {
+  std::ostringstream out;
+  // M271-D001 runtime/helper-freeze anchor: lane-D freezes the currently
+  // supported Part 8 runtime/helper proof as a reuse boundary over the private
+  // ARC/autorelease helper cluster and testing snapshots. Cleanup execution and
+  // resource invalidation still ride existing cleanup lowering plus
+  // autoreleasepool state; retainable-family helper integration rides the same
+  // retain/release/autorelease entrypoints; no public runtime ABI widening or
+  // new Part 8 import surface is claimed here.
+  out << "contract=" << kObjc3Part8SystemHelperRuntimeContractId
+      << ";source_contract=" << kObjc3Part8SystemExtensionLoweringContractId
+      << ";abi_completion_contract="
+      << kObjc3Part8BorrowedRetainableAbiCompletionContractId
+      << ";source_model=" << kObjc3Part8SystemHelperRuntimeSourceModel
+      << ";abi_model=" << kObjc3Part8SystemHelperRuntimeAbiModel
+      << ";packaging_model=" << kObjc3Part8SystemHelperRuntimePackagingModel
+      << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
+      << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
+      << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
+      << ";autoreleasepool_push_symbol="
+      << kObjc3RuntimePushAutoreleasepoolScopeSymbol
+      << ";autoreleasepool_pop_symbol="
+      << kObjc3RuntimePopAutoreleasepoolScopeSymbol
+      << ";memory_snapshot_symbol="
+      << "objc3_runtime_copy_memory_management_state_for_testing"
+      << ";arc_debug_snapshot_symbol="
+      << "objc3_runtime_copy_arc_debug_state_for_testing"
+      << ";fail_closed_model=" << kObjc3Part8SystemHelperRuntimeFailClosedModel
+      << ";next_issue=M271-D002";
+  return out.str();
+}
+
 std::string Objc3Part7ContinuationRuntimeHelperSummary() {
   std::ostringstream out;
   // M268-D001 continuation/runtime-helper anchor: lane-D freezes the first
