@@ -8806,3 +8806,21 @@ runnable smoke matrix.
   - LLVM IR now carries one replay-visible metadata node for that cross-module preservation proof
   - no live macro executor, package loader, or property-behavior runtime ABI tables are claimed yet
   - cross-module preservation and macro host/runtime integration remain later `M273` work
+
+## M273 expansion host/runtime boundary note
+
+`M273-D001` still does not widen runtime ABI tables into a live macro host, but
+it does freeze one truthful private runtime boundary over the currently
+supported Part 10 property-behavior slice.
+
+- contract id
+  `objc3c-part10-expansion-host-runtime-boundary/m273-d001-v1`
+- emitted frontend/runtime proof
+  - `; part10_expansion_host_runtime_boundary = ...`
+  - `!objc3.objc_part10_expansion_host_and_runtime_boundary = !{!107}`
+- truthful boundary
+  - private runtime proof now includes `objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing`
+  - property-behavior runtime support currently reuses the existing private property-accessor/current-property hooks
+  - no live macro host execution, driver-side host process launch, or runtime package loader is claimed yet
+  - packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
+  - live macro host/runtime integration remains later `M273` work

@@ -520,6 +520,24 @@ int objc3_runtime_exchange_current_property_i32(int value);
 int objc3_runtime_bind_current_property_context_for_testing(
     int receiver, const char *class_name, const char *property_name);
 void objc3_runtime_clear_current_property_context_for_testing(void);
+// M273-D001 expansion-host/runtime-boundary anchor: the same private property
+// accessor/current-property helper slice now defines the truthful Part 10
+// property-behavior runtime boundary while macro host execution and runtime
+// package loading remain explicitly disabled.
+typedef struct objc3_runtime_part10_expansion_host_boundary_snapshot {
+  uint64_t property_runtime_ready;
+  uint64_t macro_host_execution_ready;
+  uint64_t macro_host_process_launch_ready;
+  uint64_t runtime_package_loader_ready;
+  uint64_t deterministic;
+  const char *runtime_support_library_archive_relative_path;
+  const char *property_behavior_runtime_model;
+  const char *macro_expansion_host_model;
+  const char *packaging_model;
+  const char *fail_closed_model;
+} objc3_runtime_part10_expansion_host_boundary_snapshot;
+int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
+    objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot);
 // M262-D002 runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice

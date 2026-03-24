@@ -1613,6 +1613,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     // and retainable-family runtime proof also stays on that same packaged
     // runtime archive path. Mixed-module link plans may not diverge on archive
     // identity while lane-D still reuses the existing private helper cluster.
+    // M273-D001 expansion-host/runtime-boundary anchor: Part 10 does not launch
+    // a macro host from the driver yet; the packaged objc3_runtime.lib archive
+    // remains the only host-facing runtime handoff while macro execution and
+    // runtime package loading stay fail-closed.
     if (imported_input.runtime_support_library_archive_relative_path !=
         inputs.runtime_support_library_archive_relative_path) {
       error =

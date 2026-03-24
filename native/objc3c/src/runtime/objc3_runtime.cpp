@@ -4626,6 +4626,34 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
+    objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot) {
+  // M273-D001 expansion-host/runtime-boundary anchor: lane-D freezes the
+  // truthful Part 10 boundary on one private snapshot backed by the existing
+  // packaged runtime archive and property-accessor helper slice without
+  // claiming live macro host execution or runtime package loading.
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->property_runtime_ready = 1;
+  snapshot->macro_host_execution_ready = 0;
+  snapshot->macro_host_process_launch_ready = 0;
+  snapshot->runtime_package_loader_ready = 0;
+  snapshot->deterministic = 1;
+  snapshot->runtime_support_library_archive_relative_path =
+      "artifacts/lib/objc3_runtime.lib";
+  snapshot->property_behavior_runtime_model =
+      "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks";
+  snapshot->macro_expansion_host_model =
+      "macro-host-execution-process-launch-and-runtime-package-loading-remain-disabled-and-fail-closed";
+  snapshot->packaging_model =
+      "native-driver-packaging-still-hands-off-part10-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
+  snapshot->fail_closed_model =
+      "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);

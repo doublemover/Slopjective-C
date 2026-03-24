@@ -4502,6 +4502,30 @@ std::string Objc3Part10ModuleInterfaceReplayPreservationSummary() {
   return out.str();
 }
 
+std::string Objc3Part10ExpansionHostRuntimeBoundarySummary() {
+  std::ostringstream out;
+  // M273-D001 host/runtime-boundary anchor: lane-D freezes one truthful Part 10
+  // boundary over the already-landed synthesized/property runtime slice without
+  // claiming live macro host execution or runtime package loading.
+  out << "contract=" << kObjc3Part10ExpansionHostRuntimeBoundaryContractId
+      << ";source_contract="
+      << kObjc3Part10ExpansionHostRuntimeBoundarySourceContractId
+      << ";host_model=" << kObjc3Part10ExpansionHostRuntimeBoundaryHostModel
+      << ";property_runtime_model="
+      << kObjc3Part10ExpansionHostRuntimeBoundaryPropertyRuntimeModel
+      << ";packaging_model="
+      << kObjc3Part10ExpansionHostRuntimeBoundaryPackagingModel
+      << ";fail_closed_model="
+      << kObjc3Part10ExpansionHostRuntimeBoundaryFailClosedModel
+      << ";property_runtime_ready=true"
+      << ";macro_host_execution_ready=false"
+      << ";macro_host_process_launch_ready=false"
+      << ";runtime_package_loader_ready=false"
+      << ";deterministic=true"
+      << ";next_issue=M273-D002";
+  return out.str();
+}
+
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // M272-C003 preservation anchor: lane-C extends the local C002 lowering win

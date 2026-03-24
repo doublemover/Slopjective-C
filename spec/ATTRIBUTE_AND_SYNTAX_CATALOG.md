@@ -1481,3 +1481,22 @@ Current implementation status (`M273-C003`):
 - native separate compilation now consumes provider `module.runtime-import-surface.json` artifacts and preserves imported Part 10 replay facts in the consumer manifest and IR
 - emitted IR now carries one replay-stable Part 10 synthesized-emission summary and metadata node
 - cross-module preservation and macro host execution still remain deferred to later `M273` lanes
+
+## M273 expansion host and runtime boundary contract (D001)
+
+Current implementation status (`M273-D001`):
+
+- lane D now freezes one truthful runtime/host boundary:
+  - `objc3c-part10-expansion-host-runtime-boundary/m273-d001-v1`
+- the private runtime proof surface now exposes:
+  - `objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing`
+- property-behavior runtime support currently reuses the existing private
+  property-accessor/current-property runtime slice
+- macro host execution, driver-side host process launch, and runtime package
+  loading remain disabled and fail-closed
+- emitted IR now carries:
+  - `; part10_expansion_host_runtime_boundary = ...`
+  - `!objc3.objc_part10_expansion_host_and_runtime_boundary = !{!107}`
+- packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
+- live macro host execution and runtime package loading remain later `M273`
+  work

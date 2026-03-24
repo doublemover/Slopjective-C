@@ -1609,6 +1609,26 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel =
         "missing-or-drifted-part10-preservation-packets-disable-cross-module-metaprogramming-preservation-claims";
+// M273-D001 host/runtime-boundary freeze anchor: lane-D freezes the truthful
+// Part 10 runtime boundary around the existing packaged runtime archive and
+// private property-accessor helpers while keeping macro host execution and
+// runtime package loading explicitly disabled and fail-closed.
+inline constexpr const char *kObjc3Part10ExpansionHostRuntimeBoundaryContractId =
+    "objc3c-part10-expansion-host-runtime-boundary/m273-d001-v1";
+inline constexpr const char
+    *kObjc3Part10ExpansionHostRuntimeBoundarySourceContractId =
+        "objc3c-part10-module-interface-replay-preservation/m273-c003-v1";
+inline constexpr const char *kObjc3Part10ExpansionHostRuntimeBoundaryHostModel =
+    "macro-host-execution-process-launch-and-runtime-package-loading-remain-disabled-and-fail-closed";
+inline constexpr const char
+    *kObjc3Part10ExpansionHostRuntimeBoundaryPropertyRuntimeModel =
+        "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks";
+inline constexpr const char
+    *kObjc3Part10ExpansionHostRuntimeBoundaryPackagingModel =
+        "native-driver-packaging-still-hands-off-part10-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
+inline constexpr const char
+    *kObjc3Part10ExpansionHostRuntimeBoundaryFailClosedModel =
+        "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2790,6 +2810,7 @@ bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10ModuleInterfaceReplayPreservationSummary();
+std::string Objc3Part10ExpansionHostRuntimeBoundarySummary();
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);

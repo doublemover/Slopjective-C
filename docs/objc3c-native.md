@@ -9334,6 +9334,23 @@ native build surface.
   - `!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}`
 - cross-module preservation and macro host execution remain later `M273` work
 
+## M273 expansion host and runtime boundary
+
+- Part 10 now freezes one truthful host/runtime boundary instead of implying a
+  live macro executor
+- emitted LLVM IR now prints:
+  - `; part10_expansion_host_runtime_boundary = ...`
+  - `!objc3.objc_part10_expansion_host_and_runtime_boundary = !{!107}`
+- the private runtime proof surface now includes:
+  - `objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing`
+- current boundary truth:
+  - property-behavior runtime support currently reuses the existing private
+    property-accessor/current-property runtime slice
+  - macro host execution, driver-side host process launch, and runtime package
+    loading remain disabled and fail-closed
+  - packaged runtime handoff still goes through `artifacts/lib/objc3_runtime.lib`
+- live macro execution and package loading remain later `M273` work
+
 ## CI and closeout semantics (M276-E002)
 
 `M276-E002` closes the build-surface tranche by proving the command taxonomy in
