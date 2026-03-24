@@ -1015,6 +1015,45 @@ std::string BuildPart10MacroPackageProvenanceSourceCompletionSummaryJson(
   return out.str();
 }
 
+std::string BuildPart10PropertyBehaviorSourceCompletionSummaryJson(
+    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"failure_model\":\"" << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"property_behavior_sites\":" << summary.property_behavior_sites
+      << ",\"interface_property_behavior_sites\":"
+      << summary.interface_property_behavior_sites
+      << ",\"implementation_property_behavior_sites\":"
+      << summary.implementation_property_behavior_sites
+      << ",\"protocol_property_behavior_sites\":"
+      << summary.protocol_property_behavior_sites
+      << ",\"synthesized_binding_visible_sites\":"
+      << summary.synthesized_binding_visible_sites
+      << ",\"synthesized_getter_visible_sites\":"
+      << summary.synthesized_getter_visible_sites
+      << ",\"synthesized_setter_visible_sites\":"
+      << summary.synthesized_setter_visible_sites
+      << ",\"property_behavior_source_supported\":"
+      << (summary.property_behavior_source_supported ? "true" : "false")
+      << ",\"synthesized_declaration_visibility_supported\":"
+      << (summary.synthesized_declaration_visibility_supported ? "true"
+                                                               : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart9DispatchIntentSemanticModelSummaryJson(
     const Objc3Part9DispatchIntentSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -12747,6 +12786,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
       &part10_macro_package_provenance_source_completion_summary =
           pipeline_result.part10_macro_package_provenance_source_completion_summary;
+  const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+      &part10_property_behavior_source_completion_summary =
+          pipeline_result.part10_property_behavior_source_completion_summary;
   const Objc3Part9DispatchIntentSemanticModelSummary
       &part9_dispatch_intent_semantic_model_summary =
           pipeline_result.part9_dispatch_intent_semantic_model_summary;
@@ -17247,6 +17289,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part10_macro_package_and_provenance_source_completion\":"
             << BuildPart10MacroPackageProvenanceSourceCompletionSummaryJson(
                    part10_macro_package_provenance_source_completion_summary)
+            << ",\"objc_part10_property_behavior_and_synthesized_declaration_source_completion\":"
+            << BuildPart10PropertyBehaviorSourceCompletionSummaryJson(
+                   part10_property_behavior_source_completion_summary)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)
@@ -18635,6 +18680,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part10_macro_package_and_provenance_source_completion\":"
             << BuildPart10MacroPackageProvenanceSourceCompletionSummaryJson(
                    part10_macro_package_provenance_source_completion_summary)
+            << ",\"objc_part10_property_behavior_and_synthesized_declaration_source_completion\":"
+            << BuildPart10PropertyBehaviorSourceCompletionSummaryJson(
+                   part10_property_behavior_source_completion_summary)
             << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
             << BuildPart9DispatchIntentSemanticModelSummaryJson(
                    part9_dispatch_intent_semantic_model_summary)

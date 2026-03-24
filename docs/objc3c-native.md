@@ -4376,6 +4376,13 @@ Current implementation status (`M271-E001`):
 - the emitted frontend manifest publishes `frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion`
 - the packet tracks macro marker, package marker, provenance marker, and expansion-visible macro source sites
 - this still does not claim macro expansion execution, sandboxing, or runtime package loading yet
+
+## M273 property-behavior synthesized declaration source completion
+
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_property_behavior_and_synthesized_declaration_source_completion`
+- the packet tracks behavior-bearing interface, implementation, and protocol properties deterministically
+- the packet also tracks deterministic source-visible synthesized binding, getter, and setter state already carried by parser-owned property records
+- this still does not claim property-behavior expansion, runtime hooks, or executable synthesized declaration materialization yet
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

@@ -4554,6 +4554,23 @@ std::string BuildPart10MacroPackageProvenanceSourceCompletionReplayKey(
   return out.str();
 }
 
+std::string BuildPart10PropertyBehaviorSourceCompletionReplayKey(
+    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << summary.contract_id
+      << ";sites=" << summary.property_behavior_sites << ":"
+      << summary.interface_property_behavior_sites << ":"
+      << summary.implementation_property_behavior_sites << ":"
+      << summary.protocol_property_behavior_sites << ":"
+      << summary.synthesized_binding_visible_sites << ":"
+      << summary.synthesized_getter_visible_sites << ":"
+      << summary.synthesized_setter_visible_sites
+      << ";deterministic="
+      << (summary.deterministic_handoff ? "true" : "false");
+  return out.str();
+}
+
 std::string BuildPart7LowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
@@ -6270,6 +6287,66 @@ BuildPart10MacroPackageProvenanceSourceCompletionSummary(
   return summary;
 }
 
+Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+BuildPart10PropertyBehaviorSourceCompletionSummary(const Objc3Program &program) {
+  Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary summary;
+
+  const auto accumulate_property = [&summary](const Objc3PropertyDecl &property,
+                                              const char *owner_kind) {
+    if (!property.property_behavior_declared) {
+      return;
+    }
+    ++summary.property_behavior_sites;
+    const std::string kind(owner_kind);
+    if (kind == "interface") {
+      ++summary.interface_property_behavior_sites;
+    } else if (kind == "implementation") {
+      ++summary.implementation_property_behavior_sites;
+    } else if (kind == "protocol") {
+      ++summary.protocol_property_behavior_sites;
+    }
+    if (property.executable_synthesized_binding_kind == "implicit-ivar" &&
+        !property.executable_synthesized_binding_symbol.empty()) {
+      ++summary.synthesized_binding_visible_sites;
+    }
+    if (!property.effective_getter_selector.empty()) {
+      ++summary.synthesized_getter_visible_sites;
+    }
+    if (property.effective_setter_available &&
+        !property.effective_setter_selector.empty()) {
+      ++summary.synthesized_setter_visible_sites;
+    }
+  };
+
+  for (const auto &interface_decl : program.interfaces) {
+    for (const auto &property : interface_decl.properties) {
+      accumulate_property(property, "interface");
+    }
+  }
+  for (const auto &protocol_decl : program.protocols) {
+    for (const auto &property : protocol_decl.properties) {
+      accumulate_property(property, "protocol");
+    }
+  }
+  for (const auto &implementation : program.implementations) {
+    for (const auto &property : implementation.properties) {
+      accumulate_property(property, "implementation");
+    }
+  }
+
+  summary.property_behavior_source_supported = true;
+  summary.synthesized_declaration_visibility_supported = true;
+  summary.deterministic_handoff =
+      summary.interface_property_behavior_sites +
+              summary.implementation_property_behavior_sites +
+              summary.protocol_property_behavior_sites ==
+          summary.property_behavior_sites;
+  summary.ready_for_semantic_expansion = summary.deterministic_handoff;
+  summary.replay_key =
+      BuildPart10PropertyBehaviorSourceCompletionReplayKey(summary);
+  return summary;
+}
+
 std::string BuildSymbolGraphScopeResolutionHandoffKey(
     const Objc3FrontendSymbolGraphScopeResolutionSummary &summary) {
   std::ostringstream out;
@@ -6505,6 +6582,9 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           Objc3ParsedProgramAst(result.program));
   result.part10_macro_package_provenance_source_completion_summary =
       BuildPart10MacroPackageProvenanceSourceCompletionSummary(
+          Objc3ParsedProgramAst(result.program));
+  result.part10_property_behavior_source_completion_summary =
+      BuildPart10PropertyBehaviorSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
   result.part7_actor_member_isolation_source_closure_summary =
       BuildPart7ActorMemberIsolationSourceClosureSummary(

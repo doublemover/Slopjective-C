@@ -122,6 +122,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // M273-A002 source-completion note: macro package/provenance admission also
   // remains parser-owned callable attribute profiling on top of this same token
   // stream; do not widen the lexer with dedicated package/provenance keywords.
+  // M273-A003 source-completion note: property-behavior synthesized
+  // declaration visibility likewise stays a parser/frontend packet concern on
+  // top of the existing `behavior=...` property attribute spelling.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

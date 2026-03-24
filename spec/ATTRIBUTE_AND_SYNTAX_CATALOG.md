@@ -1363,3 +1363,17 @@ Current implementation status (`M273-A002`):
   - `objc_macro_package`
   - `objc_macro_provenance`
 - this issue still does not claim macro expansion execution, sandboxing, or runtime package loading
+
+## M273 property-behavior synthesized declaration source completion (A003)
+
+Current implementation status (`M273-A003`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_property_behavior_and_synthesized_declaration_source_completion`
+- canonical source form remains `behavior=...` inside `@property(...)`
+- the packet counts:
+  - behavior-bearing interface properties
+  - behavior-bearing implementation properties
+  - behavior-bearing protocol properties
+  - synthesized binding visibility sites
+  - synthesized getter/setter visibility sites
+- this issue still does not claim property-behavior expansion, runtime hooks, or executable synthesized declaration materialization

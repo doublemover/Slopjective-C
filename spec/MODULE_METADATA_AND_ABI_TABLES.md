@@ -8704,3 +8704,15 @@ runnable smoke matrix.
 - truthful boundary
   - package/provenance markers are frontend-owned source state only at this stage
   - no runtime package loader metadata, expansion cache ABI, or sandbox policy tables are claimed yet
+
+## M273 property-behavior synthesized declaration note
+
+`M273-A003` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-property-behavior-source-completion/m273-a003-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_property_behavior_and_synthesized_declaration_source_completion`
+- truthful boundary
+  - behavior-bearing properties now publish one deterministic source-visible synthesized declaration inventory
+  - no property-behavior runtime tables, expansion descriptors, or executable synthesized declaration ABI are claimed yet

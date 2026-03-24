@@ -188,12 +188,16 @@ inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureContractId 
     "objc3c-part10-metaprogramming-source-closure/m273-a001-v1";
 inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionContractId =
     "objc3c-part10-macro-package-provenance-source-completion/m273-a002-v1";
+inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionContractId =
+    "objc3c-part10-property-behavior-source-completion/m273-a003-v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDeriveMarkers =
     "source-only:derive-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroMarkers =
     "source-only:macro-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimPropertyBehaviorMarkers =
     "source-only:property-behavior-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimPropertyBehaviorSynthesisVisibility =
+    "source-only:property-behavior-synthesis-visibility";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroPackageMarkers =
     "source-only:macro-package-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroProvenanceMarkers =
