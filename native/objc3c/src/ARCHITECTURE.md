@@ -11450,3 +11450,24 @@ through `M269-E001` proof chain and freezing one explicit runnable matrix for
   - interface/module-preserved foreign callable and annotation totals
 - live FFI call lowering, bridge helper emission, and runnable cross-language
   behavior remain later `M274` lane-C and lane-D work
+
+## M274 bridge packaging and toolchain contract (D001)
+
+- `M274-D001` freezes the current truthful Part 11 packaging/toolchain
+  boundary instead of implying that header/module/bridge generation already
+  exists
+- emitted LLVM IR now carries:
+  - `; part11_bridge_packaging_toolchain_contract = ...`
+  - `!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}`
+- the private runtime proof surface now includes:
+  - `objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing`
+- `TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(...)` now also validates
+  imported Part 11 metadata/interface preservation packets across mixed-module
+  link plans
+- the current Part 11 toolchain-visible packaging boundary is:
+  - local runtime registration manifest plus packaged `objc3_runtime.lib`
+  - provider/consumer `module.runtime-import-surface.json` artifacts
+  - `module.cross-module-runtime-link-plan.json`
+  - the linker-response sidecar derived from that plan
+- header generation, module generation, and bridge generation remain deferred
+  until `M274-D002`

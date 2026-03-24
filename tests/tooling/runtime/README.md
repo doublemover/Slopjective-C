@@ -639,6 +639,26 @@ through `M269-D003` summary chain.
 
 - fixture:
   `tests/tooling/fixtures/native/m272_d001_runtime_fast_path_contract_positive.objc3`
+
+## M274 bridge packaging/toolchain contract probe
+
+`M274-D001` freezes the current Part 11 packaging boundary without claiming
+live header/module/bridge generation yet.
+
+- provider fixture:
+  `tests/tooling/fixtures/native/m274_d001_bridge_packaging_toolchain_provider.objc3`
+- consumer fixture:
+  `tests/tooling/fixtures/native/m274_d001_bridge_packaging_toolchain_consumer.objc3`
+- runtime probe:
+  `tests/tooling/runtime/m274_d001_bridge_packaging_toolchain_probe.cpp`
+- proof checks:
+  - packaged runtime support still points at `artifacts/lib/objc3_runtime.lib`
+  - `module.runtime-registration-manifest.json` publishes that archive path
+  - `module.cross-module-runtime-link-plan.json` preserves imported Part 11
+    preservation contract ids and replay keys
+  - `objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing`
+    publishes the current private runtime/toolchain boundary
+  - header/module/bridge generation remain fail-closed until `M274-D002`
 - probe:
   `tests/tooling/runtime/m272_d001_runtime_fast_path_contract_probe.cpp`
 - proof checks:

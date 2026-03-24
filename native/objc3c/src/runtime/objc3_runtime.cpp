@@ -4680,6 +4680,35 @@ int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
+    objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot) {
+  // M274-D001 bridge-packaging/toolchain anchor: lane-D freezes the truthful
+  // Part 11 packaging/runtime boundary on one private snapshot backed by the
+  // existing runtime archive path and cross-module link-plan topology without
+  // claiming live header/module/bridge generation yet.
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->packaging_topology_ready = 1;
+  snapshot->operator_visible_evidence_ready = 1;
+  snapshot->header_generation_ready = 0;
+  snapshot->module_generation_ready = 0;
+  snapshot->bridge_generation_ready = 0;
+  snapshot->deterministic = 1;
+  snapshot->runtime_support_library_archive_relative_path =
+      "artifacts/lib/objc3_runtime.lib";
+  snapshot->registration_manifest_model =
+      "runtime-registration-manifest-publishes-runtime-archive-path-owned-payloads-and-driver-link-wiring";
+  snapshot->cross_module_link_plan_model =
+      "runtime-import-surfaces-plus-registration-manifest-peer-artifacts-feed-one-fail-closed-cross-module-link-plan-and-linker-response-sidecar";
+  snapshot->operator_visible_evidence_model =
+      "operator-visible-interop-evidence-is-the-packaged-runtime-archive-registration-manifest-cross-module-link-plan-and-ir-summary";
+  snapshot->fail_closed_model =
+      "header-module-and-bridge-generation-remain-unclaimed-until-m274-d002";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);

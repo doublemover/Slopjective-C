@@ -553,6 +553,21 @@ typedef struct objc3_runtime_part10_macro_host_process_cache_integration_snapsho
 } objc3_runtime_part10_macro_host_process_cache_integration_snapshot;
 int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_testing(
     objc3_runtime_part10_macro_host_process_cache_integration_snapshot *snapshot);
+typedef struct objc3_runtime_part11_bridge_packaging_toolchain_snapshot {
+  uint64_t packaging_topology_ready;
+  uint64_t operator_visible_evidence_ready;
+  uint64_t header_generation_ready;
+  uint64_t module_generation_ready;
+  uint64_t bridge_generation_ready;
+  uint64_t deterministic;
+  const char *runtime_support_library_archive_relative_path;
+  const char *registration_manifest_model;
+  const char *cross_module_link_plan_model;
+  const char *operator_visible_evidence_model;
+  const char *fail_closed_model;
+} objc3_runtime_part11_bridge_packaging_toolchain_snapshot;
+int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
+    objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot);
 // M262-D002 runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice
@@ -582,6 +597,11 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 // M267-D003 cross-module preservation anchor: imported modules preserve this
 // same Part 6 helper cluster indirectly through replay sidecars and cross-image
 // link-plan validation rather than by widening the runtime helper ABI again.
+// M274-D001 bridge-packaging/toolchain anchor: the truthful Part 11 runtime
+// boundary also stays private and snapshot-backed. The current freeze claims
+// packaged-runtime archive continuity, registration-manifest/link-plan
+// topology, and operator-visible evidence only; header/module/bridge
+// generation remains deferred to M274-D002.
 void objc3_runtime_store_thrown_error_i32(int *slot, int value);
 int objc3_runtime_load_thrown_error_i32(const int *slot);
 int objc3_runtime_bridge_status_error_i32(int status_value,

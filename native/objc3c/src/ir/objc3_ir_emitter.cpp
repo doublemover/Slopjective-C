@@ -1016,6 +1016,8 @@ class Objc3IREmitter {
           << frontend_metadata_
                  .lowering_part11_ffi_metadata_interface_preservation_key
           << "\n";
+      out << "; part11_bridge_packaging_toolchain_contract = "
+          << Objc3Part11BridgePackagingToolchainSummary() << "\n";
     }
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
@@ -3866,6 +3868,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}\n";
     out << "!objc3.objc_part11_foreign_call_and_lifetime_lowering = !{!109}\n";
     out << "!objc3.objc_part11_ffi_metadata_and_interface_preservation = !{!110}\n";
+    out << "!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
@@ -6861,6 +6864,9 @@ class Objc3IREmitter {
                 ? 1
                 : 0)
         << "}\n\n";
+    out << "!111 = !{!\""
+        << EscapeCStringLiteral(Objc3Part11BridgePackagingToolchainSummary())
+        << "\"}\n\n";
     out << "!104 = !{i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_

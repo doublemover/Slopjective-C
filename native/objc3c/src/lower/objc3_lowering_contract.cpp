@@ -4569,6 +4569,33 @@ std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
          kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
 }
 
+std::string Objc3Part11BridgePackagingToolchainSummary() {
+  std::ostringstream out;
+  // M274-D001 packaging/toolchain anchor: lane-D freezes one truthful Part 11
+  // packaging boundary over the already-landed runtime-import-surface and
+  // cross-module link-plan topology without claiming live header/module/bridge
+  // generation yet.
+  out << "contract=" << kObjc3Part11BridgePackagingToolchainContractId
+      << ";source_contract="
+      << kObjc3Part11BridgePackagingToolchainSourceContractId
+      << ";preservation_contract="
+      << kObjc3Part11BridgePackagingToolchainPreservationContractId
+      << ";packaging_model="
+      << kObjc3Part11BridgePackagingToolchainPackagingModel
+      << ";operator_evidence_model="
+      << kObjc3Part11BridgePackagingToolchainEvidenceModel
+      << ";fail_closed_model="
+      << kObjc3Part11BridgePackagingToolchainFailClosedModel
+      << ";packaging_topology_ready=true"
+      << ";operator_visible_evidence_ready=true"
+      << ";header_generation_ready=false"
+      << ";module_generation_ready=false"
+      << ";bridge_generation_ready=false"
+      << ";deterministic=true"
+      << ";next_issue=M274-D002";
+  return out.str();
+}
+
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {

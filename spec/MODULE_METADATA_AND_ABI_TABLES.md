@@ -8981,3 +8981,28 @@ Current implementation status (`M274-C001`):
   - `!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}`
 - live FFI call lowering, bridge helper emission, and runnable cross-language
   behavior remain deferred
+
+## M274 bridge packaging and toolchain contract note
+
+Current implementation status (`M274-D001`):
+
+- the current Part 11 packaging/toolchain contract is
+  `objc3c-part11-bridge-packaging-and-toolchain-contract/m274-d001-v1`
+- the frozen D001 boundary does not claim live bridge generation yet; it
+  freezes the current truthful packaging topology over:
+  - `artifacts/lib/objc3_runtime.lib`
+  - `module.runtime-registration-manifest.json`
+  - `module.cross-module-runtime-link-plan.json`
+  - the sibling cross-module linker-response sidecar
+- mixed-module link-plan construction now validates imported Part 11
+  metadata/interface preservation packets and fails closed on:
+  - contract drift
+  - source-contract drift
+  - preservation-contract drift
+  - missing readiness bits
+  - duplicate replay keys
+- emitted IR carries:
+  - `; part11_bridge_packaging_toolchain_contract = ...`
+  - `!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}`
+- header generation, module generation, and bridge generation remain deferred
+  to `M274-D002`

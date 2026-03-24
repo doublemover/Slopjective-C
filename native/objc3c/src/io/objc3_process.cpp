@@ -39,6 +39,11 @@ extern char **environ;
 // M271-D002 live cleanup/runtime integration anchor: the linked Part 8 runtime
 // probe also packages against that same runtime archive path plus the emitted
 // module object; there is still no separate resource-runtime package boundary.
+// M274-D001 bridge-packaging/toolchain anchor: Part 11 now freezes the same
+// packaged runtime archive and sidecar topology as the truthful toolchain-
+// visible interop boundary. The process layer validates imported Part 11
+// preservation packets through the mixed-module link plan, but it still does
+// not claim live header/module/bridge generation here.
 
 enum class ProducedObjectFormat : std::uint8_t {
   kUnknown = 0,
@@ -1620,6 +1625,9 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part6_source_contract_id.empty() ||
       inputs.expected_part7_actor_contract_id.empty() ||
       inputs.expected_part7_actor_source_contract_id.empty() ||
+      inputs.expected_part11_ffi_contract_id.empty() ||
+      inputs.expected_part11_ffi_source_contract_id.empty() ||
+      inputs.expected_part11_ffi_preservation_contract_id.empty() ||
       inputs.expected_part10_host_cache_contract_id.empty() ||
       inputs.expected_part10_host_cache_source_contract_id.empty() ||
       inputs.expected_part10_host_cache_executable_relative_path.empty() ||
@@ -1669,11 +1677,13 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::string> seen_direct_import_surface_paths;
   std::unordered_set<std::string> seen_part6_replay_keys;
   std::unordered_set<std::string> seen_part7_actor_replay_keys;
+  std::unordered_set<std::string> seen_part11_ffi_replay_keys;
   std::unordered_set<std::string> seen_part10_host_cache_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
   std::vector<std::string> imported_part6_module_names;
   std::vector<std::string> imported_part7_actor_module_names;
+  std::vector<std::string> imported_part11_ffi_module_names;
   std::vector<std::string> imported_part10_host_cache_module_names;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
@@ -1876,6 +1886,53 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part7_actor_module_names.push_back(imported_input.module_name);
     }
+    if (imported_input.part11_ffi_metadata_interface_preservation_present) {
+      // M274-D001 bridge-packaging/toolchain anchor: imported Part 11 runtime-
+      // import surfaces must preserve one canonical metadata/interface packet
+      // across mixed-module link plans before D002 claims live header/module/
+      // bridge generation from that packaging topology.
+      if (imported_input.part11_ffi_contract_id !=
+          inputs.expected_part11_ffi_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 ffi contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part11_ffi_source_contract_id !=
+          inputs.expected_part11_ffi_source_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 ffi source contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (imported_input.part11_ffi_preservation_contract_id !=
+          inputs.expected_part11_ffi_preservation_contract_id) {
+        error =
+            "cross-module runtime link-plan Part 11 ffi preservation contract mismatch for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!imported_input.part11_ffi_runtime_import_artifact_ready ||
+          !imported_input.part11_ffi_separate_compilation_preservation_ready ||
+          !imported_input.part11_ffi_deterministic ||
+          imported_input.part11_ffi_replay_key.empty() ||
+          imported_input.part11_ffi_lowering_replay_key.empty() ||
+          imported_input.part11_ffi_preservation_replay_key.empty()) {
+        error =
+            "cross-module runtime link-plan Part 11 ffi preservation surface incomplete for " +
+            imported_input.module_name;
+        return false;
+      }
+      if (!seen_part11_ffi_replay_keys
+               .insert(imported_input.part11_ffi_replay_key)
+               .second) {
+        error =
+            "cross-module runtime link-plan duplicate imported Part 11 ffi replay key: " +
+            imported_input.part11_ffi_replay_key;
+        return false;
+      }
+      imported_part11_ffi_module_names.push_back(imported_input.module_name);
+    }
     if (imported_input.part10_macro_host_process_cache_runtime_integration_present) {
       if (imported_input.part10_macro_host_process_cache_contract_id !=
           inputs.expected_part10_host_cache_contract_id) {
@@ -2077,6 +2134,49 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << EscapeJsonString(
                imported_input.part7_actor_isolation_lowering_replay_key)
         << "\",\n"
+        << "      \"part11_ffi_metadata_interface_preservation_present\": "
+        << (imported_input.part11_ffi_metadata_interface_preservation_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part11_ffi_runtime_import_artifact_ready\": "
+        << (imported_input.part11_ffi_runtime_import_artifact_ready ? "true"
+                                                                    : "false")
+        << ",\n"
+        << "      \"part11_ffi_separate_compilation_preservation_ready\": "
+        << (imported_input.part11_ffi_separate_compilation_preservation_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"part11_ffi_deterministic\": "
+        << (imported_input.part11_ffi_deterministic ? "true" : "false")
+        << ",\n"
+        << "      \"part11_ffi_contract_id\": \""
+        << EscapeJsonString(imported_input.part11_ffi_contract_id)
+        << "\",\n"
+        << "      \"part11_ffi_source_contract_id\": \""
+        << EscapeJsonString(imported_input.part11_ffi_source_contract_id)
+        << "\",\n"
+        << "      \"part11_ffi_preservation_contract_id\": \""
+        << EscapeJsonString(imported_input.part11_ffi_preservation_contract_id)
+        << "\",\n"
+        << "      \"part11_ffi_replay_key\": \""
+        << EscapeJsonString(imported_input.part11_ffi_replay_key)
+        << "\",\n"
+        << "      \"part11_ffi_lowering_replay_key\": \""
+        << EscapeJsonString(imported_input.part11_ffi_lowering_replay_key)
+        << "\",\n"
+        << "      \"part11_ffi_preservation_replay_key\": \""
+        << EscapeJsonString(imported_input.part11_ffi_preservation_replay_key)
+        << "\",\n"
+        << "      \"part11_ffi_local_foreign_callable_count\": "
+        << imported_input.part11_ffi_local_foreign_callable_count << ",\n"
+        << "      \"part11_ffi_local_metadata_preservation_sites\": "
+        << imported_input.part11_ffi_local_metadata_preservation_sites
+        << ",\n"
+        << "      \"part11_ffi_local_interface_annotation_sites\": "
+        << imported_input.part11_ffi_local_interface_annotation_sites
+        << ",\n"
         << "      \"part10_macro_host_process_cache_runtime_integration_present\": "
         << (imported_input.part10_macro_host_process_cache_runtime_integration_present
                 ? "true"
@@ -2123,6 +2223,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::sort(imported_part6_module_names.begin(), imported_part6_module_names.end());
   std::sort(imported_part7_actor_module_names.begin(),
             imported_part7_actor_module_names.end());
+  std::sort(imported_part11_ffi_module_names.begin(),
+            imported_part11_ffi_module_names.end());
   std::sort(imported_part10_host_cache_module_names.begin(),
             imported_part10_host_cache_module_names.end());
 
@@ -2161,6 +2263,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"expected_part7_actor_source_contract_id\": \""
       << EscapeJsonString(inputs.expected_part7_actor_source_contract_id)
       << "\",\n"
+      << "  \"expected_part11_ffi_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part11_ffi_contract_id) << "\",\n"
+      << "  \"expected_part11_ffi_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part11_ffi_source_contract_id)
+      << "\",\n"
+      << "  \"expected_part11_ffi_preservation_contract_id\": \""
+      << EscapeJsonString(inputs.expected_part11_ffi_preservation_contract_id)
+      << "\",\n"
       << "  \"expected_part10_host_cache_contract_id\": \""
       << EscapeJsonString(inputs.expected_part10_host_cache_contract_id)
       << "\",\n"
@@ -2185,6 +2295,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << imported_part6_module_names.size() << ",\n"
       << "  \"part7_actor_imported_module_count\": "
       << imported_part7_actor_module_names.size() << ",\n"
+      << "  \"part11_ffi_imported_module_count\": "
+      << imported_part11_ffi_module_names.size() << ",\n"
       << "  \"part10_host_cache_imported_module_count\": "
       << imported_part10_host_cache_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
@@ -2197,6 +2309,9 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"part7_actor_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part7_actor_module_names, "    ")
       << ",\n"
+      << "  \"part11_ffi_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_part11_ffi_module_names, "    ")
+      << ",\n"
       << "  \"part10_host_cache_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(imported_part10_host_cache_module_names,
                                       "    ")
@@ -2205,6 +2320,9 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << (!imported_part6_module_names.empty() ? "true" : "false") << ",\n"
       << "  \"part7_actor_cross_module_isolation_ready\": "
       << (!imported_part7_actor_module_names.empty() ? "true" : "false")
+      << ",\n"
+      << "  \"part11_ffi_cross_module_packaging_ready\": "
+      << (!imported_part11_ffi_module_names.empty() ? "true" : "false")
       << ",\n"
       << "  \"part10_host_cache_cross_module_preservation_ready\": "
       << (!imported_part10_host_cache_module_names.empty() ? "true" : "false")

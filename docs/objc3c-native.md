@@ -9462,6 +9462,26 @@ native build surface.
 - live FFI call lowering, bridge helper emission, and runnable cross-language
   execution remain later `M274` work
 
+## M274 bridge packaging and toolchain contract
+
+- Part 11 now freezes the current toolchain-visible packaging boundary instead
+  of implying that header/module/bridge generation already exists
+- emitted LLVM IR now prints:
+  - `; part11_bridge_packaging_toolchain_contract = ...`
+  - `!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}`
+- the private runtime proof surface now includes:
+  - `objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing`
+- current boundary truth:
+  - packaged runtime support still goes through `artifacts/lib/objc3_runtime.lib`
+  - `module.runtime-registration-manifest.json` is the authoritative local
+    runtime/archive handoff
+  - `module.cross-module-runtime-link-plan.json` plus the sibling linker
+    response sidecar are the authoritative mixed-module packaging proof
+  - imported Part 11 preservation packets now participate in that mixed-module
+    link-plan validation
+  - header generation, module generation, and bridge generation remain
+    fail-closed until `M274-D002`
+
 ## M273 expansion host and runtime boundary
 
 - Part 10 now freezes one truthful host/runtime boundary instead of implying a

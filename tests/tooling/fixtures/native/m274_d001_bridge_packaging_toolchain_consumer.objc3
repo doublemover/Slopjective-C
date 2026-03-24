@@ -1,0 +1,7 @@
+module m274_d001_bridge_packaging_toolchain_consumer;
+
+extern fn ffiConsumer(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("BridgeConsumerKit"))));
+
+fn main() -> i32 {
+  return ffiConsumer(nil);
+}

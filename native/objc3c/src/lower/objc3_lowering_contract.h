@@ -1720,6 +1720,29 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11FfiMetadataInterfacePreservationFailClosedModel =
         "missing-import-surface-packet-drifted-replay-keys-or-non-deterministic-provider-preservation-disables-cross-module-part11-preservation-claims";
+// M274-D001 packaging/toolchain freeze anchor: lane-D now freezes the truthful
+// Part 11 bridge-packaging/toolchain boundary around the existing packaged
+// runtime archive, registration-manifest and cross-module link-plan topology,
+// and operator-visible interop evidence artifacts while header/module/bridge
+// generation remain explicitly deferred to M274-D002.
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainContractId =
+        "objc3c-part11-bridge-packaging-and-toolchain-contract/m274-d001-v1";
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainSourceContractId =
+        kObjc3Part11FfiMetadataInterfacePreservationContractId;
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainPreservationContractId =
+        "objc3c-part11-foreign-surface-interface-preservation/m274-a003-v1";
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainPackagingModel =
+        "runtime-registration-manifests-runtime-import-surfaces-cross-module-link-plans-and-linker-response-sidecars-are-the-current-toolchain-visible-part11-packaging-topology";
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainEvidenceModel =
+        "operator-visible-interop-evidence-is-published-through-the-packaged-runtime-archive-registration-manifest-cross-module-link-plan-and-ir-summary";
+inline constexpr const char
+    *kObjc3Part11BridgePackagingToolchainFailClosedModel =
+        "header-module-and-bridge-generation-remain-unclaimed-until-m274-d002";
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2549,6 +2572,15 @@ struct Objc3Part11FfiMetadataInterfacePreservationContract {
   bool deterministic = false;
 };
 
+struct Objc3Part11BridgePackagingToolchainContract {
+  bool packaging_topology_ready = false;
+  bool operator_visible_evidence_ready = false;
+  bool header_generation_ready = false;
+  bool module_generation_ready = false;
+  bool bridge_generation_ready = false;
+  bool deterministic = false;
+};
+
 struct Objc3Part10SynthesizedArtifactEmissionContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t emitted_derive_method_sites = 0;
@@ -2948,6 +2980,7 @@ bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
     const Objc3Part11FfiMetadataInterfacePreservationContract &contract);
 std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
     const Objc3Part11FfiMetadataInterfacePreservationContract &contract);
+std::string Objc3Part11BridgePackagingToolchainSummary();
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(

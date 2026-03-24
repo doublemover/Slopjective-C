@@ -901,6 +901,12 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
           link_plan_inputs.expected_part7_actor_source_contract_id =
               "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+          link_plan_inputs.expected_part11_ffi_contract_id =
+              kObjc3Part11FfiMetadataInterfacePreservationContractId;
+          link_plan_inputs.expected_part11_ffi_source_contract_id =
+              kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
+          link_plan_inputs.expected_part11_ffi_preservation_contract_id =
+              kObjc3Part11ForeignSurfaceInterfacePreservationContractId;
           link_plan_inputs.expected_part10_host_cache_contract_id =
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId;
           link_plan_inputs.expected_part10_host_cache_source_contract_id =
@@ -979,6 +985,33 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 imported_surface.part7_actor_lowering_replay_key;
             imported_input.part7_actor_isolation_lowering_replay_key =
                 imported_surface.part7_actor_isolation_lowering_replay_key;
+            imported_input.part11_ffi_metadata_interface_preservation_present =
+                imported_surface.part11_ffi_metadata_interface_preservation_present;
+            imported_input.part11_ffi_runtime_import_artifact_ready =
+                imported_surface.part11_ffi_runtime_import_artifact_ready;
+            imported_input.part11_ffi_separate_compilation_preservation_ready =
+                imported_surface
+                    .part11_ffi_separate_compilation_preservation_ready;
+            imported_input.part11_ffi_deterministic =
+                imported_surface.part11_ffi_deterministic;
+            imported_input.part11_ffi_contract_id =
+                imported_surface.part11_ffi_contract_id;
+            imported_input.part11_ffi_source_contract_id =
+                imported_surface.part11_ffi_source_contract_id;
+            imported_input.part11_ffi_preservation_contract_id =
+                imported_surface.part11_ffi_preservation_contract_id;
+            imported_input.part11_ffi_replay_key =
+                imported_surface.part11_ffi_replay_key;
+            imported_input.part11_ffi_lowering_replay_key =
+                imported_surface.part11_ffi_lowering_replay_key;
+            imported_input.part11_ffi_preservation_replay_key =
+                imported_surface.part11_ffi_preservation_replay_key;
+            imported_input.part11_ffi_local_foreign_callable_count =
+                imported_surface.part11_ffi_local_foreign_callable_count;
+            imported_input.part11_ffi_local_metadata_preservation_sites =
+                imported_surface.part11_ffi_local_metadata_preservation_sites;
+            imported_input.part11_ffi_local_interface_annotation_sites =
+                imported_surface.part11_ffi_local_interface_annotation_sites;
             imported_input
                 .part10_macro_host_process_cache_runtime_integration_present =
                 imported_surface
