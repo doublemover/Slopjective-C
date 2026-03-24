@@ -1,0 +1,5 @@
+module M275E002;
+
+fn main() -> i32 {
+  return 0;
+}

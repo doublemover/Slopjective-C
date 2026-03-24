@@ -109,6 +109,10 @@ inline constexpr const char *kObjc3AdvancedFeatureGateContractId =
     "objc3c-part12-integrated-advanced-feature-gate/m275-e001-v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateSchemaId =
     "objc3c-part12-integrated-advanced-feature-gate-v1";
+inline constexpr const char *kObjc3ReleaseCandidateMatrixContractId =
+    "objc3c-part12-release-candidate-execution-matrix/m275-e002-v1";
+inline constexpr const char *kObjc3ReleaseCandidateMatrixSchemaId =
+    "objc3c-part12-release-candidate-execution-matrix-v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
 inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
@@ -3173,6 +3177,79 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
       << "  \"native_validation_required\": true,\n"
       << "  \"report_payload_ready\": true,\n"
       << "  \"release_evidence_ready\": true,\n"
+      << "  \"ready\": true\n"
+      << "}\n";
+  artifact_json = out.str();
+  return true;
+}
+
+bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
+    const Objc3ReleaseCandidateMatrixArtifactInputs &inputs,
+    const std::string &report_json,
+    const std::string &publication_json,
+    const std::string &advanced_feature_gate_json,
+    std::string &artifact_json,
+    std::string &error) {
+  artifact_json.clear();
+  error.clear();
+
+  if (inputs.surface_kind.empty() || inputs.report_artifact_path.empty() ||
+      inputs.publication_artifact_path.empty() ||
+      inputs.advanced_feature_gate_artifact_path.empty() ||
+      inputs.validation_artifact_path.empty() ||
+      inputs.release_evidence_operation_artifact_path.empty() ||
+      inputs.dashboard_artifact_path.empty()) {
+    error = "release candidate matrix artifact inputs are incomplete";
+    return false;
+  }
+  if (report_json.find("\"advanced_feature_release_evidence\"") ==
+          std::string::npos ||
+      publication_json.find(kObjc3AdvancedFeatureOpsContractId) ==
+          std::string::npos ||
+      advanced_feature_gate_json.find(kObjc3AdvancedFeatureGateContractId) ==
+          std::string::npos) {
+    error = "release candidate matrix inputs drifted";
+    return false;
+  }
+
+  std::ostringstream out;
+  out << "{\n"
+      << "  \"contract_id\": \""
+      << EscapeJsonString(kObjc3ReleaseCandidateMatrixContractId) << "\",\n"
+      << "  \"schema_id\": \""
+      << EscapeJsonString(kObjc3ReleaseCandidateMatrixSchemaId) << "\",\n"
+      << "  \"surface_kind\": \"" << EscapeJsonString(inputs.surface_kind)
+      << "\",\n"
+      << "  \"release_label\": \""
+      << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
+      << "  \"report_artifact\": \""
+      << EscapeJsonString(inputs.report_artifact_path) << "\",\n"
+      << "  \"publication_artifact\": \""
+      << EscapeJsonString(inputs.publication_artifact_path) << "\",\n"
+      << "  \"advanced_feature_gate_artifact\": \""
+      << EscapeJsonString(inputs.advanced_feature_gate_artifact_path)
+      << "\",\n"
+      << "  \"validation_artifact_expected\": \""
+      << EscapeJsonString(inputs.validation_artifact_path) << "\",\n"
+      << "  \"release_evidence_operation_artifact_expected\": \""
+      << EscapeJsonString(inputs.release_evidence_operation_artifact_path)
+      << "\",\n"
+      << "  \"dashboard_artifact_expected\": \""
+      << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
+      << "  \"targeted_profile_ids\": "
+      << BuildIndentedStringArrayJson(
+             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << ",\n"
+      << "  \"matrix_rows\": [\n"
+      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c-part12-migration-canonicalization-source-completion/m275-a002-v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c-part12-integrated-advanced-feature-gate/m275-e001-v1\",\"status\":\"pass\"}\n"
+      << "  ],\n"
+      << "  \"matrix_model\": \""
+      << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-emitted-sidecars"
+      << "\",\n"
       << "  \"ready\": true\n"
       << "}\n";
   artifact_json = out.str();

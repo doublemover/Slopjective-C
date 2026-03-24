@@ -1253,3 +1253,18 @@ M275-E001 integrated advanced-feature gate note:
   - it references the native validation-time sidecars from `M275-D002`
   - it does not bypass or replace the native validation path
   - it does not promote advanced profiles into runnable public claims
+
+M275-E002 release-candidate execution matrix note:
+
+- the native CLI and frontend C API surfaces now also publish
+  `module.objc3-release-candidate-matrix.json`
+- that sidecar freezes one closeout matrix row for each required `M275`
+  dependency:
+  - `M275-A002`
+  - `M275-B003`
+  - `M275-C003`
+  - `M275-D002`
+  - `M275-E001`
+- the matrix sidecar stays bounded to milestone-closeout publication truth and
+  remains pinned to the existing emitted report/publication/gate/validation
+  sidecar family

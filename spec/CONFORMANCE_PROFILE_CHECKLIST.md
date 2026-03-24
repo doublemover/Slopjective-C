@@ -704,8 +704,11 @@ Current truthful scope:
 - Part 12 integrated advanced-feature gate now emits one gate sidecar from the
   native CLI and frontend C API surfaces over the existing Part 12 report and
   publication chain
+- Part 12 release-candidate execution matrix now emits one closeout matrix
+  sidecar from the native CLI and frontend C API surfaces over the same sidecar
+  family
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
-- feature-specific fix-it synthesis, migrator rewrite application,
-  machine-readable conformance reports and release matrices remain later `M275`
-  work
+- feature-specific fix-it synthesis, migrator rewrite application, and
+  machine-readable conformance reports now have a published milestone-closeout
+  matrix for the advanced feature tranche
 

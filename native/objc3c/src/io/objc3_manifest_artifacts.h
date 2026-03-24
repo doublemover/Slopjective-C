@@ -39,6 +39,9 @@ std::filesystem::path BuildDashboardStatusArtifactPath(
 std::filesystem::path BuildAdvancedFeatureGateArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
+std::filesystem::path BuildReleaseCandidateMatrixArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
@@ -106,6 +109,10 @@ void WriteDashboardStatusArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
                                   const std::string &artifact_json);
 void WriteAdvancedFeatureGateArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json);
+void WriteReleaseCandidateMatrixArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);

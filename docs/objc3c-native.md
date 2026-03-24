@@ -14729,6 +14729,41 @@ Truth boundary:
 - advanced profiles remain targeted release-evidence/gate profiles, not
   runnable public claims
 
+## Part 12 release-candidate execution matrix (M275-E002)
+
+`M275-E002` closes the milestone with one explicit release-candidate matrix
+sidecar.
+
+Current live behavior:
+
+- both the native CLI path and the frontend C API runner now publish
+  `module.objc3-release-candidate-matrix.json`
+- the matrix sidecar references:
+  - the emitted conformance report
+  - the emitted publication sidecar
+  - the emitted advanced-feature gate sidecar
+  - the expected validation/release-evidence/dashboard sidecars from `M275-D002`
+
+The matrix sidecar records:
+
+- the `M275-E002` release-candidate matrix contract id
+- publication surface kind (`native-cli` or `frontend-c-api`)
+- targeted advanced profile ids
+- one deterministic matrix row per required milestone dependency:
+  - `M275-A002`
+  - `M275-B003`
+  - `M275-C003`
+  - `M275-D002`
+  - `M275-E001`
+
+Truth boundary:
+
+- the matrix sidecar is a closeout publication surface, not a new execution
+  backend
+- it remains pinned to the emitted sidecar family already frozen by `M275-D002`
+  and `M275-E001`
+- it does not promote advanced profiles into runnable public claims
+
 ## Driver publication contract (M264-D001)
 
 `M264-D001` freezes the current driver/publication boundary for truthful

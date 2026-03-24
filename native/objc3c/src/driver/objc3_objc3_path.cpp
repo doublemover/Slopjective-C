@@ -446,6 +446,49 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     WriteAdvancedFeatureGateArtifact(cli_options.out_dir,
                                      cli_options.emit_prefix,
                                      advanced_feature_gate_artifact_json);
+    std::string release_candidate_matrix_artifact_json;
+    std::string release_candidate_matrix_error;
+    if (!TryBuildObjc3ReleaseCandidateMatrixArtifact(
+            {.surface_kind = "native-cli",
+             .report_artifact_path =
+                 (cli_options.emit_prefix +
+                  kObjc3VersionedConformanceReportLoweringArtifactSuffix),
+             .publication_artifact_path =
+                 BuildConformancePublicationArtifactPath(cli_options.out_dir,
+                                                        cli_options.emit_prefix)
+                     .filename()
+                     .string(),
+             .advanced_feature_gate_artifact_path =
+                 BuildAdvancedFeatureGateArtifactPath(cli_options.out_dir,
+                                                     cli_options.emit_prefix)
+                     .filename()
+                     .string(),
+             .validation_artifact_path =
+                 BuildConformanceValidationArtifactPath(cli_options.out_dir,
+                                                       cli_options.emit_prefix)
+                     .filename()
+                     .string(),
+             .release_evidence_operation_artifact_path =
+                 BuildReleaseEvidenceOperationArtifactPath(
+                     cli_options.out_dir, cli_options.emit_prefix)
+                     .filename()
+                     .string(),
+             .dashboard_artifact_path =
+                 BuildDashboardStatusArtifactPath(cli_options.out_dir,
+                                                 cli_options.emit_prefix)
+                     .filename()
+                     .string()},
+            artifacts.versioned_conformance_report_artifact_json,
+            conformance_publication_artifact_json,
+            advanced_feature_gate_artifact_json,
+            release_candidate_matrix_artifact_json,
+            release_candidate_matrix_error)) {
+      std::cerr << release_candidate_matrix_error << "\n";
+      return 125;
+    }
+    WriteReleaseCandidateMatrixArtifact(cli_options.out_dir,
+                                        cli_options.emit_prefix,
+                                        release_candidate_matrix_artifact_json);
 
     // M251-A003 expands the handoff so manifest projection survives fail-closed
     // later lowering/object gates; native runtime linking remains a later

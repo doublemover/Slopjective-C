@@ -149,6 +149,12 @@ std::filesystem::path BuildAdvancedFeatureGateArtifactPath(
   return out_dir / (emit_prefix + ".objc3-advanced-feature-gate.json");
 }
 
+std::filesystem::path BuildReleaseCandidateMatrixArtifactPath(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return out_dir / (emit_prefix + ".objc3-release-candidate-matrix.json");
+}
+
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
@@ -300,6 +306,14 @@ void WriteAdvancedFeatureGateArtifact(
     const std::string &emit_prefix,
     const std::string &artifact_json) {
   WriteText(BuildAdvancedFeatureGateArtifactPath(out_dir, emit_prefix),
+            artifact_json);
+}
+
+void WriteReleaseCandidateMatrixArtifact(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    const std::string &artifact_json) {
+  WriteText(BuildReleaseCandidateMatrixArtifactPath(out_dir, emit_prefix),
             artifact_json);
 }
 
