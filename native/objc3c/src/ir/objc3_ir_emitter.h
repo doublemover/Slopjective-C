@@ -932,6 +932,21 @@ struct Objc3IRFrontendMetadata {
   std::size_t part11_interop_lowering_guard_blocked_sites = 0;
   std::size_t part11_interop_lowering_contract_violation_sites = 0;
   bool deterministic_part11_interop_lowering_handoff = false;
+  std::string lowering_part11_foreign_call_lifetime_replay_key;
+  std::size_t part11_foreign_call_lifetime_lowering_foreign_callable_sites = 0;
+  std::size_t
+      part11_foreign_call_lifetime_lowering_c_foreign_callable_sites = 0;
+  std::size_t
+      part11_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites =
+          0;
+  std::size_t part11_foreign_call_lifetime_lowering_ownership_bridge_sites = 0;
+  std::size_t part11_foreign_call_lifetime_lowering_lifetime_bridge_sites = 0;
+  std::size_t
+      part11_foreign_call_lifetime_lowering_metadata_preservation_sites = 0;
+  std::size_t part11_foreign_call_lifetime_lowering_guard_blocked_sites = 0;
+  std::size_t
+      part11_foreign_call_lifetime_lowering_contract_violation_sites = 0;
+  bool deterministic_part11_foreign_call_lifetime_lowering_handoff = false;
   std::string lowering_part10_expansion_replay_key;
   std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
   std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;

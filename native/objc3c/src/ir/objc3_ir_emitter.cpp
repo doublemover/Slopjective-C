@@ -1003,6 +1003,13 @@ class Objc3IREmitter {
       out << "; part11_interop_lowering_abi_contract = "
           << frontend_metadata_.lowering_part11_interop_replay_key << "\n";
     }
+    if (!frontend_metadata_.lowering_part11_foreign_call_lifetime_replay_key
+             .empty()) {
+      out << "; part11_foreign_call_and_lifetime_lowering = "
+          << frontend_metadata_
+                 .lowering_part11_foreign_call_lifetime_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
       out << "; part10_expansion_lowering_contract = "
           << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
@@ -2903,9 +2910,20 @@ class Objc3IREmitter {
   struct LoweredFunctionSignature {
     ValueType return_type = ValueType::I32;
     std::vector<ValueType> param_types;
+    std::vector<bool> param_insert_retain;
+    std::vector<bool> param_insert_release;
+    std::vector<bool> param_insert_autorelease;
+    std::vector<bool> param_has_lifetime_bridge;
     bool throws_declared = false;
     bool objc_nserror_declared = false;
     bool objc_status_code_declared = false;
+    bool return_insert_retain = false;
+    bool return_insert_release = false;
+    bool return_insert_autorelease = false;
+    bool return_has_lifetime_bridge = false;
+    bool part11_foreign_surface = false;
+    bool part11_c_foreign_callable = false;
+    bool part11_metadata_preservation = false;
     std::size_t ns_error_out_param_index = std::numeric_limits<std::size_t>::max();
     int objc_status_code_success_literal = 0;
     std::string objc_status_code_mapping_symbol;
@@ -3344,6 +3362,26 @@ class Objc3IREmitter {
     return method.return_ownership_insert_autorelease;
   }
 
+  static bool HasPart11InteropSurface(const FunctionDecl &fn) {
+    return fn.objc_foreign_declared || fn.objc_import_module_declared ||
+           fn.objc_cxx_name_declared || fn.objc_header_name_declared ||
+           fn.objc_swift_name_declared || fn.objc_swift_private_declared;
+  }
+
+  static bool HasPart11LifetimeBridge(const FuncParam &param) {
+    return !param.ownership_lifetime_profile.empty();
+  }
+
+  static bool HasPart11LifetimeBridge(const FunctionDecl &fn) {
+    if (!fn.return_ownership_lifetime_profile.empty()) {
+      return true;
+    }
+    return std::any_of(fn.params.begin(), fn.params.end(),
+                       [](const FuncParam &param) {
+                         return HasPart11LifetimeBridge(param);
+                       });
+  }
+
   static std::map<std::string, LoweredFunctionSignature> BuildLoweredFunctionSignatures(const Objc3Program &program) {
     std::map<std::string, LoweredFunctionSignature> signatures;
     for (const auto &fn : program.functions) {
@@ -3353,6 +3391,15 @@ class Objc3IREmitter {
       signature.objc_nserror_declared = fn.objc_nserror_declared;
       signature.objc_status_code_declared = fn.objc_status_code_declared;
       signature.objc_status_code_mapping_symbol = fn.objc_status_code_mapping_symbol;
+      signature.return_insert_retain = EffectiveArcReturnInsertRetain(fn, false);
+      signature.return_insert_release = fn.return_ownership_insert_release;
+      signature.return_insert_autorelease =
+          EffectiveArcReturnInsertAutorelease(fn);
+      signature.return_has_lifetime_bridge =
+          !fn.return_ownership_lifetime_profile.empty();
+      signature.part11_foreign_surface = HasPart11InteropSurface(fn);
+      signature.part11_c_foreign_callable = fn.objc_foreign_declared;
+      signature.part11_metadata_preservation = HasPart11InteropSurface(fn);
       if (!fn.objc_status_code_success_literal.empty()) {
         try {
           signature.objc_status_code_success_literal =
@@ -3362,9 +3409,21 @@ class Objc3IREmitter {
         }
       }
       signature.param_types.reserve(fn.params.size());
+      signature.param_insert_retain.reserve(fn.params.size());
+      signature.param_insert_release.reserve(fn.params.size());
+      signature.param_insert_autorelease.reserve(fn.params.size());
+      signature.param_has_lifetime_bridge.reserve(fn.params.size());
       for (std::size_t param_index = 0; param_index < fn.params.size(); ++param_index) {
         const auto &param = fn.params[param_index];
         signature.param_types.push_back(param.type);
+        signature.param_insert_retain.push_back(
+            EffectiveArcParamInsertRetain(param, false));
+        signature.param_insert_release.push_back(
+            EffectiveArcParamInsertRelease(param, false));
+        signature.param_insert_autorelease.push_back(
+            param.ownership_insert_autorelease);
+        signature.param_has_lifetime_bridge.push_back(
+            HasPart11LifetimeBridge(param));
         if (signature.ns_error_out_param_index ==
                 std::numeric_limits<std::size_t>::max() &&
             IsNSErrorOutParameterSite(param)) {
@@ -3798,6 +3857,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
     out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
     out << "!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}\n";
+    out << "!objc3.objc_part11_foreign_call_and_lifetime_lowering = !{!109}\n";
     out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
     out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
     out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
@@ -6711,6 +6771,45 @@ class Objc3IREmitter {
                frontend_metadata_.part11_interop_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_part11_interop_lowering_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!109 = !{!\""
+        << EscapeCStringLiteral(frontend_metadata_
+                                    .lowering_part11_foreign_call_lifetime_replay_key)
+        << "\", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_foreign_call_lifetime_lowering_foreign_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(frontend_metadata_
+               .part11_foreign_call_lifetime_lowering_c_foreign_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_ownership_bridge_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_lifetime_bridge_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_metadata_preservation_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part11_foreign_call_lifetime_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part11_foreign_call_lifetime_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
@@ -11393,9 +11492,31 @@ class Objc3IREmitter {
                                      bool *bridge_failed_out = nullptr,
                                      std::string *bridge_error_value_out = nullptr) const {
     std::vector<std::string> args;
+    std::vector<std::string> post_call_release_values;
     args.reserve(expr->args.size() + (signature != nullptr && signature->throws_declared ? 1u : 0u));
+    post_call_release_values.reserve(expr->args.size());
     for (std::size_t i = 0; i < expr->args.size(); ++i) {
-      const std::string arg_i32 = EmitExpr(expr->args[i].get(), ctx);
+      std::string arg_i32 = EmitExpr(expr->args[i].get(), ctx);
+      if (signature != nullptr && i < signature->param_insert_retain.size()) {
+        if (signature->param_insert_retain[i]) {
+          const std::string retained_value = NewTemp(ctx);
+          ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
+                                   std::string(kObjc3RuntimeRetainI32Symbol) +
+                                   "(i32 " + arg_i32 + ")");
+          arg_i32 = retained_value;
+        }
+        if (signature->param_insert_autorelease[i]) {
+          const std::string autoreleased_value = NewTemp(ctx);
+          ctx.code_lines.push_back("  " + autoreleased_value +
+                                   " = call i32 @" +
+                                   std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
+                                   "(i32 " + arg_i32 + ")");
+          arg_i32 = autoreleased_value;
+        }
+        if (signature->param_insert_release[i]) {
+          post_call_release_values.push_back(arg_i32);
+        }
+      }
       const ValueType expected_type =
           signature != nullptr && i < signature->param_types.size() ? signature->param_types[i] : ValueType::I32;
       AppendLoweredCallArg(args, arg_i32, expected_type, ctx);
@@ -11435,6 +11556,13 @@ class Objc3IREmitter {
     }
     if (call_may_have_global_side_effects) {
       InvalidateGlobalProofState(ctx);
+    }
+    for (const auto &release_value : post_call_release_values) {
+      const std::string released_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeReleaseI32Symbol) +
+                               "(i32 " + release_value + ")");
+      (void)released_value;
     }
 
     if (bridge_failed_out != nullptr) {
@@ -11525,6 +11653,27 @@ class Objc3IREmitter {
           "(i32 " + handed_off_handle + ", i32 " + out + ")");
       InvalidateGlobalProofState(ctx);
       return resumed_value;
+    }
+    if (signature != nullptr && signature->return_insert_retain) {
+      const std::string retained_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeRetainI32Symbol) +
+                               "(i32 " + out + ")");
+      out = retained_value;
+    }
+    if (signature != nullptr && signature->return_insert_autorelease) {
+      const std::string autoreleased_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
+                               "(i32 " + out + ")");
+      out = autoreleased_value;
+    }
+    if (signature != nullptr && signature->return_insert_release) {
+      const std::string released_value = NewTemp(ctx);
+      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
+                               std::string(kObjc3RuntimeReleaseI32Symbol) +
+                               "(i32 " + out + ")");
+      (void)released_value;
     }
     return out;
   }

@@ -1676,6 +1676,24 @@ inline constexpr const char *kObjc3Part11InteropLoweringDeferredModel =
     "live-ffi-call-lowering-ownership-bridge-helper-emission-error-runtime-integration-and-cross-module-runtime-consumption-remain-later-m274-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part11InteropLoweringLaneContract =
     "m274-part11-interop-lowering-abi-contract-v1";
+// M274-C002 lowering-implementation anchor: lane-C now materializes a second
+// Part 11 packet over the actual callable-lowering slice, proving that foreign,
+// C++-annotated, and Swift-facing call boundaries emit deterministic ownership
+// and lifetime bridge operations in IR rather than stopping at the frozen C001
+// contract surface.
+inline constexpr const char *kObjc3Part11ForeignCallLifetimeLoweringContractId =
+    "objc3c-part11-foreign-call-and-lifetime-lowering/m274-c002-v1";
+inline constexpr const char *kObjc3Part11ForeignCallLifetimeLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part11_foreign_call_and_lifetime_lowering";
+inline constexpr const char *kObjc3Part11ForeignCallLifetimeLoweringModel =
+    "foreign-calls-and-cpp-swift-facing-free-functions-now-lower-through-one-deterministic-part11-call-boundary-that-preserves-ownership-lifetime-and-annotation-facts-in-manifest-and-ir";
+inline constexpr const char
+    *kObjc3Part11ForeignCallLifetimeLoweringDeferredModel =
+        "cross-module-runtime-consumption-live-foreign-linking-and-runnable-host-language-integration-remain-later-m274-lane-d-and-lane-e-work";
+inline constexpr const char
+    *kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId =
+        kObjc3Part11InteropLoweringContractId;
 // M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
@@ -2480,6 +2498,18 @@ struct Objc3Part11InteropLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part11ForeignCallLifetimeLoweringContract {
+  std::size_t foreign_callable_sites = 0;
+  std::size_t c_foreign_callable_sites = 0;
+  std::size_t objc_runtime_parity_callable_sites = 0;
+  std::size_t ownership_bridge_sites = 0;
+  std::size_t lifetime_bridge_sites = 0;
+  std::size_t metadata_preservation_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3Part10SynthesizedArtifactEmissionContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t emitted_derive_method_sites = 0;
@@ -2871,6 +2901,10 @@ bool IsValidObjc3Part11InteropLoweringContract(
     const Objc3Part11InteropLoweringContract &contract);
 std::string Objc3Part11InteropLoweringReplayKey(
     const Objc3Part11InteropLoweringContract &contract);
+bool IsValidObjc3Part11ForeignCallLifetimeLoweringContract(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &contract);
+std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &contract);
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract);
 std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(

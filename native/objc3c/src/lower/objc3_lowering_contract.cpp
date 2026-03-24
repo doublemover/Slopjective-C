@@ -4482,6 +4482,49 @@ std::string Objc3Part11InteropLoweringReplayKey(
          ";lane_contract=" + kObjc3Part11InteropLoweringLaneContract;
 }
 
+bool IsValidObjc3Part11ForeignCallLifetimeLoweringContract(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &contract) {
+  if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
+      contract.objc_runtime_parity_callable_sites >
+          contract.foreign_callable_sites) {
+    return false;
+  }
+  if (contract.ownership_bridge_sites > contract.metadata_preservation_sites ||
+      contract.lifetime_bridge_sites > contract.metadata_preservation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
+    const Objc3Part11ForeignCallLifetimeLoweringContract &contract) {
+  return std::string("foreign_callable_sites=") +
+             std::to_string(contract.foreign_callable_sites) +
+         ";c_foreign_callable_sites=" +
+         std::to_string(contract.c_foreign_callable_sites) +
+         ";objc_runtime_parity_callable_sites=" +
+         std::to_string(contract.objc_runtime_parity_callable_sites) +
+         ";ownership_bridge_sites=" +
+         std::to_string(contract.ownership_bridge_sites) +
+         ";lifetime_bridge_sites=" +
+         std::to_string(contract.lifetime_bridge_sites) +
+         ";metadata_preservation_sites=" +
+         std::to_string(contract.metadata_preservation_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";dependency_contract=" +
+         kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId;
+}
+
 bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
     const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {
