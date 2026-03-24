@@ -1377,3 +1377,16 @@ Current implementation status (`M273-A003`):
   - synthesized binding visibility sites
   - synthesized getter/setter visibility sites
 - this issue still does not claim property-behavior expansion, runtime hooks, or executable synthesized declaration materialization
+
+## M273 expansion and behavior semantic model (B001)
+
+Current implementation status (`M273-B001`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model`
+- the sema packet reuses:
+  - derive / macro / property-behavior source markers from `M273-A001`
+  - macro package / provenance and expansion-visible macro source state from `M273-A002`
+  - property-behavior synthesized declaration visibility from `M273-A003`
+- live fail-closed semantic behavior in this tranche includes:
+  - invalid `@property(..., behavior)` usage still rejected with `O3S206`
+- this issue still does not claim real derive expansion, macro sandbox execution, or property-behavior runtime materialization

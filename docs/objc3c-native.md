@@ -4383,6 +4383,15 @@ Current implementation status (`M271-E001`):
 - the packet tracks behavior-bearing interface, implementation, and protocol properties deterministically
 - the packet also tracks deterministic source-visible synthesized binding, getter, and setter state already carried by parser-owned property records
 - this still does not claim property-behavior expansion, runtime hooks, or executable synthesized declaration materialization yet
+
+## M273 expansion and behavior semantic model
+
+- the emitted frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model`
+- the sema packet composes the derive/macro source closure, macro package/provenance completion, and property-behavior synthesized visibility packet into one deterministic Part 10 legality baseline
+- current live semantic enforcement in this slice remains intentionally narrow:
+  - explicit macro package/provenance source state is reused as the truthful macro-safety boundary
+  - invalid `behavior` property attributes still fail closed through sema diagnostics
+- real derive expansion, macro execution/sandboxing, and property-behavior runtime hooks remain deferred to later M273 lanes
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

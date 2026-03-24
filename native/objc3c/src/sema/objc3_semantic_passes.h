@@ -12,6 +12,9 @@ struct Objc3FrontendPart8SystemExtensionSourceClosureSummary;
 struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary;
 struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary;
 struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary;
+struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary;
+struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary;
+struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -70,6 +73,15 @@ BuildPart9DispatchIntentSemanticModelSummary(
     const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
+Objc3Part10ExpansionBehaviorSemanticModelSummary
+BuildPart10ExpansionBehaviorSemanticModelSummary(
+    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+        &source_summary,
+    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+        &macro_summary,
+    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+        &property_summary,
+    const std::vector<std::string> &diagnostics);
   Objc3Part9DispatchIntentLegalitySummary
   BuildPart9DispatchIntentLegalitySummary(
       const Objc3Program &program,

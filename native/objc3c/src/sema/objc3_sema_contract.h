@@ -1051,6 +1051,78 @@ inline bool IsReadyObjc3Part9DispatchIntentCompatibilitySummary(
 }
 
 inline constexpr const char
+    *kObjc3Part10ExpansionBehaviorSemanticModelDependencyContractId =
+        "objc3c-part10-property-behavior-source-completion/m273-a003-v1";
+inline constexpr const char
+    *kObjc3Part10ExpansionBehaviorSemanticModelContractId =
+        "objc3c-part10-expansion-behavior-semantic-model/m273-b001-v1";
+inline constexpr const char
+    *kObjc3Part10ExpansionBehaviorSemanticModelSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model";
+inline constexpr const char
+    *kObjc3Part10ExpansionBehaviorSemanticModelRule =
+        "derive-macro-package-provenance-and-property-behavior-source-surfaces-now-share-one-truthful-sema-packet-while-real-derive-expansion-macro-execution-and-property-behavior-runtime-materialization-remain-later-m273-work";
+inline constexpr const char
+    *kObjc3Part10ExpansionBehaviorSemanticModelDeferredRule =
+        "derive-body-expansion-macro-sandbox-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-m273-lanes";
+
+struct Objc3Part10ExpansionBehaviorSemanticModelSummary {
+  std::string contract_id =
+      kObjc3Part10ExpansionBehaviorSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part10ExpansionBehaviorSemanticModelDependencyContractId;
+  std::string surface_path =
+      kObjc3Part10ExpansionBehaviorSemanticModelSurfacePath;
+  std::string semantic_model =
+      kObjc3Part10ExpansionBehaviorSemanticModelRule;
+  std::string deferred_model =
+      kObjc3Part10ExpansionBehaviorSemanticModelDeferredRule;
+  std::size_t derive_marker_sites = 0;
+  std::size_t macro_marker_sites = 0;
+  std::size_t macro_package_sites = 0;
+  std::size_t macro_provenance_sites = 0;
+  std::size_t expansion_visible_macro_sites = 0;
+  std::size_t property_behavior_sites = 0;
+  std::size_t interface_property_behavior_sites = 0;
+  std::size_t implementation_property_behavior_sites = 0;
+  std::size_t protocol_property_behavior_sites = 0;
+  std::size_t synthesized_binding_visible_sites = 0;
+  std::size_t synthesized_getter_visible_sites = 0;
+  std::size_t synthesized_setter_visible_sites = 0;
+  std::size_t property_behavior_contract_violation_sites = 0;
+  bool source_dependency_required = false;
+  bool derive_macro_source_supported = false;
+  bool macro_package_provenance_surface_reused = false;
+  bool property_behavior_source_supported = false;
+  bool synthesized_visibility_surface_reused = false;
+  bool derive_synthesis_deferred = false;
+  bool macro_execution_deferred = false;
+  bool property_behavior_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_core_implementation = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
+    const Objc3Part10ExpansionBehaviorSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.frontend_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.derive_macro_source_supported &&
+         summary.macro_package_provenance_surface_reused &&
+         summary.property_behavior_source_supported &&
+         summary.synthesized_visibility_surface_reused &&
+         summary.derive_synthesis_deferred &&
+         summary.macro_execution_deferred &&
+         summary.property_behavior_runtime_deferred && summary.deterministic &&
+         summary.ready_for_core_implementation && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

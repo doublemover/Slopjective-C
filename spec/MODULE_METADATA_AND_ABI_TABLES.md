@@ -8716,3 +8716,15 @@ runnable smoke matrix.
 - truthful boundary
   - behavior-bearing properties now publish one deterministic source-visible synthesized declaration inventory
   - no property-behavior runtime tables, expansion descriptors, or executable synthesized declaration ABI are claimed yet
+
+## M273 expansion/behavior semantic-model note
+
+`M273-B001` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-expansion-behavior-semantic-model/m273-b001-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model`
+- truthful boundary
+  - Part 10 now publishes one deterministic sema packet over the existing source surfaces and current property-behavior legality diagnostics
+  - no derive-expansion descriptors, macro execution manifests, or property-behavior runtime ABI tables are claimed yet

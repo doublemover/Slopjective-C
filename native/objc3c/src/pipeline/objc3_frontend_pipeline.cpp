@@ -6689,6 +6689,12 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.part8_system_extension_source_closure_summary,
           result.part8_cleanup_resource_capture_source_completion_summary,
           result.part8_retainable_c_family_source_completion_summary);
+  result.part10_expansion_behavior_semantic_model_summary =
+      BuildPart10ExpansionBehaviorSemanticModelSummary(
+          result.part10_metaprogramming_source_closure_summary,
+          result.part10_macro_package_provenance_source_completion_summary,
+          result.part10_property_behavior_source_completion_summary,
+          result.stage_diagnostics.semantic);
   result.part9_dispatch_intent_semantic_model_summary =
       BuildPart9DispatchIntentSemanticModelSummary(
           result.part9_dispatch_intent_source_completion_summary,
