@@ -1537,6 +1537,22 @@ inline constexpr const char *kObjc3Part8SystemExtensionLoweringDeferredModel =
     "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-m271-lane-d-work";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringLaneContract =
     "m271-part8-system-extension-lowering-contract-v1";
+// M272-C001 lowering-freeze anchor: Part 9 now freezes one explicit emitted
+// lowering contract for direct-call candidates, final/sealed dispatch-boundary
+// metadata, and replay-stable callable/container dynamism intent carriage. Live
+// selector-bypass/direct-call rewrites and runnable dispatch-boundary behavior
+// remain later M272 lane-C and lane-D work.
+inline constexpr const char *kObjc3Part9DispatchControlLoweringContractId =
+    "objc3c-part9-dispatch-control-lowering-contract/m272-c001-v1";
+inline constexpr const char *kObjc3Part9DispatchControlLoweringSurfacePath =
+    "frontend.pipeline.semantic_surface."
+    "objc_part9_dispatch_control_lowering_contract";
+inline constexpr const char *kObjc3Part9DispatchControlLoweringModel =
+    "part9-direct-call-candidates-final-sealed-boundaries-and-dynamism-intent-metadata-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
+inline constexpr const char *kObjc3Part9DispatchControlLoweringDeferredModel =
+    "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-m272-lane-c-and-lane-d-work";
+inline constexpr const char *kObjc3Part9DispatchControlLoweringLaneContract =
+    "m272-part9-dispatch-control-lowering-contract-v1";
 // M271-C003 ABI/artifact completion anchor: keep the frozen Part 8 lowering
 // contract from C001 as the single lowering boundary, but publish one
 // dedicated ABI/replay packet above it for borrowed-return contracts and
@@ -2275,6 +2291,20 @@ struct Objc3Part8SystemExtensionLoweringContract {
   bool deterministic = true;
 };
 
+struct Objc3Part9DispatchControlLoweringContract {
+  std::size_t direct_call_candidate_sites = 0;
+  std::size_t direct_members_defaulted_sites = 0;
+  std::size_t dynamic_opt_out_sites = 0;
+  std::size_t final_container_sites = 0;
+  std::size_t sealed_container_sites = 0;
+  std::size_t override_legality_sites = 0;
+  std::size_t metadata_preserved_callable_sites = 0;
+  std::size_t metadata_preserved_container_sites = 0;
+  std::size_t guard_blocked_sites = 0;
+  std::size_t contract_violation_sites = 0;
+  bool deterministic = true;
+};
+
 struct Objc3TaskRuntimeInteropCancellationLoweringContract {
   std::size_t task_runtime_sites = 0;
   std::size_t task_runtime_interop_sites = 0;
@@ -2642,6 +2672,10 @@ bool IsValidObjc3Part8SystemExtensionLoweringContract(
     const Objc3Part8SystemExtensionLoweringContract &contract);
 std::string Objc3Part8SystemExtensionLoweringReplayKey(
     const Objc3Part8SystemExtensionLoweringContract &contract);
+bool IsValidObjc3Part9DispatchControlLoweringContract(
+    const Objc3Part9DispatchControlLoweringContract &contract);
+std::string Objc3Part9DispatchControlLoweringReplayKey(
+    const Objc3Part9DispatchControlLoweringContract &contract);
 bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
     const Objc3TaskRuntimeInteropCancellationLoweringContract &contract);
 std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(

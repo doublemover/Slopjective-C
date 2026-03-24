@@ -863,6 +863,21 @@ struct Objc3IRFrontendMetadata {
   std::size_t actor_lowering_metadata_guard_blocked_sites = 0;
   std::size_t actor_lowering_metadata_contract_violation_sites = 0;
   bool deterministic_actor_lowering_metadata_handoff = false;
+  std::string lowering_part9_dispatch_control_replay_key;
+  std::size_t part9_dispatch_control_lowering_direct_call_candidate_sites = 0;
+  std::size_t part9_dispatch_control_lowering_direct_members_defaulted_sites =
+      0;
+  std::size_t part9_dispatch_control_lowering_dynamic_opt_out_sites = 0;
+  std::size_t part9_dispatch_control_lowering_final_container_sites = 0;
+  std::size_t part9_dispatch_control_lowering_sealed_container_sites = 0;
+  std::size_t part9_dispatch_control_lowering_override_legality_sites = 0;
+  std::size_t part9_dispatch_control_lowering_metadata_preserved_callable_sites =
+      0;
+  std::size_t
+      part9_dispatch_control_lowering_metadata_preserved_container_sites = 0;
+  std::size_t part9_dispatch_control_lowering_guard_blocked_sites = 0;
+  std::size_t part9_dispatch_control_lowering_contract_violation_sites = 0;
+  bool deterministic_part9_dispatch_control_lowering_handoff = false;
   std::string lowering_part8_system_extension_replay_key;
   std::size_t part8_system_extension_lowering_cleanup_hook_sites = 0;
   std::size_t part8_system_extension_lowering_resource_local_sites = 0;

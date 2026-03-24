@@ -4274,6 +4274,22 @@ Current implementation status (`M271-E001`):
   - `O3S315`
   - `O3S316`
 - this lane is still sema-only; direct-call lowering, metadata realization, and runnable dispatch-boundary behavior remain later `M272` work
+
+## M272 dispatch-control lowering contract
+
+- the frontend pipeline now publishes `frontend.pipeline.semantic_surface.objc_part9_dispatch_control_lowering_contract`
+- that lowering packet derives from the already-landed Part 9 lane-B surfaces:
+  - `objc_part9_dynamism_and_dispatch_control_semantic_model`
+  - `objc_part9_override_finality_and_sealing_legality`
+  - `objc_part9_dynamism_control_compatibility_diagnostics`
+- the packet preserves:
+  - direct-call candidate counts
+  - direct-members defaulting and `objc_dynamic` opt-out counts
+  - final/sealed container counts
+  - metadata-preserved callable/container counts
+  - guard-blocked and contract-violation counts
+- emitted LLVM IR now carries the same replay-stable Part 9 lowering metadata
+- this lane is still lowering-only; live direct-call selector bypass, runtime dispatch-boundary realization, and runnable metadata-driven dispatch remain later `M272` work
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

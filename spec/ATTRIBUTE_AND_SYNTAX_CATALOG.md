@@ -1233,3 +1233,21 @@ Current implementation status (`M272-B003`):
   - `O3S316`
 - direct-call lowering, metadata realization, and runtime dispatch-boundary
   behavior remain later `M272` work
+
+## M272 dispatch-control lowering contract (C001)
+
+Current implementation status (`M272-C001`):
+
+- the frontend pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part9_dispatch_control_lowering_contract`
+- that packet derives from the already-landed Part 9 lane-B semantic packets:
+  - `objc_part9_dynamism_and_dispatch_control_semantic_model`,
+  - `objc_part9_override_finality_and_sealing_legality`,
+  - `objc_part9_dynamism_control_compatibility_diagnostics`
+- the lowering packet preserves direct-call candidate counts, direct-members
+  defaulting and `objc_dynamic` opt-out counts, final/sealed container counts,
+  metadata-preserved callable/container counts, and zero guard-blocked plus
+  zero contract-violation counts on the happy path
+- emitted LLVM IR now carries the same replay-stable Part 9 lowering metadata
+- live direct-call selector bypass, runtime dispatch-boundary realization, and
+  runnable metadata-driven dispatch behavior remain later `M272` work

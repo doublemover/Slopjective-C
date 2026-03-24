@@ -386,6 +386,39 @@ lanes start treating Part 9 intent as a lowering/runtime contract.
 
 ---
 
+## D-029: Part 9 lowering freeze carries direct-call candidates and metadata-preserved dispatch intent before runtime realization {#decisions-d-029}
+
+**Decision:** `M272-C001` shall freeze one truthful Part 9 lowering contract by
+combining:
+
+- the Part 9 semantic-model packet from `M272-B001`,
+- the Part 9 legality packet from `M272-B002`, and
+- the Part 9 compatibility packet from `M272-B003`.
+
+That lane-C packet shall preserve, at minimum:
+
+- direct-call candidate counts,
+- direct-members defaulting and `objc_dynamic` opt-out counts,
+- final/sealed container counts,
+- metadata-preserved callable/container inventories, and
+- guard-blocked plus contract-violation counts.
+
+This packet remains lowering-only. It shall not yet claim:
+
+- live direct-call selector bypass,
+- runtime dispatch-boundary realization, or
+- runnable metadata-driven dispatch behavior.
+
+**Rationale:** the Part 9 lane-B packets already define the truthful legality
+and compatibility boundary. Lane-C should carry those facts forward into one
+deterministic emitted lowering contract instead of rediscovering them from raw
+IR or overclaiming runtime behavior before the later M272 execution lanes land.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable

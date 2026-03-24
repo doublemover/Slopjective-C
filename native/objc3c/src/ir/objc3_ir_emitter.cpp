@@ -858,6 +858,11 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_actor_lowering_metadata_replay_key
           << "\n";
     }
+    if (!frontend_metadata_.lowering_part9_dispatch_control_replay_key.empty()) {
+      out << "; dispatch_control_lowering_contract = "
+          << frontend_metadata_.lowering_part9_dispatch_control_replay_key
+          << "\n";
+    }
     if (!frontend_metadata_.lowering_part8_system_extension_replay_key.empty()) {
       out << "; system_extension_lowering_contract = "
           << frontend_metadata_.lowering_part8_system_extension_replay_key
@@ -2331,6 +2336,41 @@ class Objc3IREmitter {
                 ? "true"
                 : "false")
         << "\n";
+    out << "; frontend_objc_dispatch_control_lowering_profile = direct_call_candidate_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_direct_call_candidate_sites
+        << ", direct_members_defaulted_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_direct_members_defaulted_sites
+        << ", dynamic_opt_out_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_dynamic_opt_out_sites
+        << ", final_container_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_final_container_sites
+        << ", sealed_container_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_sealed_container_sites
+        << ", override_legality_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_override_legality_sites
+        << ", metadata_preserved_callable_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_metadata_preserved_callable_sites
+        << ", metadata_preserved_container_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_metadata_preserved_container_sites
+        << ", guard_blocked_sites="
+        << frontend_metadata_.part9_dispatch_control_lowering_guard_blocked_sites
+        << ", contract_violation_sites="
+        << frontend_metadata_
+               .part9_dispatch_control_lowering_contract_violation_sites
+        << ", deterministic_part9_dispatch_control_lowering_handoff="
+        << (frontend_metadata_
+                    .deterministic_part9_dispatch_control_lowering_handoff
+                ? "true"
+                : "false")
+        << "\n";
     out << "; frontend_objc_system_extension_lowering_profile = cleanup_hook_sites="
         << frontend_metadata_.part8_system_extension_lowering_cleanup_hook_sites
         << ", resource_local_sites="
@@ -3463,6 +3503,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_part7_live_task_runtime_integration = !{!95}\n";
     out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
     out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
+    out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
     out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
     out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
     out << "!objc3.objc_part8_system_helper_runtime_contract = !{!100}\n";
@@ -6285,6 +6326,52 @@ class Objc3IREmitter {
                .actor_lowering_metadata_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_.deterministic_actor_lowering_metadata_handoff
+                ? 1
+                : 0)
+        << "}\n\n";
+    out << "!102 = !{i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_direct_call_candidate_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_direct_members_defaulted_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_dynamic_opt_out_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_final_container_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_sealed_container_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_override_legality_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_metadata_preserved_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_metadata_preserved_container_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .part9_dispatch_control_lowering_contract_violation_sites)
+        << ", i1 "
+        << (frontend_metadata_
+                    .deterministic_part9_dispatch_control_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";

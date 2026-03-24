@@ -2018,6 +2018,47 @@ BuildPart8SystemExtensionLoweringContract(
   return contract;
 }
 
+Objc3Part9DispatchControlLoweringContract
+BuildPart9DispatchControlLoweringContract(
+    const Objc3Part9DispatchIntentSemanticModelSummary &semantic_summary,
+    const Objc3Part9DispatchIntentLegalitySummary &legality_summary,
+    const Objc3Part9DispatchIntentCompatibilitySummary &compatibility_summary) {
+  Objc3Part9DispatchControlLoweringContract contract;
+  contract.direct_call_candidate_sites =
+      semantic_summary.effective_direct_member_sites;
+  contract.direct_members_defaulted_sites =
+      semantic_summary.direct_members_defaulted_method_sites;
+  contract.dynamic_opt_out_sites =
+      semantic_summary.direct_members_dynamic_opt_out_sites;
+  contract.final_container_sites = semantic_summary.final_container_sites;
+  contract.sealed_container_sites = semantic_summary.sealed_container_sites;
+  contract.override_legality_sites = legality_summary.override_sites;
+  contract.metadata_preserved_callable_sites =
+      compatibility_summary.callable_dispatch_intent_sites;
+  contract.metadata_preserved_container_sites =
+      compatibility_summary.container_dispatch_intent_sites;
+  contract.guard_blocked_sites =
+      legality_summary.illegal_final_superclass_sites +
+      legality_summary.illegal_sealed_superclass_sites +
+      legality_summary.illegal_final_override_sites +
+      legality_summary.illegal_direct_override_sites +
+      compatibility_summary.illegal_direct_dynamic_conflict_sites +
+      compatibility_summary.illegal_final_dynamic_conflict_sites +
+      compatibility_summary.illegal_non_method_callable_sites +
+      compatibility_summary.illegal_protocol_method_sites +
+      compatibility_summary.illegal_category_method_sites +
+      compatibility_summary.illegal_category_container_sites;
+  contract.contract_violation_sites = 0;
+  contract.deterministic =
+      semantic_summary.deterministic &&
+      semantic_summary.ready_for_core_implementation &&
+      legality_summary.deterministic &&
+      legality_summary.ready_for_lowering_and_runtime &&
+      compatibility_summary.deterministic &&
+      compatibility_summary.ready_for_lowering_and_runtime;
+  return contract;
+}
+
 std::string BuildPart7ActorLoweringMetadataContractJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
         &source_summary,
@@ -2063,6 +2104,57 @@ std::string BuildPart7ActorLoweringMetadataContractJson(
       << ",\"race_guard_dependency_sites\":"
       << contract.race_guard_dependency_sites
       << ",\"task_handoff_sites\":" << contract.task_handoff_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildPart9DispatchControlLoweringContractJson(
+    const Objc3Part9DispatchIntentSemanticModelSummary &semantic_summary,
+    const Objc3Part9DispatchIntentLegalitySummary &legality_summary,
+    const Objc3Part9DispatchIntentCompatibilitySummary &compatibility_summary,
+    const Objc3Part9DispatchControlLoweringContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3Part9DispatchControlLoweringContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3Part9DispatchControlLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3Part9DispatchControlLoweringSurfacePath)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"legality_contract_id\":\""
+      << EscapeJsonString(legality_summary.contract_id)
+      << "\",\"compatibility_contract_id\":\""
+      << EscapeJsonString(compatibility_summary.contract_id)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3Part9DispatchControlLoweringLaneContract)
+      << "\",\"lowering_model\":\""
+      << EscapeJsonString(kObjc3Part9DispatchControlLoweringModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3Part9DispatchControlLoweringDeferredModel)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"direct_call_candidate_sites\":"
+      << contract.direct_call_candidate_sites
+      << ",\"direct_members_defaulted_sites\":"
+      << contract.direct_members_defaulted_sites
+      << ",\"dynamic_opt_out_sites\":" << contract.dynamic_opt_out_sites
+      << ",\"final_container_sites\":" << contract.final_container_sites
+      << ",\"sealed_container_sites\":" << contract.sealed_container_sites
+      << ",\"override_legality_sites\":" << contract.override_legality_sites
+      << ",\"metadata_preserved_callable_sites\":"
+      << contract.metadata_preserved_callable_sites
+      << ",\"metadata_preserved_container_sites\":"
+      << contract.metadata_preserved_container_sites
       << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
       << ",\"contract_violation_sites\":"
       << contract.contract_violation_sites
@@ -12444,6 +12536,21 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &part8_capture_list_retainable_family_legality_completion_summary =
           pipeline_result
               .part8_capture_list_retainable_family_legality_completion_summary;
+  const Objc3Part9DispatchControlLoweringContract
+      part9_dispatch_control_lowering_contract =
+          BuildPart9DispatchControlLoweringContract(
+              part9_dispatch_intent_semantic_model_summary,
+              part9_dispatch_intent_legality_summary,
+              part9_dispatch_intent_compatibility_summary);
+  if (!IsValidObjc3Part9DispatchControlLoweringContract(
+          part9_dispatch_control_lowering_contract)) {
+    record_post_pipeline_failure(
+        "O3L300",
+        "LLVM IR emission failed: invalid dispatch-control lowering contract");
+  }
+  const std::string part9_dispatch_control_lowering_replay_key =
+      Objc3Part9DispatchControlLoweringReplayKey(
+          part9_dispatch_control_lowering_contract);
   const Objc3Part8SystemExtensionLoweringContract
       part8_system_extension_lowering_contract =
           BuildPart8SystemExtensionLoweringContract(
@@ -16883,6 +16990,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dynamism_control_compatibility_diagnostics\":"
             << BuildPart9DispatchIntentCompatibilitySummaryJson(
                    part9_dispatch_intent_compatibility_summary)
+           << ",\"objc_part9_dispatch_control_lowering_contract\":"
+           << BuildPart9DispatchControlLoweringContractJson(
+                  part9_dispatch_intent_semantic_model_summary,
+                  part9_dispatch_intent_legality_summary,
+                  part9_dispatch_intent_compatibility_summary,
+                  part9_dispatch_control_lowering_contract,
+                  part9_dispatch_control_lowering_replay_key)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18255,6 +18369,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dynamism_control_compatibility_diagnostics\":"
             << BuildPart9DispatchIntentCompatibilitySummaryJson(
                    part9_dispatch_intent_compatibility_summary)
+           << ",\"objc_part9_dispatch_control_lowering_contract\":"
+           << BuildPart9DispatchControlLoweringContractJson(
+                  part9_dispatch_intent_semantic_model_summary,
+                  part9_dispatch_intent_legality_summary,
+                  part9_dispatch_intent_compatibility_summary,
+                  part9_dispatch_control_lowering_contract,
+                  part9_dispatch_control_lowering_replay_key)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -19277,6 +19398,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_actor_lowering_metadata_contract.contract_violation_sites;
   ir_frontend_metadata.deterministic_actor_lowering_metadata_handoff =
       part7_actor_lowering_metadata_contract.deterministic;
+  ir_frontend_metadata.lowering_part9_dispatch_control_replay_key =
+      part9_dispatch_control_lowering_replay_key;
+  ir_frontend_metadata.part9_dispatch_control_lowering_direct_call_candidate_sites =
+      part9_dispatch_control_lowering_contract.direct_call_candidate_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_direct_members_defaulted_sites =
+      part9_dispatch_control_lowering_contract.direct_members_defaulted_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_dynamic_opt_out_sites =
+      part9_dispatch_control_lowering_contract.dynamic_opt_out_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_final_container_sites =
+      part9_dispatch_control_lowering_contract.final_container_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_sealed_container_sites =
+      part9_dispatch_control_lowering_contract.sealed_container_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_override_legality_sites =
+      part9_dispatch_control_lowering_contract.override_legality_sites;
+  ir_frontend_metadata
+      .part9_dispatch_control_lowering_metadata_preserved_callable_sites =
+      part9_dispatch_control_lowering_contract
+          .metadata_preserved_callable_sites;
+  ir_frontend_metadata
+      .part9_dispatch_control_lowering_metadata_preserved_container_sites =
+      part9_dispatch_control_lowering_contract
+          .metadata_preserved_container_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_guard_blocked_sites =
+      part9_dispatch_control_lowering_contract.guard_blocked_sites;
+  ir_frontend_metadata.part9_dispatch_control_lowering_contract_violation_sites =
+      part9_dispatch_control_lowering_contract.contract_violation_sites;
+  ir_frontend_metadata.deterministic_part9_dispatch_control_lowering_handoff =
+      part9_dispatch_control_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_part8_system_extension_replay_key =
       part8_system_extension_lowering_replay_key;
   ir_frontend_metadata.part8_system_extension_lowering_cleanup_hook_sites =
