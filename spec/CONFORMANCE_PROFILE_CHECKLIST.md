@@ -689,6 +689,9 @@ Current truthful scope:
 - Part 12 machine-readable report contract now publishes
   `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
   over the existing versioned conformance sidecar and runtime capability path
+- Part 12 feature-aware report emission now publishes
+  `frontend.pipeline.semantic_surface.objc_part12_feature_aware_conformance_report_emission`
+  and extends the emitted report with `advanced_feature_reporting`
 - the packet inventories diagnostic/fix-it/migrator-relevant source sites only
 - feature-specific fix-it synthesis, migrator rewrite application,
   machine-readable conformance reports, CI publication, and release matrices

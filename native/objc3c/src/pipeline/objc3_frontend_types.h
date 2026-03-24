@@ -5485,6 +5485,37 @@ struct Objc3Part12MachineReadableConformanceReportContractSummary {
   std::string failure_reason;
 };
 
+struct Objc3Part12FeatureAwareConformanceReportEmissionSummary {
+  std::string contract_id =
+      kObjc3Part12FeatureAwareConformanceReportEmissionContractId;
+  std::string dependency_contract_id =
+      kObjc3Part12FeatureAwareConformanceReportEmissionDependencyContractId;
+  std::string machine_readable_report_contract_id =
+      kObjc3Part12MachineReadableConformanceReportContractId;
+  std::string fixit_contract_id =
+      kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+  std::string migration_semantics_contract_id =
+      kObjc3Part12LegacyCanonicalMigrationSemanticsContractId;
+  std::string frontend_surface_path =
+      kObjc3Part12FeatureAwareConformanceReportEmissionSurfacePath;
+  std::string payload_model =
+      kObjc3Part12FeatureAwareConformanceReportEmissionPayloadModel;
+  std::string authority_model =
+      kObjc3Part12FeatureAwareConformanceReportEmissionAuthorityModel;
+  std::string effective_compatibility_mode = "canonical";
+  bool migration_assist_enabled = false;
+  std::vector<std::string> fixit_family_ids;
+  std::size_t fixit_family_count = 0;
+  std::size_t current_run_legacy_literal_sites = 0;
+  std::string canonical_mode_rejection_code =
+      kObjc3Part12LegacyCanonicalMigrationDiagnosticCode;
+  bool report_payload_emitted = false;
+  bool deterministic_handoff = false;
+  bool ready_for_runtime_publication = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
 inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool compatibility_mode_valid =
@@ -5549,6 +5580,26 @@ inline bool IsReadyObjc3Part12MachineReadableConformanceReportContractSummary(
          summary.lowering_contract_ready &&
          summary.runtime_capability_surface_published &&
          summary.deterministic_handoff &&
+         summary.ready_for_runtime_publication && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline bool IsReadyObjc3Part12FeatureAwareConformanceReportEmissionSummary(
+    const Objc3Part12FeatureAwareConformanceReportEmissionSummary &summary) {
+  const bool compatibility_mode_valid =
+      summary.effective_compatibility_mode == "canonical" ||
+      summary.effective_compatibility_mode == "legacy";
+  return !summary.contract_id.empty() &&
+         !summary.dependency_contract_id.empty() &&
+         !summary.machine_readable_report_contract_id.empty() &&
+         !summary.fixit_contract_id.empty() &&
+         !summary.migration_semantics_contract_id.empty() &&
+         !summary.frontend_surface_path.empty() &&
+         !summary.payload_model.empty() &&
+         !summary.authority_model.empty() && compatibility_mode_valid &&
+         summary.fixit_family_count == summary.fixit_family_ids.size() &&
+         !summary.canonical_mode_rejection_code.empty() &&
+         summary.report_payload_emitted && summary.deterministic_handoff &&
          summary.ready_for_runtime_publication && !summary.replay_key.empty() &&
          summary.failure_reason.empty();
 }

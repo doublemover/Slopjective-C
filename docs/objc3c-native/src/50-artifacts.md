@@ -5423,6 +5423,21 @@ The current boundary keeps three things explicit:
   rather than a docs-only migration claim
 - runtime capability publication stays part of the same report authority chain
 - not-claimed profiles: `strict`, `strict-concurrency`, `strict-system`
+
+## Part 12 feature-aware conformance report emission (M275-C002)
+
+`M275-C002` extends the existing versioned conformance sidecar with one
+explicit Part 12 advanced-feature reporting block.
+
+- `frontend.pipeline.semantic_surface.objc_part12_feature_aware_conformance_report_emission`
+- top-level report payload key `advanced_feature_reporting`
+
+The current emitted block stays narrow and truthful:
+
+- it reports the live fix-it family set
+- it reports current-run legacy-literal migration state
+- it reports the canonical migration rejection code `O3S216`
+- it does not introduce a second report sidecar or a second report authority
 - strictness mode: `permissive`
 - concurrency mode: `off`
 - not-claimed optional features: `throws`, `async-await`, `actors`, `blocks`,

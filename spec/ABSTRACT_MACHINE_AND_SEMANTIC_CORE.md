@@ -1193,3 +1193,12 @@ M275-C001 machine-readable conformance/report contract note:
   capability publication path rather than introducing a second report format
 - Part 12 reporting remains explicitly bounded to the live migration semantics
   and lowered conformance truth surface
+
+M275-C002 feature-aware conformance report emission note:
+
+- the frontend now also publishes
+  `frontend.pipeline.semantic_surface.objc_part12_feature_aware_conformance_report_emission`
+- the emitted versioned conformance report now carries one top-level
+  `advanced_feature_reporting` payload
+- that payload remains bounded to the live Part 12 fix-it and migration
+  surfaces rather than claiming broader report automation

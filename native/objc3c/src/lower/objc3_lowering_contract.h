@@ -1364,6 +1364,22 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part12MachineReadableConformanceReportAuthorityModel =
         "part12-machine-readable-reporting-remains-bounded-to-the-lowered-versioned-conformance-sidecar-and-live-migration-semantics";
+inline constexpr const char
+    *kObjc3Part12FeatureAwareConformanceReportEmissionContractId =
+        "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+inline constexpr const char
+    *kObjc3Part12FeatureAwareConformanceReportEmissionDependencyContractId =
+        "objc3c-part12-machine-readable-conformance-report-contract/m275-c001-v1";
+inline constexpr const char
+    *kObjc3Part12FeatureAwareConformanceReportEmissionSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_part12_feature_aware_conformance_report_emission";
+inline constexpr const char
+    *kObjc3Part12FeatureAwareConformanceReportEmissionPayloadModel =
+        "versioned-conformance-report-now-embeds-part12-feature-aware-migration-and-fixit-state-without-introducing-a-second-report-sidecar";
+inline constexpr const char
+    *kObjc3Part12FeatureAwareConformanceReportEmissionAuthorityModel =
+        "part12-feature-aware-reporting-remains-bounded-to-live-fixit-migration-and-machine-readable-report-contract-surfaces";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
 // M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
@@ -2796,6 +2812,7 @@ std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary();
+std::string Objc3Part12FeatureAwareConformanceReportEmissionLoweringSummary();
 std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
 std::string Objc3Part8SystemHelperRuntimeContractSummary();

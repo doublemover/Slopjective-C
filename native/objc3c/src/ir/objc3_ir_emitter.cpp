@@ -8157,6 +8157,11 @@ class Objc3IREmitter {
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
+      out << "; part12_feature_aware_conformance_report_emission = "
+          << Objc3Part12FeatureAwareConformanceReportEmissionLoweringSummary()
+          << ";replay_key="
+          << frontend_metadata_.versioned_conformance_report_lowering_replay_key
+          << "\n";
     }
     if (ShouldEmitRuntimeBootstrapLowering()) {
       out << "; runtime_bootstrap_ctor_init_emission = "
