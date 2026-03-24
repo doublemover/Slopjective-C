@@ -8693,3 +8693,14 @@ runnable smoke matrix.
   - Part 10 is still source-closure only at this stage
   - no macro-expansion records, derive-synthesis descriptors, or property-behavior runtime tables are claimed yet
 
+## M273 macro package/provenance note
+
+`M273-A002` still does not widen module metadata or ABI tables.
+
+- contract id
+  `objc3c-part10-macro-package-provenance-source-completion/m273-a002-v1`
+- emitted frontend proof
+  - `frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion`
+- truthful boundary
+  - package/provenance markers are frontend-owned source state only at this stage
+  - no runtime package loader metadata, expansion cache ABI, or sandbox policy tables are claimed yet

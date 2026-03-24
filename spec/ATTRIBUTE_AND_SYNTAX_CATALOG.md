@@ -1349,3 +1349,17 @@ Current implementation status (`M273-A001`):
   - `behavior=...` inside `@property(...)`
 - this issue only freezes the source-closure contract
 - it does not yet claim macro expansion, derive synthesis, property accessor synthesis, or runtime metadata widening
+
+## M273 macro package and provenance source completion (A002)
+
+Current implementation status (`M273-A002`):
+
+- the frontend manifest now publishes `frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion`
+- admitted parser-owned callable markers now include:
+  - `__attribute__((objc_macro_package(named("..."))))`
+  - `__attribute__((objc_macro_provenance(named("..."))))`
+- expansion-visible macro source state is currently defined as a callable carrying all three markers:
+  - `objc_macro`
+  - `objc_macro_package`
+  - `objc_macro_provenance`
+- this issue still does not claim macro expansion execution, sandboxing, or runtime package loading

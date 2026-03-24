@@ -1531,6 +1531,12 @@ inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureSourceModel
     "derive-markers-macro-markers-and-property-behavior-markers-are-live-parser-owned-source-surfaces-while-expansion-synthesis-and-runtime-behavior-remain-deferred";
 inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureFailureModel =
     "part10-stays-source-closure-only-with-no-macro-expansion-derived-conformance-synthesis-or-property-runtime-claims-yet";
+inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion";
+inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionSourceModel =
+    "macro-package-markers-macro-provenance-markers-and-expansion-visible-source-state-are-live-frontend-owned-surfaces-while-expansion-execution-and-sandboxing-remain-deferred";
+inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionFailureModel =
+    "part10-source-completion-does-not-yet-claim-macro-expansion-engine-sandbox-or-runtime-package-loading";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -1704,6 +1710,34 @@ struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary {
   bool derive_marker_source_supported = false;
   bool macro_marker_source_supported = false;
   bool property_behavior_source_supported = false;
+  bool deterministic_handoff = false;
+  bool ready_for_semantic_expansion = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary {
+  std::string contract_id =
+      kObjc3Part10MacroPackageProvenanceSourceCompletionContractId;
+  std::string frontend_surface_path =
+      kObjc3Part10MacroPackageProvenanceSourceCompletionSurfacePath;
+  std::string source_model =
+      kObjc3Part10MacroPackageProvenanceSourceCompletionSourceModel;
+  std::string failure_model =
+      kObjc3Part10MacroPackageProvenanceSourceCompletionFailureModel;
+  std::vector<std::string> source_only_claim_ids = {
+      kObjc3SourceOnlyFeatureClaimMacroMarkers,
+      kObjc3SourceOnlyFeatureClaimMacroPackageMarkers,
+      kObjc3SourceOnlyFeatureClaimMacroProvenanceMarkers,
+      kObjc3SourceOnlyFeatureClaimMacroExpansionVisibleState,
+  };
+  std::size_t macro_marker_sites = 0;
+  std::size_t macro_package_sites = 0;
+  std::size_t macro_provenance_sites = 0;
+  std::size_t expansion_visible_macro_sites = 0;
+  bool macro_package_source_supported = false;
+  bool macro_provenance_source_supported = false;
+  bool expansion_visible_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;
   std::string replay_key;
@@ -5181,6 +5215,8 @@ struct Objc3FrontendPipelineResult {
       part9_dispatch_intent_source_completion_summary;
   Objc3FrontendPart10MetaprogrammingSourceClosureSummary
       part10_metaprogramming_source_closure_summary;
+  Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+      part10_macro_package_provenance_source_completion_summary;
   Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       part7_actor_member_isolation_source_closure_summary;
   Objc3Part7ActorIsolationSendableSemanticModelSummary

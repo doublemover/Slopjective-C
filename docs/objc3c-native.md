@@ -4367,6 +4367,15 @@ Current implementation status (`M271-E001`):
 - the emitted frontend manifest publishes `frontend.pipeline.semantic_surface.objc_part10_derive_macro_property_behavior_source_closure`
 - this lane is source-closure only
 - it does not claim macro expansion, derived conformance synthesis, or property runtime behavior yet
+
+## M273 macro package and provenance source completion
+
+- callable macro markers now admit parser-owned package and provenance companions:
+  - `objc_macro_package(named("..."))`
+  - `objc_macro_provenance(named("..."))`
+- the emitted frontend manifest publishes `frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion`
+- the packet tracks macro marker, package marker, provenance marker, and expansion-visible macro source sites
+- this still does not claim macro expansion execution, sandboxing, or runtime package loading yet
 ## M27 loop/control surface (`while`, `break`, `continue`)
 
 Grammar status (implemented):

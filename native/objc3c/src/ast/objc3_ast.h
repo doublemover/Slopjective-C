@@ -1292,6 +1292,10 @@ struct Objc3MethodDecl {
   std::string executor_affinity_name;
   bool objc_macro_declared = false;
   std::string objc_macro_name;
+  bool objc_macro_package_declared = false;
+  std::string objc_macro_package_name;
+  bool objc_macro_provenance_declared = false;
+  std::string objc_macro_provenance_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;
@@ -1720,6 +1724,10 @@ struct FunctionDecl {
   std::string executor_affinity_name;
   bool objc_macro_declared = false;
   std::string objc_macro_name;
+  bool objc_macro_package_declared = false;
+  std::string objc_macro_package_name;
+  bool objc_macro_provenance_declared = false;
+  std::string objc_macro_provenance_name;
   bool objc_direct_declared = false;
   bool objc_final_declared = false;
   bool objc_dynamic_declared = false;

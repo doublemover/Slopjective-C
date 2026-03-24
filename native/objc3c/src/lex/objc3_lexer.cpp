@@ -119,6 +119,9 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // dedicated derive/macro/property-behavior lexer keywords yet; the truthful
   // Part 10 source boundary is still parser-owned profiling on top of this
   // same token stream.
+  // M273-A002 source-completion note: macro package/provenance admission also
+  // remains parser-owned callable attribute profiling on top of this same token
+  // stream; do not widen the lexer with dedicated package/provenance keywords.
   ConsumePreludePragmas(diagnostics);
   std::vector<Token> tokens;
   while (true) {

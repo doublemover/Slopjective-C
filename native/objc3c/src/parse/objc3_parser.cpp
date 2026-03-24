@@ -7278,6 +7278,35 @@ class Objc3Parser {
       decl.objc_macro_declared = true;
       return true;
     }
+    if (attribute_name.text == "objc_macro_package") {
+      if (decl.objc_macro_package_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P347",
+                     "duplicate objc_macro_package attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_macro_package",
+                                            decl.objc_macro_package_name)) {
+        return false;
+      }
+      decl.objc_macro_package_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_macro_provenance") {
+      if (decl.objc_macro_provenance_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P348",
+                     "duplicate objc_macro_provenance attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(
+              attribute_name, "objc_macro_provenance",
+              decl.objc_macro_provenance_name)) {
+        return false;
+      }
+      decl.objc_macro_provenance_declared = true;
+      return true;
+    }
     if (attribute_name.text == "objc_nonisolated") {
       // M270-A002 source-surface anchor: nonisolated actor-member admission is
       // parser-owned callable attribute handling, not a standalone keyword.
