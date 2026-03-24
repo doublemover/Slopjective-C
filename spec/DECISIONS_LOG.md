@@ -302,6 +302,40 @@ later `M272` lanes widen semantics and lowering.
 
 ---
 
+## D-026: Part 9 legality freeze must reuse the existing override-accounting surface before lowering begins {#decisions-d-026}
+
+**Decision:** `M272-B001` shall freeze one truthful Part 9 semantic-model
+packet by combining:
+
+- the existing dispatch-intent/defaulting source-completion packet from
+  `M272-A002`, and
+- the existing method-lookup/override conflict accounting surface already
+  produced by semantic integration.
+
+That lane-B packet shall preserve, at minimum:
+
+- prefixed dispatch-intent container-attribute counts,
+- direct-members / final / sealed container counts,
+- effective direct-member/defaulted-direct/`objc_dynamic` opt-out counts,
+- override lookup hits, misses, conflicts, and unresolved base-interface
+  counts.
+
+This packet remains sema/accounting only. It shall not yet claim:
+
+- direct-call lowering,
+- final/sealed legality enforcement,
+- metadata realization, or
+- runnable dispatch-boundary behavior.
+
+**Rationale:** The compiler already has one deterministic override-accounting
+surface. Reusing that surface keeps the Part 9 claim truthful and avoids
+inventing a second override model before lowering/runtime work lands.
+
+**Spec impact:** [Part 9](#part-9), [Part 12](#part-12), and
+[E](#e) conformance evidence policy.
+
+---
+
 ## D-021: Runtime/public capability reports must remain a truthful projection of the lowered conformance sidecar {#decisions-d-021}
 
 **Decision:** The native `objc3c` pipeline shall publish machine-readable

@@ -11,6 +11,7 @@ struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary;
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary;
 struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary;
 struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary;
+struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -64,6 +65,11 @@ BuildPart8SystemExtensionSemanticModelSummary(
         &completion_summary,
     const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
         &retainable_summary);
+Objc3Part9DispatchIntentSemanticModelSummary
+BuildPart9DispatchIntentSemanticModelSummary(
+    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+        &source_summary,
+    const Objc3SemanticIntegrationSurface &surface);
 Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
 BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
     const Objc3Program &program,

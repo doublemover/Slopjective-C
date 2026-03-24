@@ -958,6 +958,55 @@ std::string BuildPart9DispatchIntentSourceCompletionSummaryJson(
   return out.str();
 }
 
+std::string BuildPart9DispatchIntentSemanticModelSummaryJson(
+    const Objc3Part9DispatchIntentSemanticModelSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_dependency_contract_id\":\""
+      << EscapeJsonString(summary.frontend_dependency_contract_id)
+      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
+      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
+      << "\",\"deferred_model\":\"" << EscapeJsonString(summary.deferred_model)
+      << "\",\"prefixed_container_attribute_sites\":"
+      << summary.prefixed_container_attribute_sites
+      << ",\"direct_members_container_sites\":"
+      << summary.direct_members_container_sites
+      << ",\"final_container_sites\":" << summary.final_container_sites
+      << ",\"sealed_container_sites\":" << summary.sealed_container_sites
+      << ",\"effective_direct_member_sites\":"
+      << summary.effective_direct_member_sites
+      << ",\"direct_members_defaulted_method_sites\":"
+      << summary.direct_members_defaulted_method_sites
+      << ",\"direct_members_dynamic_opt_out_sites\":"
+      << summary.direct_members_dynamic_opt_out_sites
+      << ",\"override_lookup_sites\":" << summary.override_lookup_sites
+      << ",\"override_lookup_hits\":" << summary.override_lookup_hits
+      << ",\"override_lookup_misses\":" << summary.override_lookup_misses
+      << ",\"override_conflicts\":" << summary.override_conflicts
+      << ",\"unresolved_base_interfaces\":"
+      << summary.unresolved_base_interfaces
+      << ",\"source_dependency_required\":"
+      << (summary.source_dependency_required ? "true" : "false")
+      << ",\"dispatch_intent_source_supported\":"
+      << (summary.dispatch_intent_source_supported ? "true" : "false")
+      << ",\"override_semantic_surface_reused\":"
+      << (summary.override_semantic_surface_reused ? "true" : "false")
+      << ",\"direct_dispatch_reserved_non_goal\":"
+      << (summary.direct_dispatch_reserved_non_goal ? "true" : "false")
+      << ",\"final_sealed_enforcement_deferred\":"
+      << (summary.final_sealed_enforcement_deferred ? "true" : "false")
+      << ",\"lowering_runtime_deferred\":"
+      << (summary.lowering_runtime_deferred ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"ready_for_core_implementation\":"
+      << (summary.ready_for_core_implementation ? "true" : "false")
+      << ",\"failure_reason\":\"" << EscapeJsonString(summary.failure_reason)
+      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
     const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
@@ -12264,6 +12313,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
       &part9_dispatch_intent_source_completion_summary =
           pipeline_result.part9_dispatch_intent_source_completion_summary;
+  const Objc3Part9DispatchIntentSemanticModelSummary
+      &part9_dispatch_intent_semantic_model_summary =
+          pipeline_result.part9_dispatch_intent_semantic_model_summary;
   const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
       &part7_actor_member_isolation_source_closure_summary =
           pipeline_result.part7_actor_member_isolation_source_closure_summary;
@@ -16728,6 +16780,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
             << BuildPart9DispatchIntentSourceCompletionSummaryJson(
                    part9_dispatch_intent_source_completion_summary)
+            << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
+            << BuildPart9DispatchIntentSemanticModelSummaryJson(
+                   part9_dispatch_intent_semantic_model_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)
@@ -18091,6 +18146,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             << ",\"objc_part9_dispatch_intent_attribute_and_defaulting_source_completion\":"
             << BuildPart9DispatchIntentSourceCompletionSummaryJson(
                    part9_dispatch_intent_source_completion_summary)
+            << ",\"objc_part9_dynamism_and_dispatch_control_semantic_model\":"
+            << BuildPart9DispatchIntentSemanticModelSummaryJson(
+                   part9_dispatch_intent_semantic_model_summary)
             << ",\"objc_part7_actor_member_and_isolation_source_closure\":"
             << BuildPart7ActorMemberIsolationSourceClosureSummaryJson(
                    part7_actor_member_isolation_source_closure_summary)

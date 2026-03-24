@@ -872,6 +872,67 @@ IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
 }
 
 inline constexpr const char
+    *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
+        "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
+inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =
+    "objc3c-part9-dynamism-dispatch-control-semantic-model/m272-b001-v1";
+inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_part9_dynamism_and_dispatch_control_semantic_model";
+inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelRule =
+    "direct-members-defaulting-final-sealed-and-override-accounting-now-share-one-truthful-sema-packet-while-direct-dispatch-legality-final-sealed-enforcement-and-runnable-dispatch-boundary-realization-remain-later-m272-work";
+inline constexpr const char
+    *kObjc3Part9DispatchIntentSemanticModelDeferredRule =
+        "direct-call-lowering-final-sealed-diagnostics-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+
+struct Objc3Part9DispatchIntentSemanticModelSummary {
+  std::string contract_id = kObjc3Part9DispatchIntentSemanticModelContractId;
+  std::string frontend_dependency_contract_id =
+      kObjc3Part9DispatchIntentSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3Part9DispatchIntentSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3Part9DispatchIntentSemanticModelRule;
+  std::string deferred_model =
+      kObjc3Part9DispatchIntentSemanticModelDeferredRule;
+  std::size_t prefixed_container_attribute_sites = 0;
+  std::size_t direct_members_container_sites = 0;
+  std::size_t final_container_sites = 0;
+  std::size_t sealed_container_sites = 0;
+  std::size_t effective_direct_member_sites = 0;
+  std::size_t direct_members_defaulted_method_sites = 0;
+  std::size_t direct_members_dynamic_opt_out_sites = 0;
+  std::size_t override_lookup_sites = 0;
+  std::size_t override_lookup_hits = 0;
+  std::size_t override_lookup_misses = 0;
+  std::size_t override_conflicts = 0;
+  std::size_t unresolved_base_interfaces = 0;
+  bool source_dependency_required = false;
+  bool dispatch_intent_source_supported = false;
+  bool override_semantic_surface_reused = false;
+  bool direct_dispatch_reserved_non_goal = false;
+  bool final_sealed_enforcement_deferred = false;
+  bool lowering_runtime_deferred = false;
+  bool deterministic = false;
+  bool ready_for_core_implementation = false;
+  std::string replay_key;
+  std::string failure_reason;
+};
+
+inline bool IsReadyObjc3Part9DispatchIntentSemanticModelSummary(
+    const Objc3Part9DispatchIntentSemanticModelSummary &summary) {
+  return !summary.contract_id.empty() &&
+         !summary.frontend_dependency_contract_id.empty() &&
+         !summary.surface_path.empty() && !summary.semantic_model.empty() &&
+         !summary.deferred_model.empty() &&
+         summary.source_dependency_required &&
+         summary.dispatch_intent_source_supported &&
+         summary.override_semantic_surface_reused &&
+         summary.direct_dispatch_reserved_non_goal &&
+         summary.final_sealed_enforcement_deferred &&
+         summary.lowering_runtime_deferred && summary.deterministic &&
+         summary.ready_for_core_implementation && !summary.replay_key.empty() &&
+         summary.failure_reason.empty();
+}
+
+inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
         "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
 inline constexpr const char

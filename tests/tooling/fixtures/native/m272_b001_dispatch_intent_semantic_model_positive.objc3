@@ -1,0 +1,32 @@
+module DispatchIntentSemanticModel;
+
+@interface BaseBox
+- (i32)shared;
+@end
+
+@implementation BaseBox
+- (i32)shared {
+  return 1;
+}
+@end
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface ChildBox : BaseBox
+- (i32)shared;
+- (i32)dynamicEscape __attribute__((objc_dynamic));
+- (i32)explicitDirect __attribute__((objc_direct));
+@end
+
+@implementation ChildBox
+- (i32)shared {
+  return 2;
+}
+
+- (i32)dynamicEscape __attribute__((objc_dynamic)) {
+  return 3;
+}
+
+- (i32)explicitDirect __attribute__((objc_direct)) {
+  return 4;
+}
+@end

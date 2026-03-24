@@ -1176,3 +1176,18 @@ Current implementation status (`M272-A002`):
   `objc_dynamic` opt-out sites inside direct-members containers
 - legality enforcement, direct-call lowering, metadata realization, and runtime
   dispatch-boundary behavior remain later `M272` work
+
+## M272 dynamism/dispatch-control semantic model (B001)
+
+Current implementation status (`M272-B001`):
+
+- the semantic pipeline now publishes
+  `frontend.pipeline.semantic_surface.objc_part9_dynamism_and_dispatch_control_semantic_model`
+- that packet reuses the existing Part 9 source-completion packet together
+  with the established override lookup/conflict accounting surface
+- the packet preserves prefixed/container direct-members counts, final/sealed
+  container counts, effective direct-member sites, direct-members defaulted
+  method sites, `objc_dynamic` opt-out sites, and override lookup
+  hits/misses/conflicts plus unresolved base-interface counts
+- direct-call lowering, final/sealed enforcement, metadata realization, and
+  runtime dispatch-boundary behavior remain later `M272` work
