@@ -8039,6 +8039,9 @@
     "check:objc3c:m318-d001-lane-d-readiness": "python scripts/run_m318_d001_lane_d_readiness.py",
     "check:objc3c:m318-e001-sustainable-progress-gate-contract-and-architecture-freeze": "python scripts/check_m318_e001_sustainable_progress_gate_contract_and_architecture_freeze.py",
     "test:tooling:m318-e001-sustainable-progress-gate-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_e001_sustainable_progress_gate_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m318-e001-lane-e-readiness": "python scripts/run_m318_e001_lane_e_readiness.py"
+    "check:objc3c:m318-e001-lane-e-readiness": "python scripts/run_m318_e001_lane_e_readiness.py",
+    "check:objc3c:m318-e002-governance-hardening-closeout-matrix-cross-lane-integration-sync": "python scripts/check_m318_e002_governance_hardening_closeout_matrix_cross_lane_integration_sync.py",
+    "test:tooling:m318-e002-governance-hardening-closeout-matrix-cross-lane-integration-sync": "python -m pytest tests/tooling/test_check_m318_e002_governance_hardening_closeout_matrix_cross_lane_integration_sync.py -q",
+    "check:objc3c:m318-e002-lane-e-readiness": "python scripts/run_m318_e002_lane_e_readiness.py"
   }
 }
