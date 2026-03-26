@@ -1,0 +1,72 @@
+{
+  "mode": "m317-b001-immediate-backlog-surgery-supersession-model-v1",
+  "contract_id": "objc3c-cleanup-immediate-backlog-surgery-supersession-model/m317-b001-v1",
+  "dependency_contract_id": "objc3c-cleanup-current-github-amendment-supersession-map/m317-a002-v1",
+  "allowed_actions": [
+    {
+      "action": "narrow_in_place",
+      "when": "An existing issue owns real scope but needs a stricter boundary instead of replacement.",
+      "anchors": [
+        7399
+      ]
+    },
+    {
+      "action": "corrective_tranche_consumes_existing_scope",
+      "when": "A later corrective milestone sharpens existing runtime or storage work without duplicating ownership.",
+      "anchors": [
+        7421,
+        7425,
+        7428,
+        7434,
+        7438,
+        7441
+      ]
+    },
+    {
+      "action": "boundary_preserve",
+      "when": "A human-facing milestone must keep its surface while structural cleanup is handled elsewhere.",
+      "anchors": [
+        "M288"
+      ]
+    },
+    {
+      "action": "cleanup_first_block",
+      "when": "Downstream roadmap work exists but must stay blocked until the cleanup-first sequence is complete.",
+      "anchors": [
+        "M277-M308",
+        "open roadmap issues"
+      ]
+    },
+    {
+      "action": "concept_hold",
+      "when": "A future concept issue should remain non-executable and informative only.",
+      "anchors": [
+        7764
+      ]
+    },
+    {
+      "action": "future_dependency_rewrite",
+      "when": "Future milestone descriptions and issue bodies must consume the cleanup program outputs instead of perpetuating noisy patterns.",
+      "anchors": [
+        "M293-M304"
+      ]
+    }
+  ],
+  "compatibility_rules": [
+    "Amend or narrow the existing issue before adding a corrective milestone that consumes its scope.",
+    "Use marker-based execution-order and blocker sections so backlog edits remain machine-auditable.",
+    "Keep the local tracked source-of-truth files aligned with the live GitHub issue bodies and milestone descriptions."
+  ],
+  "prohibited_patterns": [
+    "Duplicate ownership where a corrective milestone restates runtime or cleanup work without narrowing the existing issue first.",
+    "New roadmap issues without labels and execution-order status at publish time.",
+    "Using M277-B002 as a dumping ground for checker collapse, command-surface reduction, proof hygiene, or governance work.",
+    "Using M288 as a vague catch-all for structural cleanup that belongs to M313-M318.",
+    "Starting downstream runtime or future-milestone work before the cleanup-first sequence is complete."
+  ],
+  "metadata_targets": {
+    "expected_open_issue_unlabeled": 0,
+    "expected_open_issue_missing_execution_order": 0
+  },
+  "next_issue": "M317-B002"
+}
