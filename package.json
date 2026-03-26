@@ -5,6 +5,31 @@
     "markdownlint-cli2": "^0.20.0",
     "prettier": "^3.2.5"
   },
+  "objc3cCommandSurface": {
+    "mode": "m314-b002-public-package-script-collapse-v1",
+    "contractId": "objc3c-cleanup-public-package-script-collapse/m314-b002-v1",
+    "budgetMaximum": 25,
+    "publicScripts": [
+      "build",
+      "build:objc3c-native",
+      "build:objc3c-native:contracts",
+      "build:objc3c-native:full",
+      "build:objc3c-native:reconfigure",
+      "build:spec",
+      "compile:objc3c",
+      "lint:spec",
+      "test",
+      "test:smoke",
+      "test:ci",
+      "test:objc3c",
+      "test:objc3c:execution-smoke",
+      "test:objc3c:execution-replay-proof",
+      "test:objc3c:full",
+      "package:objc3c-native:runnable-toolchain",
+      "proof:objc3c"
+    ],
+    "compatibilityOwnerIssue": "M314-B004"
+  },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
     "test": "npm run test:smoke",
@@ -7826,6 +7851,9 @@
     "check:objc3c:m314-a002-lane-a-readiness": "python scripts/run_m314_a002_lane_a_readiness.py",
     "check:objc3c:m314-b001-public-versus-internal-command-model-contract-and-architecture-freeze": "python scripts/check_m314_b001_public_versus_internal_command_model_contract_and_architecture_freeze.py",
     "test:tooling:m314-b001-public-versus-internal-command-model-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_b001_public_versus_internal_command_model_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m314-b001-lane-b-readiness": "python scripts/run_m314_b001_lane_b_readiness.py"
+    "check:objc3c:m314-b001-lane-b-readiness": "python scripts/run_m314_b001_lane_b_readiness.py",
+    "check:objc3c:m314-b002-public-package-script-collapse-core-feature-implementation": "python scripts/check_m314_b002_public_package_script_collapse_core_feature_implementation.py",
+    "test:tooling:m314-b002-public-package-script-collapse-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_b002_public_package_script_collapse_core_feature_implementation.py -q",
+    "check:objc3c:m314-b002-lane-b-readiness": "python scripts/run_m314_b002_lane_b_readiness.py"
   }
 }

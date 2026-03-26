@@ -325,12 +325,37 @@ CI and closeout semantics:
 - milestone closeout evidence for this build-surface tranche lives under
   `tmp/reports/m276/M276-E002/`
 
+## Public Command Surface
+
+Use these package scripts for normal operator workflows:
+
+- `npm run build`
+- `npm run build:objc3c-native`
+- `npm run build:objc3c-native:contracts`
+- `npm run build:objc3c-native:full`
+- `npm run build:objc3c-native:reconfigure`
+- `npm run build:spec`
+- `npm run compile:objc3c -- ...`
+- `npm run lint:spec`
+- `npm run test`
+- `npm run test:smoke`
+- `npm run test:ci`
+- `npm run test:objc3c`
+- `npm run test:objc3c:execution-smoke`
+- `npm run test:objc3c:execution-replay-proof`
+- `npm run test:objc3c:full`
+- `npm run package:objc3c-native:runnable-toolchain`
+- `npm run proof:objc3c`
+
+All other package scripts are compatibility or internal surfaces retained during cleanup and may change without notice.
+Prefer the public package-script surface over direct Python or PowerShell invocations when a public wrapper already exists.
+
 ## Quickstart
 
 Build the public site overview:
 
 ```powershell
-python scripts/build_site_index.py
+npm run build:spec
 ```
 
 Check that the generated site is up to date:
@@ -355,7 +380,7 @@ Run the native execution smoke suite:
 
 ```powershell
 $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_objc3c_native_execution_smoke.ps1
+npm run test:objc3c:execution-smoke
 ```
 
 If `llc.exe` is already on `PATH`, you can omit `OBJC3C_NATIVE_EXECUTION_LLC_PATH`.
