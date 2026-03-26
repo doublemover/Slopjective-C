@@ -1,0 +1,149 @@
+{
+  "mode": "m317-a001-backlog-overlap-correction-inventory-v1",
+  "contract_id": "objc3c-cleanup-backlog-overlap-correction-inventory/m317-a001-v1",
+  "global_cleanup_sequence": [
+    "M317",
+    "M313",
+    "M314",
+    "M315",
+    "M318",
+    "M316"
+  ],
+  "critical_overlap_issue_numbers": [
+    7399,
+    7421,
+    7425,
+    7428,
+    7434,
+    7438,
+    7441,
+    7529,
+    7530,
+    7531,
+    7532,
+    7533,
+    7534,
+    7535,
+    7536,
+    7537,
+    7538
+  ],
+  "future_consumer_milestones": [
+    "M293",
+    "M294",
+    "M295",
+    "M296",
+    "M297",
+    "M298",
+    "M299",
+    "M300",
+    "M301",
+    "M302",
+    "M303",
+    "M304"
+  ],
+  "inventory_families": [
+    {
+      "family_id": "scaffold_retirement_scope_narrowing",
+      "summary": "Keep M277 scaffold-retirement work at the architecture-inventory boundary and prevent it from absorbing the later cleanup execution program.",
+      "issues": [
+        7399
+      ],
+      "milestones": [
+        "M277",
+        "M313",
+        "M314",
+        "M315",
+        "M318"
+      ],
+      "correction": "narrow_existing_issue"
+    },
+    {
+      "family_id": "realized_dispatch_corrective_overlap",
+      "summary": "Sharpen the M279 object-model runtime tranche so realized dispatch explicitly consumes the selector pool and live object graph.",
+      "issues": [
+        7421,
+        7425,
+        7428
+      ],
+      "milestones": [
+        "M279",
+        "M316"
+      ],
+      "correction": "corrective_tranche_consumes_existing_runtime_scope"
+    },
+    {
+      "family_id": "synthesized_accessor_corrective_overlap",
+      "summary": "Sharpen the M280 property/runtime tranche so synthesized accessor semantics, LLVM IR, and runtime behavior are all explicit and executable.",
+      "issues": [
+        7434,
+        7438,
+        7441
+      ],
+      "milestones": [
+        "M280",
+        "M316"
+      ],
+      "correction": "corrective_tranche_consumes_existing_storage_scope"
+    },
+    {
+      "family_id": "human_facing_superclean_boundary",
+      "summary": "Keep M288 focused on human-facing polish and presentation while structural cleanup, proof hygiene, and anti-noise governance stay in M313-M318.",
+      "issues": [
+        7529,
+        7530,
+        7531,
+        7532,
+        7533,
+        7534,
+        7535,
+        7536,
+        7537,
+        7538
+      ],
+      "milestones": [
+        "M288",
+        "M313",
+        "M314",
+        "M315",
+        "M318"
+      ],
+      "correction": "boundary_preservation"
+    },
+    {
+      "family_id": "future_post_m292_dependency_consumers",
+      "summary": "Force future performance, publishing, validation, and reporting milestones to consume the cleanup-first validation and workflow model instead of reinforcing the current noisy one.",
+      "issues": [],
+      "milestones": [
+        "M293",
+        "M294",
+        "M295",
+        "M296",
+        "M297",
+        "M298",
+        "M299",
+        "M300",
+        "M301",
+        "M302",
+        "M303",
+        "M304"
+      ],
+      "correction": "future_dependency_rewrite"
+    }
+  ],
+  "required_policy_documents": [
+    "tmp/planning/cleanup_acceleration_program/github_issue_alteration_guidance.md",
+    "tmp/planning/cleanup_acceleration_program/execution_order.md",
+    "tmp/planning/cleanup_acceleration_program/open_issue_metadata_policy.md"
+  ],
+  "observed_repo_facts": {
+    "npm_script_count": 7737,
+    "checker_scripts": 2781,
+    "checker_pytests": 2767,
+    "native_source_m2xx_refs": 3002,
+    "tracked_ll_files": 78,
+    "tracked_stub_ll_files": 2,
+    "dead_prototype_compiler_file": "compiler/objc3c/semantic.py"
+  },
+  "next_issue": "M317-A002"
+}
