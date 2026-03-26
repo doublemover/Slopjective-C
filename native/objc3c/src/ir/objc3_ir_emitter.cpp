@@ -369,6 +369,9 @@ class Objc3IREmitter {
 
   bool Emit(std::string &ir, std::string &error) {
     runtime_dispatch_call_emitted_ = false;
+    direct_dispatch_call_sites_emitted_ = 0;
+    runtime_dispatch_call_sites_emitted_ = 0;
+    selector_pool_gep_sites_emitted_ = 0;
     runtime_dispatch_symbols_used_.clear();
     fail_open_fallback_triggered_ = false;
     fail_open_fallback_reason_.clear();
@@ -2919,6 +2922,26 @@ class Objc3IREmitter {
       out << "; runtime_dispatch_call_decl = "
           << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_)
           << "\n\n";
+    }
+    if (runtime_dispatch_call_emitted_ || direct_dispatch_call_sites_emitted_ > 0) {
+      out << "; method_dispatch_and_selector_thunk_lowering_surface = "
+          << "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
+          << ";runtime_dispatch_symbol=" << lowering_ir_boundary_.runtime_dispatch_symbol
+          << ";runtime_dispatch_call_emitted="
+          << (runtime_dispatch_call_emitted_ ? "true" : "false")
+          << ";runtime_dispatch_call_sites=" << runtime_dispatch_call_sites_emitted_
+          << ";direct_dispatch_call_sites=" << direct_dispatch_call_sites_emitted_
+          << ";selector_pool_gep_sites=" << selector_pool_gep_sites_emitted_
+          << ";selector_pool_count=" << selector_pool_globals_.size()
+          << ";direct_dispatch_candidate_sites="
+          << frontend_metadata_
+                 .part9_dispatch_control_lowering_direct_call_candidate_sites
+          << ";dynamic_opt_out_sites="
+          << frontend_metadata_.part9_dispatch_control_lowering_dynamic_opt_out_sites
+          << ";selector_pool_symbol="
+          << (selector_pool_globals_.empty() ? "null"
+                                             : "@__objc3_sec_selector_pool")
+          << "\n";
     }
     out << body.str();
     ir = out.str();
@@ -12674,6 +12697,7 @@ class Objc3IREmitter {
       }
       call << ")";
       ctx.code_lines.push_back(call.str());
+      ++direct_dispatch_call_sites_emitted_;
       InvalidateGlobalProofState(ctx);
       return direct_value;
     }
@@ -12700,6 +12724,7 @@ class Objc3IREmitter {
     const std::string selector_ptr = NewTemp(ctx);
     ctx.code_lines.push_back("  " + selector_ptr + " = getelementptr inbounds [" + std::to_string(selector_len) +
                              " x i8], ptr " + selector_it->second + ", i32 0, i32 0");
+    ++selector_pool_gep_sites_emitted_;
 
     const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
       // dispatch-surface classification anchor: instance/class/super/dynamic
@@ -12752,6 +12777,7 @@ class Objc3IREmitter {
       }
       call << ")";
       runtime_dispatch_call_emitted_ = true;
+      ++runtime_dispatch_call_sites_emitted_;
       runtime_dispatch_symbols_used_.insert(lowered.dispatch_symbol);
       ctx.code_lines.push_back(call.str());
     };
@@ -14528,6 +14554,9 @@ class Objc3IREmitter {
   mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
   mutable std::set<std::string> runtime_dispatch_symbols_used_;
   mutable bool runtime_dispatch_call_emitted_ = false;
+  mutable std::size_t direct_dispatch_call_sites_emitted_ = 0;
+  mutable std::size_t runtime_dispatch_call_sites_emitted_ = 0;
+  mutable std::size_t selector_pool_gep_sites_emitted_ = 0;
   mutable bool fail_open_fallback_triggered_ = false;
   mutable std::string fail_open_fallback_reason_;
 };

@@ -285,11 +285,13 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         / "native"
         / "m272_d002_live_dispatch_fast_path_positive.objc3"
     )
-    obj_path = compile_fixture(fixture, case_dir / "compile")
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     probe = ROOT / "tests" / "tooling" / "runtime" / "m272_d002_live_dispatch_fast_path_probe.cpp"
     exe_path = case_dir / "m272_d002_live_dispatch_fast_path_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_key_value_output(run_probe(exe_path), "dispatch fast-path probe")
+    ll_text = ll_path.read_text(encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     expect(payload.get("baseline_status") == 0, "expected baseline method-cache snapshot to succeed")
     expect(payload.get("dynamic_entry_status") == 0, "expected dynamic fast-path entry lookup to succeed")
@@ -351,6 +353,39 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected repeated missingDispatch: call to stay off the fast path")
     expect(payload.get("fallback_second_state_last_dispatch_fell_back") == 1,
            "expected repeated missingDispatch: call to remain a fallback dispatch")
+    expect(
+        "; method_dispatch_and_selector_thunk_lowering_surface = "
+        "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
+        in ll_text,
+        "expected LLVM IR to publish authoritative method dispatch and selector thunk lowering surface",
+    )
+    expect("direct_dispatch_call_sites=5" in ll_text,
+           "expected mixed dispatch fixture to emit five direct dispatch calls")
+    expect("runtime_dispatch_call_sites=1" in ll_text,
+           "expected mixed dispatch fixture to emit one live runtime dispatch call")
+    expect("selector_pool_gep_sites=1" in ll_text,
+           "expected mixed dispatch fixture to materialize one selector thunk gep")
+    expect("selector_pool_count=4" in ll_text,
+           "expected mixed dispatch fixture to publish four pooled selectors")
+    expect("dynamic_opt_out_sites=2" in ll_text,
+           "expected mixed dispatch fixture to preserve two objc_dynamic opt-out sites")
+    expect("call i32 @objc3_method_PolicyBox_class_implicitDirect()" in ll_text,
+           "expected implicit direct calls to lower as exact direct LLVM calls")
+    expect("call i32 @objc3_method_PolicyBox_class_explicitDirect()" in ll_text,
+           "expected explicit direct calls to lower as exact direct LLVM calls")
+    expect("call i32 @objc3_method_PolicyBox_class_callers()" in ll_text,
+           "expected runFixture to preserve direct class-method dispatch to callers")
+    expect("call i32 @objc3_runtime_dispatch_i32(" in ll_text,
+           "expected dynamicEscape lowering to retain the live runtime dispatch call")
+    expect("@__objc3_sec_selector_pool" in ll_text,
+           "expected mixed dispatch fixture to emit the selector pool section root")
+    lowering_surface = manifest.get("dispatch_and_synthesized_accessor_lowering_surface", {})
+    expect(isinstance(lowering_surface, dict),
+           "expected compile manifest to publish the live lowering surface")
+    expect(lowering_surface.get("runtime_dispatch_symbol_matches_lowering") is True,
+           "expected compile manifest lowering surface to keep dispatch symbols aligned")
+    expect(lowering_surface.get("message_send_sites") == 6,
+           "expected compile manifest lowering surface to publish six message send sites")
 
     return CaseResult(
         case_id="dispatch-fast-path",
@@ -358,6 +393,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         fixture="tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
         passed=True,
         summary={
+            "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
             "baseline_cache_entry_count": payload.get("baseline_cache_entry_count"),
             "baseline_fast_path_seed_count": payload.get("baseline_fast_path_seed_count"),
             "mixed_first_live_dispatch_count": payload.get("mixed_first_state_live_dispatch_count"),
