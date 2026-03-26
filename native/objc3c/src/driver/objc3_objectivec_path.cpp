@@ -2,7 +2,7 @@
 
 #include <clang-c/Index.h>
 
-// M276-A002 parity anchor: this translation unit is the concrete libclang
+// parity anchor: this translation unit is the concrete libclang
 // consumer the future incremental backend must continue to compile and link
 // correctly when the wrapper-owned LLVM_ROOT/libclang discovery contract moves
 // through CMake/Ninja.

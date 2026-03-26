@@ -3076,7 +3076,7 @@ Objc3RuntimeMetadataSourceOwnershipBoundary BuildRuntimeMetadataSourceOwnershipB
   boundary.method_record_count = records.methods_lexicographic.size();
   boundary.ivar_record_count = records.ivars_lexicographic.size();
 
-  // M252-B003 diagnostic precision anchor: the semantic type-metadata handoff
+  // diagnostic precision anchor: the semantic type-metadata handoff
   // now treats category containers as a separate runtime-metadata concern so
   // valid class-plus-category programs do not collapse into duplicate
   // class-owner diagnostics. The ownership boundary therefore validates the
@@ -7191,13 +7191,13 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
 
     Objc3SemanticValidationOptions semantic_options;
     semantic_options.max_message_send_args = options.lowering.max_message_send_args;
-    // M261-A002 block-source-model-completion anchor: source-only frontend
+    // block-source-model-completion anchor: source-only frontend
     // runs may admit block literals through semantic validation when both IR
     // and object emission are disabled, but native emit paths must continue to
     // fail closed until runnable block lowering lands.
     semantic_options.allow_source_only_block_literals =
         !options.emit_ir && !options.emit_object;
-    // M266-C002 defer-lowering anchor: defer statements are now admitted for
+    // defer-lowering anchor: defer statements are now admitted for
     // native validation because lane C owns executable cleanup insertion in
     // the IR path rather than keeping defer as a source-only semantic claim.
     semantic_options.allow_source_only_defer_statements = true;

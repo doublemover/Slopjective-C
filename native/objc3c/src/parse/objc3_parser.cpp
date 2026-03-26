@@ -1,6 +1,6 @@
 #include "parse/objc3_parser.h"
 
-// M267-A001 source-closure anchors: unsupported 'try' expression,
+// source-closure anchors: unsupported 'try' expression,
 // unsupported 'throw' statement, and unsupported 'do/catch' statement remain
 // explicit fail-closed parser-owned diagnostics until the later runnable Part 6
 // lowering/runtime tranches land.
@@ -3585,7 +3585,7 @@ static Objc3AwaitSuspensionProfile BuildAwaitSuspensionProfileFromOpaqueBody(
       counts.await_continuation_sites);
 }
 
-// M270-A001 source-closure anchor: actor/isolation/sendable admission remains
+// source-closure anchor: actor/isolation/sendable admission remains
 // parser-owned symbol profiling on top of the existing token stream. This
 // tranche does not claim dedicated actor/sendable/nonisolated grammar forms
 // yet; it freezes the current source contract around actor-isolation
@@ -3951,7 +3951,7 @@ static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  // M269-A001 source-closure anchor: task/executor source ownership remains a
+  // source-closure anchor: task/executor source ownership remains a
   // deterministic parser-side symbol-profile contract instead of dedicated
   // contextual keywords. Later M269 lanes may widen runnable semantics, but
   // they must continue to preserve this identifier-driven source boundary.
@@ -5010,7 +5010,7 @@ static std::vector<std::string> BuildScopePathLexicographic(std::string owner_sy
   return path;
 }
 
-// M252-A001 freeze: semantic-link symbols remain the canonical owner identities
+// freeze: semantic-link symbols remain the canonical owner identities
 // for executable metadata source graph nodes until semantic closure lands.
 static std::string BuildObjcContainerScopeOwner(const std::string &container_kind,
                                                 const std::string &name,
@@ -5024,32 +5024,32 @@ static std::string BuildObjcContainerScopeOwner(const std::string &container_kin
 }
 
 static std::string BuildObjcMethodScopePathSymbol(const Objc3MethodDecl &method) {
-  // M256-C002 executable method-body binding anchor: parser preserves one
+  // executable method-body binding anchor: parser preserves one
   // canonical method owner identity per executable declaration so lane-C can
   // attach method-list entries to concrete LLVM body symbols without
   // rediscovering selector ownership from syntax.
-  // M256-C003 executable realization-record expansion anchor: parser still
+  // executable realization-record expansion anchor: parser still
   // stops at canonical bundle/object/attachment identities only. Realization
   // record serialization remains a downstream lowering responsibility.
-  // M256-D001 class-realization-runtime freeze anchor: parser does not decide
+  // class-realization-runtime freeze anchor: parser does not decide
   // runtime class realization, metaclass graph walking, category attachment,
   // or protocol-aware negative lookup behavior. It only preserves the source
   // identities that later sema/lowering/runtime stages consume.
-  // M256-D002 metaclass-graph-root-class anchor: parser also keeps empty
+  // metaclass-graph-root-class anchor: parser also keeps empty
   // superclass spellings explicit so runtime can distinguish root-class
   // baselines from broken superclass closure without reinterpreting syntax.
-  // M256-D003 category-attachment-protocol-conformance anchor: parser keeps
+  // category-attachment-protocol-conformance anchor: parser keeps
   // direct class/category adopted-protocol spellings stable so runtime queries
   // can consume emitted protocol refs instead of reconstructing conformance
   // from diagnostics or manifests.
-  // M256-D004 canonical-runnable-object-sample anchor: parser also preserves
+  // canonical-runnable-object-sample anchor: parser also preserves
   // nested bracketed object-sample sends like [[Widget alloc] init] without
   // rewriting receiver shape, so later sema/runtime stages can admit the
   // runtime-owned builtin alloc/new/init boundary truthfully.
-  // M256-E001 class-protocol-category conformance gate anchor: lane-E consumes
+  // class-protocol-category conformance gate anchor: lane-E consumes
   // the A003/B004/C003/D004 evidence chain and therefore still depends on this
   // parser-owned syntax preservation instead of any gate-specific rewrite.
-  // M256-E002 runnable class-protocol-category execution-matrix anchor: the
+  // runnable class-protocol-category execution-matrix anchor: the
   // live matrix still depends on parser-stable superclass sends and
   // class/category surface spelling rather than any execution-matrix-specific
   // syntax reconstruction.
@@ -5259,10 +5259,10 @@ static bool IsSortedUniqueStrings(const std::vector<std::string> &values) {
 
 static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
     const std::vector<std::string> &protocol_names) {
-  // M252-A003 completion: protocol inheritance/adoption targets remain on the
+  // completion: protocol inheritance/adoption targets remain on the
   // canonical protocol: owner surface so executable metadata graph edges stay
   // deterministic across protocol and category export packets.
-  // M252-B001 freeze: the same canonical protocol: owner identities remain the
+  // freeze: the same canonical protocol: owner identities remain the
   // semantic-consistency boundary inputs for inheritance and attachment rules.
   std::vector<std::string> targets;
   targets.reserve(protocol_names.size());
@@ -5276,30 +5276,30 @@ static std::vector<std::string> BuildProtocolSemanticLinkTargetsLexicographic(
 
 static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_name,
                                                        const std::string &category_name) {
-  // M252-A002 completeness: interface/implementation semantic-link symbols stay
+  // completeness: interface/implementation semantic-link symbols stay
   // canonical declaration node identities while runtime class/metaclass graph
   // nodes derive a separate class:/metaclass: owner surface.
-  // M252-A003 completion: category export packets keep category:Class(Category)
+  // completion: category export packets keep category:Class(Category)
   // as the canonical category node owner identity while declaration/member
   // nodes continue to reference interface:/implementation: semantic-link owners.
-  // M252-C001 lowering-handoff anchor: category semantic-link symbols remain
+  // lowering-handoff anchor: category semantic-link symbols remain
   // the parser-owned canonical owner identities that typed lowering handoff
   // packets consume without reparsing declaration containers.
-  // M252-C002 typed-lowering anchor: typed metadata graph handoff packets keep
+  // typed-lowering anchor: typed metadata graph handoff packets keep
   // these parser-owned semantic-link owner identities in the published
   // lowering schema so downstream lowering never reparses declaration
   // containers to recover owner identity.
-  // M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
+  // debug-projection anchor: the lane-C manifest/IR inspection matrix
   // replays these same parser-owned owner identities before runtime section
   // emission lands, so inspection never depends on reparsing declaration text.
-  // M252-D001 runtime-ingest packaging anchor: lane-D packages this same
+  // runtime-ingest packaging anchor: lane-D packages this same
   // parser-owned owner identity surface through one manifest transport
   // contract, so later runtime ingest never reconstructs owner identity from
   // raw syntax.
-  // M252-E001 semantic-closure gate anchor: lane-E freezes this parser-owned
+  // semantic-closure gate anchor: lane-E freezes this parser-owned
   // owner identity surface together with B004 legality, C003 debug
   // projection, and D002 packaging before M253-A001 section emission begins.
-  // M252-E002 corpus-sync anchor: representative class/category/property/ivar
+  // corpus-sync anchor: representative class/category/property/ivar
   // runner probes continue to derive owner identity from this same parser
   // surface on the real integrated path.
   return "category:" + owner_name + "(" + category_name + ")";
@@ -5431,7 +5431,7 @@ class Objc3Parser {
         }
       } else if (AtIdentifierText("actor") &&
                  AtIdentifierTextOffset(1, "class")) {
-        // M270-A002 source-surface anchor: `actor class` stays a contextual
+        // source-surface anchor: `actor class` stays a contextual
         // parser form rather than a dedicated lexer keyword while lane-A
         // completes actor-member frontend admission.
         const Token actor_token = Advance();
@@ -5441,7 +5441,7 @@ class Objc3Parser {
           ast_builder_.AddInterfaceDecl(program, std::move(*decl));
         }
       } else if (AtIdentifierText("__attribute__")) {
-        // M272-A002 source-completion anchor: prefixed Part 9 container
+        // source-completion anchor: prefixed Part 9 container
         // attributes are parser-owned wrappers around the existing interface /
         // actor container forms rather than a widened top-level grammar family.
         Objc3InterfaceDecl pending_container_attributes;
@@ -7170,7 +7170,7 @@ class Objc3Parser {
       if (decl.objc_derive_declared) {
         return record_duplicate("O3P345", "duplicate objc_derive attribute");
       }
-      // M273-A001 source-closure anchor: derive admission remains parser-owned
+      // source-closure anchor: derive admission remains parser-owned
       // container attribute handling on top of the existing identifier stream.
       if (!ParseNamedStringAttributePayload(attribute_name, "objc_derive",
                                             decl.objc_derive_name)) {
@@ -7274,7 +7274,7 @@ class Objc3Parser {
                      "duplicate objc_macro attribute"));
         return false;
       }
-      // M273-A001 source-closure anchor: macro admission remains parser-owned
+      // source-closure anchor: macro admission remains parser-owned
       // callable attribute handling without claiming expansion/runtime behavior.
       if (!ParseNamedStringAttributePayload(attribute_name, "objc_macro",
                                             decl.objc_macro_name)) {
@@ -7319,7 +7319,7 @@ class Objc3Parser {
                      "duplicate objc_foreign attribute"));
         return false;
       }
-      // M274-A001 source-closure anchor: base foreign declaration markers stay
+      // source-closure anchor: base foreign declaration markers stay
       // parser-owned callable attributes until later interop sema/lowering
       // work lands.
       decl.objc_foreign_declared = true;
@@ -7392,7 +7392,7 @@ class Objc3Parser {
       return true;
     }
     if (attribute_name.text == "objc_nonisolated") {
-      // M270-A002 source-surface anchor: nonisolated actor-member admission is
+      // source-surface anchor: nonisolated actor-member admission is
       // parser-owned callable attribute handling, not a standalone keyword.
       if (decl.objc_nonisolated_declared) {
         diagnostics_.push_back(
@@ -8742,7 +8742,7 @@ class Objc3Parser {
   }
 
   bool ParseObjcPropertyAttributes(std::vector<Objc3PropertyAttributeDecl> &attributes) {
-    // M252-B004 export-legality anchor: property attribute spelling must stay
+    // export-legality anchor: property attribute spelling must stay
     // canonical here so later property/ivar export preconditions can trust the
     // parser-owned source shape without reparsing attributes.
     if (!Match(TokenKind::LParen)) {
@@ -8930,7 +8930,7 @@ class Objc3Parser {
     if (!Match(TokenKind::LParen)) {
       return true;
     }
-    // M256-B003 category-merge source-order anchor: parser preserves category
+    // category-merge source-order anchor: parser preserves category
     // attachment spelling and declaration order verbatim so sema can build one
     // deterministic realized-class merge surface without reparsing tokens.
     has_category = true;
@@ -8975,7 +8975,7 @@ class Objc3Parser {
       return decl;
     }
 
-    // M256-B002 protocol requirement parsing anchor: @protocol containers now
+    // protocol requirement parsing anchor: @protocol containers now
     // preserve explicit @required/@optional partitions on parser-owned method
     // and property source records. The @required/@optional partition is parser-owned
     // so lane-B sema can enforce conformance without reinterpreting raw
@@ -9088,34 +9088,34 @@ class Objc3Parser {
     if (!ParseOptionalContainerDispatchAttributes(*decl)) {
       SynchronizeObjcContainer();
     }
-    // M252-B002 anchor: interface superclass names plus the canonical
+    // anchor: interface superclass names plus the canonical
     // lexicographic adopted-protocol list remain the parser-owned inputs for
     // graph-backed inheritance and protocol-composition validation.
     decl->adopted_protocols_lexicographic = BuildProtocolSemanticLinkTargetsLexicographic(decl->adopted_protocols);
-    // M256-A001 executable source-closure freeze anchor: parser-owned
+    // executable source-closure freeze anchor: parser-owned
     // interface records remain the canonical source surface for inheritance,
     // metaclass derivation, adopted protocol lists, and category attachments
     // until later M256 realization issues bind the same identities to runnable
     // class/protocol/category behavior.
-    // M256-A002 class/metaclass completion anchor: the same parser-owned
+    // class/metaclass completion anchor: the same parser-owned
     // superclass spelling continues to feed declaration-level class and
     // metaclass parent identities plus stable runtime method-owner identities.
-    // M256-A003 protocol/category completion anchor: the same parser-owned
+    // protocol/category completion anchor: the same parser-owned
     // adopted-protocol list and canonical category owner identity now also
     // feed fail-closed protocol inheritance and category attachment/conformance
     // closure for executable runtime metadata.
-    // M256-B001 object-model semantic-rule freeze anchor: parser-owned
+    // object-model semantic-rule freeze anchor: parser-owned
     // superclass/adopted-protocol spellings remain raw inputs only; semantic
     // legality for realization, overrides, conformance, and category merge
     // stays outside parser policy.
-    // M256-B004 inheritance-legality source anchor: parser still preserves raw
+    // inheritance-legality source anchor: parser still preserves raw
     // superclass spellings plus deterministic member identities only; realized
     // inheritance/override legality now fails closed in sema rather than being
     // inferred or normalized here.
-    // M252-B003 diagnostic precision anchor: category owners keep a canonical
+    // diagnostic precision anchor: category owners keep a canonical
     // class(category) semantic-link identity so attachment-collision and
     // ambiguity diagnostics can report the exact runtime metadata owner.
-    // M252-D002 binary-boundary anchor: lane-D packages this same semantic-link
+    // binary-boundary anchor: lane-D packages this same semantic-link
     // identity into the runtime-facing metadata envelope so later binary
     // consumers do not reconstruct owner strings from ad hoc parser state.
     decl->semantic_link_symbol =
@@ -9195,7 +9195,7 @@ class Objc3Parser {
   std::unique_ptr<Objc3InterfaceDecl> ParseObjcActorInterfaceDecl(
       const Token &actor_token,
       const Objc3InterfaceDecl *prefixed_dispatch_attributes = nullptr) {
-    // M270-A002 actor-member source-closure anchor: actor interfaces now ride
+    // actor-member source-closure anchor: actor interfaces now ride
     // the same interface parsing path while publishing one dedicated frontend
     // semantic packet for member/isolation annotations.
     auto decl = std::make_unique<Objc3InterfaceDecl>();
@@ -9347,21 +9347,21 @@ class Objc3Parser {
     if (!ParseObjcCategoryClause(decl->category_name, decl->has_category)) {
       SynchronizeObjcContainer();
     }
-    // M256-A001 executable source-closure freeze anchor: implementation and
+    // executable source-closure freeze anchor: implementation and
     // category source records keep the canonical interface/category attachment
     // identity for later realization and category-merge work; this freeze does
     // not yet add executable runtime realization semantics here.
-    // M256-A002 class/metaclass completion anchor: implementation-owned
+    // class/metaclass completion anchor: implementation-owned
     // declaration closure still derives stable class/metaclass object identities
     // from the parser source record rather than ad hoc runtime reconstruction.
-    // M256-A003 protocol/category completion anchor: category implementations
+    // protocol/category completion anchor: category implementations
     // preserve the same canonical class(category) identity and interface
     // pairing so later attachment/conformance checks consume one source-owned
     // runtime closure.
-    // M256-B001 object-model semantic-rule freeze anchor: parser-owned
+    // object-model semantic-rule freeze anchor: parser-owned
     // implementation/category records keep canonical owner identities, while
     // realization legality and merge behavior remain sema-owned decisions.
-    // M252-B003 diagnostic precision anchor: category implementation owners
+    // diagnostic precision anchor: category implementation owners
     // mirror the canonical class(category) identity to keep attachment
     // collision diagnostics deterministic across parse and pipeline stages.
     decl->semantic_link_symbol =
@@ -9403,7 +9403,7 @@ class Objc3Parser {
 
       Objc3MethodDecl method;
       if (ParseObjcMethodDecl(method, true)) {
-        // M256-C001 executable object artifact lowering freeze anchor: parser
+        // executable object artifact lowering freeze anchor: parser
         // keeps raw implementation method bodies, selectors, and canonical
         // owner identities only. Emitted object binding and realization-record
         // wiring remain downstream lane-C responsibilities.
@@ -11848,7 +11848,7 @@ class Objc3Parser {
     if (expr == nullptr) {
       return nullptr;
     }
-    // M265-A001 Part 3 source-closure anchor: Question currently feeds only
+    // Part 3 source-closure anchor: Question currently feeds only
     // conditional expressions here and nullability suffix parsing elsewhere.
     // Optional chaining and nil-coalescing are still fail-closed until A002/C002.
     if (!Match(TokenKind::Question)) {
@@ -12239,7 +12239,7 @@ class Objc3Parser {
 
   std::unique_ptr<Expr> ParsePostfix() {
     auto expr = ParsePrimary();
-    // M265-A001 Part 3 source-closure anchor: postfix parsing now admits calls,
+    // Part 3 source-closure anchor: postfix parsing now admits calls,
     // message-send receivers, and optional-member access lowering sugar while
     // broader typed key-path execution still remains deferred.
     while (expr != nullptr) {
@@ -12760,11 +12760,11 @@ class Objc3Parser {
       }
     }
 
-    // M261-A001 executable-block-source-closure anchor: block literals enter
+    // executable-block-source-closure anchor: block literals enter
     // the parser-owned source surface at the brace-owned ParseBlock() helper,
     // so the freeze boundary must only probe for '{' here and leave actual
     // block consumption to the shared block parser.
-    // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor: parser
+    // block-lowering-ABI/artifact-boundary freeze anchor: parser
     // owns only the source spelling, parameter list, capture inventory, and
     // body shape that later lowering consumes. It does not assign emitted
     // block-object layout slots, invoke-thunk bodies, byref cells, or helper
@@ -12785,11 +12785,11 @@ class Objc3Parser {
     }
     block->block_parameter_count = parameter_names.size();
     block->block_parameter_names_lexicographic = BuildSortedUniqueStrings(parameter_names);
-    // M261-A002 block-source-model-completion anchor: parser now publishes the
+    // block-source-model-completion anchor: parser now publishes the
     // canonical parameter-signature, capture-inventory, and invoke-surface
     // source model directly on the AST so source-only frontend runs can carry
     // that closure forward before runnable block lowering still fails closed.
-    // M261-C002 executable-block-object/invoke-thunk anchor: lane-C consumes
+    // executable-block-object/invoke-thunk anchor: lane-C consumes
     // this retained parameter/body ordering directly when it emits one stack-resident block object plus one internal invoke thunk for the current readonly-scalar capture slice.
     block->block_parameter_signature_entries_lexicographic =
         BuildBlockParameterSignatureEntriesLexicographic(parameters);
@@ -12898,42 +12898,42 @@ class Objc3Parser {
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
     const BlockLiteralSourceUseKind source_use_kind =
         CurrentBlockLiteralSourceUseKind();
-    // M261-A003 block-source-storage-annotation anchor: parser now classifies
+    // block-source-storage-annotation anchor: parser now classifies
     // mutated/byref/helper/escape-shape source annotations directly from the
     // block body and surrounding expression context so later runnable block
     // lanes consume deterministic source truth instead of reconstructing it.
-    // M261-B001 block-runtime-semantic-rules freeze anchor: these parser-owned
+    // block-runtime-semantic-rules freeze anchor: these parser-owned
     // annotations are the complete current legality input for block runtime
     // semantics; no runnable byref/helper/heap-promotion behavior is implied
     // by their presence yet.
-    // M261-B002 capture-legality/escape/invocation implementation anchor:
+    // capture-legality/escape/invocation implementation anchor:
     // lane-B now consumes these exact parser-owned source facts as the live
     // sema input for capture resolution, truthful escape classification, and
     // local block invocation typing.
-    // M261-B003 byref/copy-dispose/object-ownership anchor: parser still owns
+    // byref/copy-dispose/object-ownership anchor: parser still owns
     // only the deterministic source inventory here; sema layers
     // ownership-sensitive helper eligibility on top without widening this
     // source-only parser contract.
-    // M261-C004 escaping-block runtime-hook anchor: parser continues to own
+    // escaping-block runtime-hook anchor: parser continues to own
     // the exact escape-shape source classification, including which block
     // literal sites are truthful heap-promotion candidates for later lane-C
     // runtime-hook lowering.
-    // M261-D001 block-runtime API/object-layout freeze anchor: parser does not
+    // block-runtime API/object-layout freeze anchor: parser does not
     // widen the runtime ABI here; it only preserves the source-truth escape
     // inventory that the frozen private runtime boundary consumes downstream.
-    // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: parser
+    // block-runtime allocation/copy-dispose/invoke anchor: parser
     // still does not widen the source surface; runtime helper realization
     // remains an internal lowering/runtime concern layered on this same source
     // inventory.
-    // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+    // byref-forwarding/heap-promotion/ownership-interop anchor:
     // parser still only publishes the truthful capture and escape inventory;
     // runtime-owned forwarding cells for escaping pointer-capture blocks are
     // layered later without widening this source contract.
-    // M261-E001 runnable-block-runtime gate anchor: lane-E consumes this exact
+    // runnable-block-runtime gate anchor: lane-E consumes this exact
     // parser-owned capture and escape inventory as the source side of the
     // runnable block proof chain and must fail closed if the source truth
     // drifts behind the integrated gate.
-    // M261-E002 runnable-block execution-matrix anchor: lane-E closes M261 on
+    // runnable-block execution-matrix anchor: lane-E closes M261 on
     // the same parser-owned capture and escape inventory together with live executable block programs,
     // without widening the supported source surface.
     block->block_copy_helper_intent_required =
@@ -13296,69 +13296,69 @@ class Objc3Parser {
     message->nil_receiver_folding_symbol = BuildNilReceiverFoldingSymbol(
         message->nil_receiver_foldable, message->nil_receiver_requires_runtime_dispatch, message->message_send_form);
     message->nil_receiver_semantics_is_normalized = true;
-    // M255-A001 dispatch-surface classification anchor: super receivers stay explicit while direct dispatch remains reserved.
-    // M255-A002 dispatch-site modeling anchor: parsing preserves raw receiver
+    // dispatch-surface classification anchor: super receivers stay explicit while direct dispatch remains reserved.
+    // dispatch-site modeling anchor: parsing preserves raw receiver
     // spelling only; whole-program frontend normalization classifies
     // instance/class/super/direct/dynamic families before sema consumes the
     // message send.
-    // M255-B001 dispatch legality/selector-resolution freeze anchor: message sends remain legal only for normalized unary/keyword selectors with an
+    // dispatch legality/selector-resolution freeze anchor: message sends remain legal only for normalized unary/keyword selectors with an
     // explicit receiver form; unresolved or ambiguous selector resolution stays
     // fail-closed and direct dispatch remains reserved.
-    // M255-B002 selector-resolution implementation anchor: parser still keeps
+    // selector-resolution implementation anchor: parser still keeps
     // one normalized selector spelling plus explicit receiver syntax only;
     // lane-B sema is now responsible for exact concrete self/super/known-class
     // resolution and fail-closed ambiguity diagnostics.
-    // M255-B003 super/direct/dynamic legality expansion anchor: parser still
+    // super/direct/dynamic legality expansion anchor: parser still
     // does not invent direct-dispatch syntax or alternate receiver forms;
     // lane-B sema now owns rejecting illegal `super` sites while preserving the
     // same raw dynamic receiver spellings for runtime method-family accounting.
-    // M255-C001 dispatch lowering ABI freeze anchor: parser continues to hand
+    // dispatch lowering ABI freeze anchor: parser continues to hand
     // selector text through as lowered cstring material only. Selector-handle
     // lookup and canonical runtime-dispatch cutover stay in lane-C lowering,
     // with the compatibility bridge remaining the default call target until
     // M255-C002.
-    // M255-C002 runtime call ABI generation anchor: parser still does not pick
+    // runtime call ABI generation anchor: parser still does not pick
     // the runtime entrypoint itself. Lowering now cuts normalized instance and
-    // M262-D001 runtime ARC helper API surface anchor: parser-owned ARC and
+    // runtime ARC helper API surface anchor: parser-owned ARC and
     // ownership spelling remains purely descriptive; the private ARC helper
     // ABI stays a lowering/runtime concern rather than a source-level promise.
-    // M262-D002 runtime ARC helper implementation anchor: parser-owned ARC and
+    // runtime ARC helper implementation anchor: parser-owned ARC and
     // ownership spelling remains purely descriptive, but the supported
     // property/weak/autorelease-return slice now continues into a live linked
     // runtime-helper path rather than stopping at a freeze-only boundary.
-    // M262-D003 ownership-debug/runtime-validation anchor: parser-owned ARC
+    // ownership-debug/runtime-validation anchor: parser-owned ARC
     // and ownership spelling still does not promise any source-level debug
     // surface; lane-D owns the private runtime snapshot hooks above these same
     // source packets.
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
     // M255-C003.
-    // M255-C004 live-dispatch cutover anchor: lowering now moves normalized
+    // live-dispatch cutover anchor: lowering now moves normalized
     // dynamic sends onto objc3_runtime_dispatch_i32 too, removing the last
     // live-path compatibility-bridge dependency while keeping reserved direct
     // dispatch fail closed in IR lowering.
-    // M255-D001 lookup/dispatch runtime freeze anchor: parser still does not
+    // lookup/dispatch runtime freeze anchor: parser still does not
     // own selector interning, metadata-backed lookup tables, method caches, or
     // slow-path runtime resolution. It hands normalized selector text and
     // receiver form through to the canonical runtime-owned lookup/dispatch
     // boundary for lane-D to extend later.
-    // M255-D002 selector-table anchor: metadata-backed selector lookup tables
+    // selector-table anchor: metadata-backed selector lookup tables
     // are now runtime-owned behind that preserved boundary.
-    // M255-D003 method-cache / slow-path anchor: parser still does not resolve
+    // method-cache / slow-path anchor: parser still does not resolve
     // methods from class metadata or own cache behavior. It preserves the
     // normalized selector text plus receiver-family classification that the
     // runtime now consumes for deterministic class/metaclass slow-path lookup.
-    // M255-D004 protocol/category-aware resolution anchor: parser still does
+    // protocol/category-aware resolution anchor: parser still does
     // not resolve category tiers or protocol declaration graphs. It preserves
     // the normalized selector text, receiver family, and protocol/category
     // declaration surface that the runtime now consumes for deterministic
     // category-backed live lookup and protocol-backed negative lookup evidence.
-    // M255-E001 live-dispatch gate anchor: parser still only publishes the
+    // live-dispatch gate anchor: parser still only publishes the
     // normalized selector/receiver classification surface. Proof that sends
     // execute through the live runtime path rather than the compatibility shim
     // remains a lane-E evidence responsibility rooted in C004/D004 and handed
     // off to E002 for smoke/closeout replacement.
-    // M255-E002 live-dispatch smoke/replay closeout anchor: execution-smoke
+    // live-dispatch smoke/replay closeout anchor: execution-smoke
     // proof consumes the canonical runtime dispatch symbol from the published
     // parser/sema handoff rather than treating the compatibility shim as the
     // primary proof surface.
@@ -13418,11 +13418,11 @@ Objc3ParseResult ParseObjc3Program(const Objc3LexTokenStream &tokens) {
   Objc3ParseResult result;
   result.program = parser.Parse();
   result.diagnostics = parser.TakeDiagnostics();
-  // M264-A001 source/frontend-truth anchor: the parser contract snapshot stays
+  // source/frontend-truth anchor: the parser contract snapshot stays
   // the canonical declaration/grammar coverage record consumed by the emitted
   // runnable feature-claim inventory. Later lanes may refine claims, but they
   // must not invent a second frontend source-of-truth surface.
-  // M264-A002 truth-surface wiring anchor: the parser does not admit hidden
+  // truth-surface wiring anchor: the parser does not admit hidden
   // strictness/concurrency claim syntax, so unsupported selection surfaces stay
   // explicit in the frontend truth packet rather than being inferred.
   result.contract_snapshot = BuildObjc3ParserContractSnapshot(result.program, result.diagnostics.size());

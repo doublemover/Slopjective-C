@@ -453,7 +453,7 @@ static Objc3BootstrapLegalityFailureContractSummary
 BuildBootstrapLegalityFailureContractSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface) {
   Objc3BootstrapLegalityFailureContractSummary summary;
-  // M275-B003 semantic migration anchor: canonical-mode migration assist stays
+  // semantic migration anchor: canonical-mode migration assist stays
   // truthful only if the live fail-closed legacy-literal rejection surface is
   // preserved through the compatibility/strictness summary exported here.
   summary.fail_closed = true;
@@ -789,7 +789,7 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   summary.selected_configuration_valid = true;
   summary.selected_configuration_downgraded = false;
   summary.selected_configuration_rejected = false;
-  // M264-B003 semantic truth anchor: the current native toolchain still has
+  // semantic truth anchor: the current native toolchain still has
   // no standalone textual-interface payload, so canonical interface truth is
   // fail-closed by explicitly publishing that absence and the suppressed macro
   // claim set any future separate-compilation surface must preserve.
@@ -878,7 +878,7 @@ static void RecordUnsupportedFeatureClaimDiagnostic(
     const std::string &message,
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats) {
-  // M259-B002/M264-B002 unsupported-feature enforcement anchor: accepted
+  // unsupported-feature enforcement anchor: accepted
   // advanced surfaces fail closed here before lowering/runtime publication.
   ++site_counter;
   ++stats.live_unsupported_feature_site_count;
@@ -893,7 +893,7 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
     const Objc3UnsupportedFeatureClaimContext &context);
 
 static bool BlockLiteralUsesRunnableC003Subset(const Expr &expr) {
-  // M261-C003 byref-cell/copy-helper/dispose-helper anchor: the runnable block
+  // byref-cell/copy-helper/dispose-helper anchor: the runnable block
   // slice now admits non-escaping byref and ownership-sensitive captures at the
   // unsupported-feature gate as soon as the source model is normalized. The
   // gate intentionally remains parser/source-truth driven so later sema and
@@ -907,7 +907,7 @@ static bool BlockLiteralUsesRunnableC003Subset(const Expr &expr) {
 }
 
 static bool BlockLiteralUsesRunnableC002Subset(const Expr &expr) {
-  // M261-C002 executable-block-object/invoke-thunk anchor: preserve the
+  // executable-block-object/invoke-thunk anchor: preserve the
   // original runnable-block gate name as a compatibility surface for the C002
   // readiness contract while C003 widens the admitted non-escaping subset.
   return BlockLiteralUsesRunnableC003Subset(expr);
@@ -1161,18 +1161,18 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       return;
     }
     if (stmt->block_stmt->is_autoreleasepool_scope) {
-      // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+      // autoreleasepool/destruction-order semantic expansion anchor:
       // lane-B identified the ownership-sensitive destruction-order surface so
       // later runtime work would not need to recover it from source.
-      // M260-D002 runtime-memory-management implementation anchor: native mode
+      // runtime-memory-management implementation anchor: native mode
       // now accepts `@autoreleasepool` blocks and relies on emitted runtime
       // push/pop helpers plus live refcount/weak-table support instead of the
       // earlier fail-closed diagnostic path.
-      // M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes
+      // ownership-runtime-gate freeze anchor: lane-E now freezes
       // this accepted autoreleasepool slice as part of the supported ownership
       // runtime baseline and leaves ARC/block/public-ABI widening as explicit
       // non-goals for later milestones.
-      // M260-E002 ownership-smoke closeout anchor: the runnable closeout matrix
+      // ownership-smoke closeout anchor: the runnable closeout matrix
       // consumes this admitted ownership-sensitive autoreleasepool slice
       // unchanged and may not widen it during M260 closeout.
     }
@@ -1223,15 +1223,15 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
   }
 
   switch (expr->kind) {
-  // M261-A001 executable-block-source-closure anchor: once block literals
+  // executable-block-source-closure anchor: once block literals
   // parse successfully they still fail closed here until M261-A002 and later
   // runtime issues make them runnable.
   case Expr::Kind::BlockLiteral:
-    // M261-A002 block-source-model-completion anchor: source-only frontend
+    // block-source-model-completion anchor: source-only frontend
     // projection runs may admit block literals through sema so manifest-only
     // tooling can prove the completed source model, while native emit paths
     // continue to fail closed until later M261 lowering/runtime issues land.
-    // M261-B001 block-runtime-semantic-rules freeze anchor: current semantic
+    // block-runtime-semantic-rules freeze anchor: current semantic
     // behavior is intentionally split between source-only admission and native
     // fail-closed rejection, with no runnable block object semantics implied.
     if (context.allow_source_only_block_literals ||
@@ -1436,34 +1436,34 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
-  // M262-A002 ARC mode-handling core implementation anchor: executable
+  // ARC mode-handling core implementation anchor: executable
   // function ownership qualifiers become runnable only under explicit
   // -fobjc-arc mode while the non-ARC path remains fail-closed.
-  // M260-A001 runtime-backed-object-ownership freeze anchor: the current
+  // runtime-backed-object-ownership freeze anchor: the current
   // runnable ownership slice is still limited to object/property/accessor
   // ownership profiles plus the legacy ownership summary lanes below. ARC
   // ownership qualifiers on executable functions/methods remain fail-closed
   // until the later M260 runtime-backed ownership implementation issues land.
-  // M260-B001 retainable-object semantic-rule freeze anchor: runtime-backed
+  // retainable-object semantic-rule freeze anchor: runtime-backed
   // property/member ownership metadata is truthful, but executable
   // retain/release legality, `@autoreleasepool`, and destruction ordering
   // remain fail-closed until the later M260 storage legality/runtime issues.
-  // M260-C001 ownership-lowering baseline freeze anchor: lane-C preserves the
+  // ownership-lowering baseline freeze anchor: lane-C preserves the
   // legacy ownership lowering summaries those later runtime issues must
   // replace, but no executable retain/release/autorelease/weak runtime hooks
   // are emitted out of function-level ownership qualifiers yet.
-  // M262-C003 ARC cleanup/weak/lifetime lowering anchor: sema still only
+  // ARC cleanup/weak/lifetime lowering anchor: sema still only
   // publishes the canonical ownership and block-interaction packets; scope
   // cleanup scheduling, weak current-property helper calls, and block-capture
   // lifetime cleanup remain the responsibility of lane-C lowering.
-  // M262-C004 ARC/block autorelease-return lowering anchor: sema still only
+  // ARC/block autorelease-return lowering anchor: sema still only
   // publishes return-autorelease and block-escape intent; terminal branch
   // cleanup ordering and escaping-block/autorelease-return composition remain
   // the responsibility of lane-C lowering.
-  // M262-E001 runnable-arc-runtime gate anchor: lane-E freezes the supported
+  // runnable-arc-runtime gate anchor: lane-E freezes the supported
   // ARC slice against parser-only or metadata-only claims; sema remains the
   // truthful source of the A/B-lane legality and ownership packets it consumes.
-  // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
+  // runnable-arc-closeout anchor: lane-E closes the current ARC
   // tranche by consuming this preserved semantic state through integrated smoke
   // and runbook proof rather than widening semantic acceptance here.
   if (fn.throws_declared && !context.allow_source_only_error_runtime_surface) {
@@ -1488,7 +1488,7 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
     if (allow_source_only_block_owned_bindings ||
         allow_runnable_block_owned_bindings ||
         allow_arc_mode_owned_bindings) {
-      // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
+      // byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
       // native runnable ARC surface.
@@ -1526,17 +1526,17 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
     std::vector<std::string> &diagnostics,
     Objc3UnsupportedFeatureClaimEnforcementStats &stats,
     const Objc3UnsupportedFeatureClaimContext &context) {
-  // M262-A002 ARC mode-handling core implementation anchor: executable method
+  // ARC mode-handling core implementation anchor: executable method
   // ownership qualifiers become runnable only under explicit -fobjc-arc mode
   // while the non-ARC path remains fail-closed.
-  // M260-A001 runtime-backed-object-ownership freeze anchor: method-level ARC
+  // runtime-backed-object-ownership freeze anchor: method-level ARC
   // ownership qualifiers still sit outside the truthful runnable object-model
   // claim even though property/member ownership profiles are already preserved
   // through the object runtime metadata path.
-  // M260-B001 retainable-object semantic-rule freeze anchor: method-level
+  // retainable-object semantic-rule freeze anchor: method-level
   // retain/release legality and destruction-order behavior remain deferred even
   // though runtime-backed property/member ownership metadata is already live.
-  // M260-C001 ownership-lowering baseline freeze anchor: method-level
+  // ownership-lowering baseline freeze anchor: method-level
   // ownership qualifiers still terminate in semantic unsupported-feature
   // diagnostics while the preserved lowering summaries remain the only
   // ownership hook surface available to IR closeout.
@@ -1562,7 +1562,7 @@ static void DiagnoseUnsupportedMethodFeatureClaims(
     if (allow_source_only_block_owned_bindings ||
         allow_runnable_block_owned_bindings ||
         allow_arc_mode_owned_bindings) {
-      // M261-B003 byref/copy-dispose/object-ownership anchor: source-only block
+      // byref/copy-dispose/object-ownership anchor: source-only block
       // semantic modeling may admit ownership-qualified executable bindings so
       // lane-B can classify owned vs weak/unowned captures without widening the
       // native runnable ARC surface.
@@ -1603,7 +1603,7 @@ DiagnoseUnsupportedFeatureClaimSources(
     bool allow_source_only_error_runtime_surface,
     bool arc_mode_enabled,
     std::vector<std::string> &diagnostics) {
-  // M259-B002/M264-B002 unsupported-feature enforcement anchor: keep the
+  // unsupported-feature enforcement anchor: keep the
   // runnable-core positive path at zero-site readiness and reject accepted
   // unsupported advanced sources deterministically with O3S221.
   Objc3UnsupportedFeatureClaimEnforcementStats stats;
@@ -5195,7 +5195,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       !info.is_unowned && !info.is_assign &&
       property_is_object_like(info);
   if (arc_inferred_strong_object_property) {
-    // M262-B002 ARC inference/lifetime implementation anchor: under explicit
+    // ARC inference/lifetime implementation anchor: under explicit
     // ARC mode, unqualified object properties in the supported runnable slice
     // now inherit a canonical strong-owned retain/release profile directly in
     // sema so lowering and replay accounting no longer depend on explicit
@@ -5219,13 +5219,13 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       (property_is_object_like(info) ||
        property_has_arc_runtime_owned_attribute) &&
       info.ownership_lifetime_profile.empty()) {
-    // M262-B003 ARC interaction-semantics anchor: attribute-only strong/weak
+    // ARC interaction-semantics anchor: attribute-only strong/weak
     // ARC properties now publish the same lifetime and synthesized-accessor
     // ownership profiles that later property/runtime lanes already consume for
     // explicitly qualified ownership spellings.
-    // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes this
+    // runnable-arc-runtime gate anchor: lane-E consumes this
     // canonical property ARC packet as part of the runnable ARC proof chain.
-    // M262-E002 runnable-arc-closeout anchor: this canonical property ARC
+    // runnable-arc-closeout anchor: this canonical property ARC
     // packet remains a closeout-matrix row synchronized with the private
     // runtime-probe-backed property evidence.
     if (info.is_weak || property_has_attribute_named("weak") ||
@@ -5250,7 +5250,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       info.accessor_ownership_profile.empty() &&
       (!info.ownership_lifetime_profile.empty() ||
        !info.ownership_runtime_hook_profile.empty())) {
-    // M262-B003 ARC interaction-semantics anchor: synthesized accessor
+    // ARC interaction-semantics anchor: synthesized accessor
     // ownership packets now stay aligned with ARC-inferred or attribute-owned
     // property lifetime profiles instead of remaining blank for the same
     // executable storage model.
@@ -5372,7 +5372,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       info.is_copy || info.is_strong || info.is_weak || info.is_unowned;
   const bool has_explicit_runtime_backed_storage_modifier =
       has_runtime_managed_ownership_modifier || info.is_assign;
-  // M257-B003 accessor/ownership legality anchor: lane-B remains the
+  // accessor/ownership legality anchor: lane-B remains the
   // fail-closed source of truth for unsupported scalar ownership modifiers and
   // atomic ownership-aware property combinations until runtime storage
   // semantics land.
@@ -5393,13 +5393,13 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
             "' requires an Objective-C object property for property '" +
             property.name + "' in " + owner_kind + " '" + owner_name + "'");
   }
-  // M260-B002 runtime-backed storage ownership legality anchor: explicit
+  // runtime-backed storage ownership legality anchor: explicit
   // `__weak`, `__unsafe_unretained`, and `__strong` qualifiers now participate
   // in live property storage legality for runtime-backed Objective-C object
   // properties. Conflicting explicit storage modifiers fail before metadata
   // emission so later runtime lanes do not have to recover storage intent from
   // inconsistent source.
-  // M262-B001 ARC semantic-rule freeze anchor: explicit ARC mode does not
+  // ARC semantic-rule freeze anchor: explicit ARC mode does not
   // relax property ownership conflicts, atomic ownership-aware storage, or
   // broader inference. Those forms remain deterministic semantic failures
   // until later ARC lifetime implementation issues land.
@@ -5635,15 +5635,15 @@ static void ValidatePropertyAccessorSelectorUniqueness(
 }
 
 static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Objc3PropertyInfo &rhs) {
-  // M257-A002 property-ivar source-model completion anchor:
+  // property-ivar source-model completion anchor:
   // property attribute/accessor ownership/layout fields belong to declaration compatibility
   // only when they describe the shared declaration surface rather than storage-local layout symbols.
-  // M257-C001 accessor/layout lowering freeze anchor: sema remains the
+  // accessor/layout lowering freeze anchor: sema remains the
   // authority for the declaration-level property attribute/accessor/layout
   // compatibility packet and the canonical synthesized binding/layout
   // identities that lane-C publishes. IR/object emission must not recompute
   // those identities or invent executable accessor bodies.
-  // M257-C002 ivar offset/layout emission anchor: sema owns the canonical slot
+  // ivar offset/layout emission anchor: sema owns the canonical slot
   // index, size, and alignment identities that lane-C converts into emitted
   // offset globals and per-owner layout tables. Lowering may derive byte
   // offsets from those identities, but it must not reclassify compatibility or
@@ -5763,7 +5763,7 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
          info.param_instancetype_spelling[param_index] ||
          info.param_object_pointer_type_spelling[param_index]);
     if (arc_inferred_object_param) {
-      // M262-B002 ARC inference/lifetime implementation anchor: under
+      // ARC inference/lifetime implementation anchor: under
       // explicit ARC mode, unqualified object parameters now synthesize a
       // canonical strong-owned retain/release profile for the supported
       // runnable slice.
@@ -5819,7 +5819,7 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
       (info.return_id_spelling || info.return_instancetype_spelling ||
        info.return_object_pointer_type_spelling);
   if (arc_inferred_object_return) {
-    // M262-B002 ARC inference/lifetime implementation anchor: under explicit
+    // ARC inference/lifetime implementation anchor: under explicit
     // ARC mode, unqualified object returns now synthesize a canonical
     // strong-owned retain/release profile for the supported runnable slice.
     info.return_has_ownership_qualifier = true;
@@ -6288,7 +6288,7 @@ static void ValidateBlockLiteralCaptureLegality(
   mutable_expr->block_storage_requires_byref_cells =
       expr->block_byref_capture_count > 0u;
   mutable_expr->block_storage_escape_analysis_enabled = true;
-  // M261-C004 escaping-block runtime-hook anchor: the live lowering profile
+  // escaping-block runtime-hook anchor: the live lowering profile
   // now inherits the parser-owned escape-shape heap candidate directly, so
   // later lane-C emission can distinguish true escaping block values from the
   // nonescaping stack-only slice.
@@ -6493,7 +6493,7 @@ static void ValidateBlockLiteralCaptureLegality(
           expr->block_runtime_unowned_object_capture_names_lexicographic) &&
       expr->block_source_storage_annotations_are_normalized;
   std::ostringstream ownership_profile;
-  // M261-B003 byref/copy-dispose/object-ownership anchor: sema upgrades the
+  // byref/copy-dispose/object-ownership anchor: sema upgrades the
   // frozen source-only block path with ownership-sensitive helper eligibility
   // and fail-closed non-owning mutation rejection before runnable block object
   // lowering lands.
@@ -6839,12 +6839,12 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       return IsSameSemanticType(then_type, else_type) ? then_type : MakeScalarSemanticType(ValueType::Unknown);
     }
     case Expr::Kind::BlockLiteral: {
-      // M261-B001 block-runtime-semantic-rules freeze anchor: the current
+      // block-runtime-semantic-rules freeze anchor: the current
       // block-literal semantic rule boundary only proves deterministic
       // parameter/capture metadata on the source surface and classifies the
       // value as function-shaped; runnable invocation and runtime object
       // semantics remain outside this boundary.
-      // M261-B002 capture-legality, escape-classification, and invocation
+      // capture-legality, escape-classification, and invocation
       // typing anchor: lane-B now turns the parser-owned capture/source
       // annotations into live sema checks and a callable block signature for
       // source-only invocation typing while native block execution still fails
@@ -7024,7 +7024,7 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                                 std::size_t max_message_send_args,
                                                 const Objc3MessageSendResolutionContext &message_send_context) {
   const std::string selector = expr->selector.empty() ? "<unknown>" : expr->selector;
-  // M255-B003 super/direct/dynamic legality expansion anchor: lane-B rejects
+  // super/direct/dynamic legality expansion anchor: lane-B rejects
   // illegal `super` sites before concrete resolution, keeps direct dispatch
   // reserved/non-goal, and leaves admitted dynamic sites on the runtime path
   // with their normalized method-family metadata intact.
@@ -7116,7 +7116,7 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
         dispatch_kind == Expr::DispatchSurfaceKind::Instance &&
         selector == "init";
     if (builtin_runtime_alloc_new || builtin_runtime_init) {
-      // M256-D004 canonical runnable-object-sample anchor: concrete class
+      // canonical runnable-object-sample anchor: concrete class
       // receivers admit runtime-owned builtin alloc/new support, and concrete
       // instance-self receivers admit builtin init support, so canonical
       // runnable object samples can compile without placeholder source bodies
@@ -9490,7 +9490,7 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
     const Objc3Part6ErrorBridgeLegalitySummary &error_summary,
     const Objc3Part7AsyncDiagnosticsCompatibilitySummary &async_summary,
     const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &actor_summary) {
-  // M274-B001 semantic freeze anchor: Part 11 interop legality is modeled as a
+  // semantic freeze anchor: Part 11 interop legality is modeled as a
   // single summary over already-landed Part 6/7/8 semantic surfaces plus the
   // new foreign/import and Swift/C++ annotation source state, while ABI
   // lowering and runnable bridge generation remain later work.
@@ -12355,7 +12355,7 @@ static void AccumulateProtocolCompositionSite(bool has_protocol_composition,
                                               bool has_invalid_protocol_composition,
                                               bool is_category_context,
                                               Objc3ProtocolCategoryCompositionSummary &summary) {
-  // M252-B002 anchor: protocol-composition site accounting stays deterministic
+  // anchor: protocol-composition site accounting stays deterministic
   // so the executable metadata semantic-validation surface can fail closed on
   // invalid composition sites without inventing a second accounting model.
   if (!has_protocol_composition) {
@@ -15029,7 +15029,7 @@ static const Objc3InterfaceDecl *FindAstInterfaceDecl(
   return nullptr;
 }
 
-// M256-B004 inheritance-override-realization anchor: sema now turns the
+// inheritance-override-realization anchor: sema now turns the
 // frozen M256-B001 rules into live fail-closed legality for realized classes.
 // The parser still owns raw superclass spellings and member identities, but
 // sema rejects missing/cyclic superclass closure, unrealized superclass
@@ -15063,7 +15063,7 @@ static void ValidateInheritanceOverrideAndRealizationLegality(
       continue;
     }
 
-    // M272-B002 legality anchor: fail closed on superclass finality/sealing
+    // legality anchor: fail closed on superclass finality/sealing
     // and on override chains that cross objc_final / objc_direct boundaries
     // before Part 9 lowering or runnable dispatch behavior is allowed to widen.
     const auto direct_super_it =
@@ -15563,7 +15563,7 @@ static void MergeCategoryPropertyCandidate(
 static void ValidateAndBuildCategoryMergeSurfaces(
     const Objc3Program &ast, Objc3SemanticIntegrationSurface &surface,
     std::vector<std::string> &diagnostics) {
-  // M256-B003 category-merge enforcement anchor: sema owns deterministic
+  // category-merge enforcement anchor: sema owns deterministic
   // realized-class category merge order, concrete conflict detection, and the
   // merged member surface used by later concrete resolution and conformance.
   std::unordered_map<std::string, std::vector<Objc3CategoryMergeOrderEntry>>
@@ -15675,7 +15675,7 @@ static void ValidateAndBuildCategoryMergeSurfaces(
   }
 }
 
-// M256-B002 protocol-conformance enforcement anchor: sema now consumes the
+// protocol-conformance enforcement anchor: sema now consumes the
 // parser-owned required/optional partition directly and rejects missing or
 // incompatible adopted protocol members before runtime metadata consumption.
 static void ValidateDeclaredProtocolConformance(
@@ -16024,7 +16024,7 @@ static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflic
     }
     for (const auto &method_entry : interface_info.methods) {
       ++summary.override_lookup_sites;
-      // M252-B002 anchor: this superclass walk and signature check remain the
+      // anchor: this superclass walk and signature check remain the
       // canonical override-legality source that the executable metadata graph
       // replays with `method-to-overridden-method` owner edges.
       bool missing_base = false;
@@ -16212,7 +16212,7 @@ static Objc3MethodLookupOverrideConflictSummary BuildMethodLookupOverrideConflic
 
 static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropertyTypeMetadata &lhs,
                                                       const Objc3SemanticPropertyTypeMetadata &rhs) {
-  // M257-B001 property-ivar executable semantics anchor:
+  // property-ivar executable semantics anchor:
   // runtime-meaningful property compatibility preserves declaration-level attribute,
   // accessor, and ownership semantics while excluding storage-local layout identities.
   return lhs.type == rhs.type &&
@@ -16397,16 +16397,16 @@ static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindin
   return summary;
 }
 
-// M252-B004 export-legality anchor: class implementation property synthesis
+// export-legality anchor: class implementation property synthesis
 // plus ivar-binding preconditions remain the canonical sema summary that later
 // runtime metadata export milestones consume without source-shape revalidation.
-// M252-D002 binary-boundary anchor: lane-D packages this exact sema-owned
+// binary-boundary anchor: lane-D packages this exact sema-owned
 // property/ivar summary into the runtime metadata envelope so later binary
 // consumers stay aligned with lowering admission and replay keys.
-// M252-E001 semantic-closure gate anchor: lane-E treats this sema-owned
+// semantic-closure gate anchor: lane-E treats this sema-owned
 // property/ivar summary as one required section-emission prerequisite beside
 // A003 graph closure, C003 replay projection, and D002 packaging.
-// M252-E002 corpus-sync anchor: the integrated corpus gate replays this
+// corpus-sync anchor: the integrated corpus gate replays this
 // property/ivar summary directly from manifest output on the real runner path.
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(
     const Objc3SemanticTypeMetadataHandoff &handoff) {
@@ -18053,7 +18053,7 @@ BuildMessageSendSelectorLoweringSiteMetadataLexicographic(const Objc3Program &as
   for (const auto &fn : ast.functions) {
     CollectMessageSendSelectorLoweringSiteMetadataFromStatements(fn.body, sites);
   }
-  // M255-B003 method-family/runtime evidence anchor: implementation method
+  // method-family/runtime evidence anchor: implementation method
   // bodies must contribute selector-lowering sites so super/dynamic legality
   // and runtime-shim host-link summaries stay aligned with sema parity.
   for (const auto &implementation_decl : ast.implementations) {
@@ -19885,17 +19885,17 @@ BuildIdClassSelObjectPointerTypeCheckingSummaryFromTypeMetadataHandoff(
   return summary;
 }
 
-// M252-C001 lowering-handoff anchor: semantic integration plus type metadata
+// lowering-handoff anchor: semantic integration plus type metadata
 // handoff remain the canonical executable metadata graph source for typed
 // lowering handoff packets and must stay deterministic before lowering claims
 // readiness.
-// M252-C002 typed-lowering anchor: the concrete lowering-ready metadata graph
+// typed-lowering anchor: the concrete lowering-ready metadata graph
 // handoff continues to consume this semantic integration surface without
 // reparsing syntax, so type/owner closure must remain deterministic here.
-// M252-C003 debug-projection anchor: the lane-C manifest/IR inspection matrix
+// debug-projection anchor: the lane-C manifest/IR inspection matrix
 // replays this semantic integration surface verbatim before runtime section
 // emission and runtime ingest packaging land.
-// M252-D001 runtime-ingest packaging anchor: lane-D freezes one manifest
+// runtime-ingest packaging anchor: lane-D freezes one manifest
 // transport boundary over this semantic integration surface before section
 // emission/startup registration land, so later runtime ingest consumes the
 // published graph rather than a reconstructed sema view.
@@ -19915,7 +19915,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions =
           BuildProtocolSemanticDefinitions(ast, arc_mode_enabled, diagnostics);
-  // M252-B003 diagnostic precision anchor: class interface/implementation
+  // diagnostic precision anchor: class interface/implementation
   // summaries exclude category containers so valid class-plus-category
   // programs do not degrade into duplicate class-owner diagnostics before the
   // runtime metadata blocker computes attachment collisions and ambiguity.
@@ -20035,7 +20035,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
              info.param_instancetype_spelling[param_index] ||
              info.param_object_pointer_type_spelling[param_index]);
         if (arc_inferred_object_param) {
-          // M262-B002 ARC inference/lifetime implementation anchor: function
+          // ARC inference/lifetime implementation anchor: function
           // parameters in the supported ARC slice now receive the same
           // canonical strong-owned retain/release profile as method
           // parameters, keeping one semantic contract for executable
@@ -20092,7 +20092,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
           (info.return_id_spelling || info.return_instancetype_spelling ||
            info.return_object_pointer_type_spelling);
       if (arc_inferred_object_return) {
-        // M262-B002 ARC inference/lifetime implementation anchor: function
+        // ARC inference/lifetime implementation anchor: function
         // returns in the supported ARC slice now receive the same canonical
         // strong-owned retain/release profile as method returns.
         info.return_has_ownership_qualifier = true;
@@ -20578,15 +20578,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     }
 
     Objc3InterfaceInfo interface_info;
-    // M252-A002 completeness anchor: sema preserves deterministic interface
+    // completeness anchor: sema preserves deterministic interface
     // super-name and implementation-pairing inputs for class/metaclass graph
     // materialization in the frontend pipeline.
-    // M252-A003 completion anchor: sema must preserve protocol/category/member
+    // completion anchor: sema must preserve protocol/category/member
     // declaration inventories without reordering so export graph closure stays
     // deterministic for protocol/category/property/ivar packets.
-    // M252-B001 freeze anchor: the same deterministic inventories remain the
+    // freeze anchor: the same deterministic inventories remain the
     // semantic-consistency boundary inputs for fail-closed lane-B admission.
-    // M257-B003 accessor legality anchor: interface/category-interface
+    // accessor legality anchor: interface/category-interface
     // property containers also own one fail-closed effective accessor selector
     // namespace so later executable accessors never inherit ambiguous getter
     // or setter bindings from source.
@@ -20834,7 +20834,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                              interface_property_it->second);
     }
 
-    // M257-B002 property-synthesis enforcement anchor: matched class
+    // property-synthesis enforcement anchor: matched class
     // implementations resolve default ivar bindings from interface-declared
     // properties first, then fold in optional implementation redeclarations
     // without making redeclaration a prerequisite for authoritative binding.
@@ -20961,7 +20961,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     }
   }
 
-  // M256-B002 protocol-conformance enforcement anchor: parser-owned
+  // protocol-conformance enforcement anchor: parser-owned
   // @required/@optional partitions are now enforced here against class and
   // category adoption before runtime metadata consumption can proceed.
   ValidateAndBuildCategoryMergeSurfaces(ast, surface, diagnostics);
@@ -20991,54 +20991,54 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   surface.bootstrap_failure_restart_semantics_summary =
       BuildBootstrapFailureRestartSemanticsSummaryFromIntegrationSurface(
           surface);
-  // M256-A001 executable source-closure freeze anchor: lane-A freezes one
+  // executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before
   // later M256 realization, conformance, and category-merge issues make this
   // surface executable at runtime.
-  // M256-A002 class/metaclass completion anchor: sema preserves the same
+  // class/metaclass completion anchor: sema preserves the same
   // declaration-owned class/metaclass parent identities and method-owner split
   // so later realization/runtime lanes can consume one stable source model.
-  // M256-A003 protocol/category completion anchor: sema preserves the same
+  // protocol/category completion anchor: sema preserves the same
   // protocol/category composition and class/protocol/category linking summaries
   // so attachment and conformance closure consume one stable source model.
-  // M256-B001 object-model semantic-rule freeze anchor: sema remains the
+  // object-model semantic-rule freeze anchor: sema remains the
   // authority for realization legality, inheritance legality, override
   // compatibility, declared protocol conformance, and deterministic category
   // merge policy; parser and IR only preserve the source identities this
   // semantic boundary consumes.
-  // M256-C001 executable object artifact lowering freeze anchor: sema owns the
+  // executable object artifact lowering freeze anchor: sema owns the
   // realized-object legality and canonical owner identities that lane-C binds
   // into emitted method-list/class/category records; sema must not synthesize
   // object-artifact slots or implementation symbol attachments itself.
-  // M256-C002 executable method-body binding anchor: sema still stops at
+  // executable method-body binding anchor: sema still stops at
   // canonical method owner identities and realized legality; IR/object
   // emission must fail closed if those implementation-owned method identities
   // do not attach to exactly one concrete LLVM body symbol.
-  // M256-C003 executable realization-record expansion anchor: sema is also the
+  // executable realization-record expansion anchor: sema is also the
   // last stop for canonical superclass, class-object, metaclass-object,
   // protocol-inheritance, and category-attachment identities before lowering
   // serializes them into realization-ready records.
-  // M256-D001 class-realization-runtime freeze anchor: sema remains the owner
+  // class-realization-runtime freeze anchor: sema remains the owner
   // of realized-class legality, category merge/conflict decisions, protocol
   // conformance legality, and canonical inheritance identities. Runtime class
   // realization must consume that closure rather than reinterpreting source.
-  // M256-D002 metaclass-graph-root-class anchor: sema therefore preserves
+  // metaclass-graph-root-class anchor: sema therefore preserves
   // root-class empties and canonical superclass/metaclass owner identities as
   // the only legal input for runtime-owned realized graph publication.
-  // M256-D003 category-attachment-protocol-conformance anchor: sema also owns
+  // category-attachment-protocol-conformance anchor: sema also owns
   // the adopted-protocol closure and deterministic category merge surface that
   // runtime queries now consume from emitted refs rather than rebuilding from
   // source or diagnostics.
-  // M256-D004 canonical-runnable-object-sample anchor: sema additionally owns
+  // canonical-runnable-object-sample anchor: sema additionally owns
   // the fail-closed admission boundary for runtime-built alloc/new/init on
   // concrete object samples, including inherited class-method lookup through
   // the canonical superclass chain.
-  // M256-E001 class-protocol-category conformance gate anchor: lane-E freezes
+  // class-protocol-category conformance gate anchor: lane-E freezes
   // the aggregated evidence boundary over these sema-owned inheritance,
   // conformance, and category-merge decisions before execution-matrix
   // expansion in M256-E002.
-  // M256-E002 runnable class-protocol-category execution-matrix anchor: the
+  // runnable class-protocol-category execution-matrix anchor: the
   // live matrix consumes these sema-owned inheritance, protocol-conformance,
   // and category-merge decisions directly when replaying the linked
   // inheritance executable case.
@@ -21162,7 +21162,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       BuildAutoreleasePoolScopeSiteMetadataLexicographic(ast);
   surface.autoreleasepool_scope_summary =
       BuildAutoreleasePoolScopeSummaryFromIntegrationSurface(surface);
-  // M264-B002 unsupported-feature enforcement anchor: accepted source sites
+  // unsupported-feature enforcement anchor: accepted source sites
   // that would over-claim unsupported runtime-backed features must fail closed
   // in sema before lowering/runtime handoff proceeds.
   const Objc3UnsupportedFeatureClaimEnforcementStats
@@ -21174,7 +21174,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
               allow_source_only_error_runtime_surface,
               arc_mode_enabled,
               diagnostics);
-  // M259-B001/M264-B001 semantic freeze anchor: sema owns the single fail-closed
+  // semantic freeze anchor: sema owns the single fail-closed
   // legality summary that classifies live compatibility/migration selections,
   // source-only claim downgrades, and unsupported strictness/macro claim
   // rejections before later lowering/runtime/reporting lanes consume them.
@@ -21369,11 +21369,11 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
   std::sort(interface_names.begin(), interface_names.end());
 
   handoff.interfaces_lexicographic.reserve(interface_names.size());
-  // M262-C001 ARC lowering ABI/cleanup freeze anchor: sema continues to own
+  // ARC lowering ABI/cleanup freeze anchor: sema continues to own
   // ARC legality, inferred lifetime packets, and synthesized property ownership
   // metadata only; it does not schedule cleanups or choose lowering helper
   // placement.
-  // M262-C002 ARC automatic-insertion implementation anchor: sema now also
+  // ARC automatic-insertion implementation anchor: sema now also
   // exports the supported ARC insertion flags and normalized property ownership
   // metadata that lane C consumes for helper placement, while helper emission
   // itself remains lowering-owned.
@@ -21500,29 +21500,29 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
           source.executable_synthesized_binding_symbol;
-      // M260-A002 runtime-backed ownership attribute surface anchor: sema
+      // runtime-backed ownership attribute surface anchor: sema
       // remains the sole authority for property/member ownership profiles.
       // Lowering and runtime-facing metadata must consume these already
       // normalized attribute/lifetime/hook/accessor strings directly rather
       // than reconstructing ownership out of source text or manifests.
       property_metadata.property_attribute_profile =
           source.property_attribute_profile;
-      // M257-C003 synthesized accessor/property lowering anchor: sema remains
+      // synthesized accessor/property lowering anchor: sema remains
       // the only authority for effective accessor selectors and synthesized
       // binding identities that lane-C may turn into executable bodies.
-      // M257-D001 runtime property/layout consumption freeze anchor: the live
+      // runtime property/layout consumption freeze anchor: the live
       // runtime must consume these same emitted selector/binding/layout facts
       // without recovering property storage or allocator behavior from source.
-      // M257-D002 instance-allocation-layout-runtime anchor: later runtime
+      // instance-allocation-layout-runtime anchor: later runtime
       // allocation and per-instance slot storage must still consume only these
       // emitted selector/binding/layout facts without reopening sema.
-      // M257-D003 property-metadata-reflection anchor: runtime reflection
+      // property-metadata-reflection anchor: runtime reflection
       // helpers must also publish property/accessor/layout facts from this
       // emitted surface rather than re-querying sema or source text.
-      // M257-E001 property-ivar-execution gate anchor: lane-E now consumes the
+      // property-ivar-execution gate anchor: lane-E now consumes the
       // A002/B003/C003/D003 proof chain before runnable sample expansion, so
       // this emitted property surface remains the only authoritative handoff.
-      // M257-E002 runnable property-ivar execution-matrix anchor: lane-E
+      // runnable property-ivar execution-matrix anchor: lane-E
       // broadens the frozen gate only through one live sample that still
       // consumes this emitted property surface.
       property_metadata.effective_getter_selector =
@@ -21531,10 +21531,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.effective_setter_available;
       property_metadata.effective_setter_selector =
           source.effective_setter_selector;
-      // M260-C002 ownership runtime hook emission anchor: lowering now treats
+      // ownership runtime hook emission anchor: lowering now treats
       // the sema-approved lifetime/runtime-hook/accessor-ownership trio as the
       // authoritative executable hook surface for synthesized property access.
-      // M260-D001 runtime memory-management API freeze anchor: sema still only
+      // runtime memory-management API freeze anchor: sema still only
       // publishes the canonical ownership profile surface, while the actual
       // retain/release/autorelease/weak helper ABI stays private to runtime
       // lowering and must not widen the public runtime header here.
@@ -21836,7 +21836,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_synthesized_binding_kind;
       property_metadata.executable_synthesized_binding_symbol =
           source.executable_synthesized_binding_symbol;
-      // M260-A002 runtime-backed ownership attribute surface anchor: the
+      // runtime-backed ownership attribute surface anchor: the
       // implementation-side property handoff preserves the same ownership
       // profiles so emitted runtime-backed descriptors can stay synchronized
       // across interface/implementation pairs without reinterpreting source.
@@ -23468,7 +23468,7 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           handoff.result_like_lowering_summary);
   const Objc3MethodLookupOverrideConflictSummary method_lookup_override_conflict_summary =
       BuildMethodLookupOverrideConflictSummaryFromTypeMetadataHandoff(handoff);
-  // M257-A001 property-ivar executable-source-closure anchor:
+  // property-ivar executable-source-closure anchor:
   // freeze the source-surface replay key above layout/accessor realization.
   const Objc3PropertySynthesisIvarBindingSummary property_synthesis_ivar_binding_summary =
       BuildPropertySynthesisIvarBindingSummaryFromTypeMetadataHandoff(handoff);

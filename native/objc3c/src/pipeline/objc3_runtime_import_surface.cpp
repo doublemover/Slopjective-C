@@ -988,7 +988,7 @@ bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
 bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
-  // M274-A003 import-surface anchor: Part 11 preservation stays at the
+  // import-surface anchor: Part 11 preservation stays at the
   // manifest/runtime-import-surface layer so provider foreign/import and
   // C++/Swift-facing annotation facts survive separate compilation before any
   // ABI lowering or runnable bridge generation claims land.

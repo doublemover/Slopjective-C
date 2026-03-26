@@ -26,20 +26,20 @@ namespace {
 extern char **environ;
 #endif
 
-// M269-D002 live task runtime anchor: packaged task-runtime probes continue to
+// live task runtime anchor: packaged task-runtime probes continue to
 // use the existing runtime library path and linked execution surface; no
 // separate public scheduler/runtime package is introduced here.
-// M269-D003 hardening anchor: replay/hardening probes for the same task
+// hardening anchor: replay/hardening probes for the same task
 // runtime continue to package against that existing runtime archive path.
-// M271-D001 system-helper/runtime-contract anchor: Part 8 runtime/helper proof
+// system-helper/runtime-contract anchor: Part 8 runtime/helper proof
 // likewise stays on the same packaged runtime archive path. The driver/process
 // layer does not introduce a separate cleanup/resource runtime package or a
 // dedicated borrowed-pointer import surface for this freeze; there is still no
 // dedicated borrowed-pointer import surface here.
-// M271-D002 live cleanup/runtime integration anchor: the linked Part 8 runtime
+// live cleanup/runtime integration anchor: the linked Part 8 runtime
 // probe also packages against that same runtime archive path plus the emitted
 // module object; there is still no separate resource-runtime package boundary.
-// M274-D001 bridge-packaging/toolchain anchor: Part 11 now freezes the same
+// bridge-packaging/toolchain anchor: Part 11 now freezes the same
 // packaged runtime archive and sidecar topology as the truthful toolchain-
 // visible interop boundary. The process layer validates imported Part 11
 // preservation packets through the mixed-module link plan, but it still does
@@ -117,7 +117,7 @@ inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
 inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
 inline constexpr const char *kObjc3DeterministicSourceRevision = "0000000";
-// M269-D001 scheduler/executor runtime anchor: the driver/process layer still
+// scheduler/executor runtime anchor: the driver/process layer still
 // does not own scheduling itself, but emitted IR/object evidence now carries a
 // frozen private task-runtime helper boundary that later runtime integration
 // issues must consume without reconstructing helper or snapshot names ad hoc.
@@ -618,61 +618,61 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
                            const std::filesystem::path &object_out,
                            std::string &error) {
 #if defined(OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION)
-  // M253-A001 emitted metadata inventory freeze anchor: the llvm-direct path
+  // emitted metadata inventory freeze anchor: the llvm-direct path
   // must preserve the IR-emitted runtime metadata section inventory exactly.
   // This backend boundary may not rewrite, rename, or silently substitute a
   // different metadata inventory model.
-  // M253-A002 source-to-section matrix anchor: only image-info plus
+  // source-to-section matrix anchor: only image-info plus
   // class/protocol/category/property/ivar descriptor sections are materialized
   // today, while unsupported standalone rows stay explicit in the published
   // completeness matrix until later M253 work lands.
-  // M253-B001 layout/visibility policy anchor: llvm-direct object emission must preserve
+  // layout/visibility policy anchor: llvm-direct object emission must preserve
   // emitted global order, section family order, the local-linkage/no-COMDAT policy,
   // and llvm.used retention order exactly. Backend execution may not inject
   // exported visibility or object-format-specific rewrites before M253-B003 lands.
-  // M253-B002 normalized layout policy anchor: llvm-direct object emission now
+  // normalized layout policy anchor: llvm-direct object emission now
   // consumes an IR surface that already encodes one normalized metadata layout replay key.
   // The backend may not reorder, relax, or reinterpret that
   // semantic finalization boundary.
-  // M253-B003 object-format policy expansion anchor: llvm-direct object
+  // object-format policy expansion anchor: llvm-direct object
   // emission now normalizes post-write determinism according to the produced
   // object format instead of assuming COFF-only behavior.
-  // M253-C001 metadata section emission freeze anchor: the backend consumes a
+  // metadata section emission freeze anchor: the backend consumes a
   // real emitted metadata-section scaffold today, but it may not invent
   // richer payload bytes or new metadata families while lane-C is still frozen
   // at the placeholder-emission boundary.
-  // M253-C002 class/metaclass data emission anchor: once the IR carries real
+  // class/metaclass data emission anchor: once the IR carries real
   // class descriptor bundles, llvm-direct object emission must preserve those
   // inline class/metaclass/name/method-ref payloads verbatim instead of
   // re-synthesizing or collapsing them back into placeholder bytes.
-  // M253-C003 protocol/category data emission anchor: the same llvm-direct
+  // protocol/category data emission anchor: the same llvm-direct
   // path must preserve emitted protocol/category descriptor bundles,
   // inherited/adopted protocol-ref lists, and owner-identity attachment lists
   // verbatim instead of collapsing them back into placeholder bytes.
-  // M253-C004 member-table data emission anchor: llvm-direct object emission
+  // member-table data emission anchor: llvm-direct object emission
   // must preserve method/property/ivar payloads verbatim, including adjacent
   // owner-scoped method-table globals plus real property/ivar descriptor bytes
   // exactly as emitted in IR. The
-  // M253-C005 selector/string pool expansion anchor extends that requirement to
+  // selector/string pool expansion anchor extends that requirement to
   // canonical selector and string pool sections, including their stable ordinal
   // aggregates and pooled cstring payload bytes, without collapsing back to the
   // older selector-only global scheme.
-  // M253-C006 binary inspection harness expansion anchor: llvm-direct object
+  // binary inspection harness expansion anchor: llvm-direct object
   // emission must also preserve section families, relocation counts, and
   // aggregate symbol inventories in a form that stays inspectable through one
   // shared llvm-readobj/llvm-objdump corpus. Compile-failure cases must remain
   // fail-closed and produce no synthesized object-inspection artifacts.
-  // M253-D001 object-packaging/retention freeze anchor: this same produced
+  // object-packaging/retention freeze anchor: this same produced
   // object boundary is now frozen as the lane-D packaging handoff, rooted in
   // module.obj, @llvm.used retention, and retained __objc3_sec_* aggregate
   // symbols. Later archive/link/startup registration work may extend the
   // pipeline, but it may not replace or silently bypass these current anchors.
-  // M265-D002 live-optional-send-and-keypath-runtime-support anchor: the same
+  // live-optional-send-and-keypath-runtime-support anchor: the same
   // llvm-direct object path must preserve retained keypath descriptor sections
   // and runtime-link sidecars because the runtime now consumes those
   // descriptors into a private keypath registry while optional sends keep
   // executing through the public lookup/dispatch path.
-  // M265-D003 cross-module type-surface preservation anchor: imported runtime
+  // cross-module type-surface preservation anchor: imported runtime
   // surfaces now preserve the same optional/key-path packets, so the cross-
   // module link-plan path must carry those artifacts forward without silently
   // degrading them into generic metadata-only packaging.
@@ -704,15 +704,15 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     const std::filesystem::path &object_out,
     Objc3RuntimeMetadataLinkerRetentionArtifacts &artifacts,
     std::string &error) {
-  // M253-E001 metadata-emission gate anchor: lane-E consumes the object-level
+  // metadata-emission gate anchor: lane-E consumes the object-level
   // linker-retention/discovery artifacts published on this path together with
   // the C006 binary-inspection corpus and the D003 merged-discovery proof.
   // Any drift here must fail closed before later cross-lane closeout runs.
-  // M253-E002 cross-lane object-emission closeout anchor: the same emitted
+  // cross-lane object-emission closeout anchor: the same emitted
   // response/discovery artifacts are now replayed on integrated native class,
   // category, and message-send object probes, so this path must stay stable
   // enough for later startup-registration work to trust the produced objects.
-  // M254-A001 translation-unit registration surface freeze: startup
+  // translation-unit registration surface freeze: startup
   // registration must consume the linker-response/discovery sidecars derived
   // here without re-deriving translation-unit identity or renaming the public
   // discovery/linker-anchor boundary emitted by the M253 path.
@@ -954,45 +954,45 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       inputs.bootstrap_image_local_init_state_symbol_prefix +
       MakeIdentifierSafeSuffix(
           linker_retention_artifacts.translation_unit_identity_key);
-  // M254-B001 bootstrap-invariant anchor: later startup registration must
+  // bootstrap-invariant anchor: later startup registration must
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
   // user entry if bootstrap materialization cannot honor that contract.
-  // M254-B002 live bootstrap semantics anchor: the emitted registration
+  // live bootstrap semantics anchor: the emitted registration
   // manifest now carries the exact duplicate-registration, order, failure-mode,
   // and runtime-status-code contract consumed by the real runtime library and
   // probe harness. Drift between the emitted manifest and runtime behavior must
   // fail closed before later constructor-root automation lands.
-  // M254-C001 bootstrap-lowering anchor: the emitted registration manifest now
+  // bootstrap-lowering anchor: the emitted registration manifest now
   // also freezes the lowering-owned ctor-root/init-stub/registration-table
   // materialization boundary. This artifact may publish the canonical names
   // and non-goal states, but it may not synthesize bootstrap globals on its
   // own ahead of the later lowering implementation issue.
-  // M254-C002 constructor/init-stub emission anchor: once lowering emits the
+  // constructor/init-stub emission anchor: once lowering emits the
   // real bootstrap globals, this manifest must publish the exact derived
   // init-stub and registration-table symbols from the full translation-unit
   // identity key, not a truncated semicolon-split fragment.
-  // M254-C003 registration-table/image-local-init anchor: once lowering
+  // registration-table/image-local-init anchor: once lowering
   // expands that emitted boundary, the manifest must also publish the
   // self-describing registration-table layout contract and exact derived
   // image-local init-state symbol from the same translation-unit identity key.
-  // M254-D001 runtime-bootstrap-api anchor: the same manifest also freezes the
+  // runtime-bootstrap-api anchor: the same manifest also freezes the
   // runtime-owned bootstrap header/archive/entrypoint/reset surface so later
   // registrar/image-walk work consumes one canonical API contract instead of
   // re-deriving launch-path behavior from scattered runtime details.
-  // M254-D004 launch-integration anchor: compile, proof, and execution-smoke
+  // launch-integration anchor: compile, proof, and execution-smoke
   // command surfaces must all consume this emitted registration manifest as the
   // authoritative runtime launch contract instead of guessing archive paths or
   // linker flags from ad hoc fallback heuristics.
-  // M267-D002 live catch/bridge/runtime integration anchor: runnable Part 6
+  // live catch/bridge/runtime integration anchor: runnable Part 6
   // probes keep using this same emitted runtime-library archive path and
   // linker-response topology; lane-D must prove linked error/bridge execution
   // through the packaged runtime rather than inventing a special-case driver
   // path for throws or catch handling.
-  // M254-E001 startup-registration gate anchor: lane-E closes over this same
+  // startup-registration gate anchor: lane-E closes over this same
   // emitted manifest plus the replay-stable bootstrap evidence chain from
   // A002/B002/C003/D003/D004, so drift here must fail closed before E002.
-  // M254-E002 runbook-closeout anchor: the operator runbook must stay bound to this emitted launch contract
+  // runbook-closeout anchor: the operator runbook must stay bound to this emitted launch contract
   // and prove the same integrated path end to end.
 
   std::ostringstream out;
@@ -1677,14 +1677,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     error = "cross-module runtime link-plan artifact inputs are incomplete";
     return false;
   }
-  // M266-D001 cleanup-unwind integration anchor: runnable cleanup/unwind
+  // cleanup-unwind integration anchor: runnable cleanup/unwind
   // proofs stay toolchain-visible through the linker-response sidecar plus the
   // emitted runtime-support archive path that native executable probes consume.
-  // M272-D001 runtime-fast-path-integration anchor: Part 9 keeps imported
+  // runtime-fast-path-integration anchor: Part 9 keeps imported
   // direct-surface artifact paths visible in the cross-module link plan so the
   // runtime/cache lane can prove exactly which imported modules participate in
   // dispatch-boundary preservation before D002 widens the live fast path.
-  // M272-D002 live-dispatch-fast-path anchor: imported direct-surface artifact paths feed the runtime cache seeding model once live direct/final/sealed fast paths are materialized after registration.
+  // live-dispatch-fast-path anchor: imported direct-surface artifact paths feed the runtime cache seeding model once live direct/final/sealed fast paths are materialized after registration.
   if (inputs.direct_import_surface_artifact_paths.size() !=
       inputs.imported_inputs.size()) {
     error =
@@ -1790,32 +1790,32 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
               imported_input.module_name;
       return false;
     }
-    // M267-D001 error-runtime/bridge-helper anchor: Part 6 lane-D still rides
+    // error-runtime/bridge-helper anchor: Part 6 lane-D still rides
     // the same packaged runtime-support archive path as the rest of the native
     // runtime helper cluster, so imported modules must agree on that archive
     // before later cross-module Part 6 execution claims can become truthful.
-    // M268-D001 continuation/runtime-helper anchor: the first private Part 7
+    // continuation/runtime-helper anchor: the first private Part 7
     // continuation helper cluster likewise stays inside the same packaged
     // runtime-support archive path. Mixed-module async/runtime-helper claims
     // therefore may not diverge on the runtime archive even before live
     // suspension integration lands.
-    // M268-D002 live continuation/runtime integration anchor: the supported
+    // live continuation/runtime integration anchor: the supported
     // direct-call await slice now links and executes through that same archive,
     // so runnable Part 7 helper traffic still depends on this runtime archive
     // equality across mixed-module link plans.
-    // M270-D001 actor-runtime/executor-binding anchor: the private actor
+    // actor-runtime/executor-binding anchor: the private actor
     // runtime helper cluster also rides that same packaged runtime archive, so
     // actor-state/executor-binding claims cannot diverge on archive identity
     // across mixed-module link plans.
-    // M270-D002 actor-mailbox/isolation-runtime anchor: live mailbox helper
+    // actor-mailbox/isolation-runtime anchor: live mailbox helper
     // traffic still links through that same packaged runtime archive, so mixed
     // actor-runtime link plans must keep one archive identity even after the
     // mailbox helpers become runnable.
-    // M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup/resource
+    // system-helper/runtime-contract anchor: Part 8 cleanup/resource
     // and retainable-family runtime proof also stays on that same packaged
     // runtime archive path. Mixed-module link plans may not diverge on archive
     // identity while lane-D still reuses the existing private helper cluster.
-    // M273-D001 expansion-host/runtime-boundary anchor: Part 10 does not launch
+    // expansion-host/runtime-boundary anchor: Part 10 does not launch
     // a macro host from the driver yet; the packaged objc3_runtime.lib archive
     // remains the only host-facing runtime handoff while macro execution and
     // runtime package loading stay fail-closed.
@@ -1889,7 +1889,7 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       imported_part6_module_names.push_back(imported_input.module_name);
     }
     if (imported_input.part7_actor_mailbox_runtime_import_present) {
-      // M270-D003 actor cross-module isolation-metadata hardening anchor:
+      // actor cross-module isolation-metadata hardening anchor:
       // imported actor-runtime surfaces must preserve one canonical private
       // mailbox/isolation replay contract and may not drift on contract ids or
       // replay keys across mixed-module link plans.
@@ -1928,7 +1928,7 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       imported_part7_actor_module_names.push_back(imported_input.module_name);
     }
     if (imported_input.part11_ffi_metadata_interface_preservation_present) {
-      // M274-D001 bridge-packaging/toolchain anchor: imported Part 11 runtime-
+      // bridge-packaging/toolchain anchor: imported Part 11 runtime-
       // import surfaces must preserve one canonical metadata/interface packet
       // across mixed-module link plans before D002 claims live header/module/
       // bridge generation from that packaging topology.

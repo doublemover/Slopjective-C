@@ -128,7 +128,7 @@ inline constexpr const char *kObjc3BootstrapRegistrationDescriptorPragmaName =
 inline constexpr const char *kObjc3BootstrapImageRootPragmaName =
     "objc_image_root";
 
-// M269-A001 source-closure truth anchor: task/executor/cancellation source
+// source-closure truth anchor: task/executor/cancellation source
 // admission remains identifier-profile driven on top of the existing async
 // token surface. This tranche does not reserve new `task`/`cancel` keywords;
 // it freezes one deterministic source contract around async entry points,
@@ -256,7 +256,7 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersDefaulting
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDynamicOptOutDefaultingSurfaces =
     "source-only:dynamic-opt-out-defaulting-surfaces";
 
-// M264-A001 source/mode truth anchor: advertised Objective-C 3 feature claims
+// source/mode truth anchor: advertised Objective-C 3 feature claims
 // must be emitted from one canonical frontend inventory that separates runnable,
 // source-only, and fail-closed unsupported surfaces.
 inline constexpr const char *kObjc3RunnableFeatureClaimInventoryContractId =
@@ -365,7 +365,7 @@ inline constexpr const char *kObjc3Part5FailClosedConstructGuardedPatterns =
 inline constexpr const char *kObjc3Part5FailClosedConstructMatchTypeTestPatterns =
     "part5-fail-closed:match-type-test-patterns";
 
-// M259-B001 runnable-core compatibility guard anchor: later advanced surfaces
+// runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed
 // support lands.
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictness =

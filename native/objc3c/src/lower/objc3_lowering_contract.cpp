@@ -52,7 +52,7 @@ std::string VectorTypeSpelling(const std::string &base_spelling, unsigned lane_c
 
 const char *BoolToken(bool value) { return value ? "true" : "false"; }
 
-// M253-B003 object-format policy expansion anchor: lowering selects one
+// object-format policy expansion anchor: lowering selects one
 // supported host object format and derives emitted section spellings from the
 // logical metadata ABI surface before IR emission begins.
 const char *HostRuntimeMetadataObjectFormat() {
@@ -184,13 +184,13 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
 }
 
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary) {
-  // M253-A001 emitted metadata inventory freeze anchor: replay keys here
+  // emitted metadata inventory freeze anchor: replay keys here
   // cover lowering/message-send ABI only. Runtime metadata section inventory
   // stays frozen in the frontend ABI/scaffold summaries and is not inferred
   // from lowering-boundary strings.
-  // M253-A002 source-to-section matrix anchor: the node-to-section matrix
+  // source-to-section matrix anchor: the node-to-section matrix
   // remains a frontend artifact summary rather than a lowering-boundary string.
-  // M253-B001 layout/visibility policy anchor: replay keys may not infer or
+  // layout/visibility policy anchor: replay keys may not infer or
   // rewrite metadata family ordering, descriptor ordinal ordering,
   // zero-sentinel-or-count-plus-pointer-vector relocation, the local-linkage/no-COMDAT policy,
   // explicit visibility spelling policy, or llvm.used retention order. Those
@@ -216,7 +216,7 @@ bool RequiresFailClosedObjc3RuntimeDispatchFallback(
 
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family) {
-  // M255-C004 live-dispatch cutover anchor: all supported live dispatch
+  // live-dispatch cutover anchor: all supported live dispatch
   // surfaces now route through objc3_runtime_dispatch_i32, the exported
   // compatibility symbol remains a non-emitted alias/test surface, and
   // reserved direct-dispatch cases still fail closed before IR emission.
@@ -398,10 +398,10 @@ bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
 std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
     const Objc3RuntimeMetadataLayoutPolicy &policy) {
   std::ostringstream out;
-  // M253-B002 normalized layout policy anchor: replay proof now serializes the
+  // normalized layout policy anchor: replay proof now serializes the
   // canonical normalized metadata layout decision rather than relying on
   // emitter-local hardcoded family ordering or relocation semantics.
-  // M253-B003 object-format policy expansion anchor: replay proof now also
+  // object-format policy expansion anchor: replay proof now also
   // serializes the explicit host-format surface, including emitted section
   // spellings and retention-anchor behavior.
   out << "contract=" << policy.contract_id
@@ -445,7 +445,7 @@ std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
 
 std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary() {
   std::ostringstream out;
-  // M253-C001 metadata section emission freeze anchor: lane-C begins from the
+  // metadata section emission freeze anchor: lane-C begins from the
   // current real-section scaffold state rather than from manifest-only
   // summaries. The boundary is explicit that payload bytes are still
   // placeholders until later implementation issues replace them.
@@ -464,7 +464,7 @@ std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary() {
 
 std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary() {
   std::ostringstream out;
-  // M253-C002 class/metaclass data emission anchor: lane-C now replaces the
+  // class/metaclass data emission anchor: lane-C now replaces the
   // class-family placeholder byte model with one real descriptor-bundle
   // payload. Each class descriptor bundle carries a class record, an inline
   // metaclass record, one shared class-name cstring, nullable superclass
@@ -482,7 +482,7 @@ std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary() {
 
 std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary() {
   std::ostringstream out;
-  // M253-C003 protocol/category data emission anchor: lane-C now replaces the
+  // protocol/category data emission anchor: lane-C now replaces the
   // protocol/category family placeholder byte model with real descriptor
   // bundles, count-plus-descriptor protocol-reference lists, and
   // count-plus-owner-identity attachment lists without claiming that real
@@ -499,7 +499,7 @@ std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary() {
 
 std::string Objc3RuntimeMetadataMemberTableEmissionSummary() {
   std::ostringstream out;
-  // M253-C004 member-table data emission anchor: lane-C now adds real
+  // member-table data emission anchor: lane-C now adds real
   // owner-scoped method tables plus real property/ivar descriptor bytes while
   // preserving the previously frozen class/protocol/category descriptor
   // bundle shapes. Method-table grouping stays declaration-owner/class-kind
@@ -520,7 +520,7 @@ std::string Objc3RuntimeMetadataMemberTableEmissionSummary() {
 
 std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary() {
   std::ostringstream out;
-  // M253-C005 selector/string pool expansion anchor: lane-C now emits
+  // selector/string pool expansion anchor: lane-C now emits
   // canonical selector and string pool sections with stable ordinal aggregates
   // so runtime-facing payload lookup no longer depends on selector-only globals
   // being the only pooled surface. Existing descriptor bundles remain
@@ -536,7 +536,7 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary() {
 
 std::string Objc3ExecutableObjectArtifactLoweringSummary() {
   std::ostringstream out;
-  // M256-C001 executable object artifact lowering freeze anchor: lane-C begins
+  // executable object artifact lowering freeze anchor: lane-C begins
   // from the already-emitted method-list/class/category payload surface where
   // implementation-owned method entries may carry concrete LLVM body symbols
   // and realized object records consume owner-scoped method-list refs. The
@@ -559,7 +559,7 @@ std::string Objc3ExecutableObjectArtifactLoweringSummary() {
 
 std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
   std::ostringstream out;
-  // M257-C001 accessor/layout lowering freeze anchor: lane-C begins from the
+  // accessor/layout lowering freeze anchor: lane-C begins from the
   // already-emitted property/ivar descriptor surface and the sema-approved
   // source-model completion packet. This freeze is explicit that accessor
   // bodies and runtime storage/layout realization remain deferred; lowering
@@ -582,7 +582,7 @@ std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
 
 std::string Objc3ExecutableIvarLayoutEmissionSummary() {
   std::ostringstream out;
-  // M257-C002 ivar offset/layout emission anchor: lane-C upgrades the frozen
+  // ivar offset/layout emission anchor: lane-C upgrades the frozen
   // C001 handoff into real object payloads. Lowering now materializes
   // sema-approved slot/size/alignment identities as retained offset globals,
   // per-owner layout tables, and ivar descriptor records, but runtime
@@ -600,7 +600,7 @@ std::string Objc3ExecutableIvarLayoutEmissionSummary() {
 
 std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
   std::ostringstream out;
-  // M257-C003 synthesized accessor/property lowering anchor: lane-C promotes
+  // synthesized accessor/property lowering anchor: lane-C promotes
   // sema-approved effective property accessors into executable method entries
   // and deterministic storage globals without reopening true runtime instance
   // allocation or reflective property registration.
@@ -620,7 +620,7 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
 
 std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
   std::ostringstream out;
-  // M257-D001 runtime property/layout consumption freeze anchor: the current
+  // runtime property/layout consumption freeze anchor: the current
   // runtime consumes emitted accessor implementation pointers and
   // property/layout attachment identities through the existing lookup/dispatch
   // ABI, but alloc/new still collapse onto one canonical realized instance
@@ -641,7 +641,7 @@ std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
 
 std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary() {
   std::ostringstream out;
-  // M257-D002 instance-allocation-layout-runtime anchor: runtime now
+  // instance-allocation-layout-runtime anchor: runtime now
   // materializes distinct instance identities from the realized class graph and
   // executes synthesized property access through per-instance slot storage
   // derived from emitted ivar offset/layout metadata rather than lane-C
@@ -661,7 +661,7 @@ std::string Objc3RuntimeInstanceAllocationLayoutSupportSummary() {
 
 std::string Objc3RuntimePropertyMetadataReflectionSummary() {
   std::ostringstream out;
-  // M257-D003 property-metadata-reflection anchor: runtime now publishes a
+  // property-metadata-reflection anchor: runtime now publishes a
   // private reflective helper surface over the realized property/accessor/layout
   // graph so tests and diagnostics can query live metadata without reopening
   // the public ABI or rederiving property facts from source.
@@ -677,7 +677,7 @@ std::string Objc3RuntimePropertyMetadataReflectionSummary() {
 
 std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary() {
   std::ostringstream out;
-  // M260-A002 runtime-backed object ownership attribute surface anchor:
+  // runtime-backed object ownership attribute surface anchor:
   // ownership-bearing property/member facts stop being manifest-only evidence
   // by flowing into the emitted property descriptor payload that the runtime
   // already consumes for property realization and reflection.
@@ -697,7 +697,7 @@ std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary() {
 
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
   std::ostringstream out;
-  // M260-B001 retainable-object semantic-rule freeze anchor: runtime-backed
+  // retainable-object semantic-rule freeze anchor: runtime-backed
   // property/member ownership metadata is now the truthful live surface, but
   // retain/release legality, autoreleasepool execution, and destruction-order
   // behavior remain summary-driven and fail-closed until M260-B002+ land.
@@ -713,7 +713,7 @@ std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
 
 std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary() {
   std::ostringstream out;
-  // M260-B002 runtime-backed storage ownership legality anchor: explicit
+  // runtime-backed storage ownership legality anchor: explicit
   // ownership qualifiers on Objective-C object properties now participate in
   // live semantic legality. Weak and unsafe-unretained qualifiers must agree
   // with the concrete runtime-backed storage modifier family before metadata
@@ -730,7 +730,7 @@ std::string Objc3RuntimeBackedStorageOwnershipLegalitySummary() {
 
 std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() {
   std::ostringstream out;
-  // M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+  // autoreleasepool/destruction-order semantic expansion anchor:
   // autoreleasepool scopes still fail closed, but owned runtime-backed object storage now upgrades
   // that rejection into a deterministic destruction-order
   // edge diagnostic rather than leaving the ownership-sensitive case
@@ -748,7 +748,7 @@ std::string Objc3RuntimeBackedAutoreleasepoolDestructionOrderSummary() {
 
 std::string Objc3OwnershipLoweringBaselineSummary() {
   std::ostringstream out;
-  // M260-C001 ownership-lowering baseline freeze anchor: runtime-backed
+  // ownership-lowering baseline freeze anchor: runtime-backed
   // ownership metadata and sema legality are already live, but retain/release,
   // autoreleasepool, and weak/unowned execution still stop at legacy lowering
   // summaries instead of emitting a summary-only-without-live-runtime-hook-emission
@@ -771,7 +771,7 @@ std::string Objc3OwnershipLoweringBaselineSummary() {
 
 std::string Objc3OwnershipRuntimeHookEmissionSummary() {
   std::ostringstream out;
-  // M260-C002 runtime hook emission anchor: synthesized accessors now execute
+  // runtime hook emission anchor: synthesized accessors now execute
   // through runtime-owned helper entrypoints that operate on the current
   // runtime dispatch frame and realized property layout, while preserving the
   // existing synthesized accessor descriptor/storage artifact surface from
@@ -801,7 +801,7 @@ std::string Objc3OwnershipRuntimeHookEmissionSummary() {
 
 std::string Objc3RuntimeMemoryManagementApiSummary() {
   std::ostringstream out;
-  // M260-D001 runtime memory-management API freeze anchor: the public runtime
+  // runtime memory-management API freeze anchor: the public runtime
   // ABI still stops at registration/lookup/dispatch, while lowered ownership
   // helpers remain private bootstrap-internal entrypoints that runtime probes
   // and lowered IR may consume without widening the stable public header yet.
@@ -829,7 +829,7 @@ std::string Objc3RuntimeMemoryManagementApiSummary() {
 
 std::string Objc3RuntimeMemoryManagementImplementationSummary() {
   std::ostringstream out;
-  // M260-D002 runtime memory-management implementation anchor: runtime-backed
+  // runtime memory-management implementation anchor: runtime-backed
   // object execution now owns live refcount, weak-table, and autoreleasepool
   // behavior behind private helper entrypoints and emitted autoreleasepool
   // lowering rather than the older summary-only/fail-closed lane.
@@ -858,10 +858,10 @@ std::string Objc3RuntimeMemoryManagementImplementationSummary() {
 
 std::string Objc3OwnershipRuntimeGateSummary() {
   std::ostringstream out;
-  // M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes the
+  // ownership-runtime-gate freeze anchor: lane-E now freezes the
   // supported ownership runtime slice and its non-goals using the already-live
   // C002/D001/D002 implementation surfaces as the truthful evidence boundary.
-  // M260-E002 ownership-smoke closeout anchor: the runnable smoke matrix
+  // ownership-smoke closeout anchor: the runnable smoke matrix
   // consumes this same gate summary unchanged for M260 closeout.
   out << "contract=" << kObjc3OwnershipRuntimeGateContractId
       << ";supported_model=" << kObjc3OwnershipRuntimeGateSupportedModel
@@ -879,7 +879,7 @@ std::string Objc3OwnershipRuntimeGateSummary() {
 
 std::string Objc3ExecutableBlockSourceClosureSummary() {
   std::ostringstream out;
-  // M261-A001 executable-block-source-closure freeze anchor: this summary is
+  // executable-block-source-closure freeze anchor: this summary is
   // intentionally truthful about the current boundary. Parser/AST/source
   // replay for block literals is live, while runnable lowering remains a
   // fail-closed non-goal until later M261 issues.
@@ -894,7 +894,7 @@ std::string Objc3ExecutableBlockSourceClosureSummary() {
 
 std::string Objc3ExecutableBlockSourceModelCompletionSummary() {
   std::ostringstream out;
-  // M261-A002 block-source-model-completion anchor: lane-A now upgrades the
+  // block-source-model-completion anchor: lane-A now upgrades the
   // frozen block source closure into a deterministic parameter/capture/invoke
   // source model that source-only frontend runs may publish before runnable
   // lowering still fails closed on native emit paths.
@@ -915,7 +915,7 @@ std::string Objc3ExecutableBlockSourceModelCompletionSummary() {
 
 std::string Objc3ExecutableBlockSourceStorageAnnotationSummary() {
   std::ostringstream out;
-  // M261-A003 block-source-storage-annotation anchor: lane-A now publishes a
+  // block-source-storage-annotation anchor: lane-A now publishes a
   // truthful byref/helper/escape-shape source inventory without claiming that
   // runnable block lowering, helper emission, or heap promotion already exist.
   out << "contract="
@@ -932,7 +932,7 @@ std::string Objc3ExecutableBlockSourceStorageAnnotationSummary() {
 
 std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary() {
   std::ostringstream out;
-  // M261-B001 block-runtime-semantic-rules freeze anchor: lane-B now freezes
+  // block-runtime-semantic-rules freeze anchor: lane-B now freezes
   // the current semantic split where source-only block admission is truthful,
   // deterministic capture/byref/helper/escape annotations exist, and native
   // emit paths still fail closed before runnable block semantics land.
@@ -956,7 +956,7 @@ std::string Objc3ExecutableBlockRuntimeSemanticRulesSummary() {
 
 std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() {
   std::ostringstream out;
-  // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor: lane-C now
+  // block-lowering-ABI/artifact-boundary freeze anchor: lane-C now
   // freezes the truthful lowering boundary that later runnable block-object
   // emission must preserve. The current compiler publishes deterministic
   // capture/invoke/storage/copy-dispose lowering surfaces, but native emit
@@ -988,7 +988,7 @@ std::string Objc3ExecutableBlockLoweringAbiArtifactBoundarySummary() {
 
 std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() {
   std::ostringstream out;
-  // M261-C002 executable-block-object/invoke-thunk implementation anchor:
+  // executable-block-object/invoke-thunk implementation anchor:
   // lane-C now widens the frozen C001 boundary into one real runnable slice.
   // Native lowering emits stack block storage plus one internal invoke thunk
   // for direct local invocation when captures are readonly scalar values. Byref
@@ -1017,7 +1017,7 @@ std::string Objc3ExecutableBlockObjectInvokeThunkLoweringSummary() {
 
 std::string Objc3ExecutableBlockByrefHelperLoweringSummary() {
   std::ostringstream out;
-  // M261-C003 byref-cell/copy-helper/dispose-helper implementation anchor:
+  // byref-cell/copy-helper/dispose-helper implementation anchor:
   // lane-C now makes the non-escaping byref and owned-capture block slice
   // runnable by emitting stack byref-cell references plus helper bodies and
   // helper call sites. Heap-promotion and runtime-managed copy/dispose remain
@@ -1045,7 +1045,7 @@ std::string Objc3ExecutableBlockByrefHelperLoweringSummary() {
 
 std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() {
   std::ostringstream out;
-  // M261-C004 escaping-block runtime-hook implementation anchor: lane-C now
+  // escaping-block runtime-hook implementation anchor: lane-C now
   // widens runnable native block lowering to escaping readonly-scalar block
   // values by emitting runtime heap-promotion and invoke hooks, while
   // ownership-sensitive escaping captures remain deferred to later lane-D
@@ -1073,7 +1073,7 @@ std::string Objc3ExecutableBlockEscapeRuntimeHookLoweringSummary() {
 
 std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
   std::ostringstream out;
-  // M261-D001 block-runtime API/object-layout freeze anchor: the current
+  // block-runtime API/object-layout freeze anchor: the current
   // runtime helper surface is frozen as a private lowering/runtime contract
   // with opaque storage copies and i32 block handles; no public block-object
   // ABI or generalized heap-managed copy/dispose surface is implied yet.
@@ -1092,7 +1092,7 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
 
 std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
   std::ostringstream out;
-  // M261-D002 block-runtime allocation/copy-dispose/invoke implementation
+  // block-runtime allocation/copy-dispose/invoke implementation
   // anchor: promoted runtime block records now preserve helper pointers and
   // aligned copied storage so pointer-capture block records can run copy,
   // invoke, and final-dispose behavior without claiming byref/ownership
@@ -1111,7 +1111,7 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
 
 std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
   std::ostringstream out;
-  // M261-D003 byref-forwarding/heap-promotion/ownership-interop
+  // byref-forwarding/heap-promotion/ownership-interop
   // implementation anchor: escaping pointer-capture block promotion now
   // rewrites capture slots onto runtime-owned heap cells before helper
   // execution so byref mutation and owned-capture lifetime hooks survive after
@@ -1131,7 +1131,7 @@ std::string Objc3RuntimeBlockByrefForwardingHeapPromotionInteropSummary() {
 
 std::string Objc3RunnableBlockRuntimeGateSummary() {
   std::ostringstream out;
-  // M261-E001 runnable-block-runtime gate anchor: lane-E now freezes one
+  // runnable-block-runtime gate anchor: lane-E now freezes one
   // integrated proof boundary above the retained source, sema, lowering, and
   // runtime summaries so runnable block behavior is validated against the live
   // native path rather than metadata-only claims.
@@ -1158,7 +1158,7 @@ std::string Objc3RunnableBlockRuntimeGateSummary() {
 
 std::string Objc3RunnableBlockExecutionMatrixSummary() {
   std::ostringstream out;
-  // M261-E002 runnable-block execution-matrix anchor: lane-E now closes M261
+  // runnable-block execution-matrix anchor: lane-E now closes M261
   // with one truthful executable matrix over the retained source, sema,
   // lowering, runtime, and E001 gate surfaces. This repackages the already
   // supported block slice into an operator-facing closeout proof without
@@ -1188,7 +1188,7 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
 
 std::string Objc3Part3OptionalKeypathLoweringSummary() {
   std::ostringstream out;
-  // M265-C002 optional chaining lowering anchor: `?.member` now desugars onto
+  // optional chaining lowering anchor: `?.member` now desugars onto
   // the same optional-send ABI and nil-short-circuit path already used by
   // bracketed optional sends, so the live lowering packet truthfully covers
   // optional-member access. M265-C003 now widens the same packet to cover
@@ -1227,7 +1227,7 @@ std::string Objc3Part5ControlFlowSafetyLoweringSummary() {
 
 std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
   std::ostringstream out;
-  // M265-D002 live-optional-send-and-keypath-runtime-support anchor: optional
+  // live-optional-send-and-keypath-runtime-support anchor: optional
   // sends stay on the public selector lookup/dispatch ABI while validated
   // single-component typed key-path handles now feed the private runtime
   // registry/testing helper surface without falsely claiming full
@@ -1253,7 +1253,7 @@ std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
 
 std::string Objc3ArcSourceModeBoundarySummary() {
   std::ostringstream out;
-  // M262-A001 ARC source-surface/mode-boundary anchor: ownership qualifiers,
+  // ARC source-surface/mode-boundary anchor: ownership qualifiers,
   // weak/unowned metadata, autoreleasepool profiling, and ARC fix-it surfaces
   // remain live in parser/sema/replay space, but the native driver still
   // rejects `-fobjc-arc` and executable ownership-qualified functions/methods
@@ -1281,7 +1281,7 @@ std::string Objc3ArcSourceModeBoundarySummary() {
 
 std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled) {
   std::ostringstream out;
-  // M262-A002 ARC mode-handling core implementation anchor: the native driver
+  // ARC mode-handling core implementation anchor: the native driver
   // now admits explicit ARC mode, threads it through frontend/sema/IR, and
   // keeps non-ARC ownership-qualified executable signatures fail-closed.
   out << "contract=" << Expr::kObjc3ArcModeHandlingContractId
@@ -1307,7 +1307,7 @@ std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled) {
 
 std::string Objc3ArcSemanticRulesSummary() {
   std::ostringstream out;
-  // M262-B001 ARC semantic-rule freeze anchor: explicit ARC mode is now a real
+  // ARC semantic-rule freeze anchor: explicit ARC mode is now a real
   // admission boundary, but property ownership conflicts, atomic
   // ownership-aware storage, and broader ARC inference still fail closed until
   // later lane-B implementation issues land.
@@ -1324,7 +1324,7 @@ std::string Objc3ArcSemanticRulesSummary() {
 
 std::string Objc3ArcInferenceLifetimeSummary() {
   std::ostringstream out;
-  // M262-B002 ARC inference/lifetime implementation anchor: explicit ARC mode
+  // ARC inference/lifetime implementation anchor: explicit ARC mode
   // now upgrades the supported runnable slice from explicit-only ownership
   // spelling to semantic strong-owned inference for unqualified object
   // parameters, returns, and property surfaces, while non-ARC remains a
@@ -1347,7 +1347,7 @@ std::string Objc3ArcInferenceLifetimeSummary() {
 
 std::string Objc3ArcInteractionSemanticsSummary() {
   std::ostringstream out;
-  // M262-B003 ARC interaction-semantics expansion anchor: explicit ARC mode
+  // ARC interaction-semantics expansion anchor: explicit ARC mode
   // now carries one truthful semantic packet over weak/non-owning property
   // and block interactions, explicit autorelease returns, and synthesized
   // property accessor ownership packets for the supported runnable slice,
@@ -1374,7 +1374,7 @@ std::string Objc3ArcInteractionSemanticsSummary() {
 
 std::string Objc3ArcLoweringAbiCleanupModelSummary() {
   std::ostringstream out;
-  // M262-C001 ARC lowering ABI/cleanup freeze anchor: lane-C now freezes the
+  // ARC lowering ABI/cleanup freeze anchor: lane-C now freezes the
   // current lowering boundary as the combination of semantic ARC packets,
   // unwind-cleanup accounting, and private runtime helper entrypoints, while
   // generalized cleanup scheduling and helper-placement automation remain
@@ -1412,10 +1412,10 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
 
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
   std::ostringstream out;
-  // M267-C001 Part 6 lowering freeze anchor: lane-C first froze the combined
+  // Part 6 lowering freeze anchor: lane-C first froze the combined
   // throws ABI and propagation packet before the runnable implementation
   // tranche landed. ;next_issue=M267-C002
-  // M267-C002 Part 6 lowering implementation anchor: lane-C now materializes
+  // Part 6 lowering implementation anchor: lane-C now materializes
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
   // artifacts while deferring the D001 runtime-helper contract tranche.
@@ -1443,7 +1443,7 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
 
 std::string Objc3Part6ResultAndBridgingArtifactReplaySummary() {
   std::ostringstream out;
-  // M267-C003 Part 6 replay-completion anchor: lane-C now extends the live
+  // Part 6 replay-completion anchor: lane-C now extends the live
   // C002 lowering surface with deterministic replay artifacts that survive
   // object emission, manifest emission, and emitted sidecar publication so
   // separate provider/consumer compilation can prove preserved result/bridge
@@ -1469,7 +1469,7 @@ std::string Objc3Part6ResultAndBridgingArtifactReplaySummary() {
 
 std::string Objc3Part6ErrorRuntimeBridgeHelperSummary() {
   std::ostringstream out;
-  // M267-D001 error-runtime/bridge-helper anchor: lane-D freezes the first
+  // error-runtime/bridge-helper anchor: lane-D freezes the first
   // real private runtime helper ABI consumed by the runnable Part 6 lowering
   // so thrown-error storage, bridge normalization, and do/catch dispatch stop
   // pretending raw local slots are the runtime boundary.
@@ -1492,7 +1492,7 @@ std::string Objc3Part6ErrorRuntimeBridgeHelperSummary() {
 
 std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
   std::ostringstream out;
-  // M267-D002 live catch/bridge/runtime integration anchor: lane-D now proves
+  // live catch/bridge/runtime integration anchor: lane-D now proves
   // the runnable Part 6 lowering does not just mention the private helper ABI;
   // linked native object code executes through that helper cluster and the
   // existing runtime-library packaging path remains sufficient for the current
@@ -1520,7 +1520,7 @@ std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
 
 std::string Objc3Part8SystemHelperRuntimeContractSummary() {
   std::ostringstream out;
-  // M271-D001 runtime/helper-freeze anchor: lane-D freezes the currently
+  // runtime/helper-freeze anchor: lane-D freezes the currently
   // supported Part 8 runtime/helper proof as a reuse boundary over the private
   // ARC/autorelease helper cluster and testing snapshots. Cleanup execution and
   // resource invalidation still ride existing cleanup lowering plus
@@ -1552,7 +1552,7 @@ std::string Objc3Part8SystemHelperRuntimeContractSummary() {
 
 std::string Objc3Part8LiveCleanupRetainableIntegrationSummary() {
   std::ostringstream out;
-  // M271-D002 live runtime-integration anchor: the supported Part 8 cleanup /
+  // live runtime-integration anchor: the supported Part 8 cleanup /
   // retainable-family slice now proves linked execution through emitted
   // scope-exit cleanup calls and the private ARC/autorelease helper cluster
   // frozen in D001. This remains a narrow executable slice, not a broader
@@ -1586,7 +1586,7 @@ std::string Objc3Part8LiveCleanupRetainableIntegrationSummary() {
 
 std::string Objc3Part7ContinuationRuntimeHelperSummary() {
   std::ostringstream out;
-  // M268-D001 continuation/runtime-helper anchor: lane-D freezes the first
+  // continuation/runtime-helper anchor: lane-D freezes the first
   // real private Part 7 helper ABI. The helper cluster now allocates logical
   // continuation handles and supports deterministic handoff/resume probes even
   // though the current direct-call async lowering slice still does not consume
@@ -1616,7 +1616,7 @@ std::string Objc3Part7ContinuationRuntimeHelperSummary() {
 
 std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
   std::ostringstream out;
-  // M268-D002 live continuation/runtime integration anchor: the supported
+  // live continuation/runtime integration anchor: the supported
   // non-suspending async slice now executes through the private continuation
   // helper cluster rather than merely advertising its ABI boundary in IR.
   out << "contract=" << kObjc3Part7LiveContinuationRuntimeIntegrationContractId
@@ -1665,7 +1665,7 @@ std::string Objc3Part7SchedulerExecutorRuntimeSummary() {
 
 std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
   std::ostringstream out;
-  // M269-D002 live task runtime anchor: the private helper cluster frozen in
+  // live task runtime anchor: the private helper cluster frozen in
   // D001 now serves as a live execution surface for the supported task spawn,
   // task-group, cancellation, and executor-hop slice rather than only an ABI
   // contract. Front-door metadata export gates remain deferred outside D002.
@@ -1697,7 +1697,7 @@ std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
 
 std::string Objc3Part7TaskRuntimeHardeningSummary() {
   std::ostringstream out;
-  // M269-D003 hardening anchor: live task helper execution now carries one
+  // hardening anchor: live task helper execution now carries one
   // explicit edge-case/runtime-stability packet for cancellation cleanup,
   // autorelease scopes, and reset-stable replay proof.
   out << "contract=" << kObjc3Part7TaskRuntimeHardeningContractId
@@ -1719,7 +1719,7 @@ std::string Objc3Part7TaskRuntimeHardeningSummary() {
 
 std::string Objc3ArcAutomaticInsertionSummary() {
   std::ostringstream out;
-  // M262-C002 ARC automatic-insertion anchor: lane-C now consumes the
+  // ARC automatic-insertion anchor: lane-C now consumes the
   // existing ARC semantic insertion flags for the supported runnable slice so
   // ordinary function and method lowering materializes retain/release/
   // autorelease helper calls instead of publishing summary-only intent.
@@ -1741,7 +1741,7 @@ std::string Objc3ArcAutomaticInsertionSummary() {
 
 std::string Objc3ArcCleanupWeakLifetimeHooksSummary() {
   std::ostringstream out;
-  // M262-C003 ARC cleanup/weak/lifetime lowering anchor: lane-C now widens the
+  // ARC cleanup/weak/lifetime lowering anchor: lane-C now widens the
   // supported ARC slice with scope-aware cleanup emission, the retained weak
   // current-property helper path, and deterministic block-capture lifetime
   // cleanup without claiming generalized weak-local or exception-driven ARC.
@@ -1767,7 +1767,7 @@ std::string Objc3ArcCleanupWeakLifetimeHooksSummary() {
 
 std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary() {
   std::ostringstream out;
-  // M262-C004 ARC/block autorelease-return lowering anchor: lane-C now closes
+  // ARC/block autorelease-return lowering anchor: lane-C now closes
   // the supported escaping-block plus autoreleasing-return edge inventory by
   // preserving terminal cleanup state across sibling branches while block
   // promotion/dispose helpers and autorelease-return conventions remain
@@ -1797,7 +1797,7 @@ std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary() {
 
 std::string Objc3RuntimeArcHelperApiSurfaceSummary() {
   std::ostringstream out;
-  // M262-D001 runtime ARC helper API surface anchor: lane-D now freezes the
+  // runtime ARC helper API surface anchor: lane-D now freezes the
   // private runtime helper ABI that current ARC lowering already consumes so
   // later runtime implementation work can widen behavior without silently
   // widening the public runtime header.
@@ -1831,7 +1831,7 @@ std::string Objc3RuntimeArcHelperApiSurfaceSummary() {
 
 std::string Objc3RuntimeArcHelperRuntimeSupportSummary() {
   std::ostringstream out;
-  // M262-D002 runtime ARC helper implementation anchor: lane-D now proves the
+  // runtime ARC helper implementation anchor: lane-D now proves the
   // private ARC helper ABI from D001 is linked and executable for the
   // currently supported ARC property/weak/autorelease-return slice.
   out << "contract=" << kObjc3RuntimeArcHelperRuntimeSupportContractId
@@ -1861,7 +1861,7 @@ std::string Objc3RuntimeArcHelperRuntimeSupportSummary() {
 
 std::string Objc3RuntimeArcDebugInstrumentationSummary() {
   std::ostringstream out;
-  // M262-D003 ownership-debug/runtime-validation anchor: lane-D now widens
+  // ownership-debug/runtime-validation anchor: lane-D now widens
   // the live ARC helper runtime surface with private testing snapshots and
   // deterministic counters so supported ARC helper traffic can be proven
   // without widening the public runtime ABI.
@@ -1897,7 +1897,7 @@ std::string Objc3RuntimeArcDebugInstrumentationSummary() {
 
 std::string Objc3RunnableArcRuntimeGateSummary() {
   std::ostringstream out;
-  // M262-E001 runnable-arc-runtime gate anchor: lane-E freezes the supported
+  // runnable-arc-runtime gate anchor: lane-E freezes the supported
   // runnable ARC slice by consuming the current mode-handling, interaction,
   // lowering, and runtime proofs rather than widening source, lowering, or
   // public runtime behavior.
@@ -1917,7 +1917,7 @@ std::string Objc3RunnableArcRuntimeGateSummary() {
 
 std::string Objc3RunnableArcCloseoutSummary() {
   std::ostringstream out;
-  // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
+  // runnable-arc-closeout anchor: lane-E closes the current ARC
   // tranche by consuming the existing mode-handling, interaction, lowering,
   // runtime, and gate proofs plus integrated execution smoke instead of
   // widening the supported source/runtime slice.
@@ -1933,7 +1933,7 @@ std::string Objc3RunnableArcCloseoutSummary() {
 
 std::string Objc3ExecutableMethodBodyBindingSummary() {
   std::ostringstream out;
-  // M256-C002 executable method-body binding implementation anchor: lane-C
+  // executable method-body binding implementation anchor: lane-C
   // upgrades the frozen C001 surface into a fail-closed runtime capability by
   // requiring every implementation-owned executable method entry to bind to
   // exactly one concrete LLVM definition symbol before the object artifact is
@@ -1949,7 +1949,7 @@ std::string Objc3ExecutableMethodBodyBindingSummary() {
 
 std::string Objc3ExecutableRealizationRecordsSummary() {
   std::ostringstream out;
-  // M256-C003 executable realization-record expansion anchor: emitted
+  // executable realization-record expansion anchor: emitted
   // class/protocol/category records now preserve the owner and graph edges that
   // D-lane runtime realization will consume directly. Parser/sema still own the
   // legality and canonical identities; lowering only serializes that closure
@@ -1969,7 +1969,7 @@ std::string Objc3ExecutableRealizationRecordsSummary() {
 
 std::string Objc3RuntimeClassRealizationSummary() {
   std::ostringstream out;
-  // M256-D001 class-realization-runtime freeze anchor: the current runtime
+  // class-realization-runtime freeze anchor: the current runtime
   // consumes emitted realization records directly, walks the class/metaclass
   // graph deterministically, attaches preferred category implementation
   // records after bundle selection, and uses protocol records only as
@@ -1989,7 +1989,7 @@ std::string Objc3RuntimeClassRealizationSummary() {
 
 std::string Objc3RuntimeMetaclassGraphRootClassSummary() {
   std::ostringstream out;
-  // M256-D002 metaclass-graph-root-class anchor: runtime now publishes a
+  // metaclass-graph-root-class anchor: runtime now publishes a
   // realized class graph keyed by stable receiver base identities, preserves
   // root classes as explicit nodes with null superclass links, and keeps
   // known-class/class-self dispatch on the same metaclass graph without
@@ -2008,7 +2008,7 @@ std::string Objc3RuntimeMetaclassGraphRootClassSummary() {
 
 std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary() {
   std::ostringstream out;
-  // M256-D003 category-attachment-protocol-conformance anchor: runtime-owned
+  // category-attachment-protocol-conformance anchor: runtime-owned
   // realized class nodes now retain preferred category attachments and answer
   // protocol conformance queries from emitted class/category protocol refs
   // without rediscovering source legality or widening the public ABI.
@@ -2026,7 +2026,7 @@ std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary() {
 
 std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary() {
   std::ostringstream out;
-  // M256-D004 canonical-runnable-object-sample anchor: runtime-owned builtin
+  // canonical-runnable-object-sample anchor: runtime-owned builtin
   // alloc/new/init resolution now closes the smallest truthful executable
   // object sample while metadata-rich object-model behavior stays proven
   // through paired library/probe evidence instead of pretending the runtime
@@ -2045,7 +2045,7 @@ std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary() {
 
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
   std::ostringstream out;
-  // M253-C006 binary inspection harness expansion anchor: lane-C now proves
+  // binary inspection harness expansion anchor: lane-C now proves
   // emitted metadata sections structurally through one shared llvm-readobj and
   // llvm-objdump corpus. The positive corpus covers scaffold-only, class-heavy,
   // category-heavy, and selector-pool-heavy objects, while the negative corpus
@@ -2065,7 +2065,7 @@ std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary() {
 
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
   std::ostringstream out;
-  // M253-D001 object-packaging/retention freeze anchor: lane-D now freezes the
+  // object-packaging/retention freeze anchor: lane-D now freezes the
   // current produced-object handoff as module.obj plus retained aggregate
   // symbols. Later archive/link/startup-registration work must preserve this
   // boundary and may not silently replace llvm.used or aggregate symbol roots.
@@ -2083,7 +2083,7 @@ std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary() {
 
 std::string Objc3RuntimeMetadataLinkerRetentionSummary() {
   std::ostringstream out;
-  // M253-D002 linker-retention/dead-strip resistance anchor: lane-D adds one
+  // linker-retention/dead-strip resistance anchor: lane-D adds one
   // real public linker anchor and one public discovery root, together with a
   // driver response-file payload that can force-retain the archived object that
   // owns the metadata sections. Multi-archive and multi-TU edge cases remain
@@ -2108,7 +2108,7 @@ std::string Objc3RuntimeMetadataLinkerRetentionSummary() {
 
 std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
   std::ostringstream out;
-  // M253-D003 archive/static-link discovery anchor: lane-D extends the D002
+  // archive/static-link discovery anchor: lane-D extends the D002
   // object-level discovery path with translation-unit-stable public anchors and
   // one merged discovery/response artifact pair that downstream archive/static
   // link orchestration can consume deterministically across multiple TUs.
@@ -2128,7 +2128,7 @@ std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary() {
 
 std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
   std::ostringstream out;
-  // M263-C001 constructor-root/init-array lowering freeze anchor: the live
+  // constructor-root/init-array lowering freeze anchor: the live
   // lowering path already materializes ctor-root/global_ctors/init-stub/
   // registration-table/image-local-init globals. This summary is the
   // canonical replay-stable description of that current boundary and the
@@ -2163,7 +2163,7 @@ std::string Objc3RuntimeBootstrapLoweringBoundarySummary() {
 
 std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary() {
   std::ostringstream out;
-  // M263-C002 registration-descriptor/image-root lowering anchor: this
+  // registration-descriptor/image-root lowering anchor: this
   // summary freezes the first live binary lowering surface for the source
   // identifiers from M263-A002. The IR/object path now materializes dedicated
   // registration-descriptor and image-root globals in their own sections
@@ -2190,7 +2190,7 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
 
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary() {
   std::ostringstream out;
-  // M263-C003 archive/static-link bootstrap replay corpus anchor: this
+  // archive/static-link bootstrap replay corpus anchor: this
   // summary binds the M253-D003 retained archive/static-link discovery path to
   // the live M263-B003 bootstrap reset/replay runtime so validation can prove
   // real startup registration and replay behavior over linked archives.
@@ -2216,7 +2216,7 @@ std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary() {
 
 std::string Objc3RuntimeMetadataEmissionGateSummary() {
   std::ostringstream out;
-  // M253-E001 metadata-emission gate anchor: lane-E freezes one fail-closed
+  // metadata-emission gate anchor: lane-E freezes one fail-closed
   // evidence chain over the implemented A002/B003/C006/D003 summaries before
   // cross-lane closeout begins, so later work must preserve the same source
   // matrix, object-format policy, binary inspection corpus, and archive/static
@@ -2230,7 +2230,7 @@ std::string Objc3RuntimeMetadataEmissionGateSummary() {
 
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary() {
   std::ostringstream out;
-  // M253-E002 cross-lane object-emission closeout anchor: lane-E extends the
+  // cross-lane object-emission closeout anchor: lane-E extends the
   // E001 summary chain with fresh integrated native object probes so class,
   // category, and message-send outputs all prove the same source graph,
   // object-format policy, binary inspection, and linker/discovery continuity
@@ -2246,7 +2246,7 @@ std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary() {
 
 std::string Objc3VersionedConformanceReportLoweringContractSummary() {
   std::ostringstream out;
-  // M264-C001 lowering freeze anchor: lane-C lowers the existing A/B truth
+  // lowering freeze anchor: lane-C lowers the existing A/B truth
   // packets into one emitted machine-readable sidecar so later runtime
   // capability reporting and driver publication consume the same versioned
   // report instead of reconstructing feature truth from docs or release notes.
@@ -2333,7 +2333,7 @@ std::string Objc3Part12CorpusShardingReleaseEvidencePackagingLoweringSummary() {
 
 std::string Objc3RuntimeCapabilityReportingContractSummary() {
   std::ostringstream out;
-  // M264-C002 capability-reporting anchor: lane-C must publish one truthful
+  // capability-reporting anchor: lane-C must publish one truthful
   // machine-readable runtime/public capability payload that mirrors the
   // lowered conformance truth surface instead of deriving product claims from
   // release notes, docs, or ad hoc driver state.
@@ -2843,7 +2843,7 @@ std::string Objc3RuntimeShimHostLinkReplayKey(
          ";lane_contract=" + kObjc3RuntimeShimHostLinkLaneContract;
 }
 
-// M255-C001 dispatch lowering ABI freeze anchor: lane-C publishes the
+// dispatch lowering ABI freeze anchor: lane-C publishes the
 // compiler-to-runtime cutover boundary here without changing executable call
 // emission yet. Validation must keep the canonical runtime symbol, selector
 // lookup/handle surface, i32 receiver/result ABI, and fixed four-slot padding
@@ -2964,12 +2964,12 @@ std::string Objc3RuntimeDispatchLoweringAbiBoundarySummary(
 
 bool IsValidObjc3OwnershipQualifierLoweringContract(
     const Objc3OwnershipQualifierLoweringContract &contract) {
-  // M260-A001 runtime-backed-object-ownership freeze anchor: these legacy
+  // runtime-backed-object-ownership freeze anchor: these legacy
   // ownership replay surfaces remain part of the truthful runtime-backed
   // object ownership boundary until live ARC runtime behavior lands later in
   // M260. They are preserved summary lanes, not proof that executable
   // function/method ownership qualifiers are already runnable.
-  // M260-B001 retainable-object semantic-rule freeze anchor: ownership
+  // retainable-object semantic-rule freeze anchor: ownership
   // qualifier replay stays authoritative for fail-closed executable storage
   // legality until live runtime-backed retain/release rules land.
   return contract.invalid_ownership_qualifier_sites <= contract.ownership_qualifier_sites &&
@@ -3279,7 +3279,7 @@ std::string Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
 
 bool IsValidObjc3BlockStorageEscapeLoweringContract(
     const Objc3BlockStorageEscapeLoweringContract &contract) {
-  // M261-B002 capture-legality/escape/invocation implementation anchor:
+  // capture-legality/escape/invocation implementation anchor:
   // truthful escape classification no longer pretends that every capture is
   // mutated or lowered through byref storage. Mutable/byref counts are now a
   // bounded subset of the total capture inventory while source-only native
@@ -3332,11 +3332,11 @@ std::string Objc3BlockStorageEscapeLoweringReplayKey(
 
 bool IsValidObjc3BlockCopyDisposeLoweringContract(
     const Objc3BlockCopyDisposeLoweringContract &contract) {
-  // M261-B002 capture-legality/escape/invocation implementation anchor:
+  // capture-legality/escape/invocation implementation anchor:
   // copy/dispose helper intent is now driven by truthful mutable/byref
   // capture counts rather than by the older synthetic all-captures-need-
   // helpers model.
-  // M261-B003 byref/copy-dispose/object-ownership anchor: helper eligibility
+  // byref/copy-dispose/object-ownership anchor: helper eligibility
   // may now be promoted by owned object captures even when byref slot totals remain zero,
   // so this contract intentionally avoids pinning helper counts directly to
   // byref totals.
@@ -4627,7 +4627,7 @@ std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
 
 std::string Objc3Part11BridgePackagingToolchainSummary() {
   std::ostringstream out;
-  // M274-D001 packaging/toolchain anchor: lane-D freezes one truthful Part 11
+  // packaging/toolchain anchor: lane-D freezes one truthful Part 11
   // packaging boundary over the already-landed runtime-import-surface and
   // cross-module link-plan topology without claiming live header/module/bridge
   // generation yet.
@@ -4740,7 +4740,7 @@ std::string Objc3Part10ModuleInterfaceReplayPreservationSummary() {
 
 std::string Objc3Part10ExpansionHostRuntimeBoundarySummary() {
   std::ostringstream out;
-  // M273-D001 host/runtime-boundary anchor: lane-D freezes one truthful Part 10
+  // host/runtime-boundary anchor: lane-D freezes one truthful Part 10
   // boundary over the already-landed synthesized/property runtime slice without
   // claiming live macro host execution or runtime package loading.
   out << "contract=" << kObjc3Part10ExpansionHostRuntimeBoundaryContractId
@@ -4794,7 +4794,7 @@ std::string Objc3Part10MacroHostProcessCacheRuntimeIntegrationSummary() {
 
 std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
-  // M272-C003 preservation anchor: lane-C extends the local C002 lowering win
+  // preservation anchor: lane-C extends the local C002 lowering win
   // by preserving direct/final/sealed intent through runtime metadata source
   // records, emitted runtime-import-surface artifacts, and imported replay
   // summaries before lane-D runtime boundary work begins.

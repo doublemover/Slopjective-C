@@ -76,41 +76,41 @@ Objc3Lexer::BootstrapRegistrationSourceContract() const {
 }
 
 std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics) {
-  // M264-A001 mode-truth source anchor: the lexer owns the effective language
+  // mode-truth source anchor: the lexer owns the effective language
   // version / compatibility / migration prelude inputs consumed by the
   // runnable feature-claim inventory emitted by the frontend manifest.
-  // M264-A002 truth-surface wiring anchor: strictness / strict concurrency do
+  // truth-surface wiring anchor: strictness / strict concurrency do
   // not have accepted hidden lexer/prelude selection forms yet, so the emitted
   // truth packet must keep those surfaces fail-closed and unadvertised.
-  // M269-A001 source-closure note: task/executor/cancellation work does not
+  // source-closure note: task/executor/cancellation work does not
   // add dedicated lexer keywords yet; do not add dedicated lexer keywords yet.
   // The admitted source surface remains the existing async/await tokens plus
   // parser-owned identifier profiles and canonical `objc_executor(...)`
   // attribute payloads, including the later M269-A002 task-group/task-creation
   // callable source completion.
-  // M270-A001 source-closure note: actor/isolation/sendable work also remains
+  // source-closure note: actor/isolation/sendable work also remains
   // identifier/attribute-profile driven here. Do not add dedicated
   // actor/sendable/nonisolated lexer keywords yet; the truthful source
   // boundary is still parser-owned profiling on top of the existing token
   // stream.
-  // M270-A002 source-surface note: actor-member completion keeps `actor`
+  // source-surface note: actor-member completion keeps `actor`
   // contextual rather than promoting it to a reserved token; `actor class`
   // and `objc_nonisolated` are parser-owned surfaces built on this same token
   // stream.
-  // M271-A001 source-surface note: `borrowed`, `weak`, `unowned`, and `move`
+  // source-surface note: `borrowed`, `weak`, `unowned`, and `move`
   // remain contextual rather than promoting them to reserved tokens; Part 8
   // resource attributes, borrowed-pointer qualifiers, and explicit block
   // capture lists are parser-owned surfaces built on this same token stream.
-  // M271-A002 source-surface note: `@cleanup` and `@resource` are admitted as
+  // source-surface note: `@cleanup` and `@resource` are admitted as
   // local storage-annotation directives without claiming cleanup lowering or
   // runtime resource behavior yet.
-  // M271-A003 source-surface note: retainable C-family callable annotations
+  // source-surface note: retainable C-family callable annotations
   // remain parser-owned `__attribute__` spellings rather than dedicated lexer
   // keywords; the lexer only needs to preserve their identifier tokens.
-  // M274-A001 source-closure note: base interop closure keeps
+  // source-closure note: base interop closure keeps
   // `objc_foreign`/`objc_import_module` parser-owned and identifier-based
   // here; do not promote them into dedicated lexer keywords.
-  // M274-A002 source-completion note: C++/Swift-facing interop annotations are
+  // source-completion note: C++/Swift-facing interop annotations are
   // also parser-owned callable attributes. Keep `objc_swift_name`,
   // `objc_swift_private`, `objc_cxx_name`, and `objc_header_name` as
   // identifier tokens here.
@@ -119,22 +119,22 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // completion packet are both derived from the existing Part 6 through Part
   // 11 parser-owned surfaces plus the migration hint counters emitted here for
   // legacy `YES` / `NO` / `NULL` spellings.
-  // M272-A001 source-surface note: direct/final/sealed/dynamic dispatch-intent
+  // source-surface note: direct/final/sealed/dynamic dispatch-intent
   // controls also remain parser-owned `__attribute__` spellings rather than
   // new reserved lexer keywords; the truthful Part 9 source boundary is
   // frontend-owned attribute profiling on top of this same token stream.
-  // M272-A002 source-completion note: prefixed container attribute lists ahead
+  // source-completion note: prefixed container attribute lists ahead
   // of `@interface` and `actor class` still reuse the same parser-owned
   // identifier token stream rather than widening the lexer boundary.
-  // M273-A001 source-closure note: derive, macro, and property-behavior work
+  // source-closure note: derive, macro, and property-behavior work
   // likewise stays identifier/attribute-profile driven here. Do not add
   // dedicated derive/macro/property-behavior lexer keywords yet; the truthful
   // Part 10 source boundary is still parser-owned profiling on top of this
   // same token stream.
-  // M273-A002 source-completion note: macro package/provenance admission also
+  // source-completion note: macro package/provenance admission also
   // remains parser-owned callable attribute profiling on top of this same token
   // stream; do not widen the lexer with dedicated package/provenance keywords.
-  // M273-A003 source-completion note: property-behavior synthesized
+  // source-completion note: property-behavior synthesized
   // declaration visibility likewise stays a parser/frontend packet concern on
   // top of the existing `behavior=...` property attribute spelling.
   ConsumePreludePragmas(diagnostics);
@@ -271,7 +271,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwElse;
       } else if (ident == "guard") {
         kind = TokenKind::KwGuard;
-      // M266-A001 source-closure anchor: reserve defer/match as explicit
+      // source-closure anchor: reserve defer/match as explicit
       // frontend-owned keywords so later Part 5 work can fail closed
       // deterministically instead of drifting as plain identifiers.
       } else if (ident == "defer") {
@@ -517,7 +517,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
 }
 
 void Objc3Lexer::ConsumePreludePragmas(std::vector<std::string> &diagnostics) {
-  // M263-A002 frontend-closure anchor: bootstrap registration pragmas must be
+  // frontend-closure anchor: bootstrap registration pragmas must be
   // consumed in the file-scope prelude so the emitted registration-descriptor
   // artifact keeps one deterministic identity boundary.
   while (true) {

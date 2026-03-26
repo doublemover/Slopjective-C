@@ -342,11 +342,11 @@ using RuntimeBlockInvokeFn = int (*)(void *, int, int, int, int);
 using RuntimeBlockCopyHelperFn = void (*)(void *);
 using RuntimeBlockDisposeHelperFn = void (*)(void *);
 
-// M261-D001 block-runtime API/object-layout freeze anchor: the current block
+// block-runtime API/object-layout freeze anchor: the current block
 // handle/object layout remains private runtime state. The compiler/runtime
 // contract is one opaque copied storage blob plus a private invoke pointer; no
 // public block-object memory layout is promised yet.
-// M261-D002 block-runtime allocation/copy-dispose/invoke anchor: runtime block
+// block-runtime allocation/copy-dispose/invoke anchor: runtime block
 // records now preserve aligned copied storage plus optional helper pointers so
 // promotion/invoke/final-dispose behavior for pointer-capture blocks executes
 // inside the private runtime model.
@@ -386,7 +386,7 @@ std::size_t RuntimeBlockPointerCaptureSlotCount(const RuntimeBlockRecord &record
 }
 
 bool PromotePointerCaptureCellsIntoRuntimeOwnedStorage(RuntimeBlockRecord &record) {
-  // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+  // byref-forwarding/heap-promotion/ownership-interop anchor:
   // pointer-capture promotion now rewrites capture slots onto runtime-owned
   // heap cells so escaping blocks no longer borrow stack-cell addresses after
   // promotion.
@@ -1205,7 +1205,7 @@ bool ProbeProtocolSelectorDeclarationUnlocked(
     DispatchFamily family, std::uint64_t selector_stable_id,
     const char *selector_spelling, std::uint64_t &protocol_probe_count,
     bool &declared, bool &ambiguous) {
-  // M255-D004 protocol/category-aware resolution anchor: adopted/inherited
+  // protocol/category-aware resolution anchor: adopted/inherited
   // protocol method lists now provide declaration-aware negative resolution
   // while remaining non-callable, so unresolved selectors can fall closed to
   // compatibility dispatch with explicit protocol probe evidence.
@@ -1269,7 +1269,7 @@ bool ProbeProtocolSelectorDeclarationUnlocked(
 bool CollectPreferredCategoryRecordsForImage(
     const RegisteredImageMetadata &record, const std::string &class_name,
     std::vector<const EmittedCategoryRecord *> &preferred_records) {
-  // M256-D001 class-realization-runtime freeze anchor: category attachment is
+  // class-realization-runtime freeze anchor: category attachment is
   // resolved from emitted category records only after one concrete class name
   // has been selected. Runtime prefers implementation records over interface
   // records per category name and fails closed on conflicting attachments.
@@ -1417,7 +1417,7 @@ bool QueryProtocolConformanceFromAggregateUnlocked(
 
 bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
                                            RealizedClassNode &node) {
-  // M256-D003 category-attachment-protocol-conformance anchor: realized class
+  // category-attachment-protocol-conformance anchor: realized class
   // nodes now own preferred category attachments and direct protocol edges so
   // later dispatch/query paths consume the published graph instead of
   // rediscovering category/protocol relationships on each lookup.
@@ -1477,7 +1477,7 @@ RuntimeMethodReturnKind ClassifySynthesizedPropertyReturnType(
 
 bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
                                                  RealizedClassNode &node) {
-  // M257-D002 instance-allocation-layout-runtime anchor: realized classes now
+  // instance-allocation-layout-runtime anchor: realized classes now
   // eagerly consume emitted property and ivar metadata into a runtime-owned
   // layout/accessor view so alloc/new and synthesized accessors can execute
   // against per-instance storage instead of lane-C globals.
@@ -1682,7 +1682,7 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
     const RuntimeState &state, const RealizedClassNode &start_node,
     const char *property_name, const RealizedClassNode *&resolved_node,
     bool &inherited) {
-  // M257-D003 property-metadata-reflection anchor: private reflective helper
+  // property-metadata-reflection anchor: private reflective helper
   // lookup walks the realized runtime-owned property graph by class/property
   // name instead of rediscovering accessors or layout from source.
   if (property_name == nullptr || property_name[0] == '\0') {
@@ -1719,7 +1719,7 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
     const char *selector_spelling, SlowPathResolution &resolution,
     bool &ambiguous, std::uint64_t &category_probe_count,
     std::uint64_t &protocol_probe_count) {
-  // M255-D004 protocol/category-aware resolution anchor: once class bodies miss,
+  // protocol/category-aware resolution anchor: once class bodies miss,
   // preferred category implementation records become the next live method tier
   // and adopted/inherited protocol records provide declaration-aware negative
   // lookup evidence for unsupported selectors.
@@ -1785,10 +1785,10 @@ bool TryResolveRuntimeBuiltinObjectSampleMethod(
     return false;
   }
   const std::string selector = selector_spelling;
-  // M257-D001 runtime property/layout consumption freeze anchor: builtin
+  // runtime property/layout consumption freeze anchor: builtin
   // alloc/new and synthesized property access remain on the runtime-owned
   // lookup/dispatch surface instead of rederiving storage from source.
-  // M257-D002 instance-allocation-layout-runtime anchor: builtin alloc/new now
+  // instance-allocation-layout-runtime anchor: builtin alloc/new now
   // materialize distinct runtime instance identities backed by realized class
   // layout, and synthesized property accessors execute against per-instance
   // storage instead of lane-C globals.
@@ -1903,7 +1903,7 @@ bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
 }
 
 void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
-  // M256-D002 metaclass-graph-root-class anchor: runtime now republishes a
+  // metaclass-graph-root-class anchor: runtime now republishes a
   // realized class/metaclass graph keyed by stable receiver base identities,
   // preserving root classes as explicit graph nodes rather than rediscovering
   // the class family from emitted bundles on every dispatch.
@@ -2117,7 +2117,7 @@ bool TryResolveMethodFromRealizedClassChainUnlocked(
     SlowPathResolution &resolution, bool &ambiguous,
     std::uint64_t &category_probe_count,
     std::uint64_t &protocol_probe_count) {
-  // M256-D001 class-realization-runtime freeze anchor: runtime walks the
+  // class-realization-runtime freeze anchor: runtime walks the
   // emitted class/metaclass chain directly, consults attached categories at
   // each realized class node, and preserves protocol checks as
   // declaration-aware negative evidence only.
@@ -2294,7 +2294,7 @@ void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
 }
 
 void SeedDispatchIntentFastPathCacheUnlocked(RuntimeState &state) {
-  // M272-D002 live-dispatch-fast-path anchor: registration-time class-graph
+  // live-dispatch-fast-path anchor: registration-time class-graph
   // rebuild now pre-seeds deterministic cache entries for safe implementation-
   // backed direct/final/sealed methods so the first live dispatch can hit the
   // runtime cache without paying a slow-path lookup.
@@ -2773,7 +2773,7 @@ void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
     --block_it->second.retain_count;
     return;
   }
-  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: final
+  // block-runtime allocation/copy-dispose/invoke anchor: final
   // block-handle release now runs the optional dispose helper before erasing
   // the runtime-owned block record.
   if (block_it->second.dispose_helper != nullptr &&
@@ -2885,7 +2885,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
 }
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
-  // M255-D002 selector-table anchor: metadata-backed selector pools now
+  // selector-table anchor: metadata-backed selector pools now
   // materialize the canonical runtime selector table, while direct lookup of
   // non-emitted selectors remains a dynamic fallback. M255-D003 layers
   // method-cache and class/metaclass slow-path dispatch on top of the same
@@ -3080,7 +3080,7 @@ std::int64_t ComputeSelectorScore(const char *selector) {
 
 int ComputeDispatchResult(int receiver, const char *selector, int a0, int a1,
                           int a2, int a3) {
-  // M255-D001 lookup-dispatch-runtime anchor: live dispatch still preserves the
+  // lookup-dispatch-runtime anchor: live dispatch still preserves the
   // deterministic formula as the fail-closed fallback. M255-D003 now routes
   // supported class/metaclass resolutions through emitted method bodies first
   // and returns to this arithmetic path only for unresolved or unsupported
@@ -3299,7 +3299,7 @@ bool TryWalkRegistrationTableUnlocked(
     const objc3_runtime_registration_table *registration_table,
     const objc3_runtime_image_descriptor *image,
     RegisteredImageMetadata &record) {
-  // M263-D001 runtime-bootstrap-table-consumption anchor: staged registration
+  // runtime-bootstrap-table-consumption anchor: staged registration
   // tables must match the image descriptor exactly, discovery-root membership
   // must close over every descriptor family before image state is published,
   // and the walked image snapshot is derived from this validated table rather
@@ -3458,7 +3458,7 @@ int RegisterImageUnlocked(
     RuntimeState &state, const objc3_runtime_image_descriptor *image,
     const objc3_runtime_registration_table *staged_registration_table,
     bool retain_bootstrap_record, bool mark_image_local_init_state) {
-  // M263-D001 runtime-bootstrap-table-consumption anchor: duplicate identity
+  // runtime-bootstrap-table-consumption anchor: duplicate identity
   // rejection and out-of-order rejection happen before live counters advance,
   // while successful staged-table consumption is the only path allowed to
   // publish bootstrap-visible image-walk state.
@@ -3533,7 +3533,7 @@ int RegisterImageUnlocked(
       image->translation_unit_identity_key;
   state.registration_order_by_identity_key.emplace(
       image->translation_unit_identity_key, image->registration_order_ordinal);
-  // M256-D002 metaclass-graph-root-class anchor: successful registration now
+  // metaclass-graph-root-class anchor: successful registration now
   // republishes a runtime-owned realized class/metaclass graph and root-class
   // baseline before dispatch can consume the image.
   RebuildRealizedClassGraphUnlocked(state);
@@ -3569,7 +3569,7 @@ bool QueryRealizedClassProtocolConformanceUnlocked(
     const char *protocol_name, std::uint64_t &visited_protocol_count,
     std::string &matched_protocol_owner_identity,
     std::string &matched_attachment_owner_identity) {
-  // M256-D003 category-attachment-protocol-conformance anchor: runtime-facing
+  // category-attachment-protocol-conformance anchor: runtime-facing
   // protocol conformance queries walk realized class nodes, attached category
   // protocol refs, and inherited protocol closures without widening the public
   // dispatch ABI.
@@ -3618,7 +3618,7 @@ extern "C" void objc3_runtime_stage_registration_table_for_bootstrap(
   state.staged_registration_table = registration_table;
 }
 
-// M254-D001 runtime-bootstrap-api anchor: registration, selector lookup,
+// runtime-bootstrap-api anchor: registration, selector lookup,
 // dispatch, snapshot, and reset remain the frozen bootstrap runtime boundary.
 // D002/D003 may extend image walk and reset behavior, but they must preserve
 // this surface and its fail-closed status/result contract.
@@ -3627,7 +3627,7 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
   std::lock_guard<std::mutex> lock(state.mutex);
   const objc3_runtime_registration_table *const staged_registration_table =
       state.staged_registration_table;
-  // M263-D001 runtime-bootstrap-table-consumption anchor: staging is one-shot
+  // runtime-bootstrap-table-consumption anchor: staging is one-shot
   // and is consumed by the next public registration call only.
   state.staged_registration_table = nullptr;
   return RegisterImageUnlocked(state, image, staged_registration_table, true,
@@ -3642,7 +3642,7 @@ int objc3_runtime_copy_image_walk_state_for_testing(
 
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  // M263-D002 live-registration-discovery-replay anchor: discovery-root/image
+  // live-registration-discovery-replay anchor: discovery-root/image
   // walk state stays runtime-owned, is republished after deterministic replay,
   // and remains the canonical proof surface for the last discovered metadata
   // families rather than a manifest-only summary.
@@ -3684,7 +3684,7 @@ int objc3_runtime_copy_reset_replay_state_for_testing(
 
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  // M263-D002 live-registration-discovery-replay anchor: reset/replay evidence
+  // live-registration-discovery-replay anchor: reset/replay evidence
   // is published directly from runtime state so probes can verify retained
   // bootstrap catalog ownership, reset clears, and replayed identity/generation
   // without trusting sidecar manifests.
@@ -3771,12 +3771,12 @@ int objc3_runtime_copy_selector_lookup_entry_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-// M265-D002 live-optional-send-and-keypath-runtime-support anchor: typed
+// live-optional-send-and-keypath-runtime-support anchor: typed
 // key-path runtime support currently materializes emitted single-component
 // descriptor handles into a private runtime registry plus narrow probe helpers.
 // Optional sends stay on public lookup/dispatch; full multi-component key-path
 // evaluation remains deferred.
-// M265-D003 cross-module type-surface preservation anchor: when multiple images
+// cross-module type-surface preservation anchor: when multiple images
 // register through imported runtime surfaces, the same registry path remains
 // authoritative so imported typed key-path descriptors survive startup
 // registration without changing handle semantics.
@@ -4138,7 +4138,7 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
 
 int objc3_runtime_copy_property_registry_state_for_testing(
     objc3_runtime_property_registry_state_snapshot *snapshot) {
-  // M257-D003 property-metadata-reflection anchor: the private registry-state
+  // property-metadata-reflection anchor: the private registry-state
   // snapshot is the canonical diagnostic/testing surface for aggregate
   // reflectable property metadata counts and last-query evidence.
   if (snapshot == nullptr) {
@@ -4188,7 +4188,7 @@ int objc3_runtime_copy_property_registry_state_for_testing(
 int objc3_runtime_copy_property_entry_for_testing(
     const char *class_name, const char *property_name,
     objc3_runtime_property_entry_snapshot *snapshot) {
-  // M257-D003 property-metadata-reflection anchor: the private per-property
+  // property-metadata-reflection anchor: the private per-property
   // snapshot exposes runtime-owned accessor/layout facts by class/property name
   // without widening the public ABI or rederiving metadata from source.
   if (snapshot == nullptr) {
@@ -4602,10 +4602,10 @@ int objc3_runtime_copy_task_runtime_state_for_testing(
 
 int objc3_runtime_copy_actor_runtime_state_for_testing(
     objc3_runtime_actor_runtime_state_snapshot *snapshot) {
-  // M270-D001 actor-runtime/executor-binding anchor: lane-D freezes the
+  // actor-runtime/executor-binding anchor: lane-D freezes the
   // private actor runtime proof surface on this snapshot rather than claiming
   // a wider public mailbox runtime ABI.
-  // M270-D003 cross-module isolation-metadata hardening anchor: mixed-module
+  // cross-module isolation-metadata hardening anchor: mixed-module
   // import/link-plan validation now preserves replay facts for this same
   // private snapshot-backed actor runtime slice without widening the public
   // runtime header.
@@ -4652,7 +4652,7 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
 
 int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
     objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot) {
-  // M273-D001 expansion-host/runtime-boundary anchor: lane-D freezes the
+  // expansion-host/runtime-boundary anchor: lane-D freezes the
   // truthful Part 10 boundary on one private snapshot backed by the existing
   // packaged runtime archive and property-accessor helper slice without
   // claiming live macro host execution or runtime package loading.
@@ -4706,7 +4706,7 @@ int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_
 
 int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
     objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot) {
-  // M274-D001 bridge-packaging/toolchain anchor: lane-D freezes the truthful
+  // bridge-packaging/toolchain anchor: lane-D freezes the truthful
   // Part 11 packaging/runtime boundary on one private snapshot backed by the
   // existing runtime archive path and cross-module link-plan topology without
   // claiming live header/module/bridge generation yet.
@@ -4760,11 +4760,11 @@ int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
 int objc3_runtime_replay_registered_images_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  // M263-D002 live-registration-discovery-replay anchor: replay consumes the
+  // live-registration-discovery-replay anchor: replay consumes the
   // retained bootstrap catalog only when live registration state is empty,
   // republishes discovery/image-walk state through the same staged-table path,
   // and records last-replayed identity plus replay-generation evidence.
-  // M263-D003 live-restart-hardening anchor: replay fails closed when live
+  // live-restart-hardening anchor: replay fails closed when live
   // runtime state is still populated, repeated restart cycles must remain
   // deterministic, and replay-generation evidence must advance monotonically.
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -4827,21 +4827,21 @@ const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
   return LookupSelectorUnlocked(selector);
 }
 
-// M265-D001 optional/key-path runtime-helper freeze anchor: the live Part 3
+// optional/key-path runtime-helper freeze anchor: the live Part 3
 // runtime helper boundary intentionally remains minimal here. Optional sends
 // already execute through objc3_runtime_lookup_selector plus
 // objc3_runtime_dispatch_i32 with lowering-owned nil short-circuit semantics,
 // while validated typed key-path sites currently contribute retained descriptor
 // handles and descriptor sections without claiming full runtime evaluation yet.
 
-// M260-D001 runtime memory-management API freeze anchor: lowered ownership
+// runtime memory-management API freeze anchor: lowered ownership
 // helpers remain private runtime entrypoints reached through IR and runtime
 // probes, while the stable public runtime header stays limited to
 // registration/lookup/dispatch plus snapshot helpers.
-// M262-D001 runtime ARC helper API surface anchor: ARC-specific lowering now
+// runtime ARC helper API surface anchor: ARC-specific lowering now
 // also depends on this same private helper cluster, including autoreleasepool
 // scope hooks, but the ABI remains bootstrap-internal rather than public.
-// M262-D002 runtime ARC helper implementation anchor: ARC-specific lowering
+// runtime ARC helper implementation anchor: ARC-specific lowering
 // now also depends on this same private helper cluster as a live linked
 // runtime capability for the supported property/weak/autorelease-return slice,
 // while the ABI remains bootstrap-internal rather than public.
@@ -4962,21 +4962,21 @@ extern "C" void objc3_runtime_clear_current_property_context_for_testing(void) {
   g_runtime_has_testing_dispatch_frame = false;
 }
 
-// M267-D001 error-runtime/bridge-helper anchor: the current runnable Part 6
+// error-runtime/bridge-helper anchor: the current runnable Part 6
 // slice now routes thrown-error storage, bridge normalization, and catch-kind
 // matching through this same private bootstrap-internal helper cluster instead
 // of treating raw function-local slots as the runtime boundary.
-// M267-D002 live catch/bridge/runtime integration anchor: linked Part 6
+// live catch/bridge/runtime integration anchor: linked Part 6
 // object-code probes now execute through these helpers and consume the
 // snapshot state below to prove live store/load/bridge/catch traffic.
-// M267-D003 cross-module preservation anchor: the runtime helper behavior stays
+// cross-module preservation anchor: the runtime helper behavior stays
 // image-local, while the driver/link-plan layer now fail-closes imported Part 6
 // replay drift before mixed-module executables can claim runnable compatibility.
-// M268-D001 continuation/runtime-helper anchor: the first Part 7 runtime
+// continuation/runtime-helper anchor: the first Part 7 runtime
 // helper cluster now exposes deterministic logical continuation-handle
 // allocation, executor handoff, and resume behavior for probes, while the
 // current async lowering slice remains the non-suspending direct-call model.
-// M268-D002 live continuation/runtime integration anchor: that same direct-call
+// live continuation/runtime integration anchor: that same direct-call
 // slice now emits live helper traffic on supported await sites, so linked
 // native async fixtures execute through allocation, handoff, and resume before
 // returning their final value.
@@ -5081,13 +5081,13 @@ extern "C" int objc3_runtime_resume_async_continuation_i32(
   return result_value;
 }
 
-// M269-D002 live task runtime anchor: the supported Part 7 task slice now
+// live task runtime anchor: the supported Part 7 task slice now
 // executes through this private helper cluster and publishes deterministic
 // snapshot state for linked runtime probes without widening the public ABI.
-// M271-D001 system-helper/runtime-contract anchor: Part 8 runtime/helper proof
+// system-helper/runtime-contract anchor: Part 8 runtime/helper proof
 // intentionally reuses the existing retain/release/autorelease helper cluster
 // instead of claiming a separate resource or borrowed-pointer runtime ABI.
-// M271-D002 live cleanup/runtime integration anchor: linked Part 8 probes now
+// live cleanup/runtime integration anchor: linked Part 8 probes now
 // also execute through this same helper cluster while emitted cleanup/resource
 // calls remain ordinary lowered function calls in the compiled module body.
 extern "C" int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag) {
@@ -5144,7 +5144,7 @@ extern "C" int objc3_runtime_executor_hop_i32(int value, int executor_tag) {
 }
 
 extern "C" int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag) {
-  // M270-C002 actor lowering/runtime anchor: helper-backed actor lowering now
+  // actor lowering/runtime anchor: helper-backed actor lowering now
   // reaches the runtime through this private thunk/hop/nonisolated cluster.
   ++g_runtime_actor_isolation_thunk_call_count;
   g_runtime_actor_last_isolation_executor_tag = executor_tag;
@@ -5182,7 +5182,7 @@ extern "C" int objc3_runtime_actor_record_race_guard_i32(int executor_tag) {
 
 extern "C" int objc3_runtime_actor_bind_executor_i32(int actor_handle,
                                                      int executor_tag) {
-  // M270-D002 actor-mailbox/isolation-runtime anchor: actor runtime proof now
+  // actor-mailbox/isolation-runtime anchor: actor runtime proof now
   // includes private mailbox binding state and deterministic enqueue/drain
   // helpers without widening the public runtime ABI.
   ++g_runtime_actor_bind_executor_call_count;
@@ -5254,11 +5254,11 @@ extern "C" int objc3_runtime_autorelease_i32(int value) {
 extern "C" int objc3_runtime_promote_block_i32(
     const void *storage, std::uint64_t storage_size_bytes,
     int has_pointer_capture_storage) {
-  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: promotion
+  // block-runtime allocation/copy-dispose/invoke anchor: promotion
   // now admits pointer-capture block storage, preserves helper pointers, and
   // executes copy-helper setup before publishing the runtime-owned block
   // handle.
-  // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+  // byref-forwarding/heap-promotion/ownership-interop anchor:
   // pointer-capture promotion also rewrites capture slots onto runtime-owned
   // heap cells before helper execution so escaping blocks do not retain stack
   // addresses after the source frame returns.
@@ -5315,7 +5315,7 @@ extern "C" int objc3_runtime_promote_block_i32(
 
 extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
                                               int a2, int a3) {
-  // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: invoke now
+  // block-runtime allocation/copy-dispose/invoke anchor: invoke now
   // works for any promoted runtime block record with a concrete invoke thunk,
   // including pointer-capture storage promoted through the private helper
   // surface.
@@ -5338,26 +5338,26 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
   return invoke(storage_words.data(), a0, a1, a2, a3);
 }
 
-// M260-D002 runtime-memory-management implementation anchor: autoreleasepool
+// runtime-memory-management implementation anchor: autoreleasepool
 // scopes are now private runtime-owned stack frames that retain queued values
 // until pop-time LIFO drain, while public ABI widening remains deferred.
-// M266-D001 cleanup-unwind integration anchor: current Part 5 cleanup/unwind
+// cleanup-unwind integration anchor: current Part 5 cleanup/unwind
 // execution proofs reuse this private pool-frame drain path and the paired
 // memory-management snapshots as the runtime-owned cleanup carrier.
-// M266-D002 runtime cleanup/unwind implementation anchor: the broader runnable
+// runtime cleanup/unwind implementation anchor: the broader runnable
 // cleanup execution matrix still proves cleanup through this same private
 // helper cluster while public runtime headers remain unchanged.
-// M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup/resource
+// system-helper/runtime-contract anchor: Part 8 cleanup/resource
 // proof still routes through these same private autoreleasepool frames and
 // memory-management snapshots, with no new public cleanup or invalidation ABI.
-// M271-D002 live cleanup/runtime integration anchor: the supported Part 8
+// live cleanup/runtime integration anchor: the supported Part 8
 // fixture path now proves autoreleasepool traffic and cleanup-driven resource
 // invalidation through this same private pool-frame implementation.
 extern "C" void objc3_runtime_push_autoreleasepool_scope(void) {
   PushRuntimeAutoreleasePoolFrame();
 }
 
-// M269-D003 hardening anchor: task-runtime probes now rely on these existing
+// hardening anchor: task-runtime probes now rely on these existing
 // autoreleasepool helpers plus reset-stable snapshot state to prove
 // cancellation/autorelease determinism without widening the public ABI.
 extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
@@ -5375,11 +5375,11 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
   }
 }
 
-// M272-D001 runtime-fast-path-integration anchor: Part 9 freezes the current
+// runtime-fast-path-integration anchor: Part 9 freezes the current
 // mixed dispatch boundary exactly as implemented here. IR-lowered direct sites
 // bypass this entrypoint, while objc_dynamic opt-out and unresolved sends still
 // flow through the canonical method-cache/slow-path/fallback surface below.
-// M272-D002 live-dispatch-fast-path anchor: cache hits can now come from
+// live-dispatch-fast-path anchor: cache hits can now come from
 // registration-time seeded direct/final/sealed entries, and that seeded path
 // remains explicit in the runtime-owned proof counters and last-fast-path
 // reason snapshot state.
@@ -5506,7 +5506,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
       }
     }
   }
-  // M255-C003 runtime call ABI generation anchor: canonical runtime dispatch
+  // runtime call ABI generation anchor: canonical runtime dispatch
   // owns nil-receiver semantics for lowered instance/class/super surfaces, so
   // a zero receiver returns zero without requiring lowering-side elision.
   if (receiver == 0) {
@@ -5577,7 +5577,7 @@ int objc3_runtime_copy_registration_state_for_testing(
 
 extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
                                  int a1, int a2, int a3) {
-  // M255-C004 compatibility bridge: live lowering no longer emits this symbol.
+  // compatibility bridge: live lowering no longer emits this symbol.
   // It stays exported as a formula-parity alias and compatibility/test surface.
   return objc3_runtime_dispatch_i32(receiver, selector, a0, a1, a2, a3);
 }
@@ -5585,7 +5585,7 @@ extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
 void objc3_runtime_reset_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
-  // M263-D003 live-restart-hardening anchor: teardown clears only live runtime
+  // live-restart-hardening anchor: teardown clears only live runtime
   // state, preserves the retained bootstrap catalog for restart, zeroes image-
   // local init cells, and advances reset-generation evidence for repeated
   // restart-cycle probes.

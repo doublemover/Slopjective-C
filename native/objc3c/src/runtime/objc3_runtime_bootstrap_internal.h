@@ -110,12 +110,12 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
   const char *generic_metadata_replay_key;
 } objc3_runtime_keypath_entry_snapshot;
 
-// M272-D001 runtime-fast-path-integration anchor: Part 9 freezes the
+// runtime-fast-path-integration anchor: Part 9 freezes the
 // existing private method-cache snapshot and entry-query helpers as the
 // truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
 // and deterministic fallback dispatch behavior before D002 widens the live
 // fast-path runtime itself.
-// M272-D002 live-dispatch-fast-path anchor: Part 9 now widens the same private
+// live-dispatch-fast-path anchor: Part 9 now widens the same private
 // proof surface with seeded-fast-path counters, seeded-entry flags, and the
 // last fast-path reason so first-call cache-hit behavior remains observable
 // without reopening the public runtime ABI.
@@ -379,40 +379,40 @@ typedef struct objc3_runtime_actor_runtime_state_snapshot {
   int last_mailbox_drained_value;
 } objc3_runtime_actor_runtime_state_snapshot;
 
-// M270-C002 actor lowering/runtime anchor: actor thunk, nonisolated entry,
+// actor lowering/runtime anchor: actor thunk, nonisolated entry,
 // and executor-hop lowering remain private runtime helpers with a private
 // testing snapshot rather than a public actor runtime ABI.
-// M270-D001 actor-runtime/executor-binding anchor: the same private actor
+// actor-runtime/executor-binding anchor: the same private actor
 // helper cluster plus `objc3_runtime_actor_runtime_state_snapshot` is now the
 // canonical lane-D runtime contract for actor-state, mailbox-ownership, and
 // executor-binding proof without widening the public runtime header.
-// M270-D002 actor-mailbox/isolation-runtime anchor: live mailbox binding,
+// actor-mailbox/isolation-runtime anchor: live mailbox binding,
 // enqueue, and drain helpers also remain inside that same private snapshot-
 // backed runtime slice rather than claiming a public actor runtime ABI.
-// M270-D003 cross-module isolation-metadata hardening anchor: imported modules
+// cross-module isolation-metadata hardening anchor: imported modules
 // now preserve the replay facts that describe this same private actor mailbox
 // runtime slice across runtime-import surfaces and mixed-module link plans.
 
-// M264-D002 conformance-claim operations anchor: the runtime/bootstrap layer
+// conformance-claim operations anchor: the runtime/bootstrap layer
 // still does not own profile selection, but the driver/toolchain now consume
 // the emitted `module.objc3-conformance-report.json` plus the sibling
 // `module.objc3-conformance-publication.json` through an explicit validation
 // operation that publishes `module.objc3-conformance-validation.json`.
 // Strictness and strict concurrency remain fail-closed and unclaimed until a
 // later executable lane ships them end to end.
-// M275-D001 advanced-feature ops-contract anchor: the same operator-side
+// advanced-feature ops-contract anchor: the same operator-side
 // publication/validation pair now also carries the advanced-feature CI gate,
 // runbook, and dashboard references derived from the emitted Part 12 report
 // payloads instead of reconstructing that contract from docs alone.
-// M275-D002 release-evidence/dashboard publication anchor: the validation
+// release-evidence/dashboard publication anchor: the validation
 // path now also publishes one release-evidence operation sidecar plus one
 // dashboard-ready status sidecar without introducing a separate runtime-owned
 // release evidence executor or dashboard transport.
 
-// M254-D002 runtime-registrar anchor: this private bootstrap surface carries
+// runtime-registrar anchor: this private bootstrap surface carries
 // emitted registration tables into the frozen D001 public API without widening
 // the public header or archive contract.
-// M263-D001 runtime-bootstrap-table-consumption anchor: the next public
+// runtime-bootstrap-table-consumption anchor: the next public
 // `objc3_runtime_register_image` call consumes the staged registration table at
 // most once, duplicate identity rejection happens before live state advances,
 // and `objc3_runtime_copy_image_walk_state_for_testing` remains the canonical
@@ -421,11 +421,11 @@ void objc3_runtime_stage_registration_table_for_bootstrap(
     const objc3_runtime_registration_table *registration_table);
 int objc3_runtime_copy_image_walk_state_for_testing(
     objc3_runtime_image_walk_state_snapshot *snapshot);
-// M263-D002 live-registration-discovery-replay anchor: the retained bootstrap
+// live-registration-discovery-replay anchor: the retained bootstrap
 // catalog, reset/replay snapshot, and replay entrypoint are the canonical
 // runtime-owned proof surface for live discovery tracking and deterministic
 // replay over emitted metadata images.
-// M263-D003 live-restart-hardening anchor: repeated reset/replay cycles must
+// live-restart-hardening anchor: repeated reset/replay cycles must
 // stay idempotent, preserve the retained bootstrap catalog across teardown, and
 // keep restart evidence observable through the same replay/reset snapshot APIs.
 int objc3_runtime_replay_registered_images_for_testing(void);
@@ -440,11 +440,11 @@ int objc3_runtime_copy_keypath_registry_state_for_testing(
     objc3_runtime_keypath_registry_state_snapshot *snapshot);
 int objc3_runtime_copy_keypath_entry_for_testing(
     uint64_t stable_id, objc3_runtime_keypath_entry_snapshot *snapshot);
-// M256-D001 class-realization-runtime anchor: the private method-cache
+// class-realization-runtime anchor: the private method-cache
 // snapshots remain the canonical proof surface for realized class/metaclass
 // resolution, category attachment, and protocol-aware negative runtime checks
 // without widening the public runtime header.
-// M272-D001 runtime-fast-path-integration anchor: Part 9 explicitly reuses this
+// runtime-fast-path-integration anchor: Part 9 explicitly reuses this
 // same cache snapshot surface for direct-bypass/cache/fallback proof rather
 // than inventing a second runtime query API.
 int objc3_runtime_copy_method_cache_state_for_testing(
@@ -452,27 +452,27 @@ int objc3_runtime_copy_method_cache_state_for_testing(
 int objc3_runtime_copy_method_cache_entry_for_testing(
     int receiver, const char *selector,
     objc3_runtime_method_cache_entry_snapshot *snapshot);
-// M256-D002 metaclass-graph-root-class anchor: the runtime now owns a realized
+// metaclass-graph-root-class anchor: the runtime now owns a realized
 // class/metaclass graph with explicit root-class publication, and the
 // canonical proof surface for that graph stays behind private testing
 // snapshots instead of widening the public ABI.
-// M256-D003 category-attachment-protocol-conformance anchor: runtime-owned
+// category-attachment-protocol-conformance anchor: runtime-owned
 // category attachment and protocol conformance queries also remain on this
 // private testing surface so live graph proofs stay observable without
 // expanding the public runtime ABI.
-// M256-D004 canonical-runnable-object-sample anchor: canonical object-sample
+// canonical-runnable-object-sample anchor: canonical object-sample
 // proofs likewise stay on these same realized-graph and method-cache snapshots
 // so builtin alloc/new/init ownership can be observed without widening the
 // public ABI.
-// M257-D001 property-layout-runtime anchor: repeated alloc/new observations,
+// property-layout-runtime anchor: repeated alloc/new observations,
 // synthesized accessor cache entries, and registration/selector snapshots also
 // remain the canonical proof surface for the current single-instance
 // property/layout runtime boundary.
-// M257-D002 instance-allocation-layout-runtime anchor: the same private
+// instance-allocation-layout-runtime anchor: the same private
 // realized-graph snapshots now also publish live instance-allocation and
 // runtime layout-consumption evidence for synthesized property access without
 // widening the public runtime header.
-// M257-D003 property-metadata-reflection anchor: property metadata
+// property-metadata-reflection anchor: property metadata
 // registration state and per-property reflective helper lookups stay on this
 // same private testing surface so diagnostics and probes can consume the live
 // runtime-owned metadata without widening the public ABI.
@@ -489,46 +489,46 @@ int objc3_runtime_copy_property_entry_for_testing(
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);
-// M265-D001 optional/key-path runtime-helper freeze anchor: the current Part 3
+// optional/key-path runtime-helper freeze anchor: the current Part 3
 // runtime boundary does not add a new public helper API. Optional sends remain
 // routed through the public selector lookup/dispatch entrypoints, while the
 // validated typed key-path slice currently exposes retained descriptor handles
 // and sections as the runtime-facing input boundary. Full runtime key-path
 // evaluation helpers remain deferred to M265-D002.
-// M265-D002 live-optional-send-and-keypath-runtime-support anchor: the first
+// live-optional-send-and-keypath-runtime-support anchor: the first
 // live typed key-path runtime support stays on this private runtime header.
 // The runtime consumes emitted key-path descriptor roots into an image-backed
 // registry, publishes query/state snapshots for probes, and exposes narrow
 // helper entrypoints for validated single-component handle execution without
 // widening the stable public runtime header yet.
-// M265-D003 cross-module type-surface preservation anchor: imported runtime
+// cross-module type-surface preservation anchor: imported runtime
 // surfaces must preserve the same typed key-path/runtime-helper packets so
 // multi-image registration keeps provider metadata truthful without inventing a
 // second key-path registry model.
 int objc3_runtime_keypath_component_count_for_testing(int keypath_handle);
 int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle);
-// M260-C002 ownership runtime hook emission anchor: lowering-generated
+// ownership runtime hook emission anchor: lowering-generated
 // synthesized accessors target these private runtime helpers so retain/release,
 // autorelease, and weak property paths execute against realized runtime-backed
 // storage without widening the stable public runtime header yet.
-// M260-D001 runtime-memory-management-api anchor: this private bootstrap
+// runtime-memory-management-api anchor: this private bootstrap
 // internal header is the canonical home for lowered ownership helper
 // entrypoints until later runtime work decides whether any part of the memory
 // management surface should become public.
-// M262-D001 runtime-arc-helper-api-surface anchor: the same private header now
+// runtime-arc-helper-api-surface anchor: the same private header now
 // truthfully freezes the ARC helper ABI consumed by ARC lowering, including
 // weak/current-property helpers plus private autoreleasepool push/pop hooks.
 int objc3_runtime_read_current_property_i32(void);
 void objc3_runtime_write_current_property_i32(int value);
 int objc3_runtime_exchange_current_property_i32(int value);
-// M262-D003 ownership-debug/runtime-validation anchor: private testing hooks
+// ownership-debug/runtime-validation anchor: private testing hooks
 // may bind one live runtime property context at a time so probes can exercise
 // the existing current-property helpers directly without widening the public
 // runtime ABI.
 int objc3_runtime_bind_current_property_context_for_testing(
     int receiver, const char *class_name, const char *property_name);
 void objc3_runtime_clear_current_property_context_for_testing(void);
-// M273-D001 expansion-host/runtime-boundary anchor: the same private property
+// expansion-host/runtime-boundary anchor: the same private property
 // accessor/current-property helper slice now defines the truthful Part 10
 // property-behavior runtime boundary while macro host execution and runtime
 // package loading remain explicitly disabled.
@@ -592,36 +592,36 @@ typedef struct objc3_runtime_part11_bridge_generation_snapshot {
 } objc3_runtime_part11_bridge_generation_snapshot;
 int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
     objc3_runtime_part11_bridge_generation_snapshot *snapshot);
-// M262-D002 runtime ARC helper implementation anchor: these helpers are not
+// runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice
 // links and executes through.
-// M266-D001 cleanup-unwind integration anchor: the current runnable Part 5
+// cleanup-unwind integration anchor: the current runnable Part 5
 // cleanup/unwind proof still reuses these same private autoreleasepool hooks
 // plus the memory-management snapshot surface instead of widening the public
 // runtime ABI with a standalone cleanup stack API.
-// M271-D001 system-helper/runtime-contract anchor: Part 8 cleanup execution,
+// system-helper/runtime-contract anchor: Part 8 cleanup execution,
 // resource invalidation proof, and retainable-family helper integration now
 // freeze this same private ARC/autorelease helper cluster plus the paired
 // memory-management and ARC-debug snapshots. Lane-D does not add a dedicated
 // borrowed-pointer runtime helper or widen the public runtime header.
-// M271-D002 live cleanup/runtime integration anchor: the supported Part 8
+// live cleanup/runtime integration anchor: the supported Part 8
 // fixture path now links and executes through this same private helper slice,
 // with emitted cleanup calls and retainable-family stubs proving live helper
 // traffic rather than a contract-only boundary.
 int objc3_runtime_load_weak_current_property_i32(void);
 void objc3_runtime_store_weak_current_property_i32(int value);
-// M267-D001 error-runtime/bridge-helper anchor: the supported runnable Part 6
+// error-runtime/bridge-helper anchor: the supported runnable Part 6
 // slice now uses one narrow private helper ABI for thrown-error slot traffic,
 // bridge normalization, and catch-kind matching without widening the public
 // runtime header or claiming generalized foreign exception support.
-// M267-D002 live catch/bridge/runtime integration anchor: linked native Part 6
+// live catch/bridge/runtime integration anchor: linked native Part 6
 // probes now execute through this same helper cluster and validate the helper
 // traffic through the retained private snapshot surface below.
-// M267-D003 cross-module preservation anchor: imported modules preserve this
+// cross-module preservation anchor: imported modules preserve this
 // same Part 6 helper cluster indirectly through replay sidecars and cross-image
 // link-plan validation rather than by widening the runtime helper ABI again.
-// M274-D001 bridge-packaging/toolchain anchor: the truthful Part 11 runtime
+// bridge-packaging/toolchain anchor: the truthful Part 11 runtime
 // boundary also stays private and snapshot-backed. The current freeze claims
 // packaged-runtime archive continuity, registration-manifest/link-plan
 // topology, and operator-visible evidence only; header/module/bridge
@@ -633,7 +633,7 @@ int objc3_runtime_bridge_status_error_i32(int status_value,
 int objc3_runtime_bridge_nserror_error_i32(int error_value);
 int objc3_runtime_catch_matches_error_i32(int error_value, int catch_kind,
                                           int catch_all);
-// M268-D001 continuation/runtime-helper anchor: lane-D now freezes the first
+// continuation/runtime-helper anchor: lane-D now freezes the first
 // truthful private Part 7 helper ABI for logical continuation-handle
 // allocation, scheduler handoff, and resume traffic. The current direct-call
 // async slice still does not consume this helper cluster yet, but the helper
@@ -645,16 +645,16 @@ int objc3_runtime_handoff_async_continuation_to_executor_i32(
     int continuation_handle, int executor_tag);
 int objc3_runtime_resume_async_continuation_i32(int continuation_handle,
                                                 int result_value);
-// M269-C002 task-runtime lowering anchor: the IR emitter now rewrites the
+// task-runtime lowering anchor: the IR emitter now rewrites the
 // supported task/executor/cancellation symbol-profile family onto this private
 // helper cluster so task creation, task-group operations, cancellation polls,
 // and executor-handoff proof points become real runnable runtime traffic
 // without widening the public runtime header.
-// M269-D001 scheduler/executor runtime anchor: lane-D now freezes this same
+// scheduler/executor runtime anchor: lane-D now freezes this same
 // private helper cluster plus `objc3_runtime_copy_task_runtime_state_for_testing`
 // as the canonical scheduler/executor/task-state runtime contract for the
 // current supported Part 7 slice.
-// M269-D002 live task runtime anchor: the same private helper cluster now also
+// live task runtime anchor: the same private helper cluster now also
 // serves as the executable Part 7 runtime boundary for the supported task
 // slice, with live probe coverage proving helper traffic and snapshot state.
 int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag);
@@ -678,16 +678,16 @@ int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
 int objc3_runtime_retain_i32(int value);
 int objc3_runtime_release_i32(int value);
 int objc3_runtime_autorelease_i32(int value);
-// M261-D001 block-runtime API/object-layout freeze anchor: block
+// block-runtime API/object-layout freeze anchor: block
 // promotion/invoke helpers are now explicitly frozen as private
 // lowering/runtime entrypoints in this internal header; they are not public
 // runtime ABI and later lane-D issues must preserve that boundary unless they
 // deliberately widen it.
-// M261-D002 block-runtime allocation/copy-dispose/invoke anchor: helper-backed
+// block-runtime allocation/copy-dispose/invoke anchor: helper-backed
 // promotion now supports pointer-capture block records with runtime-managed
 // copy/dispose and invoke behavior, but the helper ABI remains private to this
 // internal header.
-// M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+// byref-forwarding/heap-promotion/ownership-interop anchor:
 // escaping pointer-capture promotion now also rewrites capture slots onto
 // runtime-owned forwarding cells before helper execution, while the helper ABI
 // still remains private to this internal header.
@@ -696,13 +696,13 @@ int objc3_runtime_promote_block_i32(const void *storage,
                                     int has_pointer_capture_storage);
 int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1, int a2,
                                    int a3);
-// M260-D002 runtime-memory-management implementation anchor: autoreleasepool
+// runtime-memory-management implementation anchor: autoreleasepool
 // scopes, refcount draining, and weak zeroing remain private runtime/lowering
 // mechanics until a later milestone makes a deliberate public-ABI decision.
-// M266-D002 runtime cleanup/unwind implementation anchor: wider runnable
+// runtime cleanup/unwind implementation anchor: wider runnable
 // cleanup execution still uses this same private helper cluster rather than
 // widening a public cleanup/unwind ABI surface.
-// M271-D001 system-helper/runtime-contract anchor: the current Part 8 runtime
+// system-helper/runtime-contract anchor: the current Part 8 runtime
 // proof keeps cleanup/resource behavior on these same private autoreleasepool
 // hooks and snapshot helpers rather than introducing a second resource-runtime
 // stack or public helper surface.
@@ -710,18 +710,18 @@ void objc3_runtime_push_autoreleasepool_scope(void);
 void objc3_runtime_pop_autoreleasepool_scope(void);
 int objc3_runtime_copy_memory_management_state_for_testing(
     objc3_runtime_memory_management_state_snapshot *snapshot);
-// M262-D003 ownership-debug/runtime-validation anchor: ARC ownership-debug
+// ownership-debug/runtime-validation anchor: ARC ownership-debug
 // counters and last-value/property context remain a private runtime-testing
 // surface so lane-D can validate ARC helper traffic without widening the
 // public runtime ABI.
 int objc3_runtime_copy_arc_debug_state_for_testing(
     objc3_runtime_arc_debug_state_snapshot *snapshot);
-// M267-D002 live catch/bridge/runtime integration anchor: lane-D continues to
+// live catch/bridge/runtime integration anchor: lane-D continues to
 // prove executable helper traffic without widening the public runtime ABI.
-// M269-D002 live task runtime anchor: task-runtime snapshot publication stays
+// live task runtime anchor: task-runtime snapshot publication stays
 // private and is consumed by the linked runtime probe rather than a widened
 // public scheduler ABI.
-// M269-D003 hardening anchor: cancellation cleanup, autoreleasepool scopes,
+// hardening anchor: cancellation cleanup, autoreleasepool scopes,
 // arc-debug counters, and explicit runtime resets are validated against the
 // same private snapshot/testing surface rather than widening any public task
 // scheduler ABI.

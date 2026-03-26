@@ -24,11 +24,11 @@
 struct objc3c_frontend_context {
   std::string last_error;
   std::string diagnostics_path;
-  // M266-E001 control-flow execution gate anchor: the C frontend bridge must
+  // control-flow execution gate anchor: the C frontend bridge must
   // keep surfacing manifest/IR/object publication paths unchanged so lane-E
   // can validate the same native artifact triplet without a synthetic proof
   // channel.
-  // M266-E002 runnable control-flow matrix anchor: the closeout matrix relies
+  // runnable control-flow matrix anchor: the closeout matrix relies
   // on the same surfaced native artifact triplet instead of a second
   // publication mechanism.
   std::string manifest_path;
@@ -37,55 +37,55 @@ struct objc3c_frontend_context {
   std::string object_path;
 };
 
-// M265-E001 type-surface executable gate anchor: the C frontend bridge must
+// type-surface executable gate anchor: the C frontend bridge must
 // keep surfacing manifest/IR/object publication paths so the lane-E gate can
 // validate the currently runnable Part 3 slice without inventing a parallel
 // proof channel.
-// M265-E002 runnable-type-surface closeout anchor: the milestone closeout
+// runnable-type-surface closeout anchor: the milestone closeout
 // matrix relies on the same publication paths instead of creating a separate
 // synthetic reporting surface.
-// M267-E001 error-model conformance gate anchor: lane-E consumes those same
+// error-model conformance gate anchor: lane-E consumes those same
 // publication paths and the same runtime-import surface without inventing a
 // second frontend proof channel.
-// M268-E001 async executable conformance gate anchor: lane-E consumes those
+// async executable conformance gate anchor: lane-E consumes those
 // same publication paths for the runnable Part 7 slice instead of inventing a
 // second frontend async proof channel.
-// M268-E002 runnable async closeout matrix anchor: milestone closeout keeps
+// runnable async closeout matrix anchor: milestone closeout keeps
 // consuming those same publication paths instead of inventing a second
 // frontend matrix-only reporting path.
-// M269-E001 task/executor conformance gate anchor: lane-E keeps consuming the
+// task/executor conformance gate anchor: lane-E keeps consuming the
 // same surfaced publication paths while using the hardened D003 runtime proof
 // as the truthful runnable task/executor capability anchor.
-// M269-E002 runnable task/executor closeout matrix anchor: milestone closeout
+// runnable task/executor closeout matrix anchor: milestone closeout
 // keeps consuming those same surfaced publication paths instead of inventing a
 // second frontend matrix-only reporting path.
-// M270-E001 strict concurrency conformance gate anchor: lane-E keeps consuming
+// strict concurrency conformance gate anchor: lane-E keeps consuming
 // the same surfaced publication paths while using the D002 mailbox runtime
 // proof plus the D003 cross-module preservation artifacts as the truthful
 // runnable actor/isolation capability anchor.
-// M270-E002 runnable actor/isolation closeout matrix anchor: milestone
+// runnable actor/isolation closeout matrix anchor: milestone
 // closeout keeps consuming those same surfaced publication paths instead of
 // inventing a second frontend matrix-only reporting path.
-// M271-E001 strict system conformance gate anchor: lane-E keeps consuming the
+// strict system conformance gate anchor: lane-E keeps consuming the
 // same surfaced publication paths while using the D002 live cleanup/runtime proof
 // as the truthful runnable Part 8 capability anchor. The D002 live cleanup/runtime
 // proof remains the canonical linked helperSurface evidence.
-// M271-E002 runnable system-extension closeout matrix anchor: milestone
+// runnable system-extension closeout matrix anchor: milestone
 // closeout keeps consuming those same surfaced publication paths instead of
 // inventing a second frontend matrix-only reporting path for Part 8.
-// M272-E001 performance/dynamism conformance gate anchor: lane-E keeps
+// performance/dynamism conformance gate anchor: lane-E keeps
 // consuming those same surfaced publication paths while using the D002 live
 // fast-path/runtime proof as the truthful runnable Part 9 capability anchor.
 // The D002 live fast-path/runtime proof remains the canonical executable
 // evidence boundary for the current dispatch-control slice.
-// M272-E002 runnable dispatch-control matrix closeout anchor: Part 9 closeout
+// runnable dispatch-control matrix closeout anchor: Part 9 closeout
 // keeps consuming those same surfaced publication paths while reusing the D002
 // runtime proof for direct/final/sealed matrix rows instead of inventing a
 // second frontend-only summary surface.
-// M273-E001 metaprogramming conformance gate anchor: lane-E keeps consuming
+// metaprogramming conformance gate anchor: lane-E keeps consuming
 // those same surfaced publication paths while using the D002 live macro
 // host-process/cache proof as the truthful runnable Part 10 capability anchor.
-// M273-E002 runnable metaprogramming closeout matrix anchor: milestone
+// runnable metaprogramming closeout matrix anchor: milestone
 // closeout keeps consuming those same surfaced publication paths instead of
 // inventing a second frontend-only Part 10 matrix reporting path.
 
@@ -614,9 +614,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
 
-  // M274-E001 interop conformance gate anchor: the frontend C API preserves
+  // interop conformance gate anchor: the frontend C API preserves
   // the same D002 generated-bridge artifacts as the native driver path.
-  // M274-E001/M274-E002 Part 11 lane-E anchors: the frontend C API preserves
+  // Part 11 lane-E anchors: the frontend C API preserves
   // the same D002 generated-bridge artifacts as the native driver path.
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
       !product.artifact_bundle.part11_bridge_header_artifact_text.empty()) {
@@ -693,11 +693,11 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         result->success = 0;
         objc3c_frontend_set_error(context, io_error.c_str());
       } else {
-        // M264-E001 versioning/conformance truth-gate anchor: the frontend C
+        // versioning/conformance truth-gate anchor: the frontend C
         // API path must continue to publish the same truthful lowered report
         // plus D001 publication sidecar that the native CLI consumes and the
         // D002 validation path checks.
-        // M264-E002 release/runtime-claim-matrix anchor: the milestone closeout
+        // release/runtime-claim-matrix anchor: the milestone closeout
         // matrix compares this frontend publication surface against the native
         // CLI surface and must keep them equivalent for the runnable core
         // profile.
@@ -1276,10 +1276,10 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                     compile_status = 125;
                     backend_error = registration_manifest_error;
                   } else {
-                    // M263-E001 bootstrap-completion gate anchor: the frontend
+                    // bootstrap-completion gate anchor: the frontend
                     // C API publishes the same manifest/descriptor artifact pair as the CLI path
                     // so lane-E bootstrap completion evidence stays identical across host entry points.
-                    // M263-E002 bootstrap-matrix closeout anchor: the published
+                    // bootstrap-matrix closeout anchor: the published
                     // bootstrap matrix stays identical across CLI and frontend C API entry points.
                     const std::filesystem::path registration_manifest_out =
                         BuildRuntimeRegistrationManifestArtifactPath(out_dir,
@@ -1391,9 +1391,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                         compile_status = 125;
                         backend_error = registration_descriptor_error;
                       } else {
-                        // M263-E001 bootstrap-completion gate anchor: the
+                        // bootstrap-completion gate anchor: the
                         // frontend C API publishes the same manifest/descriptor artifact pair as the CLI path.
-                        // M263-E002 bootstrap-matrix closeout anchor: the
+                        // bootstrap-matrix closeout anchor: the
                         // published bootstrap matrix stays identical across CLI and frontend C API entry points.
                         const std::filesystem::path
                             registration_descriptor_out =

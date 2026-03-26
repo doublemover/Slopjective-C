@@ -63,7 +63,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part7ContinuationAbiAsyncLoweringDeferredModel =
         "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-m268-work";
-// M268-C002 implementation anchor: publish a second Part 7 packet that states
+// implementation anchor: publish a second Part 7 packet that states
 // the current runnable lowering truthfully. The live native slice is
 // direct-call based and non-suspending; it does not claim a full continuation
 // runtime yet.
@@ -86,7 +86,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part7SuspensionCleanupIntegrationContractId =
         "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1";
-// M268-C003 integration anchor: this packet ties the current direct-call async
+// integration anchor: this packet ties the current direct-call async
 // slice to the already-live autoreleasepool and defer-cleanup lowering surfaces
 // instead of claiming a separate continuation cleanup runtime.
 inline constexpr const char
@@ -111,7 +111,7 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringTaskModel =
     "task-creation-cancellation-polls-and-task-group-artifacts-now-lower-through-explicit-replay-stable-lane-contracts";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringExecutorModel =
     "executor-affinity-and-detached-hop-boundaries-now-lower-through-explicit-actor-and-task-runtime-profile-handoffs";
-// M269-C002 implementation anchor: this lowering packet now maps to live
+// implementation anchor: this lowering packet now maps to live
 // helper-backed IR rewrites for the supported task-runtime symbol family.
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
@@ -2918,7 +2918,7 @@ BuildPart8SystemExtensionLoweringContract(
     const Objc3Part8BorrowedPointerEscapeAnalysisSummary &borrowed_summary,
     const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
         &family_summary) {
-  // M271-C002 lowering-implementation anchor: the live cleanup/resource
+  // lowering-implementation anchor: the live cleanup/resource
   // helper-emission path continues to consume the single C001 Part 8 lowering
   // contract; this issue does not mint a second manifest surface.
   Objc3Part8SystemExtensionLoweringContract contract;
@@ -3945,7 +3945,7 @@ BuildPart11ForeignSurfaceInterfacePreservationSummary(
     bool runtime_import_artifact_ready,
     const std::vector<Objc3ImportedRuntimeModuleSurface>
         &imported_runtime_module_surfaces) {
-  // M274-A003 preservation anchor: keep Part 11 truthful at the frontend
+  // preservation anchor: keep Part 11 truthful at the frontend
   // manifest/runtime-import-surface layer by preserving provider counts,
   // module-name payloads, and imported provider inventories before lane-B
   // semantic expansion or later ABI/runtime interop work.
@@ -8443,7 +8443,7 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
         semantic_boundary.rejected_selection_surface_count;
     summary.suppressed_macro_claim_count =
         semantic_boundary.suppressed_macro_claim_count;
-    // M259-B002/M264-B002 unsupported-feature enforcement anchor: preserve the
+    // unsupported-feature enforcement anchor: preserve the
     // semantic boundary counters verbatim so positive runnable proofs and
     // fail-closed advanced-source rejections remain replay-stable.
     summary.live_unsupported_feature_family_count =
@@ -11725,7 +11725,7 @@ std::string BuildRuntimeBootstrapLoweringReplayKey(
   return out.str();
 }
 
-// M263-C001 constructor-root/init-array lowering anchor: the canonical
+// constructor-root/init-array lowering anchor: the canonical
 // lowering summary now freezes the live ctor-root/global_ctors materialization
 // path and requires the emitted registration-descriptor frontend closure to be
 // ready before the handoff is considered valid.
@@ -13536,7 +13536,7 @@ Objc3MessageSendSelectorLoweringContract BuildMessageSendSelectorLoweringContrac
       AccumulateMessageSendSelectorLoweringStmt(stmt.get(), contract, selector_literals);
     }
   }
-  // M255-B003 parity-expansion anchor: lowering-side selector accounting must
+  // parity-expansion anchor: lowering-side selector accounting must
   // walk implementation methods too or runtime legality/method-family evidence
   // drifts from the sema-owned site surface.
   for (const auto &implementation_decl : program.implementations) {
@@ -13721,7 +13721,7 @@ Objc3DispatchAbiMarshallingContract BuildDispatchAbiMarshallingContract(
       AccumulateDispatchAbiMarshallingStmt(stmt.get(), runtime_dispatch_arg_slots, contract);
     }
   }
-  // M255-B003 parity-expansion anchor: ABI marshalling counts must include
+  // parity-expansion anchor: ABI marshalling counts must include
   // implementation method bodies so runtime-shim host-link validation stays in
   // lockstep with live super/dynamic dispatch sites.
   for (const auto &implementation_decl : program.implementations) {
@@ -14555,7 +14555,7 @@ BuildPart5ControlFlowSafetyLoweringContract(
                                 summary.guard_condition_clause_semantic_sites;
   contract.match_statement_sites = summary.match_statement_semantic_sites;
   contract.defer_statement_sites = summary.defer_statement_semantic_sites;
-  // M266-C003 lowering contract anchor: lane-C now treats admitted match
+  // lowering contract anchor: lane-C now treats admitted match
   // statements as live only when they stay inside the current literal/default/
   // wildcard/binding slice. Result-case payload matching remains explicitly
   // fail-closed until a later runtime ABI tranche lands.
@@ -16162,7 +16162,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       Objc3PropertySynthesisIvarBindingReplayKey(property_synthesis_ivar_binding_contract);
   const Objc3PropertySynthesisIvarBindingSummary &property_synthesis_ivar_binding_summary =
       pipeline_result.sema_parity_surface.property_synthesis_ivar_binding_summary;
-  // M252-B004 export-legality anchor: manifest sema surfaces must publish the
+  // export-legality anchor: manifest sema surfaces must publish the
   // canonical sema property-synthesis/ivar-binding summary rather than the
   // lowering fallback contract used for later replay keys.
   const bool property_synthesis_ivar_binding_handoff_deterministic =
@@ -16251,7 +16251,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string runtime_shim_host_link_replay_key =
       Objc3RuntimeShimHostLinkReplayKey(runtime_shim_host_link_contract);
-  // M255-C001 dispatch lowering ABI freeze anchor: lane-C now publishes the
+  // dispatch lowering ABI freeze anchor: lane-C now publishes the
   // canonical runtime-dispatch cutover boundary separately from the historical
   // shim-host-link packet so C002 can swap call emission over without
   // redefining the selector lookup/handle or argument-slot ABI ad hoc.
@@ -16424,7 +16424,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   const std::string block_literal_capture_lowering_replay_key =
       Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
-  // M261-A002 block-source-model-completion anchor: frontend artifacts now
+  // block-source-model-completion anchor: frontend artifacts now
   // derive the authoritative block signature/capture/invoke source-model
   // contract directly from the AST so source-only frontend runs can emit a
   // stable manifest handoff before runnable block lowering exists.
@@ -16439,7 +16439,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string block_source_model_completion_replay_key =
       Objc3BlockSourceModelCompletionReplayKey(
           block_source_model_completion_contract);
-  // M261-A003 block-source-storage-annotation anchor: frontend artifacts now
+  // block-source-storage-annotation anchor: frontend artifacts now
   // publish the truthful byref/helper/escape-shape source inventory directly
   // from the parser-owned block model so later sema and runtime lanes can
   // consume something real without rewriting the old synthetic M168/M169
@@ -16770,7 +16770,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       throws_propagation_lowering_contract.deterministic &&
       ns_error_bridging_lowering_contract.deterministic &&
       unwind_cleanup_lowering_contract.deterministic;
-  // M267-C002 replay continuity anchor: \",\"next_issue\":\"M267-C003\"
+  // replay continuity anchor: \",\"next_issue\":\"M267-C003\"
   const std::string part6_throws_abi_propagation_lowering_replay_key =
       Objc3Part6ThrowsAbiPropagationLoweringSummary() +
       ";throws_replay_key=" + throws_propagation_lowering_replay_key +
@@ -17764,7 +17764,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"runtime_export_ready_for_runtime_export\":"
            << (runtime_export_enforcement.ready_for_runtime_export ? "true"
                                                                   : "false")
-           // M252-B003 diagnostic precision anchor: manifest evidence must
+           // diagnostic precision anchor: manifest evidence must
            // preserve the duplicate/incomplete/illegal counters that feed the
            // precise category-attachment, duplicate-member, and ambiguity
            // diagnostics emitted by the runtime metadata blocker.
@@ -20328,18 +20328,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_handoff_deterministic ? "true" : "false")
            << "}"
-           // M264-A001 mode-truth inventory anchor: lane-A publishes one
+           // mode-truth inventory anchor: lane-A publishes one
            // truthful frontend packet that separates runnable claims,
            // source-only claims, and fail-closed unsupported claims for the
            // currently implemented Objective-C 3 native subset.
            << ",\"objc_runnable_feature_claim_inventory\":"
            << BuildRunnableFeatureClaimInventoryJson(options, pipeline_result)
-           // M264-A002 truth-surface anchor: the frontend must publish the
+           // truth-surface anchor: the frontend must publish the
            // supported driver/selection surfaces explicitly so strictness and
            // feature-macro claims remain fail-closed until later lanes land.
            << ",\"objc_feature_claim_and_strictness_truth_surface\":"
            << BuildFeatureClaimStrictnessTruthSurfaceJson(options, pipeline_result)
-           // M265-A001 Part 3 source-closure anchor: lane-A freezes the live
+           // Part 3 source-closure anchor: lane-A freezes the live
            // parser-owned type-surface truthfully before optional sends,
            // nil-coalescing, and typed key-path syntax are admitted in A002.
            << ",\"objc_part3_type_source_closure\":"
@@ -20610,7 +20610,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part3_type_semantic_model\":"
            << BuildPart3TypeSemanticModelSummaryJson(
                   part3_type_semantic_model_summary)
-           // M264-B001 semantic freeze anchor: sema publishes the fail-closed
+           // semantic freeze anchor: sema publishes the fail-closed
            // legality boundary that classifies live compatibility selections,
            // source-only claim downgrades, and strictness/macro claim
            // rejections before lowering and conformance gates consume them.
@@ -20629,14 +20629,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_part12_corpus_sharding_release_evidence_packaging\":"
            << BuildPart12CorpusShardingReleaseEvidencePackagingSummaryJson(
                   part12_corpus_sharding_release_evidence_packaging_summary)
-           // M264-C001 lowering freeze anchor: lane-C lowers the existing
+           // lowering freeze anchor: lane-C lowers the existing
            // runnable/source-only/unsupported truth packets into one emitted
            // machine-readable conformance sidecar instead of reconstructing
            // capability claims from docs or release evidence later.
            << ",\"objc_versioned_conformance_report_lowering_contract\":"
            << BuildVersionedConformanceReportLoweringSummaryJson(
                   versioned_conformance_report_lowering)
-           // M264-C002 runtime capability reporting anchor: lane-C must
+           // runtime capability reporting anchor: lane-C must
            // publish the truthful machine-readable runtime/public capability
            // payload inside the semantic surface so later driver publication
            // and release tooling consume one canonical schema.
@@ -20646,7 +20646,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_source_graph\":"
            << BuildExecutableMetadataSourceGraphJson(
                   executable_metadata_source_graph)
-           // M253-A002 source-to-section matrix anchor: lane-A must publish one
+           // source-to-section matrix anchor: lane-A must publish one
            // canonical node-to-emitted-section matrix that preserves the A001
            // inventory and explicitly marks interface/implementation/metaclass/
            // method rows as no-standalone-emission-yet until later M253 work.
@@ -20659,45 +20659,45 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_executable_metadata_semantic_validation_surface\":"
            << BuildExecutableMetadataSemanticValidationSurfaceJson(
                   executable_metadata_semantic_validation_surface)
-           // M252-C001 lowering-handoff anchor: metadata graph lowering
+           // lowering-handoff anchor: metadata graph lowering
            // handoff freeze must publish as a first-class semantic surface so
            // typed handoff and parse/lowering projections consume one schema.
            << ",\"objc_executable_metadata_lowering_handoff_surface\":"
            << BuildExecutableMetadataLoweringHandoffSurfaceJson(
                   executable_metadata_lowering_handoff_surface)
-           // M252-C002 typed-lowering anchor: the lowering-ready packet must
+           // typed-lowering anchor: the lowering-ready packet must
            // publish the ordered metadata graph payload itself rather than a
            // count-only summary so downstream lowering can consume one schema.
            << ",\"objc_executable_metadata_typed_lowering_handoff\":"
            << BuildExecutableMetadataTypedLoweringHandoffJson(
                   executable_metadata_typed_lowering_handoff)
-           // M252-C003 debug-projection anchor: lane-C must publish one
+           // debug-projection anchor: lane-C must publish one
            // canonical metadata inspection matrix across manifest and IR-facing
            // surfaces before runtime section emission lands.
            << ",\"objc_executable_metadata_debug_projection\":"
            << BuildExecutableMetadataDebugProjectionSummaryJson(
                   executable_metadata_debug_projection)
-           // M252-D001 runtime-ingest packaging anchor: lane-D must freeze one
+           // runtime-ingest packaging anchor: lane-D must freeze one
            // canonical manifest transport boundary over the typed handoff and
            // debug-projection packets before section emission and startup
            // registration land.
            << ",\"objc_executable_metadata_runtime_ingest_packaging_contract\":"
            << BuildExecutableMetadataRuntimeIngestPackagingContractSummaryJson(
                   executable_metadata_runtime_ingest_packaging_contract)
-           // M252-D002 binary-boundary anchor: lane-D must materialize a real
+           // binary-boundary anchor: lane-D must materialize a real
            // runtime-facing binary envelope over the frozen D001/C002/C003
            // packets so later section-emission/bootstrap work consumes one
            // deterministic artifact boundary instead of reparsing manifest JSON.
-           // M252-E001 semantic-closure gate anchor: lane-E freezes the
+           // semantic-closure gate anchor: lane-E freezes the
            // aggregate A003/B004/C003/D002 boundary here so M253-A001 section
            // emission consumes one synchronized metadata closure proof.
-           // M252-E002 corpus-sync anchor: integrated corpus probes must
+           // corpus-sync anchor: integrated corpus probes must
            // observe these synchronized metadata surfaces through the real
            // frontend runner path rather than mock packets.
            << ",\"objc_executable_metadata_runtime_ingest_binary_boundary\":"
            << BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
                   executable_metadata_runtime_ingest_binary_boundary)
-           // M254-A001 translation-unit registration surface anchor: lane-A
+           // translation-unit registration surface anchor: lane-A
            // freezes one manifest-published preregistration contract over the
            // runtime metadata binary, linker-retention sidecars, constructor
            // root reservation, and runtime-owned entrypoint boundary before
@@ -20705,18 +20705,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_translation_unit_registration_contract\":"
            << BuildRuntimeTranslationUnitRegistrationContractSummaryJson(
                   runtime_translation_unit_registration_contract)
-           // M254-A002 registration-manifest anchor: lane-A now publishes the
+           // registration-manifest anchor: lane-A now publishes the
            // manifest template and constructor-root ownership model that later
            // lowering/bootstrap lanes consume directly instead of reconstructing
            // startup registration inputs ad hoc from loose sidecars.
-           // M263-A001 registration-descriptor/image-root source-surface
+           // registration-descriptor/image-root source-surface
            // anchor: the same semantic surface now freezes one canonical
            // frontend-visible naming model for the registration descriptor and
            // image root that later frontend closure, lowering, and runtime
            // replay work must preserve.
-           // M254-E001 startup-registration gate anchor: the semantic-surface registration manifest remains the canonical lane-E gate input
+           // startup-registration gate anchor: the semantic-surface registration manifest remains the canonical lane-E gate input
            // for the A002/B002/C003/D003/D004 replay-stable bootstrap evidence chain.
-           // M254-E002 runbook-closeout anchor: the registration manifest summary stays authoritative for the published runbook
+           // runbook-closeout anchor: the registration manifest summary stays authoritative for the published runbook
            // and its live smoke replay proof.
            << ",\"objc_runtime_translation_unit_registration_manifest\":"
            << BuildRuntimeTranslationUnitRegistrationManifestSummaryJson(
@@ -20724,13 +20724,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_registration_descriptor_image_root_source_surface\":"
            << BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummaryJson(
                   runtime_registration_descriptor_image_root_source_surface)
-           // M263-A002 registration-descriptor frontend-closure anchor: lane-A
+           // registration-descriptor frontend-closure anchor: lane-A
            // now publishes the owned descriptor-artifact boundary that later
            // lowering and runtime bootstrap work consume directly.
            << ",\"objc_runtime_registration_descriptor_frontend_closure\":"
            << BuildRuntimeRegistrationDescriptorFrontendClosureSummaryJson(
                   runtime_registration_descriptor_frontend_closure)
-           // M263-B001 bootstrap-legality anchor: lane-B now publishes the
+           // bootstrap-legality anchor: lane-B now publishes the
            // fail-closed semantic legality packet that bridges the emitted
            // A002 descriptor frontier and the live M254-B002 bootstrap
            // semantics so later runtime/lowering work preserves one canonical
@@ -20738,27 +20738,27 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_bootstrap_legality_failure_contract\":"
            << BuildRuntimeBootstrapLegalityFailureContractSummaryJson(
                   runtime_bootstrap_legality_failure_contract)
-           // M263-B002 bootstrap-legality semantics anchor: lane-B now lands
+           // bootstrap-legality semantics anchor: lane-B now lands
            // the live duplicate-registration and image-order semantic bridge
            // over the emitted translation-unit identity key so lowering and
            // runtime handoff consume one canonical cross-image legality model.
            << ",\"objc_runtime_bootstrap_legality_semantics\":"
            << BuildRuntimeBootstrapLegalitySemanticsSummaryJson(
                   runtime_bootstrap_legality_semantics)
-           // M263-B003 bootstrap failure/restart anchor: lane-B now publishes
+           // bootstrap failure/restart anchor: lane-B now publishes
            // the fail-closed restart/recovery bridge over the live reset/replay
            // runtime path so later multi-image bootstrap work consumes one
            // canonical unsupported-topology and deterministic-restart model.
            << ",\"objc_runtime_bootstrap_failure_restart_semantics\":"
            << BuildRuntimeBootstrapFailureRestartSemanticsSummaryJson(
                   runtime_bootstrap_failure_restart_semantics)
-           // M254-D001 runtime-bootstrap-api anchor: lane-D freezes the
+           // runtime-bootstrap-api anchor: lane-D freezes the
            // runtime-owned bootstrap header/archive/entrypoint/reset surface as
            // one canonical packet that later image-walk and reset-expansion
            // issues must preserve exactly.
            << ",\"objc_runtime_bootstrap_api_contract\":"
            << BuildRuntimeBootstrapApiSummaryJson(runtime_bootstrap_api)
-           // M254-D002 bootstrap-registrar anchor: the semantic surface now
+           // bootstrap-registrar anchor: the semantic surface now
            // publishes the private staging hook and runtime image-walk policy
            // that extend the emitted startup path without widening the frozen
            // D001 public runtime API.
@@ -20796,7 +20796,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
-           // M254-D003 bootstrap-reset anchor: the semantic surface now
+           // bootstrap-reset anchor: the semantic surface now
            // publishes the private deterministic reset/replay hooks that allow
            // same-process smoke harnesses to clear live runtime state, zero the
            // retained image-local init cells, and replay retained startup
@@ -20836,7 +20836,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
-           // M263-C003 archive/static-link bootstrap replay corpus anchor:
+           // archive/static-link bootstrap replay corpus anchor:
            // lane-C now publishes the retained-archive replay proof surface
            // that ties the M253-D003 merge model to the live M263-B003 replay
            // runtime and the emitted C002 registration-descriptor/image-root
@@ -20884,7 +20884,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "}"
-           // M254-B001 bootstrap-invariant anchor: lane-B freezes duplicate
+           // bootstrap-invariant anchor: lane-B freezes duplicate
            // registration, realization order, failure mode, and image-local
            // initialization semantics against the live A002 registration
            // manifest so later bootstrap implementation extends one canonical
@@ -20892,14 +20892,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_startup_bootstrap_invariants\":"
            << BuildRuntimeStartupBootstrapInvariantSummaryJson(
                   runtime_startup_bootstrap_invariants)
-           // M254-B002 bootstrap-semantics anchor: lane-B now lands the live
+           // bootstrap-semantics anchor: lane-B now lands the live
            // runtime enforcement/result-code surface that must remain aligned
            // with the emitted registration manifest and the native runtime
            // probe harness.
            << ",\"objc_runtime_startup_bootstrap_semantics\":"
            << BuildRuntimeBootstrapSemanticsSummaryJson(
                   runtime_bootstrap_semantics)
-           // M254-C001 bootstrap-lowering anchor: lane-C now freezes one
+           // bootstrap-lowering anchor: lane-C now freezes one
            // manifest-driven lowering packet that owns future ctor-root,
            // init-stub, and registration-table materialization without
            // claiming that the current emitted IR already contains those
@@ -21501,7 +21501,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   part5_control_flow_semantic_model_summary,
                   part5_control_flow_semantic_model_summary.replay_key,
                   part5_control_flow_safety_lowering_replay_key)
-            // M265-D001 runtime-helper freeze anchor: lane-D publishes one
+            // runtime-helper freeze anchor: lane-D publishes one
             // canonical runtime/helper boundary packet above the live lowering
             // contract and the runtime link wiring surface while full key-path
             // execution helpers remain deferred to D002.
@@ -21529,7 +21529,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
            << "}"
-           // M258-A001 runtime-aware import/module surface anchor: lane-A
+           // runtime-aware import/module surface anchor: lane-A
            // freezes one frontend-published contract above the current module
            // import graph lowering surface and below any real imported
            // runtime-owned declaration or metadata-reference realization.
@@ -21541,7 +21541,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_runtime_aware_import_module_frontend_closure\":"
            << BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
                   runtime_aware_import_module_frontend_closure)
-           // M258-B001 cross-module semantic preservation anchor: lane-B
+           // cross-module semantic preservation anchor: lane-B
            // freezes the semantic facts that later imported metadata handling
            // must preserve across module boundaries without claiming that the
            // imported runtime metadata semantics are landed yet.
@@ -21551,7 +21551,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_imported_runtime_metadata_semantic_rules\":"
            << BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
                   imported_runtime_metadata_semantic_rules)
-           // M258-C001 serialized metadata import/lowering anchor: lane-C
+           // serialized metadata import/lowering anchor: lane-C
            // freezes the boundary where emitted runtime-import-surface
            // artifacts already influence frontend semantic surfaces, but
            // imported metadata payloads still are not rehydrated, reused
@@ -21559,28 +21559,28 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"objc_serialized_runtime_metadata_import_lowering_contract\":"
            << BuildSerializedRuntimeMetadataImportLoweringSummaryJson(
                   serialized_runtime_metadata_import_lowering)
-           // M258-C002 serialized metadata artifact reuse anchor: lane-C now
+           // serialized metadata artifact reuse anchor: lane-C now
            // emits and reloads a transitive serialized runtime-metadata payload
            // through the runtime-import-surface artifact so downstream modules
            // can recover object-model semantics without reparsing source.
            << ",\"objc_serialized_runtime_metadata_artifact_reuse\":"
            << BuildSerializedRuntimeMetadataArtifactReuseSummaryJson(
                   serialized_runtime_metadata_artifact_reuse)
-           // M258-D001 cross-module build/runtime orchestration anchor:
+           // cross-module build/runtime orchestration anchor:
            // lane-D freezes the truthful boundary where the transitive
            // runtime-import-surface reuse payload and the local registration
            // manifest are both authoritative inputs, while cross-module link
            // packaging and runtime-registration aggregation remain unlanded.
-           // M258-D002 cross-module runtime packaging anchor:
+           // cross-module runtime packaging anchor:
            // driver/runtime packaging path now materializes the ordered
            // cross-module link plan and merged linker response file from those
            // same authoritative artifacts, so this semantic surface remains the
            // canonical replay boundary for downstream packaging consumers.
-           // M258-E001 cross-module object-model gate anchor: lane-E consumes
+           // cross-module object-model gate anchor: lane-E consumes
            // the A002/B002/C002/D002 summary chain and freezes the current
            // runnable two-image proof boundary before E002 broadens the
            // execution matrix.
-           // M258-E002 runnable import/module execution-matrix anchor:
+           // runnable import/module execution-matrix anchor:
            // the same emitted frontend surface remains the canonical replay
            // boundary while lane-E closes the runnable matrix around it.
            << ",\"objc_cross_module_build_runtime_orchestration_contract\":"
@@ -23022,7 +23022,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_actor_isolation_sendability_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_actor_lowering_metadata_replay_key =
       part7_actor_lowering_metadata_replay_key;
-  // M270-C002 implementation anchor: the deterministic actor-lowering
+  // implementation anchor: the deterministic actor-lowering
   // contract now feeds helper-backed actor thunk/hop/nonisolated rewrites in
   // IR rather than staying metadata-only.
   ir_frontend_metadata.actor_lowering_metadata_actor_interface_sites =
@@ -23419,7 +23419,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       part7_task_runtime_interop_cancellation_lowering_contract.deterministic;
   ir_frontend_metadata.lowering_concurrency_replay_race_guard_replay_key =
       part7_concurrency_replay_race_guard_lowering_replay_key;
-  // M270-C003 implementation anchor: the runnable actor pipeline now carries
+  // implementation anchor: the runnable actor pipeline now carries
   // the strict-concurrency replay/race-guard lowering packet beside the actor
   // lowering contract so helper-backed actor runtime rewrites can prove both
   // artifact families together.
@@ -24420,12 +24420,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       .runtime_metadata_archive_static_link_translation_unit_identity_key =
       BuildObjc3TranslationUnitIdentityKey(
           input_path, bundle.parse_lowering_readiness_surface);
-  // M254-C002 bootstrap materialization anchor: the native IR emitter consumes
+  // bootstrap materialization anchor: the native IR emitter consumes
   // this lowering packet directly when it materializes the ctor root, derived
   // init stub, registration table, and image descriptor. Driver/process code
   // may publish the same packet, but they may not re-derive those symbol
   // shapes independently from truncated sidecar state.
-  // M254-C003 registration-table/image-local-init anchor: the same lowering
+  // registration-table/image-local-init anchor: the same lowering
   // packet now also carries the self-describing registration-table layout,
   // ABI/version counts, and image-local init-state model that the emitter,
   // manifest writers, and later runtime image-walk code must preserve exactly.
@@ -24634,7 +24634,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ir_frontend_metadata.runtime_metadata_class_metaclass_emission_fail_closed =
           bundle_payload_complete;
 
-      // M253-C003 protocol/category data emission anchor: the typed lowering
+      // protocol/category data emission anchor: the typed lowering
       // handoff now expands one combined category graph node into explicit
       // interface/implementation record bundles so the emitted descriptor count
       // matches the runtime-export/scaffold record inventory exactly.
@@ -24784,7 +24784,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .runtime_metadata_protocol_category_emission_fail_closed =
           protocol_category_payload_complete;
 
-      // M253-C004 member-table data emission anchor: the typed lowering
+      // member-table data emission anchor: the typed lowering
       // handoff now also projects real owner-scoped method tables plus real
       // property/ivar descriptor payload records without reopening the earlier
       // class/protocol/category descriptor bundle shapes from C002/C003.

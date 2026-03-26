@@ -7,43 +7,43 @@
 #include "lower/objc3_lowering_contract.h"
 
 struct Objc3OwnershipAwareLoweringBehaviorScaffold {
-  // M262-A002 ARC mode-handling anchor: this scaffold remains the truthful
+  // ARC mode-handling anchor: this scaffold remains the truthful
   // source-side inventory for ownership qualifiers, weak/unowned semantics,
   // autoreleasepool profiling, and ARC fix-it summaries while explicit
   // -fobjc-arc mode only widens the executable signature boundary rather than
   // claiming full ARC automation.
-  // M262-B001 ARC semantic-rule freeze anchor: this scaffold remains explicit
+  // ARC semantic-rule freeze anchor: this scaffold remains explicit
   // about legality/inference boundaries so later ARC lifetime work cannot
   // silently treat property conflicts or inferred ownership as already live.
-  // M262-B002 ARC inference/lifetime implementation anchor: this scaffold now
+  // ARC inference/lifetime implementation anchor: this scaffold now
   // truthfully carries inferred strong-owned retain/release activity for the
   // supported ARC slice, without widening into the still-deferred cleanup,
   // weak, autorelease-return, or property-synthesis ARC behaviors.
-  // M262-B003 ARC interaction-semantics expansion anchor: this scaffold now
+  // ARC interaction-semantics expansion anchor: this scaffold now
   // also truthfully carries the supported weak/non-owning, autorelease-return,
   // synthesized-accessor, and block-interaction semantic packets that sit on
   // top of the retained ARC inference baseline.
-  // M262-C001 ARC lowering ABI/cleanup freeze anchor: this scaffold remains a
+  // ARC lowering ABI/cleanup freeze anchor: this scaffold remains a
   // semantic/source packet only and does not by itself schedule ARC cleanup
   // scopes or claim helper-call placement; later lane-C lowering must consume
   // it explicitly.
-  // M262-C002 ARC automatic-insertion implementation anchor: this scaffold now
+  // ARC automatic-insertion implementation anchor: this scaffold now
   // explicitly feeds the supported ARC helper-placement path, but remains a
   // source-side replay packet rather than the place where retain/release/
   // autorelease calls are emitted.
-  // M262-C003 ARC cleanup/weak/lifetime implementation anchor: this scaffold
+  // ARC cleanup/weak/lifetime implementation anchor: this scaffold
   // still only carries the source-side ownership and block-interaction packets
   // that lane-C lowering consumes for scope cleanup, weak current-property
   // helper paths, and deterministic lifetime cleanup on scope and implicit
   // exits.
-  // M262-C004 ARC/block autorelease-return implementation anchor: this
+  // ARC/block autorelease-return implementation anchor: this
   // scaffold still carries only source-side return-autorelease and block-escape
   // intent while lane-C owns the actual branch-stable cleanup ordering when
   // escaping blocks and autoreleasing returns compose.
-  // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes the
+  // runnable-arc-runtime gate anchor: lane-E consumes the
   // already-proven ARC source, semantic, lowering, and runtime summaries
   // without widening this scaffold beyond its truthful source-side packet role.
-  // M262-E002 runnable-arc-closeout anchor: lane-E closes the current ARC
+  // runnable-arc-closeout anchor: lane-E closes the current ARC
   // tranche by combining those preserved summaries with integrated execution
   // smoke and operator docs rather than widening lowering behavior here.
   bool ownership_qualifier_contract_ready = false;

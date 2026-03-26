@@ -34,7 +34,7 @@ enum class ValueType {
 struct Stmt;
 
 struct Expr {
-  // M261-A001 executable-block-source-closure freeze constants: lane-A now
+  // executable-block-source-closure freeze constants: lane-A now
   // freezes the truthful parser/AST boundary for block literals, captures,
   // and replay-stable profiling before runnable block realization begins.
   static inline constexpr const char *kObjc3ExecutableBlockSourceClosureContractId =
@@ -61,7 +61,7 @@ struct Expr {
       "fail-closed-on-block-signature-capture-or-invoke-source-model-drift-before-runnable-block-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockSourceModelLaneContract =
       "m261-block-source-model-v1";
-  // M261-A003 block-source-storage-annotation constants: lane-A now extends
+  // block-source-storage-annotation constants: lane-A now extends
   // the truthful source-only block model with parser-owned byref/helper/
   // escape-shape annotations while runnable block lowering remains out of
   // scope.
@@ -75,7 +75,7 @@ struct Expr {
       "block-source-model-publishes-heap-promotion-relevant-escape-shape-categories-before-runnable-block-escape-analysis";
   static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationLaneContract =
       "m261-block-source-storage-annotations-v1";
-  // M261-B001 block-runtime-semantic-rules freeze constants: lane-B now
+  // block-runtime-semantic-rules freeze constants: lane-B now
   // freezes the truthful semantic boundary that current source-only block
   // admission exposes while native emit paths still fail closed on runnable
   // block semantics.
@@ -93,7 +93,7 @@ struct Expr {
       "block-runtime-semantics-freeze-block-literals-as-source-only-function-shaped-values-while-runnable-invocation-fails-closed";
   static inline constexpr const char *kObjc3ExecutableBlockRuntimeFailClosedModel =
       "block-runtime-semantics-fail-closed-on-native-emit-before-runnable-block-semantics-land";
-  // M261-B002 capture-legality/escape/invocation implementation constants:
+  // capture-legality/escape/invocation implementation constants:
   // lane-B now upgrades the source-only semantic path so live capture
   // resolution, truthful escape classification, and local block invocation
   // typing are enforced before runnable block-object lowering lands.
@@ -105,7 +105,7 @@ struct Expr {
       "source-only-sema-classifies-byref-escape-and-copy-dispose-requirements-from-parser-owned-annotations-before-runnable-helper-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockInvocationTypingImplementationModel =
       "source-only-sema-types-local-block-invocations-as-callable-values-while-native-block-execution-remains-fail-closed";
-  // M261-B003 byref/copy-dispose/object-ownership constants: lane-B now
+  // byref/copy-dispose/object-ownership constants: lane-B now
   // extends the live source-only block semantics with ownership-sensitive
   // helper eligibility and fail-closed mutation rules for non-owning object
   // captures.
@@ -117,7 +117,7 @@ struct Expr {
       "owned-object-captures-promote-copy-dispose-helper-eligibility-even-without-byref-cells";
   static inline constexpr const char *kObjc3ExecutableBlockObjectCaptureOwnershipModel =
       "weak-and-unowned-object-captures-remain-non-owning-and-do-not-force-copy-dispose-helpers";
-  // M261-C001 block-lowering-ABI/artifact-boundary constants: lane-C now
+  // block-lowering-ABI/artifact-boundary constants: lane-C now
   // freezes the truthful lowering boundary required for runnable block objects
   // without claiming that emitted block records, invoke thunks, byref cells,
   // or helper bodies already exist on native paths.
@@ -133,7 +133,7 @@ struct Expr {
       "native-emit-fails-closed-on-block-literals-before-runnable-block-object-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockLoweringNonGoalModel =
       "no-emitted-block-object-records-no-invoke-thunks-no-byref-cell-storage-no-copy-dispose-helper-bodies";
-  // M261-C002 executable-block-object/invoke-thunk constants: lane-C now
+  // executable-block-object/invoke-thunk constants: lane-C now
   // upgrades the frozen C001 boundary into one runnable lowering slice for
   // stack-allocated block objects, readonly scalar captures, and direct local
   // invocation, while byref/helper/ownership-sensitive cases stay deferred to
@@ -146,7 +146,7 @@ struct Expr {
       "byref-cells-copy-dispose-helpers-owned-object-captures-and-heap-promotion-stay-fail-closed-until-m261-c003";
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkExecutionEvidenceModel =
       "native-compile-link-run-proves-local-block-invocation-through-emitted-block-storage-and-invoke-thunk";
-  // M261-C003 byref-cell/copy-helper/dispose-helper constants: lane-C now
+  // byref-cell/copy-helper/dispose-helper constants: lane-C now
   // widens runnable native block lowering to non-escaping byref and owned
   // capture cases by emitting stack byref cells plus copy/dispose helper
   // bodies, while heap-promotion and runtime-managed block copying remain
@@ -159,7 +159,7 @@ struct Expr {
       "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-until-m261-c004-and-m261-d002";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-byref-mutation-and-owned-capture-helper-lowering-through-emitted-block-helper-bodies";
-  // M261-C004 escaping-block runtime-hook constants: lane-C widens runnable
+  // escaping-block runtime-hook constants: lane-C widens runnable
   // block lowering to readonly-scalar escaping cases by lowering heap
   // promotion and invoke hooks against the native runtime while ownership-
   // sensitive escaping captures stay deferred to lane-D runtime work.
@@ -171,7 +171,7 @@ struct Expr {
       "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-until-m261-d002-and-m261-d003";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-returned-and-argument-passed-readonly-scalar-block-values-through-runtime-promotion-hooks";
-  // M261-E001 runnable-block-runtime gate constants: lane-E now freezes the
+  // runnable-block-runtime gate constants: lane-E now freezes the
   // truthful integrated block-runtime proof boundary above the retained source,
   // sema, lowering, and runtime evidence chain before broader block closeout
   // samples expand it.
@@ -185,7 +185,7 @@ struct Expr {
       "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
       "fail-closed-on-runnable-block-runtime-evidence-drift";
-  // M261-E002 runnable-block execution-matrix constants: lane-E now closes
+  // runnable-block execution-matrix constants: lane-E now closes
   // the current M261 slice with one truthful executable matrix over the
   // existing native runtime path rather than widening the supported surface.
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
@@ -198,7 +198,7 @@ struct Expr {
       "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
       "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
-  // M262-A001 ARC source-surface/mode-boundary constants: ownership
+  // ARC source-surface/mode-boundary constants: ownership
   // qualifiers, weak/unowned metadata, autoreleasepool profiling, and ARC
   // fix-it summaries are already parser/sema-visible, but the native driver
   // still rejects `-fobjc-arc` and executable ownership-qualified
@@ -708,13 +708,13 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
     "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles";
-// M257-C001 accessor/layout lowering freeze anchor: AST remains the canonical
+// accessor/layout lowering freeze anchor: AST remains the canonical
 // source of property attribute/accessor profiles, synthesized-binding
 // identities, and ivar layout identities. Lane-C lowering may only serialize
 // this handoff into emitted metadata/object artifacts; it must not synthesize
 // accessor bodies or invent runtime storage/layout beyond the sema-approved
 // source model.
-// M257-C002 ivar offset/layout emission anchor: AST-owned
+// ivar offset/layout emission anchor: AST-owned
 // `Objc3PropertyDecl.executable_ivar_layout_symbol`,
 // `.executable_ivar_layout_slot_index`, `.executable_ivar_layout_size_bytes`,
 // and `.executable_ivar_layout_alignment_bytes` remain the only authoritative
@@ -758,7 +758,7 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
     "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
     "objc3c-runtime-support-library-core-feature/m251-d002-v1";
-// M253-A001 emitted metadata inventory freeze anchor: these constants define
+// emitted metadata inventory freeze anchor: these constants define
 // the canonical logical sections, symbol families, linkage, visibility,
 // retention root, and inspection commands for the currently supported runtime
 // metadata inventory.
@@ -1580,24 +1580,24 @@ struct Objc3PropertyDecl {
   std::string scope_path_symbol;
   std::string property_synthesis_symbol;
   std::string ivar_binding_symbol;
-  // M257-C003 synthesized accessor/property lowering anchor: lane-C consumes
+  // synthesized accessor/property lowering anchor: lane-C consumes
   // the effective accessor selectors plus synthesized binding identity below
   // to materialize executable getter/setter bodies without reopening property
   // parsing or sema ownership/layout derivation.
-  // M257-D001 runtime property/layout consumption freeze anchor: lane-D must
+  // runtime property/layout consumption freeze anchor: lane-D must
   // consume the same emitted binding and layout identities below rather than
   // rederiving property storage or allocator state from source.
-  // M257-D002 instance-allocation-layout-runtime anchor: the same emitted
+  // instance-allocation-layout-runtime anchor: the same emitted
   // binding and layout identities must also be sufficient for true
   // per-instance allocation and slot storage without rederiving layout from
   // source.
-  // M257-D003 property-metadata-reflection anchor: private runtime reflection
+  // property-metadata-reflection anchor: private runtime reflection
   // helpers must likewise surface property/accessor/layout facts from these
   // same emitted identities rather than rediscovering them from source.
-  // M257-E001 property-ivar-execution gate anchor: lane-E freezes the
+  // property-ivar-execution gate anchor: lane-E freezes the
   // executable claim over these same binding, accessor, and layout identities
   // before broader runnable sample expansion is allowed.
-  // M257-E002 runnable property-ivar execution-matrix anchor: these same
+  // runnable property-ivar execution-matrix anchor: these same
   // emitted identities must now survive one live integrated storage,
   // synthesized-accessor, and reflection proof.
   std::string executable_synthesized_binding_kind;

@@ -40,7 +40,7 @@ std::string MakeDiag(unsigned line, unsigned column, const std::string &code, co
 }
 
 void AppendMigrationAssistDiagnostics(const Objc3SemaPassManagerInput &input, std::vector<std::string> &diagnostics) {
-  // M259-B001 runnable-core compatibility guard anchor: migration assist only
+  // runnable-core compatibility guard anchor: migration assist only
   // becomes a live fail-closed diagnostic surface in canonical mode.
   if (!input.migration_assist || input.compatibility_mode != Objc3SemaCompatibilityMode::Canonical) {
     return;
@@ -500,7 +500,7 @@ bool IsEquivalentIdClassSelObjectPointerTypeCheckingSummary(
          lhs.property_object_pointer_type_sites == rhs.property_object_pointer_type_sites;
 }
 
-// M261-A001 executable-block-source-closure anchor: sema parity for block
+// executable-block-source-closure anchor: sema parity for block
 // source closure remains summary-based at this freeze point because runnable
 // block realization has not started yet.
 bool IsEquivalentBlockLiteralCaptureSemanticsSummary(const Objc3BlockLiteralCaptureSemanticsSummary &lhs,
@@ -894,58 +894,58 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
     std::vector<std::string> pass_diagnostics;
     if (pass == Objc3SemaPassId::BuildIntegrationSurface) {
       result.integration_surface =
-          // M261-A002 block-source-model-completion anchor: the semantic
+          // block-source-model-completion anchor: the semantic
           // integration surface receives the explicit source-only
           // block-literal admission bit so lane-A can publish the completed
           // source model without widening runnable block support.
-          // M261-A003 block-source-storage-annotation anchor: byref/helper/
+          // block-source-storage-annotation anchor: byref/helper/
           // escape-shape source annotations remain parser-owned at this stage
           // and ride the same source-only admission path without claiming that
           // runnable block lowering or helper emission already exists.
-          // M261-B001 block-runtime-semantic-rules freeze anchor: the pass
+          // block-runtime-semantic-rules freeze anchor: the pass
           // manager freezes this exact source-only admission boundary as the
           // current semantic contract while native emit paths still fail
           // closed on runnable block semantics.
-          // M261-B002 capture-legality/escape/invocation implementation
+          // capture-legality/escape/invocation implementation
           // anchor: lane-B keeps this same admission boundary but now expects
           // ValidateBodies to enforce live capture legality and local callable
           // block invocation typing inside the source-only path.
-          // M261-B003 byref/copy-dispose/object-ownership anchor: the pass
+          // byref/copy-dispose/object-ownership anchor: the pass
           // manager still routes blocks through this source-only admission
           // path, but ValidateBodies now also owns
           // ownership-sensitive helper eligibility and non-owning mutation
           // rejection.
-          // M261-C001 block-lowering-ABI/artifact-boundary freeze anchor:
+          // block-lowering-ABI/artifact-boundary freeze anchor:
           // this pass manager hands lane-C one deterministic set of capture,
           // invoke, storage-escape, and copy-dispose lowering surfaces, but
           // it still does not materialize emitted block-object records,
           // invoke-thunk bodies, byref cells, or helper function bodies.
-          // M261-C003 byref-cell/copy-helper/dispose-helper anchor: lane-C now
+          // byref-cell/copy-helper/dispose-helper anchor: lane-C now
           // consumes the same pass-manager handoff while ValidateBodies
           // populates the live byref layout and runtime helper fields needed
           // for emitted local nonescaping block lowering.
-          // M261-C004 escaping-block runtime-hook anchor: the same
+          // escaping-block runtime-hook anchor: the same
           // deterministic pass-manager handoff now also carries truthful
           // escape-to-heap source facts so lane-C can widen only the
           // readonly-scalar escaping slice through private runtime promotion
           // and invoke hooks.
-          // M261-D001 block-runtime API/object-layout freeze anchor: this
+          // block-runtime API/object-layout freeze anchor: this
           // pass-manager handoff remains the only semantic input to the
           // frozen private block-runtime ABI boundary; no parallel runtime
           // re-derivation path is permitted.
-          // M261-D002 block-runtime allocation/copy-dispose/invoke anchor:
+          // block-runtime allocation/copy-dispose/invoke anchor:
           // lane-D widens runtime execution for promoted block records without
           // widening the source-level sema contract that this handoff
           // publishes.
-          // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+          // byref-forwarding/heap-promotion/ownership-interop anchor:
           // the same sema handoff now feeds runtime-owned forwarding-cell
           // promotion for escaping pointer-capture blocks without changing the
           // source-facing capture legality contract.
-          // M261-E001 runnable-block-runtime gate anchor: lane-E now freezes
+          // runnable-block-runtime gate anchor: lane-E now freezes
           // this exact source+sema handoff together with the C004 and D003
           // lowering/runtime proofs so runnable block closeout cannot drift
           // back to metadata-only evidence.
-          // M261-E002 runnable-block execution-matrix anchor: lane-E now
+          // runnable-block execution-matrix anchor: lane-E now
           // closes M261 by consuming this same source+sema handoff together
           // with integrated executable block fixtures instead of widening the
           // semantic surface any further.
@@ -2060,7 +2060,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_storage_escape_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_storage_escape_semantics_summary.block_literal_sites &&
-      // M261-C002 executable-block-object/invoke-thunk anchor: the current
+      // executable-block-object/invoke-thunk anchor: the current
       // runnable slice allows readonly scalar captures without forcing the old
       // mutable==capture or byref==capture equalities. Later C003 work widens
       // this to real byref/helper cases.
@@ -2090,7 +2090,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.block_copy_dispose_semantics_summary.block_literal_sites &&
-      // M261-C002 executable-block-object/invoke-thunk anchor: copy/dispose
+      // executable-block-object/invoke-thunk anchor: copy/dispose
       // determinism must also admit the readonly-capture slice even though no
       // helper bodies are emitted yet.
       result.type_metadata_handoff.block_copy_dispose_semantics_summary.mutable_capture_count_total <=
@@ -2251,14 +2251,14 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       IsEquivalentRetainReleaseOperationSummary(
           result.integration_surface.retain_release_operation_summary,
           result.type_metadata_handoff.retain_release_operation_summary) &&
-      // M262-D001 runtime ARC helper API surface anchor: sema continues to
+      // runtime ARC helper API surface anchor: sema continues to
       // publish ownership and helper-need summaries only; the concrete helper
       // ABI itself remains frozen in the runtime/lowering boundary.
-      // M262-D002 runtime ARC helper implementation anchor: sema continues to
+      // runtime ARC helper implementation anchor: sema continues to
       // publish ownership and helper-need summaries only, while the supported
       // property/weak/autorelease-return ARC slice now reaches a live linked
       // helper/runtime boundary rather than a semantic promise here.
-      // M262-D003 ownership-debug/runtime-validation anchor: sema still does
+      // ownership-debug/runtime-validation anchor: sema still does
       // not own ARC debug counters or helper-traffic probes; it only preserves
       // the packets that the private runtime/testing surface consumes.
       result.type_metadata_handoff.retain_release_operation_summary.retain_insertion_sites <=
@@ -2284,44 +2284,44 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
       result.type_metadata_handoff.weak_unowned_semantics_summary.contract_violation_sites <=
           result.type_metadata_handoff.weak_unowned_semantics_summary.ownership_candidate_sites +
               result.type_metadata_handoff.weak_unowned_semantics_summary.weak_unowned_conflict_sites;
-  // M262-A002 ARC mode-handling anchor: the handoff keeps ownership
+  // ARC mode-handling anchor: the handoff keeps ownership
   // qualifiers, weak/unowned summaries, ARC fix-it summaries, and
   // autoreleasepool scope accounting live and deterministic while explicit
   // ARC mode now widens executable ownership-qualified
   // function/method
   // signatures without claiming full ARC automation.
-  // M262-B001 ARC semantic-rule freeze anchor: the pass-manager handoff still
+  // ARC semantic-rule freeze anchor: the pass-manager handoff still
   // treats ARC semantic legality as explicit-mode-only, preserving deterministic
   // weak/unowned and ARC-fixit surfaces while broader inference remains
   // deferred.
-  // M262-B002 ARC inference/lifetime implementation anchor: the handoff now
+  // ARC inference/lifetime implementation anchor: the handoff now
   // treats explicit ARC mode as permission to infer strong-owned retain/release
   // activity for the supported unqualified object slice, while non-ARC still
   // preserves the zero-inference baseline and later ARC cleanup work remains
   // deferred.
-  // M262-B003 ARC interaction-semantics expansion anchor: the handoff now also
+  // ARC interaction-semantics expansion anchor: the handoff now also
   // preserves the semantic packets that distinguish weak/non-owning storage,
   // explicit autorelease returns, synthesized accessor ownership packets, and
   // block-capture interactions inside the supported ARC slice.
-  // M262-C001 ARC lowering ABI/cleanup freeze anchor: this handoff remains
+  // ARC lowering ABI/cleanup freeze anchor: this handoff remains
   // semantic-only and must not silently claim cleanup scheduling, helper-call
   // placement, or runtime ABI widening before the lane-C lowering issues land.
-  // M262-C002 ARC automatic-insertion implementation anchor: the handoff now
+  // ARC automatic-insertion implementation anchor: the handoff now
   // also preserves the supported ARC insertion flags that lowering consumes for
   // helper placement, without moving retain/release/autorelease emission into
   // sema itself.
-  // M262-C003 ARC cleanup/weak/lifetime implementation anchor: the handoff
+  // ARC cleanup/weak/lifetime implementation anchor: the handoff
   // continues to be semantic-only while preserving the packets lowering now
   // consumes for scope-exit cleanup ordering, weak current-property helper
   // usage, and deterministic block-capture lifetime cleanup.
-  // M262-C004 ARC/block autorelease-return implementation anchor: the handoff
+  // ARC/block autorelease-return implementation anchor: the handoff
   // also preserves the explicit block-escape and return-autorelease packets,
   // while lane-C owns the branch-stable cleanup ordering needed to combine
   // them truthfully.
-  // M262-E001 runnable-arc-runtime gate anchor: lane-E consumes this existing
+  // runnable-arc-runtime gate anchor: lane-E consumes this existing
   // source, semantic, lowering, and runtime proof chain and must not regress
   // into parser-only or metadata-only evidence.
-  // M262-E002 runnable-arc-closeout anchor: the closeout matrix consumes this
+  // runnable-arc-closeout anchor: the closeout matrix consumes this
   // unchanged proof chain plus integrated smoke instead of broadening parser
   // or semantic acceptance in lane E.
   result.arc_diagnostics_fixit_summary = result.integration_surface.arc_diagnostics_fixit_summary;

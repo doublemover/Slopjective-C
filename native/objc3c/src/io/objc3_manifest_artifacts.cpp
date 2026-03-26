@@ -10,59 +10,59 @@
 std::filesystem::path BuildManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  // M266-E001 control-flow execution gate anchor: lane-E consumes the emitted
+  // control-flow execution gate anchor: lane-E consumes the emitted
   // manifest plus the matching IR/object artifacts as one canonical proof
   // surface for the currently runnable Part 5 control-flow slice.
-  // M266-E002 runnable control-flow matrix anchor: the closeout matrix keeps
+  // runnable control-flow matrix anchor: the closeout matrix keeps
   // consuming this same manifest artifact rather than inventing a separate
   // publication channel for Part 5 runnable evidence.
-  // M265-E001 type-surface executable gate anchor: the emitted manifest
+  // type-surface executable gate anchor: the emitted manifest
   // remains the authoritative published semantic packet surface consumed by
   // the lane-E executable Part 3 gate.
-  // M265-E002 runnable-type-surface closeout anchor: closeout matrix rows
+  // runnable-type-surface closeout anchor: closeout matrix rows
   // consume the same manifest surface for truthful optionals/generic-replay/
   // typed-keypath evidence.
-  // M267-E001 error-model conformance gate anchor: lane-E keeps consuming the
+  // error-model conformance gate anchor: lane-E keeps consuming the
   // same manifest sidecar and the canonical cross-module link-plan artifact
   // instead of introducing a parallel Part 6 publication surface.
-  // M268-E001 async executable conformance gate anchor: lane-E keeps consuming
+  // async executable conformance gate anchor: lane-E keeps consuming
   // the same manifest sidecar and its paired IR/object artifacts instead of a
   // separate Part 7 publication surface.
-  // M268-E002 runnable async closeout matrix anchor: the milestone closeout
+  // runnable async closeout matrix anchor: the milestone closeout
   // keeps consuming this same manifest sidecar and its paired IR/object
   // artifacts instead of a matrix-only reporting surface.
-  // M269-E001 task/executor conformance gate anchor: lane-E keeps consuming
+  // task/executor conformance gate anchor: lane-E keeps consuming
   // the same manifest sidecar and paired driver artifacts while the wider
   // front-door task publication path remains intentionally fail-closed.
-  // M269-E002 runnable task/executor closeout matrix anchor: the milestone
+  // runnable task/executor closeout matrix anchor: the milestone
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only reporting surface for the current Part 7 task/runtime slice.
-  // M270-E001 strict concurrency conformance gate anchor: lane-E keeps
+  // strict concurrency conformance gate anchor: lane-E keeps
   // consuming the same manifest sidecar and paired driver artifacts while the
   // broader front-door actor publication path remains intentionally fail-closed.
-  // M270-E002 runnable actor/isolation closeout matrix anchor: the milestone
+  // runnable actor/isolation closeout matrix anchor: the milestone
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only reporting surface for the current Part 7 actor/runtime slice.
-  // M271-E001 strict system conformance gate anchor: lane-E keeps consuming
+  // strict system conformance gate anchor: lane-E keeps consuming
   // this same manifest sidecar and paired driver artifacts while the broader
   // front-door Part 8 publication path remains intentionally fail-closed for
   // deferred borrowed-lifetime/runtime-enforcement claims.
-  // M271-E002 runnable system-extension closeout matrix anchor: the milestone
+  // runnable system-extension closeout matrix anchor: the milestone
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only reporting surface for the current Part 8 slice.
-  // M272-E001 performance/dynamism conformance gate anchor: lane-E keeps
+  // performance/dynamism conformance gate anchor: lane-E keeps
   // consuming this same manifest sidecar and paired driver artifacts while the
   // front-door Part 9 publication path remains intentionally singular and the
   // D002 live fast-path/runtime proof stays the executable evidence boundary.
-  // M272-E002 runnable dispatch-control matrix closeout anchor: Part 9
+  // runnable dispatch-control matrix closeout anchor: Part 9
   // closeout keeps consuming this same manifest sidecar and paired driver
   // artifacts; there is no second manifest-only closeout path for the runnable
   // dispatch-control matrix.
-  // M273-E001 metaprogramming conformance gate anchor: lane-E keeps consuming
+  // metaprogramming conformance gate anchor: lane-E keeps consuming
   // this same manifest sidecar and paired driver artifacts while the D002 live
   // macro host-process/cache proof stays the canonical executable evidence
   // boundary for the currently supported Part 10 slice.
-  // M273-E002 runnable metaprogramming closeout matrix anchor: Part 10
+  // runnable metaprogramming closeout matrix anchor: Part 10
   // closeout keeps consuming this same manifest sidecar instead of inventing a
   // matrix-only publication path for derives/macros/property behaviors.
   return out_dir / (emit_prefix + ".manifest.json");
@@ -122,10 +122,10 @@ std::filesystem::path BuildConformancePublicationArtifactPath(
 std::filesystem::path BuildConformanceValidationArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  // M264-E001 versioning/conformance truth-gate anchor: the validation
+  // versioning/conformance truth-gate anchor: the validation
   // artifact is the canonical integrated operator-side summary of the emitted
   // report/publication pair.
-  // M264-E002 release/runtime-claim-matrix anchor: the release matrix consumes
+  // release/runtime-claim-matrix anchor: the release matrix consumes
   // this stable validation artifact name when publishing the milestone closeout
   // surface.
   return out_dir / (emit_prefix + ".objc3-conformance-validation.json");
@@ -158,10 +158,10 @@ std::filesystem::path BuildReleaseCandidateMatrixArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  // M263-E001 bootstrap-completion gate anchor: the registration manifest is
+  // bootstrap-completion gate anchor: the registration manifest is
   // one half of the canonical emitted artifact pair consumed by the lane-E bootstrap completion gate
   // for single-image and multi-image evidence.
-  // M263-E002 bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
+  // bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix);
@@ -170,10 +170,10 @@ std::filesystem::path BuildRuntimeRegistrationManifestArtifactPath(
 std::filesystem::path BuildRuntimeRegistrationDescriptorArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  // M263-E001 bootstrap-completion gate anchor: the registration descriptor is
+  // bootstrap-completion gate anchor: the registration descriptor is
   // the other half of the canonical emitted artifact pair consumed by the
   // lane-E bootstrap completion gate.
-  // M263-E002 bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
+  // bootstrap-matrix closeout anchor: published bootstrap matrix consumes the same canonical artifact pair.
   return out_dir /
          (emit_prefix +
           kObjc3RuntimeRegistrationDescriptorFrontendClosureArtifactSuffix);
@@ -361,9 +361,9 @@ void WritePart10MacroHostProcessCacheArtifact(
 void WritePart11BridgeHeaderArtifact(const std::filesystem::path &out_dir,
                                      const std::string &emit_prefix,
                                      const std::string &artifact_text) {
-  // M274-E001 interop conformance gate anchor: deterministic bridge header
+  // interop conformance gate anchor: deterministic bridge header
   // emission is part of the canonical lane-E evidence chain.
-  // M274-E001/M274-E002 Part 11 lane-E anchors: deterministic bridge header
+  // Part 11 lane-E anchors: deterministic bridge header
   // emission is part of the canonical gate and closeout evidence chain.
   WriteText(BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix),
             artifact_text);
@@ -379,9 +379,9 @@ void WritePart11BridgeModuleArtifact(const std::filesystem::path &out_dir,
 void WritePart11BridgeArtifact(const std::filesystem::path &out_dir,
                                const std::string &emit_prefix,
                                const std::string &artifact_json) {
-  // M274-E001 interop conformance gate anchor: the bridge JSON remains part of
+  // interop conformance gate anchor: the bridge JSON remains part of
   // the canonical lane-E evidence chain for the supported Part 11 slice.
-  // M274-E001/M274-E002 Part 11 lane-E anchors: the bridge JSON remains
+  // Part 11 lane-E anchors: the bridge JSON remains
   // operator-visible evidence for the supported Part 11 slice.
   WriteText(BuildPart11BridgeArtifactPath(out_dir, emit_prefix), artifact_json);
 }

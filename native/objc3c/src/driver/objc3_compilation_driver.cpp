@@ -21,23 +21,23 @@ int RunObjc3CompilationDriver(const Objc3CliOptions &cli_options) {
   }
 
   if (input_kind == Objc3DriverInputKind::kObjc3Language) {
-    // M262-D001 runtime ARC helper API surface anchor: driver orchestration
+    // runtime ARC helper API surface anchor: driver orchestration
     // continues to toggle ARC lowering and runtime linkage without widening
     // the private ARC helper ABI into new CLI-facing surface.
-    // M262-D002 runtime ARC helper implementation anchor: driver orchestration
+    // runtime ARC helper implementation anchor: driver orchestration
     // now proves the private ARC helper ABI is both internal and linked as a
     // live runtime capability for the supported ARC execution slice.
-    // M262-D003 ownership-debug/runtime-validation anchor: driver
+    // ownership-debug/runtime-validation anchor: driver
     // orchestration still does not widen the CLI or public ABI surface; lane-D
     // adds only private runtime-debug probes and validation hooks above the
     // same native objc3 path.
-    // M261-D001 block-runtime API/object-layout freeze anchor: the compilation
+    // block-runtime API/object-layout freeze anchor: the compilation
     // driver keeps block runtime mechanics behind the native objc3 path only;
     // no extra CLI surface or public runtime ABI routing is introduced here.
-    // M261-D002 block-runtime allocation/copy-dispose/invoke anchor: driver
+    // block-runtime allocation/copy-dispose/invoke anchor: driver
     // orchestration now also republishes the live runtime helper capability
     // without changing the public CLI surface or source acceptance model.
-    // M261-D003 byref-forwarding/heap-promotion/ownership-interop anchor:
+    // byref-forwarding/heap-promotion/ownership-interop anchor:
     // driver orchestration still widens only the internal runtime behavior for
     // escaping pointer-capture blocks; there is no new CLI or public ABI knob.
     return RunObjc3LanguagePath(cli_options);

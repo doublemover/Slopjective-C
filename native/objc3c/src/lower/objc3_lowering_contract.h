@@ -50,7 +50,7 @@ inline constexpr const char *kObjc3DynamicDispatchMethodFamilyPolicy =
     "dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting";
 inline constexpr const char *kObjc3RuntimeVisibleMethodFamilyPolicy =
     "super-and-dynamic-sites-preserve-method-family-runtime-visibility";
-// M255-C001 dispatch lowering ABI freeze anchor: lane-C freezes the
+// dispatch lowering ABI freeze anchor: lane-C freezes the
 // compiler-to-runtime dispatch boundary without switching code generation yet.
 // The canonical runtime entrypoint is objc3_runtime_dispatch_i32, selector
 // handles come from objc3_runtime_lookup_selector, receiver/result ABI stays
@@ -92,7 +92,7 @@ inline constexpr const char
         "compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
     "super-nil-direct-runtime-entrypoint-cutover-deferred-until-m255-c003";
-// M255-C002 runtime call ABI generation anchor: lane-C now cuts instance/class
+// runtime call ABI generation anchor: lane-C now cuts instance/class
 // sends over to the canonical runtime entrypoint while preserving the
 // compatibility bridge for deferred super/dynamic/direct surfaces until
 // M255-C003.
@@ -104,7 +104,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchCallAbiGenerationDeferredLoweringModel =
         "super-dynamic-and-deferred-sends-stay-on-compatibility-bridge-until-m255-c003";
-// M255-C003 runtime call ABI generation anchor: lane-C now routes normalized
+// runtime call ABI generation anchor: lane-C now routes normalized
 // super sends and nil-receiver canonical surfaces through the live runtime
 // entrypoint, keeps dynamic sends on the compatibility bridge until M255-C004,
 // and fails closed if an unsupported reserved direct-dispatch surface reaches
@@ -120,7 +120,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilUnsupportedFallbackModel =
         "direct-dispatch-fails-closed-until-supported-surface-materializes";
-// M255-C004 live-dispatch cutover anchor: lane-C removes the last live-path
+// live-dispatch cutover anchor: lane-C removes the last live-path
 // compatibility-bridge assumption by routing normalized dynamic sends through
 // the canonical runtime entrypoint too, while keeping the compatibility symbol
 // exported as test/compat evidence only and leaving direct dispatch fail-closed.
@@ -138,7 +138,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel =
         "direct-dispatch-remains-fail-closed-after-live-cutover";
-// M255-D001 lookup/dispatch runtime freeze anchor: lane-D now freezes the
+// lookup/dispatch runtime freeze anchor: lane-D now freezes the
 // runtime-owned selector interning, lookup-table, cache, and slow-path
 // boundary that the live lane-C call ABI targets. The canonical runtime API
 // remains objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32;
@@ -163,7 +163,7 @@ inline constexpr const char *kObjc3RuntimeLookupDispatchCompatibilityModel =
     "compatibility-shim-remains-test-only-non-authoritative-runtime-surface";
 inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
     "runtime-lookup-and-dispatch-fail-closed-on-unmaterialized-resolution";
-// M255-D002 selector lookup table anchor: lane-D now materializes the selector
+// selector lookup table anchor: lane-D now materializes the selector
 // table from emitted registration-table selector pools while preserving the
 // frozen D001 public runtime entrypoints. Method-cache / slow-path resolution
 // remains deferred to M255-D003, and unknown selector lookups stay dynamic
@@ -183,7 +183,7 @@ inline constexpr const char
     *kObjc3RuntimeSelectorLookupTablesReplayModel =
         "reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order";
 inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
-// M255-D003 method-cache / slow-path anchor: lane-D now turns registered class
+// method-cache / slow-path anchor: lane-D now turns registered class
 // and metaclass metadata into real runtime dispatch targets while preserving
 // the frozen D001 public runtime API. Selector tables remain the authoritative
 // stable-id source from D002, class-known and class-self receivers normalize
@@ -204,7 +204,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeMethodCacheSlowPathFallbackModel =
         "unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula";
-// M255-D004 protocol/category-aware resolution anchor: lane-D extends the live
+// protocol/category-aware resolution anchor: lane-D extends the live
 // runtime slow path to consume emitted category method tables plus adopted and
 // inherited protocol metadata while preserving the frozen D001 public runtime
 // API and D003 cache/selector-table surfaces.
@@ -220,7 +220,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel =
         "conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch";
-// M255-E001 live-dispatch gate anchor: lane-E now freezes one fail-closed
+// live-dispatch gate anchor: lane-E now freezes one fail-closed
 // evidence boundary proving supported message sends execute through the live
 // runtime path rather than the compatibility shim. The upstream gate chain
 // stays rooted on A002/B003/C004/D004, the compatibility shim remains
@@ -236,7 +236,7 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
     "fail-closed-on-live-dispatch-evidence-drift";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
     "M255-E002";
-// M255-E002 live-dispatch smoke/replay closeout anchor: lane-E now replaces
+// live-dispatch smoke/replay closeout anchor: lane-E now replaces
 // the last shim-era smoke/replay assumptions with canonical live runtime
 // dispatch evidence. Execution smoke and replay must publish
 // requires_live_runtime_dispatch, the canonical runtime library path, the
@@ -246,15 +246,15 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutContrac
     "objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutModel =
     "live-runtime-dispatch-smoke-and-replay-authoritative-shim-evidence-non-authoritative";
-// M253-A001 emitted metadata inventory freeze anchor: lowering contracts do
+// emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info
 // plus class/protocol/category/property/ivar descriptor sections until later
 // M253 issues extend it explicitly.
-// M253-A002 source-to-section matrix anchor: interface/implementation/
+// source-to-section matrix anchor: interface/implementation/
 // metaclass/method rows stay explicit no-standalone-emission entries until
 // later M253 payload work extends them.
-// M253-B001 layout/visibility policy anchor: lowering contracts freeze one
+// layout/visibility policy anchor: lowering contracts freeze one
 // emitted metadata layout policy without inferring a second model. Image-info
 // emits first; descriptor families follow class/protocol/category/property/ivar
 // order; descriptor ordinals ascend before the family aggregate; emitted
@@ -277,7 +277,7 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionOrderingModel =
     "llvm.used-emission-order";
 inline constexpr const char *kObjc3RuntimeMetadataObjectFormatPolicyModel =
     "object-format-neutral-until-m253-b003";
-// M253-B003 object-format policy expansion anchor: B001/B002 keep the neutral
+// object-format policy expansion anchor: B001/B002 keep the neutral
 // model frozen for historical replay, while lowering now also carries the
 // explicit COFF/ELF/Mach-O mapping surface for emitted section spellings and
 // retention-anchor behavior.
@@ -301,7 +301,7 @@ inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelElf =
     "llvm.used-appending-global+elf-stable-sections";
 inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelMachO =
     "llvm.used-appending-global+mach-o-data-segment-sections";
-// M253-C001 metadata section emission freeze anchor: native object files now
+// metadata section emission freeze anchor: native object files now
 // carry real metadata sections, but the payload bytes remain scaffold-only
 // placeholder shapes until the later lane-C implementation issues land.
 inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionContractId =
@@ -320,11 +320,11 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeMetadataSectionEmissionImageInfoPayloadModel =
         "internal-{i32,i32}-zeroinitializer-image-info";
-// M253-C002 class/metaclass data emission anchor: lane-C begins replacing the
+// class/metaclass data emission anchor: lane-C begins replacing the
 // class-family placeholder byte model with real class descriptor bundles while
 // keeping metaclass payloads inline with their class bundles and deferring real
 // method/property/ivar lists plus selector/string pools to later issues.
-// M272-C002 dispatch-control lowering anchor: class/metaclass payloads now
+// dispatch-control lowering anchor: class/metaclass payloads now
 // preserve objc_final/objc_sealed container intent as explicit metadata bits.
 inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionContractId =
     "objc3c-runtime-class-metaclass-data-emission/m253-c002-v1";
@@ -337,7 +337,7 @@ inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionSuperLinkModel =
 inline constexpr const char
     *kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel =
         "count-plus-owner-identity-pointer-method-list-ref";
-// M253-C003 protocol/category data emission anchor: lane-C next replaces the
+// protocol/category data emission anchor: lane-C next replaces the
 // protocol/category family placeholder byte models with real descriptor bundles
 // while keeping cross-protocol references and category attachments explicit and
 // fail-closed without claiming that selector/string pools or standalone
@@ -352,12 +352,12 @@ inline constexpr const char *kObjc3RuntimeProtocolReferenceModel =
     "count-plus-descriptor-pointer-protocol-ref-lists";
 inline constexpr const char *kObjc3RuntimeCategoryAttachmentModel =
     "count-plus-owner-identity-pointer-attachment-lists";
-// M253-C004 member-table data emission anchor: lane-C now adds real
+// member-table data emission anchor: lane-C now adds real
 // owner-scoped method-table payloads plus real property/ivar descriptor bytes
 // without reopening the C002/C003 descriptor-family shapes. Class refs keep
 // their historical prefix stable while protocol/category descriptor bundles
 // remain shape-stable and gain adjacent emitted member-table payloads.
-// M272-C002 dispatch-control lowering anchor: method-table payloads now carry
+// dispatch-control lowering anchor: method-table payloads now carry
 // effective direct-dispatch and objc_final intent bits alongside callable
 // implementation pointers.
 inline constexpr const char *kObjc3RuntimeMemberTableEmissionContractId =
@@ -370,7 +370,7 @@ inline constexpr const char *kObjc3RuntimePropertyDescriptorEmissionPayloadModel
     "property-descriptor-records-with-accessor-and-binding-strings";
 inline constexpr const char *kObjc3RuntimeIvarDescriptorEmissionPayloadModel =
     "ivar-descriptor-records-with-property-binding-strings";
-// M253-C005 selector/string pool expansion anchor: runtime-adjacent selector
+// selector/string pool expansion anchor: runtime-adjacent selector
 // globals now expand into canonical selector and string pool families with
 // stable ordinal aggregates, while existing descriptor bundles remain shape
 // stable and keep their current inline cstring payloads.
@@ -386,7 +386,7 @@ inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
     "objc3.runtime.string_pool";
 inline constexpr const char *kObjc3RuntimeKeypathDescriptorLogicalSection =
     "objc3.runtime.keypath_descriptors";
-// M256-C001 executable object artifact lowering freeze anchor: lane-C now
+// executable object artifact lowering freeze anchor: lane-C now
 // freezes the current binding surface where realized class/category metadata
 // records consume owner-scoped method-list refs and implementation-backed
 // method entries may point at concrete LLVM definition symbols. Later
@@ -408,7 +408,7 @@ inline constexpr const char *kObjc3ExecutableObjectArtifactLoweringScopeModel =
 inline constexpr const char
     *kObjc3ExecutableObjectArtifactLoweringFailClosedModel =
         "no-synthetic-implementation-symbols-no-rebound-legality-no-new-section-families";
-// M257-C001 accessor/layout lowering freeze anchor: lane-C now freezes the
+// accessor/layout lowering freeze anchor: lane-C now freezes the
 // current property/ivar lowering surface where sema-approved property
 // descriptor bundles, ivar layout symbols/slots/sizes/alignment, and
 // synthesized binding identities are serialized into emitted metadata/object
@@ -431,7 +431,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel =
         "no-synthesized-accessor-bodies-no-runtime-storage-allocation-no-layout-rederivation";
-// M257-C002 ivar offset/layout emission anchor: lane-C extends the frozen
+// ivar offset/layout emission anchor: lane-C extends the frozen
 // accessor/layout handoff into real object payloads by emitting per-ivar
 // offset globals, per-owner layout tables, and descriptor records that carry
 // the sema-approved slot/offset/size/alignment tuple without yet allocating
@@ -448,7 +448,7 @@ inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionScopeModel =
     "sema-approved-layout-shape-lowers-into-ivar-section-payloads-without-runtime-allocation";
 inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionFailClosedModel =
     "no-runtime-instance-allocation-no-layout-rederivation-no-accessor-body-synthesis";
-// M257-C003 synthesized accessor/property lowering anchor: lane-C upgrades the
+// synthesized accessor/property lowering anchor: lane-C upgrades the
 // frozen property/layout handoff into executable accessor support by
 // materializing missing implementation-owned getter/setter method entries,
 // emitting deterministic storage globals keyed by synthesized binding symbols,
@@ -470,7 +470,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
         "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation";
-// M257-D001 runtime property/layout consumption freeze anchor: lane-D now
+// runtime property/layout consumption freeze anchor: lane-D now
 // freezes the truthful runtime boundary above C003. Runtime consumes emitted
 // synthesized accessor implementation pointers plus property/layout attachment
 // records through the existing lookup/dispatch ABI, but alloc/new still
@@ -491,7 +491,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
         "no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet";
-// M257-D002 instance-allocation-layout-runtime anchor: lane-D upgrades the
+// instance-allocation-layout-runtime anchor: lane-D upgrades the
 // frozen D001 runtime-consumption boundary into true per-instance allocation
 // backed by realized class layout, emitted ivar offsets, and runtime-owned slot
 // storage without reopening source-driven layout recovery.
@@ -510,7 +510,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeInstanceAllocationLayoutSupportFailClosedModel =
         "no-layout-rederivation-no-shared-global-property-storage-no-reflective-property-registration-yet";
-// M257-D003 property-metadata-reflection anchor: lane-D now freezes the
+// property-metadata-reflection anchor: lane-D now freezes the
 // private reflective helper surface over the realized property metadata graph
 // so diagnostics and tests can query property/accessor/layout facts without
 // widening the public runtime ABI or rediscovering metadata from source.
@@ -526,7 +526,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimePropertyMetadataReflectionFailClosedModel =
         "no-public-reflection-abi-no-reflective-source-recovery-no-property-query-success-without-realized-runtime-layout";
-// M260-A002 runtime-backed object ownership attribute surface anchor: lane-A
+// runtime-backed object ownership attribute surface anchor: lane-A
 // upgrades the frozen ownership boundary into an emitted property/member
 // metadata capability by carrying sema-approved property attribute,
 // lifetime/runtime-hook, and accessor ownership profiles directly in the
@@ -547,7 +547,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBackedObjectOwnershipAttributeFailClosedModel =
         "no-manifest-only-ownership-proof-no-source-recovery-no-live-arc-hook-emission-yet";
-// M260-B001 retainable-object semantic-rule freeze anchor: lane-B freezes the
+// retainable-object semantic-rule freeze anchor: lane-B freezes the
 // truthful semantic boundary around runtime-backed object ownership by making
 // it explicit that property/member ownership metadata is now live while
 // retain/release legality, autoreleasepool execution, and destruction-order
@@ -564,7 +564,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RetainableObjectSemanticRulesFailClosedModel =
         "fail-closed-on-retainable-object-semantic-drift-or-premature-live-storage-legality-claim";
-// M260-B002 runtime-backed storage ownership legality anchor: lane-B upgrades
+// runtime-backed storage ownership legality anchor: lane-B upgrades
 // the frozen B001 boundary into live semantic enforcement for runtime-backed
 // object properties by rejecting conflicting explicit ownership
 // qualifier/modifier combinations while preserving the truthful owned/weak/
@@ -581,7 +581,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBackedStorageOwnershipFailClosedModel =
         "fail-closed-on-runtime-backed-object-property-ownership-qualifier-modifier-drift";
-// M260-B003 autoreleasepool/destruction-order semantic expansion anchor:
+// autoreleasepool/destruction-order semantic expansion anchor:
 // lane-B keeps autoreleasepool scopes fail-closed but now distinguishes the
 // ownership-sensitive case where owned runtime-backed object or synthesized
 // property storage would require deferred destruction-order semantics.
@@ -597,7 +597,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBackedAutoreleasepoolDestructionOrderFailClosedModel =
         "fail-closed-on-autoreleasepool-destruction-order-semantic-drift-for-owned-runtime-backed-storage";
-// M260-C001 ownership-lowering baseline freeze anchor: lane-C freezes the
+// ownership-lowering baseline freeze anchor: lane-C freezes the
 // current lowering boundary where runtime-backed ownership metadata and sema
 // legality are live, but executable retain/release/autorelease/weak behavior
 // still remains represented by legacy lowering summaries rather than emitted
@@ -612,7 +612,7 @@ inline constexpr const char *kObjc3OwnershipLoweringBaselineAutoreleasepoolModel
     "autoreleasepool-lowering-remains-summary-only-without-emitted-push-pop-hooks";
 inline constexpr const char *kObjc3OwnershipLoweringBaselineFailClosedModel =
     "no-live-ownership-runtime-hooks-no-arc-weak-side-table-entrypoints-no-destruction-lowering-yet";
-// M260-C002 runtime hook emission anchor: lane-C replaces the C001 summary-only
+// runtime hook emission anchor: lane-C replaces the C001 summary-only
 // baseline with emitted runtime helper calls for retain/release/autorelease and
 // weak property paths while preserving the existing synthesized accessor
 // descriptor/storage artifact surface from M257-C003.
@@ -703,7 +703,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBlockByrefForwardingHeapPromotionInteropContractId =
         "objc3c-runtime-block-byref-forwarding-heap-promotion-interop/m261-d003-v1";
-// M261-E001 runnable-block-runtime gate anchor: lane-E now freezes the
+// runnable-block-runtime gate anchor: lane-E now freezes the
 // truthful integrated block-runtime boundary above the retained A003/B003/C004
 // and D003 evidence chain so later closeout samples cannot overclaim support.
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
@@ -716,7 +716,7 @@ inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
     "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
     "fail-closed-on-runnable-block-runtime-evidence-drift";
-// M261-E002 runnable-block execution-matrix anchor: lane-E now closes the
+// runnable-block execution-matrix anchor: lane-E now closes the
 // current runnable block tranche with one integrated executable matrix over
 // the retained A003/B003/C004/D003/E001 chain without widening the public
 // block ABI or helper surface.
@@ -730,7 +730,7 @@ inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
     "no-public-block-object-abi-no-public-runtime-helper-header-no-generalized-foreign-block-interop-no-caller-frame-forwarding-bridge";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
     "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
-// M262-A001 ARC source-surface/mode-boundary freeze anchor: the compiler
+// ARC source-surface/mode-boundary freeze anchor: the compiler
 // already preserves ownership-qualifier, weak/unowned, autoreleasepool, and
 // ARC fix-it source surfaces, but there is still no user-visible `-fobjc-arc`
 // mode and executable ownership-qualified functions/methods stay fail closed.
@@ -846,7 +846,7 @@ inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationPackagingMode
 inline constexpr const char *kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel =
     "no-public-error-runtime-abi-no-generalized-foreign-exception-support-no-cross-module-live-claim-yet";
 std::string Objc3Part6LiveErrorRuntimeIntegrationSummary();
-// M268-D001 continuation/runtime-helper freeze anchor: lane-D now freezes a
+// continuation/runtime-helper freeze anchor: lane-D now freezes a
 // private Part 7 helper ABI for logical continuation handles, resume traffic,
 // and executor handoff without pretending the current direct-call async slice
 // already emits live suspension or scheduler traffic through it.
@@ -872,7 +872,7 @@ inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationPackag
 inline constexpr const char *kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel =
     "no-suspension-state-machine-no-general-executor-runtime-no-cross-module-live-claim-yet";
 std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary();
-// M269-D001 scheduler/executor runtime freeze anchor: lane-D freezes the
+// scheduler/executor runtime freeze anchor: lane-D freezes the
 // private Part 7 helper/runtime boundary that already exists after C002/C003.
 // Task spawn, task-group scope/add/wait/cancel, cancellation polling, executor
 // hops, and task-state snapshot publication remain bootstrap-internal runtime
@@ -890,7 +890,7 @@ inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimePackagingModel =
 inline constexpr const char *kObjc3Part7SchedulerExecutorRuntimeFailClosedModel =
     "no-public-task-runtime-header-no-general-scheduler-implementation-claim-no-cross-module-task-runtime-claim-yet";
 std::string Objc3Part7SchedulerExecutorRuntimeSummary();
-// M269-D002 live task runtime anchor: lane-D now publishes the existing helper
+// live task runtime anchor: lane-D now publishes the existing helper
 // cluster as a live private runtime execution boundary. Supported task spawn,
 // task-group, cancellation, and executor-hop traffic executes through the
 // runtime library and packaged object/runtime probe path, while broader
@@ -906,7 +906,7 @@ inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel
 inline constexpr const char *kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel =
     "retained-runtime-metadata-export-gates-and-no-public-task-runtime-header-mean-broader-native-task-scheduler-claims-remain-deferred";
 std::string Objc3Part7LiveTaskRuntimeIntegrationSummary();
-// M269-D003 hardening anchor: lane-D now freezes one truthful edge-case
+// hardening anchor: lane-D now freezes one truthful edge-case
 // completion surface above the live task runtime boundary. The current helper
 // cluster must remain deterministic across cancellation paths, autoreleasepool
 // scopes, and explicit runtime resets used by issue-local replay probes.
@@ -1013,7 +1013,7 @@ inline constexpr const char *kObjc3RuntimePushAutoreleasepoolScopeSymbol =
     "objc3_runtime_push_autoreleasepool_scope";
 inline constexpr const char *kObjc3RuntimePopAutoreleasepoolScopeSymbol =
     "objc3_runtime_pop_autoreleasepool_scope";
-// M260-D001 runtime memory-management API freeze anchor: the stable public
+// runtime memory-management API freeze anchor: the stable public
 // runtime ABI remains register/lookup/dispatch only, while lowered
 // retain/release/autorelease/current-property/weak helper entrypoints stay on
 // the private bootstrap-internal surface until later runtime work decides
@@ -1028,7 +1028,7 @@ inline constexpr const char *kObjc3RuntimeMemoryManagementApiAutoreleasepoolMode
     "no-public-autoreleasepool-push-pop-api-yet-autorelease-helper-drains-only-on-dispatch-frame-return";
 inline constexpr const char *kObjc3RuntimeMemoryManagementApiFailClosedModel =
     "no-public-memory-management-header-widening-no-user-facing-arc-entrypoints-yet";
-// M260-D002 runtime memory-management implementation anchor: runtime-backed
+// runtime memory-management implementation anchor: runtime-backed
 // objects now execute refcount, weak-table, and autoreleasepool semantics
 // through private runtime helpers while preserving the frozen D001 public ABI.
 inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationContractId =
@@ -1041,7 +1041,7 @@ inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationAutorele
     "private-autoreleasepool-push-pop-scopes-retain-autoreleased-runtime-values-until-lifo-drain";
 inline constexpr const char *kObjc3RuntimeMemoryManagementImplementationFailClosedModel =
     "memory-management-runtime-support-remains-private-lowered-and-runtime-probe-driven";
-// M260-E001 ownership-runtime-gate freeze anchor: lane-E now freezes the
+// ownership-runtime-gate freeze anchor: lane-E now freezes the
 // supported ownership runtime baseline and its non-goals so later integration
 // issues cannot silently claim ARC-, block-, or public-ABI-level support.
 inline constexpr const char *kObjc3OwnershipRuntimeGateContractId =
@@ -1054,7 +1054,7 @@ inline constexpr const char *kObjc3OwnershipRuntimeGateNonGoalModel =
     "no-arc-automation-no-block-ownership-runtime-no-public-ownership-api-widening";
 inline constexpr const char *kObjc3OwnershipRuntimeGateFailClosedModel =
     "integration-gate-must-not-claim-more-than-the-supported-runtime-backed-ownership-baseline";
-// M256-C002 executable method-body binding implementation anchor: lane-C now
+// executable method-body binding implementation anchor: lane-C now
 // hardens the existing executable object surface so implementation-owned
 // method entries must bind to exactly one concrete LLVM definition symbol and
 // object emission fails closed when that attachment is missing or ambiguous.
@@ -1066,7 +1066,7 @@ inline constexpr const char *kObjc3ExecutableMethodBodyBindingRuntimeModel =
     "emitted-method-entry-implementation-pointer-dispatches-through-objc3_runtime_dispatch_i32";
 inline constexpr const char *kObjc3ExecutableMethodBodyBindingFailClosedModel =
     "error-on-missing-or-duplicate-implementation-binding";
-// M256-C003 executable realization-record expansion anchor: lane-C extends the
+// executable realization-record expansion anchor: lane-C extends the
 // executable object surface with realization-ready class, protocol, and
 // category records that preserve the frontend-owned owner/super/adoption edges
 // directly in emitted artifacts instead of forcing later runtime work to
@@ -1081,7 +1081,7 @@ inline constexpr const char *kObjc3ExecutableRealizationCategoryRecordModel =
     "category-records-carry-explicit-class-and-category-owner-identities-plus-attachment-and-adopted-protocol-edges";
 inline constexpr const char *kObjc3ExecutableRealizationFailClosedModel =
     "no-identity-edge-elision-no-out-of-band-graph-reconstruction";
-// M256-D001 class-realization-runtime freeze anchor: lane-D now freezes the
+// class-realization-runtime freeze anchor: lane-D now freezes the
 // current runtime-owned class realization surface that consumes emitted
 // realization records, walks class/metaclass chains, attaches preferred
 // category implementation records, and uses protocol records as
@@ -1098,7 +1098,7 @@ inline constexpr const char *kObjc3RuntimeProtocolCheckModel =
     "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks";
 inline constexpr const char *kObjc3RuntimeClassRealizationFailClosedModel =
     "invalid-bundle-graphs-category-conflicts-and-ambiguous-runtime-resolution-fail-closed";
-// M256-D002 metaclass-graph-root-class anchor: lane-D now promotes the frozen
+// metaclass-graph-root-class anchor: lane-D now promotes the frozen
 // D001 runtime boundary into a runtime-owned realized class graph keyed by
 // stable receiver identities, with explicit root-class publication and
 // metaclass-edge inventory available to later runtime lanes.
@@ -1126,7 +1126,7 @@ inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectProbeSplitModel
     "metadata-rich-object-samples-prove-category-and-protocol-runtime-behavior-through-library-plus-probe-splits";
 inline constexpr const char *kObjc3RuntimeCanonicalRunnableObjectFailClosedModel =
     "metadata-heavy-executable-samples-stay-library-probed-until-runtime-export-gates-open";
-// M253-C006 binary inspection harness expansion anchor: lane-C now freezes one
+// binary inspection harness expansion anchor: lane-C now freezes one
 // emitted-metadata inspection corpus over llvm-readobj/llvm-objdump so every
 // currently emitted metadata section family can be asserted structurally from
 // produced objects, including fail-closed negative gating when metadata
@@ -1141,7 +1141,7 @@ inline constexpr const char *kObjc3RuntimeBinaryInspectionSectionCommand =
     "llvm-readobj --sections module.obj";
 inline constexpr const char *kObjc3RuntimeBinaryInspectionSymbolCommand =
     "llvm-objdump --syms module.obj";
-// M253-D001 object-packaging/retention freeze anchor: lane-D now freezes the
+// object-packaging/retention freeze anchor: lane-D now freezes the
 // current produced-object boundary around module.obj plus retained aggregate
 // metadata symbols. Later archive/link/startup-registration work must preserve
 // these anchors instead of redefining the object boundary ad hoc.
@@ -1155,7 +1155,7 @@ inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionArtifact =
     "module.obj";
 inline constexpr const char *kObjc3RuntimeObjectPackagingRetentionSymbolPrefix =
     "__objc3_sec_";
-// M253-D002 linker-retention/dead-strip resistance anchor: lane-D now adds one
+// linker-retention/dead-strip resistance anchor: lane-D now adds one
 // public linker anchor plus one public discovery root over the retained
 // metadata aggregates. The compiler publishes a driver-friendly linker-response
 // file and a discovery JSON sidecar so single-library packaging can survive
@@ -1180,7 +1180,7 @@ inline constexpr const char *kObjc3RuntimeLinkerRetentionElfFlagModel =
     "-Wl,--undefined=<symbol>";
 inline constexpr const char *kObjc3RuntimeLinkerRetentionMachOFlagModel =
     "-Wl,-u,_<symbol>";
-// M253-D003 archive/static-link discovery anchor: lane-D now closes the
+// archive/static-link discovery anchor: lane-D now closes the
 // remaining multi-archive fan-in and cross-translation-unit discovery path by
 // making linker-anchor identity translation-unit-stable and by standardizing
 // one merged discovery/response artifact pair for downstream archive link
@@ -1197,7 +1197,7 @@ inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
     ".merged.runtime-metadata-linker-options.rsp";
 inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
     ".merged.runtime-metadata-discovery.json";
-// M263-C001 constructor-root/init-array lowering freeze anchor: the existing
+// constructor-root/init-array lowering freeze anchor: the existing
 // bootstrap-lowering surface is now the canonical live lowering contract for
 // constructor roots, derived init stubs, registration tables, and
 // llvm.global_ctors participation. The registration-descriptor artifact plus
@@ -1230,7 +1230,7 @@ inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix
     "__objc3_runtime_registration_table_";
 inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitStateSymbolPrefix =
     "__objc3_runtime_image_local_init_state_";
-// M263-C002 registration-descriptor/image-root lowering anchor: lane-C now
+// registration-descriptor/image-root lowering anchor: lane-C now
 // materializes the registration-descriptor and image-root identities as real
 // emitted globals in dedicated object sections so later multi-image runtime
 // bootstrap can consume binary artifacts instead of only sidecar manifests.
@@ -1256,7 +1256,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBootstrapImageRootPayloadModel =
         "image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root";
-// M263-C003 archive/static-link bootstrap replay corpus anchor: lane-C now
+// archive/static-link bootstrap replay corpus anchor: lane-C now
 // binds the earlier archive/static-link retention/discovery proof to the live
 // bootstrap replay runtime so archive-linked images are validated through one
 // retained-binary corpus instead of section-only inspection.
@@ -1277,7 +1277,7 @@ inline constexpr std::uint64_t kObjc3RuntimeBootstrapRegistrationTableAbiVersion
     2u;
 inline constexpr std::uint64_t
     kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 12u;
-// M264-C001 versioned conformance-report lowering freeze anchor: lane-C
+// versioned conformance-report lowering freeze anchor: lane-C
 // lowers the truthful runnable/source-only/unsupported claim packets into one
 // emitted machine-readable sidecar artifact. Later runtime capability and
 // driver publication issues must preserve this versioned lowering boundary
@@ -1314,7 +1314,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3VersionedConformanceReportPublicationModel =
         "written-next-to-manifest-when-out-dir-is-present";
-// M264-C002 runtime capability reporting anchor: lane-C turns the versioned
+// runtime capability reporting anchor: lane-C turns the versioned
 // conformance sidecar into a truthful machine-readable capability and public
 // conformance-report payload that later driver/CLI publication lanes can emit
 // directly without inventing a second truth surface.
@@ -1398,7 +1398,7 @@ inline constexpr const char
         "part12-release-evidence-packaging-remains-bounded-to-emitted-report-payloads-checklist-refs-and-stable-conformance-bucket-manifests";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
-// M253-E001 metadata-emission gate anchor: lane-E now freezes the upstream
+// metadata-emission gate anchor: lane-E now freezes the upstream
 // object-emission evidence contract over A002/B003/C006/D003 so later closeout
 // work must fail closed if the source-to-section matrix, object-format policy,
 // binary inspection corpus, or archive/static-link discovery proof drifts.
@@ -1408,7 +1408,7 @@ inline constexpr const char *kObjc3RuntimeMetadataEmissionGateEvidenceModel =
     "a002-b003-c006-d003-summary-chain";
 inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
     "fail-closed-on-upstream-summary-drift";
-// M253-E002 cross-lane object-emission closeout anchor: lane-E now freezes one
+// cross-lane object-emission closeout anchor: lane-E now freezes one
 // integrated closeout over the E001 summary chain plus fresh native object
 // probes so later startup-registration work can trust the same emitted objects
 // on the class/category/message-send paths.
@@ -1418,7 +1418,7 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutEvidence
     "e001-summary-plus-integrated-native-object-emission-probes";
 inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel =
     "fail-closed-on-summary-or-integrated-probe-drift";
-// M253-B002 normalized layout policy anchor: semantic finalization of runtime
+// normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
 // globals. The emitter consumes the normalized plan directly instead of
@@ -1484,7 +1484,7 @@ inline constexpr const char *kObjc3BlockSourceModelCompletionLaneContract =
     "m261-block-source-model-v1";
 inline constexpr const char *kObjc3BlockSourceStorageAnnotationLaneContract =
     "m261-block-source-storage-annotations-v1";
-// M261-B002 capture-legality/escape/invocation implementation anchor: lane-B
+// capture-legality/escape/invocation implementation anchor: lane-B
 // keeps the same runtime-summary lane contract while source-only sema grows
 // live capture-resolution, truthful escape classification, and local callable
 // invocation typing before runnable block lowering lands.
@@ -1538,21 +1538,21 @@ inline constexpr const char *kObjc3AsyncContinuationLoweringLaneContract =
 inline constexpr const char
     *kObjc3AwaitLoweringSuspensionStateLoweringLaneContract =
         "m187-await-lowering-suspension-state-lowering-v1";
-// M268-C001 freeze anchor: these lane contracts become the explicit Part 7
+// freeze anchor: these lane contracts become the explicit Part 7
 // continuation ABI / await suspension lowering boundary once frontend artifacts
 // publish the replay-stable handoff packet into emitted manifests and IR.
-// M268-C002 implementation anchor: the currently supported runnable lowering
+// implementation anchor: the currently supported runnable lowering
 // slice is narrower than the lane-contract names imply. Async entry points and
 // await-marked expressions lower through the existing direct-call/object path
 // only for the non-suspending happy path, while continuation allocation,
 // suspend/resume, and executor scheduling remain deferred.
-// M268-C003 integration anchor: the same supported async slice composes with
+// integration anchor: the same supported async slice composes with
 // existing autoreleasepool-scope and defer-cleanup lowering rather than a
 // separate suspension cleanup runtime. Later M268 work still has to widen that
 // into real suspension-frame cleanup and executor resume behavior.
 inline constexpr const char *kObjc3ActorIsolationSendabilityLoweringLaneContract =
     "m188-actor-isolation-sendability-lowering-v1";
-// M270-C001 lowering-freeze anchor: Part 7 actor lowering now freezes one
+// lowering-freeze anchor: Part 7 actor lowering now freezes one
 // dedicated emitted contract for actor metadata carriage, isolation-thunk
 // planning, and hop-artifact planning. Live thunk bodies and runtime entrypoints
 // remain later C002/C003 work, but this packet is the canonical lowering
@@ -1568,13 +1568,13 @@ inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
     "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataLaneContract =
     "m270-actor-lowering-metadata-contract-v1";
-// M271-C001 lowering-freeze anchor: Part 8 now freezes one explicit emitted
+// lowering-freeze anchor: Part 8 now freezes one explicit emitted
 // lowering contract that carries cleanup/resource ownership counts, borrowed
 // boundary counts, and retainable-family callable counts into manifests and IR
 // metadata without overclaiming live runtime cleanup or borrowed lifetime
 // execution. Lane-D must widen this exact contract family rather than inventing
 // a second system-extension lowering boundary.
-// M271-C002 lowering-implementation anchor: live Part 8 lowering now consumes
+// lowering-implementation anchor: live Part 8 lowering now consumes
 // this frozen contract directly for native helper emission and object proof.
 // Stack/local cleanup-resource capture lowering is implemented; actual escaping
 // move-capture promotion stays fail-closed until later runtime ownership
@@ -1590,7 +1590,7 @@ inline constexpr const char *kObjc3Part8SystemExtensionLoweringDeferredModel =
     "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-m271-lane-d-work";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringLaneContract =
     "m271-part8-system-extension-lowering-contract-v1";
-// M272-C001 lowering-freeze anchor: Part 9 now freezes one explicit emitted
+// lowering-freeze anchor: Part 9 now freezes one explicit emitted
 // lowering contract for direct-call candidates, final/sealed dispatch-boundary
 // metadata, and replay-stable callable/container dynamism intent carriage. Live
 // selector-bypass/direct-call rewrites and runnable dispatch-boundary behavior
@@ -1606,7 +1606,7 @@ inline constexpr const char *kObjc3Part9DispatchControlLoweringDeferredModel =
     "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-m272-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part9DispatchControlLoweringLaneContract =
     "m272-part9-dispatch-control-lowering-contract-v1";
-// M273-C001 expansion/lowering freeze anchor: lane-C freezes one deterministic
+// expansion/lowering freeze anchor: lane-C freezes one deterministic
 // Part 10 lowering packet over derived selector inventory, macro replay
 // visibility, and synthesized property metadata carriage. Runnable derive body
 // emission, macro execution, and property-behavior runtime hooks remain later
@@ -1634,7 +1634,7 @@ inline constexpr const char
         "cross-module-preservation-expansion-host-execution-and-cached-macro-toolchain-integration-remain-deferred-to-later-m273-work";
 inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionLaneContract =
     "m273-part10-synthesized-ast-ir-emission-v1";
-// M273-C003 preservation anchor: lane-C extends the local C002 synthesis win by
+// preservation anchor: lane-C extends the local C002 synthesis win by
 // preserving derive/macro/property-behavior replay facts, interface-facing
 // artifact splits, and deterministic import-surface summaries across module
 // boundaries before lane-D runtime execution work begins.
@@ -1657,7 +1657,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel =
         "missing-or-drifted-part10-preservation-packets-disable-cross-module-metaprogramming-preservation-claims";
-// M273-D001 host/runtime-boundary freeze anchor: lane-D freezes the truthful
+// host/runtime-boundary freeze anchor: lane-D freezes the truthful
 // Part 10 runtime boundary around the existing packaged runtime archive and
 // private property-accessor helpers while keeping macro host execution and
 // runtime package loading explicitly disabled and fail-closed.
@@ -1708,7 +1708,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-part10-host-process-cache-claims";
-// M274-C001 lowering-freeze anchor: Part 11 now freezes one explicit emitted
+// lowering-freeze anchor: Part 11 now freezes one explicit emitted
 // lowering contract for foreign callable ABI carriage, ownership/error bridge
 // interaction counts, Swift-facing concurrency metadata, and interface/import
 // preservation facts across FFI boundaries. Live bridge helper emission and
@@ -1724,7 +1724,7 @@ inline constexpr const char *kObjc3Part11InteropLoweringDeferredModel =
     "live-ffi-call-lowering-ownership-bridge-helper-emission-error-runtime-integration-and-cross-module-runtime-consumption-remain-later-m274-lane-c-and-lane-d-work";
 inline constexpr const char *kObjc3Part11InteropLoweringLaneContract =
     "m274-part11-interop-lowering-abi-contract-v1";
-// M274-C002 lowering-implementation anchor: lane-C now materializes a second
+// lowering-implementation anchor: lane-C now materializes a second
 // Part 11 packet over the actual callable-lowering slice, proving that foreign,
 // C++-annotated, and Swift-facing call boundaries emit deterministic ownership
 // and lifetime bridge operations in IR rather than stopping at the frozen C001
@@ -1742,7 +1742,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId =
         kObjc3Part11InteropLoweringContractId;
-// M274-C003 preservation-expansion anchor: lane-C now publishes one explicit
+// preservation-expansion anchor: lane-C now publishes one explicit
 // replay/import packet proving Part 11 callable and annotation metadata survive
 // separate compilation through the runtime-import-surface artifact and emitted
 // IR payloads instead of remaining local-only facts from A003/C002.
@@ -1768,7 +1768,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11FfiMetadataInterfacePreservationFailClosedModel =
         "missing-import-surface-packet-drifted-replay-keys-or-non-deterministic-provider-preservation-disables-cross-module-part11-preservation-claims";
-// M274-D001 packaging/toolchain freeze anchor: lane-D now freezes the truthful
+// packaging/toolchain freeze anchor: lane-D now freezes the truthful
 // Part 11 bridge-packaging/toolchain boundary around the existing packaged
 // runtime archive, registration-manifest and cross-module link-plan topology,
 // and operator-visible interop evidence artifacts while header/module/bridge
@@ -1806,7 +1806,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part11HeaderModuleBridgeGenerationLoweringFailClosedModel =
         "missing-generated-bridge-artifacts-or-drifted-import-surface-paths-disable-live-part11-bridge-generation-claims";
-// M272-C003 preservation anchor: lane-C now preserves the direct/final/sealed
+// preservation anchor: lane-C now preserves the direct/final/sealed
 // intent introduced by C002 through runtime metadata source records, emitted
 // runtime-import-surface artifacts, and replay-stable frontend metadata instead
 // of restricting those facts to local IR/object payloads only.
@@ -1829,7 +1829,7 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3Part9DispatchMetadataInterfacePreservationFailClosedModel =
         "missing-or-drifted-dispatch-intent-preservation-packets-disable-cross-module-part9-preservation-claims";
-// M271-C003 ABI/artifact completion anchor: keep the frozen Part 8 lowering
+// ABI/artifact completion anchor: keep the frozen Part 8 lowering
 // contract from C001 as the single lowering boundary, but publish one
 // dedicated ABI/replay packet above it for borrowed-return contracts and
 // retainable-family callable inventories so lane-D runtime work can consume a
@@ -1841,7 +1841,7 @@ inline constexpr const char *kObjc3Part8BorrowedRetainableAbiCompletionSurfacePa
     "objc_part8_borrowed_pointer_and_retainable_family_abi_completion";
 inline constexpr const char *kObjc3Part8BorrowedRetainableAbiCompletionLaneContract =
     "m271-part8-borrowed-retainable-family-abi-completion-v1";
-// M271-D001 runtime/helper-freeze anchor: lane-D does not invent a second
+// runtime/helper-freeze anchor: lane-D does not invent a second
 // Part 8 runtime subsystem. Cleanup execution, resource invalidation, and
 // retainable-family helper integration freeze the already-live private ARC /
 // autorelease / snapshot helper slice plus the existing packaged runtime
@@ -1857,7 +1857,7 @@ inline constexpr const char *kObjc3Part8SystemHelperRuntimePackagingModel =
     "same-packaged-runtime-archive-no-public-runtime-header-widening-and-no-new-part8-import-surface";
 inline constexpr const char *kObjc3Part8SystemHelperRuntimeFailClosedModel =
     "borrowed-lifetime-runtime-enforcement-and-escaping-resource-ownership-transfer-remain-deferred";
-// M271-D002 live runtime-integration anchor: the supported Part 8 cleanup /
+// live runtime-integration anchor: the supported Part 8 cleanup /
 // retainable-family slice now proves actual linked execution through the same
 // private helper cluster frozen in D001 plus emitted scope-exit cleanup calls.
 inline constexpr const char *kObjc3Part8LiveCleanupRetainableIntegrationContractId =
@@ -1874,7 +1874,7 @@ inline constexpr const char *kObjc3TaskRuntimeInteropCancellationLoweringLaneCon
     "m189-task-runtime-interop-cancellation-lowering-v1";
 inline constexpr const char *kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract =
     "m190-concurrency-replay-race-guard-lowering-v1";
-// M269-C001 lowering-freeze anchor: these existing Part 7 concurrency lane
+// lowering-freeze anchor: these existing Part 7 concurrency lane
 // contracts now become the explicit task-runtime lowering handoff for task
 // creation, executor hops, cancellation polling, and task-group artifacts.
 // Later M269 lane-C issues must widen the same contract family with native
@@ -1884,7 +1884,7 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringContractId =
     "objc3c-part7-task-runtime-lowering-contract/m269-c001-v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_task_runtime_lowering_contract";
-// M269-C003 ABI/artifact completion anchor: the supported Part 7 helper-backed
+// ABI/artifact completion anchor: the supported Part 7 helper-backed
 // lowering slice now also publishes a dedicated runtime-ABI packet and IR
 // boundary so later lane-D runtime freezes consume a stable artifact surface
 // instead of rediscovering helper names ad hoc.

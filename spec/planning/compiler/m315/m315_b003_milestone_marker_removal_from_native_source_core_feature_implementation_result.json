@@ -1,0 +1,51 @@
+{
+  "mode": "m315-b003-native-source-marker-removal-v1",
+  "contract_id": "objc3c-cleanup-native-source-marker-removal/m315-b003-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m315/m315_a002_native_source_milestone_residue_inventory_source_completion_inventory.json",
+    "spec/planning/compiler/m315/m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze_policy.json"
+  ],
+  "implemented_scope": {
+    "leading_comment_marker_removal": true,
+    "runtime_visible_contract_id_rewrite": false,
+    "generated_payload_rewrite": false
+  },
+  "post_state": {
+    "leading_comment_markers_remaining": 0,
+    "native_code_match_count_remaining": 495,
+    "rewritten_file_count": 24
+  },
+  "rewritten_files": [
+    "ast/objc3_ast.h",
+    "driver/objc3_compilation_driver.cpp",
+    "driver/objc3_objc3_path.cpp",
+    "driver/objc3_objectivec_path.cpp",
+    "io/objc3_manifest_artifacts.cpp",
+    "io/objc3_process.cpp",
+    "ir/objc3_ir_emitter.cpp",
+    "lex/objc3_lexer.cpp",
+    "libobjc3c_frontend/frontend_anchor.cpp",
+    "lower/objc3_lowering_contract.cpp",
+    "lower/objc3_lowering_contract.h",
+    "parse/objc3_parser.cpp",
+    "pipeline/objc3_frontend_artifacts.cpp",
+    "pipeline/objc3_frontend_pipeline.cpp",
+    "pipeline/objc3_frontend_types.h",
+    "pipeline/objc3_ownership_aware_lowering_behavior_scaffold.h",
+    "pipeline/objc3_runtime_import_surface.cpp",
+    "runtime/objc3_runtime.cpp",
+    "runtime/objc3_runtime.h",
+    "runtime/objc3_runtime_bootstrap_internal.h",
+    "sema/objc3_sema_contract.h",
+    "sema/objc3_sema_pass_manager.cpp",
+    "sema/objc3_semantic_passes.cpp",
+    "token/objc3_token_contract.h"
+  ],
+  "downstream_ownership": {
+    "ir_fixture_compatibility_semantics": "M315-B004",
+    "remaining_edge_sweep": "M315-B005",
+    "source_of_truth_contract": "M315-C001",
+    "authenticity_schema": "M315-C002"
+  },
+  "next_issue": "M315-B004"
+}

@@ -40,47 +40,47 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
 
 }  // namespace
 
-// M267-E001 error-model conformance gate anchor: lane-E freezes the current
+// error-model conformance gate anchor: lane-E freezes the current
 // Part 6 slice by consuming the canonical integrated proof surface already
 // published by the driver and artifact sidecars.
-// M268-E001 async executable conformance gate anchor: lane-E must keep
+// async executable conformance gate anchor: lane-E must keep
 // consuming this same emitted manifest/IR/object triplet for the runnable Part
 // 7 slice instead of introducing an async-only publication channel.
-// M268-E002 runnable async closeout matrix anchor: milestone closeout rows must
+// runnable async closeout matrix anchor: milestone closeout rows must
 // keep consuming this same emitted manifest/IR/object triplet for the current
 // Part 7 slice instead of a synthetic matrix-only publication path.
-// M269-E001 task/executor conformance gate anchor: lane-E freezes the current
+// task/executor conformance gate anchor: lane-E freezes the current
 // runnable task/runtime slice by consuming the same published driver artifact
 // surface while the broader front-door publication path remains fail-closed.
-// M269-E002 runnable task/executor closeout matrix anchor: milestone closeout
+// runnable task/executor closeout matrix anchor: milestone closeout
 // rows keep consuming this same driver artifact surface instead of inventing a
 // matrix-only publication path for the current Part 7 task/runtime slice.
-// M270-E001 strict concurrency conformance gate anchor: lane-E freezes the
+// strict concurrency conformance gate anchor: lane-E freezes the
 // current runnable actor/isolation slice by consuming this same published
 // driver artifact surface while the broader front-door actor publication path remains fail-closed.
-// M270-E002 runnable actor/isolation closeout matrix anchor: milestone
+// runnable actor/isolation closeout matrix anchor: milestone
 // closeout rows keep consuming this same driver artifact surface instead of
 // inventing a matrix-only publication path for the current Part 7 actor slice.
-// M271-E001 strict system conformance gate anchor: lane-E freezes the current
+// strict system conformance gate anchor: lane-E freezes the current
 // runnable Part 8 cleanup/resource/retainable slice by consuming this same
 // published driver artifact surface while the broader front-door publication
 // path remains fail-closed for deferred borrowed-lifetime runtime claims.
-// M271-E002 runnable system-extension closeout matrix anchor: milestone
+// runnable system-extension closeout matrix anchor: milestone
 // closeout rows keep consuming this same driver artifact surface instead of
 // inventing a matrix-only publication path for the current Part 8 slice.
-// M272-E001 performance/dynamism conformance gate anchor: lane-E now freezes
+// performance/dynamism conformance gate anchor: lane-E now freezes
 // the current runnable Part 9 dispatch-control slice by consuming this same
 // published driver artifact surface while the widened D002 runtime proof
 // remains the canonical executable evidence boundary.
-// M272-E002 runnable dispatch-control matrix closeout anchor: matrix rows keep
+// runnable dispatch-control matrix closeout anchor: matrix rows keep
 // consuming this same driver artifact surface while Part 9 closeout stays
 // pinned to the existing D002 runtime proof instead of inventing a new lane-E
 // publication channel.
-// M273-E001 metaprogramming conformance gate anchor: lane-E freezes the
+// metaprogramming conformance gate anchor: lane-E freezes the
 // currently supported Part 10 slice by consuming this same published driver
 // artifact surface while the D002 live macro host-process/cache proof remains
 // the canonical executable evidence boundary.
-// M273-E002 runnable metaprogramming closeout matrix anchor: Part 10 closeout
+// runnable metaprogramming closeout matrix anchor: Part 10 closeout
 // rows keep consuming this same driver artifact surface instead of inventing a
 // parallel lane-E publication channel for derives/macros/property behaviors.
 
@@ -129,7 +129,7 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
     return 125;
   }
 
-  // M264-E001 versioning/conformance truth-gate anchor: this validation mode
+  // versioning/conformance truth-gate anchor: this validation mode
   // is the integrated operator-side consumer of the D001 publication sidecar
   // and the C001/C002 lowered/runtime capability reports.
   WriteConformanceValidationArtifact(cli_options.out_dir,
@@ -212,10 +212,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     const std::string source = ReadText(cli_options.input);
     const Objc3FrontendOptions frontend_options = BuildObjc3FrontendOptions(cli_options);
     Objc3FrontendArtifactBundle artifacts = CompileObjc3SourceForCli(cli_options.input, source, frontend_options);
-    // M265-E001 type-surface executable gate anchor: lane-E consumes the
+    // type-surface executable gate anchor: lane-E consumes the
     // emitted manifest/IR/object triplet as the canonical integrated proof for
     // the currently runnable optional/key-path slice.
-    // M265-E002 runnable-type-surface closeout anchor: the same emitted
+    // runnable-type-surface closeout anchor: the same emitted
     // artifact triplet remains the source of truth for the milestone closeout
     // matrix runtime rows and preserved generic replay evidence.
     WriteDiagnosticsArtifacts(cli_options.out_dir,
@@ -223,30 +223,30 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                               artifacts.stage_diagnostics,
                               artifacts.post_pipeline_diagnostics);
     if (!artifacts.manifest_json.empty()) {
-      // M266-E001 control-flow execution gate anchor: lane-E consumes the
+      // control-flow execution gate anchor: lane-E consumes the
       // emitted manifest/IR/object triplet from this native CLI path as the
       // truthful integrated proof surface for the currently runnable Part 5
       // slice.
-      // M266-E002 runnable control-flow matrix anchor: the milestone closeout
+      // runnable control-flow matrix anchor: the milestone closeout
       // matrix continues to consume the same emitted native artifact triplet
       // rather than widening into a synthetic reporting path.
-      // M251-C001 freeze: manifest emission remains the authoritative published
+      // freeze: manifest emission remains the authoritative published
       // metadata-section ABI surface until later object-section emission lands.
-      // M251-C002 scaffold: manifest emission mirrors the live runtime-metadata
+      // scaffold: manifest emission mirrors the live runtime-metadata
       // section scaffold inventory so tooling can diff JSON against emitted
       // LLVM IR/object evidence without treating the manifest as the only source.
-      // M251-C003 object inspection harness: manifest emission also publishes
+      // object inspection harness: manifest emission also publishes
       // the llvm-readobj/llvm-objdump matrix so object inspection remains tied
       // to canonical emitted artifacts instead of ad hoc operator commands.
-      // M251-D001 freeze: manifest emission also publishes the reserved native
+      // freeze: manifest emission also publishes the reserved native
       // runtime support-library surface (target/header/entrypoints/link mode)
       // so D002/D003 must preserve one canonical runtime-library contract while
       // the deterministic test shim remains non-canonical evidence only.
-      // M251-D002 core feature: manifest emission also publishes the live
+      // core feature: manifest emission also publishes the live
       // native runtime-library skeleton/build contract so the real in-tree
       // archive/header/source/probe surface stays synchronized with emitted IR
       // evidence while driver link wiring remains deferred to M251-D003.
-      // M251-D003 link wiring: manifest emission remains the canonical
+      // link wiring: manifest emission remains the canonical
       // runtime-archive handoff for external executable link steps, even while
       // this driver tranche still stops at deterministic object emission.
       WriteManifestArtifact(cli_options.out_dir, cli_options.emit_prefix, artifacts.manifest_json);
@@ -279,9 +279,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           cli_options.emit_prefix,
           artifacts.runtime_aware_import_module_artifact_json);
     }
-    // M274-E001 interop conformance gate anchor: the driver-side publication
+    // interop conformance gate anchor: the driver-side publication
     // path includes the live D002 bridge sidecars consumed by the lane-E gate.
-    // M274-E001/M274-E002 Part 11 lane-E anchors: the driver-side publication
+    // Part 11 lane-E anchors: the driver-side publication
     // path includes the live D002 bridge sidecars consumed by the gate and the closeout matrix.
     if (!artifacts.part11_bridge_header_artifact_text.empty()) {
       WritePart11BridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
@@ -346,10 +346,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         cli_options.out_dir,
         cli_options.emit_prefix,
         artifacts.versioned_conformance_report_artifact_json);
-    // M264-E001 versioning/conformance truth-gate anchor: lane-E freezes this
+    // versioning/conformance truth-gate anchor: lane-E freezes this
     // emitted lowered report plus the D001 publication sidecar and D002
     // validation mode as one core/json-only fail-closed operator surface.
-    // M264-E002 release/runtime-claim-matrix anchor: the published matrix must
+    // release/runtime-claim-matrix anchor: the published matrix must
     // continue to consume this exact native CLI report/publication/validation
     // surface instead of widening claims beyond the runnable core profile.
     if (cli_options.emit_objc3_conformance) {
@@ -490,7 +490,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                                         cli_options.emit_prefix,
                                         release_candidate_matrix_artifact_json);
 
-    // M251-A003 expands the handoff so manifest projection survives fail-closed
+    // expands the handoff so manifest projection survives fail-closed
     // later lowering/object gates; native runtime linking remains a later
     // milestone.
 
@@ -554,7 +554,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         compile_status = 125;
         std::cerr << linker_retention_error << "\n";
       } else {
-        // M254-A001 translation-unit registration surface freeze: the native
+        // translation-unit registration surface freeze: the native
         // driver's preregistration payload inventory for one translation unit
         // is the runtime-metadata binary plus the linker-response/discovery
         // sidecars written here. Later startup-registration work may reserve a
@@ -632,10 +632,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.registration_entrypoint_symbol;
           manifest_inputs.translation_unit_identity_model =
               registration_manifest_summary.translation_unit_identity_model;
-          // M254-E001 startup-registration gate anchor: lane-E consumes the
+          // startup-registration gate anchor: lane-E consumes the
           // emitted registration manifest plus the A002/B002/C003/D003/D004 evidence chain
           // exactly as published here before E002 closeout broadens the gate.
-          // M254-E002 runbook-closeout anchor: the published operator runbook
+          // runbook-closeout anchor: the published operator runbook
           // must stay bound to this emitted manifest contract instead of a
           // separately reconstructed launch path.
           manifest_inputs.launch_integration_contract_id =
@@ -703,7 +703,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                   .registration_order_ordinal_model;
           manifest_inputs.runtime_state_snapshot_symbol =
               runtime_bootstrap_semantics_summary.runtime_state_snapshot_symbol;
-          // M254-D001 runtime-bootstrap-api anchor: driver-side manifest
+          // runtime-bootstrap-api anchor: driver-side manifest
           // publication must preserve the frozen runtime header/archive/API
           // boundary rather than re-spelling bootstrap entrypoints or reset
           // hooks ad hoc in later launch-path work.
@@ -763,7 +763,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3RuntimeBootstrapImageLocalInitStateResetModel;
           manifest_inputs.bootstrap_reset_bootstrap_catalog_retention_model =
               kObjc3RuntimeBootstrapCatalogRetentionModel;
-          // M254-C001 bootstrap-lowering anchor: driver-side artifact
+          // bootstrap-lowering anchor: driver-side artifact
           // materialization remains limited to the registration manifest. The
           // actual ctor-root/init-stub/registration-table IR globals stay
           // owned by lowering and must be derived from the canonical lowering
@@ -829,37 +829,37 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             compile_status = 125;
             std::cerr << registration_manifest_error << "\n";
           } else {
-            // M254-A002 registration-manifest anchor: the driver now writes one
+            // registration-manifest anchor: the driver now writes one
             // canonical startup-registration manifest per translation unit so
             // later lowering/bootstrap lanes consume direct constructor-root
             // ownership inputs instead of reconstructing them from ad hoc
             // sidecar parsing rules.
-            // M254-C002 constructor/init-stub emission anchor: the same
+            // constructor/init-stub emission anchor: the same
             // manifest now publishes the exact derived registration-table
             // symbol alongside the init-stub symbol so emitted IR/object
             // bootstrap artifacts can be checked against one authoritative
             // manifest packet.
-            // M254-C003 registration-table/image-local-init anchor: the
+            // registration-table/image-local-init anchor: the
             // manifest also publishes the self-describing registration-table
             // layout model, ABI/version counts, and the exact derived
             // image-local init-state symbol so later runtime image-walk work
             // consumes one canonical lowering-owned boundary.
-            // M254-B001 bootstrap-invariant anchor: later startup execution
+            // bootstrap-invariant anchor: later startup execution
             // must continue to treat this manifest as the authoritative source
             // for one constructor root per translation-unit identity, fail
             // duplicate registration closed, and preserve deterministic
             // realization order before user entry.
-            // M254-B002 bootstrap-semantics anchor: the manifest now also
+            // bootstrap-semantics anchor: the manifest now also
             // carries the live runtime duplicate/order/failure contract and
             // status-code model consumed by the runtime library probe.
-            // M254-D004 launch-integration anchor: compile/proof/smoke command
+            // launch-integration anchor: compile/proof/smoke command
             // surfaces consume this emitted registration manifest directly for
             // runtime archive resolution and launch/link boundary validation.
-            // M263-E001 bootstrap-completion gate anchor: lane-E consumes this
+            // bootstrap-completion gate anchor: lane-E consumes this
             // emitted registration manifest plus the A002/B003/C003/D003 proof chain
             // to decide whether current single-image and multi-image bootstrap
             // completion is satisfied.
-            // M263-E002 bootstrap-matrix closeout anchor: the published operator runbook and matrix proof
+            // bootstrap-matrix closeout anchor: the published operator runbook and matrix proof
             // consume this same manifest authority without
             // inventing a separate startup source of truth.
             WriteRuntimeRegistrationManifestArtifact(
@@ -961,11 +961,11 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               compile_status = 125;
               std::cerr << registration_descriptor_error << "\n";
             } else {
-              // M263-E001 bootstrap-completion gate anchor: lane-E treats the
+              // bootstrap-completion gate anchor: lane-E treats the
               // registration descriptor and registration manifest as one
               // canonical emitted artifact pair rather than reconstructing
               // descriptor authority from ad hoc sidecars.
-              // M263-E002 bootstrap-matrix closeout anchor: the published
+              // bootstrap-matrix closeout anchor: the published
               // operator runbook and matrix proof consume this same canonical pair.
               WriteRuntimeRegistrationDescriptorArtifact(
                   cli_options.out_dir, cli_options.emit_prefix,

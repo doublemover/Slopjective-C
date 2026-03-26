@@ -7951,6 +7951,9 @@
     "check:objc3c:m315-b001-lane-b-readiness": "python scripts/run_m315_b001_lane_b_readiness.py",
     "check:objc3c:m315-b002-product-code-annotation-and-provenance-policy-contract-and-architecture-freeze": "python scripts/check_m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze.py",
     "test:tooling:m315-b002-product-code-annotation-and-provenance-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-b002-lane-b-readiness": "python scripts/run_m315_b002_lane_b_readiness.py"
+    "check:objc3c:m315-b002-lane-b-readiness": "python scripts/run_m315_b002_lane_b_readiness.py",
+    "check:objc3c:m315-b003-milestone-marker-removal-from-native-source-core-feature-implementation": "python scripts/check_m315_b003_milestone_marker_removal_from_native_source_core_feature_implementation.py",
+    "test:tooling:m315-b003-milestone-marker-removal-from-native-source-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_b003_milestone_marker_removal_from_native_source_core_feature_implementation.py -q",
+    "check:objc3c:m315-b003-lane-b-readiness": "python scripts/run_m315_b003_lane_b_readiness.py"
   }
 }

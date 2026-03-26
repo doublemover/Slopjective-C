@@ -38,7 +38,7 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsContract
     "objc3c-compatibility-strictness-claim-semantics/m264-b001-v1";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics";
-// M259-B001 runnable-core compatibility guard anchor: sema owns the current
+// runnable-core compatibility guard anchor: sema owns the current
 // truthful split between live selections, source-only downgraded claims, and
 // fail-closed unsupported advanced surfaces around the runnable core.
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
@@ -137,12 +137,12 @@ struct Objc3ProtocolCategoryCompositionSummary {
 };
 
 struct Objc3ClassProtocolCategoryLinkingSummary {
-  // M252-A002 completeness anchor: these deterministic counts validate the
+  // completeness anchor: these deterministic counts validate the
   // first-class executable metadata graph packet.
-  // M252-A003 completion anchor: protocol/category composition counts stay
+  // completion anchor: protocol/category composition counts stay
   // stable so protocol/category/property/ivar export graph closure can fail
   // closed on deterministic sema inputs.
-  // M252-B001 freeze anchor: these counts remain the canonical semantic
+  // freeze anchor: these counts remain the canonical semantic
   // consistency inputs for executable metadata graph admission.
   std::size_t declared_interfaces = 0;
   std::size_t resolved_interfaces = 0;
@@ -2297,7 +2297,7 @@ struct Objc3SymbolGraphScopeResolutionSummary {
 };
 
 struct Objc3MethodLookupOverrideConflictSummary {
-  // M252-B002 anchor: lane-B executable metadata semantic validation consumes
+  // anchor: lane-B executable metadata semantic validation consumes
   // this deterministic override summary as the canonical legality handoff for
   // superclass override checks before lowering admission exists.
   std::size_t method_lookup_sites = 0;
@@ -2316,16 +2316,16 @@ struct Objc3MethodLookupOverrideConflictSummary {
 };
 
 struct Objc3PropertySynthesisIvarBindingSummary {
-  // M252-B004 export-legality anchor: these counts are the canonical sema
+  // export-legality anchor: these counts are the canonical sema
   // preconditions for property/ivar runtime export and must not degrade into
   // generic property-declaration totals.
-  // M252-E001 semantic-closure gate anchor: lane-E consumes this property/ivar
+  // semantic-closure gate anchor: lane-E consumes this property/ivar
   // legality summary together with the A003 graph, C003 projection, and D002
   // packaging proofs before M253-A001 section emission begins.
-  // M252-E002 corpus-sync anchor: representative legality corpus cases keep
+  // corpus-sync anchor: representative legality corpus cases keep
   // these counts deterministic so docs and integrated gate coverage stay
   // aligned on the real runner path.
-  // M257-B002 default-binding semantics anchor: matched class implementations
+  // default-binding semantics anchor: matched class implementations
   // resolve synthesis from interface-declared properties first, then fold in
   // optional implementation redeclarations without making redeclaration a
   // prerequisite for default ivar binding.
@@ -2513,7 +2513,7 @@ struct Objc3WeakUnownedSemanticsSummary {
 };
 
 struct Objc3ArcDiagnosticsFixitSummary {
-  // M275-B001 freezes the advanced diagnostics taxonomy/portability contract on
+  // freezes the advanced diagnostics taxonomy/portability contract on
   // top of this deterministic ARC/fix-it baseline rather than inventing a
   // parallel semantic diagnostics summary.
   std::size_t ownership_arc_diagnostic_candidate_sites = 0;
@@ -3325,7 +3325,7 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
   std::size_t rejected_unsupported_feature_claim_count = 0;
   std::size_t rejected_selection_surface_count = 0;
   std::size_t suppressed_macro_claim_count = 0;
-  // M259-B002/M264-B002 unsupported-feature enforcement anchor: accepted
+  // unsupported-feature enforcement anchor: accepted
   // advanced source surfaces must either keep these counters at zero on the
   // runnable path or fail closed before lowering/runtime handoff.
   std::size_t live_unsupported_feature_family_count = 0;
@@ -3424,11 +3424,11 @@ inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
 struct Objc3SemanticIntegrationSurface {
   std::unordered_map<std::string, ValueType> globals;
   std::unordered_map<std::string, FunctionInfo> functions;
-  // M252-B003 diagnostic precision anchor: these maps model class containers
+  // diagnostic precision anchor: these maps model class containers
   // only. Category containers are validated separately so valid
   // class-plus-category programs do not collapse into duplicate class-owner
   // diagnostics before runtime metadata conflict analysis runs.
-  // M252-D002 binary-boundary anchor: the executable metadata binary envelope
+  // binary-boundary anchor: the executable metadata binary envelope
   // must consume the canonical sema-owned class/category split without
   // rebuilding container ownership from manifest-only heuristics.
   std::unordered_map<std::string, Objc3InterfaceInfo> interfaces;
@@ -3840,16 +3840,16 @@ struct Objc3SemanticImplementationTypeMetadata {
   std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };
 
-// M252-C001 lowering-handoff anchor: this typed metadata handoff is the
+// lowering-handoff anchor: this typed metadata handoff is the
 // canonical sema-to-lowering schema input for executable metadata graph
 // lowering freeze packets and must remain deterministic and replayable.
-// M252-C002 typed-lowering anchor: the concrete lowering-ready metadata graph
+// typed-lowering anchor: the concrete lowering-ready metadata graph
 // packet consumes this same deterministic sema metadata surface so the typed
 // handoff stays schema-stable between manifest publication and later lowering.
-// M252-C003 debug-projection anchor: the manifest/IR inspection matrix replays
+// debug-projection anchor: the manifest/IR inspection matrix replays
 // this same typed sema surface so operators inspect one deterministic schema
 // before runtime section emission lands.
-// M252-D001 runtime-ingest packaging anchor: the manifest packaging boundary
+// runtime-ingest packaging anchor: the manifest packaging boundary
 // must carry this same typed sema surface forward verbatim, so runtime ingest
 // packaging never invents a second schema between lane-C publication and
 // later section emission/startup registration.
