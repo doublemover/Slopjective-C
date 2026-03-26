@@ -13,6 +13,46 @@ Live runtime surface:
 Ownership boundary:
 
 - the compiler owns source-derived metadata and emitted IR/object payloads
-- the runtime owns installed registration, lookup, dispatch, and execution state once payloads are ingested
+- the runtime owns installed registration, lookup, dispatch, allocation, property access, and execution state once payloads are ingested
+
+Current dispatch path:
+
+1. IR lowers supported message sends to `objc3_runtime_dispatch_i32`
+2. the runtime interns or resolves the selector through `objc3_runtime_lookup_selector`
+3. dispatch probes the method cache and then the realized class/category/protocol slow path
+4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
+5. unresolved sends still fall back to the deterministic arithmetic path in `ComputeDispatchResult`
+
+Current synthesized-property path:
+
+1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records
+2. IR emission synthesizes missing getter/setter bodies in `Objc3IREmitter::EmitSyntheticMethod`
+3. property descriptors carry runtime implementation pointers for those accessors
+4. runtime realization builds `RealizedPropertyAccessor` records from emitted descriptors and ivar layout
+5. getter/setter dispatch executes against realized per-instance slot storage through the current-property helper surface
+
+Current corrective focus:
+
+- keep dispatch on the canonical `objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` path
+- tighten the remaining gap between emitted dispatch IR and runtime selector/materialization behavior
+- remove stale transitional lowering artifacts that no longer participate in live execution
+- prove native output only from real compiler invocations and executable probes
+
+Authoritative code paths for the current tranche:
+
+- runtime registration and dispatch:
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime.h`
+- message-send lowering:
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- runtime/lowering boundary comments:
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
+
+Non-goals for the current corrective tranche:
+
+- no public runtime ABI widening beyond the existing header
+- no new compatibility-only dispatch path
+- no milestone-specific proof sidecars or bookkeeping surfaces in the live product tree
+- no synthetic `.ll` or hand-authored artifact used as authoritative runtime proof
 
 The live runtime docs describe the current executable surface only. Historical milestone freeze text is archived under `tmp/archive/`.
