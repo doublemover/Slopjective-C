@@ -7945,6 +7945,9 @@
     "check:objc3c:m315-a002-lane-a-readiness": "python scripts/run_m315_a002_lane_a_readiness.py",
     "check:objc3c:m315-a003-artifact-authenticity-and-provenance-classification-inventory-source-completion": "python scripts/check_m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion.py",
     "test:tooling:m315-a003-artifact-authenticity-and-provenance-classification-inventory-source-completion": "python -m pytest tests/tooling/test_check_m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion.py -q",
-    "check:objc3c:m315-a003-lane-a-readiness": "python scripts/run_m315_a003_lane_a_readiness.py"
+    "check:objc3c:m315-a003-lane-a-readiness": "python scripts/run_m315_a003_lane_a_readiness.py",
+    "check:objc3c:m315-b001-stable-feature-surface-identifier-and-annotation-policy-contract-and-architecture-freeze": "python scripts/check_m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze.py",
+    "test:tooling:m315-b001-stable-feature-surface-identifier-and-annotation-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-b001-lane-b-readiness": "python scripts/run_m315_b001_lane_b_readiness.py"
   }
 }

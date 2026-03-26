@@ -1,0 +1,97 @@
+{
+  "mode": "m315-b001-stable-feature-surface-identifier-policy-v1",
+  "contract_id": "objc3c-cleanup-stable-feature-surface-identifier-policy/m315-b001-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m315/m315_a002_native_source_milestone_residue_inventory_source_completion_inventory.json",
+    "spec/planning/compiler/m315/m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion_inventory.json"
+  ],
+  "durable_identifier_grammar": {
+    "regex": "^objc3c\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+\\.v[0-9]+$",
+    "required_prefix": "objc3c.",
+    "terminal_version_segment_required": true,
+    "lowercase_ascii_only": true,
+    "minimum_dot_segments_before_version": 3
+  },
+  "prohibited_segment_patterns": [
+    "^m[0-9]{3}$",
+    "^[a-e][0-9]{3}$",
+    "^lane[a-e]?$",
+    "^issue[0-9]+$"
+  ],
+  "annotation_families": [
+    {
+      "family_id": "surface_id",
+      "allowed_in": [
+        "product-code comments when a durable surface marker is required",
+        "constexpr labels that survive beyond planning history",
+        "emitted manifest and report schema fields"
+      ],
+      "example": "objc3c.runtime.selectorpool.dispatch.v1"
+    },
+    {
+      "family_id": "artifact_family_id",
+      "allowed_in": [
+        "artifact manifests",
+        "replay and proof envelopes",
+        "source-of-truth registries"
+      ],
+      "example": "objc3c.artifact.replaymanifest.lowering.v1"
+    },
+    {
+      "family_id": "fixture_family_id",
+      "allowed_in": [
+        "synthetic fixture labels",
+        "fixture relocation manifests",
+        "parity test descriptors"
+      ],
+      "example": "objc3c.fixture.synthetic.librarycliparity.v1"
+    },
+    {
+      "family_id": "report_family_id",
+      "allowed_in": [
+        "generated report families",
+        "dashboard publication records",
+        "release evidence indexes"
+      ],
+      "example": "objc3c.report.activationpreflight.summary.v1"
+    },
+    {
+      "family_id": "historical_ref",
+      "allowed_in": [
+        "spec/planning/**",
+        "docs/contracts/**",
+        "archival narrative docs"
+      ],
+      "prohibited_in": [
+        "native/objc3c/src/** durable identifiers",
+        "generated manifests that claim runtime/compiler truth",
+        "future source-of-truth registries"
+      ],
+      "example": "historical-ref:m315-b001"
+    }
+  ],
+  "replacement_examples": {
+    "runtime_dispatch_surface": "objc3c.runtime.classdispatch.selectorpool.v1",
+    "property_accessor_surface": "objc3c.lowering.propertyaccessor.synthesized.v1",
+    "native_source_hygiene_report": "objc3c.report.sourcehygiene.native.v1",
+    "synthetic_ll_fixture_family": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "replay_manifest_family": "objc3c.artifact.replaymanifest.frontend.v1"
+  },
+  "archival_only_zones": [
+    "docs/contracts/**",
+    "spec/planning/**"
+  ],
+  "durable_product_zones": [
+    "native/objc3c/src/**",
+    "reports/**",
+    "tests/tooling/fixtures/** when labeled as durable artifact outputs",
+    "future source-of-truth registries"
+  ],
+  "downstream_ownership": {
+    "product_code_annotation_policy": "M315-B002",
+    "native_source_marker_removal": "M315-B003",
+    "source_of_truth_contract": "M315-C001",
+    "authenticity_schema": "M315-C002"
+  },
+  "next_issue": "M315-B002"
+}
