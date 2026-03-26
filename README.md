@@ -356,6 +356,8 @@ The documented public package commands are thin wrappers over
 `scripts/objc3c_public_workflow_runner.py`.
 See `docs/runbooks/objc3c_public_command_surface.md` for the synchronized
 command/action/backend reference.
+Maintainers should use `docs/runbooks/objc3c_maintainer_workflows.md` for the
+canonical operator workflow map.
 
 ## Quickstart
 

@@ -1,0 +1,16 @@
+{
+  "mode": "m314-d001-maintainer-operator-workflow-docs-v1",
+  "contract_id": "objc3c-cleanup-maintainer-operator-workflow-docs/m314-d001-v1",
+  "depends_on": "M314-C003",
+  "primary_public_entrypoint": "package.json public scripts delegated through scripts/objc3c_public_workflow_runner.py",
+  "supported_compiler_root": "native/objc3c",
+  "canonical_docs": {
+    "readme": "README.md",
+    "public_command_runbook": "docs/runbooks/objc3c_public_command_surface.md",
+    "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
+    "incremental_build_runbook": "docs/runbooks/m276_incremental_native_build_operator_runbook.md"
+  },
+  "internal_surface_rule": "Direct Python and PowerShell tooling remains an internal maintainer surface unless no public wrapper exists.",
+  "retired_surface_rule": "The prototype Python compiler surface remains retired and archival only.",
+  "next_issue": "M314-E001"
+}
