@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -28,6 +30,7 @@ SITE_PY = ROOT / "scripts" / "build_site_index.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
+PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
 @dataclass(frozen=True)
@@ -46,6 +49,21 @@ ActionHandler = Callable[[list[str]], int]
 
 def run(command: Sequence[str]) -> int:
     return subprocess.run(list(command), cwd=ROOT, check=False).returncode
+
+
+def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        list(command),
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    return result
 
 
 def pwsh_file(script: Path, *args: str) -> int:
@@ -99,14 +117,84 @@ def action_test_default(_: list[str]) -> int:
     return run_steps(["test-fast"])
 
 
+def to_repo_relative(raw_path: str) -> str:
+    candidate = Path(raw_path.strip())
+    try:
+        if candidate.is_absolute():
+            return str(candidate.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return raw_path.strip()
+    return raw_path.strip().replace("\\", "/")
+
+
+def extract_report_paths(stdout: str) -> list[str]:
+    report_paths: list[str] = []
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if line.startswith("summary_path:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+            continue
+        match = re.search(r"runtime-acceptance:\s+PASS\s+\((.+)\)", line)
+        if match:
+            report_paths.append(to_repo_relative(match.group(1)))
+            continue
+        if line.startswith("out_dir:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+    return report_paths
+
+
+def write_composite_validation_report(
+    action: str,
+    steps: list[dict[str, object]],
+    *,
+    status: str,
+) -> Path:
+    PUBLIC_WORKFLOW_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
+    report_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action}.json"
+    payload = {
+        "action": action,
+        "status": status,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "runner_path": "scripts/objc3c_public_workflow_runner.py",
+        "steps": steps,
+    }
+    report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return report_path
+
+
+def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]:
+    result = run_capture(command)
+    return {
+        "action": action,
+        "command": [str(token) for token in command],
+        "exit_code": result.returncode,
+        "report_paths": extract_report_paths(result.stdout),
+    }
+
+
+def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]) -> int:
+    results: list[dict[str, object]] = []
+    for step_action, command in steps:
+        step = run_composite_step(step_action, command)
+        results.append(step)
+        if step["exit_code"] != 0:
+            report_path = write_composite_validation_report(action, results, status="FAIL")
+            print(f"public-workflow-report: {report_path.relative_to(ROOT).as_posix()}")
+            return int(step["exit_code"])
+    report_path = write_composite_validation_report(action, results, status="PASS")
+    print(f"public-workflow-report: {report_path.relative_to(ROOT).as_posix()}")
+    return 0
+
+
 def action_test_fast(_: list[str]) -> int:
-    rc = pwsh_file(SMOKE_PS1, "-Limit", "12")
-    if rc != 0:
-        return rc
-    rc = run_steps(["test-runtime-acceptance"])
-    if rc != 0:
-        return rc
-    return run_steps(["test-execution-replay"])
+    return run_composite_validation(
+        "test-fast",
+        [
+            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "12"]),
+            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+        ],
+    )
 
 
 def action_test_smoke(_: list[str]) -> int:
@@ -114,10 +202,15 @@ def action_test_smoke(_: list[str]) -> int:
 
 
 def action_test_ci(_: list[str]) -> int:
-    rc = run([sys.executable, str(TASK_HYGIENE_PY)])
-    if rc != 0:
-        return rc
-    return run_steps(["test-full"])
+    return run_composite_validation(
+        "test-ci",
+        [
+            ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
+            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
+            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+        ],
+    )
 
 
 def action_test_recovery(rest: list[str]) -> int:
@@ -145,17 +238,28 @@ def action_test_negative_expectations(rest: list[str]) -> int:
 
 
 def action_test_full(_: list[str]) -> int:
-    rc = run_steps(["test-smoke", "test-runtime-acceptance"])
-    if rc != 0:
-        return rc
-    return run_steps(["test-execution-replay"])
+    return run_composite_validation(
+        "test-full",
+        [
+            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
+            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+        ],
+    )
 
 
 def action_test_nightly(_: list[str]) -> int:
-    rc = run_steps(["test-full", "test-recovery", "test-fixture-matrix", "test-negative-expectations"])
-    if rc != 0:
-        return rc
-    return 0
+    return run_composite_validation(
+        "test-nightly",
+        [
+            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
+            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+            ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
+            ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
+            ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
+        ],
+    )
 
 
 def action_package_runnable_toolchain(_: list[str]) -> int:

@@ -28,6 +28,8 @@ python scripts/objc3c_public_workflow_runner.py test-negative-expectations -Fixt
 python scripts/objc3c_public_workflow_runner.py test-execution-replay -CaseId synthesized-accessor
 ```
 
+Composite runner entrypoints also write one integrated report to `tmp/reports/objc3c-public-workflow/<action>.json`, with the exact child-suite summary paths captured from the live smoke, runtime-acceptance, replay, recovery, and matrix scripts.
+
 ## What The Live Test Surface Covers
 
 - `test-fast`: bounded execution-smoke slice, runtime acceptance, and canonical replay/native-truth proof
