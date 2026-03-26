@@ -93,7 +93,7 @@ try {
     $buildLog = Join-Path $runDir "build.log"
     $buildExit = Invoke-LoggedNativeCommand `
       -Command "powershell" `
-      -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $buildScript) `
+      -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $buildScript, "-ExecutionMode", "binaries-only") `
       -LogPath $buildLog
     if ($buildExit -ne 0) {
       throw "matrix FAIL: native compiler build failed with exit code $buildExit"

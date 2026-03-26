@@ -8,7 +8,7 @@ $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $compileWrapperScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
 $pwsh = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } elseif (Get-Command powershell -ErrorAction SilentlyContinue) { "powershell" } else { "pwsh" }
 
-& $buildScript
+& $buildScript -ExecutionMode binaries-only
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
@@ -19,15 +19,13 @@ $negativeFixtureDir = Join-Path $recoveryFixtureRoot "negative"
 
 function Invoke-Objc3cNativeWithRecovery {
   param(
-    [string[]]$Arguments
+    [string[]]$Arguments,
+    [switch]$UseCompileWrapper
   )
-
-  $firstArgument = if ($Arguments.Count -gt 0) { [string]$Arguments[0] } else { "" }
-  $useCompileWrapper = $firstArgument.EndsWith(".objc3", [System.StringComparison]::OrdinalIgnoreCase)
 
   for ($attempt = 1; $attempt -le 2; $attempt++) {
     if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-      & $buildScript
+      & $buildScript -ExecutionMode binaries-only
       if ($LASTEXITCODE -ne 0) {
         throw "contract FAIL: native compiler build failed while recovering missing executable"
       }
@@ -37,7 +35,7 @@ function Invoke-Objc3cNativeWithRecovery {
     }
 
     try {
-      if ($useCompileWrapper) {
+      if ($UseCompileWrapper) {
         $null = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compileWrapperScript @Arguments
       } else {
         $null = & $exe @Arguments
@@ -48,7 +46,7 @@ function Invoke-Objc3cNativeWithRecovery {
         throw
       }
       Write-Output "warning: objc3c-native launch failed; rebuilding and retrying once"
-      & $buildScript
+      & $buildScript -ExecutionMode binaries-only
       if ($LASTEXITCODE -ne 0) {
         throw "contract FAIL: native compiler build failed while recovering launch failure"
       }
@@ -226,6 +224,7 @@ function Invoke-ContractCase {
     [string]$CaseName,
     [switch]$RequireLl,
     [switch]$RequireCompileProvenance,
+    [switch]$UseCompileWrapper,
     [string[]]$ExtraArgs = @(),
     [string[]]$RequiredLlTokens = @("define i32 @objc3c_entry"),
     [string[]]$ForbiddenLlTokens = @(),
@@ -246,9 +245,9 @@ function Invoke-ContractCase {
   $compileArgsRun1 = @($resolvedSource, "--out-dir", $run1, "--emit-prefix", "module") + $ExtraArgs
   $compileArgsRun2 = @($resolvedSource, "--out-dir", $run2, "--emit-prefix", "module") + $ExtraArgs
 
-  $exitRun1 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun1
+  $exitRun1 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun1 -UseCompileWrapper:$UseCompileWrapper
   if ($exitRun1 -ne 0) { throw "contract FAIL: compile failed for $CaseName run1" }
-  $exitRun2 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun2
+  $exitRun2 = Invoke-Objc3cNativeWithRecovery -Arguments $compileArgsRun2 -UseCompileWrapper:$UseCompileWrapper
   if ($exitRun2 -ne 0) { throw "contract FAIL: compile failed for $CaseName run2" }
 
   $manifest1 = Get-Content -LiteralPath (Join-Path $run1 "module.manifest.json") -Raw
@@ -486,7 +485,8 @@ function Assert-RecoveryFixtureClass {
 }
 
 Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.m" -CaseName "objc_baseline"
-Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.objc3" -CaseName "objc3_frontend" -RequireLl -RequireCompileProvenance -RequireObjc3ManifestSurface
+Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.objc3" -CaseName "objc3_frontend" -RequireLl -RequireObjc3ManifestSurface
+Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.objc3" -CaseName "objc3_frontend_wrapper_launch_contract" -RequireLl -RequireCompileProvenance -RequireObjc3ManifestSurface -UseCompileWrapper
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/function_return_annotation_bool.objc3" `
   -CaseName "objc3_typed_signature_bool_return" `
@@ -828,11 +828,8 @@ foreach ($fixture in $positiveFixtures) {
     throw "contract FAIL: empty manifest artifact for positive fixture $source"
   }
   Assert-Objc3ManifestPipelineSurface -ManifestText $manifest -CaseName $source
-  [void](Assert-CompileOutputProvenance -CaseName $source -RunDir $caseOutDir)
-
   Write-Output "$caseName`_compiled=true"
   Write-Output "$caseName`_object_size=$objSize"
-  Write-Output "$caseName`_compile_provenance=true"
 }
 
 $negativeFixtures = Get-RecoveryFixtures -Directory $negativeFixtureDir -FixtureKind "negative native recovery" -Extensions @(".objc3")

@@ -8,6 +8,7 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $positiveFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/positive"
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/negative"
 $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
+$buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-A001 runnable-sample-surface anchor: execution smoke remains the
 # scalar/core corpus boundary rooted at tests/tooling/fixtures/native/execution.
@@ -47,7 +48,6 @@ $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
-$compileWrapper = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
 $runtimeLaunchContractScript = Join-Path $repoRoot "scripts/objc3c_runtime_launch_contract.ps1"
 $defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
@@ -77,13 +77,36 @@ if (-not [string]::IsNullOrWhiteSpace($llcCommand)) {
   }
 }
 
-if (!(Test-Path -LiteralPath $compileWrapper -PathType Leaf)) {
-  throw "execution smoke FAIL: compile wrapper missing at $compileWrapper"
-}
 if (!(Test-Path -LiteralPath $runtimeLaunchContractScript -PathType Leaf)) {
   throw "execution smoke FAIL: runtime launch contract helper missing at $runtimeLaunchContractScript"
 }
 . $runtimeLaunchContractScript
+
+function Ensure-NativeCompilerExecutable {
+  param(
+    [Parameter(Mandatory = $true)][string]$NativeExePath,
+    [Parameter(Mandatory = $true)][bool]$NativeExeExplicit,
+    [Parameter(Mandatory = $true)][string]$BuildScriptPath
+  )
+
+  if (Test-Path -LiteralPath $NativeExePath -PathType Leaf) {
+    return
+  }
+  if ($NativeExeExplicit) {
+    throw "execution smoke FAIL: configured native compiler missing at $NativeExePath"
+  }
+  if (!(Test-Path -LiteralPath $BuildScriptPath -PathType Leaf)) {
+    throw "execution smoke FAIL: native build script missing at $BuildScriptPath"
+  }
+
+  & $BuildScriptPath -ExecutionMode binaries-only | Out-Null
+  if ($LASTEXITCODE -ne 0) {
+    throw "execution smoke FAIL: native compiler build failed with exit code $LASTEXITCODE"
+  }
+  if (!(Test-Path -LiteralPath $NativeExePath -PathType Leaf)) {
+    throw "execution smoke FAIL: native compiler executable missing at $NativeExePath"
+  }
+}
 
 function Get-RepoRelativePath {
   param(
@@ -468,6 +491,8 @@ function Assert-RuntimeDispatchParityFromLl {
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
+  Ensure-NativeCompilerExecutable -NativeExePath $nativeExe -NativeExeExplicit $nativeExeExplicit -BuildScriptPath $buildScript
+
   $clangCheckExit = Invoke-LoggedCommand -Command $clangCommand -Arguments @("--version") -LogPath (Join-Path $runDir "clang-version.log")
   if ($clangCheckExit -ne 0) {
     throw "execution smoke FAIL: clang command is unavailable: $clangCommand"
@@ -497,7 +522,7 @@ try {
     if ($expectation.compile_args.Count -gt 0) {
       $nativeArgs += @($expectation.compile_args)
     }
-    $compileExit = Invoke-LoggedCommand -Command $compileWrapper -Arguments $nativeArgs -LogPath $compileLog
+    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments $nativeArgs -LogPath $compileLog
     if ($compileExit -ne 0) {
       throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)"
     }
@@ -577,7 +602,7 @@ try {
     $runLog = Join-Path $caseDir "run.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $compileExit = Invoke-LoggedCommand -Command $compileWrapper -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
+    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
     $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
     $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
       Get-Content -LiteralPath $compileDiagPath -Raw
@@ -726,7 +751,7 @@ try {
   $failedCount = $total - $passedCount
   $summary = [ordered]@{
     run_dir = Get-RepoRelativePath -Path $runDir -Root $repoRoot
-    compile_wrapper = Get-RepoRelativePath -Path $compileWrapper -Root $repoRoot
+    compile_command = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_launch_contract_script = Get-RepoRelativePath -Path $runtimeLaunchContractScript -Root $repoRoot
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_library = if (Test-Path -LiteralPath $defaultRuntimeLibrary -PathType Leaf) { Get-RepoRelativePath -Path $defaultRuntimeLibrary -Root $repoRoot } else { "" }
