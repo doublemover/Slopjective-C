@@ -1,0 +1,29 @@
+{
+  "mode": "m317-e001-backlog-realignment-gate-contract-v1",
+  "contract_id": "objc3c-cleanup-backlog-realignment-gate-contract/m317-e001-v1",
+  "required_predecessor_summaries": {
+    "M317-A001": "tmp/reports/m317/M317-A001/backlog_overlap_correction_inventory_summary.json",
+    "M317-A002": "tmp/reports/m317/M317-A002/current_github_issue_amendment_and_supersession_map_summary.json",
+    "M317-B001": "tmp/reports/m317/M317-B001/immediate_backlog_surgery_and_supersession_model_summary.json",
+    "M317-B002": "tmp/reports/m317/M317-B002/existing_milestone_issue_amendments_implementation_summary.json",
+    "M317-B003": "tmp/reports/m317/M317-B003/future_milestone_dependency_rewrites_summary.json",
+    "M317-C001": "tmp/reports/m317/M317-C001/planning_packet_issue_template_contract_summary.json",
+    "M317-C002": "tmp/reports/m317/M317-C002/issue_template_seed_generator_simplification_summary.json",
+    "M317-D001": "tmp/reports/m317/M317-D001/publication_time_consistency_audit_contract_summary.json"
+  },
+  "required_live_checks": [
+    "open_roadmap_issue_label_completeness",
+    "open_roadmap_issue_execution_marker_completeness",
+    "m288_boundary_amendments_preserved",
+    "m293_m308_dependency_rewrites_preserved",
+    "template_generator_contract_alignment_preserved"
+  ],
+  "pre_closeout_milestone_state": {
+    "milestone_number": 398,
+    "expected_open_issue_numbers": [
+      7833,
+      7834
+    ]
+  },
+  "next_issue": "M317-E002"
+}
