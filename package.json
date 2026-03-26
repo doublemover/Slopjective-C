@@ -19,6 +19,8 @@
       "runnerMode": "m314-c002-parameterized-task-runner-v1",
       "introspectionCommand": "python scripts/objc3c_public_workflow_runner.py --list-json"
     },
+    "publicDocumentationPath": "docs/runbooks/objc3c_public_command_surface.md",
+    "budgetEnforcementOwnerIssue": "M314-C003",
     "publicScripts": [
       "build",
       "build:objc3c-native",
@@ -7916,6 +7918,9 @@
     "check:objc3c:m314-c001-lane-c-readiness": "python scripts/run_m314_c001_lane_c_readiness.py",
     "check:objc3c:m314-c002-parameterized-task-runner-implementation-core-feature-implementation": "python scripts/check_m314_c002_parameterized_task_runner_implementation_core_feature_implementation.py",
     "test:tooling:m314-c002-parameterized-task-runner-implementation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_c002_parameterized_task_runner_implementation_core_feature_implementation.py -q",
-    "check:objc3c:m314-c002-lane-c-readiness": "python scripts/run_m314_c002_lane_c_readiness.py"
+    "check:objc3c:m314-c002-lane-c-readiness": "python scripts/run_m314_c002_lane_c_readiness.py",
+    "check:objc3c:m314-c003-public-command-budget-enforcement-and-cli-docs-synchronization-core-feature-expansion": "python scripts/check_m314_c003_public_command_budget_enforcement_and_cli_docs_synchronization_core_feature_expansion.py",
+    "test:tooling:m314-c003-public-command-budget-enforcement-and-cli-docs-synchronization-core-feature-expansion": "python -m pytest tests/tooling/test_check_m314_c003_public_command_budget_enforcement_and_cli_docs_synchronization_core_feature_expansion.py -q",
+    "check:objc3c:m314-c003-lane-c-readiness": "python scripts/run_m314_c003_lane_c_readiness.py"
   }
 }
