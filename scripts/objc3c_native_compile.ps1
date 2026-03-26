@@ -1036,7 +1036,7 @@ function Test-NativeCompilerBuildArtifactsReady {
     [object]$ExistingBuildResult
   )
 
-  $exe = Join-Path $CompilerRepoRoot "artifacts/bin/objc3c-native.exe"
+  $exe = Resolve-NativeCompilerExecutablePath -RepoRoot $CompilerRepoRoot
   $runtimeLibrary = Join-Path $CompilerRepoRoot "artifacts/lib/objc3_runtime.lib"
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
     return $false
@@ -1094,13 +1094,25 @@ function Ensure-NativeCompilerAvailable {
     exit $buildExit
   }
 
-  $exe = Join-Path $RepoRoot "artifacts/bin/objc3c-native.exe"
+  $exe = Resolve-NativeCompilerExecutablePath -RepoRoot $RepoRoot
   if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
     Write-Error "native compiler executable missing at $exe"
     exit 2
   }
 
   return $nextBuildResult
+}
+
+function Resolve-NativeCompilerExecutablePath {
+  param(
+    [Parameter(Mandatory = $true)][string]$RepoRoot
+  )
+
+  $configuredNativeExe = [string]$env:OBJC3C_NATIVE_EXECUTABLE
+  if (-not [string]::IsNullOrWhiteSpace($configuredNativeExe)) {
+    return [System.IO.Path]::GetFullPath($configuredNativeExe)
+  }
+  return (Join-Path $RepoRoot "artifacts/bin/objc3c-native.exe")
 }
 
 function Assert-FrontendModuleScaffold {
@@ -2564,7 +2576,7 @@ function Assert-FrontendIntegrationCloseout {
 }
 
 $parsed = Parse-WrapperArguments -RawArgs $args
-$exe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
+$exe = Resolve-NativeCompilerExecutablePath -RepoRoot $repoRoot
 $buildResult = $null
 $buildResult = Ensure-NativeCompilerAvailable -RepoRoot $repoRoot -BuildResult $buildResult
 

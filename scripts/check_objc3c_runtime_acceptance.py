@@ -95,10 +95,32 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         )
     obj_path = out_dir / "module.obj"
     manifest_path = out_dir / "module.manifest.json"
+    registration_manifest_path = out_dir / "module.runtime-registration-manifest.json"
+    provenance_path = out_dir / "module.compile-provenance.json"
     if not obj_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {obj_path}")
     if not manifest_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {manifest_path}")
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
+    if not provenance_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {provenance_path}")
+
+    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+    registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+    if provenance.get("contract_id") != "objc3c.native.compile.output.provenance.v1":
+        raise RuntimeError("compiled fixture did not publish the native compile provenance contract")
+    truthfulness = provenance.get("compile_output_truthfulness")
+    if not isinstance(truthfulness, dict) or truthfulness.get("contract_id") != "objc3c.native.compile.output.truthfulness.v1":
+        raise RuntimeError("compiled fixture did not publish the compile output truthfulness contract")
+    if truthfulness.get("truthful") is not True:
+        raise RuntimeError("compiled fixture did not certify truthful compile output")
+    if registration_manifest.get("compile_output_provenance_artifact") != "module.compile-provenance.json":
+        raise RuntimeError("runtime registration manifest did not bind compile provenance artifact")
+    if registration_manifest.get("compile_output_truthful") is not True:
+        raise RuntimeError("runtime registration manifest did not certify truthful compile output")
+    if registration_manifest.get("compile_output_artifact_set_digest_sha256") != provenance.get("artifact_set_digest_sha256"):
+        raise RuntimeError("runtime registration manifest compile output digest drifted from compile provenance")
     return obj_path
 
 

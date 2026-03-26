@@ -17,10 +17,12 @@ $proofRunId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $proofDir = Join-Path $proofRoot $proofRunId
 $summaryPath = Join-Path $proofDir "summary.json"
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
+$compileScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
 $defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
 $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }
 $nativeExeExplicit = -not [string]::IsNullOrWhiteSpace($configuredNativeExe)
+$shellCommand = (Get-Process -Id $PID).Path
 $configuredLlvmReadobj = $env:OBJC3C_NATIVE_EXECUTION_LLVM_READOBJ_PATH
 $llvmReadobjCommand = if ([string]::IsNullOrWhiteSpace($configuredLlvmReadobj)) { "llvm-readobj" } else { $configuredLlvmReadobj }
 $requiredRuntimeSections = @(
@@ -141,6 +143,19 @@ function Get-Sha256HexFromText {
   }
 }
 
+function Get-Sha256HexFromBytes {
+  param([Parameter(Mandatory = $true)][byte[]]$Bytes)
+
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $hashBytes = $sha256.ComputeHash($Bytes)
+    return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+  }
+  finally {
+    $sha256.Dispose()
+  }
+}
+
 function Get-Sha256HexFromFile {
   param([Parameter(Mandatory = $true)][string]$Path)
 
@@ -157,6 +172,94 @@ function Get-NormalizedTextFromFile {
     throw "execution replay proof FAIL: missing text file $Path"
   }
   return ("$((Get-Content -LiteralPath $Path -Raw))").Replace("`r`n", "`n")
+}
+
+function Read-JsonHashtable {
+  param([Parameter(Mandatory = $true)][string]$Path)
+
+  return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable)
+}
+
+function Assert-CompileOutputProvenance {
+  param(
+    [Parameter(Mandatory = $true)][string]$CaseId,
+    [Parameter(Mandatory = $true)][string]$RunDir
+  )
+
+  $provenancePath = Join-Path $RunDir "module.compile-provenance.json"
+  if (!(Test-Path -LiteralPath $provenancePath -PathType Leaf)) {
+    throw "execution replay proof FAIL: missing compile provenance artifact for $CaseId"
+  }
+  $registrationManifestPath = Join-Path $RunDir "module.runtime-registration-manifest.json"
+  if (!(Test-Path -LiteralPath $registrationManifestPath -PathType Leaf)) {
+    throw "execution replay proof FAIL: missing runtime registration manifest for $CaseId"
+  }
+
+  $provenanceText = Get-NormalizedTextFromFile -Path $provenancePath
+  if ([string]::IsNullOrWhiteSpace($provenanceText)) {
+    throw "execution replay proof FAIL: empty compile provenance artifact for $CaseId"
+  }
+
+  $provenance = Read-JsonHashtable -Path $provenancePath
+  $registrationManifest = Read-JsonHashtable -Path $registrationManifestPath
+  if ([string]$provenance["contract_id"] -ne "objc3c.native.compile.output.provenance.v1") {
+    throw "execution replay proof FAIL: unexpected compile provenance contract id for $CaseId"
+  }
+  if ([string]$registrationManifest["compile_output_provenance_artifact"] -ne "module.compile-provenance.json") {
+    throw "execution replay proof FAIL: runtime registration manifest missing compile provenance binding for $CaseId"
+  }
+
+  $truthfulness = $provenance["compile_output_truthfulness"]
+  if ($null -eq $truthfulness -or [string]$truthfulness["contract_id"] -ne "objc3c.native.compile.output.truthfulness.v1") {
+    throw "execution replay proof FAIL: missing compile output truthfulness envelope for $CaseId"
+  }
+  if (-not [bool]$truthfulness["truthful"]) {
+    throw "execution replay proof FAIL: compile output truthfulness envelope did not certify emitted artifacts for $CaseId"
+  }
+  if ([string]$registrationManifest["compile_output_truthfulness_contract_id"] -ne "objc3c.native.compile.output.truthfulness.v1") {
+    throw "execution replay proof FAIL: runtime registration manifest missing compile output truthfulness contract id for $CaseId"
+  }
+  if (-not [bool]$registrationManifest["compile_output_truthful"]) {
+    throw "execution replay proof FAIL: runtime registration manifest did not certify truthful compile output for $CaseId"
+  }
+
+  $artifactEntries = @($provenance["emitted_artifacts"])
+  if ($artifactEntries.Count -lt 4) {
+    throw "execution replay proof FAIL: compile provenance emitted_artifacts too small for $CaseId"
+  }
+
+  $digestLines = New-Object System.Collections.Generic.List[string]
+  foreach ($entry in $artifactEntries) {
+    $artifactPath = Join-Path $RunDir ([string]$entry["path"])
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      throw "execution replay proof FAIL: compile provenance referenced missing artifact '$artifactPath' for $CaseId"
+    }
+    $actualHash = Get-Sha256HexFromFile -Path $artifactPath
+    if ($actualHash -ne ([string]$entry["sha256"]).ToLowerInvariant()) {
+      throw "execution replay proof FAIL: compile provenance sha256 mismatch for '$artifactPath' in $CaseId"
+    }
+    $actualSize = (Get-Item -LiteralPath $artifactPath).Length
+    if ([long]$actualSize -ne [long]$entry["byte_count"]) {
+      throw "execution replay proof FAIL: compile provenance byte_count mismatch for '$artifactPath' in $CaseId"
+    }
+    $digestLines.Add(("{0}|{1}|{2}" -f [string]$entry["path"], [string]$entry["byte_count"], [string]$entry["sha256"]))
+  }
+
+  $actualArtifactSetDigest = Get-Sha256HexFromBytes -Bytes ([System.Text.Encoding]::UTF8.GetBytes(($digestLines -join "`n")))
+  if ($actualArtifactSetDigest -ne ([string]$provenance["artifact_set_digest_sha256"]).ToLowerInvariant()) {
+    throw "execution replay proof FAIL: compile provenance artifact set digest mismatch for $CaseId"
+  }
+  if ($actualArtifactSetDigest -ne ([string]$registrationManifest["compile_output_artifact_set_digest_sha256"]).ToLowerInvariant()) {
+    throw "execution replay proof FAIL: runtime registration manifest compile output digest mismatch for $CaseId"
+  }
+
+  return [ordered]@{
+    provenance_path = Get-RepoRelativePath -Path $provenancePath -Root $repoRoot
+    registration_manifest_path = Get-RepoRelativePath -Path $registrationManifestPath -Root $repoRoot
+    provenance_sha256 = Get-Sha256HexFromText -Text $provenanceText
+    registration_manifest_sha256 = Get-Sha256HexFromText -Text (Get-NormalizedTextFromFile -Path $registrationManifestPath)
+    artifact_set_digest_sha256 = $actualArtifactSetDigest
+  }
 }
 
 function Get-NormalizedReadobjSectionText {
@@ -272,7 +375,10 @@ function Invoke-ReplayCompile {
   New-Item -ItemType Directory -Force -Path $artifactRoot | Out-Null
   New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-  $compileExit = Invoke-LoggedCommand -Command $NativeExePath -Arguments @($fixturePath, "--out-dir", $outDir, "--emit-prefix", "module") -LogPath $compileLog
+  if (!(Test-Path -LiteralPath $compileScript -PathType Leaf)) {
+    throw "execution replay proof FAIL: compile wrapper missing at $compileScript"
+  }
+  $compileExit = Invoke-LoggedCommand -Command $shellCommand -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $compileScript, $fixturePath, "--out-dir", $outDir, "--emit-prefix", "module") -LogPath $compileLog
   if ($compileExit -ne 0) {
     throw "execution replay proof FAIL: compile failed for $caseId $RunLabel (exit=$compileExit)"
   }
@@ -286,6 +392,7 @@ function Invoke-ReplayCompile {
       throw "execution replay proof FAIL: missing replay artifact $artifactPath"
     }
   }
+  $provenance = Assert-CompileOutputProvenance -CaseId $caseId -RunDir $outDir
 
   $llText = Get-NormalizedTextFromFile -Path $irPath
   $requiredLlTokens = @($Case.required_ll_tokens)
@@ -318,6 +425,8 @@ function Invoke-ReplayCompile {
     out_dir = Get-RepoRelativePath -Path $outDir -Root $repoRoot
     compile_log = Get-RepoRelativePath -Path $compileLog -Root $repoRoot
     manifest = Get-RepoRelativePath -Path $manifestPath -Root $repoRoot
+    registration_manifest = [string]$provenance.registration_manifest_path
+    compile_provenance = [string]$provenance.provenance_path
     diagnostics = Get-RepoRelativePath -Path $diagPath -Root $repoRoot
     ir = Get-RepoRelativePath -Path $irPath -Root $repoRoot
     object = Get-RepoRelativePath -Path $objPath -Root $repoRoot
@@ -325,9 +434,12 @@ function Invoke-ReplayCompile {
     required_ll_tokens = @($requiredLlTokens)
     required_runtime_sections = @($requiredSections)
     manifest_sha256 = Get-Sha256HexFromText -Text (Get-NormalizedTextFromFile -Path $manifestPath)
+    registration_manifest_sha256 = [string]$provenance.registration_manifest_sha256
+    provenance_sha256 = [string]$provenance.provenance_sha256
     diagnostics_sha256 = Get-Sha256HexFromText -Text (Get-NormalizedTextFromFile -Path $diagPath)
     ir_sha256 = Get-Sha256HexFromText -Text $llText
     object_sha256 = Get-Sha256HexFromFile -Path $objPath
+    artifact_set_digest_sha256 = [string]$provenance.artifact_set_digest_sha256
     section_inspection_sha256 = $sectionInspectionSha
     section_names = @($sectionNames)
   }
@@ -345,7 +457,7 @@ try {
     $run1 = Invoke-ReplayCompile -Case $case -RunLabel "run1" -NativeExePath $nativeExe
     $run2 = Invoke-ReplayCompile -Case $case -RunLabel "run2" -NativeExePath $nativeExe
 
-    foreach ($field in @("manifest_sha256", "diagnostics_sha256", "ir_sha256", "object_sha256")) {
+    foreach ($field in @("manifest_sha256", "registration_manifest_sha256", "provenance_sha256", "diagnostics_sha256", "ir_sha256", "object_sha256", "artifact_set_digest_sha256")) {
       if ([string]$run1[$field] -ne [string]$run2[$field]) {
         throw "execution replay proof FAIL: $field drift across replay for $($case.case_id) (run1=$($run1[$field]) run2=$($run2[$field]))"
       }
