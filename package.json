@@ -85,6 +85,13 @@
     "publicCommandRunbook": "docs/runbooks/objc3c_public_command_surface.md",
     "supportedCompilerRoot": "native/objc3c"
   },
+  "objc3cGovernance": {
+    "contractId": "objc3c-governance-anti-noise-exception-process/m318-a002-v1",
+    "antiNoiseBudgetMapPath": "spec/planning/compiler/m318/m318_a001_anti_noise_governance_inventory_and_budget_map_contract_and_architecture_freeze_inventory.json",
+    "antiNoiseExceptionProcessPath": "spec/governance/objc3c_anti_noise_exception_process.json",
+    "antiNoiseExceptionRegistryPath": "spec/governance/objc3c_anti_noise_exception_registry.json",
+    "governanceOwnerIssue": "M318-A002"
+  },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
     "test": "python scripts/objc3c_public_workflow_runner.py test-default",
@@ -7987,6 +7994,9 @@
     "check:objc3c:m315-e002-lane-e-readiness": "python scripts/run_m315_e002_lane_e_readiness.py",
     "check:objc3c:m318-a001-anti-noise-governance-inventory-and-budget-map-contract-and-architecture-freeze": "python scripts/check_m318_a001_anti_noise_governance_inventory_and_budget_map_contract_and_architecture_freeze.py",
     "test:tooling:m318-a001-anti-noise-governance-inventory-and-budget-map-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_a001_anti_noise_governance_inventory_and_budget_map_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m318-a001-lane-a-readiness": "python scripts/run_m318_a001_lane_a_readiness.py"
+    "check:objc3c:m318-a001-lane-a-readiness": "python scripts/run_m318_a001_lane_a_readiness.py",
+    "check:objc3c:m318-a002-exception-process-and-ownership-model-source-completion": "python scripts/check_m318_a002_exception_process_and_ownership_model_source_completion.py",
+    "test:tooling:m318-a002-exception-process-and-ownership-model-source-completion": "python -m pytest tests/tooling/test_check_m318_a002_exception_process_and_ownership_model_source_completion.py -q",
+    "check:objc3c:m318-a002-lane-a-readiness": "python scripts/run_m318_a002_lane_a_readiness.py"
   }
 }
