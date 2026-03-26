@@ -96,11 +96,14 @@
     "reviewRegressionModelPath": "spec/governance/objc3c_review_and_regression_model.json",
     "reviewChecklistRunbookPath": "docs/runbooks/objc3c_review_checklist.md",
     "automationContractPath": "spec/governance/objc3c_governance_automation_contract.json",
+    "automationRunnerPath": "scripts/m318_governance_guard.py",
+    "automationWorkflowPath": ".github/workflows/m318-governance-budget-enforcement.yml",
     "governanceOwnerIssue": "M318-A002",
     "budgetPolicyOwnerIssue": "M318-B001",
     "planningHygieneOwnerIssue": "M318-B002",
     "reviewChecklistOwnerIssue": "M318-B003",
-    "automationContractOwnerIssue": "M318-C001"
+    "automationContractOwnerIssue": "M318-C001",
+    "automationImplementationOwnerIssue": "M318-C002"
   },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
@@ -8019,6 +8022,9 @@
     "check:objc3c:m318-b003-lane-b-readiness": "python scripts/run_m318_b003_lane_b_readiness.py",
     "check:objc3c:m318-c001-governance-automation-and-ci-policy-contract-and-architecture-freeze": "python scripts/check_m318_c001_governance_automation_and_ci_policy_contract_and_architecture_freeze.py",
     "test:tooling:m318-c001-governance-automation-and-ci-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_c001_governance_automation_and_ci_policy_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m318-c001-lane-c-readiness": "python scripts/run_m318_c001_lane_c_readiness.py"
+    "check:objc3c:m318-c001-lane-c-readiness": "python scripts/run_m318_c001_lane_c_readiness.py",
+    "check:objc3c:m318-c002-budget-enforcement-and-regression-alarms-implementation-core-feature-implementation": "python scripts/check_m318_c002_budget_enforcement_and_regression_alarms_implementation_core_feature_implementation.py",
+    "test:tooling:m318-c002-budget-enforcement-and-regression-alarms-implementation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m318_c002_budget_enforcement_and_regression_alarms_implementation_core_feature_implementation.py -q",
+    "check:objc3c:m318-c002-lane-c-readiness": "python scripts/run_m318_c002_lane_c_readiness.py"
   }
 }
