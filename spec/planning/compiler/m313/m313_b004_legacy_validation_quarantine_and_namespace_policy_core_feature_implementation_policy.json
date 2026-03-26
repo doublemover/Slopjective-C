@@ -1,0 +1,48 @@
+{
+  "mode": "m313-b004-legacy-validation-quarantine-namespace-policy-v1",
+  "contract_id": "objc3c-cleanup-legacy-validation-quarantine-namespace-policy/m313-b004-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m313/m313_a001_validation_surface_inventory_and_taxonomy_contract_and_architecture_freeze_inventory.json",
+    "spec/planning/compiler/m313/m313_a002_validation_reduction_targets_and_ratchet_map_source_completion_ratchet_map.json",
+    "spec/planning/compiler/m313/m313_a003_subsystem_acceptance_suite_boundary_and_migration_map_source_completion_map.json",
+    "spec/planning/compiler/m313/m313_b001_testing_pyramid_and_static_guard_retention_model_contract_and_architecture_freeze_model.json",
+    "spec/planning/compiler/m313/m313_b002_shared_compiler_runtime_integration_harness_core_feature_implementation_registry.json",
+    "spec/planning/compiler/m313/m313_b003_checker_consolidation_and_migration_policy_core_feature_implementation_policy.json"
+  ],
+  "active_milestone_codes": [313, 314, 315, 316, 317, 318],
+  "namespace_rules": [
+    {
+      "validation_class": "issue_local_checker",
+      "path_glob": "scripts/check_*.py",
+      "non_milestone_disposition": "retained_non_milestone",
+      "milestone_disposition": "active_only_when_code_in_active_milestone_codes"
+    },
+    {
+      "validation_class": "issue_local_readiness_runner",
+      "path_glob": "scripts/run_*_readiness.py",
+      "non_milestone_disposition": "retained_non_milestone",
+      "milestone_disposition": "active_only_when_code_in_active_milestone_codes"
+    },
+    {
+      "validation_class": "issue_local_pytest_wrapper",
+      "path_glob": "tests/tooling/test_check_*.py",
+      "non_milestone_disposition": "retained_non_milestone",
+      "milestone_disposition": "active_only_when_code_in_active_milestone_codes"
+    }
+  ],
+  "ratchet_stage": {
+    "owner_issue": "M313-B004",
+    "stage": "namespace_quarantine",
+    "maximums": {
+      "check_scripts": 1674,
+      "readiness_runners": 479,
+      "pytest_check_files": 1666
+    }
+  },
+  "classification_requirements": {
+    "must_exhaustively_classify": true,
+    "quarantined_surfaces_are_not_default_truth": true,
+    "no_new_active_namespace_outside_allowlist": true
+  },
+  "next_issue": "M313-B005"
+}
