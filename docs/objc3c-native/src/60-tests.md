@@ -31,10 +31,10 @@ python scripts/objc3c_public_workflow_runner.py test-execution-replay -CaseId sy
 ## What The Live Test Surface Covers
 
 - `test-fast`: bounded execution-smoke slice, runtime acceptance, and canonical replay/native-truth proof
-- `test-smoke`: runnable execution smoke plus runtime acceptance
-- `test-recovery`: recovery compile success and deterministic diagnostics replay
-- `test-full`: smoke, recovery, and replay/native-truth proof
-- `test-nightly`: exhaustive validation plus positive fixture-matrix and static negative-expectation sweeps
+- `test-smoke`: full runnable execution smoke corpus
+- `test-recovery`: recovery compile success and deterministic diagnostics replay as a non-default heavy path
+- `test-full`: smoke, runtime acceptance, and replay/native-truth proof without the recovery fan-out
+- `test-nightly`: full validation plus recovery, positive fixture-matrix, and static negative-expectation sweeps
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols
