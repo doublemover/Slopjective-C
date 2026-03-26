@@ -7933,6 +7933,9 @@
     "check:objc3c:m314-d001-lane-d-readiness": "python scripts/run_m314_d001_lane_d_readiness.py",
     "check:objc3c:m314-e001-workflow-simplification-gate-contract-and-architecture-freeze": "python scripts/check_m314_e001_workflow_simplification_gate_contract_and_architecture_freeze.py",
     "test:tooling:m314-e001-workflow-simplification-gate-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_e001_workflow_simplification_gate_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m314-e001-lane-e-readiness": "python scripts/run_m314_e001_lane_e_readiness.py"
+    "check:objc3c:m314-e001-lane-e-readiness": "python scripts/run_m314_e001_lane_e_readiness.py",
+    "check:objc3c:m314-e002-command-surface-closeout-matrix-cross-lane-integration-sync": "python scripts/check_m314_e002_command_surface_closeout_matrix_cross_lane_integration_sync.py",
+    "test:tooling:m314-e002-command-surface-closeout-matrix-cross-lane-integration-sync": "python -m pytest tests/tooling/test_check_m314_e002_command_surface_closeout_matrix_cross_lane_integration_sync.py -q",
+    "check:objc3c:m314-e002-lane-e-readiness": "python scripts/run_m314_e002_lane_e_readiness.py"
   }
 }
