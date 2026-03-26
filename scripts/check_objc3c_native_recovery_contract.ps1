@@ -1,3 +1,11 @@
+param(
+  [string]$FixtureList = "",
+  [string]$FixtureGlob = "",
+  [int]$ShardIndex = -1,
+  [int]$ShardCount = 0,
+  [int]$Limit = 0
+)
+
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -344,6 +352,107 @@ function Get-RecoveryFixtures {
   }
 
   return $fixtures
+}
+
+function Get-RequestedRelativePaths {
+  param(
+    [string]$FixtureListPath
+  )
+
+  $resolvedFixtureList = if ([System.IO.Path]::IsPathRooted($FixtureListPath)) {
+    $FixtureListPath
+  } else {
+    Join-Path $repoRoot $FixtureListPath
+  }
+  if (!(Test-Path -LiteralPath $resolvedFixtureList -PathType Leaf)) {
+    throw "contract FAIL: missing fixture list at $resolvedFixtureList"
+  }
+
+  $requested = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  foreach ($rawLine in @(Get-Content -LiteralPath $resolvedFixtureList)) {
+    $candidate = "$rawLine".Trim()
+    if ([string]::IsNullOrWhiteSpace($candidate) -or $candidate.StartsWith("#")) {
+      continue
+    }
+    $normalized = $candidate.Replace('\', '/')
+    if ($normalized.StartsWith("./")) {
+      $normalized = $normalized.Substring(2)
+    }
+    $null = $requested.Add($normalized)
+  }
+  return $requested
+}
+
+function Select-RecoveryFixtureEntries {
+  param(
+    [object[]]$Entries,
+    [string]$FixtureListPath,
+    [string]$FixtureGlobPattern,
+    [int]$ShardIndexValue,
+    [int]$ShardCountValue,
+    [int]$LimitValue
+  )
+
+  if ($LimitValue -lt 0) {
+    throw "contract FAIL: limit must be non-negative"
+  }
+  if ($ShardCountValue -lt 0) {
+    throw "contract FAIL: shard-count must be non-negative"
+  }
+  if (($ShardIndexValue -ge 0) -and ($ShardCountValue -le 0)) {
+    throw "contract FAIL: shard-index requires shard-count > 0"
+  }
+  if (($ShardCountValue -gt 0) -and (($ShardIndexValue -lt 0) -or ($ShardIndexValue -ge $ShardCountValue))) {
+    throw "contract FAIL: shard-index must satisfy 0 <= shard-index < shard-count"
+  }
+
+  $selected = @($Entries)
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureListPath)) {
+    $requested = Get-RequestedRelativePaths -FixtureListPath $FixtureListPath
+    $selected = @($selected | Where-Object { $requested.Contains($_.relative_path) })
+    $matched = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in $selected) {
+      $null = $matched.Add([string]$entry.relative_path)
+    }
+    $missing = @()
+    foreach ($requestedPath in $requested) {
+      if (-not $matched.Contains($requestedPath)) {
+        $missing += $requestedPath
+      }
+    }
+    if ($missing.Count -gt 0) {
+      throw "contract FAIL: fixture-list entries did not match recovery fixtures ($($missing -join ', '))"
+    }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureGlobPattern)) {
+    $pattern = [System.Management.Automation.WildcardPattern]::new(
+      $FixtureGlobPattern.Replace('\', '/'),
+      [System.Management.Automation.WildcardOptions]::IgnoreCase
+    )
+    $selected = @($selected | Where-Object { $pattern.IsMatch($_.relative_path) })
+  }
+
+  if ($ShardCountValue -gt 0) {
+    $sharded = New-Object System.Collections.Generic.List[object]
+    for ($index = 0; $index -lt $selected.Count; $index++) {
+      if (($index % $ShardCountValue) -eq $ShardIndexValue) {
+        $sharded.Add($selected[$index]) | Out-Null
+      }
+    }
+    $selected = @($sharded)
+  }
+
+  if (($LimitValue -gt 0) -and ($selected.Count -gt $LimitValue)) {
+    $selected = @($selected | Select-Object -First $LimitValue)
+  }
+
+  if ($selected.Count -eq 0) {
+    throw "contract FAIL: no recovery fixtures matched the requested selection"
+  }
+
+  return $selected
 }
 
 function Get-FixtureCaseName {
@@ -805,7 +914,36 @@ Write-Output "objc3_invalid_dispatch_symbol_exit_code=$invalidDispatchExit"
 
 $positiveFixtures = Get-RecoveryFixtures -Directory $positiveFixtureDir -FixtureKind "positive native recovery" -Extensions @(".objc3")
 Assert-RecoveryFixtureClass -Fixtures $positiveFixtures -FixtureKind "positive native recovery"
-foreach ($fixture in $positiveFixtures) {
+$negativeFixtures = Get-RecoveryFixtures -Directory $negativeFixtureDir -FixtureKind "negative native recovery" -Extensions @(".objc3")
+Assert-RecoveryFixtureClass -Fixtures $negativeFixtures -FixtureKind "negative native recovery"
+$recoveryFixtureEntries = @(
+  $positiveFixtures | ForEach-Object {
+    [pscustomobject]@{
+      kind = "positive"
+      file = $_
+      relative_path = [System.IO.Path]::GetRelativePath($repoRoot, $_.FullName).Replace("\", "/")
+    }
+  }
+) + @(
+  $negativeFixtures | ForEach-Object {
+    [pscustomobject]@{
+      kind = "negative"
+      file = $_
+      relative_path = [System.IO.Path]::GetRelativePath($repoRoot, $_.FullName).Replace("\", "/")
+    }
+  }
+)
+$selectedRecoveryEntries = Select-RecoveryFixtureEntries `
+  -Entries $recoveryFixtureEntries `
+  -FixtureListPath $FixtureList `
+  -FixtureGlobPattern $FixtureGlob `
+  -ShardIndexValue $ShardIndex `
+  -ShardCountValue $ShardCount `
+  -LimitValue $Limit
+$selectedPositiveFixtures = @($selectedRecoveryEntries | Where-Object { $_.kind -eq "positive" } | ForEach-Object { $_.file })
+$selectedNegativeFixtures = @($selectedRecoveryEntries | Where-Object { $_.kind -eq "negative" } | ForEach-Object { $_.file })
+Write-Output ("selection: positive={0} negative={1}" -f $selectedPositiveFixtures.Count, $selectedNegativeFixtures.Count)
+foreach ($fixture in $selectedPositiveFixtures) {
   $source = $fixture.FullName
   $caseName = Get-FixtureCaseName -Prefix "recovery_positive" -FixturePath $source
   $caseOutDir = Join-Path $outDir $caseName
@@ -832,8 +970,6 @@ foreach ($fixture in $positiveFixtures) {
   Write-Output "$caseName`_object_size=$objSize"
 }
 
-$negativeFixtures = Get-RecoveryFixtures -Directory $negativeFixtureDir -FixtureKind "negative native recovery" -Extensions @(".objc3")
-Assert-RecoveryFixtureClass -Fixtures $negativeFixtures -FixtureKind "negative native recovery"
 $negativeFixtureDiagnosticTokenContracts = @{
   "negative_pure_definition_impure_global_write.objc3" = @(
     "error:7:9",
@@ -872,7 +1008,7 @@ $negativeFixtureDiagnosticTokenContracts = @{
     "detail:message-send@6:10"
   )
 }
-foreach ($fixture in $negativeFixtures) {
+foreach ($fixture in $selectedNegativeFixtures) {
   $source = $fixture.FullName
   $caseName = Get-FixtureCaseName -Prefix "recovery_negative" -FixturePath $source
   $run1 = Join-Path $outDir ($caseName + "_run1")

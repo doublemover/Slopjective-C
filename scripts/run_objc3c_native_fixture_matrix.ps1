@@ -1,3 +1,11 @@
+param(
+  [string]$FixtureList = "",
+  [string]$FixtureGlob = "",
+  [int]$ShardIndex = -1,
+  [int]$ShardCount = 0,
+  [int]$Limit = 0
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 if ($PSVersionTable.PSVersion.Major -ge 7) {
@@ -13,6 +21,7 @@ $runDir = Join-Path $matrixRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
 $hadFatalError = $false
 $fatalErrorMessage = ""
+$selectedPositiveCount = 0
 
 function Get-RepoRelativePath {
   param(
@@ -64,6 +73,101 @@ function Get-Fixtures {
   return $fixtures
 }
 
+function Get-RequestedRelativePaths {
+  param([string]$FixtureListPath)
+
+  $resolvedFixtureList = if ([System.IO.Path]::IsPathRooted($FixtureListPath)) { $FixtureListPath } else { Join-Path $repoRoot $FixtureListPath }
+  if (!(Test-Path -LiteralPath $resolvedFixtureList -PathType Leaf)) {
+    throw "matrix FAIL: missing fixture list at $resolvedFixtureList"
+  }
+
+  $requested = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  foreach ($rawLine in @(Get-Content -LiteralPath $resolvedFixtureList)) {
+    $candidate = "$rawLine".Trim()
+    if ([string]::IsNullOrWhiteSpace($candidate) -or $candidate.StartsWith("#")) {
+      continue
+    }
+    $normalized = $candidate.Replace('\', '/')
+    if ($normalized.StartsWith("./")) {
+      $normalized = $normalized.Substring(2)
+    }
+    $null = $requested.Add($normalized)
+  }
+  return $requested
+}
+
+function Select-Fixtures {
+  param(
+    [object[]]$Fixtures,
+    [string]$FixtureListPath,
+    [string]$FixtureGlobPattern,
+    [int]$ShardIndexValue,
+    [int]$ShardCountValue,
+    [int]$LimitValue
+  )
+
+  if ($LimitValue -lt 0) {
+    throw "matrix FAIL: limit must be non-negative"
+  }
+  if ($ShardCountValue -lt 0) {
+    throw "matrix FAIL: shard-count must be non-negative"
+  }
+  if (($ShardIndexValue -ge 0) -and ($ShardCountValue -le 0)) {
+    throw "matrix FAIL: shard-index requires shard-count > 0"
+  }
+  if (($ShardCountValue -gt 0) -and (($ShardIndexValue -lt 0) -or ($ShardIndexValue -ge $ShardCountValue))) {
+    throw "matrix FAIL: shard-index must satisfy 0 <= shard-index < shard-count"
+  }
+
+  $selected = @($Fixtures)
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureListPath)) {
+    $requested = Get-RequestedRelativePaths -FixtureListPath $FixtureListPath
+    $selected = @($selected | Where-Object { $requested.Contains((Get-RepoRelativePath -Path $_.FullName -Root $repoRoot)) })
+    $matched = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($fixture in $selected) {
+      $null = $matched.Add((Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot))
+    }
+    $missing = @()
+    foreach ($requestedPath in $requested) {
+      if (-not $matched.Contains($requestedPath)) {
+        $missing += $requestedPath
+      }
+    }
+    if ($missing.Count -gt 0) {
+      throw "matrix FAIL: fixture-list entries did not match matrix fixtures ($($missing -join ', '))"
+    }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureGlobPattern)) {
+    $pattern = [System.Management.Automation.WildcardPattern]::new(
+      $FixtureGlobPattern.Replace('\', '/'),
+      [System.Management.Automation.WildcardOptions]::IgnoreCase
+    )
+    $selected = @($selected | Where-Object { $pattern.IsMatch((Get-RepoRelativePath -Path $_.FullName -Root $repoRoot)) })
+  }
+
+  if ($ShardCountValue -gt 0) {
+    $sharded = New-Object System.Collections.Generic.List[object]
+    for ($index = 0; $index -lt $selected.Count; $index++) {
+      if (($index % $ShardCountValue) -eq $ShardIndexValue) {
+        $sharded.Add($selected[$index]) | Out-Null
+      }
+    }
+    $selected = @($sharded)
+  }
+
+  if (($LimitValue -gt 0) -and ($selected.Count -gt $LimitValue)) {
+    $selected = @($selected | Select-Object -First $LimitValue)
+  }
+
+  if ($selected.Count -eq 0) {
+    throw "matrix FAIL: no positive recovery fixtures matched the requested selection"
+  }
+
+  return $selected
+}
+
 function Invoke-LoggedNativeCommand {
   param(
     [string]$Command,
@@ -105,6 +209,15 @@ try {
   }
 
   $positiveFixtures = Get-Fixtures -Directory $positiveDir -FixtureKind "positive recovery"
+  $positiveFixtures = Select-Fixtures `
+    -Fixtures $positiveFixtures `
+    -FixtureListPath $FixtureList `
+    -FixtureGlobPattern $FixtureGlob `
+    -ShardIndexValue $ShardIndex `
+    -ShardCountValue $ShardCount `
+    -LimitValue $Limit
+  $selectedPositiveCount = $positiveFixtures.Count
+  Write-Output ("selection: positive={0}" -f $positiveFixtures.Count)
 
   foreach ($fixture in $positiveFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
@@ -160,6 +273,14 @@ $status = if (!$hadFatalError -and $total -gt 0 -and $failedCount -eq 0) { "PASS
 
 $summary = [ordered]@{
   run_dir = (Get-RepoRelativePath -Path $runDir -Root $repoRoot)
+  selection = [ordered]@{
+    fixture_list = $FixtureList
+    fixture_glob = $FixtureGlob
+    shard_index = $ShardIndex
+    shard_count = $ShardCount
+    limit = $Limit
+    selected_positive = $selectedPositiveCount
+  }
   total = $total
   passed = $passedCount
   failed = $failedCount

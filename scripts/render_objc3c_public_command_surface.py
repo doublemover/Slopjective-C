@@ -68,7 +68,7 @@ def render_markdown() -> str:
             "## Operator Notes",
             "",
             "- Use the package scripts above for normal operator workflows.",
-            "- `compile:objc3c` is the only public command that accepts pass-through arguments.",
+            "- `compile:objc3c` and the fixture-backed suite commands accept pass-through arguments for bounded selectors.",
             "- No additional package-script compatibility aliases remain supported.",
             "- Maintainer-only package scripts are limited to repo hygiene and boundary checks.",
             "",

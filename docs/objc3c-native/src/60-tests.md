@@ -18,13 +18,23 @@ python scripts/ci/check_task_hygiene.py
 python scripts/check_objc3c_dependency_boundaries.py --strict
 ```
 
+Targeted entrypoints accept bounded selectors when you need signal without the full corpus:
+
+```powershell
+python scripts/objc3c_public_workflow_runner.py test-execution-smoke -Limit 12
+python scripts/objc3c_public_workflow_runner.py test-recovery -Limit 24
+python scripts/objc3c_public_workflow_runner.py test-fixture-matrix -ShardIndex 0 -ShardCount 4
+python scripts/objc3c_public_workflow_runner.py test-negative-expectations -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
+python scripts/objc3c_public_workflow_runner.py test-execution-replay -CaseId synthesized-accessor
+```
+
 ## What The Live Test Surface Covers
 
-- `test-fast`: runtime acceptance and ABI/accessor proof
+- `test-fast`: bounded execution-smoke slice, runtime acceptance, and canonical replay/native-truth proof
 - `test-smoke`: runnable execution smoke plus runtime acceptance
 - `test-recovery`: recovery compile success and deterministic diagnostics replay
 - `test-full`: smoke, recovery, and replay/native-truth proof
-- `test-nightly`: full validation plus positive fixture-matrix and static negative-expectation sweeps
+- `test-nightly`: exhaustive validation plus positive fixture-matrix and static negative-expectation sweeps
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols

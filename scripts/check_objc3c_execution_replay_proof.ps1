@@ -1,3 +1,10 @@
+param(
+  [string]$CaseId = "",
+  [int]$ShardIndex = -1,
+  [int]$ShardCount = 0,
+  [int]$Limit = 0
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 if ($PSVersionTable.PSVersion.Major -ge 7) {
@@ -201,6 +208,51 @@ function Assert-RequiredTextTokens {
   }
 }
 
+function Select-ProofCases {
+  param([object[]]$Cases)
+
+  if ($Limit -lt 0) {
+    throw "execution replay proof FAIL: limit must be non-negative"
+  }
+  if ($ShardCount -lt 0) {
+    throw "execution replay proof FAIL: shard-count must be non-negative"
+  }
+  if (($ShardIndex -ge 0) -and ($ShardCount -le 0)) {
+    throw "execution replay proof FAIL: shard-index requires shard-count > 0"
+  }
+  if (($ShardCount -gt 0) -and (($ShardIndex -lt 0) -or ($ShardIndex -ge $ShardCount))) {
+    throw "execution replay proof FAIL: shard-index must satisfy 0 <= shard-index < shard-count"
+  }
+
+  $selected = @($Cases)
+  if (-not [string]::IsNullOrWhiteSpace($CaseId)) {
+    $selected = @($selected | Where-Object { [string]$_.case_id -eq $CaseId })
+    if ($selected.Count -eq 0) {
+      throw "execution replay proof FAIL: no replay proof case matched case-id '$CaseId'"
+    }
+  }
+
+  if ($ShardCount -gt 0) {
+    $sharded = New-Object System.Collections.Generic.List[object]
+    for ($index = 0; $index -lt $selected.Count; $index++) {
+      if (($index % $ShardCount) -eq $ShardIndex) {
+        $sharded.Add($selected[$index]) | Out-Null
+      }
+    }
+    $selected = @($sharded)
+  }
+
+  if (($Limit -gt 0) -and ($selected.Count -gt $Limit)) {
+    $selected = @($selected | Select-Object -First $Limit)
+  }
+
+  if ($selected.Count -eq 0) {
+    throw "execution replay proof FAIL: no replay proof cases matched the requested selection"
+  }
+
+  return $selected
+}
+
 function Invoke-ReplayCompile {
   param(
     [Parameter(Mandatory = $true)][hashtable]$Case,
@@ -286,8 +338,10 @@ Push-Location $repoRoot
 try {
   Ensure-NativeCompilerExecutable -NativeExePath $nativeExe -NativeExeExplicit $nativeExeExplicit -BuildScriptPath $buildScript
 
+  $selectedProofCases = @(Select-ProofCases -Cases $proofCases)
+  Write-Output ("selection: cases={0}" -f $selectedProofCases.Count)
   $caseSummaries = @()
-  foreach ($case in $proofCases) {
+  foreach ($case in $selectedProofCases) {
     $run1 = Invoke-ReplayCompile -Case $case -RunLabel "run1" -NativeExePath $nativeExe
     $run2 = Invoke-ReplayCompile -Case $case -RunLabel "run2" -NativeExePath $nativeExe
 
@@ -316,6 +370,13 @@ try {
   $summary = [ordered]@{
     proof_run_id = $proofRunId
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
+    selection = [ordered]@{
+      case_id = $CaseId
+      shard_index = $ShardIndex
+      shard_count = $ShardCount
+      limit = $Limit
+      selected_cases = $selectedProofCases.Count
+    }
     cases = $caseSummaries
     status = "PASS"
   }

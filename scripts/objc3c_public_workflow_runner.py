@@ -100,7 +100,13 @@ def action_test_default(_: list[str]) -> int:
 
 
 def action_test_fast(_: list[str]) -> int:
-    return run_steps(["test-runtime-acceptance"])
+    rc = pwsh_file(SMOKE_PS1, "-Limit", "12")
+    if rc != 0:
+        return rc
+    rc = run_steps(["test-runtime-acceptance"])
+    if rc != 0:
+        return rc
+    return run_steps(["test-execution-replay"])
 
 
 def action_test_smoke(_: list[str]) -> int:
@@ -114,28 +120,28 @@ def action_test_ci(_: list[str]) -> int:
     return run_steps(["test-full"])
 
 
-def action_test_recovery(_: list[str]) -> int:
-    return pwsh_file(RECOVERY_PS1)
+def action_test_recovery(rest: list[str]) -> int:
+    return pwsh_file(RECOVERY_PS1, *rest)
 
 
-def action_test_execution_smoke(_: list[str]) -> int:
-    return pwsh_file(SMOKE_PS1)
+def action_test_execution_smoke(rest: list[str]) -> int:
+    return pwsh_file(SMOKE_PS1, *rest)
 
 
-def action_test_execution_replay(_: list[str]) -> int:
-    return pwsh_file(REPLAY_PS1)
+def action_test_execution_replay(rest: list[str]) -> int:
+    return pwsh_file(REPLAY_PS1, *rest)
 
 
 def action_test_runtime_acceptance(_: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY)])
 
 
-def action_test_fixture_matrix(_: list[str]) -> int:
-    return pwsh_file(MATRIX_PS1)
+def action_test_fixture_matrix(rest: list[str]) -> int:
+    return pwsh_file(MATRIX_PS1, *rest)
 
 
-def action_test_negative_expectations(_: list[str]) -> int:
-    return pwsh_file(NEGATIVE_EXPECTATIONS_PS1)
+def action_test_negative_expectations(rest: list[str]) -> int:
+    return pwsh_file(NEGATIVE_EXPECTATIONS_PS1, *rest)
 
 
 def action_test_full(_: list[str]) -> int:
@@ -170,15 +176,15 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
-    "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance and ABI/accessor proof"),
+    "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
     "test-smoke": ActionSpec("test-smoke", "developer smoke validation entrypoint", "runner-internal", ("test:smoke",), validation_tier="smoke", guarantee_owner="execution smoke plus runtime acceptance"),
     "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene plus full developer validation"),
-    "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",), validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics"),
-    "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior"),
-    "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth"),
+    "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",), validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics", pass_through_args=True),
+    "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
+    "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
     "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py", ("test:objc3c:runtime-acceptance",), validation_tier="fast", guarantee_owner="runtime acceptance and ABI/accessor proof"),
-    "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity"),
-    "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement"),
+    "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
+    "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, recovery, runtime acceptance, and replay"),
     "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus positive matrix and expectation enforcement"),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),

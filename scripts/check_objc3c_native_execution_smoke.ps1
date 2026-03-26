@@ -1,3 +1,11 @@
+param(
+  [string]$FixtureList = "",
+  [string]$FixtureGlob = "",
+  [int]$ShardIndex = -1,
+  [int]$ShardCount = 0,
+  [int]$Limit = 0
+)
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 if ($PSVersionTable.PSVersion.Major -ge 7) {
@@ -203,6 +211,107 @@ function Get-Fixtures {
     throw "execution smoke FAIL: no $FixtureKind fixtures found in $Directory"
   }
   return $fixtures
+}
+
+function Get-RequestedRelativePaths {
+  param(
+    [Parameter(Mandatory = $true)][string]$FixtureListPath
+  )
+
+  $resolvedFixtureList = if ([System.IO.Path]::IsPathRooted($FixtureListPath)) {
+    $FixtureListPath
+  } else {
+    Join-Path $repoRoot $FixtureListPath
+  }
+  if (!(Test-Path -LiteralPath $resolvedFixtureList -PathType Leaf)) {
+    throw "execution smoke FAIL: missing fixture list at $resolvedFixtureList"
+  }
+
+  $requested = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+  foreach ($rawLine in @(Get-Content -LiteralPath $resolvedFixtureList)) {
+    $candidate = "$rawLine".Trim()
+    if ([string]::IsNullOrWhiteSpace($candidate) -or $candidate.StartsWith("#")) {
+      continue
+    }
+    $normalized = $candidate.Replace('\', '/')
+    if ($normalized.StartsWith("./")) {
+      $normalized = $normalized.Substring(2)
+    }
+    $null = $requested.Add($normalized)
+  }
+  return $requested
+}
+
+function Select-ExecutionFixtureEntries {
+  param(
+    [Parameter(Mandatory = $true)][object[]]$Entries,
+    [string]$FixtureListPath,
+    [string]$FixtureGlobPattern,
+    [Parameter(Mandatory = $true)][int]$ShardIndexValue,
+    [Parameter(Mandatory = $true)][int]$ShardCountValue,
+    [Parameter(Mandatory = $true)][int]$LimitValue
+  )
+
+  if ($LimitValue -lt 0) {
+    throw "execution smoke FAIL: limit must be non-negative"
+  }
+  if ($ShardCountValue -lt 0) {
+    throw "execution smoke FAIL: shard-count must be non-negative"
+  }
+  if (($ShardIndexValue -ge 0) -and ($ShardCountValue -le 0)) {
+    throw "execution smoke FAIL: shard-index requires shard-count > 0"
+  }
+  if (($ShardCountValue -gt 0) -and (($ShardIndexValue -lt 0) -or ($ShardIndexValue -ge $ShardCountValue))) {
+    throw "execution smoke FAIL: shard-index must satisfy 0 <= shard-index < shard-count"
+  }
+
+  $selected = @($Entries)
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureListPath)) {
+    $requested = Get-RequestedRelativePaths -FixtureListPath $FixtureListPath
+    $selected = @($selected | Where-Object { $requested.Contains($_.relative_path) })
+    $matched = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in $selected) {
+      $null = $matched.Add([string]$entry.relative_path)
+    }
+    $missing = @()
+    foreach ($requestedPath in $requested) {
+      if (-not $matched.Contains($requestedPath)) {
+        $missing += $requestedPath
+      }
+    }
+    if ($missing.Count -gt 0) {
+      throw "execution smoke FAIL: fixture-list entries did not match execution fixtures ($($missing -join ', '))"
+    }
+  }
+
+  if (-not [string]::IsNullOrWhiteSpace($FixtureGlobPattern)) {
+    $pattern = [System.Management.Automation.WildcardPattern]::new(
+      $FixtureGlobPattern.Replace('\', '/'),
+      [System.Management.Automation.WildcardOptions]::IgnoreCase
+    )
+    $selected = @($selected | Where-Object { $pattern.IsMatch($_.relative_path) })
+  }
+
+  if ($ShardCountValue -gt 0) {
+    $sharded = New-Object System.Collections.Generic.List[object]
+    for ($index = 0; $index -lt $selected.Count; $index++) {
+      if (($index % $ShardCountValue) -eq $ShardIndexValue) {
+        $sharded.Add($selected[$index]) | Out-Null
+      }
+    }
+    $selected = @($sharded)
+  }
+
+  if (($LimitValue -gt 0) -and ($selected.Count -gt $LimitValue)) {
+    $selected = @($selected | Select-Object -First $LimitValue)
+  }
+
+  if ($selected.Count -eq 0) {
+    throw "execution smoke FAIL: no execution fixtures matched the requested selection"
+  }
+
+  return $selected
 }
 
 function Get-PositiveExpectation {
@@ -500,10 +609,37 @@ try {
 
   $positiveFixtures = Get-Fixtures -Directory $positiveFixtureDir -FixtureKind "positive execution"
   $negativeFixtures = Get-Fixtures -Directory $negativeFixtureDir -FixtureKind "negative execution"
+  $executionFixtureEntries = @(
+    $positiveFixtures | ForEach-Object {
+      [pscustomobject]@{
+        kind = "positive"
+        file = $_
+        relative_path = Get-RepoRelativePath -Path $_.FullName -Root $repoRoot
+      }
+    }
+  ) + @(
+    $negativeFixtures | ForEach-Object {
+      [pscustomobject]@{
+        kind = "negative"
+        file = $_
+        relative_path = Get-RepoRelativePath -Path $_.FullName -Root $repoRoot
+      }
+    }
+  )
+  $selectedExecutionEntries = Select-ExecutionFixtureEntries `
+    -Entries $executionFixtureEntries `
+    -FixtureListPath $FixtureList `
+    -FixtureGlobPattern $FixtureGlob `
+    -ShardIndexValue $ShardIndex `
+    -ShardCountValue $ShardCount `
+    -LimitValue $Limit
+  $selectedPositiveFixtures = @($selectedExecutionEntries | Where-Object { $_.kind -eq "positive" } | ForEach-Object { $_.file })
+  $selectedNegativeFixtures = @($selectedExecutionEntries | Where-Object { $_.kind -eq "negative" } | ForEach-Object { $_.file })
+  Write-Output ("selection: positive={0} negative={1}" -f $selectedPositiveFixtures.Count, $selectedNegativeFixtures.Count)
 
   $results = @()
 
-  foreach ($fixture in $positiveFixtures) {
+  foreach ($fixture in $selectedPositiveFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
     $expectation = Get-PositiveExpectation -FixturePath $fixture.FullName
     $caseDirName = Get-CaseDirectoryName `
@@ -586,7 +722,7 @@ try {
     Write-Output "[PASS] positive $fixtureRel (run_exit=$runExit)"
   }
 
-  foreach ($fixture in $negativeFixtures) {
+  foreach ($fixture in $selectedNegativeFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
     $spec = Get-NegativeExpectation -FixturePath $fixture.FullName
     $caseDirName = Get-CaseDirectoryName `
@@ -759,6 +895,15 @@ try {
     clang = $clangCommand
     llc = $llcCommand
     llc_source = $llcSourcePath
+    selection = [ordered]@{
+      fixture_list = $FixtureList
+      fixture_glob = $FixtureGlob
+      shard_index = $ShardIndex
+      shard_count = $ShardCount
+      limit = $Limit
+      selected_positive = $selectedPositiveFixtures.Count
+      selected_negative = $selectedNegativeFixtures.Count
+    }
     total = $total
     passed = $passedCount
     failed = $failedCount
