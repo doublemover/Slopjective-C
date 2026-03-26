@@ -7957,6 +7957,9 @@
     "check:objc3c:m315-b003-lane-b-readiness": "python scripts/run_m315_b003_lane_b_readiness.py",
     "check:objc3c:m315-b004-synthetic-versus-genuine-ir-fixture-compatibility-semantics-core-feature-implementation": "python scripts/check_m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation.py",
     "test:tooling:m315-b004-synthetic-versus-genuine-ir-fixture-compatibility-semantics-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation.py -q",
-    "check:objc3c:m315-b004-lane-b-readiness": "python scripts/run_m315_b004_lane_b_readiness.py"
+    "check:objc3c:m315-b004-lane-b-readiness": "python scripts/run_m315_b004_lane_b_readiness.py",
+    "check:objc3c:m315-b005-comment-constexpr-and-contract-string-decontamination-sweep-edge-case-and-compatibility-completion": "python scripts/check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py",
+    "test:tooling:m315-b005-comment-constexpr-and-contract-string-decontamination-sweep-edge-case-and-compatibility-completion": "python -m pytest tests/tooling/test_check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py -q",
+    "check:objc3c:m315-b005-lane-b-readiness": "python scripts/run_m315_b005_lane_b_readiness.py"
   }
 }

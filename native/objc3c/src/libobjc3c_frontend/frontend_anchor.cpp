@@ -705,7 +705,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         std::string conformance_publication_error;
         if (!TryBuildObjc3ConformanceReportPublicationArtifact(
                 {.contract_id =
-                     "objc3c-driver-conformance-report-publication/m264-d001-v1",
+                     "objc3c.driver.conformance.report.publication.v1",
                  .schema_id = "objc3c-driver-conformance-publication-v1",
                  .selected_profile = "core",
                  .selected_profile_supported = true,
@@ -725,17 +725,17 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                  .fail_closed_diagnostic_model =
                      "core-profile-live-other-known-profiles-fail-closed-before-publication",
                  .lowered_report_contract_id =
-                     "objc3c-versioned-conformance-report-lowering/m264-c001-v1",
+                     "objc3c.versioned.conformance.report.lowering.v1",
                  .runtime_capability_contract_id =
-                     "objc3c-runtime-capability-reporting/m264-c002-v1",
+                     "objc3c.runtime.capability.reporting.v1",
                  .public_conformance_schema_id =
                      "objc3-conformance-report/v1",
                  .advanced_feature_ops_contract_id =
-                     "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1",
+                     "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1",
                  .advanced_feature_reporting_contract_id =
-                     "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1",
+                     "objc3c.part12.feature.aware.conformance.report.emission.v1",
                  .advanced_feature_release_evidence_contract_id =
-                     "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1",
+                     "objc3c.part12.corpus.sharding.release.evidence.packaging.v1",
                  .ci_release_evidence_gate_script_path =
                      "scripts/check_release_evidence.py",
                  .runbook_reference_path =

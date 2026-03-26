@@ -48,46 +48,46 @@ extern "C" {
  * - Callers should gate startup with objc3c_frontend_is_abi_compatible().
  * - Reserved struct fields are for forward ABI growth and should be zero-initialized by callers.
  * - ABI evolution policy for exposed structs/enums is additive; existing fields and values remain stable.
- * - M258-A001 runtime-aware import/module surface anchor: embedding now
+ * - runtime-aware import/module surface anchor: embedding now
  *   receives the canonical runtime-aware import/module handoff through the
  *   emitted `module.runtime-import-surface.json` filesystem artifact derived
  *   from `out_dir` and `emit_prefix`. The public ABI still does not yet expose imported module handles,
  *   including in-memory imported module handles or foreign metadata payload injection,
  *   so direct runtime-owned import wiring remains fail-closed until later
  *   lowering/runtime milestones consume that emitted artifact.
- * - M258-B001 cross-module semantic preservation anchor: imported runtime
+ * - cross-module semantic preservation anchor: imported runtime
  *   metadata semantics remain filesystem-artifact only and do not yet expose a
  *   live imported-module semantic ABI.
- * - M258-B002 imported metadata semantic rules anchor: embedding may direct
+ * - imported metadata semantic rules anchor: embedding may direct
  *   the frontend driver to consume emitted runtime-import-surface filesystem
  *   artifacts, but this public C ABI still does not expose live imported
  *   module semantic handles or in-memory foreign metadata payload injection.
- * - M258-C001 serialized metadata import/lowering anchor: this public C ABI
+ * - serialized metadata import/lowering anchor: this public C ABI
  *   still does not expose serialized imported payload handles, incremental
  *   imported-metadata reuse hooks, or direct imported-payload IR-lowering
  *   entrypoints. Cross-module import consumption remains filesystem-artifact
  *   driven and fail-closed until later runtime/lowering milestones land.
- * - M258-C002 serialized metadata artifact reuse anchor: emitted
+ * - serialized metadata artifact reuse anchor: emitted
  *   runtime-import-surface filesystem artifacts may now carry transitive
  *   serialized runtime metadata for downstream frontend reuse, but this public
  *   C ABI still does not expose direct serialized-payload handles or imported
  *   IR-lowering entrypoints.
- * - M258-D001 cross-module build/runtime orchestration anchor: this public C
+ * - cross-module build/runtime orchestration anchor: this public C
  *   ABI still exposes no cross-module link-plan bundle, imported
  *   registration-manifest ingestion handle, or aggregated runtime-registration
  *   launch surface. The truthful boundary remains the emitted
  *   `module.runtime-import-surface.json` artifact plus the local
  *   `module.runtime-registration-manifest.json` artifact.
- * - M258-D002 cross-module runtime packaging anchor: lane D now realizes that
+ * - cross-module runtime packaging anchor: lane D now realizes that
  *   filesystem-emitted link plans and runtime-registration artifacts can drive
  *   real downstream packaging and multi-image runtime registration, but this
  *   public C ABI still exposes no in-memory cross-module packaging handle or
  *   orchestration object model.
- * - M258-E001 cross-module object-model gate anchor: the truthful lane-E gate
+ * - cross-module object-model gate anchor: the truthful lane-E gate
  *   is still the emitted A002/B002/C002/D002 evidence chain. This public C ABI
  *   exposes no public in-memory cross-module object-model gate handle and
  *   broad runnable matrix work remains deferred to later milestones.
- * - M258-E002 runnable import/module execution-matrix anchor: lane E now
+ * - runnable import/module execution-matrix anchor: lane E now
  *   closes one live cross-module execution matrix above those same emitted
  *   filesystem artifacts, but this public C ABI still exposes no in-memory
  *   cross-module execution-matrix handle or imported module object graph.

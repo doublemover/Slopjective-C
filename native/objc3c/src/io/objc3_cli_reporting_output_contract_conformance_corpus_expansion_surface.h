@@ -12,10 +12,10 @@ inline constexpr std::size_t
     kObjc3CliReportingOutputContractConformanceCorpusRejectCaseCount = 1u;
 inline constexpr const char
     *kObjc3CliReportingOutputContractConformanceCorpusAcceptCaseId =
-        "M243-D010-C001";
+        "objc3c.case.cli.reporting.output.contract.conformance.corpus.accept.v1";
 inline constexpr const char
     *kObjc3CliReportingOutputContractConformanceCorpusRejectCaseId =
-        "M243-D010-R001";
+        "objc3c.case.cli.reporting.output.contract.conformance.corpus.reject.v1";
 
 struct Objc3CliReportingOutputContractConformanceCorpusExpansionSurface {
   bool summary_output_path_contract_consistent = false;

@@ -494,7 +494,7 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 // routed through the public selector lookup/dispatch entrypoints, while the
 // validated typed key-path slice currently exposes retained descriptor handles
 // and sections as the runtime-facing input boundary. Full runtime key-path
-// evaluation helpers remain deferred to M265-D002.
+// evaluation helpers remain deferred to the next runtime step.
 // live-optional-send-and-keypath-runtime-support anchor: the first
 // live typed key-path runtime support stays on this private runtime header.
 // The runtime consumes emitted key-path descriptor roots into an image-backed
@@ -625,7 +625,7 @@ void objc3_runtime_store_weak_current_property_i32(int value);
 // boundary also stays private and snapshot-backed. The current freeze claims
 // packaged-runtime archive continuity, registration-manifest/link-plan
 // topology, and operator-visible evidence only; header/module/bridge
-// generation remains deferred to M274-D002.
+// generation remains deferred to the next runtime step.
 void objc3_runtime_store_thrown_error_i32(int *slot, int value);
 int objc3_runtime_load_thrown_error_i32(const int *slot);
 int objc3_runtime_bridge_status_error_i32(int status_value,

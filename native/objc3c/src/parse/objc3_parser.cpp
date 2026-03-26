@@ -18,7 +18,7 @@
 
 namespace {
 
-// M275-A001/A002 source note: Part 12 does not admit new syntax here. Both the
+// source note: Part 12 does not admit new syntax here. Both the
 // diagnostics/fix-it/migrator inventory and the migration/canonicalization
 // completion packet aggregate existing Part 6 through Part 11 parser-owned
 // surfaces and frontend summary packets.
@@ -3953,7 +3953,7 @@ static bool IsTaskRuntimeHookSymbol(const std::string &symbol) {
   }
   // source-closure anchor: task/executor source ownership remains a
   // deterministic parser-side symbol-profile contract instead of dedicated
-  // contextual keywords. Later M269 lanes may widen runnable semantics, but
+  // contextual keywords. Later runtime lanes may widen runnable semantics, but
   // they must continue to preserve this identifier-driven source boundary.
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("task_runtime") != std::string::npos ||
@@ -5298,7 +5298,7 @@ static std::string BuildObjcCategorySemanticLinkSymbol(const std::string &owner_
   // raw syntax.
   // semantic-closure gate anchor: lane-E freezes this parser-owned
   // owner identity surface together with B004 legality, C003 debug
-  // projection, and D002 packaging before M253-A001 section emission begins.
+  // projection, and D002 packaging before the next runtime step section emission begins.
   // corpus-sync anchor: representative class/category/property/ivar
   // runner probes continue to derive owner identity from this same parser
   // surface on the real integrated path.
@@ -5989,7 +5989,7 @@ class Objc3Parser {
   }
 
   void ParseModule(Objc3ParsedProgram &program) {
-    // M263-A001/A002 registration-descriptor/image-root source-surface and
+    // registration-descriptor/image-root source-surface and
     // frontend-closure anchor: module identity remains parser-owned here,
     // while the paired registration-descriptor and image-root prelude pragmas
     // are lexer-owned inputs that later frontend-manifest code resolves into
@@ -9095,7 +9095,7 @@ class Objc3Parser {
     // executable source-closure freeze anchor: parser-owned
     // interface records remain the canonical source surface for inheritance,
     // metaclass derivation, adopted protocol lists, and category attachments
-    // until later M256 realization issues bind the same identities to runnable
+    // until later realization work binds the same identities to runnable
     // class/protocol/category behavior.
     // class/metaclass completion anchor: the same parser-owned
     // superclass spelling continues to feed declaration-level class and
@@ -12933,7 +12933,7 @@ class Objc3Parser {
     // parser-owned capture and escape inventory as the source side of the
     // runnable block proof chain and must fail closed if the source truth
     // drifts behind the integrated gate.
-    // runnable-block execution-matrix anchor: lane-E closes M261 on
+    // runnable-block execution-matrix anchor: lane-E closes the block-runtime tranche on
     // the same parser-owned capture and escape inventory together with live executable block programs,
     // without widening the supported source surface.
     block->block_copy_helper_intent_required =
@@ -13316,7 +13316,7 @@ class Objc3Parser {
     // selector text through as lowered cstring material only. Selector-handle
     // lookup and canonical runtime-dispatch cutover stay in lane-C lowering,
     // with the compatibility bridge remaining the default call target until
-    // M255-C002.
+    // 
     // runtime call ABI generation anchor: parser still does not pick
     // the runtime entrypoint itself. Lowering now cuts normalized instance and
     // runtime ARC helper API surface anchor: parser-owned ARC and
@@ -13332,7 +13332,7 @@ class Objc3Parser {
     // source packets.
     // class sends over to objc3_runtime_dispatch_i32 while deferred
     // super/dynamic/direct handling stays on the compatibility bridge until
-    // M255-C003.
+    // 
     // live-dispatch cutover anchor: lowering now moves normalized
     // dynamic sends onto objc3_runtime_dispatch_i32 too, removing the last
     // live-path compatibility-bridge dependency while keeping reserved direct

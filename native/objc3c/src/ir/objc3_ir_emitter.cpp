@@ -492,7 +492,7 @@ class Objc3IREmitter {
     if (!frontend_metadata_.executable_property_ivar_source_model_replay_key.empty()) {
       // property-ivar source-model completion anchor:
       // publish the completed property attribute/accessor ownership/layout
-      // handoff without reopening the legacy descriptor shapes from M253-C004.
+      // handoff without reopening the legacy descriptor shapes from the earlier runtime step.
       // property-ivar executable semantics anchor:
       // runtime-meaningful synthesis/accessor/storage semantics stay frozen on
       // this replay marker until accessor bodies and storage realization land.
@@ -743,7 +743,7 @@ class Objc3IREmitter {
     // control-flow safety lowering freeze anchor: the frontend now
     // publishes one lowering-owned packet for admitted Part 5 control-flow
     // sites while native IR lowering still fails closed on guard/match/defer
-    // execution until later M266 lowering/runtime issues materialize it.
+    // execution until later lowering/runtime work materializes it.
     out << "; part5_control_flow_safety_lowering = "
         << Objc3Part5ControlFlowSafetyLoweringSummary() << "\n";
     out << "; part3_optional_keypath_runtime_helper_contract = "
@@ -820,7 +820,7 @@ class Objc3IREmitter {
       // runtime-aware import/module surface anchor: the frontend
       // still preserves only the local translation-unit module-import graph
       // profile in emitted IR.
-      // M258-A001/A002 runtime-aware import/module surface anchor: the
+      // runtime-aware import/module surface anchor: the
       // frontend now emits a canonical runtime-import surface artifact for
       // later cross-translation-unit consumers.
       // cross-module semantic preservation anchor: imported runtime metadata semantics are not lowered into IR; the lane-B surface freezes
@@ -1673,7 +1673,7 @@ class Objc3IREmitter {
     // ownership-lowering baseline freeze anchor: the current IR
     // surface keeps ownership qualifier, retain/release, autoreleasepool, and
     // weak/unowned lowering on deterministic summary lanes only.
-    // No live runtime ownership hooks are emitted here before M260-C002.
+    // No live runtime ownership hooks are emitted here before the next runtime step.
     out << "; ownership_lowering_baseline = "
         << Objc3OwnershipLoweringBaselineSummary() << "\n";
     if (synthesized_property_accessor_count_ > 0u) {
@@ -1725,7 +1725,7 @@ class Objc3IREmitter {
     // correct baseline without rediscovering it from prose alone.
     // ownership-smoke closeout anchor: the runnable smoke matrix
     // consumes this exact emitted gate boundary as the integrated ownership
-    // proof surface for M260 closeout.
+    // proof surface for closeout.
     out << "; ownership_runtime_gate = "
         << Objc3OwnershipRuntimeGateSummary() << "\n";
     // executable-block-source-closure anchor: emit the truthful
@@ -1780,7 +1780,7 @@ class Objc3IREmitter {
     // byref-cell/copy-helper/dispose-helper anchor: native lowering
     // now widens the runnable block slice to non-escaping byref and owned
     // capture cases through stack helper emission and helper call sites, while
-    // escaping heap promotion remains deferred to later M261 issues.
+    // escaping heap promotion remains deferred to later work.
     out << "; executable_block_byref_helper_lowering = "
         << Objc3ExecutableBlockByrefHelperLoweringSummary() << "\n";
     // escaping-block runtime-hook anchor: lane-C now publishes the
@@ -1815,7 +1815,7 @@ class Objc3IREmitter {
     out << "; runnable_block_runtime_gate = "
         << Objc3RunnableBlockRuntimeGateSummary() << "\n";
     // runnable-block execution-matrix anchor: lane-E now closes the
-    // current M261 slice by requiring integrated executable block probes above
+    // current current slice by requiring integrated executable block probes above
     // the retained gate, without widening the public block ABI or helper
     // surface.
     out << "; runnable_block_execution_matrix = "
@@ -3699,7 +3699,7 @@ class Objc3IREmitter {
   void EmitFrontendMetadata(std::ostringstream &out) const {
     // executable source-closure freeze anchor: IR currently
     // publishes interface/protocol/category/linking metadata as the canonical
-    // source-closure proof surface only. Later M256 realization issues must
+    // source-closure proof surface only. Later realization work must
     // preserve these identities while adding runnable class/category/protocol
     // behavior.
     // executable class/metaclass source-closure anchor: the IR
@@ -3741,7 +3741,7 @@ class Objc3IREmitter {
     // for the frozen semantic boundary covering realization legality,
     // inheritance legality, override compatibility, protocol conformance, and
     // deterministic category merge behavior; executable enforcement begins in
-    // later M256 lane-B issues.
+    // later lane-B work.
     // protocol-conformance implementation anchor: IR remains a
     // proof-only consumer of the sema-owned protocol conformance result while
     // publishing the same protocol/category source identities after sema
@@ -7990,7 +7990,7 @@ class Objc3IREmitter {
     // supported emitted inventory is image-info plus class/protocol/category/
     // property/ivar descriptor sections retained via llvm.used. Separate
     // method/selector/string-pool section families remain explicit non-goals
-    // until later M253 issues extend the inventory model.
+    // until later work extend the inventory model.
     return frontend_metadata_.runtime_metadata_section_ready_for_scaffold &&
            frontend_metadata_.runtime_export_ready_for_runtime_export &&
            frontend_metadata_.runtime_metadata_section_scaffold_emitted &&
@@ -8109,7 +8109,7 @@ class Objc3IREmitter {
     // source-to-section matrix anchor: emitted runtime metadata still
     // materializes only image-info plus class/protocol/category/property/ivar
     // descriptor sections. Interface/implementation/metaclass/method nodes
-    // remain explicit no-standalone-emission matrix rows until later M253
+    // remain explicit no-standalone-emission matrix rows until later work
     // payload work lands.
     // layout/visibility policy anchor: image-info emits first, then
     // class/protocol/category/property/ivar families. Within each family,
@@ -8170,7 +8170,7 @@ class Objc3IREmitter {
     }
     if (ShouldEmitRuntimeBootstrapLowering()) {
       out << "; runtime_bootstrap_ctor_init_emission = "
-          << "contract=objc3c-runtime-constructor-init-stub-emission/m254-c002-v1"
+          << "contract=objc3c.runtime.constructor.init.stub.emission.v1"
           << ";constructor_root_symbol="
           << frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol
           << ";constructor_init_stub_symbol=" << RuntimeBootstrapInitStubSymbol()
@@ -8185,7 +8185,7 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
           << ";happy_path=register-before-user-main\n";
       out << "; runtime_registration_table_image_local_initialization = "
-          << "contract=objc3c-runtime-registration-table-image-local-initialization/m254-c003-v1"
+          << "contract=objc3c.runtime.registration.table.image.local.initialization.v1"
           << ";registration_table_symbol="
           << RuntimeBootstrapRegistrationTableSymbol()
           << ";registration_table_layout_model="
@@ -8536,7 +8536,7 @@ class Objc3IREmitter {
       // key-path boundary; full runtime evaluation helpers remain deferred to
       // the next lane-D issue.
       out << "; typed_keypath_artifact_emission = "
-          << "contract=objc3c-part3-typed-keypath-artifact-emission/m265-c003-v1"
+          << "contract=objc3c.part3.typed.keypath.artifact.emission.v1"
           << ";keypath_count=" << typed_keypath_artifacts_.size()
           << ";section="
           << Objc3RuntimeMetadataHostSectionForLogicalName(
@@ -11079,7 +11079,7 @@ class Objc3IREmitter {
                                      expr);
     if (!supported) {
       return EmitUnsupportedI32Value(
-          "escaping block value still requires normalized block runtime helper metadata that lands in later M261 runtime issues");
+          "escaping block value still requires normalized block runtime helper metadata that lands in later runtime work");
     }
     // lowering-implementation anchor: actual promotion of move-based
     // cleanup/resource captures remains fail-closed until runtime ownership
@@ -11262,7 +11262,7 @@ class Objc3IREmitter {
     // unsupported boundary is promotion, not local helper materialization.
     if (BlockLiteralRequiresFutureRuntimeLanes(expr)) {
       return EmitUnsupportedI32Value(
-          "block literal requires escaping heap-promotion or runtime-managed copy/dispose lowering that lands in later M261 issues");
+          "block literal requires escaping heap-promotion or runtime-managed copy/dispose lowering that lands in later runtime work");
     }
     if (expr.block_parameter_count > 4u) {
       return EmitUnsupportedI32Value(
@@ -12725,10 +12725,10 @@ class Objc3IREmitter {
       // the compatibility bridge symbol as the default call target while the
       // frozen lane-C ABI records the canonical runtime entrypoint,
       // selector-lookup surface, i32 receiver/result ABI, and fixed four-slot
-      // argument vector that M255-C002 will cut over to explicitly.
+      // argument vector that the next runtime step will cut over to explicitly.
       // runtime call ABI generation anchor: normalized instance/class
       // sends now call objc3_runtime_dispatch_i32 directly, while deferred
-      // super/dynamic sites preserve objc3_msgsend_i32 until M255-C003.
+      // super/dynamic sites preserve objc3_msgsend_i32 until the next runtime step.
       // live-dispatch cutover anchor: supported dynamic sends now
       // join instance/class/super on objc3_runtime_dispatch_i32, nil semantics
       // for canonical surfaces stay runtime-owned, the compatibility symbol is
@@ -13111,7 +13111,7 @@ class Objc3IREmitter {
         // currently reach native IR through the operand's direct-call lowering
         // path. This emits runnable IR/object code for the non-suspending happy
         // slice without materializing continuation allocation or a state
-        // machine; those surfaces remain later M268 work.
+        // machine; those surfaces remain later work.
         return EmitDirectFunctionCall(expr, signature, ctx, "");
       }
       case Expr::Kind::MessageSend: {

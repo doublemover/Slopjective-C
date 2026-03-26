@@ -86,7 +86,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // add dedicated lexer keywords yet; do not add dedicated lexer keywords yet.
   // The admitted source surface remains the existing async/await tokens plus
   // parser-owned identifier profiles and canonical `objc_executor(...)`
-  // attribute payloads, including the later M269-A002 task-group/task-creation
+  // attribute payloads, including the later task-group/task-creation
   // callable source completion.
   // source-closure note: actor/isolation/sendable work also remains
   // identifier/attribute-profile driven here. Do not add dedicated
@@ -114,7 +114,7 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
   // also parser-owned callable attributes. Keep `objc_swift_name`,
   // `objc_swift_private`, `objc_cxx_name`, and `objc_header_name` as
   // identifier tokens here.
-  // M275-A001/A002 source note: Part 12 stays token-stable. The advanced
+  // source note: Part 12 stays token-stable. The advanced
   // diagnostics/fix-it/migrator inventory and the migration/canonicalization
   // completion packet are both derived from the existing Part 6 through Part
   // 11 parser-owned surfaces plus the migration hint counters emitted here for

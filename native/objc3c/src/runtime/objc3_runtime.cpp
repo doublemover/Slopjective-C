@@ -18,22 +18,22 @@ constexpr std::int64_t kDispatchModulus = 2147483629LL;
 constexpr std::uint64_t kReceiverIdentityBase = 1024;
 constexpr std::uint64_t kReceiverIdentityStride = 17;
 [[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
-    "objc3c-driver-conformance-report-publication/m264-d001-v1";
+    "objc3c.driver.conformance.report.publication.v1";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimOperationsContractId =
-    "objc3c-toolchain-conformance-claim-operations/m264-d002-v1";
+    "objc3c.toolchain.conformance.claim.operations.v1";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimSelectionModel =
     "compatibility-mode-plus-migration-assist-drive-current-publication-surface";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimFailureModel =
     "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureOpsContractId =
-        "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1";
+        "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReportingContractId =
-        "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+        "objc3c.part12.feature.aware.conformance.report.emission.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReleaseEvidenceContractId =
-        "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1";
+        "objc3c.part12.corpus.sharding.release.evidence.packaging.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureEvidenceGateScriptPath =
         "scripts/check_release_evidence.py";
@@ -45,10 +45,10 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
         "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReleaseEvidenceOperationContractId =
-        "objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1";
+        "objc3c.part12.release.evidence.toolchain.operations.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureDashboardStatusPublicationContractId =
-        "objc3c-part12-dashboard-status-publication/m275-d002-v1";
+        "objc3c.part12.dashboard.status.publication.v1";
 
 struct SelectorSlot {
   std::string spelling_storage;
@@ -2315,7 +2315,7 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
     RuntimeState &state, std::uint64_t base_identity,
     std::uint64_t normalized_receiver_identity, DispatchFamily family,
     std::uint64_t selector_stable_id, const char *selector_spelling) {
-  // M255-D003: live lookup walks the emitted class/metaclass graph that came
+  // live lookup walks the emitted class/metaclass graph that came
   // through startup registration, resolves one deterministic class family for
   // the receiver identity, and then records the outcome in the method cache.
   SlowPathResolution resolution;
@@ -2887,7 +2887,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
   // selector-table anchor: metadata-backed selector pools now
   // materialize the canonical runtime selector table, while direct lookup of
-  // non-emitted selectors remains a dynamic fallback. M255-D003 layers
+  // non-emitted selectors remains a dynamic fallback. The later runtime step layers
   // method-cache and class/metaclass slow-path dispatch on top of the same
   // preserved public lookup/dispatch surface.
   if (selector == nullptr) {
@@ -3081,7 +3081,7 @@ std::int64_t ComputeSelectorScore(const char *selector) {
 int ComputeDispatchResult(int receiver, const char *selector, int a0, int a1,
                           int a2, int a3) {
   // lookup-dispatch-runtime anchor: live dispatch still preserves the
-  // deterministic formula as the fail-closed fallback. M255-D003 now routes
+  // deterministic formula as the fail-closed fallback. The next runtime step now routes
   // supported class/metaclass resolutions through emitted method bodies first
   // and returns to this arithmetic path only for unresolved or unsupported
   // runtime lookups without changing the canonical dispatch entrypoint.
@@ -4729,7 +4729,7 @@ int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
   snapshot->operator_visible_evidence_model =
       "operator-visible-interop-evidence-is-the-packaged-runtime-archive-registration-manifest-cross-module-link-plan-and-ir-summary";
   snapshot->fail_closed_model =
-      "header-module-and-bridge-generation-remain-unclaimed-until-m274-d002";
+      "header-module-and-bridge-generation-remain-unclaimed-until-next-runtime-phase";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

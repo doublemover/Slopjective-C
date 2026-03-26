@@ -38,7 +38,7 @@ struct Expr {
   // freezes the truthful parser/AST boundary for block literals, captures,
   // and replay-stable profiling before runnable block realization begins.
   static inline constexpr const char *kObjc3ExecutableBlockSourceClosureContractId =
-      "objc3c-executable-block-source-closure/m261-a001-v1";
+      "objc3c.executable.block.source.closure.v1";
   static inline constexpr const char *kObjc3ExecutableBlockSourceSurfaceModel =
       "parser-owned-block-literal-source-closure-freezes-capture-abi-storage-copy-dispose-and-baseline-profiles-before-runnable-block-realization";
   static inline constexpr const char *kObjc3ExecutableBlockSourceEvidenceModel =
@@ -48,7 +48,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockSourceNonGoalModel =
       "no-block-pointer-declarator-spellings-no-explicit-byref-storage-spellings-no-block-runtime-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockSourceModelCompletionContractId =
-      "objc3c-executable-block-source-model-completion/m261-a002-v1";
+      "objc3c.executable.block.source.model.completion.v1";
   static inline constexpr const char *kObjc3ExecutableBlockSignatureModel =
       "block-source-model-publishes-deterministic-parameter-signature-entries-before-runnable-block-realization";
   static inline constexpr const char *kObjc3ExecutableBlockCaptureInventoryModel =
@@ -60,13 +60,13 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockSourceModelFailureModel =
       "fail-closed-on-block-signature-capture-or-invoke-source-model-drift-before-runnable-block-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockSourceModelLaneContract =
-      "m261-block-source-model-v1";
+      "objc3c.block.source.model.v1";
   // block-source-storage-annotation constants: lane-A now extends
   // the truthful source-only block model with parser-owned byref/helper/
   // escape-shape annotations while runnable block lowering remains out of
   // scope.
   static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationContractId =
-      "objc3c-executable-block-source-storage-annotation/m261-a003-v1";
+      "objc3c.executable.block.source.storage.annotation.v1";
   static inline constexpr const char *kObjc3ExecutableBlockByrefStorageModel =
       "block-source-model-publishes-deterministic-byref-capture-candidates-before-runnable-block-byref-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockHelperIntentModel =
@@ -74,13 +74,13 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockEscapeShapeModel =
       "block-source-model-publishes-heap-promotion-relevant-escape-shape-categories-before-runnable-block-escape-analysis";
   static inline constexpr const char *kObjc3ExecutableBlockSourceStorageAnnotationLaneContract =
-      "m261-block-source-storage-annotations-v1";
+      "objc3c.block.source.storage.annotations.v1";
   // block-runtime-semantic-rules freeze constants: lane-B now
   // freezes the truthful semantic boundary that current source-only block
   // admission exposes while native emit paths still fail closed on runnable
   // block semantics.
   static inline constexpr const char *kObjc3ExecutableBlockRuntimeSemanticRulesContractId =
-      "objc3c-executable-block-runtime-semantic-rules/m261-b001-v1";
+      "objc3c.executable.block.runtime.semantic.rules.v1";
   static inline constexpr const char *kObjc3ExecutableBlockRuntimeCaptureLegalityModel =
       "block-runtime-semantics-freeze-capture-legality-on-deterministic-source-owned-capture-inventory";
   static inline constexpr const char *kObjc3ExecutableBlockRuntimeStorageClassModel =
@@ -98,7 +98,7 @@ struct Expr {
   // resolution, truthful escape classification, and local block invocation
   // typing are enforced before runnable block-object lowering lands.
   static inline constexpr const char *kObjc3ExecutableBlockCaptureLegalityImplementationContractId =
-      "objc3c-executable-block-capture-legality-escape-and-invocation/m261-b002-v1";
+      "objc3c.executable.block.capture.legality.escape.and.invocation.v1";
   static inline constexpr const char *kObjc3ExecutableBlockCaptureLegalityImplementationModel =
       "source-only-sema-enforces-live-capture-resolution-and-mutability-classification-before-runnable-block-object-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeClassificationImplementationModel =
@@ -110,7 +110,7 @@ struct Expr {
   // helper eligibility and fail-closed mutation rules for non-owning object
   // captures.
   static inline constexpr const char *kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId =
-      "objc3c-executable-block-byref-copy-dispose-and-object-capture-ownership/m261-b003-v1";
+      "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1";
   static inline constexpr const char *kObjc3ExecutableBlockByrefMutationOwnershipModel =
       "source-only-sema-rejects-weak-or-unowned-byref-mutation-before-runnable-block-ownership-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockCopyDisposeEligibilityModel =
@@ -122,11 +122,11 @@ struct Expr {
   // without claiming that emitted block records, invoke thunks, byref cells,
   // or helper bodies already exist on native paths.
   static inline constexpr const char *kObjc3ExecutableBlockLoweringAbiArtifactBoundaryContractId =
-      "objc3c-executable-block-lowering-abi-artifact-boundary/m261-c001-v1";
+      "objc3c.executable.block.lowering.abi.artifact.boundary.v1";
   static inline constexpr const char *kObjc3ExecutableBlockLoweringAbiModel =
       "block-object-descriptor-invoke-byref-and-helper-abi-boundary-freezes-on-source-modeled-lowering-surfaces-before-runnable-emission";
   static inline constexpr const char *kObjc3ExecutableBlockHelperSymbolPolicyModel =
-      "copy-dispose-and-byref-helper-symbols-remain-source-modeled-and-non-emitted-until-m261-c002";
+      "copy-dispose-and-byref-helper-symbols-remain-source-modeled-and-non-emitted-until-next-runtime-phase";
   static inline constexpr const char *kObjc3ExecutableBlockArtifactInventoryModel =
       "source-only-manifest-lowering-surfaces-plus-fail-closed-native-ir-boundary-before-runnable-block-object-artifacts";
   static inline constexpr const char *kObjc3ExecutableBlockLoweringFailClosedModel =
@@ -139,24 +139,24 @@ struct Expr {
   // invocation, while byref/helper/ownership-sensitive cases stay deferred to
   // C003.
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId =
-      "objc3c-executable-block-object-and-invoke-thunk-lowering/m261-c002-v1";
+      "objc3c.executable.block.object.and.invoke.thunk.lowering.v1";
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkActiveModel =
       "native-lowering-emits-stack-block-objects-and-direct-local-invoke-thunks-for-readonly-scalar-captures";
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkDeferredModel =
-      "byref-cells-copy-dispose-helpers-owned-object-captures-and-heap-promotion-stay-fail-closed-until-m261-c003";
+      "byref-cells-copy-dispose-helpers-owned-object-captures-and-heap-promotion-stay-fail-closed-until-next-runtime-phase";
   static inline constexpr const char *kObjc3ExecutableBlockObjectInvokeThunkExecutionEvidenceModel =
       "native-compile-link-run-proves-local-block-invocation-through-emitted-block-storage-and-invoke-thunk";
   // byref-cell/copy-helper/dispose-helper constants: lane-C now
   // widens runnable native block lowering to non-escaping byref and owned
   // capture cases by emitting stack byref cells plus copy/dispose helper
   // bodies, while heap-promotion and runtime-managed block copying remain
-  // deferred to later M261 issues.
+  // deferred to later work.
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringContractId =
-      "objc3c-executable-block-byref-helper-lowering/m261-c003-v1";
+      "objc3c.executable.block.byref.helper.lowering.v1";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringActiveModel =
       "native-lowering-emits-stack-byref-cells-and-copy-dispose-helper-bodies-for-nonescaping-block-captures";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringDeferredModel =
-      "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-until-m261-c004-and-m261-d002";
+      "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-to-later-runtime-work";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-byref-mutation-and-owned-capture-helper-lowering-through-emitted-block-helper-bodies";
   // escaping-block runtime-hook constants: lane-C widens runnable
@@ -164,11 +164,11 @@ struct Expr {
   // promotion and invoke hooks against the native runtime while ownership-
   // sensitive escaping captures stay deferred to lane-D runtime work.
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId =
-      "objc3c-executable-block-escape-runtime-hook-lowering/m261-c004-v1";
+      "objc3c.executable.block.escape.runtime.hook.lowering.v1";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringActiveModel =
       "native-lowering-emits-runtime-block-promotion-and-invoke-hooks-for-readonly-scalar-escaping-block-values";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringDeferredModel =
-      "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-until-m261-d002-and-m261-d003";
+      "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-to-later-runtime-work";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel =
       "native-compile-link-run-proves-returned-and-argument-passed-readonly-scalar-block-values-through-runtime-promotion-hooks";
   // runnable-block-runtime gate constants: lane-E now freezes the
@@ -176,7 +176,7 @@ struct Expr {
   // sema, lowering, and runtime evidence chain before broader block closeout
   // samples expand it.
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
-      "objc3c-runnable-block-runtime-gate/m261-e001-v1";
+      "objc3c.runnable.block.runtime.gate.v1";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateEvidenceModel =
       "a003-b003-c004-d003-summary-chain";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateActiveModel =
@@ -186,10 +186,10 @@ struct Expr {
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
       "fail-closed-on-runnable-block-runtime-evidence-drift";
   // runnable-block execution-matrix constants: lane-E now closes
-  // the current M261 slice with one truthful executable matrix over the
+  // the current current slice with one truthful executable matrix over the
   // existing native runtime path rather than widening the supported surface.
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
-      "objc3c-runnable-block-execution-matrix/m261-e002-v1";
+      "objc3c.runnable.block.execution.matrix.v1";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixEvidenceModel =
       "a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixActiveModel =
@@ -204,7 +204,7 @@ struct Expr {
   // still rejects `-fobjc-arc` and executable ownership-qualified
   // functions/methods remain fail-closed until ARC automation lands.
   static inline constexpr const char *kObjc3ArcSourceModeBoundaryContractId =
-      "objc3c-arc-source-mode-boundary-freeze/m262-a001-v1";
+      "objc3c.arc.source.mode.boundary.freeze.v1";
   static inline constexpr const char *kObjc3ArcSourceModeBoundarySourceModel =
       "ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode";
   static inline constexpr const char *kObjc3ArcSourceModeBoundaryModeModel =
@@ -214,7 +214,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
       "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
   static inline constexpr const char *kObjc3ArcModeHandlingContractId =
-      "objc3c-arc-mode-handling/m262-a002-v1";
+      "objc3c.arc.mode.handling.v1";
   static inline constexpr const char *kObjc3ArcModeHandlingSourceModel =
       "ownership-qualified-method-property-return-and-block-capture-surfaces-are-runnable-under-explicit-arc-mode";
   static inline constexpr const char *kObjc3ArcModeHandlingModeModel =
@@ -224,7 +224,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
       "no-generalized-arc-cleanup-synthesis-no-implicit-nonarc-promotion-no-full-arc-automation-yet";
   static inline constexpr const char *kObjc3ArcSemanticRulesContractId =
-      "objc3c-arc-semantic-rules/m262-b001-v1";
+      "objc3c.arc.semantic.rules.v1";
   static inline constexpr const char *kObjc3ArcSemanticRulesSourceModel =
       "explicit-arc-mode-admits-only-explicit-ownership-surfaces-while-forbidden-property-forms-and-broad-inference-remain-fail-closed";
   static inline constexpr const char *kObjc3ArcSemanticRulesSemanticModel =
@@ -234,7 +234,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ArcSemanticRulesNonGoalModel =
       "no-implicit-retain-release-inference-no-lifetime-extension-no-method-family-based-arc-semantics-yet";
   static inline constexpr const char *kObjc3ArcInferenceLifetimeContractId =
-      "objc3c-arc-inference-lifetime/m262-b002-v1";
+      "objc3c.arc.inference.lifetime.v1";
   static inline constexpr const char *kObjc3ArcInferenceLifetimeSourceModel =
       "explicit-arc-mode-now-infers-strong-owned-executable-object-signatures-for-the-supported-runnable-slice";
   static inline constexpr const char *kObjc3ArcInferenceLifetimeSemanticModel =
@@ -244,7 +244,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ArcInferenceLifetimeNonGoalModel =
       "no-full-arc-cleanup-synthesis-no-weak-autorelease-return-property-synthesis-or-block-interaction-arc-semantics-yet";
   static inline constexpr const char *kObjc3ArcInteractionSemanticsContractId =
-      "objc3c-arc-interaction-semantics/m262-b003-v1";
+      "objc3c.arc.interaction.semantics.v1";
   static inline constexpr const char *kObjc3ArcInteractionSemanticsSourceModel =
       "explicit-arc-mode-now-covers-weak-autorelease-return-property-synthesis-and-block-ownership-interactions-for-the-supported-runnable-slice";
   static inline constexpr const char *kObjc3ArcInteractionSemanticsSemanticModel =
@@ -687,7 +687,7 @@ struct FuncParam {
 };
 
 inline constexpr const char *kObjc3RuntimeMetadataSourceOwnershipContractId =
-    "objc3c-runtime-metadata-source-ownership-freeze/m251-a001-v1";
+    "objc3c.runtime.metadata.source.ownership.freeze.v1";
 inline constexpr const char *kObjc3RuntimeMetadataCanonicalSourceSchema =
     "objc3-runtime-metadata-source-boundary-v1";
 inline constexpr const char *kObjc3RuntimeMetadataClassAstAnchor =
@@ -699,11 +699,11 @@ inline constexpr const char *kObjc3RuntimeMetadataCategoryAstAnchor =
 inline constexpr const char *kObjc3RuntimeMetadataPropertyAstAnchor =
     "Objc3PropertyDecl";
 inline constexpr const char *kObjc3ExecutablePropertyIvarSourceClosureContractId =
-    "objc3c-executable-property-ivar-source-closure/m257-a001-v1";
+    "objc3c.executable.property.ivar.source.closure.v1";
 inline constexpr const char *kObjc3ExecutablePropertyIvarSourceSurfaceModel =
     "property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyIvarSourceModelCompletionContractId =
-    "objc3c-executable-property-ivar-source-model-completion/m257-a002-v1";
+    "objc3c.executable.property.ivar.source.model.completion.v1";
 inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
@@ -721,7 +721,7 @@ inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
 // layout-shape inputs that lane-C may use when it materializes emitted offset
 // globals or per-owner layout tables.
 inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
-    "objc3c-executable-property-ivar-semantics/m257-b001-v1";
+    "objc3c.executable.property.ivar.semantics.v1";
 inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =
     "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands";
 inline constexpr const char *kObjc3ExecutablePropertyDefaultIvarBindingResolutionModel =
@@ -743,21 +743,21 @@ inline constexpr const char *kObjc3RuntimeMetadataIvarAstAnchor =
 inline constexpr const char *kObjc3RuntimeMetadataIvarSourceModel =
     "property-synthesis-ivar-binding-symbols";
 inline constexpr const char *kObjc3RuntimeMetadataSectionAbiContractId =
-    "objc3c-runtime-metadata-section-abi-symbol-policy-freeze/m251-c001-v1";
+    "objc3c.runtime.metadata.section.abi.symbol.policy.freeze.v1";
 inline constexpr const char *kObjc3RuntimeMetadataSectionScaffoldContractId =
-    "objc3c-runtime-metadata-section-scaffold/m251-c002-v1";
+    "objc3c.runtime.metadata.section.scaffold.v1";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
-    "objc3c-runtime-metadata-object-inspection-harness/m251-c003-v1";
+    "objc3c.runtime.metadata.object.inspection.harness.v1";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionContractId =
-    "objc3c-executable-metadata-debug-projection/m252-c003-v1";
+    "objc3c.executable.metadata.debug.projection.v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestPackagingContractId =
-    "objc3c-executable-metadata-runtime-ingest-packaging-boundary/m252-d001-v1";
+    "objc3c.executable.metadata.runtime.ingest.packaging.boundary.v1";
 inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryBoundaryContractId =
-    "objc3c-executable-metadata-runtime-ingest-binary-boundary/m252-d002-v1";
+    "objc3c.executable.metadata.runtime.ingest.binary.boundary.v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryContractId =
-    "objc3c-runtime-support-library-surface-build-contract/m251-d001-v1";
+    "objc3c.runtime.support.library.surface.build.contract.v1";
 inline constexpr const char *kObjc3RuntimeSupportLibraryCoreFeatureContractId =
-    "objc3c-runtime-support-library-core-feature/m251-d002-v1";
+    "objc3c.runtime.support.library.core.feature.v1";
 // emitted metadata inventory freeze anchor: these constants define
 // the canonical logical sections, symbol families, linkage, visibility,
 // retention root, and inspection commands for the currently supported runtime
@@ -813,7 +813,7 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSectionCommand
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionSymbolCommand =
     "llvm-objdump --syms module.obj";
 inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixContractId =
-    "objc3c-runtime-metadata-source-to-section-matrix/m253-a002-v1";
+    "objc3c.runtime.metadata.source.to.section.matrix.v1";
 inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_metadata_source_to_section_matrix";
 inline constexpr const char *kObjc3RuntimeMetadataSourceToSectionMatrixOrderingModel =
@@ -920,7 +920,7 @@ inline constexpr const char *kObjc3ExecutableMetadataRuntimeIngestBinaryDebugPro
 inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeVersion = 1u;
 inline constexpr std::uint32_t kObjc3ExecutableMetadataRuntimeIngestBinaryEnvelopeChunkCount = 3u;
 inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationContractId =
-    "objc3c-translation-unit-registration-surface-freeze/m254-a001-v1";
+    "objc3c.translation.unit.registration.surface.freeze.v1";
 inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_translation_unit_registration_contract";
 inline constexpr const char *kObjc3RuntimeTranslationUnitRegistrationPayloadModel =
@@ -945,7 +945,7 @@ inline constexpr const char
         "reserved-not-emitted-yet";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationConstructorPriorityPolicy =
-        "deferred-until-m254-a002";
+        "deferred-until-next-runtime-phase";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationEntryPointSymbol =
         "objc3_runtime_register_image";
@@ -954,7 +954,7 @@ inline constexpr const char
         "input-path-plus-parse-and-lowering-replay";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestContractId =
-        "objc3c-translation-unit-registration-manifest/m254-a002-v1";
+        "objc3c.translation.unit.registration.manifest.v1";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -969,7 +969,7 @@ inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestArtifactRelativePath =
         "module.runtime-registration-manifest.json";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanContractId =
-    "objc3c-cross-module-runtime-packaging-link-plan/m258-d002-v1";
+    "objc3c.cross.module.runtime.packaging.link.plan.v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanPayloadModel =
     "cross-module-runtime-link-plan-json-v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix =
@@ -1026,10 +1026,10 @@ inline constexpr const char
         "registration-manifest-authoritative-for-constructor-root-shape";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationManifestPriorityPolicy =
-        "deferred-until-m254-c001";
+        "deferred-until-next-runtime-phase";
 inline constexpr const char
     *kObjc3RuntimeStartupBootstrapInvariantContractId =
-        "objc3c-runtime-startup-bootstrap-invariants/m254-b001-v1";
+        "objc3c.runtime.startup.bootstrap.invariants.v1";
 inline constexpr const char
     *kObjc3RuntimeStartupBootstrapInvariantSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -1054,9 +1054,9 @@ inline constexpr const char
         "startup-root-consumes-registration-manifest";
 inline constexpr const char
     *kObjc3RuntimeStartupBootstrapExecutionMode =
-        "deferred-until-m254-c001";
+        "deferred-until-next-runtime-phase";
 inline constexpr const char *kObjc3RuntimeBootstrapSemanticsContractId =
-    "objc3c-runtime-startup-bootstrap-semantics/m254-b002-v1";
+    "objc3c.runtime.startup.bootstrap.semantics.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapSemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_startup_bootstrap_semantics";
 inline constexpr const char *kObjc3RuntimeBootstrapResultModel =
@@ -1074,7 +1074,7 @@ inline constexpr int kObjc3RuntimeBootstrapOutOfOrderStatusCode = -3;
 inline constexpr std::uint64_t
     kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal = 1u;
 inline constexpr const char *kObjc3RuntimeBootstrapApiContractId =
-    "objc3c-runtime-bootstrap-api-freeze/m254-d001-v1";
+    "objc3c.runtime.bootstrap.api.freeze.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapApiSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract";
 inline constexpr const char *kObjc3RuntimeBootstrapApiStatusEnumType =
@@ -1090,12 +1090,12 @@ inline constexpr const char *kObjc3RuntimeBootstrapApiStateLockingModel =
 inline constexpr const char *kObjc3RuntimeBootstrapApiStartupInvocationModel =
     "generated-init-stub-calls-runtime-register-image";
 inline constexpr const char *kObjc3RuntimeBootstrapApiImageWalkLifecycleModel =
-    "deferred-until-m254-d002";
+    "deferred-until-next-runtime-phase";
 inline constexpr const char
     *kObjc3RuntimeBootstrapApiDeterministicResetLifecycleModel =
-        "deferred-until-m254-d003";
+        "deferred-until-next-runtime-phase";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarContractId =
-    "objc3c-runtime-bootstrap-registrar-image-walk/m254-d002-v1";
+    "objc3c.runtime.bootstrap.registrar.image.walk.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_registrar_contract";
 inline constexpr const char *kObjc3RuntimeBootstrapInternalHeaderPath =
@@ -1117,7 +1117,7 @@ inline constexpr const char
 inline constexpr const char *kObjc3RuntimeBootstrapRealizationStagingModel =
     "registration-table-roots-retained-for-later-realization";
 inline constexpr const char *kObjc3RuntimeBootstrapResetContractId =
-    "objc3c-runtime-bootstrap-reset-replay/m254-d003-v1";
+    "objc3c.runtime.bootstrap.reset.replay.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapResetSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_reset_contract";
 inline constexpr const char
@@ -1159,9 +1159,9 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryDispatchI32Symbol =
 inline constexpr const char *kObjc3RuntimeSupportLibraryResetForTestingSymbol =
     "objc3_runtime_reset_for_testing";
 inline constexpr const char *kObjc3RuntimeSupportLibraryDriverLinkMode =
-    "not-linked-until-m251-d003";
+    "not-linked-until-next-runtime-phase";
 inline constexpr const char *kObjc3RuntimeSupportLibraryLinkWiringContractId =
-    "objc3c-runtime-support-library-link-wiring/m251-d003-v1";
+    "objc3c.runtime.support.library.link.wiring.v1";
 inline constexpr const char
     *kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol =
         "objc3_msgsend_i32";
@@ -1178,7 +1178,7 @@ inline constexpr const char
         "runtime-owns-registration-lookup-and-dispatch-state";
 inline constexpr const char
     *kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfaceContractId =
-        "objc3c-bootstrap-registration-descriptor-image-root-source-surface/m263-a001-v1";
+        "objc3c.bootstrap.registration.descriptor.image.root.source.surface.v1";
 inline constexpr const char
     *kObjc3RuntimeRegistrationDescriptorImageRootSourceSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -1202,7 +1202,7 @@ inline constexpr const char
     *kObjc3RuntimeBootstrapImageRootDefaultSuffix = "_image_root";
 inline constexpr const char
     *kObjc3RuntimeRegistrationDescriptorFrontendClosureContractId =
-        "objc3c-runtime-registration-descriptor-frontend-closure/m263-a002-v1";
+        "objc3c.runtime.registration.descriptor.frontend.closure.v1";
 inline constexpr const char
     *kObjc3RuntimeRegistrationDescriptorFrontendClosureSurfacePath =
         "frontend.pipeline.semantic_surface."

@@ -1174,7 +1174,7 @@ static void DiagnoseUnsupportedFeatureClaimsInStmt(
       // non-goals for later milestones.
       // ownership-smoke closeout anchor: the runnable closeout matrix
       // consumes this admitted ownership-sensitive autoreleasepool slice
-      // unchanged and may not widen it during M260 closeout.
+      // unchanged and may not widen it during the earlier tranche closeout.
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
       DiagnoseUnsupportedFeatureClaimsInStmt(
@@ -1224,13 +1224,13 @@ static void DiagnoseUnsupportedFeatureClaimsInExpr(
 
   switch (expr->kind) {
   // executable-block-source-closure anchor: once block literals
-  // parse successfully they still fail closed here until M261-A002 and later
+  // parse successfully they still fail closed here until the next runtime step and later
   // runtime issues make them runnable.
   case Expr::Kind::BlockLiteral:
     // block-source-model-completion anchor: source-only frontend
     // projection runs may admit block literals through sema so manifest-only
     // tooling can prove the completed source model, while native emit paths
-    // continue to fail closed until later M261 lowering/runtime issues land.
+    // continue to fail closed until later lowering/runtime work lands.
     // block-runtime-semantic-rules freeze anchor: current semantic
     // behavior is intentionally split between source-only admission and native
     // fail-closed rejection, with no runnable block object semantics implied.
@@ -1443,11 +1443,11 @@ static void DiagnoseUnsupportedFunctionFeatureClaims(
   // runnable ownership slice is still limited to object/property/accessor
   // ownership profiles plus the legacy ownership summary lanes below. ARC
   // ownership qualifiers on executable functions/methods remain fail-closed
-  // until the later M260 runtime-backed ownership implementation issues land.
+  // until the later runtime-backed ownership implementation work lands.
   // retainable-object semantic-rule freeze anchor: runtime-backed
   // property/member ownership metadata is truthful, but executable
   // retain/release legality, `@autoreleasepool`, and destruction ordering
-  // remain fail-closed until the later M260 storage legality/runtime issues.
+  // remain fail-closed until the later storage legality/runtime work.
   // ownership-lowering baseline freeze anchor: lane-C preserves the
   // legacy ownership lowering summaries those later runtime issues must
   // replace, but no executable retain/release/autorelease/weak runtime hooks
@@ -15030,7 +15030,7 @@ static const Objc3InterfaceDecl *FindAstInterfaceDecl(
 }
 
 // inheritance-override-realization anchor: sema now turns the
-// frozen M256-B001 rules into live fail-closed legality for realized classes.
+// frozen rules into live fail-closed legality for realized classes.
 // The parser still owns raw superclass spellings and member identities, but
 // sema rejects missing/cyclic superclass closure, unrealized superclass
 // implementations, selector-kind drift, and inherited method/property
@@ -20994,7 +20994,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // executable source-closure freeze anchor: lane-A freezes one
   // deterministic source closure over interface/implementation summaries plus
   // protocol/category composition and class/protocol/category linking before
-  // later M256 realization, conformance, and category-merge issues make this
+  // later realization, conformance, and category-merge work make this
   // surface executable at runtime.
   // class/metaclass completion anchor: sema preserves the same
   // declaration-owned class/metaclass parent identities and method-owner split
@@ -21037,7 +21037,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   // class-protocol-category conformance gate anchor: lane-E freezes
   // the aggregated evidence boundary over these sema-owned inheritance,
   // conformance, and category-merge decisions before execution-matrix
-  // expansion in M256-E002.
+  // expansion in the later closeout step.
   // runnable class-protocol-category execution-matrix anchor: the
   // live matrix consumes these sema-owned inheritance, protocol-conformance,
   // and category-merge decisions directly when replaying the linked
@@ -23507,7 +23507,7 @@ bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataH
           BuildInlineAsmIntrinsicGovernanceSummaryFromUnsafePointerAndThrowsSummaries(
               handoff.unsafe_pointer_extension_summary,
               handoff.throws_propagation_summary);
-  // M275-B001/B002 semantic anchor: Part 12 advanced diagnostic taxonomy,
+  // semantic anchor: Part 12 advanced diagnostic taxonomy,
   // portability publication, and feature-specific fix-it synthesis all consume
   // this existing deterministic ARC/fix-it semantic slice as the live
   // baseline.

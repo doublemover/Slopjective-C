@@ -888,12 +888,12 @@ bool PopulateImportedPart7ActorMailboxRuntimeImport(
   }
 
   if (contract_id !=
-      "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1") {
+      "objc3c.part7.actor.mailbox.isolation.import.surface.v1") {
     error = "unexpected Part 7 actor mailbox runtime import contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1") {
+      "objc3c.part7.actor.lowering.and.metadata.contract.v1") {
     error = "unexpected Part 7 actor mailbox runtime source contract id in import surface";
     return false;
   }
@@ -1357,13 +1357,13 @@ bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
   }
 
   if (contract_id !=
-      "objc3c-part9-dispatch-metadata-interface-preservation/m272-c003-v1") {
+      "objc3c.part9.dispatch.metadata.interface.preservation.v1") {
     error =
         "unexpected Part 9 dispatch metadata/interface preservation contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      "objc3c-part9-dispatch-control-lowering-contract/m272-c001-v1") {
+      "objc3c.part9.dispatch.control.lowering.contract.v1") {
     error =
         "unexpected Part 9 dispatch metadata/interface preservation source contract id in import surface";
     return false;

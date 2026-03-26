@@ -35,7 +35,7 @@ inline constexpr std::array<ValueType, 5> kObjc3CanonicalBridgeTopReferenceTypeF
     ValueType::ObjCObjectPtr,
 };
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsContractId =
-    "objc3c-compatibility-strictness-claim-semantics/m264-b001-v1";
+    "objc3c.compatibility.strictness.claim.semantics.v1";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_compatibility_strictness_claim_semantics";
 // runnable-core compatibility guard anchor: sema owns the current
@@ -281,7 +281,7 @@ struct Objc3GenericMetadataAbiSummary {
 };
 
 struct Objc3Part3TypeSemanticModelSummary {
-  std::string contract_id = "objc3c-part3-type-semantic-model/m265-b001-v1";
+  std::string contract_id = "objc3c.part3.type.semantic.model.v1";
   std::string surface_path =
       "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
   std::string semantic_model =
@@ -312,15 +312,15 @@ struct Objc3Part3TypeSemanticModelSummary {
 
 inline constexpr const char
     *kObjc3Part5ControlFlowSemanticModelFrontendDependencyContractId =
-        "objc3c-part5-control-flow-source-closure/m266-a002-v1";
+        "objc3c.part5.control.flow.source.closure.v1";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelContractId =
-    "objc3c-part5-control-flow-semantic-model/m266-b001-v1";
+    "objc3c.part5.control.flow.semantic.model.v1";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelRule =
     "guard-refinement-plus-statement-match-exhaustiveness-and-defer-legality-semantics-are-live-while-defer-cleanup-lowering-remains-a-later-lane-c-runtime-step";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelDeferRule =
-    "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-m266-lowering-and-runtime-work";
+    "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-lowering-and-runtime-work";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelMatchRule =
     "statement-match-enforces-catch-all-bool-and-result-case-exhaustiveness-with-case-local-binding-scopes-while-result-payload-typing-remains-deferred";
 inline constexpr const char *kObjc3Part5ControlFlowSemanticModelExitRule =
@@ -401,9 +401,9 @@ inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
 }
 
 inline constexpr const char *kObjc3Part6ErrorSemanticModelFrontendDependencyContractId =
-    "objc3c-part6-error-source-closure/m267-a001-v1";
+    "objc3c.part6.error.source.closure.v1";
 inline constexpr const char *kObjc3Part6ErrorSemanticModelContractId =
-    "objc3c-part6-error-semantic-model/m267-b001-v1";
+    "objc3c.part6.error.semantic.model.v1";
 inline constexpr const char *kObjc3Part6ErrorSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part6_error_semantic_model";
 inline constexpr const char *kObjc3Part6ErrorSemanticModelRule =
@@ -454,15 +454,15 @@ struct Objc3Part6ErrorSemanticModelSummary {
 };
 
 inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelFrontendDependencyContractId =
-    "objc3c-part7-async-source-closure/m268-a002-v1";
+    "objc3c.part7.async.source.closure.v1";
 inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelContractId =
-    "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
+    "objc3c.part7.async.effect.suspension.semantic.model.v1";
 inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_async_effect_and_suspension_semantic_model";
 inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelRule =
-    "async-effect-and-await-legality-semantics-plus-deterministic-continuation-suspension-and-concurrency-profile-carriage-are-live-while-runnable-frame-lowering-cleanup-and-executor-runtime-integration-remain-later-m268-work";
+    "async-effect-and-await-legality-semantics-plus-deterministic-continuation-suspension-and-concurrency-profile-carriage-are-live-while-runnable-frame-lowering-cleanup-and-executor-runtime-integration-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelDeferredRule =
-    "async-frame-abi-resume-lowering-suspension-cleanup-task-runtime-execution-and-executor-dispatch-remain-deferred-to-later-m268-lanes";
+    "async-frame-abi-resume-lowering-suspension-cleanup-task-runtime-execution-and-executor-dispatch-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7AsyncEffectSuspensionSemanticModelSummary {
   std::string contract_id =
@@ -552,15 +552,15 @@ inline bool IsReadyObjc3Part7AsyncEffectSuspensionSemanticModelSummary(
 }
 
 inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDependencyContractId =
-    "objc3c-part7-task-group-cancellation-source-closure/m269-a002-v1";
+    "objc3c.part7.task.group.cancellation.source.closure.v1";
 inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelContractId =
-    "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
+    "objc3c.part7.task.executor.cancellation.semantic.model.v1";
 inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model";
 inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelRule =
-    "task-lifetime-executor-affinity-cancellation-observation-and-structured-task-legality-are-live-in-sema-while-runnable-task-allocation-and-scheduler-execution-remain-later-m269-work";
+    "task-lifetime-executor-affinity-cancellation-observation-and-structured-task-legality-are-live-in-sema-while-runnable-task-allocation-and-scheduler-execution-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDeferredRule =
-    "task-allocation-executor-hop-runtime-task-group-execution-and-scheduler-backed-cancellation-remain-deferred-to-later-m269-lanes";
+    "task-allocation-executor-hop-runtime-task-group-execution-and-scheduler-backed-cancellation-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7TaskExecutorCancellationSemanticModelSummary {
   std::string contract_id =
@@ -619,15 +619,15 @@ inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
 }
 
 inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDependencyContractId =
-    "objc3c-part8-retainable-c-family-source-completion/m271-a003-v1";
+    "objc3c.part8.retainable.c.family.source.completion.v1";
 inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelContractId =
-    "objc3c-part8-system-extension-semantic-model/m271-b001-v1";
+    "objc3c.part8.system.extension.semantic.model.v1";
 inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model";
 inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelRule =
-    "cleanup-resource-borrowed-capture-and-retainable-family-source-surfaces-now-share-one-truthful-sema-model-while-resource-move-borrowed-escape-and-runtime-interop-work-remain-later-m271-lanes";
+    "cleanup-resource-borrowed-capture-and-retainable-family-source-surfaces-now-share-one-truthful-sema-model-while-resource-move-borrowed-escape-and-runtime-interop-work-remain-later-runtime-lanes";
 inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDeferredRule =
-    "resource-move-use-after-move-borrowed-escape-retainable-family-legality-and-runtime-interop-remain-deferred-to-later-m271-lanes";
+    "resource-move-use-after-move-borrowed-escape-retainable-family-legality-and-runtime-interop-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part8SystemExtensionSemanticModelSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSemanticModelContractId;
@@ -680,19 +680,19 @@ inline bool IsReadyObjc3Part8SystemExtensionSemanticModelSummary(
 
 inline constexpr const char
     *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDependencyContractId =
-        "objc3c-part8-system-extension-semantic-model/m271-b001-v1";
+        "objc3c.part8.system.extension.semantic.model.v1";
 inline constexpr const char
     *kObjc3Part8ResourceMoveUseAfterMoveSemanticsContractId =
-        "objc3c-part8-resource-move-use-after-move-semantics/m271-b002-v1";
+        "objc3c.part8.resource.move.use.after.move.semantics.v1";
 inline constexpr const char
     *kObjc3Part8ResourceMoveUseAfterMoveSemanticsSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics";
 inline constexpr const char
     *kObjc3Part8ResourceMoveUseAfterMoveSemanticsRule =
-        "cleanup-owned-resource-locals-now-transfer-cleanup-ownership-through-explicit-move-captures-and-fail-closed-on-use-after-move-while-borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-later-m271-work";
+        "cleanup-owned-resource-locals-now-transfer-cleanup-ownership-through-explicit-move-captures-and-fail-closed-on-use-after-move-while-borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDeferredRule =
-        "borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-m271-lanes";
+        "borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary {
   std::string contract_id =
@@ -741,19 +741,19 @@ inline bool IsReadyObjc3Part8ResourceMoveUseAfterMoveSemanticsSummary(
 
 inline constexpr const char
     *kObjc3Part8BorrowedPointerEscapeAnalysisDependencyContractId =
-        "objc3c-part8-resource-move-use-after-move-semantics/m271-b002-v1";
+        "objc3c.part8.resource.move.use.after.move.semantics.v1";
 inline constexpr const char
     *kObjc3Part8BorrowedPointerEscapeAnalysisContractId =
-        "objc3c-part8-borrowed-pointer-escape-analysis/m271-b003-v1";
+        "objc3c.part8.borrowed.pointer.escape.analysis.v1";
 inline constexpr const char
     *kObjc3Part8BorrowedPointerEscapeAnalysisSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis";
 inline constexpr const char
     *kObjc3Part8BorrowedPointerEscapeAnalysisRule =
-        "borrowed-pointer-bindings-now-fail-closed-on-unproven-call-boundaries-escaping-block-capture-and-invalid-borrowed-return-contracts-while-retainable-family-legality-lowering-and-runtime-remain-later-m271-work";
+        "borrowed-pointer-bindings-now-fail-closed-on-unproven-call-boundaries-escaping-block-capture-and-invalid-borrowed-return-contracts-while-retainable-family-legality-lowering-and-runtime-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part8BorrowedPointerEscapeAnalysisDeferredRule =
-        "retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-m271-lanes";
+        "retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part8BorrowedPointerEscapeAnalysisSummary {
   std::string contract_id =
@@ -801,10 +801,10 @@ inline bool IsReadyObjc3Part8BorrowedPointerEscapeAnalysisSummary(
 
 inline constexpr const char
     *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDependencyContractId =
-        "objc3c-part8-borrowed-pointer-escape-analysis/m271-b003-v1";
+        "objc3c.part8.borrowed.pointer.escape.analysis.v1";
 inline constexpr const char
     *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionContractId =
-        "objc3c-part8-capture-list-retainable-family-legality/m271-b004-v1";
+        "objc3c.part8.capture.list.retainable.family.legality.v1";
 inline constexpr const char
     *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion";
@@ -813,7 +813,7 @@ inline constexpr const char
         "explicit-capture-lists-now-fail-closed-on-duplicate-unused-and-non-object-ownership-modes-while-retainable-family-callables-fail-closed-on-conflicting-and-shape-invalid-annotations-before-lowering-and-runtime-integration";
 inline constexpr const char
     *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDeferredRule =
-        "lowering-runtime-interop-and-runnable-retainable-family-behavior-remain-deferred-to-later-m271-lanes";
+        "lowering-runtime-interop-and-runnable-retainable-family-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary {
   std::string contract_id =
@@ -873,15 +873,15 @@ IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
 
 inline constexpr const char
     *kObjc3Part11InteropSemanticModelDependencyContractId =
-        "objc3c-part11-foreign-surface-interface-preservation/m274-a003-v1";
+        "objc3c.part11.foreign.surface.interface.preservation.v1";
 inline constexpr const char *kObjc3Part11InteropSemanticModelContractId =
-    "objc3c-part11-interop-semantic-model/m274-b001-v1";
+    "objc3c.part11.interop.semantic.model.v1";
 inline constexpr const char *kObjc3Part11InteropSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part11_interop_semantic_model";
 inline constexpr const char *kObjc3Part11InteropSemanticModelRule =
-    "foreign-import-swift-cpp-facing-annotation-surfaces-now-freeze-one-deterministic-sema-model-over-existing-ownership-error-async-and-actor-interaction-profiles-while-ffi-lowering-and-runnable-bridge-generation-remain-later-m274-work";
+    "foreign-import-swift-cpp-facing-annotation-surfaces-now-freeze-one-deterministic-sema-model-over-existing-ownership-error-async-and-actor-interaction-profiles-while-ffi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part11InteropSemanticModelDeferredRule =
-    "ffi-abi-lowering-runtime-bridge-shims-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-m274-lanes";
+    "ffi-abi-lowering-runtime-bridge-shims-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part11InteropSemanticModelSummary {
   std::string contract_id = kObjc3Part11InteropSemanticModelContractId;
@@ -941,16 +941,16 @@ inline constexpr const char
         kObjc3Part11InteropSemanticModelContractId;
 inline constexpr const char
     *kObjc3Part11InteropRuntimeParitySummaryContractId =
-        "objc3c-part11-c-and-objc-runtime-parity-semantics/m274-b002-v1";
+        "objc3c.part11.c.and.objc.runtime.parity.semantics.v1";
 inline constexpr const char
     *kObjc3Part11InteropRuntimeParitySummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part11_c_and_objc_runtime_parity_semantics";
 inline constexpr const char
     *kObjc3Part11InteropRuntimeParitySummaryRule =
-        "declaration-only-foreign-c-surfaces-import-module-requires-foreign-and-implementation-annotation-rejections-are-now-live-fail-closed-sema-rules-while-ffi-abi-lowering-and-runnable-bridge-generation-remain-later-m274-work";
+        "declaration-only-foreign-c-surfaces-import-module-requires-foreign-and-implementation-annotation-rejections-are-now-live-fail-closed-sema-rules-while-ffi-abi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part11InteropRuntimeParitySummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-m274-lanes";
+        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part11InteropRuntimeParitySummary {
   std::string contract_id = kObjc3Part11InteropRuntimeParitySummaryContractId;
@@ -1004,16 +1004,16 @@ inline constexpr const char
         kObjc3Part11InteropRuntimeParitySummaryContractId;
 inline constexpr const char
     *kObjc3Part11CppInteropInteractionSummaryContractId =
-        "objc3c-part11-cpp-ownership-throws-and-async-interaction-completion/m274-b003-v1";
+        "objc3c.part11.cpp.ownership.throws.and.async.interaction.completion.v1";
 inline constexpr const char
     *kObjc3Part11CppInteropInteractionSummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part11_cpp_ownership_throws_and_async_interactions";
 inline constexpr const char
     *kObjc3Part11CppInteropInteractionSummaryRule =
-        "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-m274-work";
+        "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part11CppInteropInteractionSummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-m274-lanes";
+        "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part11CppInteropInteractionSummary {
   std::string contract_id = kObjc3Part11CppInteropInteractionSummaryContractId;
@@ -1067,16 +1067,16 @@ inline constexpr const char
         kObjc3Part11CppInteropInteractionSummaryContractId;
 inline constexpr const char
     *kObjc3Part11SwiftInteropIsolationSummaryContractId =
-        "objc3c-part11-swift-metadata-and-isolation-mapping-completion/m274-b004-v1";
+        "objc3c.part11.swift.metadata.and.isolation.mapping.completion.v1";
 inline constexpr const char
     *kObjc3Part11SwiftInteropIsolationSummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part11_swift_metadata_and_isolation_mapping";
 inline constexpr const char
     *kObjc3Part11SwiftInteropIsolationSummaryRule =
-        "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-m274-work";
+        "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part11SwiftInteropIsolationSummaryDeferredRule =
-        "ffi-abi-lowering-runtime-bridge-shims-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-m274-lanes";
+        "ffi-abi-lowering-runtime-bridge-shims-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part11SwiftInteropIsolationSummary {
   std::string contract_id = kObjc3Part11SwiftInteropIsolationSummaryContractId;
@@ -1131,16 +1131,16 @@ inline bool IsReadyObjc3Part11SwiftInteropIsolationSummary(
 
 inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
-        "objc3c-part9-dispatch-intent-source-completion/m272-a002-v1";
+        "objc3c.part9.dispatch.intent.source.completion.v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =
-    "objc3c-part9-dynamism-dispatch-control-semantic-model/m272-b001-v1";
+    "objc3c.part9.dynamism.dispatch.control.semantic.model.v1";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part9_dynamism_and_dispatch_control_semantic_model";
 inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelRule =
-    "direct-members-defaulting-final-sealed-and-override-accounting-now-share-one-truthful-sema-packet-while-direct-dispatch-legality-final-sealed-enforcement-and-runnable-dispatch-boundary-realization-remain-later-m272-work";
+    "direct-members-defaulting-final-sealed-and-override-accounting-now-share-one-truthful-sema-packet-while-direct-dispatch-legality-final-sealed-enforcement-and-runnable-dispatch-boundary-realization-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part9DispatchIntentSemanticModelDeferredRule =
-        "direct-call-lowering-final-sealed-diagnostics-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+        "direct-call-lowering-final-sealed-diagnostics-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part9DispatchIntentSemanticModelSummary {
   std::string contract_id = kObjc3Part9DispatchIntentSemanticModelContractId;
@@ -1192,19 +1192,19 @@ inline bool IsReadyObjc3Part9DispatchIntentSemanticModelSummary(
 
 inline constexpr const char
     *kObjc3Part9DispatchIntentLegalitySummaryDependencyContractId =
-        "objc3c-part9-dynamism-dispatch-control-semantic-model/m272-b001-v1";
+        "objc3c.part9.dynamism.dispatch.control.semantic.model.v1";
 inline constexpr const char *
     kObjc3Part9DispatchIntentLegalitySummaryContractId =
-        "objc3c-part9-override-finality-sealing-legality/m272-b002-v1";
+        "objc3c.part9.override.finality.sealing.legality.v1";
 inline constexpr const char *
     kObjc3Part9DispatchIntentLegalitySummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part9_override_finality_and_sealing_legality";
 inline constexpr const char *
     kObjc3Part9DispatchIntentLegalitySummaryRule =
-        "superclass-finality-superclass-sealing-and-direct-final-override-restrictions-are-now-live-fail-closed-sema-rules-while-direct-call-lowering-and-runnable-dispatch-boundary-realization-remain-later-m272-work";
+        "superclass-finality-superclass-sealing-and-direct-final-override-restrictions-are-now-live-fail-closed-sema-rules-while-direct-call-lowering-and-runnable-dispatch-boundary-realization-remain-later-runtime-work";
 inline constexpr const char *
     kObjc3Part9DispatchIntentLegalitySummaryDeferredRule =
-        "direct-call-lowering-selector-dispatch-bypass-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+        "direct-call-lowering-selector-dispatch-bypass-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part9DispatchIntentLegalitySummary {
   std::string contract_id = kObjc3Part9DispatchIntentLegalitySummaryContractId;
@@ -1250,10 +1250,10 @@ inline bool IsReadyObjc3Part9DispatchIntentLegalitySummary(
 
 inline constexpr const char
     *kObjc3Part9DispatchIntentCompatibilitySummaryDependencyContractId =
-        "objc3c-part9-override-finality-sealing-legality/m272-b002-v1";
+        "objc3c.part9.override.finality.sealing.legality.v1";
 inline constexpr const char *
     kObjc3Part9DispatchIntentCompatibilitySummaryContractId =
-        "objc3c-part9-dynamism-control-compatibility-diagnostics/m272-b003-v1";
+        "objc3c.part9.dynamism.control.compatibility.diagnostics.v1";
 inline constexpr const char *
     kObjc3Part9DispatchIntentCompatibilitySummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part9_dynamism_control_compatibility_diagnostics";
@@ -1262,7 +1262,7 @@ inline constexpr const char *
         "part9-dispatch-intent-now-fails-closed-on-conflicting-direct-dynamic-final-dynamic-callable-markers-plus-unsupported-function-protocol-and-category-topologies-before-lowering-and-runtime-dispatch-boundary-realization";
 inline constexpr const char *
     kObjc3Part9DispatchIntentCompatibilitySummaryDeferredRule =
-        "direct-call-lowering-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-m272-lanes";
+        "direct-call-lowering-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part9DispatchIntentCompatibilitySummary {
   std::string contract_id =
@@ -1310,19 +1310,19 @@ inline bool IsReadyObjc3Part9DispatchIntentCompatibilitySummary(
 
 inline constexpr const char
     *kObjc3Part10ExpansionBehaviorSemanticModelDependencyContractId =
-        "objc3c-part10-property-behavior-source-completion/m273-a003-v1";
+        "objc3c.part10.property.behavior.source.completion.v1";
 inline constexpr const char
     *kObjc3Part10ExpansionBehaviorSemanticModelContractId =
-        "objc3c-part10-expansion-behavior-semantic-model/m273-b001-v1";
+        "objc3c.part10.expansion.behavior.semantic.model.v1";
 inline constexpr const char
     *kObjc3Part10ExpansionBehaviorSemanticModelSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model";
 inline constexpr const char
     *kObjc3Part10ExpansionBehaviorSemanticModelRule =
-        "derive-macro-package-provenance-and-property-behavior-source-surfaces-now-share-one-truthful-sema-packet-while-real-derive-expansion-macro-execution-and-property-behavior-runtime-materialization-remain-later-m273-work";
+        "derive-macro-package-provenance-and-property-behavior-source-surfaces-now-share-one-truthful-sema-packet-while-real-derive-expansion-macro-execution-and-property-behavior-runtime-materialization-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part10ExpansionBehaviorSemanticModelDeferredRule =
-        "derive-body-expansion-macro-sandbox-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-m273-lanes";
+        "derive-body-expansion-macro-sandbox-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part10ExpansionBehaviorSemanticModelSummary {
   std::string contract_id =
@@ -1382,10 +1382,10 @@ inline bool IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
 
 inline constexpr const char
     *kObjc3Part10DeriveExpansionInventoryDependencyContractId =
-        "objc3c-part10-expansion-behavior-semantic-model/m273-b001-v1";
+        "objc3c.part10.expansion.behavior.semantic.model.v1";
 inline constexpr const char
     *kObjc3Part10DeriveExpansionInventoryContractId =
-        "objc3c-part10-derive-expansion-inventory/m273-b002-v1";
+        "objc3c.part10.derive.expansion.inventory.v1";
 inline constexpr const char
     *kObjc3Part10DeriveExpansionInventorySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory";
@@ -1394,7 +1394,7 @@ inline constexpr const char
         "supported-derive-requests-now-expand-into-a-deterministic-selector-inventory-while-unsupported-derive-names-category-topologies-and-selector-collisions-fail-closed-in-sema";
 inline constexpr const char
     *kObjc3Part10DeriveExpansionInventoryDeferredRule =
-        "runtime-backed-derived-method-body-materialization-macro-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-m273-lanes";
+        "runtime-backed-derived-method-body-materialization-macro-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part10DeriveExpansionInventorySummary {
   std::string contract_id = kObjc3Part10DeriveExpansionInventoryContractId;
@@ -1444,10 +1444,10 @@ inline bool IsReadyObjc3Part10DeriveExpansionInventorySummary(
 
 inline constexpr const char
     *kObjc3Part10MacroSafetySandboxDeterminismDependencyContractId =
-        "objc3c-part10-derive-expansion-inventory/m273-b002-v1";
+        "objc3c.part10.derive.expansion.inventory.v1";
 inline constexpr const char
     *kObjc3Part10MacroSafetySandboxDeterminismContractId =
-        "objc3c-part10-macro-safety-sandbox-determinism-semantics/m273-b003-v1";
+        "objc3c.part10.macro.safety.sandbox.determinism.semantics.v1";
 inline constexpr const char
     *kObjc3Part10MacroSafetySandboxDeterminismSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part10_macro_safety_sandbox_and_determinism_semantics";
@@ -1456,7 +1456,7 @@ inline constexpr const char
         "macro-callable-safety-sandbox-namespace-and-deterministic-provenance-semantics-are-live-in-sema-while-runnable-macro-execution-remains-deferred";
 inline constexpr const char
     *kObjc3Part10MacroSafetySandboxDeterminismDeferredRule =
-        "runnable-macro-execution-runtime-package-loading-and-expanded-body-materialization-remain-deferred-to-later-m273-lanes";
+        "runnable-macro-execution-runtime-package-loading-and-expanded-body-materialization-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part10MacroSafetySandboxDeterminismSummary {
   std::string contract_id =
@@ -1510,10 +1510,10 @@ inline bool IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
 
 inline constexpr const char
     *kObjc3Part10PropertyBehaviorLegalityCompatibilityDependencyContractId =
-        "objc3c-part10-macro-safety-sandbox-determinism-semantics/m273-b003-v1";
+        "objc3c.part10.macro.safety.sandbox.determinism.semantics.v1";
 inline constexpr const char
     *kObjc3Part10PropertyBehaviorLegalityCompatibilityContractId =
-        "objc3c-part10-property-behavior-legality-interaction-completion/m273-b004-v1";
+        "objc3c.part10.property.behavior.legality.interaction.completion.v1";
 inline constexpr const char
     *kObjc3Part10PropertyBehaviorLegalityCompatibilitySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion";
@@ -1522,7 +1522,7 @@ inline constexpr const char
         "supported-property-behavior-names-and-owner-interaction-legality-now-fail-closed-in-sema-while-runtime-backed-behavior-materialization-remains-deferred";
 inline constexpr const char
     *kObjc3Part10PropertyBehaviorLegalityCompatibilityDeferredRule =
-        "runnable-property-behavior-hooks-observation-materialization-and-projection-runtime-support-remain-deferred-to-later-m273-lanes";
+        "runnable-property-behavior-hooks-observation-materialization-and-projection-runtime-support-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part10PropertyBehaviorLegalityCompatibilitySummary {
   std::string contract_id =
@@ -1577,19 +1577,19 @@ inline bool IsReadyObjc3Part10PropertyBehaviorLegalityCompatibilitySummary(
 
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
-        "objc3c-part7-task-executor-cancellation-semantic-model/m269-b001-v1";
+        "objc3c.part7.task.executor.cancellation.semantic.model.v1";
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId =
-        "objc3c-part7-structured-task-cancellation-semantics/m269-b002-v1";
+        "objc3c.part7.structured.task.cancellation.semantics.v1";
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics";
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryRule =
-        "structured-task-scope-task-hierarchy-and-cancellation-usage-semantics-are-live-in-sema-while-runnable-task-lowering-and-scheduler-execution-remain-later-m269-work";
+        "structured-task-scope-task-hierarchy-and-cancellation-usage-semantics-are-live-in-sema-while-runnable-task-lowering-and-scheduler-execution-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part7StructuredTaskCancellationSemanticSummaryDeferredRule =
-        "task-allocation-executor-hop-task-group-runtime-and-scheduler-backed-cancellation-remain-deferred-to-later-m269-lanes";
+        "task-allocation-executor-hop-task-group-runtime-and-scheduler-backed-cancellation-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7StructuredTaskCancellationSemanticSummary {
   std::string contract_id =
@@ -1648,19 +1648,19 @@ inline bool IsReadyObjc3Part7StructuredTaskCancellationSemanticSummary(
 
 inline constexpr const char
     *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDependencyContractId =
-        "objc3c-part7-structured-task-cancellation-semantics/m269-b002-v1";
+        "objc3c.part7.structured.task.cancellation.semantics.v1";
 inline constexpr const char
     *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId =
-        "objc3c-part7-executor-hop-affinity-compatibility/m269-b003-v1";
+        "objc3c.part7.executor.hop.affinity.compatibility.v1";
 inline constexpr const char
     *kObjc3Part7ExecutorHopAffinityCompatibilitySummarySurfacePath =
         "frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion";
 inline constexpr const char
     *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryRule =
-        "executor-affinity-and-detached-task-hop-boundaries-are-live-in-sema-while-runnable-hop-lowering-and-scheduler-runtime-remain-later-m269-work";
+        "executor-affinity-and-detached-task-hop-boundaries-are-live-in-sema-while-runnable-hop-lowering-and-scheduler-runtime-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDeferredRule =
-        "executor-hop-lowering-task-spawn-runtime-and-scheduler-visible-execution-remain-deferred-to-later-m269-lanes";
+        "executor-hop-lowering-task-spawn-runtime-and-scheduler-visible-execution-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7ExecutorHopAffinityCompatibilitySummary {
   std::string contract_id =
@@ -1710,15 +1710,15 @@ inline bool IsReadyObjc3Part7ExecutorHopAffinityCompatibilitySummary(
 }
 
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
-    "objc3c-part7-async-effect-suspension-semantic-model/m268-b001-v1";
+    "objc3c.part7.async.effect.suspension.semantic.model.v1";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =
-    "objc3c-part7-await-suspension-resume-semantics/m268-b002-v1";
+    "objc3c.part7.await.suspension.resume.semantics.v1";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummarySurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryRule =
-    "await-placement-suspension-and-resume-semantics-are-live-in-sema-while-runnable-async-frame-lowering-and-executor-runtime-execution-remain-later-m268-work";
+    "await-placement-suspension-and-resume-semantics-are-live-in-sema-while-runnable-async-frame-lowering-and-executor-runtime-execution-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDeferredRule =
-    "async-frame-layout-resume-lowering-suspension-cleanup-and-runtime-executor-scheduling-remain-deferred-to-later-m268-lanes";
+    "async-frame-layout-resume-lowering-suspension-cleanup-and-runtime-executor-scheduling-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7AwaitSuspensionResumeSemanticSummary {
   std::string contract_id =
@@ -1765,9 +1765,9 @@ inline bool IsReadyObjc3Part7AwaitSuspensionResumeSemanticSummary(
 }
 
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId =
-    "objc3c-part6-error-semantic-model/m267-b001-v1";
+    "objc3c.part6.error.semantic.model.v1";
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryContractId =
-    "objc3c-part6-try-throw-do-catch-semantics/m267-b002-v1";
+    "objc3c.part6.try.throw.do.catch.semantics.v1";
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummarySurfacePath =
     "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics";
 inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryRule =
@@ -1810,9 +1810,9 @@ struct Objc3Part6TryDoCatchSemanticSummary {
 };
 
 inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryDependencyContractId =
-    "objc3c-part6-try-throw-do-catch-semantics/m267-b002-v1";
+    "objc3c.part6.try.throw.do.catch.semantics.v1";
 inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryContractId =
-    "objc3c-part6-error-bridge-legality/m267-b003-v1";
+    "objc3c.part6.error.bridge.legality.v1";
 inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummarySurfacePath =
     "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality";
 inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryRule =
@@ -1979,16 +1979,16 @@ inline constexpr const char
         kObjc3ActorMemberIsolationSourceClosureContractId;
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendableSemanticModelContractId =
-        "objc3c-part7-actor-isolation-sendable-semantic-model/m270-b001-v1";
+        "objc3c.part7.actor.isolation.sendable.semantic.model.v1";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendableSemanticModelSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendableSemanticModelRule =
-        "actor-member-source-closure-and-parser-owned-actor-sendability-profiles-now-publish-one-deterministic-sema-packet-while-cross-actor-legality-sendable-enforcement-and-runnable-actor-runtime-behavior-remain-later-m270-work";
+        "actor-member-source-closure-and-parser-owned-actor-sendability-profiles-now-publish-one-deterministic-sema-packet-while-cross-actor-legality-sendable-enforcement-and-runnable-actor-runtime-behavior-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendableSemanticModelDeferredRule =
-        "dedicated-actor-isolation-diagnostics-cross-actor-sendable-enforcement-executor-scheduling-and-runnable-actor-runtime-behavior-remain-deferred-to-later-m270-lanes";
+        "dedicated-actor-isolation-diagnostics-cross-actor-sendable-enforcement-executor-scheduling-and-runnable-actor-runtime-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7ActorIsolationSendableSemanticModelSummary {
   std::string contract_id =
@@ -2048,16 +2048,16 @@ inline constexpr const char
         kObjc3Part7ActorIsolationSendableSemanticModelContractId;
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendabilityEnforcementContractId =
-        "objc3c-part7-actor-isolation-sendability-enforcement/m270-b002-v1";
+        "objc3c.part7.actor.isolation.sendability.enforcement.v1";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendabilityEnforcementSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendability_enforcement";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendabilityEnforcementRule =
-        "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-and-non-sendable-crossings-while-runnable-actor-mailbox-runtime-remains-later-m270-work";
+        "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-and-non-sendable-crossings-while-runnable-actor-mailbox-runtime-remains-later-runtime-work";
 inline constexpr const char
     *kObjc3Part7ActorIsolationSendabilityEnforcementDeferredRule =
-        "full-cross-module-actor-runtime-mailboxes-race-hazard-closure-and-runnable-strict-concurrency-scheduling-remain-deferred-to-later-m270-lanes";
+        "full-cross-module-actor-runtime-mailboxes-race-hazard-closure-and-runnable-strict-concurrency-scheduling-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7ActorIsolationSendabilityEnforcementSummary {
   std::string contract_id =
@@ -2115,7 +2115,7 @@ inline constexpr const char
         kObjc3Part7ActorIsolationSendabilityEnforcementContractId;
 inline constexpr const char
     *kObjc3Part7ActorRaceHazardEscapeDiagnosticsContractId =
-        "objc3c-part7-actor-race-hazard-escape-diagnostics/m270-b003-v1";
+        "objc3c.part7.actor.race.hazard.escape.diagnostics.v1";
 inline constexpr const char
     *kObjc3Part7ActorRaceHazardEscapeDiagnosticsSurfacePath =
         "frontend.pipeline.semantic_surface.objc_part7_actor_race_hazard_and_escape_diagnostics";
@@ -2124,7 +2124,7 @@ inline constexpr const char
         "actor-method-task-handoff-now-fails-closed-without-race-guard-replay-proof-and-actor-isolation-coverage-while-escaping-block-literals-in-that-hazard-slice-remain-unsupported";
 inline constexpr const char
     *kObjc3Part7ActorRaceHazardEscapeDiagnosticsDeferredRule =
-        "runnable-actor-mailboxes-cross-module-isolation-runtime-and-full-strict-concurrency-escape-analysis-remain-deferred-to-later-m270-lanes";
+        "runnable-actor-mailboxes-cross-module-isolation-runtime-and-full-strict-concurrency-escape-analysis-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary {
   std::string contract_id =
@@ -2321,7 +2321,7 @@ struct Objc3PropertySynthesisIvarBindingSummary {
   // generic property-declaration totals.
   // semantic-closure gate anchor: lane-E consumes this property/ivar
   // legality summary together with the A003 graph, C003 projection, and D002
-  // packaging proofs before M253-A001 section emission begins.
+  // packaging proofs before the next runtime step section emission begins.
   // corpus-sync anchor: representative legality corpus cases keep
   // these counts deterministic so docs and integrated gate coverage stay
   // aligned on the real runner path.
@@ -2526,14 +2526,14 @@ struct Objc3ArcDiagnosticsFixitSummary {
 };
 
 inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityContractId =
-    "objc3c-part12-diagnostic-taxonomy-portability-contract/m275-b001-v1";
+    "objc3c.part12.diagnostic.taxonomy.portability.contract.v1";
 inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace =
     "O3S";
 inline constexpr const char *kObjc3Part12FeatureSpecificFixitSynthesisContractId =
-    "objc3c-part12-feature-specific-fixit-synthesis/m275-b002-v1";
+    "objc3c.part12.feature.specific.fixit.synthesis.v1";
 inline constexpr const char
     *kObjc3Part12LegacyCanonicalMigrationSemanticsContractId =
-        "objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1";
+        "objc3c.part12.legacy.canonical.migration.semantics.v1";
 inline constexpr const char
     *kObjc3Part12LegacyCanonicalMigrationDiagnosticCode = "O3S216";
 
@@ -3067,13 +3067,13 @@ struct Objc3InterfaceImplementationSummary {
 };
 
 inline constexpr const char *kObjc3BootstrapLegalityFailureContractId =
-    "objc3c-runtime-bootstrap-legality-duplicate-order-failure-contract/m263-b001-v1";
+    "objc3c.runtime.bootstrap.legality.duplicate.order.failure.contract.v1";
 inline constexpr const char *kObjc3BootstrapLegalityFailureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_failure_contract";
 inline constexpr const char *kObjc3BootstrapLegalityImageOrderInvariantModel =
     kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel;
 inline constexpr const char *kObjc3BootstrapLegalitySemanticsContractId =
-    "objc3c-runtime-bootstrap-legality-duplicate-order-semantics/m263-b002-v1";
+    "objc3c.runtime.bootstrap.legality.duplicate.order.semantics.v1";
 inline constexpr const char *kObjc3BootstrapLegalitySemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_legality_semantics";
 inline constexpr const char *kObjc3BootstrapLegalityCrossImageLegalityModel =
@@ -3081,7 +3081,7 @@ inline constexpr const char *kObjc3BootstrapLegalityCrossImageLegalityModel =
 inline constexpr const char *kObjc3BootstrapLegalitySemanticDiagnosticModel =
     "fail-closed-bootstrap-legality-before-runtime-handoff";
 inline constexpr const char *kObjc3BootstrapFailureRestartSemanticsContractId =
-    "objc3c-runtime-bootstrap-failure-restart-semantics/m263-b003-v1";
+    "objc3c.runtime.bootstrap.failure.restart.semantics.v1";
 inline constexpr const char *kObjc3BootstrapFailureRestartSemanticsSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_bootstrap_failure_restart_semantics";
 inline constexpr const char *kObjc3BootstrapFailureRestartUnsupportedTopologyModel =
@@ -3137,15 +3137,15 @@ inline bool IsReadyObjc3BootstrapLegalityFailureContractSummary(
 }
 
 inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDependencyContractId =
-    "objc3c-part7-await-suspension-resume-semantics/m268-b002-v1";
+    "objc3c.part7.await.suspension.resume.semantics.v1";
 inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryContractId =
-    "objc3c-part7-async-diagnostics-compatibility-completion/m268-b003-v1";
+    "objc3c.part7.async.diagnostics.compatibility.completion.v1";
 inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummarySurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_async_diagnostics_and_compatibility_completion";
 inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryRule =
-    "async-topology-diagnostics-now-fail-closed-for-non-async-executor-affinity-async-function-prototypes-and-async-throws-while-runnable-frame-and-runtime-integration-remain-later-m268-work";
+    "async-topology-diagnostics-now-fail-closed-for-non-async-executor-affinity-async-function-prototypes-and-async-throws-while-runnable-frame-and-runtime-integration-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDeferredRule =
-    "async-prototype-import-surfaces-async-error-propagation-abi-and-runnable-executor-runtime-behavior-remain-deferred-to-later-m268-lanes";
+    "async-prototype-import-surfaces-async-error-propagation-abi-and-runnable-executor-runtime-behavior-remain-deferred-to-later-runtime-lanes";
 
 struct Objc3Part7AsyncDiagnosticsCompatibilitySummary {
   std::string contract_id =

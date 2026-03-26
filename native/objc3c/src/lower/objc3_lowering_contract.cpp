@@ -194,7 +194,7 @@ std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boun
   // rewrite metadata family ordering, descriptor ordinal ordering,
   // zero-sentinel-or-count-plus-pointer-vector relocation, the local-linkage/no-COMDAT policy,
   // explicit visibility spelling policy, or llvm.used retention order. Those
-  // remain one frozen emitted policy surface until M253-B002 and M253-B003
+  // remain one frozen emitted policy surface until the next runtime step and the later object-format policy step
   // extend them explicitly.
   return "runtime_dispatch_symbol=" + boundary.runtime_dispatch_symbol +
          ";runtime_dispatch_arg_slots=" + std::to_string(boundary.runtime_dispatch_arg_slots) +
@@ -700,7 +700,7 @@ std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
   // retainable-object semantic-rule freeze anchor: runtime-backed
   // property/member ownership metadata is now the truthful live surface, but
   // retain/release legality, autoreleasepool execution, and destruction-order
-  // behavior remain summary-driven and fail-closed until M260-B002+ land.
+  // behavior remain summary-driven and fail-closed until the next runtime step+ land.
   out << "contract=" << kObjc3RetainableObjectSemanticRulesFreezeContractId
       << ";semantic_model="
       << kObjc3RetainableObjectSemanticRulesSemanticModel
@@ -752,7 +752,7 @@ std::string Objc3OwnershipLoweringBaselineSummary() {
   // ownership metadata and sema legality are already live, but retain/release,
   // autoreleasepool, and weak/unowned execution still stop at legacy lowering
   // summaries instead of emitting a summary-only-without-live-runtime-hook-emission
-  // widening before M260-C002.
+  // widening before the next runtime step.
   out << "contract=" << kObjc3OwnershipLoweringBaselineContractId
       << ";ownership_qualifier_model="
       << kObjc3OwnershipLoweringBaselineQualifierModel
@@ -775,7 +775,7 @@ std::string Objc3OwnershipRuntimeHookEmissionSummary() {
   // through runtime-owned helper entrypoints that operate on the current
   // runtime dispatch frame and realized property layout, while preserving the
   // existing synthesized accessor descriptor/storage artifact surface from
-  // M257-C003.
+  // 
   out << "contract=" << kObjc3OwnershipRuntimeHookEmissionContractId
       << ";accessor_model="
       << kObjc3OwnershipRuntimeHookEmissionAccessorModel
@@ -862,7 +862,7 @@ std::string Objc3OwnershipRuntimeGateSummary() {
   // supported ownership runtime slice and its non-goals using the already-live
   // C002/D001/D002 implementation surfaces as the truthful evidence boundary.
   // ownership-smoke closeout anchor: the runnable smoke matrix
-  // consumes this same gate summary unchanged for M260 closeout.
+  // consumes this same gate summary unchanged for closeout.
   out << "contract=" << kObjc3OwnershipRuntimeGateContractId
       << ";supported_model=" << kObjc3OwnershipRuntimeGateSupportedModel
       << ";evidence_model=" << kObjc3OwnershipRuntimeGateEvidenceModel
@@ -882,7 +882,7 @@ std::string Objc3ExecutableBlockSourceClosureSummary() {
   // executable-block-source-closure freeze anchor: this summary is
   // intentionally truthful about the current boundary. Parser/AST/source
   // replay for block literals is live, while runnable lowering remains a
-  // fail-closed non-goal until later M261 issues.
+  // fail-closed non-goal until later work.
   out << "contract=" << Expr::kObjc3ExecutableBlockSourceClosureContractId
       << ";source_model=" << Expr::kObjc3ExecutableBlockSourceSurfaceModel
       << ";evidence_model=" << Expr::kObjc3ExecutableBlockSourceEvidenceModel
@@ -1085,7 +1085,7 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
       << ";invoke_abi=i32-handle-plus-four-i32-arguments-returning-i32"
       << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-invoke-pointer"
       << ";object_layout_model=runtime-block-records-are-private-runtime-state-not-public-object-abi"
-      << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-m261-d002-and-m261-d003"
+      << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-next-runtime-phase-and-m261-d003"
       << ";non_goals=no-public-block-object-abi-no-generalized-runtime-copy-dispose-allocation-surface";
   return out.str();
 }
@@ -1104,7 +1104,7 @@ std::string Objc3RuntimeBlockAllocationCopyDisposeInvokeSupportSummary() {
       << ";copy_dispose_model=pointer-capture-promotion-runs-copy-helper-and-final-release-runs-dispose-helper"
       << ";invoke_model=runtime-invoke-supports-readonly-scalar-and-pointer-capture-block-records"
       << ";handle_lifetime_model=i32-block-handles-participate-in-runtime-retain-release"
-      << ";fail_closed_model=byref-forwarding-runtime-reentrant-helper-bodies-and-owned-capture-escape-interop-remain-deferred-until-m261-d003"
+      << ";fail_closed_model=byref-forwarding-runtime-reentrant-helper-bodies-and-owned-capture-escape-interop-remain-deferred-until-next-runtime-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-public-runtime-helper-surface";
   return out.str();
 }
@@ -1158,7 +1158,7 @@ std::string Objc3RunnableBlockRuntimeGateSummary() {
 
 std::string Objc3RunnableBlockExecutionMatrixSummary() {
   std::ostringstream out;
-  // runnable-block execution-matrix anchor: lane-E now closes M261
+  // runnable-block execution-matrix anchor: lane-E now closes the block-runtime tranche
   // with one truthful executable matrix over the retained source, sema,
   // lowering, runtime, and E001 gate surfaces. This repackages the already
   // supported block slice into an operator-facing closeout proof without
@@ -1191,7 +1191,7 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
   // optional chaining lowering anchor: `?.member` now desugars onto
   // the same optional-send ABI and nil-short-circuit path already used by
   // bracketed optional sends, so the live lowering packet truthfully covers
-  // optional-member access. M265-C003 now widens the same packet to cover
+  // optional-member access. The later lowering step now widens the same packet to cover
   // validated typed key-path descriptor emission and stable runtime handles
   // without claiming full key-path application/runtime evaluation yet.
   out << "contract_id=" << kObjc3Part3OptionalKeypathLoweringContractId
@@ -1257,7 +1257,7 @@ std::string Objc3ArcSourceModeBoundarySummary() {
   // weak/unowned metadata, autoreleasepool profiling, and ARC fix-it surfaces
   // remain live in parser/sema/replay space, but the native driver still
   // rejects `-fobjc-arc` and executable ownership-qualified functions/methods
-  // stay fail-closed until ARC automation begins in M262-A002.
+  // stay fail-closed until ARC automation begins in the next lowering step.
   out << "contract=" << Expr::kObjc3ArcSourceModeBoundaryContractId
       << ";source_model=" << Expr::kObjc3ArcSourceModeBoundarySourceModel
       << ";mode_model=" << Expr::kObjc3ArcSourceModeBoundaryModeModel
@@ -1593,11 +1593,11 @@ std::string Objc3Part7ContinuationRuntimeHelperSummary() {
   // those helpers for live suspension.
   out << "contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
       << ";source_contract="
-      << "objc3c-part7-continuation-abi-async-lowering-contract/m268-c001-v1"
+      << "objc3c.part7.continuation.abi.async.lowering.contract.v1"
       << ";direct_call_contract="
-      << "objc3c-part7-async-direct-call-lowering/m268-c002-v1"
+      << "objc3c.part7.async.direct.call.lowering.v1"
       << ";cleanup_contract="
-      << "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1"
+      << "objc3c.part7.suspension.autorelease.cleanup.integration.v1"
       << ";source_model=" << kObjc3Part7ContinuationRuntimeHelperSourceModel
       << ";abi_model=" << kObjc3Part7ContinuationRuntimeHelperAbiModel
       << ";execution_model="
@@ -1622,9 +1622,9 @@ std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
   out << "contract=" << kObjc3Part7LiveContinuationRuntimeIntegrationContractId
       << ";helper_contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
       << ";direct_call_contract="
-      << "objc3c-part7-async-direct-call-lowering/m268-c002-v1"
+      << "objc3c.part7.async.direct.call.lowering.v1"
       << ";cleanup_contract="
-      << "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1"
+      << "objc3c.part7.suspension.autorelease.cleanup.integration.v1"
       << ";source_model="
       << kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel
       << ";execution_model="
@@ -1672,9 +1672,9 @@ std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
   out << "contract=" << kObjc3Part7LiveTaskRuntimeIntegrationContractId
       << ";helper_contract=" << kObjc3Part7SchedulerExecutorRuntimeContractId
       << ";lowering_contract="
-      << "objc3c-part7-task-runtime-lowering-implementation/m269-c002-v1"
+      << "objc3c.part7.task.runtime.lowering.implementation.v1"
       << ";abi_contract="
-      << "objc3c-part7-task-runtime-abi-completion/m269-c003-v1"
+      << "objc3c.part7.task.runtime.abi.completion.v1"
       << ";source_model=" << kObjc3Part7LiveTaskRuntimeIntegrationSourceModel
       << ";execution_model="
       << kObjc3Part7LiveTaskRuntimeIntegrationExecutionModel
@@ -2087,7 +2087,7 @@ std::string Objc3RuntimeMetadataLinkerRetentionSummary() {
   // real public linker anchor and one public discovery root, together with a
   // driver response-file payload that can force-retain the archived object that
   // owns the metadata sections. Multi-archive and multi-TU edge cases remain
-  // deferred until M253-D003.
+  // deferred until the next runtime step.
   out << "contract=" << kObjc3RuntimeLinkerRetentionContractId
       << ";anchor_model=" << kObjc3RuntimeLinkerRetentionAnchorModel
       << ";discovery_model=" << kObjc3RuntimeLinkerDiscoveryModel
@@ -2165,7 +2165,7 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
   std::ostringstream out;
   // registration-descriptor/image-root lowering anchor: this
   // summary freezes the first live binary lowering surface for the source
-  // identifiers from M263-A002. The IR/object path now materializes dedicated
+  // identifiers from the earlier runtime step. The IR/object path now materializes dedicated
   // registration-descriptor and image-root globals in their own sections
   // rather than treating those identifiers as sidecar-only metadata.
   out << "contract="
@@ -2191,8 +2191,8 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary() {
   std::ostringstream out;
   // archive/static-link bootstrap replay corpus anchor: this
-  // summary binds the M253-D003 retained archive/static-link discovery path to
-  // the live M263-B003 bootstrap reset/replay runtime so validation can prove
+  // summary binds the retained archive/static-link discovery path to
+  // the live bootstrap reset/replay runtime so validation can prove
   // real startup registration and replay behavior over linked archives.
   out << "contract="
       << kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId
@@ -2967,7 +2967,7 @@ bool IsValidObjc3OwnershipQualifierLoweringContract(
   // runtime-backed-object-ownership freeze anchor: these legacy
   // ownership replay surfaces remain part of the truthful runtime-backed
   // object ownership boundary until live ARC runtime behavior lands later in
-  // M260. They are preserved summary lanes, not proof that executable
+  // They are preserved summary lanes, not proof that executable
   // function/method ownership qualifiers are already runnable.
   // retainable-object semantic-rule freeze anchor: ownership
   // qualifier replay stays authoritative for fail-closed executable storage

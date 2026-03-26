@@ -245,7 +245,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // core feature: manifest emission also publishes the live
       // native runtime-library skeleton/build contract so the real in-tree
       // archive/header/source/probe surface stays synchronized with emitted IR
-      // evidence while driver link wiring remains deferred to M251-D003.
+      // evidence while driver link wiring remains deferred to the next runtime step.
       // link wiring: manifest emission remains the canonical
       // runtime-archive handoff for external executable link steps, even while
       // this driver tranche still stops at deterministic object emission.
@@ -361,7 +361,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     std::string conformance_publication_artifact_json;
     std::string conformance_publication_error;
     if (!TryBuildObjc3ConformanceReportPublicationArtifact(
-            {.contract_id = "objc3c-driver-conformance-report-publication/m264-d001-v1",
+            {.contract_id = "objc3c.driver.conformance.report.publication.v1",
              .schema_id = "objc3c-driver-conformance-publication-v1",
              .selected_profile =
                  ConformanceProfileName(cli_options.conformance_profile),
@@ -380,16 +380,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .fail_closed_diagnostic_model =
                  "core-profile-live-other-known-profiles-fail-closed-before-publication",
              .lowered_report_contract_id =
-                 "objc3c-versioned-conformance-report-lowering/m264-c001-v1",
+                 "objc3c.versioned.conformance.report.lowering.v1",
              .runtime_capability_contract_id =
-                 "objc3c-runtime-capability-reporting/m264-c002-v1",
+                 "objc3c.runtime.capability.reporting.v1",
              .public_conformance_schema_id = "objc3-conformance-report/v1",
              .advanced_feature_ops_contract_id =
-                 "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1",
+                 "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1",
              .advanced_feature_reporting_contract_id =
-                 "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1",
+                 "objc3c.part12.feature.aware.conformance.report.emission.v1",
              .advanced_feature_release_evidence_contract_id =
-                 "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1",
+                 "objc3c.part12.corpus.sharding.release.evidence.packaging.v1",
              .ci_release_evidence_gate_script_path =
                  "scripts/check_release_evidence.py",
              .runbook_reference_path =
@@ -1065,9 +1065,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           link_plan_inputs.expected_part6_source_contract_id =
               kObjc3Part6ThrowsAbiPropagationLoweringContractId;
           link_plan_inputs.expected_part7_actor_contract_id =
-              "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
+              "objc3c.part7.actor.mailbox.isolation.import.surface.v1";
           link_plan_inputs.expected_part7_actor_source_contract_id =
-              "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+              "objc3c.part7.actor.lowering.and.metadata.contract.v1";
           link_plan_inputs.expected_part11_ffi_contract_id =
               kObjc3Part11FfiMetadataInterfacePreservationContractId;
           link_plan_inputs.expected_part11_ffi_source_contract_id =

@@ -53,7 +53,7 @@ enum class ProducedObjectFormat : std::uint8_t {
 };
 
 inline constexpr const char *kObjc3RuntimeBootstrapTableConsumptionContractId =
-    "objc3c-runtime-bootstrap-table-consumption-freeze/m263-d001-v1";
+    "objc3c.runtime.bootstrap.table.consumption.freeze.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapTableConsumptionModel =
     "next-public-register-call-consumes-staged-registration-table-once";
 inline constexpr const char *kObjc3RuntimeBootstrapTableDeduplicationModel =
@@ -62,7 +62,7 @@ inline constexpr const char
     *kObjc3RuntimeBootstrapTableImageStatePublicationModel =
         "image-walk-snapshot-publishes-module-identity-root-counts-and-staged-table-usage";
 inline constexpr const char *kObjc3RuntimeLiveRegistrationDiscoveryReplayContractId =
-    "objc3c-runtime-live-registration-discovery-replay/m263-d002-v1";
+    "objc3c.runtime.live.registration.discovery.replay.v1";
 inline constexpr const char *kObjc3RuntimeLiveRegistrationModel =
     "emitted-metadata-images-register-through-native-runtime-and-retained-bootstrap-catalog";
 inline constexpr const char *kObjc3RuntimeLiveDiscoveryTrackingModel =
@@ -70,7 +70,7 @@ inline constexpr const char *kObjc3RuntimeLiveDiscoveryTrackingModel =
 inline constexpr const char *kObjc3RuntimeLiveReplayTrackingModel =
     "reset-replay-state-snapshot-tracks-retained-images-reset-clears-and-last-replayed-identity";
 inline constexpr const char *kObjc3RuntimeLiveRestartHardeningContractId =
-    "objc3c-runtime-live-restart-hardening/m263-d003-v1";
+    "objc3c.runtime.live.restart.hardening.v1";
 inline constexpr const char *kObjc3RuntimeLiveIdempotenceModel =
     "second-live-replay-without-reset-fails-closed-and-preserves-live-runtime-state";
 inline constexpr const char *kObjc3RuntimeLiveTeardownModel =
@@ -78,7 +78,7 @@ inline constexpr const char *kObjc3RuntimeLiveTeardownModel =
 inline constexpr const char *kObjc3RuntimeLiveRestartEvidenceModel =
     "repeated-reset-replay-cycles-publish-monotonic-reset-and-replay-generations";
 inline constexpr const char *kObjc3ToolchainConformanceClaimOperationsContractId =
-    "objc3c-toolchain-conformance-claim-operations/m264-d002-v1";
+    "objc3c.toolchain.conformance.claim.operations.v1";
 inline constexpr const char *kObjc3ToolchainConformanceClaimValidationSchemaId =
     "objc3c-driver-conformance-validation-v1";
 inline constexpr const char *kObjc3ToolchainConformanceClaimValidationModel =
@@ -86,11 +86,11 @@ inline constexpr const char *kObjc3ToolchainConformanceClaimValidationModel =
 inline constexpr const char *kObjc3ToolchainConformanceClaimConsumptionModel =
     "validation-consumes-json-sidecars-only-and-keeps-unsupported-profiles-fail-closed";
 inline constexpr const char *kObjc3AdvancedFeatureOpsContractId =
-    "objc3c-advanced-feature-ci-runbook-dashboard-contract/m275-d001-v1";
+    "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
 inline constexpr const char *kObjc3AdvancedFeatureReportingContractId =
-    "objc3c-part12-feature-aware-conformance-report-emission/m275-c002-v1";
+    "objc3c.part12.feature.aware.conformance.report.emission.v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseEvidenceContractId =
-    "objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1";
+    "objc3c.part12.corpus.sharding.release.evidence.packaging.v1";
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceGateScriptPath =
     "scripts/check_release_evidence.py";
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
@@ -98,19 +98,19 @@ inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
 inline constexpr const char *kObjc3AdvancedFeatureDashboardSchemaPath =
     "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 inline constexpr const char *kObjc3ReleaseEvidenceOperationContractId =
-    "objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1";
+    "objc3c.part12.release.evidence.toolchain.operations.v1";
 inline constexpr const char *kObjc3ReleaseEvidenceOperationSchemaId =
     "objc3c-part12-release-evidence-operation-v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationContractId =
-    "objc3c-part12-dashboard-status-publication/m275-d002-v1";
+    "objc3c.part12.dashboard.status.publication.v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationSchemaId =
     "objc3c-part12-dashboard-status-publication-v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateContractId =
-    "objc3c-part12-integrated-advanced-feature-gate/m275-e001-v1";
+    "objc3c.part12.integrated.advanced.feature.gate.v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateSchemaId =
     "objc3c-part12-integrated-advanced-feature-gate-v1";
 inline constexpr const char *kObjc3ReleaseCandidateMatrixContractId =
-    "objc3c-part12-release-candidate-execution-matrix/m275-e002-v1";
+    "objc3c.part12.release.candidate.execution.matrix.v1";
 inline constexpr const char *kObjc3ReleaseCandidateMatrixSchemaId =
     "objc3c-part12-release-candidate-execution-matrix-v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
@@ -625,11 +625,11 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
   // source-to-section matrix anchor: only image-info plus
   // class/protocol/category/property/ivar descriptor sections are materialized
   // today, while unsupported standalone rows stay explicit in the published
-  // completeness matrix until later M253 work lands.
+  // completeness matrix until later work lands.
   // layout/visibility policy anchor: llvm-direct object emission must preserve
   // emitted global order, section family order, the local-linkage/no-COMDAT policy,
   // and llvm.used retention order exactly. Backend execution may not inject
-  // exported visibility or object-format-specific rewrites before M253-B003 lands.
+  // exported visibility or object-format-specific rewrites before the next runtime step lands.
   // normalized layout policy anchor: llvm-direct object emission now
   // consumes an IR surface that already encodes one normalized metadata layout replay key.
   // The backend may not reorder, relax, or reinterpret that
@@ -715,7 +715,7 @@ bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
   // translation-unit registration surface freeze: startup
   // registration must consume the linker-response/discovery sidecars derived
   // here without re-deriving translation-unit identity or renaming the public
-  // discovery/linker-anchor boundary emitted by the M253 path.
+  // discovery/linker-anchor boundary emitted by the earlier path.
   artifacts = Objc3RuntimeMetadataLinkerRetentionArtifacts{};
   error.clear();
 
@@ -2701,7 +2701,7 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     return false;
   }
   if (!TryExtractJsonStringField(report_json, "contract_id", report_contract_id) ||
-      report_contract_id != "objc3c-versioned-conformance-report-lowering/m264-c001-v1") {
+      report_contract_id != "objc3c.versioned.conformance.report.lowering.v1") {
     error = "invalid conformance report contract_id";
     return false;
   }
@@ -2717,13 +2717,13 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   }
   if (report_json.find("\"runtime_capability_report\"") == std::string::npos ||
       report_json.find(
-          "\"contract_id\":\"objc3c-runtime-capability-reporting/m264-c002-v1\"") ==
+          "\"contract_id\":\"objc3c.runtime.capability.reporting.v1\"") ==
           std::string::npos) {
     error = "runtime_capability_report payload is missing or drifted";
     return false;
   }
   runtime_capability_contract_id =
-      "objc3c-runtime-capability-reporting/m264-c002-v1";
+      "objc3c.runtime.capability.reporting.v1";
   if (report_json.find("\"public_conformance_report\"") == std::string::npos ||
       report_json.find("\"schema_id\":\"objc3-conformance-report/v1\"") ==
           std::string::npos) {
@@ -2754,7 +2754,7 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   if (!TryExtractJsonStringField(publication_json, "contract_id",
                                  publication_contract_id) ||
       publication_contract_id !=
-          "objc3c-driver-conformance-report-publication/m264-d001-v1") {
+          "objc3c.driver.conformance.report.publication.v1") {
     error = "invalid conformance publication contract_id";
     return false;
   }
@@ -3148,8 +3148,8 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
       << EscapeJsonString(kObjc3AdvancedFeatureGateSchemaId) << "\",\n"
       << "  \"dependency_contract_ids\": "
       << BuildIndentedStringArrayJson(
-             {"objc3c-part12-frontend-migration-canonicalization-source-completion/m275-a002-v1",
-              "objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1",
+             {"objc3c.part12.frontend.migration.canonicalization.source.completion.v1",
+              "objc3c.part12.legacy.canonical.migration.semantics.v1",
               kObjc3AdvancedFeatureReleaseEvidenceContractId,
               kObjc3ReleaseEvidenceOperationContractId},
              "    ")
@@ -3241,11 +3241,11 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
              {"strict", "strict-concurrency", "strict-system"}, "    ")
       << ",\n"
       << "  \"matrix_rows\": [\n"
-      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c-part12-migration-canonicalization-source-completion/m275-a002-v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c-part12-legacy-canonical-migration-semantics/m275-b003-v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c-part12-corpus-sharding-release-evidence-packaging/m275-c003-v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c-part12-release-evidence-toolchain-operations/m275-d002-v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c-part12-integrated-advanced-feature-gate/m275-e001-v1\",\"status\":\"pass\"}\n"
+      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c.part12.migration.canonicalization.source.completion.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c.part12.legacy.canonical.migration.semantics.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c.part12.corpus.sharding.release.evidence.packaging.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c.part12.release.evidence.toolchain.operations.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c.part12.integrated.advanced.feature.gate.v1\",\"status\":\"pass\"}\n"
       << "  ],\n"
       << "  \"matrix_model\": \""
       << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-emitted-sidecars"

@@ -946,7 +946,7 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // lowering/runtime proofs so runnable block closeout cannot drift
           // back to metadata-only evidence.
           // runnable-block execution-matrix anchor: lane-E now
-          // closes M261 by consuming this same source+sema handoff together
+          // closes the block-runtime tranche by consuming this same source+sema handoff together
           // with integrated executable block fixtures instead of widening the
           // semantic surface any further.
           BuildSemanticIntegrationSurface(

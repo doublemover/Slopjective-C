@@ -1232,7 +1232,7 @@ struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
 };
 
 inline constexpr const char *kObjc3Part3TypeSourceClosureContractId =
-    "objc3c-part3-type-source-closure/m265-a002-v1";
+    "objc3c.part3.type.source.closure.v1";
 inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part3_type_source_closure";
 inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
@@ -1240,7 +1240,7 @@ inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
 inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
     "typed-keypath-literals-remain-source-sema-surfaces-while-native-lowering-now-emits-stable-descriptor-handles-for-the-validated-single-component-subset";
 inline constexpr const char *kObjc3Part3TypeSemanticModelContractId =
-    "objc3c-part3-type-semantic-model/m265-b001-v1";
+    "objc3c.part3.type.semantic.model.v1";
 inline constexpr const char *kObjc3Part3TypeSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
 inline constexpr const char *kObjc3Part3TypeSemanticModelCoreRule =
@@ -1292,13 +1292,13 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
 };
 
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureContractId =
-    "objc3c-part5-control-flow-source-closure/m266-a002-v1";
+    "objc3c.part5.control.flow.source.closure.v1";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSourceModel =
     "guard-condition-lists-defer-statements-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
 inline constexpr const char *kObjc3Part5ControlFlowSourceClosureFailureModel =
-    "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-m266-sema-lowering-and-runtime-work";
+    "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
 
 struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string contract_id = kObjc3Part5ControlFlowSourceClosureContractId;
@@ -1356,7 +1356,7 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
 };
 
 inline constexpr const char *kObjc3Part6ErrorSourceClosureContractId =
-    "objc3c-part6-error-source-closure/m267-a001-v1";
+    "objc3c.part6.error.source.closure.v1";
 inline constexpr const char *kObjc3Part6ErrorSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part6_error_source_closure";
 inline constexpr const char *kObjc3Part6ErrorSourceClosureSourceModel =
@@ -1414,17 +1414,17 @@ struct Objc3FrontendPart6ErrorSourceClosureSummary {
 };
 
 inline constexpr const char *kObjc3Part7AsyncSourceClosureContractId =
-    "objc3c-part7-async-source-closure/m268-a002-v1";
+    "objc3c.part7.async.source.closure.v1";
 inline constexpr const char *kObjc3Part7AsyncSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_async_source_closure";
 inline constexpr const char *kObjc3Part7AsyncSourceClosureSourceModel =
-    "async-entry-await-expression-and-executor-affinity-syntax-are-live-frontend-owned-source-surfaces-while-continuation-lowering-suspension-cleanup-and-runtime-scheduling-remain-later-m268-work";
+    "async-entry-await-expression-and-executor-affinity-syntax-are-live-frontend-owned-source-surfaces-while-continuation-lowering-suspension-cleanup-and-runtime-scheduling-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7AsyncSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-continuation-abi-suspension-cleanup-or-executor-runtime-behavior";
 inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_actor_member_and_isolation_source_closure";
 inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSourceModel =
-    "actor-class-declarations-actor-members-and-objc-nonisolated-annotations-are-live-frontend-owned-source-surfaces-while-actor-legality-diagnostics-and-runnable-actor-runtime-behavior-remain-later-m270-work";
+    "actor-class-declarations-actor-members-and-objc-nonisolated-annotations-are-live-frontend-owned-source-surfaces-while-actor-legality-diagnostics-and-runnable-actor-runtime-behavior-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-actor-member-legality-diagnostics-cross-actor-enforcement-or-runnable-actor-runtime-behavior";
 
@@ -1491,38 +1491,38 @@ struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary {
 inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part7_task_group_and_cancellation_source_closure";
 inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSourceModel =
-    "task-creation-task-group-and-cancellation-call-surfaces-are-live-frontend-owned-source-surfaces-while-runnable-task-allocation-executor-hops-and-scheduler-execution-remain-later-m269-work";
+    "task-creation-task-group-and-cancellation-call-surfaces-are-live-frontend-owned-source-surfaces-while-runnable-task-allocation-executor-hops-and-scheduler-execution-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-task-allocation-task-group-execution-or-scheduler-backed-cancellation-runtime-behavior";
 
 inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part8_resource_borrowed_and_capture_list_source_closure";
 inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSourceModel =
-    "resource-let-attributes-borrowed-pointer-qualifiers-borrowed-return-relations-and-explicit-block-capture-lists-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-lifetime-enforcement-remain-later-m271-work";
+    "resource-let-attributes-borrowed-pointer-qualifiers-borrowed-return-relations-and-explicit-block-capture-lists-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-lifetime-enforcement-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-resource-cleanup-lowering-borrowed-escape-enforcement-or-runnable-capture-ownership-runtime-behavior";
 inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part8_cleanup_resource_and_capture_source_completion";
 inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSourceModel =
-    "cleanup-hooks-resource-sugar-and-explicit-block-capture-surface-forms-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-resource-ownership-remain-later-m271-work";
+    "cleanup-hooks-resource-sugar-and-explicit-block-capture-surface-forms-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-resource-ownership-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-cleanup-lowering-resource-runtime-behavior-or-borrowed-pointer-semantic-enforcement";
 inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part8_retainable_c_family_source_completion";
 inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSourceModel =
-    "retainable-c-family-callable-annotations-and-compatibility-aliases-are-live-frontend-owned-source-surfaces-while-family-legality-arc-integration-and-runtime-interop-remain-later-m271-work";
+    "retainable-c-family-callable-annotations-and-compatibility-aliases-are-live-frontend-owned-source-surfaces-while-family-legality-arc-integration-and-runtime-interop-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-retainable-c-family-legality-arc-interop-or-runnable-family-runtime-behavior";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureSourceModel =
-    "direct-final-sealed-and-dynamism-control-attributes-are-live-frontend-owned-source-surfaces-while-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-m272-work";
+    "direct-final-sealed-and-dynamism-control-attributes-are-live-frontend-owned-source-surfaces-while-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-direct-dispatch-legality-final-sealed-enforcement-or-runnable-dispatch-boundary-behavior";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_attribute_and_defaulting_source_completion";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSourceModel =
-    "prefixed-container-attributes-direct-members-defaulting-and-dynamic-opt-out-surfaces-are-live-frontend-owned-source-surfaces-while-part9-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-m272-work";
+    "prefixed-container-attributes-direct-members-defaulting-and-dynamic-opt-out-surfaces-are-live-frontend-owned-source-surfaces-while-part9-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-final-sealed-legality-enforcement-direct-call-lowering-or-runnable-dispatch-boundary-behavior";
 inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureSurfacePath =
@@ -1546,13 +1546,13 @@ inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionFailure
 inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part11_foreign_declaration_and_import_source_closure";
 inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSourceModel =
-    "foreign-callable-markers-import-module-annotations-and-base-interop-annotation-surfaces-are-live-frontend-owned-source-surfaces-while-cpp-swift-annotation-completion-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-m274-work";
+    "foreign-callable-markers-import-module-annotations-and-base-interop-annotation-surfaces-are-live-frontend-owned-source-surfaces-while-cpp-swift-annotation-completion-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part11ForeignImportSourceClosureFailureModel =
     "part11-source-closure-does-not-yet-claim-cpp-swift-specific-annotation-completion-interface-emission-ffi-lowering-or-runnable-bridge-generation";
 inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSurfacePath =
     "frontend.pipeline.semantic_surface.objc_part11_cpp_and_swift_interop_annotation_source_completion";
 inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSourceModel =
-    "swift-facing-name-private-markers-cpp-facing-name-markers-and-header-name-metadata-surfaces-are-live-frontend-owned-source-surfaces-while-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-m274-work";
+    "swift-facing-name-private-markers-cpp-facing-name-markers-and-header-name-metadata-surfaces-are-live-frontend-owned-source-surfaces-while-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel =
     "part11-source-completion-does-not-yet-claim-interface-emission-cpp-swift-runtime-bridging-or-runnable-cross-language-call-behavior";
 inline constexpr const char
@@ -1561,7 +1561,7 @@ inline constexpr const char
         "objc_part12_diagnostics_fixit_and_migrator_source_inventory";
 inline constexpr const char
     *kObjc3Part12DiagnosticsMigratorSourceInventorySourceModel =
-        "advanced-part6-through-part11-source-packets-and-migration-hints-are-aggregated-into-one-frontend-owned-inventory-for-diagnostics-fix-its-and-migrator-planning-while-feature-specific-synthesis-report-emission-and-release-automation-remain-later-m275-work";
+        "advanced-part6-through-part11-source-packets-and-migration-hints-are-aggregated-into-one-frontend-owned-inventory-for-diagnostics-fix-its-and-migrator-planning-while-feature-specific-synthesis-report-emission-and-release-automation-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel =
         "part12-source-inventory-does-not-yet-claim-feature-specific-fix-it-rewrites-legacy-to-canonical-migration-application-or-machine-readable-release-report-emission";
@@ -1587,7 +1587,7 @@ inline constexpr const char
         "advanced-sema-diagnostic-taxonomy-and-portability-freeze-publishes-one-deterministic-part12-packet-over-the-live-arc-fixit-and-migration-surfaces";
 inline constexpr const char
     *kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel =
-        "advanced-feature-portability-claims-remain-anchored-to-completed-m264-through-m274-closeout-dependencies-while-part12-freezes-the-frontdoor-sema-contract";
+        "advanced-feature-portability-claims-remain-anchored-to-completed-advanced-closeout-dependencies-while-part12-freezes-the-frontdoor-sema-contract";
 inline constexpr const char
     *kObjc3Part12FeatureSpecificFixitSynthesisSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -1623,13 +1623,13 @@ inline constexpr const char
         "missing-or-drifted-part11-preservation-packets-disable-cross-module-foreign-surface-preservation-claims";
 inline constexpr const char
     *kObjc3Part11HeaderModuleBridgeGenerationContractId =
-        "objc3c-part11-header-module-and-bridge-generation/m274-d002-v1";
+        "objc3c.part11.header.module.and.bridge.generation.v1";
 inline constexpr const char
     *kObjc3Part11HeaderModuleBridgeGenerationSourceContractId =
-        "objc3c-part11-bridge-packaging-and-toolchain-contract/m274-d001-v1";
+        "objc3c.part11.bridge.packaging.and.toolchain.contract.v1";
 inline constexpr const char
     *kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId =
-        "objc3c-part11-ffi-metadata-interface-preservation/m274-c003-v1";
+        "objc3c.part11.ffi.metadata.interface.preservation.v1";
 inline constexpr const char
     *kObjc3Part11HeaderModuleBridgeGenerationSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -2367,9 +2367,9 @@ struct Objc3RuntimeMetadataIvarSourceRecord {
 };
 
 inline constexpr const char *kObjc3RuntimeExportLegalityContractId =
-    "objc3c-runtime-export-legality-freeze/m251-b001-v1";
+    "objc3c.runtime.export.legality.freeze.v1";
 inline constexpr const char *kObjc3RuntimeExportEnforcementContractId =
-    "objc3c-runtime-export-enforcement/m251-b002-v1";
+    "objc3c.runtime.export.enforcement.v1";
 
 struct Objc3RuntimeMetadataSourceRecordSet {
   std::vector<Objc3RuntimeMetadataClassSourceRecord> classes_lexicographic;
@@ -2388,10 +2388,10 @@ inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
 
 inline constexpr const char
     *kObjc3RuntimeAwareImportModuleSurfaceContractId =
-        "objc3c-runtime-aware-import-module-surface/m258-a001-v1";
+        "objc3c.runtime.aware.import.module.surface.v1";
 inline constexpr const char
     *kObjc3RuntimeAwareImportModuleFrontendClosureContractId =
-        "objc3c-runtime-aware-import-module-frontend-closure/m258-a002-v1";
+        "objc3c.runtime.aware.import.module.frontend.closure.v1";
 inline constexpr const char
     *kObjc3RuntimeAwareImportModuleFrontendClosureSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -2508,7 +2508,7 @@ inline bool IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
 
 inline constexpr const char
     *kObjc3CrossModuleRuntimeMetadataSemanticPreservationContractId =
-        "objc3c-cross-module-runtime-metadata-semantic-preservation/m258-b001-v1";
+        "objc3c.cross.module.runtime.metadata.semantic.preservation.v1";
 inline constexpr const char
     *kObjc3CrossModuleRuntimeMetadataSemanticPreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -2623,7 +2623,7 @@ inline bool IsReadyObjc3CrossModuleRuntimeMetadataSemanticPreservationSummary(
 }
 
 inline constexpr const char *kObjc3ImportedRuntimeMetadataSemanticRulesContractId =
-    "objc3c-imported-runtime-metadata-semantic-rules/m258-b002-v1";
+    "objc3c.imported.runtime.metadata.semantic.rules.v1";
 inline constexpr const char *kObjc3ImportedRuntimeMetadataSemanticRulesSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_imported_runtime_metadata_semantic_rules";
@@ -2723,7 +2723,7 @@ inline bool IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
 }
 
 inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringContractId =
-    "objc3c-serialized-runtime-metadata-import-lowering/m258-c001-v1";
+    "objc3c.serialized.runtime.metadata.import.lowering.v1";
 inline constexpr const char *kObjc3SerializedRuntimeMetadataImportLoweringSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_serialized_runtime_metadata_import_lowering_contract";
@@ -2783,7 +2783,7 @@ inline bool IsReadyObjc3SerializedRuntimeMetadataImportLoweringSummary(
 }
 
 inline constexpr const char *kObjc3SerializedRuntimeMetadataArtifactReuseContractId =
-    "objc3c-serialized-runtime-metadata-artifact-reuse/m258-c002-v1";
+    "objc3c.serialized.runtime.metadata.artifact.reuse.v1";
 inline constexpr const char *kObjc3SerializedRuntimeMetadataArtifactReuseSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_serialized_runtime_metadata_artifact_reuse";
@@ -2854,7 +2854,7 @@ inline bool IsReadyObjc3SerializedRuntimeMetadataArtifactReuseSummary(
 
 inline constexpr const char
     *kObjc3CrossModuleBuildRuntimeOrchestrationContractId =
-        "objc3c-cross-module-build-runtime-orchestration/m258-d001-v1";
+        "objc3c.cross.module.build.runtime.orchestration.v1";
 inline constexpr const char
     *kObjc3CrossModuleBuildRuntimeOrchestrationSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -2973,7 +2973,7 @@ inline bool IsReadyObjc3CrossModuleBuildRuntimeOrchestrationSummary(
 }
 
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphContractId =
-    "objc3c-executable-metadata-source-graph-completeness/m252-a002-v1";
+    "objc3c.executable.metadata.source.graph.completeness.v1";
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphOwnerIdentityModel =
     "semantic-link-symbol-and-runtime-owner-identity";
 inline constexpr const char *kObjc3ExecutableMetadataMetaclassNodePolicy =
@@ -2982,7 +2982,7 @@ inline constexpr const char *kObjc3ExecutableMetadataSourceGraphEdgeOrderingMode
     "lexicographic-kind-source-target";
 inline constexpr const char
     *kObjc3ExecutableMetadataClassMetaclassSourceClosureContractId =
-        "objc3c-executable-class-metaclass-source-closure/m256-a002-v1";
+        "objc3c.executable.class.metaclass.source.closure.v1";
 inline constexpr const char
     *kObjc3ExecutableMetadataClassMetaclassParentIdentityModel =
         "declaration-owned-class-parent-plus-metaclass-parent-identities";
@@ -2994,7 +2994,7 @@ inline constexpr const char
         "declaration-owned-class-and-metaclass-object-identities";
 inline constexpr const char
     *kObjc3ExecutableMetadataProtocolCategorySourceClosureContractId =
-        "objc3c-executable-protocol-category-source-closure/m256-a003-v1";
+        "objc3c.executable.protocol.category.source.closure.v1";
 inline constexpr const char
     *kObjc3ExecutableMetadataProtocolInheritanceIdentityModel =
         "protocol-declaration-owned-inherited-protocol-identities";
@@ -3005,13 +3005,13 @@ inline constexpr const char
     *kObjc3ExecutableMetadataProtocolCategoryConformanceIdentityModel =
         "category-declaration-owned-adopted-protocol-conformance-identities";
 inline constexpr const char *kObjc3ExecutableMetadataSemanticConsistencyContractId =
-    "objc3c-executable-metadata-semantic-consistency-freeze/m252-b001-v1";
+    "objc3c.executable.metadata.semantic.consistency.freeze.v1";
 inline constexpr const char *kObjc3ExecutableMetadataSemanticValidationContractId =
-    "objc3c-executable-metadata-semantic-validation/m252-b002-v1";
+    "objc3c.executable.metadata.semantic.validation.v1";
 inline constexpr const char *kObjc3ExecutableMetadataLoweringHandoffContractId =
-    "objc3c-executable-metadata-lowering-handoff-freeze/m252-c001-v1";
+    "objc3c.executable.metadata.lowering.handoff.freeze.v1";
 inline constexpr const char *kObjc3ExecutableMetadataTypedLoweringHandoffContractId =
-    "objc3c-executable-metadata-typed-lowering-handoff/m252-c002-v1";
+    "objc3c.executable.metadata.typed.lowering.handoff.v1";
 inline constexpr const char *kObjc3ExecutableMetadataTypedLoweringManifestSchemaOrderingModel =
     "contract-header-then-source-graph-payload-v1";
 
@@ -4354,7 +4354,7 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestSummary {
   std::string contract_id =
       kObjc3RuntimeTranslationUnitRegistrationManifestContractId;
   std::string launch_integration_contract_id =
-      "objc3c-runtime-launch-integration/m254-d004-v1";
+      "objc3c.runtime.launch.integration.v1";
   std::string translation_unit_registration_contract_id =
       kObjc3RuntimeTranslationUnitRegistrationContractId;
   std::string runtime_support_library_link_wiring_contract_id =

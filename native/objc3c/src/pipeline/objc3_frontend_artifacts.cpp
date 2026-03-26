@@ -49,7 +49,7 @@ inline constexpr const char
         "objc_part5_control_flow_safety_lowering_contract";
 inline constexpr const char
     *kObjc3Part7ContinuationAbiAsyncLoweringContractId =
-        "objc3c-part7-continuation-abi-async-lowering-contract/m268-c001-v1";
+        "objc3c.part7.continuation.abi.async.lowering.contract.v1";
 inline constexpr const char
     *kObjc3Part7ContinuationAbiAsyncLoweringSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -62,14 +62,14 @@ inline constexpr const char
         "await-suspension-state-lowering-replay-keys-and-counts-are-published-alongside-continuation-lowering";
 inline constexpr const char
     *kObjc3Part7ContinuationAbiAsyncLoweringDeferredModel =
-        "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-m268-work";
+        "runnable-async-frame-layout-resume-cleanup-and-executor-runtime-execution-remain-later-runtime-work";
 // implementation anchor: publish a second Part 7 packet that states
 // the current runnable lowering truthfully. The live native slice is
 // direct-call based and non-suspending; it does not claim a full continuation
 // runtime yet.
 inline constexpr const char
     *kObjc3Part7AsyncDirectCallLoweringContractId =
-        "objc3c-part7-async-direct-call-lowering/m268-c002-v1";
+        "objc3c.part7.async.direct.call.lowering.v1";
 inline constexpr const char
     *kObjc3Part7AsyncDirectCallLoweringSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -82,10 +82,10 @@ inline constexpr const char
         "await-marked-expressions-currently-reuse-the-operand-direct-call-lowering-path-without-materializing-a-suspension-state-machine";
 inline constexpr const char
     *kObjc3Part7AsyncDirectCallLoweringDeferredModel =
-        "continuation-allocation-resume-suspend-state-machine-cleanup-and-executor-runtime-scheduling-remain-later-m268-work";
+        "continuation-allocation-resume-suspend-state-machine-cleanup-and-executor-runtime-scheduling-remain-later-runtime-work";
 inline constexpr const char
     *kObjc3Part7SuspensionCleanupIntegrationContractId =
-        "objc3c-part7-suspension-autorelease-cleanup-integration/m268-c003-v1";
+        "objc3c.part7.suspension.autorelease.cleanup.integration.v1";
 // integration anchor: this packet ties the current direct-call async
 // slice to the already-live autoreleasepool and defer-cleanup lowering surfaces
 // instead of claiming a separate continuation cleanup runtime.
@@ -101,9 +101,9 @@ inline constexpr const char
         "current-proof-fixtures-show-terminal-return-paths-compose-await-direct-call-lowering-with-autoreleasepool-pop-and-defer-cleanup-without-a-separate-suspension-runtime";
 inline constexpr const char
     *kObjc3Part7SuspensionCleanupIntegrationDeferredModel =
-        "continuation-resume-cleanup-suspension-state-frames-and-executor-runtime-scheduling-remain-later-m268-work";
+        "continuation-resume-cleanup-suspension-state-frames-and-executor-runtime-scheduling-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringContractId =
-    "objc3c-part7-task-runtime-lowering-contract/m269-c001-v1";
+    "objc3c.part7.task.runtime.lowering.contract.v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_part7_task_runtime_lowering_contract";
@@ -116,18 +116,18 @@ inline constexpr const char *kObjc3Part7TaskRuntimeLoweringExecutorModel =
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringConcurrencyModel =
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
 inline constexpr const char *kObjc3Part7TaskRuntimeLoweringDeferredModel =
-    "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-m269-work";
+    "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataContractId =
-    "objc3c-part7-actor-lowering-and-metadata-contract/m270-c001-v1";
+    "objc3c.part7.actor.lowering.and.metadata.contract.v1";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_part7_actor_lowering_and_metadata_contract";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataModel =
     "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
-    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
+    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-runtime-work";
 inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportContractId =
-    "objc3c-part7-actor-mailbox-isolation-import-surface/m270-d003-v1";
+    "objc3c.part7.actor.mailbox.isolation.import.surface.v1";
 inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_part7_actor_mailbox_and_isolation_runtime_import_surface";
@@ -136,7 +136,7 @@ inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportSourceModel =
 inline constexpr const char *kObjc3Part7ActorMailboxRuntimeImportFailClosedModel =
     "missing-or-drifted-actor-mailbox-runtime-import-packets-disable-cross-module-actor-runtime-preservation-claims";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionContractId =
-    "objc3c-part7-task-runtime-abi-completion/m269-c003-v1";
+    "objc3c.part7.task.runtime.abi.completion.v1";
 inline constexpr const char *kObjc3Part7TaskRuntimeAbiCompletionSurfacePath =
     "frontend.pipeline.semantic_surface."
     "objc_part7_task_group_and_runtime_abi_completion";
@@ -487,7 +487,7 @@ std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
 }
 
 constexpr char kObjc3RuntimeAwareImportModuleSurfaceContractId[] =
-    "objc3c-runtime-aware-import-module-surface/m258-a001-v1";
+    "objc3c.runtime.aware.import.module.surface.v1";
 constexpr char kObjc3RuntimeAwareImportModuleSurfacePath[] =
     "frontend.pipeline.semantic_surface.objc_runtime_aware_import_module_surface_contract";
 constexpr char kObjc3RuntimeAwareImportModuleSurfaceSourceModel[] =
@@ -16442,7 +16442,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   // block-source-storage-annotation anchor: frontend artifacts now
   // publish the truthful byref/helper/escape-shape source inventory directly
   // from the parser-owned block model so later sema and runtime lanes can
-  // consume something real without rewriting the old synthetic M168/M169
+  // consume something real without rewriting the old synthetic legacy
   // packets in place.
   const Objc3BlockSourceStorageAnnotationContract
       block_source_storage_annotation_contract =
@@ -20649,7 +20649,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // source-to-section matrix anchor: lane-A must publish one
            // canonical node-to-emitted-section matrix that preserves the A001
            // inventory and explicitly marks interface/implementation/metaclass/
-           // method rows as no-standalone-emission-yet until later M253 work.
+           // method rows as no-standalone-emission-yet until later work.
            << ",\"objc_runtime_metadata_source_to_section_matrix\":"
            << BuildRuntimeMetadataSourceToSectionMatrixSummaryJson(
                   runtime_metadata_source_to_section_matrix)
@@ -20689,7 +20689,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            // packets so later section-emission/bootstrap work consumes one
            // deterministic artifact boundary instead of reparsing manifest JSON.
            // semantic-closure gate anchor: lane-E freezes the
-           // aggregate A003/B004/C003/D002 boundary here so M253-A001 section
+           // aggregate the existing boundary here so the section
            // emission consumes one synchronized metadata closure proof.
            // corpus-sync anchor: integrated corpus probes must
            // observe these synchronized metadata surfaces through the real
@@ -20732,7 +20732,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                   runtime_registration_descriptor_frontend_closure)
            // bootstrap-legality anchor: lane-B now publishes the
            // fail-closed semantic legality packet that bridges the emitted
-           // A002 descriptor frontier and the live M254-B002 bootstrap
+           // descriptor frontier and the live bootstrap
            // semantics so later runtime/lowering work preserves one canonical
            // duplicate-policy, ordering, and restart model.
            << ",\"objc_runtime_bootstrap_legality_failure_contract\":"
@@ -20838,7 +20838,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "}"
            // archive/static-link bootstrap replay corpus anchor:
            // lane-C now publishes the retained-archive replay proof surface
-           // that ties the M253-D003 merge model to the live M263-B003 replay
+           // that ties the merge model to the live replay
            // runtime and the emitted C002 registration-descriptor/image-root
            // lowering boundary.
            << ",\"objc_runtime_bootstrap_archive_static_link_replay_corpus\":{"
@@ -25221,7 +25221,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             std::to_string(synthesized_binding_entries) +
             ";ivar_layout_entries=" +
             std::to_string(ivar_bundles.size()) +
-            ";deterministic=true;lane_contract=m257-property-ivar-source-model-v1";
+            ";deterministic=true;lane_contract=objc3c.property.ivar.source.model.v1";
         ir_frontend_metadata.executable_ivar_layout_emission_contract_id =
             kObjc3ExecutableIvarLayoutEmissionContractId;
         ir_frontend_metadata.executable_ivar_layout_descriptor_model =
@@ -25263,7 +25263,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               std::to_string(ivar_layout_owner_identities.size()) +
               ";owner_entries=" +
               std::to_string(ivar_layout_owner_identities.size()) +
-              ";deterministic=true;lane_contract=m257-ivar-layout-emission-v1";
+              ";deterministic=true;lane_contract=objc3c.ivar.layout.emission.v1";
         } else {
           ir_frontend_metadata.executable_ivar_layout_emission_replay_key.clear();
         }
