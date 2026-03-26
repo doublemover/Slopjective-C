@@ -1,0 +1,21 @@
+{
+  "mode": "m318-c003-new-work-proposal-tooling-v1",
+  "contract_id": "objc3c-governance-new-work-proposal-tooling/m318-c003-v1",
+  "consumed_contract_ids": [
+    "objc3c-cleanup-planning-packet-issue-template-contract/m317-c001-v1",
+    "objc3c-governance-planning-hygiene-policy/m318-b002-v1",
+    "objc3c-governance-anti-noise-exception-process/m318-a002-v1",
+    "objc3c-governance-automation-contract/m318-c001-v1"
+  ],
+  "template_path": "tmp/planning/m318_governance/new_work_proposal_template.json",
+  "publication_tool_path": "tmp/github-publish/m318_governance/publish_new_work_proposal.py",
+  "sample_fixture_path": "tests/tooling/fixtures/m318_governance/new_work_proposal_sample.json",
+  "sample_output_dir": "tmp/reports/m318/governance/new_work_proposal",
+  "package_metadata_keys": [
+    "newWorkProposalTemplatePath",
+    "newWorkProposalPublicationToolPath",
+    "newWorkProposalToolingOwnerIssue"
+  ],
+  "default_mode": "render-only",
+  "next_issue": "M318-D001"
+}
