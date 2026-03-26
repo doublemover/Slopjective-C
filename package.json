@@ -106,7 +106,9 @@
     "reviewChecklistOwnerIssue": "M318-B003",
     "automationContractOwnerIssue": "M318-C001",
     "automationImplementationOwnerIssue": "M318-C002",
-    "newWorkProposalToolingOwnerIssue": "M318-C003"
+    "newWorkProposalToolingOwnerIssue": "M318-C003",
+    "longTermGovernanceReportingContractPath": "spec/governance/objc3c_long_term_governance_reporting_contract.json",
+    "longTermGovernanceReportingOwnerIssue": "M318-D001"
   },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
@@ -8031,6 +8033,9 @@
     "check:objc3c:m318-c002-lane-c-readiness": "python scripts/run_m318_c002_lane_c_readiness.py",
     "check:objc3c:m318-c003-new-work-proposal-and-publication-workflow-tooling-core-feature-expansion": "python scripts/check_m318_c003_new_work_proposal_and_publication_workflow_tooling_core_feature_expansion.py",
     "test:tooling:m318-c003-new-work-proposal-and-publication-workflow-tooling-core-feature-expansion": "python -m pytest tests/tooling/test_check_m318_c003_new_work_proposal_and_publication_workflow_tooling_core_feature_expansion.py -q",
-    "check:objc3c:m318-c003-lane-c-readiness": "python scripts/run_m318_c003_lane_c_readiness.py"
+    "check:objc3c:m318-c003-lane-c-readiness": "python scripts/run_m318_c003_lane_c_readiness.py",
+    "check:objc3c:m318-d001-long-term-governance-and-waiver-reporting-contract-and-architecture-freeze": "python scripts/check_m318_d001_long_term_governance_and_waiver_reporting_contract_and_architecture_freeze.py",
+    "test:tooling:m318-d001-long-term-governance-and-waiver-reporting-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_d001_long_term_governance_and_waiver_reporting_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m318-d001-lane-d-readiness": "python scripts/run_m318_d001_lane_d_readiness.py"
   }
 }
