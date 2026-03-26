@@ -61,6 +61,7 @@ Authoritative code paths for the current tranche:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
 - published architecture map:
   - `docs/objc3c-native.md`
+  - `native/objc3c/src/runtime/ARCHITECTURE.md`
 
 Non-goals for the current corrective tranche:
 

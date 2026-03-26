@@ -77,3 +77,7 @@ closure work must extend this path, not bypass it.
 The live runtime-acceptance, replay-proof, and composite public-workflow
 reports publish this same claim boundary as machine-readable JSON so later work
 cannot silently overclaim from sidecars or synthetic artifacts.
+
+The runtime-owned subsystem dependency model is anchored in
+`native/objc3c/src/runtime/ARCHITECTURE.md` and enforced by
+`python scripts/check_objc3c_dependency_boundaries.py --strict`.

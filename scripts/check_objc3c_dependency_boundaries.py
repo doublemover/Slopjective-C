@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = ROOT / "native" / "objc3c" / "src"
 ARCHITECTURE_DOC = SRC_ROOT / "ARCHITECTURE.md"
+RUNTIME_ARCHITECTURE_DOC = SRC_ROOT / "runtime" / "ARCHITECTURE.md"
 ADR_ROOT = SRC_ROOT / "adr"
 
 REQUIRED_ARCH_SECTIONS = (
@@ -18,10 +19,28 @@ REQUIRED_ARCH_SECTIONS = (
     "Allowed dependencies:",
     "Forbidden dependencies:",
 )
+REQUIRED_RUNTIME_ARCH_SECTIONS = (
+    "## Runtime Subsystem Model",
+    "Owned code paths:",
+    "Allowed subsystem dependencies:",
+    "Forbidden subsystem shortcuts:",
+)
 REQUIRED_ADRS = (
     "ADR-0001-layered-frontend-boundaries.md",
     "ADR-0002-cli-vs-library-separation.md",
     "ADR-0003-diagnostics-determinism-contract.md",
+)
+REQUIRED_RUNTIME_ARCH_PATH_TOKENS = (
+    "`native/objc3c/src/driver/objc3_compilation_driver.cpp`",
+    "`native/objc3c/src/io/objc3_process.cpp`",
+    "`native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`",
+    "`native/objc3c/src/ir/objc3_ir_emitter.cpp`",
+    "`native/objc3c/src/runtime/objc3_runtime.h`",
+    "`native/objc3c/src/runtime/objc3_runtime.cpp`",
+    "`native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`",
+    "`scripts/check_objc3c_runtime_acceptance.py`",
+    "`scripts/check_objc3c_execution_replay_proof.ps1`",
+    "`scripts/objc3c_public_workflow_runner.py`",
 )
 
 SOURCE_EXTENSIONS = (".h", ".hpp", ".hh", ".c", ".cc", ".cpp")
@@ -94,6 +113,25 @@ def ensure_contract_assets() -> None:
         adr_path = ADR_ROOT / adr_name
         if not adr_path.exists():
             fail(f"missing required ADR: {display_path(adr_path)}")
+
+    if not RUNTIME_ARCHITECTURE_DOC.exists():
+        fail(
+            "missing runtime architecture contract: "
+            f"{display_path(RUNTIME_ARCHITECTURE_DOC)}"
+        )
+    runtime_text = RUNTIME_ARCHITECTURE_DOC.read_text(encoding="utf-8")
+    for marker in REQUIRED_RUNTIME_ARCH_SECTIONS:
+        if marker not in runtime_text:
+            fail(
+                "runtime architecture contract missing required section "
+                f"'{marker}' in {display_path(RUNTIME_ARCHITECTURE_DOC)}"
+            )
+    for token in REQUIRED_RUNTIME_ARCH_PATH_TOKENS:
+        if token not in runtime_text:
+            fail(
+                "runtime architecture contract missing required path reference "
+                f"{token} in {display_path(RUNTIME_ARCHITECTURE_DOC)}"
+            )
 
 
 def detect_module_for_source(path: Path) -> str | None:
