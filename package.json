@@ -30,6 +30,38 @@
     ],
     "compatibilityOwnerIssue": "M314-B004"
   },
+  "objc3cCommandCompatibility": {
+    "mode": "m314-b004-alias-deprecation-compatibility-window-v1",
+    "contractId": "objc3c-cleanup-alias-deprecation-compatibility-window/m314-b004-v1",
+    "noNewLegacyAliasFamilies": true,
+    "prototypeSurfaceOwnerIssue": "M314-B005",
+    "families": [
+      {
+        "familyId": "milestone_local_validation_aliases",
+        "matchRule": "check:objc3c:m* and test:tooling:m*",
+        "status": "temporary-non-public",
+        "ownerIssue": "M314-E002"
+      },
+      {
+        "familyId": "historical_release_replay_aliases",
+        "matchRule": "run:objc3c:*",
+        "status": "temporary-non-public",
+        "ownerIssue": "M314-C003"
+      },
+      {
+        "familyId": "historical_planning_aliases",
+        "matchRule": "plan:compiler-dispatch:* and refresh:compiler-dispatch:*",
+        "status": "temporary-non-public",
+        "ownerIssue": "M314-C003"
+      },
+      {
+        "familyId": "historical_developer_probe_aliases",
+        "matchRule": "dev:objc3c:*",
+        "status": "temporary-non-public",
+        "ownerIssue": "M314-C003"
+      }
+    ]
+  },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
     "test": "python scripts/objc3c_public_workflow_runner.py test-default",
@@ -7857,6 +7889,9 @@
     "check:objc3c:m314-b002-lane-b-readiness": "python scripts/run_m314_b002_lane_b_readiness.py",
     "check:objc3c:m314-b003-build-test-doc-workflow-runner-unification-core-feature-implementation": "python scripts/check_m314_b003_build_test_doc_workflow_runner_unification_core_feature_implementation.py",
     "test:tooling:m314-b003-build-test-doc-workflow-runner-unification-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_b003_build_test_doc_workflow_runner_unification_core_feature_implementation.py -q",
-    "check:objc3c:m314-b003-lane-b-readiness": "python scripts/run_m314_b003_lane_b_readiness.py"
+    "check:objc3c:m314-b003-lane-b-readiness": "python scripts/run_m314_b003_lane_b_readiness.py",
+    "check:objc3c:m314-b004-alias-deprecation-and-compatibility-window-core-feature-implementation": "python scripts/check_m314_b004_alias_deprecation_and_compatibility_window_core_feature_implementation.py",
+    "test:tooling:m314-b004-alias-deprecation-and-compatibility-window-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_b004_alias_deprecation_and_compatibility_window_core_feature_implementation.py -q",
+    "check:objc3c:m314-b004-lane-b-readiness": "python scripts/run_m314_b004_lane_b_readiness.py"
   }
 }
