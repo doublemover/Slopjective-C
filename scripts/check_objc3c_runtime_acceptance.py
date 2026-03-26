@@ -536,6 +536,118 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "canonical-sample-set"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m259_a002_canonical_runnable_sample_set.objc3"
+    obj_path, _, _ = compile_fixture_outputs(fixture, case_dir / "compile")
+    registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
+
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m259_a002_canonical_runnable_sample_set_probe.cpp"
+    exe_path = case_dir / "m259_a002_canonical_runnable_sample_set_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "canonical runnable sample set probe")
+    registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+
+    widget_entry = payload.get("widget_entry", {})
+    worker_query = payload.get("worker_query", {})
+    tracer_query = payload.get("tracer_query", {})
+    count_property = payload.get("count_property", {})
+    value_property = payload.get("value_property", {})
+    token_property = payload.get("token_property", {})
+
+    expect(widget_entry.get("found") == 1, "expected Widget to realize successfully for the canonical sample set")
+    expect(widget_entry.get("base_identity") == 1041, "expected Widget base identity 1041 for the canonical sample set")
+    expect(widget_entry.get("runtime_property_accessor_count") == 4, "expected Widget to expose four runtime property accessors")
+    expect(widget_entry.get("runtime_instance_size_bytes") == 24, "expected Widget instance size to remain 24 bytes")
+    expect(
+        widget_entry.get("last_attached_category_owner_identity") == "category:Widget(Tracing)",
+        "expected Widget to preserve the attached Tracing category owner",
+    )
+
+    expect(registration_manifest.get("class_descriptor_count") == 4, "expected canonical sample set to publish four class descriptors")
+    expect(registration_manifest.get("protocol_descriptor_count") == 2, "expected canonical sample set to publish two protocol descriptors")
+    expect(registration_manifest.get("category_descriptor_count") == 2, "expected canonical sample set to publish two category descriptors")
+    expect(registration_manifest.get("property_descriptor_count") == 8, "expected canonical sample set to publish eight property descriptors")
+    expect(registration_manifest.get("ivar_descriptor_count") == 4, "expected canonical sample set to publish four ivar descriptors")
+    expect(
+        registration_manifest.get("compile_output_truthfulness_property_descriptor_count") == 8,
+        "expected compile-output truthfulness to certify eight property descriptors for the canonical sample set",
+    )
+    expect(
+        registration_manifest.get("compile_output_truthfulness_ivar_descriptor_count") == 4,
+        "expected compile-output truthfulness to certify four ivar descriptors for the canonical sample set",
+    )
+
+    expect(payload.get("init_value", 0) != 0, "expected alloc/init to return a non-zero canonical sample-set receiver")
+    expect(payload.get("traced_value") == 13, "expected tracedValue to return 13 for the canonical sample set")
+    expect(payload.get("inherited_value") == 7, "expected inheritedValue to return 7 for the canonical sample set")
+    expect(payload.get("class_value") == 11, "expected classValue to return 11 for the canonical sample set")
+    expect(payload.get("shared_value") == 19, "expected shared to return 19 for the canonical sample set")
+    expect(payload.get("count_value") == 37, "expected count to reload 37 for the canonical sample set")
+    expect(payload.get("enabled_value") == 1, "expected enabled to reload 1 for the canonical sample set")
+    expect(payload.get("current_value") == 55, "expected currentValue to reload 55 for the canonical sample set")
+    expect(payload.get("token_value") == 0, "expected tokenValue to remain 0 for the canonical sample set")
+
+    expect(worker_query.get("conforms") == 1, "expected Widget to conform to Worker in the canonical sample set")
+    expect(
+        worker_query.get("matched_protocol_owner_identity") in {"protocol:Worker", "protocol:Tracer"},
+        "expected Worker query to resolve through Worker or inherited Tracer",
+    )
+    expect(worker_query.get("matched_attachment_owner_identity") is None, "did not expect Worker query to require an attachment-owner match")
+    expect(tracer_query.get("conforms") == 1, "expected Widget to conform to Tracer in the canonical sample set")
+    expect(tracer_query.get("matched_protocol_owner_identity") == "protocol:Tracer", "expected Tracer query to resolve through protocol:Tracer")
+    expect(
+        tracer_query.get("matched_attachment_owner_identity") == "category:Widget(Tracing)",
+        "expected Tracer query to resolve through the attached category owner",
+    )
+
+    expect(
+        count_property.get("found") == 1
+        and count_property.get("slot_index") == 0
+        and count_property.get("offset_bytes") == 0
+        and count_property.get("size_bytes") == 4
+        and count_property.get("getter_owner_identity") == "implementation:Widget::instance_method:count"
+        and count_property.get("setter_owner_identity") == "implementation:Widget::instance_method:setCount:",
+        "expected count property reflection to preserve slot/layout/accessor facts",
+    )
+    expect(
+        value_property.get("found") == 1
+        and value_property.get("slot_index") == 2
+        and value_property.get("offset_bytes") == 8
+        and value_property.get("size_bytes") == 8
+        and value_property.get("getter_owner_identity") == "implementation:Widget::instance_method:currentValue"
+        and value_property.get("setter_owner_identity") == "implementation:Widget::instance_method:setCurrentValue:",
+        "expected currentValue property reflection to preserve slot/layout/accessor facts",
+    )
+    expect(
+        token_property.get("found") == 1
+        and token_property.get("slot_index") == 3
+        and token_property.get("offset_bytes") == 16
+        and token_property.get("setter_available") == 0
+        and token_property.get("getter_owner_identity") == "implementation:Widget::instance_method:tokenValue"
+        and token_property.get("setter_owner_identity") is None,
+        "expected tokenValue property reflection to preserve readonly slot/layout/accessor facts",
+    )
+
+    return CaseResult(
+        case_id="canonical-sample-set",
+        probe="tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "widget_base_identity": widget_entry.get("base_identity"),
+            "traced_value": payload["traced_value"],
+            "inherited_value": payload["inherited_value"],
+            "class_value": payload["class_value"],
+            "shared_value": payload["shared_value"],
+            "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+        },
+    )
+
+
 def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "dispatch-fast-path"
     fixture = (
@@ -1256,6 +1368,156 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
     )
 
 
+def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "synthesized-accessor-runtime"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    obj_path = compile_fixture(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_c003_synthesized_accessor_probe.cpp"
+    exe_path = case_dir / "m257_c003_synthesized_accessor_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "synthesized accessor runtime probe")
+
+    registration_state = payload.get("registration_state", {})
+    selector_state = payload.get("selector_table_state", {})
+    count_entry = payload.get("count_entry", {})
+    set_count_entry = payload.get("set_count_entry", {})
+    enabled_entry = payload.get("enabled_entry", {})
+    set_enabled_entry = payload.get("set_enabled_entry", {})
+    value_entry = payload.get("value_entry", {})
+    set_value_entry = payload.get("set_value_entry", {})
+
+    expect(payload.get("widget_instance", 0) > 0, "expected synthesized-accessor runtime probe to allocate a positive Widget receiver")
+    expect(payload.get("set_count_result") == 0, "expected synthesized-accessor count setter dispatch to return zero")
+    expect(payload.get("count_value") == 37, "expected synthesized-accessor count getter to reload 37")
+    expect(payload.get("set_enabled_result") == 0, "expected synthesized-accessor enabled setter dispatch to return zero")
+    expect(payload.get("enabled_value") == 1, "expected synthesized-accessor enabled getter to reload 1")
+    expect(payload.get("set_value_result") == 0, "expected synthesized-accessor value setter dispatch to return zero")
+    expect(payload.get("value_result") == 55, "expected synthesized-accessor value getter to reload 55")
+
+    expect(registration_state.get("registered_image_count", 0) >= 1, "expected synthesized-accessor runtime probe to report at least one registered image")
+    expect(registration_state.get("registered_descriptor_total", 0) >= 1, "expected synthesized-accessor runtime probe to report a non-zero descriptor total")
+    expect(selector_state.get("selector_table_entry_count", 0) >= 6, "expected synthesized-accessor runtime probe to materialize the accessor selector surface")
+    expect(selector_state.get("metadata_backed_selector_count", 0) >= 6, "expected synthesized-accessor runtime probe to preserve metadata-backed selectors")
+
+    expected_entries = (
+        (count_entry, "count", 0, "implementation:Widget::instance_method:count"),
+        (set_count_entry, "setCount:", 1, "implementation:Widget::instance_method:setCount:"),
+        (enabled_entry, "enabled", 0, "implementation:Widget::instance_method:enabled"),
+        (set_enabled_entry, "setEnabled:", 1, "implementation:Widget::instance_method:setEnabled:"),
+        (value_entry, "value", 0, "implementation:Widget::instance_method:value"),
+        (set_value_entry, "setValue:", 1, "implementation:Widget::instance_method:setValue:"),
+    )
+    for entry, selector, parameter_count, owner_identity in expected_entries:
+        expect(entry.get("found") == 1 and entry.get("resolved") == 1, f"expected {selector} cache entry to resolve live")
+        expect(entry.get("selector") == selector, f"expected {selector} cache entry to preserve selector spelling")
+        expect(entry.get("parameter_count") == parameter_count, f"expected {selector} cache entry to preserve parameter count {parameter_count}")
+        expect(entry.get("resolved_class_name") == "Widget", f"expected {selector} cache entry to resolve against Widget")
+        expect(entry.get("resolved_owner_identity") == owner_identity, f"expected {selector} cache entry to preserve owner identity")
+
+    return CaseResult(
+        case_id="synthesized-accessor-runtime",
+        probe="tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "widget_instance": payload["widget_instance"],
+            "count_value": payload["count_value"],
+            "enabled_value": payload["enabled_value"],
+            "value_result": payload["value_result"],
+            "selector_table_entry_count": selector_state.get("selector_table_entry_count"),
+        },
+    )
+
+
+def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "property-layout"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    obj_path, ll_path, _ = compile_fixture_outputs(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_d001_property_layout_runtime_probe.cpp"
+    exe_path = case_dir / "m257_d001_property_layout_runtime_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "property layout runtime probe")
+
+    ll_text = ll_path.read_text(encoding="utf-8")
+    registration_state = payload.get("registration_state", {})
+    selector_state = payload.get("selector_table_state", {})
+    count_entry = payload.get("count_entry", {})
+    set_count_entry = payload.get("set_count_entry", {})
+
+    expect(
+        "; runtime_property_layout_consumption = "
+        "contract=objc3c.runtime.property.layout.consumption.freeze.v1"
+        in ll_text,
+        "expected LLVM IR to publish the runtime property/layout consumption surface",
+    )
+    expect("synthesized_accessor_entries=6" in ll_text, "expected property-layout fixture to preserve six synthesized accessors")
+    expect("property_descriptor_entries=" in ll_text, "expected property-layout fixture to publish property descriptor inventory")
+    expect("ivar_layout_owner_entries=" in ll_text, "expected property-layout fixture to publish ivar layout owner inventory")
+
+    first_alloc = int(payload.get("first_alloc", 0))
+    second_alloc = int(payload.get("second_alloc", 0))
+    same_instance_mode = first_alloc == 1025 and second_alloc == 1025
+    distinct_instance_mode = first_alloc > 0 and second_alloc > 0 and first_alloc != second_alloc
+
+    expect(first_alloc > 0, "expected first alloc to materialize a positive Widget instance identity")
+    expect(
+        same_instance_mode or distinct_instance_mode,
+        "expected property-layout probe to preserve either the historical single-instance mode or the forward-compatible distinct-instance mode",
+    )
+    expect(payload.get("set_count_result") == 0, "expected count setter dispatch to return zero")
+    expect(payload.get("count_value_first") == 37, "expected count getter to observe the written value on the first alloc")
+    expect(
+        payload.get("count_value_second") == (37 if same_instance_mode else 0),
+        "expected second alloc to preserve historical shared storage or observe the forward-compatible distinct-instance default",
+    )
+    expect(payload.get("set_enabled_result") == 0, "expected enabled setter dispatch to return zero")
+    expect(
+        payload.get("enabled_value_second") == (1 if same_instance_mode else 0),
+        "expected second alloc to preserve historical shared bool storage or observe the forward-compatible distinct-instance default",
+    )
+    expect(payload.get("set_value_result") == 0, "expected value setter dispatch to return zero")
+    expect(
+        payload.get("value_result_second") == (55 if same_instance_mode else 0),
+        "expected second alloc to preserve historical shared scalar storage or observe the forward-compatible distinct-instance default",
+    )
+
+    expect(registration_state.get("registered_image_count", 0) >= 1, "expected property-layout runtime to report at least one registered image")
+    expect(registration_state.get("registered_descriptor_total", 0) >= 1, "expected property-layout runtime to report a non-zero descriptor total")
+    expect(selector_state.get("selector_table_entry_count", 0) >= 6, "expected property-layout runtime to materialize the synthesized accessor selector surface")
+
+    expect(count_entry.get("found") == 1 and count_entry.get("resolved") == 1, "expected count getter cache entry to resolve")
+    expect(count_entry.get("parameter_count") == 0, "expected count getter cache entry to preserve zero parameters")
+    expect(
+        str(count_entry.get("resolved_owner_identity", "")).endswith("implementation:Widget::instance_method:count"),
+        "expected count getter cache entry to preserve the synthesized owner identity",
+    )
+
+    expect(set_count_entry.get("found") == 1 and set_count_entry.get("resolved") == 1, "expected setCount setter cache entry to resolve")
+    expect(set_count_entry.get("parameter_count") == 1, "expected setCount setter cache entry to preserve one parameter")
+    expect(
+        str(set_count_entry.get("resolved_owner_identity", "")).endswith("implementation:Widget::instance_method:setCount:"),
+        "expected setCount setter cache entry to preserve the synthesized owner identity",
+    )
+
+    allocation_mode = "shared-instance-freeze" if same_instance_mode else "distinct-instance-forward-compatible"
+    return CaseResult(
+        case_id="property-layout",
+        probe="tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "allocation_mode": allocation_mode,
+            "first_alloc": first_alloc,
+            "second_alloc": second_alloc,
+            "count_value_first": payload["count_value_first"],
+            "count_value_second": payload["count_value_second"],
+            "selector_table_entry_count": selector_state.get("selector_table_entry_count"),
+        },
+    )
+
+
 def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-codegen"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
@@ -1384,9 +1646,12 @@ def main() -> int:
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
+        check_canonical_sample_set_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
+        check_synthesized_accessor_runtime_case(clangxx, run_dir),
+        check_property_layout_case(clangxx, run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
         check_arc_property_helper_case(clangxx, run_dir),
@@ -1417,7 +1682,10 @@ def main() -> int:
         "dispatch_accessor_runtime_abi_surface": {
             "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
             "proof_cases": [
+                "canonical-sample-set",
                 "dispatch-fast-path",
+                "synthesized-accessor-runtime",
+                "property-layout",
                 "property-execution",
                 "arc-property-helper-abi",
             ],
