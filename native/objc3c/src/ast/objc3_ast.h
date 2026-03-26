@@ -799,7 +799,7 @@ inline constexpr const char *kObjc3RuntimeMetadataVisibilityPolicy =
 inline constexpr const char *kObjc3RuntimeMetadataRetentionPolicyRoot =
     "llvm.used";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionFixturePath =
-    "tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3";
+    "tests/tooling/fixtures/native/runtime_metadata_object_inspection_zero_descriptor.objc3";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionEmitPrefix =
     "module";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionObjectRelativePath =
@@ -859,9 +859,9 @@ inline constexpr const char *kObjc3ExecutableMetadataTypedLoweringHandoffManifes
 inline constexpr const char *kObjc3ExecutableMetadataSourceGraphManifestSurfacePath =
     "frontend.pipeline.semantic_surface.objc_executable_metadata_source_graph";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassFixturePath =
-    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3";
+    "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryFixturePath =
-    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3";
+    "tests/tooling/fixtures/native/runtime_metadata_source_records_category_protocol_property.objc3";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrFixturePath =
     "tests/tooling/fixtures/native/hello.objc3";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionEmitPrefix =
@@ -878,12 +878,12 @@ inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrNamedMetad
     "hello-ir-named-metadata-anchor";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionClassProbeCommand =
     "artifacts/bin/objc3c-frontend-c-api-runner.exe "
-    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3 "
+    "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3 "
     "--out-dir <probe-root>/class_protocol_property_ivar --emit-prefix module "
     "--no-emit-ir --no-emit-object";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionCategoryProbeCommand =
     "artifacts/bin/objc3c-frontend-c-api-runner.exe "
-    "tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3 "
+    "tests/tooling/fixtures/native/runtime_metadata_source_records_category_protocol_property.objc3 "
     "--out-dir <probe-root>/category_protocol_property --emit-prefix module "
     "--no-emit-ir --no-emit-object";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionIrProbeCommand =
@@ -1149,7 +1149,7 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveRelativePath =
 inline constexpr const char *kObjc3RuntimeSupportLibraryImplementationSourcePath =
     "native/objc3c/src/runtime/objc3_runtime.cpp";
 inline constexpr const char *kObjc3RuntimeSupportLibraryProbeSourcePath =
-    "tests/tooling/runtime/m251_d002_runtime_library_probe.cpp";
+    "tests/tooling/runtime/runtime_library_probe.cpp";
 inline constexpr const char *kObjc3RuntimeSupportLibraryRegisterImageSymbol =
     "objc3_runtime_register_image";
 inline constexpr const char *kObjc3RuntimeSupportLibraryLookupSelectorSymbol =

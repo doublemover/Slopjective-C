@@ -153,128 +153,25 @@ Expected artifacts:
 - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - `artifacts/lib/objc3_runtime.lib`
 
-## Native Build Surface Modernization
+## Native Build Surface
 
-Current truthful state:
-
-- `npm run build:objc3c-native` is now a PowerShell wrapper over a persistent
-  CMake/Ninja build tree under `tmp/build-objc3c-native`.
-- That command reuses the configured build tree across invocations, publishes
-  the native binaries and runtime archive into `artifacts/`, and then
-  regenerates the current frontend packet family.
-
-Frozen future command surface (`M276-A001`):
+Current live build/test surface:
 
 - `npm run build:objc3c-native`
-  - eventual fast local binary-build default after parity proof lands
 - `npm run build:objc3c-native:contracts`
-  - reserved contracts and packet-generation path
 - `npm run build:objc3c-native:full`
-  - reserved full-build path for closeout and CI
 - `npm run build:objc3c-native:reconfigure`
-  - reserved fingerprint refresh / self-healing configure path
+- `npm run test:smoke`
+- `npm run test:ci`
+- `npm run test:objc3c:full`
+- `npm run proof:objc3c`
 
-Planned policy boundary:
+Behavior:
 
-- local issue work should eventually use the fast default path
-- packet generation should be callable independently where dependency shape
-  permits it
-- milestone closeout and CI should retain a truthful full-build path
-- persistent local build trees will live under `tmp/`
-- published binaries and libraries will remain under `artifacts/`
-
-The command split is fully implemented now.
-
-Parity freeze (`M276-A002`):
-
-- the current PowerShell build and the current `CMakeLists.txt` already cover
-  the same in-tree native source set
-- the remaining parity gaps are tool discovery, `libclang` linkage,
-  compile-definition shape, compile-database policy, and final `artifacts/`
-  publication behavior
-- the frozen compile-database target path is
-  `tmp/build-objc3c-native/compile_commands.json`
-- the authoritative toolchain root remains `LLVM_ROOT`, with the wrapper
-  responsible for carrying that into any future configure step
-
-`M276-C001` is now the first landed implementation step after that parity freeze:
-
-- native binary builds route through CMake/Ninja
-- `tmp/build-objc3c-native/compile_commands.json` is emitted on configure
-- warm invocations reuse the persistent build tree
-- canonical binaries still publish to `artifacts/bin` and `artifacts/lib`
-
-`M276-C003` now decomposes the generated frontend packet family by dependency
-shape inside that wrapper:
-
-- `source-derived`
-  - `frontend_modular_scaffold.json`
-- `binary-derived`
-  - `frontend_invocation_lock.json`
-  - `frontend_core_feature_expansion.json`
-- `closeout-derived`
-  - `frontend_edge_compat.json`
-  - `frontend_edge_robustness.json`
-  - `frontend_diagnostics_hardening.json`
-  - `frontend_recovery_determinism_hardening.json`
-  - `frontend_conformance_matrix.json`
-  - `frontend_conformance_corpus.json`
-  - `frontend_integration_closeout.json`
-
-Current truthful boundary after `M276-C002`:
-
-- `npm run build:objc3c-native`
-  - fast public binary-build path
-  - uses `binaries-only`
-- `npm run build:objc3c-native:contracts`
-  - public source-derived plus binary-derived packet path
-  - uses `packets-binary`
-- `npm run build:objc3c-native:full`
-  - public full binary-plus-packet path
-  - uses `full`
-- `npm run build:objc3c-native:reconfigure`
-  - public forced-configure binary-build path
-  - uses `binaries-only` plus `-ForceReconfigure`
-
-`M276-D002` now adds the shared native build helper:
-
-- `scripts/ensure_objc3c_native_build.py`
-  - `--mode fast`
-  - `--mode contracts`
-  - `--mode full`
-  - `--force-reconfigure`
-- active readiness runners can now ask for a usable native build without
-  hard-coding raw npm build semantics
-- forced reconfigure now routes through the wrapper without deleting the
-  persistent build tree
-
-`M276-D001` now migrates the active `M262`/`M263` issue-work range onto the
-shared helper.
-
-- active lane `A` through `D` readiness runners now acquire binaries with:
-  - `python scripts/ensure_objc3c_native_build.py --mode fast`
-- those runners now emit deterministic helper summaries under:
-  - `tmp/reports/<milestone>/<issue>/ensure_objc3c_native_build_summary.json`
-- lane `E` aggregators remain orchestration layers over the migrated lane
-  runners instead of reacquiring native builds themselves
-- the truthful boundary after `M276-D001` is:
-  - fast helper mode for active issue work
-  - full builds reserved for closeout, CI, and deliberately cross-cutting proof
-    paths
-
-`M276-D003` preserves compatibility for older raw-build callers during the
-transition.
-
-- historical raw-build callers remain supported through the public default build
-  command:
-  - `npm run build:objc3c-native`
-- that compatibility path is truthful but narrow:
-  - canonical native binaries are refreshed at `artifacts/`
-  - packet generation is not implied
-  - downstream historical checkers remain responsible for their own proof work
-- representative coexistence proof now uses:
-  - active helper runner: `scripts/run_m262_a001_lane_a_readiness.py`
-  - historical raw-build runner: `scripts/run_m257_a001_lane_a_readiness.py`
+- native builds run through the CMake/Ninja-backed wrapper
+- build trees and transient evidence stay under `tmp/`
+- published binaries and libraries stay under `artifacts/`
+- milestone-era planning and closeout material is archived under `tmp/archive/`
 
 ## When to use each command
 
@@ -322,8 +219,7 @@ CI and closeout semantics:
 - the active Windows core workflow proves `build:objc3c-native` plus
   `build:objc3c-native:contracts`
 - the manual compiler closeout workflow proves `build:objc3c-native:full`
-- milestone closeout evidence for this build-surface tranche lives under
-  `tmp/reports/m276/M276-E002/`
+- build-surface evidence and summaries live under `tmp/reports/`
 
 ## Public Command Surface
 

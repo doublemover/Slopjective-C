@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
-"""Fail-closed task-hygiene surface checks for the post-compatibility command model."""
-
 from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_JSON = ROOT / "package.json"
-TASK_HYGIENE_WORKFLOW = ROOT / ".github" / "workflows" / "task-hygiene.yml"
-REGISTRY_JSON = ROOT / "spec" / "governance" / "objc3c_task_hygiene_registry.json"
-
 REMOVED_FAMILY_PATTERNS = (
     r"^check:objc3c:m",
     r"^test:tooling:m",
@@ -22,115 +17,88 @@ REMOVED_FAMILY_PATTERNS = (
     r"^refresh:compiler-dispatch:",
     r"^dev:objc3c:",
 )
+LIVE_SCAN_ROOTS = [
+    ROOT / ".github",
+    ROOT / "docs",
+    ROOT / "scripts",
+    ROOT / "tests",
+    ROOT / "native",
+    ROOT / "README.md",
+    ROOT / "CONTRIBUTING.md",
+    ROOT / "package.json",
+]
+LEGACY_ALIAS_RE = re.compile(r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)")
+MILESTONE_WORKFLOW_RE = re.compile(r"^m\d+.*\.yml$")
 
 
-def _read_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _read_package_scripts() -> dict[str, str]:
-    payload = _read_json(PACKAGE_JSON)
-    scripts = payload.get("scripts")
-    if not isinstance(scripts, dict):
-        raise ValueError("package.json scripts field must be an object")
-    return {str(key): str(value) for key, value in scripts.items()}
-
-
-def _removed_aliases_present(scripts: dict[str, str]) -> list[str]:
-    hits: list[str] = []
-    for script_name in scripts:
-        if any(re.match(pattern, script_name) for pattern in REMOVED_FAMILY_PATTERNS):
-            hits.append(script_name)
-    return sorted(hits)
-
-
-def _check_package_contracts(scripts: dict[str, str], registry: dict) -> list[str]:
-    errors: list[str] = []
-    surface = registry
-
-    if scripts.get("check:task-hygiene") != "python scripts/ci/run_task_hygiene_gate.py":
-        errors.append("package.json scripts.check:task-hygiene must route directly to python scripts/ci/run_task_hygiene_gate.py")
-
-    removed_hits = _removed_aliases_present(scripts)
-    if removed_hits:
-        errors.append(f"package.json still exposes removed alias families: {removed_hits}")
-
-    if len(scripts) > 25:
-        errors.append(f"package.json scripts count exceeds cleanup budget: {len(scripts)} > 25")
-
-    sequence = surface.get("sequence", [])
-    if not isinstance(sequence, list) or not sequence:
-        errors.append("task hygiene registry must publish a non-empty sequence")
-        return errors
-
-    required_sources = {
-        "check:planning-hygiene",
-        "check:compiler-closeout:m155",
-        "check:compiler-closeout:m156",
-        "check:compiler-closeout:m157",
-        "check:compiler-closeout:m158",
-        "check:compiler-closeout:m159",
-        "check:compiler-closeout:m160",
-        "check:catalog-status-integrity",
-        "check:catalog-status-metadata",
-        "check:open-blocker-audit:repo-root:fixtures",
-        "extract:open-issues",
-        "check:issue-drift",
-    }
-    seen_sources = {entry.get("source_script") for entry in sequence if isinstance(entry, dict)}
-    missing_sources = sorted(required_sources - seen_sources)
-    if missing_sources:
-        errors.append(f"task hygiene registry missing required entries: {missing_sources}")
-
-    forbidden_tokens = (
-        "npm run check:compiler-closeout:",
-        "npm run check:objc3c:m",
-        "npm run test:tooling:m",
-        "npm run run:objc3c:",
-        "npm run plan:compiler-dispatch:",
-        "npm run refresh:compiler-dispatch:",
-        "npm run dev:objc3c:",
-    )
-    for entry in sequence:
-        if not isinstance(entry, dict):
-            errors.append("task hygiene registry entries must be objects")
+def iter_live_files():
+    for root in LIVE_SCAN_ROOTS:
+        if not root.exists():
             continue
-        command = entry.get("command")
-        if not isinstance(command, str) or not command.strip():
-            errors.append(f"task hygiene registry entry {entry!r} must publish a non-empty command string")
+        if root.is_file():
+            yield root
             continue
-        for forbidden in forbidden_tokens:
-            if forbidden in command:
-                errors.append(f"task hygiene registry command still depends on removed alias family: {forbidden}")
-    return errors
-
-
-def _check_workflow_contracts(workflow_text: str) -> list[str]:
-    errors: list[str] = []
-    if "npm run check:objc3c:library-cli-parity:source:m144" in workflow_text:
-        errors.append(".github/workflows/task-hygiene.yml must not invoke removed package alias check:objc3c:library-cli-parity:source:m144")
-    if "python scripts/check_objc3c_library_cli_parity.py --source tests/tooling/fixtures/native/hello.objc3" not in workflow_text:
-        errors.append(".github/workflows/task-hygiene.yml must directly invoke the library CLI parity source check")
-    return errors
+        for path in root.rglob('*'):
+            if path.is_file() and 'tmp' not in path.parts and 'node_modules' not in path.parts:
+                yield path
 
 
 def main() -> int:
-    scripts = _read_package_scripts()
-    registry = _read_json(REGISTRY_JSON)
-    workflow_text = TASK_HYGIENE_WORKFLOW.read_text(encoding="utf-8")
+    errors: list[str] = []
+    payload = json.loads(PACKAGE_JSON.read_text(encoding='utf-8'))
+    scripts = payload.get('scripts', {})
+    if not isinstance(scripts, dict):
+        errors.append('package.json scripts field must be an object')
+        scripts = {}
 
-    errors = _check_package_contracts(scripts, registry)
-    errors.extend(_check_workflow_contracts(workflow_text))
-
+    removed_hits = sorted(name for name in scripts if any(re.match(p, name) for p in REMOVED_FAMILY_PATTERNS))
+    if removed_hits:
+        errors.append(f'removed script families still present: {removed_hits}')
+    if len(scripts) > 25:
+        errors.append(f'package script count exceeds budget: {len(scripts)} > 25')
+    if (ROOT / 'docs' / 'contracts').exists():
+        errors.append('docs/contracts must not be live')
+    if (ROOT / 'spec' / 'planning').exists():
+        errors.append('spec/planning must not be live')
+    if (ROOT / 'compiler').exists():
+        errors.append('compiler prototype tree must not be live')
+    if any((ROOT / '.github' / 'workflows').glob('m*.yml')):
+        errors.append('milestone-named workflows must not be live')
+    if any((ROOT / 'scripts').glob('check_m*.py')):
+        errors.append('milestone checkers must not be live')
+    if list((ROOT / 'tests' / 'tooling').glob('test_check_*.py')):
+        errors.append('checker-wrapper pytest files must not be live')
+    if any((ROOT / 'scripts').rglob('run_*_lane_*_readiness.py')):
+        errors.append('readiness runners must not be live')
+    live_pycache_dirs = [path for path in ROOT.rglob('__pycache__') if 'tmp' not in path.parts]
+    if live_pycache_dirs:
+        errors.append(f'__pycache__ directories must not be live: {[path.relative_to(ROOT).as_posix() for path in live_pycache_dirs[:5]]}')
+    live_pyc_files = [path for path in ROOT.rglob('*.pyc') if 'tmp' not in path.parts]
+    if live_pyc_files:
+        errors.append(f'.pyc files must not be live: {[path.relative_to(ROOT).as_posix() for path in live_pyc_files[:5]]}')
+    for path in iter_live_files():
+        try:
+            text = path.read_text(encoding='utf-8', errors='ignore')
+        except Exception:
+            continue
+        if LEGACY_ALIAS_RE.search(text):
+            errors.append(f'legacy npm alias reference still live: {path.relative_to(ROOT).as_posix()}')
+            break
+    ll_stubs = [
+        ROOT / 'tests/tooling/fixtures/native/library_cli_parity/cli/module.ll',
+        ROOT / 'tests/tooling/fixtures/native/library_cli_parity/library/module.ll',
+    ]
+    for stub in ll_stubs:
+        if stub.exists():
+            errors.append(f'stub ll fixture still live: {stub.relative_to(ROOT).as_posix()}')
     if errors:
-        print("task-hygiene contract check failed:")
+        print('task-hygiene contract check failed:')
         for error in errors:
-            print(f"- {error}")
+            print(f'- {error}')
         return 1
-
-    print("task-hygiene contract check passed.")
+    print('task-hygiene contract check passed.')
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

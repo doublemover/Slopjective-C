@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified public workflow runner for the M314 command surface."""
+"""Unified public workflow runner for the live objc3c command surface."""
 
 from __future__ import annotations
 
@@ -27,7 +27,6 @@ PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 SITE_PY = ROOT / "scripts" / "build_site_index.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
-ACCEPTANCE_FIRST_CI_PY = ROOT / "scripts" / "m313_acceptance_first_ci_runner.py"
 
 
 @dataclass(frozen=True)
@@ -105,10 +104,7 @@ def action_test_ci(_: list[str]) -> int:
     rc = run([sys.executable, str(TASK_HYGIENE_PY)])
     if rc != 0:
         return rc
-    rc = run_steps(["test-full"])
-    if rc != 0:
-        return rc
-    return run([sys.executable, str(ACCEPTANCE_FIRST_CI_PY), "--stage", "topology"])
+    return run_steps(["test-full"])
 
 
 def action_test_recovery(_: list[str]) -> int:
@@ -152,7 +148,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-smoke": ActionSpec("test-smoke", "public smoke test entrypoint", "runner-internal", ("test:smoke",)),
-    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene + acceptance-first CI", ("test:ci",)),
+    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",)),
     "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",)),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",)),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",)),

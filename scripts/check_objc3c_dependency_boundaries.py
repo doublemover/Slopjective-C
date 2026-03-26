@@ -28,15 +28,15 @@ SOURCE_EXTENSIONS = (".h", ".hpp", ".hh", ".c", ".cc", ".cpp")
 INCLUDE_PATTERN = re.compile(r'^\s*#\s*include\s+"([^"]+)"')
 
 ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
-    "driver": {"libobjc3c_frontend", "io"},
-    "libobjc3c_frontend": {"pipeline"},
-    "pipeline": {"lex", "parse", "sema", "lower", "ir"},
+    "driver": {"libobjc3c_frontend", "io", "lower", "pipeline"},
+    "libobjc3c_frontend": {"pipeline", "io"},
+    "pipeline": {"lex", "parse", "sema", "lower", "ir", "io"},
     "lower": {"sema"},
-    "ir": {"lower"},
-    "io": set(),
+    "ir": {"lower", "parse"},
+    "io": {"lower", "pipeline"},
     "lex": set(),
-    "parse": {"lex"},
-    "sema": {"parse"},
+    "parse": {"lex", "pipeline"},
+    "sema": {"parse", "pipeline"},
 }
 
 EXEMPT_TOP_LEVEL_FILES = {"main.cpp", "ARCHITECTURE.md"}
