@@ -7811,6 +7811,9 @@
     "check:objc3c:m313-d001-lane-d-readiness": "python scripts/run_m313_d001_lane_d_readiness.py",
     "check:objc3c:m313-d002-ci-migration-to-acceptance-first-validation-core-feature-implementation": "python scripts/check_m313_d002_ci_migration_to_acceptance_first_validation_core_feature_implementation.py",
     "test:tooling:m313-d002-ci-migration-to-acceptance-first-validation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m313_d002_ci_migration_to_acceptance_first_validation_core_feature_implementation.py -q",
-    "check:objc3c:m313-d002-lane-d-readiness": "python scripts/run_m313_d002_lane_d_readiness.py"
+    "check:objc3c:m313-d002-lane-d-readiness": "python scripts/run_m313_d002_lane_d_readiness.py",
+    "check:objc3c:m313-e001-validation-noise-reduction-gate-contract-and-architecture-freeze": "python scripts/check_m313_e001_validation_noise_reduction_gate_contract_and_architecture_freeze.py",
+    "test:tooling:m313-e001-validation-noise-reduction-gate-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m313_e001_validation_noise_reduction_gate_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m313-e001-lane-e-readiness": "python scripts/run_m313_e001_lane_e_readiness.py"
   }
 }
