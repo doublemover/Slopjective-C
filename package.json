@@ -7823,6 +7823,9 @@
     "check:objc3c:m314-a001-lane-a-readiness": "python scripts/run_m314_a001_lane_a_readiness.py",
     "check:objc3c:m314-a002-orchestration-layer-policy-and-operator-workflow-map-source-completion": "python scripts/check_m314_a002_orchestration_layer_policy_and_operator_workflow_map_source_completion.py",
     "test:tooling:m314-a002-orchestration-layer-policy-and-operator-workflow-map-source-completion": "python -m pytest tests/tooling/test_check_m314_a002_orchestration_layer_policy_and_operator_workflow_map_source_completion.py -q",
-    "check:objc3c:m314-a002-lane-a-readiness": "python scripts/run_m314_a002_lane_a_readiness.py"
+    "check:objc3c:m314-a002-lane-a-readiness": "python scripts/run_m314_a002_lane_a_readiness.py",
+    "check:objc3c:m314-b001-public-versus-internal-command-model-contract-and-architecture-freeze": "python scripts/check_m314_b001_public_versus_internal_command_model_contract_and_architecture_freeze.py",
+    "test:tooling:m314-b001-public-versus-internal-command-model-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_b001_public_versus_internal_command_model_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m314-b001-lane-b-readiness": "python scripts/run_m314_b001_lane_b_readiness.py"
   }
 }
