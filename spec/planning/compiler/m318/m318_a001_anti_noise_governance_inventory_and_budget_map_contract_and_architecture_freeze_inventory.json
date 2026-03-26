@@ -1,0 +1,66 @@
+{
+  "mode": "m318-a001-anti-noise-governance-budget-map-v1",
+  "contract_id": "objc3c-governance-anti-noise-budget-map/m318-a001-v1",
+  "baseline_sources": {
+    "command_surface": "package.json#objc3cCommandSurface",
+    "validation_ratchet": "spec/planning/compiler/m313/m313_a002_validation_reduction_targets_and_ratchet_map_source_completion_ratchet_map.json",
+    "validation_exception_policy": "spec/planning/compiler/m313/m313_b005_new_checker_and_temporary_validation_exception_policy_edge_case_and_compatibility_completion_policy.json",
+    "validation_exception_registry": "spec/planning/compiler/m313/m313_b005_new_checker_and_temporary_validation_exception_policy_edge_case_and_compatibility_completion_exception_registry.json",
+    "source_hygiene_result": "spec/planning/compiler/m315/m315_d002_anti_noise_enforcement_implementation_core_feature_implementation_result.json",
+    "artifact_authenticity_inventory": "spec/planning/compiler/m315/m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion_inventory.json",
+    "synthetic_fixture_registry": "spec/planning/compiler/m315/m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation_registry.json",
+    "synthetic_fixture_result": "spec/planning/compiler/m315/m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion_result.json"
+  },
+  "budget_families": {
+    "public_command_surface": {
+      "maximum_total_public_entrypoints": 25,
+      "current_public_entrypoints": 17,
+      "owner_issue": "M314-C003",
+      "future_enforcement_issue": "M318-C002"
+    },
+    "validation_growth": {
+      "closeout_maximums": {
+        "check_scripts": 558,
+        "readiness_runners": 179,
+        "pytest_check_files": 555
+      },
+      "no_new_growth_without_exception": true,
+      "policy_owner_issue": "M313-B005",
+      "future_enforcement_issue": "M318-C002"
+    },
+    "source_hygiene_and_residue": {
+      "zero_target_classes_removed": [
+        "transitional_source_model",
+        "legacy_m248_surface_identifier"
+      ],
+      "remaining_quarantined_residual_classes": {
+        "legacy_fixture_path_reference": 6,
+        "dependency_issue_array": 3,
+        "next_issue_schema_field": 40,
+        "issue_key_schema_field": 8
+      },
+      "post_cleanup_native_source_milestone_token_lines": 57,
+      "owner_issue": "M315-D002",
+      "future_enforcement_issue": "M318-C002"
+    },
+    "artifact_authenticity_and_synthetic_fixtures": {
+      "synthetic_stub_ir_files": 2,
+      "generated_replay_candidate_files": 76,
+      "replay_without_frontend_header": 46,
+      "synthetic_fixture_root": "tests/tooling/fixtures/native/library_cli_parity",
+      "transitional_bridge_owner_issue": "M315-C003",
+      "future_enforcement_issue": "M318-D001"
+    },
+    "exception_process_transition": {
+      "active_exception_count": 0,
+      "current_registry_owner_issue": "M313-B005",
+      "future_process_owner_issue": "M318-A002"
+    }
+  },
+  "notes": [
+    "This map intentionally reuses existing budgets instead of introducing a second competing governance vocabulary.",
+    "Long-term exception-process replacement and CI alarm automation are downstream work in this milestone, not part of this inventory freeze.",
+    "The artifact-authenticity family records both the explicit synthetic fixture allowance and the remaining replay bridge debt so later enforcement stays truthful."
+  ],
+  "next_issue": "M318-A002"
+}
