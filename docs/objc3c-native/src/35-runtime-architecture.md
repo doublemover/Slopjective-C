@@ -143,6 +143,22 @@ runtime acceptance report. It only passes when all three agree on the runtime
 claim boundary, runtime state publication surface, acceptance suite surface,
 runtime installation ABI surface, and loader lifecycle surface.
 
+## Integrated Validation Path
+
+- runner:
+  - `scripts/check_objc3c_runtime_architecture_integration.py`
+- public action:
+  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+- summary path:
+  - `tmp/reports/runtime/architecture-integration/summary.json`
+
+The integrated runtime architecture validation path runs the shared harness over
+`public-test-full`, then requires the resulting full public-workflow report to
+stay aligned with the runtime architecture proof packet and the direct runtime
+acceptance report. It fails closed if the full workflow drops the smoke,
+runtime-acceptance, or replay child steps, or if any published runtime
+architecture surface drifts between the full workflow and the proof packet.
+
 ## Claim Boundary
 
 - runnable:

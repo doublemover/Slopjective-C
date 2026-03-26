@@ -95,3 +95,12 @@ Integrated runtime architecture proof:
   - `python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture`
 - integrated packet:
   - `tmp/reports/runtime/architecture-proof/summary.json`
+
+Integrated runtime architecture validation:
+
+- runner:
+  - `scripts/check_objc3c_runtime_architecture_integration.py`
+- public action:
+  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+- integrated summary:
+  - `tmp/reports/runtime/architecture-integration/summary.json`

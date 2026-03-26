@@ -50,6 +50,9 @@ Representative live proof paths:
 - integrated runtime architecture packet:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
   - `tmp/reports/runtime/architecture-proof/summary.json`
+- integrated runtime architecture validation:
+  - `scripts/check_objc3c_runtime_architecture_integration.py`
+  - `tmp/reports/runtime/architecture-integration/summary.json`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
 

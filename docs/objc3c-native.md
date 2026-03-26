@@ -210,6 +210,22 @@ runtime acceptance report. It only passes when all three agree on the runtime
 claim boundary, runtime state publication surface, acceptance suite surface,
 runtime installation ABI surface, and loader lifecycle surface.
 
+## Integrated Validation Path
+
+- runner:
+  - `scripts/check_objc3c_runtime_architecture_integration.py`
+- public action:
+  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+- summary path:
+  - `tmp/reports/runtime/architecture-integration/summary.json`
+
+The integrated runtime architecture validation path runs the shared harness over
+`public-test-full`, then requires the resulting full public-workflow report to
+stay aligned with the runtime architecture proof packet and the direct runtime
+acceptance report. It fails closed if the full workflow drops the smoke,
+runtime-acceptance, or replay child steps, or if any published runtime
+architecture surface drifts between the full workflow and the proof packet.
+
 ## Claim Boundary
 
 - runnable:
@@ -314,6 +330,7 @@ python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance
 python scripts/objc3c_public_workflow_runner.py test-full
 python scripts/objc3c_public_workflow_runner.py test-nightly
 python scripts/objc3c_public_workflow_runner.py test-ci
+python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture
 python scripts/objc3c_public_workflow_runner.py proof-objc3c
 python scripts/ci/check_task_hygiene.py
 python scripts/check_objc3c_dependency_boundaries.py --strict
@@ -338,6 +355,7 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 - `test-recovery`: recovery compile success and deterministic diagnostics replay as a non-default heavy path
 - `test-full`: smoke, runtime acceptance, and replay/native-truth proof without the recovery fan-out
 - `test-nightly`: full validation plus recovery, positive fixture-matrix, and static negative-expectation sweeps
+- `test:objc3c:runtime-architecture`: full public workflow plus runtime architecture proof-packet alignment
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols

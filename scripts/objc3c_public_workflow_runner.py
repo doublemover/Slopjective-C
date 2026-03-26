@@ -31,6 +31,7 @@ SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 RUNTIME_ARCHITECTURE_PROOF_PACKET_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_proof_packet.py"
+RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
@@ -287,6 +288,10 @@ def action_proof_runtime_architecture(_: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_ARCHITECTURE_PROOF_PACKET_PY)])
 
 
+def action_validate_runtime_architecture(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ARCHITECTURE_INTEGRATION_PY)])
+
+
 def action_test_fixture_matrix(rest: list[str]) -> int:
     return pwsh_file(MATRIX_PS1, *rest)
 
@@ -346,6 +351,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
     "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py", ("test:objc3c:runtime-acceptance",), validation_tier="fast", guarantee_owner="runtime acceptance and ABI/accessor proof"),
     "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture proof packet", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
+    "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
@@ -373,6 +379,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-execution-replay": action_test_execution_replay,
     "test-runtime-acceptance": action_test_runtime_acceptance,
     "proof-runtime-architecture": action_proof_runtime_architecture,
+    "validate-runtime-architecture": action_validate_runtime_architecture,
     "test-fixture-matrix": action_test_fixture_matrix,
     "test-negative-expectations": action_test_negative_expectations,
     "test-full": action_test_full,
