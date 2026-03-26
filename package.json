@@ -7808,6 +7808,9 @@
     "check:objc3c:m246-d012-lane-d-readiness": "python scripts/run_m246_d012_lane_d_readiness.py",
     "check:objc3c:m313-d001-ci-validation-topology-and-scheduling-contract-contract-and-architecture-freeze": "python scripts/check_m313_d001_ci_validation_topology_and_scheduling_contract_contract_and_architecture_freeze.py",
     "test:tooling:m313-d001-ci-validation-topology-and-scheduling-contract-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m313_d001_ci_validation_topology_and_scheduling_contract_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m313-d001-lane-d-readiness": "python scripts/run_m313_d001_lane_d_readiness.py"
+    "check:objc3c:m313-d001-lane-d-readiness": "python scripts/run_m313_d001_lane_d_readiness.py",
+    "check:objc3c:m313-d002-ci-migration-to-acceptance-first-validation-core-feature-implementation": "python scripts/check_m313_d002_ci_migration_to_acceptance_first_validation_core_feature_implementation.py",
+    "test:tooling:m313-d002-ci-migration-to-acceptance-first-validation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m313_d002_ci_migration_to_acceptance_first_validation_core_feature_implementation.py -q",
+    "check:objc3c:m313-d002-lane-d-readiness": "python scripts/run_m313_d002_lane_d_readiness.py"
   }
 }

@@ -56,31 +56,36 @@
       "guard_id": "inventory_contract",
       "command": "python scripts/check_m313_a001_validation_surface_inventory_and_taxonomy_contract_and_architecture_freeze.py",
       "guard_class": "inventory_contract",
-      "owner_issue": "M313-A001"
+      "owner_issue": "M313-A001",
+      "enforcement_mode": "observational"
     },
     {
       "guard_id": "ratchet_budget_contract",
       "command": "python scripts/check_m313_a002_validation_reduction_targets_and_ratchet_map_source_completion.py",
       "guard_class": "policy_budget_enforcement",
-      "owner_issue": "M313-A002"
+      "owner_issue": "M313-A002",
+      "enforcement_mode": "strict"
     },
     {
       "guard_id": "namespace_quarantine_policy",
       "command": "python scripts/check_m313_b004_legacy_validation_quarantine_and_namespace_policy_core_feature_implementation.py",
       "guard_class": "policy_budget_enforcement",
-      "owner_issue": "M313-B004"
+      "owner_issue": "M313-B004",
+      "enforcement_mode": "strict"
     },
     {
       "guard_id": "exception_policy",
       "command": "python scripts/check_m313_b005_new_checker_and_temporary_validation_exception_policy_edge_case_and_compatibility_completion.py",
       "guard_class": "publication_consistency",
-      "owner_issue": "M313-B005"
+      "owner_issue": "M313-B005",
+      "enforcement_mode": "strict"
     },
     {
       "guard_id": "acceptance_schema_contract",
       "command": "python scripts/check_m313_c001_acceptance_artifact_schema_and_replay_contract_contract_and_architecture_freeze.py",
       "guard_class": "schema_contract",
-      "owner_issue": "M313-C001"
+      "owner_issue": "M313-C001",
+      "enforcement_mode": "strict"
     }
   ],
   "topology_runner": {

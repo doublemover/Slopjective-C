@@ -1,0 +1,27 @@
+{
+  "mode": "m313-d002-ci-acceptance-first-migration-v1",
+  "contract_id": "objc3c-cleanup-ci-acceptance-first-migration/m313-d002-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m313/m313_a002_validation_reduction_targets_and_ratchet_map_source_completion_ratchet_map.json",
+    "spec/planning/compiler/m313/m313_b004_legacy_validation_quarantine_and_namespace_policy_core_feature_implementation_policy.json",
+    "spec/planning/compiler/m313/m313_b005_new_checker_and_temporary_validation_exception_policy_edge_case_and_compatibility_completion_exception_registry.json",
+    "spec/planning/compiler/m313/m313_c002_subsystem_executable_acceptance_suites_core_feature_implementation_plan.json",
+    "spec/planning/compiler/m313/m313_c003_historical_checker_compatibility_bridge_and_deprecation_surface_core_feature_expansion_plan.json",
+    "spec/planning/compiler/m313/m313_d001_ci_validation_topology_and_scheduling_contract_contract_and_architecture_freeze_contract.json"
+  ],
+  "runner_script": "scripts/m313_acceptance_first_ci_runner.py",
+  "workflow_path": ".github/workflows/m313-validation-acceptance-first.yml",
+  "supported_stages": [
+    "static-guards",
+    "acceptance-suites",
+    "compatibility-bridges",
+    "topology"
+  ],
+  "default_reports": {
+    "static-guards": "tmp/reports/m313/ci/static_policy_guards/summary.json",
+    "acceptance-suites": "tmp/reports/m313/ci/acceptance_suites/summary.json",
+    "compatibility-bridges": "tmp/reports/m313/ci/compatibility_bridges/summary.json",
+    "topology": "tmp/reports/m313/ci/acceptance_first/summary.json"
+  },
+  "next_issue": "M313-E001"
+}
