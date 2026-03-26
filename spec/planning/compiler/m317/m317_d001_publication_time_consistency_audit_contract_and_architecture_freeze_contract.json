@@ -1,0 +1,42 @@
+{
+  "mode": "m317-d001-publication-consistency-audit-contract-v1",
+  "contract_id": "objc3c-cleanup-publication-consistency-audit-contract/m317-d001-v1",
+  "audit_facets": [
+    "open_issue_label_completeness",
+    "execution_order_marker_completeness",
+    "milestone_description_dependency_marker_completeness",
+    "overlap_amendment_coverage",
+    "post_cleanup_dependency_rewrite_coverage",
+    "template_generator_contract_alignment",
+    "idempotent_apply_behavior",
+    "rate_limit_safe_publish_apply_behavior"
+  ],
+  "required_report_keys": [
+    "ok",
+    "checks_total",
+    "checks_passed",
+    "failures",
+    "checked_milestones",
+    "checked_issues",
+    "unlabeled_open_issues",
+    "open_issues_missing_execution_order",
+    "updated_entities",
+    "next_issue"
+  ],
+  "blocker_failures": [
+    "unlabeled open roadmap issue",
+    "open roadmap issue missing execution-order marker",
+    "target milestone missing dependency-rewrite or blocker markers",
+    "target issue body missing required overlap-amendment or post-cleanup rewrite section",
+    "template/generator surfaces drifting from the frozen simplification contract",
+    "apply path that is not idempotent or does not emit a machine-readable report"
+  ],
+  "future_implementation_surfaces": [
+    "tmp/github-publish/cleanup_acceleration_program/publish_cleanup_acceleration_program.py",
+    "tmp/github-publish/cleanup_acceleration_program/apply_cleanup_execution_order.py",
+    "tmp/github-publish/cleanup_acceleration_program/apply_open_issue_metadata.py",
+    "tmp/github-publish/cleanup_acceleration_program/apply_m317_b002_existing_amendments.py",
+    "tmp/github-publish/cleanup_acceleration_program/apply_m317_b003_future_dependency_rewrites.py"
+  ],
+  "next_issue": "M317-E001"
+}
