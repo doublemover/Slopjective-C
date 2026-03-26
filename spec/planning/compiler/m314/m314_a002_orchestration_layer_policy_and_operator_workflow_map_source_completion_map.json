@@ -1,0 +1,131 @@
+{
+  "mode": "m314-a002-orchestration-layer-workflow-map-v1",
+  "contract_id": "objc3c-cleanup-orchestration-layer-workflow-map/m314-a002-v1",
+  "depends_on": "M314-A001",
+  "primary_public_layer": "package.json scripts",
+  "layer_policy": {
+    "public_operator_layer": {
+      "entrypoint_kind": "package scripts",
+      "allowed_public_families": [
+        "build",
+        "compile",
+        "lint",
+        "test",
+        "package",
+        "tool",
+        "proof"
+      ],
+      "notes": [
+        "Public operator documentation must prefer package scripts over direct Python or PowerShell commands.",
+        "Package scripts may wrap Python or PowerShell internally."
+      ]
+    },
+    "internal_parameterized_layer": {
+      "entrypoint_kind": "python scripts/*",
+      "allowed_for": [
+        "shared runners",
+        "parameterized orchestration",
+        "acceptance harnesses",
+        "docs builders",
+        "policy checkers"
+      ],
+      "non_public": true
+    },
+    "platform_specific_layer": {
+      "entrypoint_kind": "PowerShell wrappers",
+      "allowed_for": [
+        "Windows-specific implementation details",
+        "backend wrappers behind package scripts",
+        "narrow recovery helpers"
+      ],
+      "non_public": true
+    },
+    "ci_only_layer": {
+      "entrypoint_kind": ".github/workflows/*.yml",
+      "non_public": true,
+      "workflow_files": [
+        ".github/workflows/compiler-closeout.yml",
+        ".github/workflows/conformance-evidence-gate.yml",
+        ".github/workflows/conformance-minima.yml",
+        ".github/workflows/m313-validation-acceptance-first.yml",
+        ".github/workflows/planning-lint.yml",
+        ".github/workflows/publish-pages.yml",
+        ".github/workflows/spec-quality.yml",
+        ".github/workflows/task-hygiene-live-drift.yml",
+        ".github/workflows/task-hygiene.yml"
+      ]
+    }
+  },
+  "workflow_map": [
+    {
+      "workflow_id": "native_build",
+      "public_entrypoints": [
+        "build",
+        "build:objc3c-native",
+        "build:objc3c-native:contracts",
+        "build:objc3c-native:full",
+        "build:objc3c-native:reconfigure"
+      ],
+      "internal_entrypoints": [],
+      "implementation_entrypoints": [
+        "scripts/build_objc3c_native.ps1"
+      ],
+      "documentation_state": "public-package-first"
+    },
+    {
+      "workflow_id": "native_compile",
+      "public_entrypoints": [
+        "compile:objc3c"
+      ],
+      "internal_entrypoints": [],
+      "implementation_entrypoints": [
+        "scripts/objc3c_native_compile.ps1"
+      ],
+      "documentation_state": "public-package-first"
+    },
+    {
+      "workflow_id": "spec_build_and_lint",
+      "public_entrypoints": [
+        "build:spec",
+        "lint:spec"
+      ],
+      "internal_entrypoints": [
+        "python scripts/build_site_index.py",
+        "python scripts/build_site_index.py --check",
+        "python scripts/spec_lint.py"
+      ],
+      "implementation_entrypoints": [],
+      "documentation_state": "mixed-public-and-internal"
+    },
+    {
+      "workflow_id": "execution_smoke",
+      "public_entrypoints": [
+        "test:objc3c:execution-smoke"
+      ],
+      "internal_entrypoints": [],
+      "implementation_entrypoints": [
+        "pwsh -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\check_objc3c_native_execution_smoke.ps1"
+      ],
+      "documentation_state": "mixed-public-and-implementation"
+    }
+  ],
+  "documented_transition_leaks": [
+    {
+      "source": "README.md",
+      "command": "python scripts/build_site_index.py",
+      "replacement_owner_issue": "M314-B003"
+    },
+    {
+      "source": "README.md",
+      "command": "python scripts/build_site_index.py --check",
+      "replacement_owner_issue": "M314-C003"
+    },
+    {
+      "source": "README.md",
+      "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\check_objc3c_native_execution_smoke.ps1",
+      "replacement_owner_issue": "M314-D001"
+    }
+  ],
+  "prototype_surface_owner_issue": "M314-B005",
+  "next_issue": "M314-B001"
+}
