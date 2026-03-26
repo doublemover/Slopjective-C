@@ -90,7 +90,9 @@
     "antiNoiseBudgetMapPath": "spec/planning/compiler/m318/m318_a001_anti_noise_governance_inventory_and_budget_map_contract_and_architecture_freeze_inventory.json",
     "antiNoiseExceptionProcessPath": "spec/governance/objc3c_anti_noise_exception_process.json",
     "antiNoiseExceptionRegistryPath": "spec/governance/objc3c_anti_noise_exception_registry.json",
-    "governanceOwnerIssue": "M318-A002"
+    "antiNoiseBudgetPolicyPath": "spec/governance/objc3c_anti_noise_budget_policy.json",
+    "governanceOwnerIssue": "M318-A002",
+    "budgetPolicyOwnerIssue": "M318-B001"
   },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
@@ -7997,6 +7999,9 @@
     "check:objc3c:m318-a001-lane-a-readiness": "python scripts/run_m318_a001_lane_a_readiness.py",
     "check:objc3c:m318-a002-exception-process-and-ownership-model-source-completion": "python scripts/check_m318_a002_exception_process_and_ownership_model_source_completion.py",
     "test:tooling:m318-a002-exception-process-and-ownership-model-source-completion": "python -m pytest tests/tooling/test_check_m318_a002_exception_process_and_ownership_model_source_completion.py -q",
-    "check:objc3c:m318-a002-lane-a-readiness": "python scripts/run_m318_a002_lane_a_readiness.py"
+    "check:objc3c:m318-a002-lane-a-readiness": "python scripts/run_m318_a002_lane_a_readiness.py",
+    "check:objc3c:m318-b001-governance-and-budget-enforcement-policy-contract-and-architecture-freeze": "python scripts/check_m318_b001_governance_and_budget_enforcement_policy_contract_and_architecture_freeze.py",
+    "test:tooling:m318-b001-governance-and-budget-enforcement-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_b001_governance_and_budget_enforcement_policy_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m318-b001-lane-b-readiness": "python scripts/run_m318_b001_lane_b_readiness.py"
   }
 }
