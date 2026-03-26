@@ -121,7 +121,7 @@ def action_test_execution_replay(_: list[str]) -> int:
 
 
 def action_test_full(_: list[str]) -> int:
-    rc = run_steps(["test-recovery"])
+    rc = run_steps(["test-execution-smoke", "test-recovery"])
     if rc != 0:
         return rc
     rc = pwsh_file(MATRIX_PS1)
