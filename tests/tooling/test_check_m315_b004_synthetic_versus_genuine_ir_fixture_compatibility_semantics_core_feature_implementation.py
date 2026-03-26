@@ -15,3 +15,12 @@ def test_registry_freezes_tracked_ll_totals() -> None:
 def test_registry_hands_regeneration_to_c003() -> None:
     payload = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
     assert payload["downstream_ownership"]["replay_regeneration"] == "M315-C003"
+
+
+def test_registry_records_synthetic_labelled_json_paths() -> None:
+    payload = json.loads(REGISTRY_JSON.read_text(encoding="utf-8"))
+    assert payload["synthetic_labelled_json_paths"] == [
+        "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+        "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json",
+        "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+    ]

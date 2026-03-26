@@ -91,6 +91,8 @@ def provenance_signal(rel: str) -> str:
         payload = json.loads(text)
     except json.JSONDecodeError:
         return "non_json_or_invalid"
+    if isinstance(payload, dict) and isinstance(payload.get("artifact_authenticity"), dict):
+        return "artifact_authenticity_envelope"
     if any(key in payload for key in ("generated_at", "published_at_utc", "generated_at_utc")):
         return "embedded_generation_metadata"
     if any(key in payload for key in ("producer", "source_revision", "ci_run_id", "release_id", "artifact_id")):
@@ -215,12 +217,12 @@ def main(argv: Sequence[str]) -> int:
     checks_total += 5
     checks_passed += require(inventory.get("mode") == "m315-a003-artifact-authenticity-inventory-v1", str(INVENTORY_JSON), "M315-A003-INV-01", "mode drifted", failures)
     checks_passed += require(inventory.get("contract_id") == "objc3c-cleanup-artifact-authenticity-inventory/m315-a003-v1", str(INVENTORY_JSON), "M315-A003-INV-02", "contract id drifted", failures)
-    checks_passed += require(inventory.get("totals", {}).get("tracked_artifact_candidates") == measured["tracked_artifact_candidates"] == 2501, str(INVENTORY_JSON), "M315-A003-INV-03", "artifact candidate total drifted", failures)
+    checks_passed += require(inventory.get("totals", {}).get("tracked_artifact_candidates") == measured["tracked_artifact_candidates"] == 2510, str(INVENTORY_JSON), "M315-A003-INV-03", "artifact candidate total drifted", failures)
     checks_passed += require(inventory.get("totals", {}).get("ll_files") == measured["ll_files"] == 78, str(INVENTORY_JSON), "M315-A003-INV-04", "ll file count drifted", failures)
-    checks_passed += require(inventory.get("totals", {}).get("json_files") == measured["json_files"] == 2423, str(INVENTORY_JSON), "M315-A003-INV-05", "json file count drifted", failures)
+    checks_passed += require(inventory.get("totals", {}).get("json_files") == measured["json_files"] == 2432, str(INVENTORY_JSON), "M315-A003-INV-05", "json file count drifted", failures)
 
     for key, expected in {
-        "schema_policy_contract": 53,
+        "schema_policy_contract": 62,
         "generated_or_report_artifact": 25,
         "sample_or_example_artifact": 62,
         "synthetic_fixture": 2209,
@@ -230,19 +232,21 @@ def main(argv: Sequence[str]) -> int:
         checks_passed += require(inventory.get("authenticity_class_counts", {}).get(key) == measured["class_counts"].get(key) == expected, str(INVENTORY_JSON), f"M315-A003-CLASS-{key}", f"class count drifted for {key}", failures)
 
     for key, expected in {
-        "none": 2150,
+        "none": 2158,
+        "artifact_authenticity_envelope": 3,
         "embedded_generation_metadata": 49,
-        "artifact_header_only": 108,
+        "artifact_header_only": 106,
         "fixture_or_status_label": 183,
         "explicit_fixture_label": 2,
     }.items():
         checks_total += 1
         checks_passed += require(inventory.get("provenance_signal_counts", {}).get(key) == measured["provenance_counts"].get(key) == expected, str(INVENTORY_JSON), f"M315-A003-PROV-{key}", f"provenance count drifted for {key}", failures)
 
-    checks_total += 8
+    checks_total += 9
     checks_passed += require(inventory.get("root_counts", {}).get("tests/tooling/fixtures") == measured["root_counts"].get("tests/tooling/fixtures") == 760, str(INVENTORY_JSON), "M315-A003-ROOT-01", "tests/tooling/fixtures root count drifted", failures)
     checks_passed += require(inventory.get("root_counts", {}).get("tests/conformance") == measured["root_counts"].get("tests/conformance") == 1601, str(INVENTORY_JSON), "M315-A003-ROOT-02", "tests/conformance root count drifted", failures)
-    checks_passed += require(inventory.get("root_counts", {}).get("tests/conformance/examples") == measured["root_counts"].get("tests/conformance/examples") == 59, str(INVENTORY_JSON), "M315-A003-ROOT-03", "tests/conformance/examples root count drifted", failures)
+    checks_passed += require(inventory.get("root_counts", {}).get("spec/planning") == measured["root_counts"].get("spec/planning") == 56, str(INVENTORY_JSON), "M315-A003-ROOT-03", "spec/planning root count drifted", failures)
+    checks_passed += require(inventory.get("root_counts", {}).get("tests/conformance/examples") == measured["root_counts"].get("tests/conformance/examples") == 59, str(INVENTORY_JSON), "M315-A003-ROOT-04", "tests/conformance/examples root count drifted", failures)
     checks_passed += require(inventory.get("synthetic_fixture_breakdown", {}).get("tests/conformance") == measured["synthetic_breakdown"].get("tests/conformance") == 1601, str(INVENTORY_JSON), "M315-A003-SYN-01", "synthetic tests/conformance count drifted", failures)
     checks_passed += require(inventory.get("synthetic_fixture_breakdown", {}).get("tests/tooling/fixtures") == measured["synthetic_breakdown"].get("tests/tooling/fixtures") == 608, str(INVENTORY_JSON), "M315-A003-SYN-02", "synthetic tests/tooling/fixtures count drifted", failures)
     checks_passed += require(inventory.get("sample_or_example_breakdown", {}).get("reports") == measured["sample_breakdown"].get("reports") == 3, str(INVENTORY_JSON), "M315-A003-SAMPLE-01", "sample reports count drifted", failures)

@@ -47,8 +47,8 @@
       "source_kind": "artifact-bytes",
       "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.ll",
       "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll",
-      "library_sha256": "3333fc3d5412ec3224d7e6ac03db48a2da083d79095f8ff6654c7061e1188670",
-      "cli_sha256": "3333fc3d5412ec3224d7e6ac03db48a2da083d79095f8ff6654c7061e1188670",
+      "library_sha256": "e4b9834957feb8237bac72479545c2256ed538c6e2694c632c8a9fa23d3db962",
+      "cli_sha256": "e4b9834957feb8237bac72479545c2256ed538c6e2694c632c8a9fa23d3db962",
       "matches": true
     },
     {
@@ -57,8 +57,8 @@
       "source_kind": "artifact-bytes",
       "library_source": "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
       "cli_source": "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
-      "library_sha256": "b40da60c6f5cce53f29cb887194a7379d1a8a6a90a77276fe8710e69b2f07fe4",
-      "cli_sha256": "b40da60c6f5cce53f29cb887194a7379d1a8a6a90a77276fe8710e69b2f07fe4",
+      "library_sha256": "dda517bd80e536762a7d9c71b14b2b088033a606f6b713a4eb227fb89652a4b9",
+      "cli_sha256": "dda517bd80e536762a7d9c71b14b2b088033a606f6b713a4eb227fb89652a4b9",
       "matches": true
     },
     {
@@ -74,5 +74,52 @@
   ],
   "failures": [],
   "ok": true,
+  "artifact_authenticity": {
+    "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+    "artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.golden_summary.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "content_role": "fixture_parity_golden_summary",
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "synthetic_reason": "fixture parity IR for CLI versus library behavior",
+    "explicit_fixture_label": "fixture parity IR"
+  },
+  "synthetic_fixture_contract": {
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "relocation_decision": "filesystem_root_retained_labeling_promoted_to_authenticity_contract",
+    "required_manifest_artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.manifest.v1",
+    "required_ll_header_keys": [
+      "artifact_family_id",
+      "provenance_class",
+      "provenance_mode",
+      "fixture_family_id",
+      "explicit_fixture_label"
+    ],
+    "required_provenance_class": "synthetic_fixture",
+    "required_provenance_mode": "fixture_curated",
+    "required_explicit_fixture_label": "fixture parity IR"
+  },
+  "authenticity_checks": {
+    "applied": true,
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "manifest_paths": [
+      "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+      "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json"
+    ],
+    "ll_paths": [
+      "tests/tooling/fixtures/native/library_cli_parity/library/module.ll",
+      "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll"
+    ],
+    "validated_ll_header_keys": [
+      "artifact_family_id",
+      "provenance_class",
+      "provenance_mode",
+      "fixture_family_id",
+      "explicit_fixture_label"
+    ],
+    "manifest_artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.manifest.v1",
+    "summary_artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.golden_summary.v1",
+    "failure_count": 0
+  },
   "golden_summary": "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json"
 }

@@ -13,12 +13,12 @@
     ]
   },
   "totals": {
-    "tracked_artifact_candidates": 2501,
+    "tracked_artifact_candidates": 2510,
     "ll_files": 78,
-    "json_files": 2423
+    "json_files": 2432
   },
   "authenticity_class_counts": {
-    "schema_policy_contract": 53,
+    "schema_policy_contract": 62,
     "generated_or_report_artifact": 25,
     "sample_or_example_artifact": 62,
     "synthetic_fixture": 2209,
@@ -26,19 +26,20 @@
   },
   "provenance_signal_counts": {
     "schema_or_contract_label": 6,
-    "none": 2150,
+    "none": 2158,
     "embedded_generation_metadata": 49,
     "non_json_or_invalid": 3,
     "fixture_or_status_label": 183,
     "explicit_fixture_label": 2,
-    "artifact_header_only": 108
+    "artifact_authenticity_envelope": 3,
+    "artifact_header_only": 106
   },
   "root_counts": {
     "registries": 1,
     "reports": 28,
     "schemas": 4,
     "site/src": 1,
-    "spec/planning": 47,
+    "spec/planning": 56,
     "tests/conformance": 1601,
     "tests/conformance/examples": 59,
     "tests/tooling/fixtures": 760
@@ -63,7 +64,7 @@
   "class_by_provenance": {
     "schema_policy_contract": {
       "schema_or_contract_label": 6,
-      "none": 47
+      "none": 56
     },
     "generated_or_report_artifact": {
       "none": 17,
@@ -74,12 +75,12 @@
       "none": 59
     },
     "synthetic_fixture": {
-      "none": 1981,
+      "none": 1980,
       "embedded_generation_metadata": 38,
       "non_json_or_invalid": 3,
       "fixture_or_status_label": 183,
       "explicit_fixture_label": 2,
-      "artifact_header_only": 2
+      "artifact_authenticity_envelope": 3
     },
     "replay_candidate_missing_provenance": {
       "artifact_header_only": 106,

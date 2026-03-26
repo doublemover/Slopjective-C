@@ -25,12 +25,49 @@ def _write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def _write_json(path: Path, payload: object) -> None:
+    _write(path, json.dumps(payload, indent=2) + "\n")
+
+
 def _write_source_mode_artifacts(out_dir: Path, *, emit_prefix: str, marker: str) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     _write(out_dir / f"{emit_prefix}.diagnostics.json", f'{{"marker":"{marker}"}}\n')
     _write(out_dir / f"{emit_prefix}.manifest.json", f'{{"module":"{marker}"}}\n')
     _write(out_dir / f"{emit_prefix}.ll", "define i32 @main() { ret i32 0 }\n")
     (out_dir / f"{emit_prefix}.obj").write_bytes(b"\x00OBJ")
+
+
+def _write_synthetic_ll(path: Path) -> None:
+    _write(
+        path,
+        "\n".join(
+            [
+                f"; {parity.SYNTHETIC_FIXTURE_LABEL}",
+                f"; artifact_family_id: {parity.SYNTHETIC_FIXTURE_FAMILY_ID}",
+                "; provenance_class: synthetic_fixture",
+                "; provenance_mode: fixture_curated",
+                f"; fixture_family_id: {parity.SYNTHETIC_FIXTURE_FAMILY_ID}",
+                f"; explicit_fixture_label: {parity.SYNTHETIC_FIXTURE_LABEL}",
+                "define i32 @main() {",
+                "entry:",
+                "  ret i32 0",
+                "}",
+                "",
+            ]
+        ),
+    )
+
+
+def _write_synthetic_manifest(path: Path) -> None:
+    _write_json(
+        path,
+        {
+            "entrypoint": "main",
+            "module": "fixture_library_cli_parity",
+            "source": "fixtures/native/library_cli_parity",
+            "artifact_authenticity": parity.synthetic_fixture_manifest_envelope(),
+        },
+    )
 
 
 def _write_capability_summary(
@@ -203,6 +240,75 @@ def test_parity_check_golden_detects_drift(tmp_path: Path) -> None:
     payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["ok"] is False
     assert any("golden summary drift detected" in failure for failure in payload["failures"])
+
+
+def test_parity_applies_synthetic_fixture_authenticity_contract(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    cli_dir = tmp_path / "cli"
+
+    _write_synthetic_ll(library_dir / "module.ll")
+    _write_synthetic_ll(cli_dir / "module.ll")
+    _write_synthetic_manifest(library_dir / "module.manifest.json")
+    _write_synthetic_manifest(cli_dir / "module.manifest.json")
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--library-dir",
+            str(library_dir),
+            "--cli-dir",
+            str(cli_dir),
+            "--artifacts",
+            "module.manifest.json",
+            "module.ll",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is True
+    assert payload["artifact_authenticity"]["provenance_class"] == "synthetic_fixture"
+    assert payload["synthetic_fixture_contract"]["fixture_family_id"] == parity.SYNTHETIC_FIXTURE_FAMILY_ID
+    assert payload["authenticity_checks"]["failure_count"] == 0
+
+
+def test_parity_fail_closes_on_partial_synthetic_fixture_labeling(tmp_path: Path) -> None:
+    library_dir = tmp_path / "library"
+    cli_dir = tmp_path / "cli"
+
+    _write_synthetic_ll(library_dir / "module.ll")
+    _write_synthetic_ll(cli_dir / "module.ll")
+    _write_synthetic_manifest(library_dir / "module.manifest.json")
+    _write_json(
+        cli_dir / "module.manifest.json",
+        {
+            "entrypoint": "main",
+            "module": "fixture_library_cli_parity",
+            "source": "fixtures/native/library_cli_parity",
+        },
+    )
+
+    summary_out = tmp_path / "summary.json"
+    exit_code = parity.run(
+        [
+            "--library-dir",
+            str(library_dir),
+            "--cli-dir",
+            str(cli_dir),
+            "--artifacts",
+            "module.manifest.json",
+            "module.ll",
+            "--summary-out",
+            str(summary_out),
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
+    assert payload["ok"] is False
+    assert any("synthetic fixture authenticity mismatch" in failure for failure in payload["failures"])
 
 
 def test_parity_source_mode_generates_and_compares_cli_and_c_api_outputs(

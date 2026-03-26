@@ -13,7 +13,9 @@
       "allowed_roots": [
         "tests/tooling/fixtures/native/library_cli_parity/**"
       ],
-      "required_header_substring": "fixture parity IR"
+      "required_header_substring": "fixture parity IR",
+      "required_json_root_field": "artifact_authenticity",
+      "required_fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1"
     },
     "generated_replay_candidate": {
       "allowed_roots": [
@@ -26,6 +28,11 @@
   "synthetic_fixture_paths": [
     "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll",
     "tests/tooling/fixtures/native/library_cli_parity/library/module.ll"
+  ],
+  "synthetic_labelled_json_paths": [
+    "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+    "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json",
+    "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json"
   ],
   "legacy_missing_header_examples": [
     "tests/tooling/fixtures/objc3c/m170_validation_block_determinism_perf_baseline_contract/replay_run_1/module.ll",
@@ -45,5 +52,6 @@
     "replay_regeneration": "M315-C003",
     "fixture_relocation_and_labeling": "M315-C004"
   },
+  "relocation_resolution": "filesystem_root_retained_labeling_promoted_to_authenticity_contract",
   "next_issue": "M315-B005"
 }

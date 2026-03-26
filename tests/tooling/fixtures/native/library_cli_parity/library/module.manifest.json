@@ -1,5 +1,15 @@
 {
   "entrypoint": "main",
   "module": "fixture_library_cli_parity",
-  "source": "fixtures/native/library_cli_parity"
+  "source": "fixtures/native/library_cli_parity",
+  "artifact_authenticity": {
+    "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+    "artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.manifest.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "content_role": "fixture_parity_manifest",
+    "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+    "synthetic_reason": "fixture parity IR for CLI versus library behavior",
+    "explicit_fixture_label": "fixture parity IR"
+  }
 }

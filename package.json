@@ -7969,6 +7969,9 @@
     "check:objc3c:m315-c002-lane-c-readiness": "python scripts/run_m315_c002_lane_c_readiness.py",
     "check:objc3c:m315-c003-genuine-replay-artifact-regeneration-and-provenance-capture-core-feature-implementation": "python scripts/check_m315_c003_genuine_replay_artifact_regeneration_and_provenance_capture_core_feature_implementation.py",
     "test:tooling:m315-c003-genuine-replay-artifact-regeneration-and-provenance-capture-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_c003_genuine_replay_artifact_regeneration_and_provenance_capture_core_feature_implementation.py -q",
-    "check:objc3c:m315-c003-lane-c-readiness": "python scripts/run_m315_c003_lane_c_readiness.py"
+    "check:objc3c:m315-c003-lane-c-readiness": "python scripts/run_m315_c003_lane_c_readiness.py",
+    "check:objc3c:m315-c004-synthetic-fixture-relocation-labeling-and-parity-test-updates-core-feature-expansion": "python scripts/check_m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion.py",
+    "test:tooling:m315-c004-synthetic-fixture-relocation-labeling-and-parity-test-updates-core-feature-expansion": "python -m pytest tests/tooling/test_check_m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion.py -q",
+    "check:objc3c:m315-c004-lane-c-readiness": "python scripts/run_m315_c004_lane_c_readiness.py"
   }
 }

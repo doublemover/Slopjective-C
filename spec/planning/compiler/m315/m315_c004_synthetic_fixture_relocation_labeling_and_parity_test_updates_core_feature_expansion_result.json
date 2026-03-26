@@ -1,0 +1,24 @@
+{
+  "mode": "m315-c004-synthetic-fixture-labeling-parity-updates-v1",
+  "contract_id": "objc3c-cleanup-synthetic-fixture-labeling-parity-updates/m315-c004-v1",
+  "fixture_root": "tests/tooling/fixtures/native/library_cli_parity",
+  "relocation_decision": "filesystem_root_retained_labeling_promoted_to_authenticity_contract",
+  "ll_fixture_paths": [
+    "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll",
+    "tests/tooling/fixtures/native/library_cli_parity/library/module.ll"
+  ],
+  "json_authenticity_paths": [
+    "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+    "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+    "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json"
+  ],
+  "shared_tooling_surface": {
+    "checker": "scripts/check_objc3c_library_cli_parity.py",
+    "pytest": "tests/tooling/test_objc3c_library_cli_parity.py"
+  },
+  "downstream_compatibility_updates": {
+    "inventory_owner": "M315-A003",
+    "registry_owner": "M315-B004"
+  },
+  "next_issue": "M315-D001"
+}

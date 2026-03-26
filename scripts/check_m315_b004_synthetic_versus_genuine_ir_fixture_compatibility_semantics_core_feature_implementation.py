@@ -58,6 +58,15 @@ def main(argv: Sequence[str]) -> int:
     ll_files = tracked_ll_files()
 
     synthetic_paths = [path for path in ll_files if path.startswith('tests/tooling/fixtures/native/library_cli_parity/')]
+    synthetic_json_paths = sorted(
+        path
+        for path in (
+            "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+            "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+            "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json",
+        )
+        if (ROOT / path).is_file()
+    )
     replay_paths = [path for path in ll_files if path.startswith('tests/tooling/fixtures/objc3c/') and '/replay_run_' in path and path.endswith('/module.ll')]
     with_header = []
     without_header = []
@@ -80,7 +89,7 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require("explicit synthetic parity stubs" in packet, str(PACKET_DOC), "M315-B004-PKT-01", "packet missing semantics summary", failures)
     checks_passed += require("Next issue: `M315-B005`." in packet, str(PACKET_DOC), "M315-B004-PKT-02", "packet missing next issue", failures)
 
-    checks_total += 9
+    checks_total += 11
     checks_passed += require(registry.get('mode') == 'm315-b004-ir-fixture-compatibility-semantics-v1', str(REGISTRY_JSON), 'M315-B004-REG-01', 'mode drifted', failures)
     checks_passed += require(registry.get('contract_id') == 'objc3c-cleanup-ir-fixture-compatibility-semantics/m315-b004-v1', str(REGISTRY_JSON), 'M315-B004-REG-02', 'contract id drifted', failures)
     checks_passed += require(registry.get('ll_fixture_totals', {}).get('tracked_ll_files') == len(ll_files) == 78, str(REGISTRY_JSON), 'M315-B004-REG-03', 'tracked ll count drifted', failures)
@@ -89,13 +98,17 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(registry.get('ll_fixture_totals', {}).get('replay_with_frontend_header') == len(with_header) == 30, str(REGISTRY_JSON), 'M315-B004-REG-06', 'replay ll-with-header count drifted', failures)
     checks_passed += require(registry.get('ll_fixture_totals', {}).get('replay_without_frontend_header') == len(without_header) == 46, str(REGISTRY_JSON), 'M315-B004-REG-07', 'replay ll-without-header count drifted', failures)
     checks_passed += require(registry.get('classes', {}).get('synthetic_fixture', {}).get('required_header_substring') == 'fixture parity IR', str(REGISTRY_JSON), 'M315-B004-REG-08', 'synthetic header requirement drifted', failures)
+    checks_passed += require(registry.get('classes', {}).get('synthetic_fixture', {}).get('required_json_root_field') == 'artifact_authenticity', str(REGISTRY_JSON), 'M315-B004-REG-08A', 'synthetic json root field drifted', failures)
+    checks_passed += require(registry.get('classes', {}).get('synthetic_fixture', {}).get('required_fixture_family_id') == 'objc3c.fixture.synthetic.librarycliparity.v1', str(REGISTRY_JSON), 'M315-B004-REG-08B', 'synthetic fixture family drifted', failures)
     checks_passed += require(registry.get('classes', {}).get('generated_replay_candidate', {}).get('legacy_missing_header_owner_issue') == 'M315-C003', str(REGISTRY_JSON), 'M315-B004-REG-09', 'legacy missing-header owner drifted', failures)
 
-    checks_total += 5
+    checks_total += 7
     checks_passed += require(registry.get('synthetic_fixture_paths') == synthetic_paths, str(REGISTRY_JSON), 'M315-B004-PATH-01', 'synthetic fixture path list drifted', failures)
+    checks_passed += require(registry.get('synthetic_labelled_json_paths') == synthetic_json_paths, str(REGISTRY_JSON), 'M315-B004-PATH-01A', 'synthetic labelled json path list drifted', failures)
     checks_passed += require(len(explicit_synthetic) == 2, str(REGISTRY_JSON), 'M315-B004-PATH-02', 'explicit synthetic label count drifted', failures)
     checks_passed += require(registry.get('legacy_missing_header_examples', [None])[0] == without_header[0], str(REGISTRY_JSON), 'M315-B004-PATH-03', 'legacy missing-header example drifted', failures)
     checks_passed += require(registry.get('downstream_ownership', {}).get('fixture_relocation_and_labeling') == 'M315-C004', str(REGISTRY_JSON), 'M315-B004-PATH-04', 'fixture relocation owner drifted', failures)
+    checks_passed += require(registry.get('relocation_resolution') == 'filesystem_root_retained_labeling_promoted_to_authenticity_contract', str(REGISTRY_JSON), 'M315-B004-PATH-04A', 'relocation resolution drifted', failures)
     checks_passed += require(registry.get('next_issue') == 'M315-B005', str(REGISTRY_JSON), 'M315-B004-PATH-05', 'next issue drifted', failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
@@ -107,6 +120,7 @@ def main(argv: Sequence[str]) -> int:
         'checks_passed': checks_passed,
         'tracked_ll_files': len(ll_files),
         'synthetic_fixture_files': synthetic_paths,
+        'synthetic_labelled_json_paths': synthetic_json_paths,
         'replay_with_header_count': len(with_header),
         'replay_without_header_count': len(without_header),
         'next_issue': 'M315-B005',
