@@ -9,6 +9,14 @@
     "mode": "m314-b002-public-package-script-collapse-v1",
     "contractId": "objc3c-cleanup-public-package-script-collapse/m314-b002-v1",
     "budgetMaximum": 25,
+    "workflowApi": {
+      "contractId": "objc3c-cleanup-task-runner-workflow-api/m314-c001-v1",
+      "runnerPath": "scripts/objc3c_public_workflow_runner.py",
+      "publicActionCount": 17,
+      "passThroughActions": [
+        "compile:objc3c"
+      ]
+    },
     "publicScripts": [
       "build",
       "build:objc3c-native",
@@ -7900,6 +7908,9 @@
     "check:objc3c:m314-b004-lane-b-readiness": "python scripts/run_m314_b004_lane_b_readiness.py",
     "check:objc3c:m314-b005-prototype-compiler-surface-retirement-edge-case-and-compatibility-completion": "python scripts/check_m314_b005_prototype_compiler_surface_retirement_edge_case_and_compatibility_completion.py",
     "test:tooling:m314-b005-prototype-compiler-surface-retirement-edge-case-and-compatibility-completion": "python -m pytest tests/tooling/test_check_m314_b005_prototype_compiler_surface_retirement_edge_case_and_compatibility_completion.py -q",
-    "check:objc3c:m314-b005-lane-b-readiness": "python scripts/run_m314_b005_lane_b_readiness.py"
+    "check:objc3c:m314-b005-lane-b-readiness": "python scripts/run_m314_b005_lane_b_readiness.py",
+    "check:objc3c:m314-c001-task-runner-and-workflow-api-contract-and-architecture-freeze": "python scripts/check_m314_c001_task_runner_and_workflow_api_contract_and_architecture_freeze.py",
+    "test:tooling:m314-c001-task-runner-and-workflow-api-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_c001_task_runner_and_workflow_api_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m314-c001-lane-c-readiness": "python scripts/run_m314_c001_lane_c_readiness.py"
   }
 }

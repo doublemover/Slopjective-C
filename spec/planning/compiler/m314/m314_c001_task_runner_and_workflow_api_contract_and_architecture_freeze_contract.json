@@ -1,0 +1,123 @@
+{
+  "mode": "m314-c001-task-runner-workflow-api-contract-v1",
+  "contract_id": "objc3c-cleanup-task-runner-workflow-api/m314-c001-v1",
+  "depends_on": "M314-B005",
+  "runner_path": "scripts/objc3c_public_workflow_runner.py",
+  "public_scripts_budget_maximum": 25,
+  "pass_through_actions": [
+    "compile-objc3c"
+  ],
+  "fixed_shape_actions": [
+    "build-default",
+    "build-native-binaries",
+    "build-native-contracts",
+    "build-native-full",
+    "build-native-reconfigure",
+    "build-spec",
+    "lint-spec",
+    "test-default",
+    "test-smoke",
+    "test-ci",
+    "test-recovery",
+    "test-execution-smoke",
+    "test-execution-replay",
+    "test-full",
+    "package-runnable-toolchain",
+    "proof-objc3c"
+  ],
+  "public_workflow_api": [
+    {
+      "package_script": "build",
+      "action": "build-default",
+      "backend": "runner-internal"
+    },
+    {
+      "package_script": "build:objc3c-native",
+      "action": "build-native-binaries",
+      "backend": "pwsh:scripts/build_objc3c_native.ps1"
+    },
+    {
+      "package_script": "build:objc3c-native:contracts",
+      "action": "build-native-contracts",
+      "backend": "pwsh:scripts/build_objc3c_native.ps1"
+    },
+    {
+      "package_script": "build:objc3c-native:full",
+      "action": "build-native-full",
+      "backend": "pwsh:scripts/build_objc3c_native.ps1"
+    },
+    {
+      "package_script": "build:objc3c-native:reconfigure",
+      "action": "build-native-reconfigure",
+      "backend": "pwsh:scripts/build_objc3c_native.ps1"
+    },
+    {
+      "package_script": "build:spec",
+      "action": "build-spec",
+      "backend": "python:scripts/build_site_index.py + npx prettier"
+    },
+    {
+      "package_script": "compile:objc3c",
+      "action": "compile-objc3c",
+      "backend": "pwsh:scripts/objc3c_native_compile.ps1",
+      "pass_through_args": true
+    },
+    {
+      "package_script": "lint:spec",
+      "action": "lint-spec",
+      "backend": "python:scripts/spec_lint.py"
+    },
+    {
+      "package_script": "test",
+      "action": "test-default",
+      "backend": "runner-internal"
+    },
+    {
+      "package_script": "test:smoke",
+      "action": "test-smoke",
+      "backend": "runner-internal"
+    },
+    {
+      "package_script": "test:ci",
+      "action": "test-ci",
+      "backend": "runner-internal + npm + pytest"
+    },
+    {
+      "package_script": "test:objc3c",
+      "action": "test-recovery",
+      "backend": "pwsh:scripts/check_objc3c_native_recovery_contract.ps1"
+    },
+    {
+      "package_script": "test:objc3c:execution-smoke",
+      "action": "test-execution-smoke",
+      "backend": "pwsh:scripts/check_objc3c_native_execution_smoke.ps1"
+    },
+    {
+      "package_script": "test:objc3c:execution-replay-proof",
+      "action": "test-execution-replay",
+      "backend": "pwsh:scripts/check_objc3c_execution_replay_proof.ps1"
+    },
+    {
+      "package_script": "test:objc3c:full",
+      "action": "test-full",
+      "backend": "runner-internal + npm"
+    },
+    {
+      "package_script": "package:objc3c-native:runnable-toolchain",
+      "action": "package-runnable-toolchain",
+      "backend": "pwsh:scripts/package_objc3c_runnable_toolchain.ps1"
+    },
+    {
+      "package_script": "proof:objc3c",
+      "action": "proof-objc3c",
+      "backend": "pwsh:scripts/run_objc3c_native_compile_proof.ps1"
+    }
+  ],
+  "invariants": [
+    "The public operator path is package.json -> scripts/objc3c_public_workflow_runner.py -> backend scripts.",
+    "Only compile-objc3c accepts arbitrary pass-through arguments.",
+    "The workflow API must not reference the retired prototype compiler surface.",
+    "The documented public command set must stay within the command-surface budget."
+  ],
+  "next_issue": "M314-C002"
+}

@@ -352,6 +352,8 @@ Prefer the public package-script surface over direct Python or PowerShell invoca
 `native/objc3c/` is the only supported compiler implementation root. The earlier
 prototype Python compiler surface has been retired into the governance archive
 and is not an operator path.
+The documented public package commands are thin wrappers over
+`scripts/objc3c_public_workflow_runner.py`.
 
 ## Quickstart
 
