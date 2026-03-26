@@ -41,6 +41,7 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols
 - synthesized property accessor execution over realized instance storage
+- runtime-backed storage ownership reflection over emitted property descriptors
 - native-output provenance through real compile and probe paths
 
 ## Current Corrective Gaps Under Test

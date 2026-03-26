@@ -16,6 +16,7 @@ What the live probes should cover:
 - synthesized property getter/setter execution through realized per-instance storage
 - property metadata reflection over emitted descriptors
 - memory-management and ownership helper behavior where that surface is live
+- runtime-backed storage ownership reflection over emitted property descriptors
 - reset/replay behavior where deterministic runtime state matters
 
 What does not count as proof:
@@ -39,5 +40,6 @@ Representative live proof paths:
   - `tests/tooling/runtime/runtime_library_probe.cpp`
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.

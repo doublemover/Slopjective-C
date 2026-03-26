@@ -1,0 +1,17 @@
+module runtime_backed_storage_ownership_reflection_probe;
+
+@interface Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, copy) __strong id copiedValue;
+@property (nonatomic, weak) __weak id weakValue;
+@property (assign) __unsafe_unretained id borrowedValue;
+@property (unowned) id guardedValue;
+@end
+
+@implementation Box
+@property (nonatomic, strong) __strong id currentValue;
+@property (nonatomic, copy) __strong id copiedValue;
+@property (nonatomic, weak) __weak id weakValue;
+@property (assign) __unsafe_unretained id borrowedValue;
+@property (unowned) id guardedValue;
+@end

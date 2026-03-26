@@ -858,6 +858,160 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "storage-ownership-reflection"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m260_runtime_backed_storage_ownership_reflection_positive.objc3"
+    )
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
+
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m260_runtime_backed_storage_ownership_reflection_probe.cpp"
+    exe_path = case_dir / "m260_runtime_backed_storage_ownership_reflection_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "storage ownership reflection probe")
+
+    ll_text = ll_path.read_text(encoding="utf-8")
+    registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+    box_entry = payload.get("box_entry", {})
+
+    expect(box_entry.get("found") == 1, "expected Box to be realized for storage ownership reflection")
+    expect(box_entry.get("runtime_property_accessor_count", 0) >= 5,
+           "expected Box to publish five runtime-backed storage accessors")
+    expect(box_entry.get("runtime_instance_size_bytes", 0) >= 40,
+           "expected Box instance layout to reserve five object-backed storage slots")
+    expect(registration_manifest.get("property_descriptor_count") == 10,
+           "expected storage ownership fixture to publish ten property descriptors")
+    expect(registration_manifest.get("ivar_descriptor_count") == 5,
+           "expected storage ownership fixture to publish five ivar layout descriptors")
+    expect(registration_manifest.get("compile_output_truthfulness_property_descriptor_count") == 10,
+           "expected compile-output truthfulness to certify ten property descriptors")
+    expect(registration_manifest.get("compile_output_truthfulness_ivar_descriptor_count") == 5,
+           "expected compile-output truthfulness to certify five ivar descriptors")
+    expect(
+        "; runtime_backed_object_ownership_attribute_surface = "
+        "contract=objc3c.runtime.backed.object.ownership.attribute.surface.v1"
+        in ll_text,
+        "expected LLVM IR to publish the runtime-backed object ownership attribute surface",
+    )
+    expect("property_attribute_profiles=10" in ll_text,
+           "expected LLVM IR ownership surface to publish ten property-attribute profiles")
+    expect("ownership_lifetime_profiles=10" in ll_text,
+           "expected LLVM IR ownership surface to publish ten ownership lifetime profiles")
+    expect("ownership_runtime_hook_profiles=6" in ll_text,
+           "expected LLVM IR ownership surface to publish six runtime hook profiles")
+    expect("accessor_ownership_profiles=10" in ll_text,
+           "expected LLVM IR ownership surface to publish ten accessor ownership profiles")
+
+    expected_properties = {
+        "current_value_property": {
+            "property_name": "currentValue",
+            "slot_index": 0,
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;strong=1;weak=0;unowned=0;assign=0;attributes=nonatomic,strong",
+            "ownership_lifetime_profile": "strong-owned",
+            "ownership_runtime_hook_profile": None,
+            "accessor_ownership_profile": "getter=currentValue;setter_available=1;setter=setCurrentValue:;ownership_lifetime=strong-owned;runtime_hook=",
+            "effective_getter_selector": "currentValue",
+            "effective_setter_selector": "setCurrentValue:",
+        },
+        "copied_value_property": {
+            "property_name": "copiedValue",
+            "slot_index": 1,
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=1;strong=0;weak=0;unowned=0;assign=0;attributes=copy,nonatomic",
+            "ownership_lifetime_profile": "strong-owned",
+            "ownership_runtime_hook_profile": None,
+            "accessor_ownership_profile": "getter=copiedValue;setter_available=1;setter=setCopiedValue:;ownership_lifetime=strong-owned;runtime_hook=",
+            "effective_getter_selector": "copiedValue",
+            "effective_setter_selector": "setCopiedValue:",
+        },
+        "weak_value_property": {
+            "property_name": "weakValue",
+            "slot_index": 2,
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;strong=0;weak=1;unowned=0;assign=0;attributes=nonatomic,weak",
+            "ownership_lifetime_profile": "weak",
+            "ownership_runtime_hook_profile": "objc-weak-side-table",
+            "accessor_ownership_profile": "getter=weakValue;setter_available=1;setter=setWeakValue:;ownership_lifetime=weak;runtime_hook=objc-weak-side-table",
+            "effective_getter_selector": "weakValue",
+            "effective_setter_selector": "setWeakValue:",
+        },
+        "borrowed_value_property": {
+            "property_name": "borrowedValue",
+            "slot_index": 3,
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;strong=0;weak=0;unowned=0;assign=1;attributes=assign",
+            "ownership_lifetime_profile": "unowned-unsafe",
+            "ownership_runtime_hook_profile": "objc-unowned-unsafe-direct",
+            "accessor_ownership_profile": "getter=borrowedValue;setter_available=1;setter=setBorrowedValue:;ownership_lifetime=unowned-unsafe;runtime_hook=objc-unowned-unsafe-direct",
+            "effective_getter_selector": "borrowedValue",
+            "effective_setter_selector": "setBorrowedValue:",
+        },
+        "guarded_value_property": {
+            "property_name": "guardedValue",
+            "slot_index": 4,
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;strong=0;weak=0;unowned=1;assign=0;attributes=unowned",
+            "ownership_lifetime_profile": "unowned-safe",
+            "ownership_runtime_hook_profile": "objc-unowned-safe-guard",
+            "accessor_ownership_profile": "getter=guardedValue;setter_available=1;setter=setGuardedValue:;ownership_lifetime=unowned-safe;runtime_hook=objc-unowned-safe-guard",
+            "effective_getter_selector": "guardedValue",
+            "effective_setter_selector": "setGuardedValue:",
+        },
+    }
+
+    for payload_key, expected in expected_properties.items():
+        prop = payload.get(payload_key, {})
+        expect(prop.get("found") == 1, f"expected {expected['property_name']} to be reflectable")
+        expect(prop.get("has_runtime_getter") == 1 and prop.get("has_runtime_setter") == 1,
+               f"expected {expected['property_name']} to execute through runtime-backed accessors")
+        expect(prop.get("base_identity") == box_entry.get("base_identity"),
+               f"expected {expected['property_name']} to share Box base identity")
+        expect(prop.get("slot_index") == expected["slot_index"],
+               f"expected {expected['property_name']} to keep slot index {expected['slot_index']}")
+        expect(prop.get("size_bytes") == 8 and prop.get("alignment_bytes") == 8,
+               f"expected {expected['property_name']} to preserve 8-byte object storage layout")
+        expect(prop.get("property_name") == expected["property_name"],
+               f"expected runtime property name for {expected['property_name']}")
+        expect(prop.get("effective_getter_selector") == expected["effective_getter_selector"],
+               f"expected getter selector for {expected['property_name']}")
+        expect(prop.get("effective_setter_selector") == expected["effective_setter_selector"],
+               f"expected setter selector for {expected['property_name']}")
+        expect(prop.get("property_attribute_profile") == expected["property_attribute_profile"],
+               f"expected property attribute profile for {expected['property_name']}")
+        expect(prop.get("ownership_lifetime_profile") == expected["ownership_lifetime_profile"],
+               f"expected ownership lifetime profile for {expected['property_name']}")
+        expected_runtime_hook = expected["ownership_runtime_hook_profile"]
+        if expected_runtime_hook is None:
+            expect(prop.get("ownership_runtime_hook_profile") in (None, ""),
+                   f"expected no runtime hook profile for {expected['property_name']}")
+        else:
+            expect(prop.get("ownership_runtime_hook_profile") == expected_runtime_hook,
+                   f"expected runtime hook profile for {expected['property_name']}")
+        expect(prop.get("accessor_ownership_profile") == expected["accessor_ownership_profile"],
+               f"expected accessor ownership profile for {expected['property_name']}")
+        expect(prop.get("getter_owner_identity"), f"expected getter owner identity for {expected['property_name']}")
+        expect(prop.get("setter_owner_identity"), f"expected setter owner identity for {expected['property_name']}")
+
+    return CaseResult(
+        case_id="storage-ownership-reflection",
+        probe="tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        passed=True,
+        summary={
+            "runtime_property_accessor_count": box_entry.get("runtime_property_accessor_count"),
+            "runtime_instance_size_bytes": box_entry.get("runtime_instance_size_bytes"),
+            "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+            "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+            "guarded_runtime_hook_profile": payload.get("guarded_value_property", {}).get("ownership_runtime_hook_profile"),
+            "weak_runtime_hook_profile": payload.get("weak_value_property", {}).get("ownership_runtime_hook_profile"),
+        },
+    )
+
+
 def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-codegen"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
@@ -985,6 +1139,7 @@ def main() -> int:
         check_runtime_library_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
+        check_storage_ownership_reflection_case(clangxx, run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
