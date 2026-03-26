@@ -102,6 +102,15 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     return obj_path
 
 
+def compile_fixture_outputs(fixture: Path, out_dir: Path) -> tuple[Path, Path, Path]:
+    obj_path = compile_fixture(fixture, out_dir)
+    ll_path = out_dir / "module.ll"
+    manifest_path = out_dir / "module.manifest.json"
+    if not ll_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {ll_path}")
+    return obj_path, ll_path, manifest_path
+
+
 def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list[Path]) -> None:
     exe_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
@@ -349,6 +358,65 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "property-codegen"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
+
+    ll_text = ll_path.read_text(encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+
+    required_ir_snippets = {
+        "count getter": "define i32 @objc3_method_Widget_instance_count()",
+        "count setter": "define void @objc3_method_Widget_instance_setCount_(i32 %arg0)",
+        "enabled getter": "define i1 @objc3_method_Widget_instance_enabled()",
+        "enabled setter": "define void @objc3_method_Widget_instance_setEnabled_(i1 %arg0)",
+        "value getter": "define i32 @objc3_method_Widget_instance_value()",
+        "value setter": "define void @objc3_method_Widget_instance_setValue_(i32 %arg0)",
+        "getter runtime read": "call i32 @objc3_runtime_read_current_property_i32()",
+        "setter runtime write": "call void @objc3_runtime_write_current_property_i32(i32 %arg0)",
+        "bool setter coercion": "%objc3_property_value = zext i1 %arg0 to i32",
+        "strong getter retain": "%objc3_property_retained = call i32 @objc3_runtime_retain_i32(i32 %objc3_property_slot)",
+        "strong getter autorelease": "%objc3_property_autoreleased = call i32 @objc3_runtime_autorelease_i32(i32 %objc3_property_retained)",
+        "strong setter exchange": "%objc3_property_previous = call i32 @objc3_runtime_exchange_current_property_i32(i32 %objc3_property_retained)",
+        "strong setter release": "%objc3_property_release = call i32 @objc3_runtime_release_i32(i32 %objc3_property_previous)",
+        "count descriptor getter binding": "ptr @objc3_method_Widget_instance_count, ptr @objc3_method_Widget_instance_setCount_",
+        "enabled descriptor getter binding": "ptr @objc3_method_Widget_instance_enabled, ptr @objc3_method_Widget_instance_setEnabled_",
+        "value descriptor getter binding": "ptr @objc3_method_Widget_instance_value, ptr @objc3_method_Widget_instance_setValue_",
+    }
+    for label, snippet in required_ir_snippets.items():
+        expect(snippet in ll_text, f"expected synthesized accessor codegen to emit {label}")
+
+    synthesis_summary = manifest.get("lowering_property_synthesis_ivar_binding", {})
+    expect(isinstance(synthesis_summary, dict), "expected property synthesis lowering summary in compile manifest")
+    expect(synthesis_summary.get("deterministic_handoff") is True,
+           "expected property synthesis lowering summary to report deterministic handoff")
+    replay_key = synthesis_summary.get("replay_key", "")
+    expect("property_synthesis_sites=3" in replay_key,
+           "expected property synthesis replay key to record the three synthesized properties")
+    expect("property_synthesis_default_ivar_bindings=3" in replay_key,
+           "expected property synthesis replay key to record the default ivar bindings")
+    expect(registration_manifest.get("property_descriptor_count", 0) >= 6,
+           "expected runtime registration manifest to publish synthesized property descriptors")
+
+    return CaseResult(
+        case_id="property-codegen",
+        probe="real-compile-llvm-inspection",
+        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        passed=True,
+        summary={
+            "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "registration_manifest": str(registration_manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -362,6 +430,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
+        check_synthesized_accessor_codegen_case(run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
     ]
