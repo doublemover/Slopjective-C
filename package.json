@@ -15,7 +15,9 @@
       "publicActionCount": 17,
       "passThroughActions": [
         "compile:objc3c"
-      ]
+      ],
+      "runnerMode": "m314-c002-parameterized-task-runner-v1",
+      "introspectionCommand": "python scripts/objc3c_public_workflow_runner.py --list-json"
     },
     "publicScripts": [
       "build",
@@ -7911,6 +7913,9 @@
     "check:objc3c:m314-b005-lane-b-readiness": "python scripts/run_m314_b005_lane_b_readiness.py",
     "check:objc3c:m314-c001-task-runner-and-workflow-api-contract-and-architecture-freeze": "python scripts/check_m314_c001_task_runner_and_workflow_api_contract_and_architecture_freeze.py",
     "test:tooling:m314-c001-task-runner-and-workflow-api-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_c001_task_runner_and_workflow_api_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m314-c001-lane-c-readiness": "python scripts/run_m314_c001_lane_c_readiness.py"
+    "check:objc3c:m314-c001-lane-c-readiness": "python scripts/run_m314_c001_lane_c_readiness.py",
+    "check:objc3c:m314-c002-parameterized-task-runner-implementation-core-feature-implementation": "python scripts/check_m314_c002_parameterized_task_runner_implementation_core_feature_implementation.py",
+    "test:tooling:m314-c002-parameterized-task-runner-implementation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_c002_parameterized_task_runner_implementation_core_feature_implementation.py -q",
+    "check:objc3c:m314-c002-lane-c-readiness": "python scripts/run_m314_c002_lane_c_readiness.py"
   }
 }
