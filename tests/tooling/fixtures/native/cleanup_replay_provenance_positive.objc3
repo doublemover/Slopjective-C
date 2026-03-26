@@ -1,0 +1,11 @@
+module CleanupReplayProvenancePositive;
+
+fn add(a: i32, b: i32) -> i32 {
+  return a + b;
+}
+
+fn main() -> i32 {
+  let first = add(2, 5);
+  let second = add(first, 9);
+  return second;
+}

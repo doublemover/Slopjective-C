@@ -7966,6 +7966,9 @@
     "check:objc3c:m315-c001-lane-c-readiness": "python scripts/run_m315_c001_lane_c_readiness.py",
     "check:objc3c:m315-c002-artifact-authenticity-schema-and-evidence-contract-and-architecture-freeze": "python scripts/check_m315_c002_artifact_authenticity_schema_and_evidence_contract_and_architecture_freeze.py",
     "test:tooling:m315-c002-artifact-authenticity-schema-and-evidence-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_c002_artifact_authenticity_schema_and_evidence_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-c002-lane-c-readiness": "python scripts/run_m315_c002_lane_c_readiness.py"
+    "check:objc3c:m315-c002-lane-c-readiness": "python scripts/run_m315_c002_lane_c_readiness.py",
+    "check:objc3c:m315-c003-genuine-replay-artifact-regeneration-and-provenance-capture-core-feature-implementation": "python scripts/check_m315_c003_genuine_replay_artifact_regeneration_and_provenance_capture_core_feature_implementation.py",
+    "test:tooling:m315-c003-genuine-replay-artifact-regeneration-and-provenance-capture-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_c003_genuine_replay_artifact_regeneration_and_provenance_capture_core_feature_implementation.py -q",
+    "check:objc3c:m315-c003-lane-c-readiness": "python scripts/run_m315_c003_lane_c_readiness.py"
   }
 }
