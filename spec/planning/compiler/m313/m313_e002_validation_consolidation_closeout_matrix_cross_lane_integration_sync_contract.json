@@ -1,0 +1,89 @@
+{
+  "mode": "m313-e002-validation-consolidation-closeout-matrix-v1",
+  "contract_id": "objc3c-cleanup-validation-consolidation-closeout-matrix/m313-e002-v1",
+  "required_predecessor_summaries": {
+    "M313-A001": "tmp/reports/m313/M313-A001/validation_surface_inventory_and_taxonomy_summary.json",
+    "M313-A002": "tmp/reports/m313/M313-A002/validation_reduction_targets_and_ratchet_map_summary.json",
+    "M313-A003": "tmp/reports/m313/M313-A003/subsystem_acceptance_suite_boundary_map_summary.json",
+    "M313-B001": "tmp/reports/m313/M313-B001/testing_pyramid_static_guard_model_summary.json",
+    "M313-B002": "tmp/reports/m313/M313-B002/shared_compiler_runtime_harness_summary.json",
+    "M313-B003": "tmp/reports/m313/M313-B003/checker_consolidation_migration_policy_summary.json",
+    "M313-B004": "tmp/reports/m313/M313-B004/legacy_validation_quarantine_namespace_policy_summary.json",
+    "M313-B005": "tmp/reports/m313/M313-B005/new_checker_temporary_validation_exception_policy_summary.json",
+    "M313-C001": "tmp/reports/m313/M313-C001/acceptance_artifact_schema_replay_contract_summary.json",
+    "M313-C002": "tmp/reports/m313/M313-C002/subsystem_executable_acceptance_suites_summary.json",
+    "M313-C003": "tmp/reports/m313/M313-C003/historical_checker_compatibility_bridge_summary.json",
+    "M313-D001": "tmp/reports/m313/M313-D001/ci_validation_topology_scheduling_contract_summary.json",
+    "M313-D002": "tmp/reports/m313/M313-D002/ci_acceptance_first_validation_summary.json",
+    "M313-E001": "tmp/reports/m313/M313-E001/validation_noise_reduction_gate_summary.json"
+  },
+  "observational_predecessor_summaries": [
+    "M313-A001"
+  ],
+  "required_topology_summary": "tmp/reports/m313/ci/acceptance_first/summary.json",
+  "pre_closeout_milestone_state": {
+    "milestone_number": 394,
+    "expected_open_issue_numbers": [
+      7779
+    ]
+  },
+  "matrix_rows": [
+    {
+      "row_id": "validation_inventory",
+      "source_issue": "M313-A001"
+    },
+    {
+      "row_id": "ratchet_map",
+      "source_issue": "M313-A002"
+    },
+    {
+      "row_id": "suite_boundary_map",
+      "source_issue": "M313-A003"
+    },
+    {
+      "row_id": "testing_pyramid_model",
+      "source_issue": "M313-B001"
+    },
+    {
+      "row_id": "shared_harness",
+      "source_issue": "M313-B002"
+    },
+    {
+      "row_id": "consolidation_policy",
+      "source_issue": "M313-B003"
+    },
+    {
+      "row_id": "quarantine_policy",
+      "source_issue": "M313-B004"
+    },
+    {
+      "row_id": "exception_policy",
+      "source_issue": "M313-B005"
+    },
+    {
+      "row_id": "artifact_schema",
+      "source_issue": "M313-C001"
+    },
+    {
+      "row_id": "acceptance_suites",
+      "source_issue": "M313-C002"
+    },
+    {
+      "row_id": "compatibility_bridges",
+      "source_issue": "M313-C003"
+    },
+    {
+      "row_id": "ci_topology_contract",
+      "source_issue": "M313-D001"
+    },
+    {
+      "row_id": "ci_acceptance_first_migration",
+      "source_issue": "M313-D002"
+    },
+    {
+      "row_id": "noise_gate",
+      "source_issue": "M313-E001"
+    }
+  ],
+  "next_issue": "M314-A001"
+}
