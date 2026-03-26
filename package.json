@@ -35,6 +35,11 @@
     "contractId": "objc3c-cleanup-alias-deprecation-compatibility-window/m314-b004-v1",
     "noNewLegacyAliasFamilies": true,
     "prototypeSurfaceOwnerIssue": "M314-B005",
+    "prototypeSurface": {
+      "state": "retired-archived-text",
+      "archivePath": "spec/governance/retired_surfaces/compiler_objc3c/semantic.py.txt",
+      "supportedCompilerRoot": "native/objc3c"
+    },
     "families": [
       {
         "familyId": "milestone_local_validation_aliases",
@@ -7892,6 +7897,9 @@
     "check:objc3c:m314-b003-lane-b-readiness": "python scripts/run_m314_b003_lane_b_readiness.py",
     "check:objc3c:m314-b004-alias-deprecation-and-compatibility-window-core-feature-implementation": "python scripts/check_m314_b004_alias_deprecation_and_compatibility_window_core_feature_implementation.py",
     "test:tooling:m314-b004-alias-deprecation-and-compatibility-window-core-feature-implementation": "python -m pytest tests/tooling/test_check_m314_b004_alias_deprecation_and_compatibility_window_core_feature_implementation.py -q",
-    "check:objc3c:m314-b004-lane-b-readiness": "python scripts/run_m314_b004_lane_b_readiness.py"
+    "check:objc3c:m314-b004-lane-b-readiness": "python scripts/run_m314_b004_lane_b_readiness.py",
+    "check:objc3c:m314-b005-prototype-compiler-surface-retirement-edge-case-and-compatibility-completion": "python scripts/check_m314_b005_prototype_compiler_surface_retirement_edge_case_and_compatibility_completion.py",
+    "test:tooling:m314-b005-prototype-compiler-surface-retirement-edge-case-and-compatibility-completion": "python -m pytest tests/tooling/test_check_m314_b005_prototype_compiler_surface_retirement_edge_case_and_compatibility_completion.py -q",
+    "check:objc3c:m314-b005-lane-b-readiness": "python scripts/run_m314_b005_lane_b_readiness.py"
   }
 }

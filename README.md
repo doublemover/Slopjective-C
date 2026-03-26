@@ -349,6 +349,9 @@ Use these package scripts for normal operator workflows:
 
 All other package scripts are compatibility or internal surfaces retained during cleanup and may change without notice.
 Prefer the public package-script surface over direct Python or PowerShell invocations when a public wrapper already exists.
+`native/objc3c/` is the only supported compiler implementation root. The earlier
+prototype Python compiler surface has been retired into the governance archive
+and is not an operator path.
 
 ## Quickstart
 

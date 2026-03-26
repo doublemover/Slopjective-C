@@ -1,3 +1,8 @@
+# Retired prototype compiler source archive.
+# Original tracked path: compiler/objc3c/semantic.py
+# Retirement owner: M314-B005
+# Active supported compiler implementation root: native/objc3c/
+
 """Semantic analysis for parsed Objective-C 3.0 declarations."""
 
 from __future__ import annotations

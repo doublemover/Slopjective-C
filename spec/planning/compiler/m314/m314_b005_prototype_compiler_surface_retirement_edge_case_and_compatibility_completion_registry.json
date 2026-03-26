@@ -1,0 +1,27 @@
+{
+  "mode": "m314-b005-prototype-compiler-surface-retirement-v1",
+  "contract_id": "objc3c-cleanup-prototype-compiler-surface-retirement/m314-b005-v1",
+  "depends_on": "M314-B004",
+  "retired_surface": {
+    "original_tracked_path": "compiler/objc3c/semantic.py",
+    "archive_path": "spec/governance/retired_surfaces/compiler_objc3c/semantic.py.txt",
+    "archive_readme": "spec/governance/retired_surfaces/compiler_objc3c/README.md",
+    "state": "retired-archived-text",
+    "supported_compiler_root": "native/objc3c",
+    "tracked_source_files_under_compiler": 0
+  },
+  "historical_reference_policy": {
+    "allowed_reference_prefixes": [
+      "docs/contracts/",
+      "spec/planning/compiler/",
+      "spec/governance/retired_surfaces/",
+      "scripts/check_",
+      "scripts/run_m314_b005_",
+      "tests/tooling/",
+      "README.md"
+    ],
+    "public_documentation_rule": "README and operator-facing guidance must present native/objc3c as the only supported compiler implementation root.",
+    "operator_path_rule": "No public workflow, CI entrypoint, or active runner may treat the retired prototype surface as executable."
+  },
+  "next_issue": "M314-C001"
+}
