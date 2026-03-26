@@ -1,0 +1,149 @@
+{
+  "mode": "m315-a001-repo-wide-milestone-residue-inventory-v1",
+  "contract_id": "objc3c-cleanup-repo-wide-milestone-residue-inventory/m315-a001-v1",
+  "scan_rules": {
+    "match_pattern": "m[0-9]{3}-[a-z][0-9]{3}",
+    "excluded_prefixes": [
+      ".git/",
+      "tmp/"
+    ]
+  },
+  "repo_wide_totals": {
+    "match_count": 277347,
+    "distinct_milestone_issue_ids": 3024,
+    "distinct_milestone_families": 122
+  },
+  "scope_counts": {
+    "package_surface": 13297,
+    "operator_docs": 277,
+    "generated_docs": 2224,
+    "planning_specs": 28564,
+    "tooling_scripts": 178092,
+    "tests_surface": 27290,
+    "native_source": 3182,
+    "github_meta": 2,
+    "other": 24419
+  },
+  "scope_file_counts": {
+    "package_surface": 1,
+    "operator_docs": 10,
+    "generated_docs": 10,
+    "planning_specs": 2641,
+    "tooling_scripts": 3336,
+    "tests_surface": 2880,
+    "native_source": 32,
+    "github_meta": 2,
+    "other": 2745
+  },
+  "top_hotspot_files": [
+    {
+      "path": "package.json",
+      "match_count": 13294,
+      "scope": "package_surface"
+    },
+    {
+      "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md",
+      "match_count": 3073,
+      "scope": "planning_specs"
+    },
+    {
+      "path": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md",
+      "match_count": 2483,
+      "scope": "planning_specs"
+    },
+    {
+      "path": "native/objc3c/src/ARCHITECTURE.md",
+      "match_count": 1691,
+      "scope": "native_source"
+    },
+    {
+      "path": "docs/objc3c-native.md",
+      "match_count": 1111,
+      "scope": "generated_docs"
+    },
+    {
+      "path": "docs/objc3c-native/src/50-artifacts.md",
+      "match_count": 478,
+      "scope": "generated_docs"
+    },
+    {
+      "path": "docs/objc3c-native/src/20-grammar.md",
+      "match_count": 287,
+      "scope": "generated_docs"
+    },
+    {
+      "path": "scripts/check_m258_e002_runnable_import_and_module_execution_matrix_plus_docs_cross_lane_integration_sync.py",
+      "match_count": 244,
+      "scope": "tooling_scripts"
+    },
+    {
+      "path": "native/objc3c/src/lower/objc3_lowering_contract.h",
+      "match_count": 234,
+      "scope": "native_source"
+    },
+    {
+      "path": "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md",
+      "match_count": 208,
+      "scope": "planning_specs"
+    }
+  ],
+  "top_milestone_families": [
+    {
+      "milestone": "m228",
+      "match_count": 17368
+    },
+    {
+      "milestone": "m227",
+      "match_count": 14424
+    },
+    {
+      "milestone": "m248",
+      "match_count": 12270
+    },
+    {
+      "milestone": "m246",
+      "match_count": 11927
+    },
+    {
+      "milestone": "m244",
+      "match_count": 11675
+    },
+    {
+      "milestone": "m243",
+      "match_count": 11654
+    },
+    {
+      "milestone": "m235",
+      "match_count": 10964
+    },
+    {
+      "milestone": "m245",
+      "match_count": 10798
+    },
+    {
+      "milestone": "m247",
+      "match_count": 10380
+    },
+    {
+      "milestone": "m249",
+      "match_count": 10210
+    }
+  ],
+  "downstream_ownership": {
+    "repo_wide_scope_refinement": "M315-A002",
+    "artifact_authenticity_and_provenance": "M315-A003",
+    "stable_feature_surface_identifier_policy": "M315-B001",
+    "product_annotation_and_provenance_policy": "M315-B002",
+    "native_source_marker_removal": "M315-B003",
+    "native_source_decontamination_sweep": "M315-B005",
+    "artifact_schema_and_generated_surface_policy": "M315-C001",
+    "authenticity_schema_and_evidence_contract": "M315-C002"
+  },
+  "notes": [
+    "The repo-wide residue problem is dominated by tooling scripts, planning/spec surfaces, tests, and package.json rather than only native source.",
+    "The native-source slice is still materially large and is handled explicitly in M315-A002 plus later lane-B work.",
+    "This baseline includes the issue-local M315-A001 packet/checker/test surfaces and is the true post-landing starting point for the rest of M315.",
+    "This baseline is historical evidence and should not be chained by later readiness runners once cleanup starts changing the counts."
+  ],
+  "next_issue": "M315-A002"
+}

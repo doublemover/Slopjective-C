@@ -7936,6 +7936,9 @@
     "check:objc3c:m314-e001-lane-e-readiness": "python scripts/run_m314_e001_lane_e_readiness.py",
     "check:objc3c:m314-e002-command-surface-closeout-matrix-cross-lane-integration-sync": "python scripts/check_m314_e002_command_surface_closeout_matrix_cross_lane_integration_sync.py",
     "test:tooling:m314-e002-command-surface-closeout-matrix-cross-lane-integration-sync": "python -m pytest tests/tooling/test_check_m314_e002_command_surface_closeout_matrix_cross_lane_integration_sync.py -q",
-    "check:objc3c:m314-e002-lane-e-readiness": "python scripts/run_m314_e002_lane_e_readiness.py"
+    "check:objc3c:m314-e002-lane-e-readiness": "python scripts/run_m314_e002_lane_e_readiness.py",
+    "check:objc3c:m315-a001-repo-wide-milestone-residue-inventory-contract-and-architecture-freeze": "python scripts/check_m315_a001_repo_wide_milestone_residue_inventory_contract_and_architecture_freeze.py",
+    "test:tooling:m315-a001-repo-wide-milestone-residue-inventory-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_a001_repo_wide_milestone_residue_inventory_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-a001-lane-a-readiness": "python scripts/run_m315_a001_lane_a_readiness.py"
   }
 }
