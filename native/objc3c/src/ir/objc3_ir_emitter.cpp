@@ -460,6 +460,46 @@ class Objc3IREmitter {
       // preserve the source freeze as a lowering-only replay marker.
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
+      out << "; dispatch_and_synthesized_accessor_lowering_surface = "
+          << "contract_id=objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+          << ";runtime_dispatch_symbol="
+          << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol
+          << ";runtime_dispatch_arg_slots="
+          << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_arg_slots
+          << ";runtime_dispatch_symbol_matches_lowering="
+          << ((frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol ==
+                       lowering_ir_boundary_.runtime_dispatch_symbol &&
+               frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol ==
+                       frontend_metadata_
+                           .runtime_support_library_link_wiring_runtime_dispatch_symbol)
+                  ? "true"
+                  : "false")
+          << ";live_runtime_dispatch_sites="
+          << (frontend_metadata_.dispatch_surface_classification_instance_sites +
+              frontend_metadata_.dispatch_surface_classification_class_sites +
+              frontend_metadata_.dispatch_surface_classification_super_sites +
+              frontend_metadata_.dispatch_surface_classification_dynamic_sites)
+          << ";direct_dispatch_sites="
+          << frontend_metadata_.dispatch_surface_classification_direct_sites
+          << ";property_synthesis_sites="
+          << frontend_metadata_.lowering_property_synthesis_sites
+          << ";property_synthesis_default_ivar_bindings="
+          << frontend_metadata_.lowering_property_synthesis_default_ivar_bindings
+          << ";property_synthesis_explicit_ivar_bindings="
+          << frontend_metadata_.lowering_property_synthesis_explicit_ivar_bindings
+          << ";ivar_binding_resolved="
+          << frontend_metadata_.lowering_property_synthesis_ivar_binding_resolved
+          << ";property_descriptor_count="
+          << frontend_metadata_.runtime_metadata_section_scaffold_property_descriptor_count
+          << ";ivar_descriptor_count="
+          << frontend_metadata_.runtime_metadata_section_scaffold_ivar_descriptor_count
+          << ";member_table_emission_ready="
+          << (frontend_metadata_.runtime_metadata_member_table_emission_ready ? "true"
+                                                                              : "false")
+          << ";deterministic_handoff="
+          << (frontend_metadata_.lowering_property_synthesis_deterministic_handoff ? "true"
+                                                                                   : "false")
+          << "\n";
     }
     if (!frontend_metadata_.executable_property_ivar_source_model_replay_key.empty()) {
       // property-ivar source-model completion anchor:

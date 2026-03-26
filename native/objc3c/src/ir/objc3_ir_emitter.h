@@ -500,6 +500,11 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_support_library_link_wiring_execution_smoke_script_path;
   std::string runtime_support_library_link_wiring_driver_link_mode;
   std::string lowering_property_synthesis_ivar_binding_replay_key;
+  std::size_t lowering_property_synthesis_sites = 0;
+  std::size_t lowering_property_synthesis_explicit_ivar_bindings = 0;
+  std::size_t lowering_property_synthesis_default_ivar_bindings = 0;
+  std::size_t lowering_property_synthesis_ivar_binding_resolved = 0;
+  bool lowering_property_synthesis_deterministic_handoff = false;
   std::string lowering_id_class_sel_object_pointer_typecheck_replay_key;
   std::size_t id_typecheck_sites = 0;
   std::size_t class_typecheck_sites = 0;

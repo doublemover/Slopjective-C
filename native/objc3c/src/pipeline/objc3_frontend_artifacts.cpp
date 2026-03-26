@@ -22251,6 +22251,50 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "},\n";
+  manifest << "  \"dispatch_and_synthesized_accessor_lowering_surface\":{\"contract_id\":"
+           << "\"objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1\""
+           << ",\"runtime_dispatch_symbol\":\""
+           << runtime_shim_host_link_contract.runtime_dispatch_symbol
+           << "\",\"runtime_dispatch_arg_slots\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_arg_slots
+           << ",\"runtime_dispatch_declaration_parameter_count\":"
+           << runtime_shim_host_link_contract.runtime_dispatch_declaration_parameter_count
+           << ",\"runtime_dispatch_symbol_matches_lowering\":"
+           << ((runtime_shim_host_link_contract.runtime_dispatch_symbol ==
+                        options.lowering.runtime_dispatch_symbol &&
+                runtime_shim_host_link_contract.runtime_dispatch_symbol ==
+                        runtime_support_library_link_wiring.runtime_dispatch_symbol)
+                       ? "true"
+                       : "false")
+           << ",\"live_runtime_dispatch_sites\":"
+           << (dispatch_surface_classification_contract.instance_dispatch_sites +
+               dispatch_surface_classification_contract.class_dispatch_sites +
+               dispatch_surface_classification_contract.super_dispatch_sites +
+               dispatch_surface_classification_contract.dynamic_dispatch_sites)
+           << ",\"direct_dispatch_sites\":"
+           << dispatch_surface_classification_contract.direct_dispatch_sites
+           << ",\"message_send_sites\":"
+           << message_send_selector_lowering_contract.message_send_sites
+           << ",\"property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_sites
+           << ",\"property_synthesis_explicit_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
+           << ",\"property_synthesis_default_ivar_bindings\":"
+           << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << ",\"ivar_binding_resolved\":"
+           << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << ",\"property_descriptor_count\":"
+           << runtime_metadata_section_scaffold.property_descriptor_count
+           << ",\"ivar_descriptor_count\":"
+           << runtime_metadata_section_scaffold.ivar_descriptor_count
+           << ",\"deterministic_handoff\":"
+           << (property_synthesis_ivar_binding_contract.deterministic &&
+                       dispatch_surface_classification_contract.deterministic &&
+                       message_send_selector_lowering_contract.deterministic &&
+                       runtime_shim_host_link_contract.deterministic
+                   ? "true"
+                   : "false")
+           << "},\n";
   manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
            << id_class_sel_object_pointer_typecheck_replay_key
            << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract
@@ -22888,6 +22932,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   ir_frontend_metadata.property_setter_selector_entries = property_attribute_summary.property_setter_selector_entries;
   ir_frontend_metadata.lowering_property_synthesis_ivar_binding_replay_key =
       property_synthesis_ivar_binding_replay_key;
+  ir_frontend_metadata.lowering_property_synthesis_sites =
+      property_synthesis_ivar_binding_contract.property_synthesis_sites;
+  ir_frontend_metadata.lowering_property_synthesis_explicit_ivar_bindings =
+      property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings;
+  ir_frontend_metadata.lowering_property_synthesis_default_ivar_bindings =
+      property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings;
+  ir_frontend_metadata.lowering_property_synthesis_ivar_binding_resolved =
+      property_synthesis_ivar_binding_contract.ivar_binding_resolved;
+  ir_frontend_metadata.lowering_property_synthesis_deterministic_handoff =
+      property_synthesis_ivar_binding_contract.deterministic;
   ir_frontend_metadata.lowering_id_class_sel_object_pointer_typecheck_replay_key =
       id_class_sel_object_pointer_typecheck_replay_key;
   ir_frontend_metadata.id_typecheck_sites = id_class_sel_object_pointer_typecheck_contract.id_typecheck_sites;

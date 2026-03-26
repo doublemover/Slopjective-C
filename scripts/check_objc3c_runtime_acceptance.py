@@ -640,6 +640,38 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
            "expected property synthesis replay key to record the default ivar bindings")
     expect(registration_manifest.get("property_descriptor_count", 0) >= 6,
            "expected runtime registration manifest to publish synthesized property descriptors")
+    lowering_surface = manifest.get("dispatch_and_synthesized_accessor_lowering_surface", {})
+    expect(isinstance(lowering_surface, dict),
+           "expected authoritative dispatch and synthesized-accessor lowering surface in compile manifest")
+    expect(lowering_surface.get("contract_id") ==
+           "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1",
+           "expected lowering surface contract id for dispatch and synthesized accessors")
+    expect(lowering_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
+           "expected lowering surface to publish canonical runtime dispatch symbol")
+    expect(lowering_surface.get("runtime_dispatch_symbol_matches_lowering") is True,
+           "expected lowering surface to bind lowering, shim, and runtime library dispatch symbols together")
+    expect(lowering_surface.get("property_synthesis_sites") == 3,
+           "expected lowering surface to publish three synthesized properties")
+    expect(lowering_surface.get("property_synthesis_default_ivar_bindings") == 3,
+           "expected lowering surface to publish three default ivar bindings")
+    expect(lowering_surface.get("property_descriptor_count") == registration_manifest.get("property_descriptor_count"),
+           "expected lowering surface property descriptor count to match runtime registration manifest")
+    expect(lowering_surface.get("ivar_descriptor_count") == registration_manifest.get("ivar_descriptor_count"),
+           "expected lowering surface ivar descriptor count to match runtime registration manifest")
+    expect(lowering_surface.get("deterministic_handoff") is True,
+           "expected lowering surface to report deterministic handoff")
+    expect(
+        "; dispatch_and_synthesized_accessor_lowering_surface = "
+        "contract_id=objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+        in ll_text,
+        "expected LLVM IR banner to publish dispatch and synthesized-accessor lowering surface",
+    )
+    expect("property_synthesis_sites=3" in ll_text,
+           "expected LLVM IR banner to report three synthesized properties")
+    expect("property_descriptor_count=6" in ll_text,
+           "expected LLVM IR banner to report synthesized property descriptor count")
+    expect("member_table_emission_ready=true" in ll_text,
+           "expected LLVM IR banner to report member table emission readiness")
 
     return CaseResult(
         case_id="property-codegen",
