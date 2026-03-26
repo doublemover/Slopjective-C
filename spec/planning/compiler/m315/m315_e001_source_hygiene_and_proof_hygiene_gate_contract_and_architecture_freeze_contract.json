@@ -1,0 +1,23 @@
+{
+  "mode": "m315-e001-source-hygiene-proof-hygiene-gate-v1",
+  "contract_id": "objc3c.cleanup.source-hygiene.proof-hygiene.gate/m315-e001-v1",
+  "predecessor_checkers": {
+    "b005": "scripts/check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py",
+    "d001": "scripts/check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py",
+    "d002": "scripts/check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py"
+  },
+  "required_b005_match_count": 57,
+  "required_remaining_residual_classes": {
+    "legacy_fixture_path_reference": 6,
+    "dependency_issue_array": 3,
+    "next_issue_schema_field": 40,
+    "issue_key_schema_field": 8
+  },
+  "required_zero_current_target_residuals": {
+    "transitional_source_model": 0,
+    "legacy_m248_surface_identifier": 0
+  },
+  "required_stable_identifier_family": "advanced_integration_closeout_signoff",
+  "required_workflow_path": ".github/workflows/m315-source-hygiene-proof-policy-enforcement.yml",
+  "next_issue": "M315-E002"
+}
