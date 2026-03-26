@@ -107,17 +107,38 @@ The live native build publishes:
 - `artifacts/bin/objc3c-native.exe`
 - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - `artifacts/lib/objc3_runtime.lib`
+
+## Native Output Truth
+
+Treat these as authoritative only when they come from a real compiler invocation:
+
+- emitted LLVM IR
+- emitted object files
+- manifests that point at those emitted outputs
+- executable probes that link against `artifacts/lib/objc3_runtime.lib`
+
+Do not treat these as authoritative proof:
+
+- hand-written `.ll` files
+- compatibility shims by themselves
+- sidecars that are not tied to a reproducible compile and probe path
+
+## Current Corrective Gaps
+
+- unresolved sends still have one deterministic arithmetic fallback path in `native/objc3c/src/runtime/objc3_runtime.cpp`
+- synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path
 ## Live Validation Commands
 
 From repo root:
 
 ```powershell
-npm run test:objc3c
-npm run test:objc3c:execution-smoke
-npm run test:objc3c:execution-replay-proof
-npm run test:objc3c:full
-npm run test:ci
-npm run proof:objc3c
+python scripts/objc3c_public_workflow_runner.py test-recovery
+python scripts/objc3c_public_workflow_runner.py test-execution-smoke
+python scripts/objc3c_public_workflow_runner.py test-execution-replay
+python scripts/objc3c_public_workflow_runner.py test-full
+python scripts/objc3c_public_workflow_runner.py test-ci
+python scripts/objc3c_public_workflow_runner.py proof-objc3c
 python scripts/ci/check_task_hygiene.py
 python scripts/check_objc3c_dependency_boundaries.py --strict
 ```
@@ -131,6 +152,15 @@ python scripts/check_objc3c_dependency_boundaries.py --strict
 - negative fixture expectations
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
+- runtime dispatch over realized classes/categories/protocols
+- synthesized property accessor execution over realized instance storage
+- native-output provenance through real compile and probe paths
+
+## Current Corrective Gaps Under Test
+
+- unresolved dispatch still has one deterministic fallback path after slow-path miss
+- synthesized accessor IR still carries transitional lowering residue even though live getter/setter execution is already runtime-backed
+- native-output truth requires the emitted object and linked probe to stay coupled end to end
 # libobjc3c_frontend Library API
 
 This document describes the live embedding surface exposed by `native/objc3c/src/libobjc3c_frontend/api.h`.

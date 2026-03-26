@@ -5,12 +5,12 @@
 From repo root:
 
 ```powershell
-npm run test:objc3c
-npm run test:objc3c:execution-smoke
-npm run test:objc3c:execution-replay-proof
-npm run test:objc3c:full
-npm run test:ci
-npm run proof:objc3c
+python scripts/objc3c_public_workflow_runner.py test-recovery
+python scripts/objc3c_public_workflow_runner.py test-execution-smoke
+python scripts/objc3c_public_workflow_runner.py test-execution-replay
+python scripts/objc3c_public_workflow_runner.py test-full
+python scripts/objc3c_public_workflow_runner.py test-ci
+python scripts/objc3c_public_workflow_runner.py proof-objc3c
 python scripts/ci/check_task_hygiene.py
 python scripts/check_objc3c_dependency_boundaries.py --strict
 ```
@@ -24,3 +24,12 @@ python scripts/check_objc3c_dependency_boundaries.py --strict
 - negative fixture expectations
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
+- runtime dispatch over realized classes/categories/protocols
+- synthesized property accessor execution over realized instance storage
+- native-output provenance through real compile and probe paths
+
+## Current Corrective Gaps Under Test
+
+- unresolved dispatch still has one deterministic fallback path after slow-path miss
+- synthesized accessor IR still carries transitional lowering residue even though live getter/setter execution is already runtime-backed
+- native-output truth requires the emitted object and linked probe to stay coupled end to end
