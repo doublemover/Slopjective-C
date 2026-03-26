@@ -7930,6 +7930,9 @@
     "check:objc3c:m314-c003-lane-c-readiness": "python scripts/run_m314_c003_lane_c_readiness.py",
     "check:objc3c:m314-d001-maintainer-operator-workflow-and-docs-contract-and-architecture-freeze": "python scripts/check_m314_d001_maintainer_operator_workflow_and_docs_contract_and_architecture_freeze.py",
     "test:tooling:m314-d001-maintainer-operator-workflow-and-docs-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_d001_maintainer_operator_workflow_and_docs_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m314-d001-lane-d-readiness": "python scripts/run_m314_d001_lane_d_readiness.py"
+    "check:objc3c:m314-d001-lane-d-readiness": "python scripts/run_m314_d001_lane_d_readiness.py",
+    "check:objc3c:m314-e001-workflow-simplification-gate-contract-and-architecture-freeze": "python scripts/check_m314_e001_workflow_simplification_gate_contract_and_architecture_freeze.py",
+    "test:tooling:m314-e001-workflow-simplification-gate-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m314_e001_workflow_simplification_gate_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m314-e001-lane-e-readiness": "python scripts/run_m314_e001_lane_e_readiness.py"
   }
 }
