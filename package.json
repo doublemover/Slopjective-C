@@ -7972,6 +7972,9 @@
     "check:objc3c:m315-c003-lane-c-readiness": "python scripts/run_m315_c003_lane_c_readiness.py",
     "check:objc3c:m315-c004-synthetic-fixture-relocation-labeling-and-parity-test-updates-core-feature-expansion": "python scripts/check_m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion.py",
     "test:tooling:m315-c004-synthetic-fixture-relocation-labeling-and-parity-test-updates-core-feature-expansion": "python -m pytest tests/tooling/test_check_m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion.py -q",
-    "check:objc3c:m315-c004-lane-c-readiness": "python scripts/run_m315_c004_lane_c_readiness.py"
+    "check:objc3c:m315-c004-lane-c-readiness": "python scripts/run_m315_c004_lane_c_readiness.py",
+    "check:objc3c:m315-d001-source-hygiene-and-proof-policy-enforcement-contract-and-architecture-freeze": "python scripts/check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py",
+    "test:tooling:m315-d001-source-hygiene-and-proof-policy-enforcement-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-d001-lane-d-readiness": "python scripts/run_m315_d001_lane_d_readiness.py"
   }
 }
