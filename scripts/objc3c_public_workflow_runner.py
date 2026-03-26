@@ -156,6 +156,20 @@ def write_composite_validation_report(
         "status": status,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runner_path": "scripts/objc3c_public_workflow_runner.py",
+        "claim_boundary": {
+            "contract_id": "objc3c.runtime.execution.claim.boundary.v1",
+            "reports_are_authoritative_only_when_child_steps_are_compile-coupled": True,
+            "authoritative_child_surfaces": [
+                "scripts/check_objc3c_runtime_acceptance.py",
+                "scripts/check_objc3c_execution_replay_proof.ps1",
+                "scripts/check_objc3c_native_execution_smoke.ps1",
+            ],
+            "non_authoritative_inputs": [
+                "integrated report paths by themselves",
+                "sidecar-only summaries with no matching emitted object/probe path",
+                "synthetic or hand-authored llvm ir used without coupled compile output",
+            ],
+        },
         "steps": steps,
     }
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")

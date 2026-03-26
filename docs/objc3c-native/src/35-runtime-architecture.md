@@ -73,3 +73,7 @@ closure work must extend this path, not bypass it.
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe
   path can execute today
+
+The live runtime-acceptance, replay-proof, and composite public-workflow
+reports publish this same claim boundary as machine-readable JSON so later work
+cannot silently overclaim from sidecars or synthetic artifacts.

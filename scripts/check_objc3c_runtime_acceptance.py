@@ -212,8 +212,39 @@ class CaseResult:
     case_id: str
     probe: str
     fixture: str | None
+    claim_class: str
     passed: bool
     summary: dict[str, Any]
+
+
+def build_claim_boundary() -> dict[str, Any]:
+    return {
+        "contract_id": "objc3c.runtime.execution.claim.boundary.v1",
+        "authoritative_claim_classes": {
+            "linked-runtime-probe": {
+                "requires_runtime_library_or_emitted_object": True,
+                "requires_executable_probe": True,
+                "requires_runtime_backed_execution_or_snapshot": True,
+            },
+            "compile-coupled-inspection": {
+                "requires_real_compile": True,
+                "requires_compile_output_truthfulness": True,
+                "requires_coupled_registration_manifest": True,
+            },
+        },
+        "non_authoritative_inputs": [
+            "hand-authored llvm ir without matching compile output",
+            "sidecar-only manifests or reports with no coupled object/probe path",
+            "compatibility shims without a coupled emitted object and runtime probe",
+            "comment-only or placeholder-only capability claims",
+        ],
+        "public_runtime_abi_boundary": [
+            "objc3_runtime_register_image",
+            "objc3_runtime_lookup_selector",
+            "objc3_runtime_dispatch_i32",
+            "objc3_runtime_reset_for_testing",
+        ],
+    }
 
 
 def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
@@ -226,6 +257,7 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
         case_id="runtime-library",
         probe="tests/tooling/runtime/runtime_library_probe.cpp",
         fixture=None,
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={"kind": "standalone-runtime-probe"},
     )
@@ -286,6 +318,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
         case_id="canonical-dispatch",
         probe="tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
         fixture="tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "traced_value": payload["traced_value"],
@@ -491,6 +524,7 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         case_id="dispatch-fast-path",
         probe="tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
         fixture="tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
@@ -551,6 +585,7 @@ def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
         case_id="property-reflection",
         probe="tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
         fixture="tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "reflectable_property_count": registry_after_count.get("reflectable_property_count"),
@@ -768,6 +803,7 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
         case_id="property-execution",
         probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
         fixture="tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "count_value": payload.get("count_value"),
@@ -846,6 +882,7 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
         case_id="arc-property-helper-abi",
         probe="tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
         fixture="tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "parent": payload.get("parent"),
@@ -1000,6 +1037,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         case_id="storage-ownership-reflection",
         probe="tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
         fixture="tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        claim_class="linked-runtime-probe",
         passed=True,
         summary={
             "runtime_property_accessor_count": box_entry.get("runtime_property_accessor_count"),
@@ -1115,6 +1153,7 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
         case_id="property-codegen",
         probe="real-compile-llvm-inspection",
         fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        claim_class="compile-coupled-inspection",
         passed=True,
         summary={
             "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
@@ -1157,11 +1196,13 @@ def main() -> int:
                 "case_id": result.case_id,
                 "probe": result.probe,
                 "fixture": result.fixture,
+                "claim_class": result.claim_class,
                 "passed": result.passed,
                 "summary": result.summary,
             }
             for result in results
         ],
+        "claim_boundary": build_claim_boundary(),
         "dispatch_accessor_runtime_abi_surface": {
             "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
             "proof_cases": [

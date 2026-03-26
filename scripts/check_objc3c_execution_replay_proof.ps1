@@ -473,6 +473,7 @@ try {
 
     $caseSummaries += [ordered]@{
       case_id = [string]$case.case_id
+      claim_class = "compile-coupled-replay-proof"
       run1 = $run1
       run2 = $run2
       status = "PASS"
@@ -482,6 +483,24 @@ try {
   $summary = [ordered]@{
     proof_run_id = $proofRunId
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
+    claim_boundary = [ordered]@{
+      contract_id = "objc3c.runtime.execution.claim.boundary.v1"
+      authoritative_claim_class = "compile-coupled-replay-proof"
+      compile_output_truthfulness_contract_id = "objc3c.native.compile.output.truthfulness.v1"
+      registration_manifest_truth_required = $true
+      authoritative_evidence = @(
+        "emitted object coupled to compile provenance",
+        "runtime registration manifest bound to the same artifact digest",
+        "deterministic replay digest equality across two real compile runs",
+        "runtime section inspection derived from the emitted object when required"
+      )
+      non_authoritative_inputs = @(
+        "hand-authored llvm ir without the emitted object",
+        "sidecar-only reports or manifests without coupled compile output",
+        "compatibility shims without the emitted object and runtime-backed probe path",
+        "replay text alone without compile provenance and registration-manifest coupling"
+      )
+    }
     selection = [ordered]@{
       case_id = $CaseId
       shard_index = $ShardIndex
