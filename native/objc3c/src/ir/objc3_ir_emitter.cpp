@@ -12721,14 +12721,12 @@ class Objc3IREmitter {
       // continues to route admitted super/dynamic sites through the live
       // runtime family, preserves their normalized method-family metadata, and
       // never synthesizes a reserved direct-dispatch entrypoint.
-      // dispatch lowering ABI freeze anchor: lowering still emits
-      // the compatibility bridge symbol as the default call target while the
-      // frozen lane-C ABI records the canonical runtime entrypoint,
-      // selector-lookup surface, i32 receiver/result ABI, and fixed four-slot
-      // argument vector that the next runtime step will cut over to explicitly.
-      // runtime call ABI generation anchor: normalized instance/class
-      // sends now call objc3_runtime_dispatch_i32 directly, while deferred
-      // super/dynamic sites preserve objc3_msgsend_i32 until the next runtime step.
+      // dispatch lowering ABI anchor: lowering emits the canonical runtime
+      // entrypoint directly. The compatibility symbol stays exported only as a
+      // non-emitted alias while selector lookup, receiver/result ABI, and the
+      // fixed four-slot argument vector remain stable.
+      // runtime call ABI generation anchor: normalized instance/class/super
+      // and dynamic sends all call objc3_runtime_dispatch_i32 directly.
       // live-dispatch cutover anchor: supported dynamic sends now
       // join instance/class/super on objc3_runtime_dispatch_i32, nil semantics
       // for canonical surfaces stay runtime-owned, the compatibility symbol is

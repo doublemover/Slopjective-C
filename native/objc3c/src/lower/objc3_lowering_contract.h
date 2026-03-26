@@ -17,7 +17,7 @@ inline constexpr const char *kObjc3DispatchSurfaceSuperFamily = "super";
 inline constexpr const char *kObjc3DispatchSurfaceDirectFamily = "direct";
 inline constexpr const char *kObjc3DispatchSurfaceDynamicFamily = "dynamic";
 inline constexpr const char *kObjc3DispatchSurfaceLiveRuntimeEntrypointFamily =
-    "objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat";
+    "objc3_runtime_dispatch_i32-canonical-live-runtime";
 inline constexpr const char *kObjc3DispatchSurfaceDirectDispatchBinding =
     "reserved-non-goal";
 inline constexpr const char *kObjc3DispatchLegalitySelectorResolutionContractId =
@@ -50,17 +50,14 @@ inline constexpr const char *kObjc3DynamicDispatchMethodFamilyPolicy =
     "dynamic-dispatch-preserves-runtime-resolution-and-method-family-accounting";
 inline constexpr const char *kObjc3RuntimeVisibleMethodFamilyPolicy =
     "super-and-dynamic-sites-preserve-method-family-runtime-visibility";
-// dispatch lowering ABI freeze anchor: lane-C freezes the
-// compiler-to-runtime dispatch boundary without switching code generation yet.
-// The canonical runtime entrypoint is objc3_runtime_dispatch_i32, selector
-// handles come from objc3_runtime_lookup_selector, receiver/result ABI stays
-// i32, the fixed argument-slot vector stays i32[4] with zero padding, and the
-// default lowering target remains the compatibility bridge until the next runtime step
-// changes it explicitly.
+// dispatch lowering ABI anchor: emitted sends already lower to the canonical
+// runtime entrypoint. The compatibility symbol stays exported as a non-emitted
+// alias only, while selector lookup, receiver/result ABI, and fixed-slot
+// argument padding remain the compiler-to-runtime boundary.
 inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiContractId =
     "objc3c.runtime.dispatch.lowering.abi.freeze.v1";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiBoundaryModel =
-    "compatibility-bridge-default-target-before-live-runtime-dispatch-cutover";
+    "canonical-runtime-dispatch-default-target";
 inline constexpr const char
     *kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol =
         "objc3_runtime_dispatch_i32";
@@ -86,29 +83,25 @@ inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorHandleModel =
 inline constexpr const char *kObjc3RuntimeDispatchLoweringArgumentPaddingModel =
     "zero-pad-to-fixed-runtime-arg-slot-count";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDefaultTargetModel =
-    "default-lowering-target-remains-compatibility-bridge-until-next-runtime-phase";
+    "default-lowering-target-is-canonical-runtime-entrypoint";
 inline constexpr const char
     *kObjc3RuntimeDispatchLoweringCompatibilityRoleModel =
-        "compatibility-bridge-remains-test-and-backcompat-surface-not-canonical-runtime-abi";
+        "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
-    "super-nil-direct-runtime-entrypoint-cutover-deferred-until-next-runtime-phase";
-// runtime call ABI generation anchor: lane-C now cuts instance/class
-// sends over to the canonical runtime entrypoint while preserving the
-// compatibility bridge for deferred super/dynamic/direct surfaces until
-// 
+    "direct-dispatch-remains-fail-closed-after-live-cutover";
+// runtime call ABI generation anchor: all supported send surfaces use the
+// canonical runtime entrypoint; only reserved direct dispatch stays fail-closed.
 inline constexpr const char *kObjc3RuntimeDispatchCallAbiGenerationContractId =
     "objc3c.runtime.call.abi.instance.class.dispatch.v1";
 inline constexpr const char
     *kObjc3RuntimeDispatchCallAbiGenerationActiveLoweringModel =
-        "instance-and-class-sends-lower-directly-to-canonical-runtime-entrypoint";
+        "instance-class-super-and-dynamic-sends-lower-directly-to-canonical-runtime-entrypoint";
 inline constexpr const char
     *kObjc3RuntimeDispatchCallAbiGenerationDeferredLoweringModel =
-        "super-dynamic-and-deferred-sends-stay-on-compatibility-bridge-until-next-runtime-phase";
-// runtime call ABI generation anchor: lane-C now routes normalized
-// super sends and nil-receiver canonical surfaces through the live runtime
-// entrypoint, keeps dynamic sends on the compatibility bridge until the next runtime step,
-// and fails closed if an unsupported reserved direct-dispatch surface reaches
-// IR emission.
+        "direct-dispatch-remains-fail-closed-until-supported-surface-materializes";
+// runtime call ABI generation anchor: normalized nil, instance, class, super,
+// and dynamic sends route through the live runtime entrypoint. Unsupported
+// direct dispatch still fails closed before IR emission.
 inline constexpr const char *kObjc3RuntimeDispatchSuperNilContractId =
     "objc3c.runtime.call.abi.super.nil.direct.dispatch.v1";
 inline constexpr const char
@@ -116,14 +109,14 @@ inline constexpr const char
         "instance-class-super-and-nil-sends-lower-directly-to-canonical-runtime-entrypoint";
 inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilDeferredLoweringModel =
-        "dynamic-sends-stay-on-compatibility-bridge-until-next-runtime-phase";
+        "direct-dispatch-remains-fail-closed-until-supported-surface-materializes";
 inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilUnsupportedFallbackModel =
         "direct-dispatch-fails-closed-until-supported-surface-materializes";
-// live-dispatch cutover anchor: lane-C removes the last live-path
-// compatibility-bridge assumption by routing normalized dynamic sends through
+// live-dispatch cutover anchor: lane-C routes normalized dynamic sends through
 // the canonical runtime entrypoint too, while keeping the compatibility symbol
-// exported as test/compat evidence only and leaving direct dispatch fail-closed.
+// exported as non-emitted test/compat evidence only and leaving direct
+// dispatch fail-closed.
 inline constexpr const char *kObjc3RuntimeDispatchLiveCutoverContractId =
     "objc3c.runtime.call.abi.live.dispatch.cutover.v1";
 inline constexpr const char
@@ -138,14 +131,10 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel =
         "direct-dispatch-remains-fail-closed-after-live-cutover";
-// lookup/dispatch runtime freeze anchor: lane-D now freezes the
-// runtime-owned selector interning, lookup-table, cache, and slow-path
-// boundary that the live lane-C call ABI targets. The canonical runtime API
-// remains objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32;
-// metadata-backed selector lookup tables land in the next runtime step, method-cache and
-// slow-path lookup land in the following runtime step, protocol/category-aware method
-// resolution lands in the later runtime step, and unsupported runtime-resolution surfaces
-// remain fail closed until those issues materialize them explicitly.
+// lookup/dispatch runtime anchor: the live runtime owns selector interning,
+// realized lookup tables, method cache, and slow-path method resolution behind
+// objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32. The
+// compatibility symbol is non-authoritative alias surface only.
 inline constexpr const char *kObjc3RuntimeLookupDispatchContractId =
     "objc3c.runtime.lookup.dispatch.freeze.v1";
 inline constexpr const char
@@ -153,16 +142,16 @@ inline constexpr const char
         "process-global-selector-intern-table-stable-id-per-canonical-selector-spelling";
 inline constexpr const char
     *kObjc3RuntimeLookupDispatchLookupTableModel =
-        "metadata-backed-selector-lookup-tables-deferred-until-next-runtime-phase";
+        "registered-selector-pools-materialize-process-global-stable-id-table";
 inline constexpr const char *kObjc3RuntimeLookupDispatchCacheModel =
-    "method-cache-and-runtime-slow-path-deferred-until-next-runtime-phase";
+    "method-cache-and-runtime-slow-path-resolve-realized-methods";
 inline constexpr const char
     *kObjc3RuntimeLookupDispatchProtocolCategoryModel =
-        "protocol-and-category-aware-method-resolution-deferred-until-next-runtime-phase";
+        "protocol-and-category-aware-method-resolution-participate-in-realized-slow-path";
 inline constexpr const char *kObjc3RuntimeLookupDispatchCompatibilityModel =
-    "compatibility-shim-remains-test-only-non-authoritative-runtime-surface";
+    "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
 inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
-    "runtime-lookup-and-dispatch-fail-closed-on-unmaterialized-resolution";
+    "only-unresolved-or-invalid-runtime-resolution-falls-back-deterministically";
 // selector lookup table anchor: lane-D now materializes the selector
 // table from emitted registration-table selector pools while preserving the
 // frozen D001 public runtime entrypoints. Method-cache / slow-path resolution
@@ -203,7 +192,7 @@ inline constexpr const char
         "normalized-receiver-plus-selector-stable-id-positive-and-negative-cache";
 inline constexpr const char
     *kObjc3RuntimeMethodCacheSlowPathFallbackModel =
-        "unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula";
+        "only-unresolved-or-ambiguous-runtime-resolution-falls-back-to-deterministic-dispatch-formula";
 // protocol/category-aware resolution anchor: lane-D extends the live
 // runtime slow path to consume emitted category method tables plus adopted and
 // inherited protocol metadata while preserving the frozen D001 public runtime
@@ -219,7 +208,7 @@ inline constexpr const char
         "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution";
 inline constexpr const char
     *kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel =
-        "conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch";
+        "only-unresolved-conflicting-category-or-protocol-resolution-falls-back-deterministically";
 // live-dispatch gate anchor: lane-E now freezes one fail-closed
 // evidence boundary proving supported message sends execute through the live
 // runtime path rather than the compatibility shim. The upstream gate chain

@@ -2843,11 +2843,9 @@ std::string Objc3RuntimeShimHostLinkReplayKey(
          ";lane_contract=" + kObjc3RuntimeShimHostLinkLaneContract;
 }
 
-// dispatch lowering ABI freeze anchor: lane-C publishes the
-// compiler-to-runtime cutover boundary here without changing executable call
-// emission yet. Validation must keep the canonical runtime symbol, selector
-// lookup/handle surface, i32 receiver/result ABI, and fixed four-slot padding
-// model synchronized with the compatibility-bridge default target.
+// dispatch lowering ABI anchor: validation keeps the canonical runtime symbol,
+// selector lookup/handle surface, i32 receiver/result ABI, and fixed four-slot
+// padding model synchronized with the live emitted call path.
 bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
     const Objc3RuntimeDispatchLoweringAbiContract &contract) {
   if (contract.fixed_argument_slot_count > kObjc3RuntimeDispatchMaxArgs) {
