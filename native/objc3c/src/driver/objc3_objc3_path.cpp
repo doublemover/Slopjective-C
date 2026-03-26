@@ -660,6 +660,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
           manifest_inputs.dispatch_accessor_runtime_dispatch_symbol =
               runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
+          manifest_inputs.dispatch_accessor_dispatch_state_snapshot_symbol =
+              "objc3_runtime_copy_dispatch_state_for_testing";
           manifest_inputs
               .dispatch_accessor_method_cache_state_snapshot_symbol =
               "objc3_runtime_copy_method_cache_state_for_testing";

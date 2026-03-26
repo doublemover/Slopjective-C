@@ -113,8 +113,9 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
 // runtime-fast-path-integration anchor: Part 9 freezes the
 // existing private method-cache snapshot and entry-query helpers as the
 // truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
-// and deterministic fallback dispatch behavior before D002 widens the live
-// fast-path runtime itself.
+// and deterministic fallback dispatch behavior. D002 widens that same private
+// runtime proof surface with one dedicated realized-dispatch snapshot rather
+// than opening a second public dispatch ABI.
 // live-dispatch-fast-path anchor: Part 9 now widens the same private
 // proof surface with seeded-fast-path counters, seeded-entry flags, and the
 // last fast-path reason so first-call cache-hit behavior remains observable
@@ -160,6 +161,34 @@ typedef struct objc3_runtime_method_cache_entry_snapshot {
   const char *resolved_class_name;
   const char *resolved_owner_identity;
 } objc3_runtime_method_cache_entry_snapshot;
+
+// realized-dispatch-runtime anchor: lane-D now widens the same
+// private runtime testing surface with one dispatch-state snapshot so
+// executable probes can read the authoritative realized dispatch path and
+// implementation kind from the live runtime rather than inferring them from
+// cache counters alone.
+typedef struct objc3_runtime_dispatch_state_snapshot {
+  uint64_t cache_entry_count;
+  uint64_t fast_path_seed_count;
+  uint64_t fast_path_hit_count;
+  uint64_t live_dispatch_count;
+  uint64_t fallback_dispatch_count;
+  uint64_t last_selector_stable_id;
+  uint64_t last_normalized_receiver_identity;
+  uint64_t last_resolved_parameter_count;
+  int last_dispatch_used_cache;
+  int last_dispatch_used_fast_path;
+  int last_dispatch_resolved_live_method;
+  int last_dispatch_fell_back;
+  int last_effective_direct_dispatch;
+  int last_used_builtin;
+  const char *last_selector;
+  const char *last_fast_path_reason;
+  const char *last_dispatch_path;
+  const char *last_implementation_kind;
+  const char *last_resolved_class_name;
+  const char *last_resolved_owner_identity;
+} objc3_runtime_dispatch_state_snapshot;
 
 typedef struct objc3_runtime_realized_class_graph_state_snapshot {
   uint64_t realized_class_count;
@@ -452,6 +481,8 @@ int objc3_runtime_copy_method_cache_state_for_testing(
 int objc3_runtime_copy_method_cache_entry_for_testing(
     int receiver, const char *selector,
     objc3_runtime_method_cache_entry_snapshot *snapshot);
+int objc3_runtime_copy_dispatch_state_for_testing(
+    objc3_runtime_dispatch_state_snapshot *snapshot);
 // metaclass-graph-root-class anchor: the runtime now owns a realized
 // class/metaclass graph with explicit root-class publication, and the
 // canonical proof surface for that graph stays behind private testing

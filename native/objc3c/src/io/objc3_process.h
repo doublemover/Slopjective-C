@@ -51,6 +51,7 @@ struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string dispatch_accessor_public_header_path;
   std::string dispatch_accessor_private_header_path;
   std::string dispatch_accessor_runtime_dispatch_symbol;
+  std::string dispatch_accessor_dispatch_state_snapshot_symbol;
   std::string dispatch_accessor_method_cache_state_snapshot_symbol;
   std::string dispatch_accessor_method_cache_entry_snapshot_symbol;
   std::string dispatch_accessor_property_registry_state_snapshot_symbol;

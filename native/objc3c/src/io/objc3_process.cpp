@@ -1080,6 +1080,10 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "    \"runtime_dispatch_symbol\": \""
       << EscapeJsonString(inputs.dispatch_accessor_runtime_dispatch_symbol)
       << "\",\n"
+      << "    \"dispatch_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_dispatch_state_snapshot_symbol)
+      << "\",\n"
       << "    \"method_cache_state_snapshot_symbol\": \""
       << EscapeJsonString(
              inputs.dispatch_accessor_method_cache_state_snapshot_symbol)

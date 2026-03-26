@@ -95,6 +95,47 @@ void PrintEntry(const char *label,
   std::cout << label << "_fast_path_reason=" << fast_path_reason << "\n";
 }
 
+void PrintDispatchState(const char *label,
+                        const objc3_runtime_dispatch_state_snapshot &snapshot,
+                        const std::string &last_selector,
+                        const std::string &last_fast_path_reason,
+                        const std::string &last_dispatch_path,
+                        const std::string &last_implementation_kind,
+                        const std::string &last_resolved_class_name) {
+  std::cout << label << "_cache_entry_count=" << snapshot.cache_entry_count
+            << "\n";
+  std::cout << label << "_fast_path_seed_count=" << snapshot.fast_path_seed_count
+            << "\n";
+  std::cout << label << "_fast_path_hit_count=" << snapshot.fast_path_hit_count
+            << "\n";
+  std::cout << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
+            << "\n";
+  std::cout << label << "_fallback_dispatch_count="
+            << snapshot.fallback_dispatch_count << "\n";
+  std::cout << label << "_last_resolved_parameter_count="
+            << snapshot.last_resolved_parameter_count << "\n";
+  std::cout << label << "_last_dispatch_used_cache="
+            << snapshot.last_dispatch_used_cache << "\n";
+  std::cout << label << "_last_dispatch_used_fast_path="
+            << snapshot.last_dispatch_used_fast_path << "\n";
+  std::cout << label << "_last_dispatch_resolved_live_method="
+            << snapshot.last_dispatch_resolved_live_method << "\n";
+  std::cout << label << "_last_dispatch_fell_back="
+            << snapshot.last_dispatch_fell_back << "\n";
+  std::cout << label << "_last_effective_direct_dispatch="
+            << snapshot.last_effective_direct_dispatch << "\n";
+  std::cout << label << "_last_used_builtin=" << snapshot.last_used_builtin
+            << "\n";
+  std::cout << label << "_last_selector=" << last_selector << "\n";
+  std::cout << label << "_last_fast_path_reason=" << last_fast_path_reason
+            << "\n";
+  std::cout << label << "_last_dispatch_path=" << last_dispatch_path << "\n";
+  std::cout << label << "_last_implementation_kind="
+            << last_implementation_kind << "\n";
+  std::cout << label << "_last_resolved_class_name="
+            << last_resolved_class_name << "\n";
+}
+
 }  // namespace
 
 int main() {
@@ -104,6 +145,10 @@ int main() {
   objc3_runtime_method_cache_state_snapshot mixed_second_state{};
   objc3_runtime_method_cache_state_snapshot fallback_first_state{};
   objc3_runtime_method_cache_state_snapshot fallback_second_state{};
+  objc3_runtime_dispatch_state_snapshot mixed_first_dispatch_state{};
+  objc3_runtime_dispatch_state_snapshot mixed_second_dispatch_state{};
+  objc3_runtime_dispatch_state_snapshot fallback_first_dispatch_state{};
+  objc3_runtime_dispatch_state_snapshot fallback_second_dispatch_state{};
   objc3_runtime_method_cache_entry_snapshot dynamic_entry{};
   objc3_runtime_method_cache_entry_snapshot explicit_entry{};
   objc3_runtime_method_cache_entry_snapshot fallback_entry{};
@@ -119,6 +164,26 @@ int main() {
   std::string fallback_first_last_fast_path_reason;
   std::string fallback_second_last_selector;
   std::string fallback_second_last_fast_path_reason;
+  std::string mixed_first_dispatch_last_selector;
+  std::string mixed_first_dispatch_last_fast_path_reason;
+  std::string mixed_first_dispatch_last_path;
+  std::string mixed_first_dispatch_last_implementation_kind;
+  std::string mixed_first_dispatch_last_resolved_class_name;
+  std::string mixed_second_dispatch_last_selector;
+  std::string mixed_second_dispatch_last_fast_path_reason;
+  std::string mixed_second_dispatch_last_path;
+  std::string mixed_second_dispatch_last_implementation_kind;
+  std::string mixed_second_dispatch_last_resolved_class_name;
+  std::string fallback_first_dispatch_last_selector;
+  std::string fallback_first_dispatch_last_fast_path_reason;
+  std::string fallback_first_dispatch_last_path;
+  std::string fallback_first_dispatch_last_implementation_kind;
+  std::string fallback_first_dispatch_last_resolved_class_name;
+  std::string fallback_second_dispatch_last_selector;
+  std::string fallback_second_dispatch_last_fast_path_reason;
+  std::string fallback_second_dispatch_last_path;
+  std::string fallback_second_dispatch_last_implementation_kind;
+  std::string fallback_second_dispatch_last_resolved_class_name;
   std::string dynamic_entry_selector;
   std::string dynamic_entry_fast_path_reason;
   std::string explicit_entry_selector;
@@ -153,21 +218,65 @@ int main() {
   const int mixed_first = callMixed();
   const int mixed_first_status =
       objc3_runtime_copy_method_cache_state_for_testing(&mixed_first_state);
+  const int mixed_first_dispatch_state_status =
+      objc3_runtime_copy_dispatch_state_for_testing(&mixed_first_dispatch_state);
   mixed_first_last_selector =
       mixed_first_state.last_selector != nullptr ? mixed_first_state.last_selector : "";
   mixed_first_last_fast_path_reason = mixed_first_state.last_fast_path_reason != nullptr
                                            ? mixed_first_state.last_fast_path_reason
                                            : "";
+  mixed_first_dispatch_last_selector =
+      mixed_first_dispatch_state.last_selector != nullptr
+          ? mixed_first_dispatch_state.last_selector
+          : "";
+  mixed_first_dispatch_last_fast_path_reason =
+      mixed_first_dispatch_state.last_fast_path_reason != nullptr
+          ? mixed_first_dispatch_state.last_fast_path_reason
+          : "";
+  mixed_first_dispatch_last_path =
+      mixed_first_dispatch_state.last_dispatch_path != nullptr
+          ? mixed_first_dispatch_state.last_dispatch_path
+          : "";
+  mixed_first_dispatch_last_implementation_kind =
+      mixed_first_dispatch_state.last_implementation_kind != nullptr
+          ? mixed_first_dispatch_state.last_implementation_kind
+          : "";
+  mixed_first_dispatch_last_resolved_class_name =
+      mixed_first_dispatch_state.last_resolved_class_name != nullptr
+          ? mixed_first_dispatch_state.last_resolved_class_name
+          : "";
 
   const int mixed_second = callMixed();
   const int mixed_second_status =
       objc3_runtime_copy_method_cache_state_for_testing(&mixed_second_state);
+  const int mixed_second_dispatch_state_status =
+      objc3_runtime_copy_dispatch_state_for_testing(&mixed_second_dispatch_state);
   mixed_second_last_selector = mixed_second_state.last_selector != nullptr
                                    ? mixed_second_state.last_selector
                                    : "";
   mixed_second_last_fast_path_reason = mixed_second_state.last_fast_path_reason != nullptr
                                             ? mixed_second_state.last_fast_path_reason
                                             : "";
+  mixed_second_dispatch_last_selector =
+      mixed_second_dispatch_state.last_selector != nullptr
+          ? mixed_second_dispatch_state.last_selector
+          : "";
+  mixed_second_dispatch_last_fast_path_reason =
+      mixed_second_dispatch_state.last_fast_path_reason != nullptr
+          ? mixed_second_dispatch_state.last_fast_path_reason
+          : "";
+  mixed_second_dispatch_last_path =
+      mixed_second_dispatch_state.last_dispatch_path != nullptr
+          ? mixed_second_dispatch_state.last_dispatch_path
+          : "";
+  mixed_second_dispatch_last_implementation_kind =
+      mixed_second_dispatch_state.last_implementation_kind != nullptr
+          ? mixed_second_dispatch_state.last_implementation_kind
+          : "";
+  mixed_second_dispatch_last_resolved_class_name =
+      mixed_second_dispatch_state.last_resolved_class_name != nullptr
+          ? mixed_second_dispatch_state.last_resolved_class_name
+          : "";
 
   const char *const fallback_selector = "missingDispatch:";
   const int fallback_expected =
@@ -176,6 +285,9 @@ int main() {
       objc3_runtime_dispatch_i32(1024, fallback_selector, 4, 5, 6, 7);
   const int fallback_first_status =
       objc3_runtime_copy_method_cache_state_for_testing(&fallback_first_state);
+  const int fallback_first_dispatch_state_status =
+      objc3_runtime_copy_dispatch_state_for_testing(
+          &fallback_first_dispatch_state);
   fallback_first_last_selector = fallback_first_state.last_selector != nullptr
                                      ? fallback_first_state.last_selector
                                      : "";
@@ -183,17 +295,60 @@ int main() {
       fallback_first_state.last_fast_path_reason != nullptr
           ? fallback_first_state.last_fast_path_reason
           : "";
+  fallback_first_dispatch_last_selector =
+      fallback_first_dispatch_state.last_selector != nullptr
+          ? fallback_first_dispatch_state.last_selector
+          : "";
+  fallback_first_dispatch_last_fast_path_reason =
+      fallback_first_dispatch_state.last_fast_path_reason != nullptr
+          ? fallback_first_dispatch_state.last_fast_path_reason
+          : "";
+  fallback_first_dispatch_last_path =
+      fallback_first_dispatch_state.last_dispatch_path != nullptr
+          ? fallback_first_dispatch_state.last_dispatch_path
+          : "";
+  fallback_first_dispatch_last_implementation_kind =
+      fallback_first_dispatch_state.last_implementation_kind != nullptr
+          ? fallback_first_dispatch_state.last_implementation_kind
+          : "";
+  fallback_first_dispatch_last_resolved_class_name =
+      fallback_first_dispatch_state.last_resolved_class_name != nullptr
+          ? fallback_first_dispatch_state.last_resolved_class_name
+          : "";
 
   const int fallback_second =
       objc3_runtime_dispatch_i32(1024, fallback_selector, 4, 5, 6, 7);
   const int fallback_second_status =
       objc3_runtime_copy_method_cache_state_for_testing(&fallback_second_state);
+  const int fallback_second_dispatch_state_status =
+      objc3_runtime_copy_dispatch_state_for_testing(
+          &fallback_second_dispatch_state);
   fallback_second_last_selector = fallback_second_state.last_selector != nullptr
                                       ? fallback_second_state.last_selector
                                       : "";
   fallback_second_last_fast_path_reason =
       fallback_second_state.last_fast_path_reason != nullptr
           ? fallback_second_state.last_fast_path_reason
+          : "";
+  fallback_second_dispatch_last_selector =
+      fallback_second_dispatch_state.last_selector != nullptr
+          ? fallback_second_dispatch_state.last_selector
+          : "";
+  fallback_second_dispatch_last_fast_path_reason =
+      fallback_second_dispatch_state.last_fast_path_reason != nullptr
+          ? fallback_second_dispatch_state.last_fast_path_reason
+          : "";
+  fallback_second_dispatch_last_path =
+      fallback_second_dispatch_state.last_dispatch_path != nullptr
+          ? fallback_second_dispatch_state.last_dispatch_path
+          : "";
+  fallback_second_dispatch_last_implementation_kind =
+      fallback_second_dispatch_state.last_implementation_kind != nullptr
+          ? fallback_second_dispatch_state.last_implementation_kind
+          : "";
+  fallback_second_dispatch_last_resolved_class_name =
+      fallback_second_dispatch_state.last_resolved_class_name != nullptr
+          ? fallback_second_dispatch_state.last_resolved_class_name
           : "";
 
   const int fallback_entry_status = objc3_runtime_copy_method_cache_entry_for_testing(
@@ -210,13 +365,21 @@ int main() {
   std::cout << "direct_status=" << direct_status << "\n";
   std::cout << "mixed_first=" << mixed_first << "\n";
   std::cout << "mixed_first_status=" << mixed_first_status << "\n";
+  std::cout << "mixed_first_dispatch_state_status="
+            << mixed_first_dispatch_state_status << "\n";
   std::cout << "mixed_second=" << mixed_second << "\n";
   std::cout << "mixed_second_status=" << mixed_second_status << "\n";
+  std::cout << "mixed_second_dispatch_state_status="
+            << mixed_second_dispatch_state_status << "\n";
   std::cout << "fallback_expected=" << fallback_expected << "\n";
   std::cout << "fallback_first=" << fallback_first << "\n";
   std::cout << "fallback_first_status=" << fallback_first_status << "\n";
+  std::cout << "fallback_first_dispatch_state_status="
+            << fallback_first_dispatch_state_status << "\n";
   std::cout << "fallback_second=" << fallback_second << "\n";
   std::cout << "fallback_second_status=" << fallback_second_status << "\n";
+  std::cout << "fallback_second_dispatch_state_status="
+            << fallback_second_dispatch_state_status << "\n";
   std::cout << "fallback_entry_status=" << fallback_entry_status << "\n";
   std::cout << "direct_delta_cache_entry_count="
             << (direct_state.cache_entry_count - baseline.cache_entry_count) << "\n";
@@ -295,11 +458,41 @@ int main() {
   PrintState("fallback_second_state", fallback_second_state,
              fallback_second_last_selector,
              fallback_second_last_fast_path_reason);
+  PrintDispatchState("mixed_first_dispatch_state", mixed_first_dispatch_state,
+                     mixed_first_dispatch_last_selector,
+                     mixed_first_dispatch_last_fast_path_reason,
+                     mixed_first_dispatch_last_path,
+                     mixed_first_dispatch_last_implementation_kind,
+                     mixed_first_dispatch_last_resolved_class_name);
+  PrintDispatchState("mixed_second_dispatch_state", mixed_second_dispatch_state,
+                     mixed_second_dispatch_last_selector,
+                     mixed_second_dispatch_last_fast_path_reason,
+                     mixed_second_dispatch_last_path,
+                     mixed_second_dispatch_last_implementation_kind,
+                     mixed_second_dispatch_last_resolved_class_name);
+  PrintDispatchState("fallback_first_dispatch_state",
+                     fallback_first_dispatch_state,
+                     fallback_first_dispatch_last_selector,
+                     fallback_first_dispatch_last_fast_path_reason,
+                     fallback_first_dispatch_last_path,
+                     fallback_first_dispatch_last_implementation_kind,
+                     fallback_first_dispatch_last_resolved_class_name);
+  PrintDispatchState("fallback_second_dispatch_state",
+                     fallback_second_dispatch_state,
+                     fallback_second_dispatch_last_selector,
+                     fallback_second_dispatch_last_fast_path_reason,
+                     fallback_second_dispatch_last_path,
+                     fallback_second_dispatch_last_implementation_kind,
+                     fallback_second_dispatch_last_resolved_class_name);
 
   const bool ok =
       baseline_status == 0 && dynamic_entry_status == 0 && explicit_entry_status == 0 &&
       direct_status == 0 && mixed_first_status == 0 && mixed_second_status == 0 &&
+      mixed_first_dispatch_state_status == 0 &&
+      mixed_second_dispatch_state_status == 0 &&
       fallback_first_status == 0 && fallback_second_status == 0 &&
+      fallback_first_dispatch_state_status == 0 &&
+      fallback_second_dispatch_state_status == 0 &&
       fallback_entry_status == 0 && implicit_value == 3 && explicit_value == 5 &&
       mixed_first == 12 && mixed_second == 12 &&
       baseline.cache_entry_count == 4 && baseline.fast_path_seed_count == 4 &&
@@ -328,6 +521,12 @@ int main() {
       mixed_first_state.last_dispatch_fell_back == 0 &&
       mixed_first_last_selector == "dynamicEscape" &&
       mixed_first_last_fast_path_reason == "class-final" &&
+      mixed_first_dispatch_last_path == "cache-hit-fast-path" &&
+      mixed_first_dispatch_last_implementation_kind == "emitted-method-body" &&
+      mixed_first_dispatch_state.last_effective_direct_dispatch == 0 &&
+      mixed_first_dispatch_state.last_used_builtin == 0 &&
+      mixed_first_dispatch_state.last_resolved_parameter_count == 0 &&
+      mixed_first_dispatch_last_resolved_class_name == "PolicyBox" &&
       mixed_second_state.cache_entry_count == mixed_first_state.cache_entry_count &&
       mixed_second_state.cache_hit_count == mixed_first_state.cache_hit_count + 1 &&
       mixed_second_state.fast_path_hit_count == mixed_first_state.fast_path_hit_count + 1 &&
@@ -336,6 +535,12 @@ int main() {
       mixed_second_state.last_dispatch_used_fast_path == 1 &&
       mixed_second_last_selector == "dynamicEscape" &&
       mixed_second_last_fast_path_reason == "class-final" &&
+      mixed_second_dispatch_last_path == "cache-hit-fast-path" &&
+      mixed_second_dispatch_last_implementation_kind == "emitted-method-body" &&
+      mixed_second_dispatch_state.last_effective_direct_dispatch == 0 &&
+      mixed_second_dispatch_state.last_used_builtin == 0 &&
+      mixed_second_dispatch_state.last_resolved_parameter_count == 0 &&
+      mixed_second_dispatch_last_resolved_class_name == "PolicyBox" &&
       fallback_first == fallback_expected && fallback_second == fallback_expected &&
       fallback_first_state.cache_entry_count == mixed_second_state.cache_entry_count + 1 &&
       fallback_first_state.cache_miss_count == mixed_second_state.cache_miss_count + 1 &&
@@ -349,6 +554,12 @@ int main() {
       fallback_first_state.last_dispatch_fell_back == 1 &&
       fallback_first_last_selector == "missingDispatch:" &&
       fallback_first_last_fast_path_reason.empty() &&
+      fallback_first_dispatch_last_path == "slow-path-fallback" &&
+      fallback_first_dispatch_last_implementation_kind == "fallback-formula" &&
+      fallback_first_dispatch_state.last_effective_direct_dispatch == 0 &&
+      fallback_first_dispatch_state.last_used_builtin == 0 &&
+      fallback_first_dispatch_state.last_resolved_parameter_count == 0 &&
+      fallback_first_dispatch_last_resolved_class_name.empty() &&
       fallback_second_state.cache_entry_count == fallback_first_state.cache_entry_count &&
       fallback_second_state.cache_hit_count == fallback_first_state.cache_hit_count + 1 &&
       fallback_second_state.fallback_dispatch_count ==
@@ -359,6 +570,12 @@ int main() {
       fallback_second_state.last_dispatch_fell_back == 1 &&
       fallback_second_last_selector == "missingDispatch:" &&
       fallback_second_last_fast_path_reason.empty() &&
+      fallback_second_dispatch_last_path == "cache-hit-fallback" &&
+      fallback_second_dispatch_last_implementation_kind == "fallback-formula" &&
+      fallback_second_dispatch_state.last_effective_direct_dispatch == 0 &&
+      fallback_second_dispatch_state.last_used_builtin == 0 &&
+      fallback_second_dispatch_state.last_resolved_parameter_count == 0 &&
+      fallback_second_dispatch_last_resolved_class_name.empty() &&
       fallback_entry.found == 1 && fallback_entry.resolved == 0 &&
       fallback_entry.fast_path_seeded == 0 && fallback_entry_fast_path_reason.empty();
 

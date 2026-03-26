@@ -357,12 +357,32 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "did not expect first mixed dispatch runtime call to fall back")
     expect(payload.get("mixed_first_state_last_selector") == "dynamicEscape",
            "expected first mixed dispatch runtime call to target dynamicEscape")
+    expect(payload.get("mixed_first_dispatch_state_status") == 0,
+           "expected first mixed dispatch runtime call to publish dispatch state")
+    expect(payload.get("mixed_first_dispatch_state_last_dispatch_path") == "cache-hit-fast-path",
+           "expected first mixed dispatch runtime call to report the cache-hit fast path")
+    expect(payload.get("mixed_first_dispatch_state_last_implementation_kind") == "emitted-method-body",
+           "expected first mixed dispatch runtime call to execute an emitted method body")
+    expect(payload.get("mixed_first_dispatch_state_last_effective_direct_dispatch") == 0,
+           "expected first mixed dispatch runtime call to remain runtime-dispatched")
+    expect(payload.get("mixed_first_dispatch_state_last_used_builtin") == 0,
+           "expected first mixed dispatch runtime call to avoid builtin dispatch")
     expect(payload.get("mixed_second_state_last_dispatch_used_cache") == 1,
            "expected repeated mixed dispatch runtime call to remain cached")
     expect(payload.get("mixed_second_state_last_dispatch_used_fast_path") == 1,
            "expected repeated mixed dispatch runtime call to remain on the fast path")
     expect(payload.get("mixed_second_state_last_dispatch_fell_back") == 0,
            "did not expect repeated mixed dispatch runtime call to fall back")
+    expect(payload.get("mixed_second_dispatch_state_status") == 0,
+           "expected repeated mixed dispatch runtime call to publish dispatch state")
+    expect(payload.get("mixed_second_dispatch_state_last_dispatch_path") == "cache-hit-fast-path",
+           "expected repeated mixed dispatch runtime call to stay on the cache-hit fast path")
+    expect(payload.get("mixed_second_dispatch_state_last_implementation_kind") == "emitted-method-body",
+           "expected repeated mixed dispatch runtime call to execute an emitted method body")
+    expect(payload.get("mixed_second_dispatch_state_last_effective_direct_dispatch") == 0,
+           "expected repeated mixed dispatch runtime call to remain runtime-dispatched")
+    expect(payload.get("mixed_second_dispatch_state_last_used_builtin") == 0,
+           "expected repeated mixed dispatch runtime call to avoid builtin dispatch")
     expect(payload.get("fallback_first_state_last_dispatch_used_cache") == 0,
            "expected first missingDispatch: call to miss the cache")
     expect(payload.get("fallback_first_state_last_dispatch_used_fast_path") == 0,
@@ -371,12 +391,24 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "did not expect first missingDispatch: call to resolve live")
     expect(payload.get("fallback_first_state_last_dispatch_fell_back") == 1,
            "expected first missingDispatch: call to fall back")
+    expect(payload.get("fallback_first_dispatch_state_status") == 0,
+           "expected first missingDispatch: call to publish dispatch state")
+    expect(payload.get("fallback_first_dispatch_state_last_dispatch_path") == "slow-path-fallback",
+           "expected first missingDispatch: call to report slow-path fallback dispatch")
+    expect(payload.get("fallback_first_dispatch_state_last_implementation_kind") == "fallback-formula",
+           "expected first missingDispatch: call to execute deterministic fallback formula")
     expect(payload.get("fallback_second_state_last_dispatch_used_cache") == 1,
            "expected repeated missingDispatch: call to hit the fallback cache entry")
     expect(payload.get("fallback_second_state_last_dispatch_used_fast_path") == 0,
            "expected repeated missingDispatch: call to stay off the fast path")
     expect(payload.get("fallback_second_state_last_dispatch_fell_back") == 1,
            "expected repeated missingDispatch: call to remain a fallback dispatch")
+    expect(payload.get("fallback_second_dispatch_state_status") == 0,
+           "expected repeated missingDispatch: call to publish dispatch state")
+    expect(payload.get("fallback_second_dispatch_state_last_dispatch_path") == "cache-hit-fallback",
+           "expected repeated missingDispatch: call to report cached fallback dispatch")
+    expect(payload.get("fallback_second_dispatch_state_last_implementation_kind") == "fallback-formula",
+           "expected repeated missingDispatch: call to execute deterministic fallback formula")
     expect(
         "; method_dispatch_and_selector_thunk_lowering_surface = "
         "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
@@ -417,6 +449,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected dispatch/accessor runtime ABI surface contract id in compile manifest")
     expect(runtime_abi_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
            "expected runtime ABI surface to publish canonical runtime dispatch symbol")
+    expect(runtime_abi_surface.get("dispatch_state_snapshot_symbol") == "objc3_runtime_copy_dispatch_state_for_testing",
+           "expected runtime ABI surface to publish dispatch state snapshot helper")
     expect(runtime_abi_surface.get("method_cache_state_snapshot_symbol") == "objc3_runtime_copy_method_cache_state_for_testing",
            "expected runtime ABI surface to publish method cache state snapshot helper")
     expect(runtime_abi_surface.get("property_registry_state_snapshot_symbol") == "objc3_runtime_copy_property_registry_state_for_testing",
@@ -438,6 +472,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected dispatch/accessor runtime ABI surface contract id in runtime registration manifest")
     expect(registration_runtime_abi_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
            "expected runtime registration manifest to publish canonical runtime dispatch symbol")
+    expect(registration_runtime_abi_surface.get("dispatch_state_snapshot_symbol") == "objc3_runtime_copy_dispatch_state_for_testing",
+           "expected runtime registration manifest to publish dispatch state snapshot helper")
     expect(registration_runtime_abi_surface.get("current_property_read_symbol") == "objc3_runtime_read_current_property_i32",
            "expected runtime registration manifest to publish current-property read helper")
     expect(registration_runtime_abi_surface.get("current_property_exchange_symbol") == "objc3_runtime_exchange_current_property_i32",
@@ -462,6 +498,14 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
             "registration_manifest": str(registration_manifest_path.relative_to(ROOT)).replace("\\", "/"),
             "baseline_cache_entry_count": payload.get("baseline_cache_entry_count"),
             "baseline_fast_path_seed_count": payload.get("baseline_fast_path_seed_count"),
+            "mixed_first_dispatch_path": payload.get("mixed_first_dispatch_state_last_dispatch_path"),
+            "mixed_first_implementation_kind": payload.get("mixed_first_dispatch_state_last_implementation_kind"),
+            "mixed_second_dispatch_path": payload.get("mixed_second_dispatch_state_last_dispatch_path"),
+            "mixed_second_implementation_kind": payload.get("mixed_second_dispatch_state_last_implementation_kind"),
+            "fallback_first_dispatch_path": payload.get("fallback_first_dispatch_state_last_dispatch_path"),
+            "fallback_first_implementation_kind": payload.get("fallback_first_dispatch_state_last_implementation_kind"),
+            "fallback_second_dispatch_path": payload.get("fallback_second_dispatch_state_last_dispatch_path"),
+            "fallback_second_implementation_kind": payload.get("fallback_second_dispatch_state_last_implementation_kind"),
             "mixed_first_live_dispatch_count": payload.get("mixed_first_state_live_dispatch_count"),
             "mixed_second_live_dispatch_count": payload.get("mixed_second_state_live_dispatch_count"),
             "fallback_first_fallback_dispatch_count": payload.get("fallback_first_state_fallback_dispatch_count"),
@@ -855,6 +899,7 @@ def main() -> int:
                 "arc-property-helper-abi",
             ],
             "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+            "dispatch_state_snapshot_symbol": "objc3_runtime_copy_dispatch_state_for_testing",
             "method_cache_state_snapshot_symbol": "objc3_runtime_copy_method_cache_state_for_testing",
             "property_registry_state_snapshot_symbol": "objc3_runtime_copy_property_registry_state_for_testing",
             "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",

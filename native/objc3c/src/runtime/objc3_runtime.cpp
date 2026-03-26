@@ -510,9 +510,14 @@ struct RuntimeState {
   bool last_dispatch_used_fast_path = false;
   bool last_dispatch_resolved_live_method = false;
   bool last_dispatch_fell_back = false;
+  bool last_dispatch_effective_direct_dispatch = false;
+  bool last_dispatch_used_builtin = false;
   std::string last_fast_path_reason;
+  std::string last_dispatch_path;
+  std::string last_dispatch_implementation_kind;
   std::string last_resolved_class_name;
   std::string last_resolved_owner_identity;
+  std::uint64_t last_dispatch_parameter_count = 0;
   const objc3_runtime_registration_table *staged_registration_table = nullptr;
   std::uint64_t walked_image_count = 0;
   std::uint64_t last_discovery_root_entry_count = 0;
@@ -727,9 +732,14 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.last_dispatch_used_fast_path = false;
   state.last_dispatch_resolved_live_method = false;
   state.last_dispatch_fell_back = false;
+  state.last_dispatch_effective_direct_dispatch = false;
+  state.last_dispatch_used_builtin = false;
   state.last_fast_path_reason.clear();
+  state.last_dispatch_path.clear();
+  state.last_dispatch_implementation_kind.clear();
   state.last_resolved_class_name.clear();
   state.last_resolved_owner_identity.clear();
+  state.last_dispatch_parameter_count = 0;
 }
 
 void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
@@ -2220,6 +2230,28 @@ std::string BuildDispatchIntentFastPathReason(const RealizedClassNode &node,
     return "class-sealed";
   }
   return {};
+}
+
+const char *DescribeResolvedImplementationKind(
+    RuntimeBuiltinKind builtin_kind, const void *implementation) {
+  switch (builtin_kind) {
+    case RuntimeBuiltinKind::Alloc:
+      return "builtin-alloc";
+    case RuntimeBuiltinKind::Init:
+      return "builtin-init";
+    case RuntimeBuiltinKind::New:
+      return "builtin-new";
+    case RuntimeBuiltinKind::PropertyGetter:
+      return "builtin-property-getter";
+    case RuntimeBuiltinKind::PropertySetter:
+      return "builtin-property-setter";
+    case RuntimeBuiltinKind::None:
+      break;
+  }
+  if (implementation != nullptr) {
+    return "emitted-method-body";
+  }
+  return "";
 }
 
 void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
@@ -3942,6 +3974,45 @@ int objc3_runtime_copy_method_cache_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_dispatch_state_for_testing(
+    objc3_runtime_dispatch_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->cache_entry_count =
+      static_cast<std::uint64_t>(state.method_cache.size());
+  snapshot->fast_path_seed_count = state.fast_path_seed_count;
+  snapshot->fast_path_hit_count = state.fast_path_hit_count;
+  snapshot->live_dispatch_count = state.live_dispatch_count;
+  snapshot->fallback_dispatch_count = state.fallback_dispatch_count;
+  snapshot->last_selector_stable_id = state.last_dispatch_selector_stable_id;
+  snapshot->last_normalized_receiver_identity =
+      state.last_dispatch_normalized_receiver_identity;
+  snapshot->last_resolved_parameter_count = state.last_dispatch_parameter_count;
+  snapshot->last_dispatch_used_cache = state.last_dispatch_used_cache ? 1 : 0;
+  snapshot->last_dispatch_used_fast_path =
+      state.last_dispatch_used_fast_path ? 1 : 0;
+  snapshot->last_dispatch_resolved_live_method =
+      state.last_dispatch_resolved_live_method ? 1 : 0;
+  snapshot->last_dispatch_fell_back = state.last_dispatch_fell_back ? 1 : 0;
+  snapshot->last_effective_direct_dispatch =
+      state.last_dispatch_effective_direct_dispatch ? 1 : 0;
+  snapshot->last_used_builtin = state.last_dispatch_used_builtin ? 1 : 0;
+  snapshot->last_selector = StableCString(state.last_dispatch_selector);
+  snapshot->last_fast_path_reason = StableCString(state.last_fast_path_reason);
+  snapshot->last_dispatch_path = StableCString(state.last_dispatch_path);
+  snapshot->last_implementation_kind =
+      StableCString(state.last_dispatch_implementation_kind);
+  snapshot->last_resolved_class_name =
+      StableCString(state.last_resolved_class_name);
+  snapshot->last_resolved_owner_identity =
+      StableCString(state.last_resolved_owner_identity);
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_copy_method_cache_entry_for_testing(
     int receiver, const char *selector,
     objc3_runtime_method_cache_entry_snapshot *snapshot) {
@@ -5410,9 +5481,14 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     state.last_dispatch_used_fast_path = false;
     state.last_dispatch_resolved_live_method = false;
     state.last_dispatch_fell_back = false;
+    state.last_dispatch_effective_direct_dispatch = false;
+    state.last_dispatch_used_builtin = false;
     state.last_fast_path_reason.clear();
+    state.last_dispatch_path.clear();
+    state.last_dispatch_implementation_kind.clear();
     state.last_resolved_class_name.clear();
     state.last_resolved_owner_identity.clear();
+    state.last_dispatch_parameter_count = 0;
 
     if (receiver != 0 && selector_handle != nullptr) {
       std::uint64_t base_identity = 0;
@@ -5433,11 +5509,14 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.last_dispatch_used_fast_path = entry.fast_path_seeded;
           state.last_dispatch_resolved_live_method = entry.resolved;
           state.last_dispatch_fell_back = !entry.resolved;
+          state.last_dispatch_effective_direct_dispatch =
+              entry.effective_direct_dispatch;
           state.last_category_probe_count = entry.category_probe_count;
           state.last_protocol_probe_count = entry.protocol_probe_count;
           state.last_fast_path_reason = entry.fast_path_reason;
           state.last_resolved_class_name = entry.class_name;
           state.last_resolved_owner_identity = entry.owner_identity;
+          state.last_dispatch_parameter_count = entry.parameter_count;
           if (entry.resolved) {
             resolved_live_method = true;
             resolved_builtin_kind = entry.builtin_kind;
@@ -5445,11 +5524,21 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
             resolved_runtime_property_accessor = entry.runtime_property_accessor;
             resolved_parameter_count = entry.parameter_count;
             resolved_return_kind = entry.return_kind;
+            state.last_dispatch_used_builtin =
+                entry.builtin_kind != RuntimeBuiltinKind::None;
+            state.last_dispatch_path =
+                entry.fast_path_seeded ? "cache-hit-fast-path"
+                                       : "cache-hit-live";
+            state.last_dispatch_implementation_kind =
+                DescribeResolvedImplementationKind(entry.builtin_kind,
+                                                   entry.implementation);
             ++state.live_dispatch_count;
             if (entry.fast_path_seeded) {
               ++state.fast_path_hit_count;
             }
           } else {
+            state.last_dispatch_path = "cache-hit-fallback";
+            state.last_dispatch_implementation_kind = "fallback-formula";
             ++state.fallback_dispatch_count;
           }
         } else {
@@ -5484,11 +5573,14 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.method_cache.emplace(cache_key, std::move(cache_entry));
           state.last_dispatch_resolved_live_method = resolution.resolved;
           state.last_dispatch_fell_back = !resolution.resolved;
+          state.last_dispatch_effective_direct_dispatch =
+              resolution.effective_direct_dispatch;
           state.last_category_probe_count = resolution.category_probe_count;
           state.last_protocol_probe_count = resolution.protocol_probe_count;
           state.last_fast_path_reason = resolution.fast_path_reason;
           state.last_resolved_class_name = resolution.class_name;
           state.last_resolved_owner_identity = resolution.owner_identity;
+          state.last_dispatch_parameter_count = resolution.parameter_count;
           if (resolution.resolved) {
             resolved_live_method = true;
             resolved_builtin_kind = resolution.builtin_kind;
@@ -5497,14 +5589,24 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                 resolution.runtime_property_accessor;
             resolved_parameter_count = resolution.parameter_count;
             resolved_return_kind = resolution.return_kind;
+            state.last_dispatch_used_builtin =
+                resolution.builtin_kind != RuntimeBuiltinKind::None;
+            state.last_dispatch_path = "slow-path-live";
+            state.last_dispatch_implementation_kind =
+                DescribeResolvedImplementationKind(resolution.builtin_kind,
+                                                   resolution.implementation);
             ++state.live_dispatch_count;
           } else {
+            state.last_dispatch_path = "slow-path-fallback";
+            state.last_dispatch_implementation_kind = "fallback-formula";
             ++state.fallback_dispatch_count;
           }
         }
       } else {
         ++state.fallback_dispatch_count;
         state.last_dispatch_fell_back = true;
+        state.last_dispatch_path = "invalid-receiver-fallback";
+        state.last_dispatch_implementation_kind = "fallback-formula";
       }
     }
   }
@@ -5512,6 +5614,9 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   // owns nil-receiver semantics for lowered instance/class/super surfaces, so
   // a zero receiver returns zero without requiring lowering-side elision.
   if (receiver == 0) {
+    std::lock_guard<std::mutex> lock(state.mutex);
+    state.last_dispatch_path = "nil-short-circuit";
+    state.last_dispatch_implementation_kind = "nil-short-circuit";
     return 0;
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
