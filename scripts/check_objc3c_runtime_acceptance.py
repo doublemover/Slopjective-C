@@ -288,6 +288,67 @@ def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "property-execution"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_property_ivar_execution_matrix_positive.objc3"
+    obj_path = compile_fixture(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_e002_property_ivar_execution_matrix_probe.cpp"
+    exe_path = case_dir / "m257_e002_property_ivar_execution_matrix_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "property execution probe")
+
+    widget_entry = payload.get("widget_entry", {})
+    registry_state = payload.get("registry_state", {})
+    count_property = payload.get("count_property", {})
+    enabled_property = payload.get("enabled_property", {})
+    value_property = payload.get("value_property", {})
+    token_property = payload.get("token_property", {})
+    count_method = payload.get("count_method", {})
+    enabled_method = payload.get("enabled_method", {})
+    value_method = payload.get("value_method", {})
+    token_method = payload.get("token_method", {})
+
+    expect(payload.get("widget_instance", 0) != 0, "expected alloc to materialize a Widget instance")
+    expect(payload.get("count_value") == 37, "expected synthesized count getter to return the stored value")
+    expect(payload.get("enabled_value") == 1, "expected synthesized enabled getter to return the stored value")
+    expect(payload.get("value_result") == 55, "expected synthesized strong property getter to return the stored value")
+    expect(widget_entry.get("found") == 1, "expected Widget to be realized during property execution")
+    expect(widget_entry.get("runtime_property_accessor_count", 0) >= 4,
+           "expected Widget to publish runtime-backed synthesized accessors")
+    expect(registry_state.get("slot_backed_property_count", 0) >= 4,
+           "expected property execution fixture to register four slot-backed properties")
+    expect(count_property.get("has_runtime_getter") == 1 and count_property.get("has_runtime_setter") == 1,
+           "expected count property to execute through runtime-backed synthesized accessors")
+    expect(enabled_property.get("has_runtime_getter") == 1 and enabled_property.get("has_runtime_setter") == 1,
+           "expected enabled property to execute through runtime-backed synthesized accessors")
+    expect(value_property.get("has_runtime_getter") == 1 and value_property.get("has_runtime_setter") == 1,
+           "expected value property to execute through runtime-backed synthesized accessors")
+    expect(token_property.get("has_runtime_getter") == 1 and token_property.get("setter_available") == 0,
+           "expected readonly token property to expose only the synthesized getter")
+    expect(count_method.get("resolved") == 1 and count_method.get("parameter_count") == 0,
+           "expected count getter dispatch to resolve live through the runtime cache")
+    expect(enabled_method.get("resolved") == 1 and enabled_method.get("parameter_count") == 0,
+           "expected enabled getter dispatch to resolve live through the runtime cache")
+    expect(value_method.get("resolved") == 1 and value_method.get("parameter_count") == 0,
+           "expected currentValue getter dispatch to resolve live through the runtime cache")
+    expect(token_method.get("resolved") == 1 and token_method.get("parameter_count") == 0,
+           "expected tokenValue getter dispatch to resolve live through the runtime cache")
+
+    return CaseResult(
+        case_id="property-execution",
+        probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        passed=True,
+        summary={
+            "count_value": payload.get("count_value"),
+            "enabled_value": payload.get("enabled_value"),
+            "value_result": payload.get("value_result"),
+            "runtime_property_accessor_count": widget_entry.get("runtime_property_accessor_count"),
+            "slot_backed_property_count": registry_state.get("slot_backed_property_count"),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -301,6 +362,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
+        check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
     ]
 

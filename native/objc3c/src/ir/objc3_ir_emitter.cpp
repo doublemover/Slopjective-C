@@ -62,17 +62,11 @@ class Objc3IREmitter {
     std::string superclass_name;
     const Objc3MethodDecl *method = nullptr;
     SyntheticMethodKind synthetic_method_kind = SyntheticMethodKind::None;
-    std::string synthesized_storage_symbol;
     ValueType synthesized_value_type = ValueType::Unknown;
     std::size_t synthesized_parameter_count = 0;
     std::string synthesized_ownership_lifetime_profile;
     std::string synthesized_ownership_runtime_hook_profile;
     std::string synthesized_accessor_ownership_profile;
-  };
-
-  struct SynthesizedPropertyStorage {
-    std::string symbol;
-    std::string binding_symbol;
   };
 
   struct Part10GlobalArtifact {
@@ -190,7 +184,6 @@ class Objc3IREmitter {
                              superclass_name,
                              &method,
                              SyntheticMethodKind::None,
-                             std::string{},
                              ValueType::Unknown,
                              0u,
                              std::string{},
@@ -211,11 +204,6 @@ class Objc3IREmitter {
         }
       }
     }
-    std::unordered_map<std::string, std::string>
-        synthesized_storage_symbols_by_binding;
-    synthesized_storage_symbols_by_binding.reserve(
-        frontend_metadata_
-            .runtime_metadata_property_bundles_lexicographic.size());
     for (const auto &bundle :
          frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
       if (!IsImplementationOwnedPropertyBundle(bundle) ||
@@ -232,16 +220,6 @@ class Objc3IREmitter {
             bundle.type_name + "' for owner '" + bundle.declaration_owner_identity +
             "'";
         return;
-      }
-      const auto [storage_it, inserted_storage] =
-          synthesized_storage_symbols_by_binding.emplace(
-              bundle.executable_synthesized_binding_symbol,
-              BuildSynthesizedPropertyStorageSymbol(
-                  bundle.executable_synthesized_binding_symbol));
-      if (inserted_storage) {
-        synthesized_property_storages_.push_back(
-            SynthesizedPropertyStorage{storage_it->second,
-                                       bundle.executable_synthesized_binding_symbol});
       }
       const auto append_synthesized_method =
           [&](const std::string &selector, SyntheticMethodKind kind) {
@@ -272,7 +250,6 @@ class Objc3IREmitter {
                 std::string{},
                 nullptr,
                 kind,
-                storage_it->second,
                 property_type,
                 kind == SyntheticMethodKind::PropertySetter ? 1u : 0u,
                 bundle.ownership_lifetime_profile,
@@ -340,7 +317,6 @@ class Objc3IREmitter {
           std::string{},
           nullptr,
           synthetic_kind,
-          std::string{},
           ValueType::I32,
           bundle.parameter_count,
           std::string{},
@@ -436,12 +412,6 @@ class Objc3IREmitter {
       body << "\n";
     }
 
-    for (const auto &storage : synthesized_property_storages_) {
-      body << "@" << storage.symbol << " = private global i32 0, align 4\n";
-    }
-    if (!synthesized_property_storages_.empty()) {
-      body << "\n";
-    }
     for (const auto &artifact : part10_global_artifacts_) {
       std::string payload = artifact.payload;
       payload.push_back('\0');
@@ -584,14 +554,12 @@ class Objc3IREmitter {
       if (synthesized_property_accessor_count_ > 0u) {
         // synthesized accessor/property lowering anchor: lane-C now
         // materializes missing implementation-owned property accessors as real
-        // method bodies backed by deterministic storage globals and republishes
-        // the widened property-descriptor surface in emitted IR.
+        // method bodies on the live runtime current-property helper path and
+        // republishes the widened property-descriptor surface in emitted IR.
         out << "; executable_synthesized_accessor_property_lowering = "
             << Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary()
             << ";synthesized_accessor_entries="
-            << synthesized_property_accessor_count_
-            << ";synthesized_storage_globals="
-            << synthesized_property_storages_.size() << "\n";
+            << synthesized_property_accessor_count_ << "\n";
         // runtime property/layout consumption freeze anchor: lane-D
         // now freezes the truthful runtime surface above C003. Runtime
         // consumes emitted accessor implementation pointers and
@@ -1680,24 +1648,19 @@ class Objc3IREmitter {
       // runtime hook emission anchor: synthesized accessors now
       // execute through runtime-owned helper entrypoints that consume the
       // current dispatch-frame property context rather than the old summary-only
-      // ownership lane. The legacy storage globals stay emitted for historical
-      // artifact compatibility, but owned and weak execution paths use the live
-      // runtime hooks below.
+      // ownership lane, and owned and weak execution paths use the live runtime
+      // hooks below.
       out << "; ownership_runtime_hook_emission = "
           << Objc3OwnershipRuntimeHookEmissionSummary()
           << ";synthesized_accessor_entries="
-          << synthesized_property_accessor_count_
-          << ";synthesized_storage_globals="
-          << synthesized_property_storages_.size() << "\n";
+          << synthesized_property_accessor_count_ << "\n";
       // runtime memory-management API freeze anchor: the public
       // runtime ABI remains narrow while lane-C emits the private helper
       // surface consumed by synthesized ownership accessors.
       out << "; runtime_memory_management_api = "
           << Objc3RuntimeMemoryManagementApiSummary()
           << ";synthesized_accessor_entries="
-          << synthesized_property_accessor_count_
-          << ";synthesized_storage_globals="
-          << synthesized_property_storages_.size() << "\n";
+          << synthesized_property_accessor_count_ << "\n";
     }
     if (synthesized_property_accessor_count_ > 0u ||
         frontend_metadata_.autoreleasepool_scope_lowering_scope_sites > 0u ||
@@ -1713,8 +1676,6 @@ class Objc3IREmitter {
           << Objc3RuntimeMemoryManagementImplementationSummary()
           << ";synthesized_accessor_entries="
           << synthesized_property_accessor_count_
-          << ";synthesized_storage_globals="
-          << synthesized_property_storages_.size()
           << ";autoreleasepool_scope_sites="
           << frontend_metadata_.autoreleasepool_scope_lowering_scope_sites
           << "\n";
@@ -4975,8 +4936,6 @@ class Objc3IREmitter {
                kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel)
         << "\", i64 "
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
-        << ", i64 "
-        << static_cast<unsigned long long>(synthesized_property_storages_.size())
         << "}\n";
     out << "!69 = !{!\""
         << EscapeCStringLiteral(kObjc3OwnershipRuntimeHookEmissionContractId)
@@ -5007,8 +4966,6 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
         << "\", i64 "
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
-        << ", i64 "
-        << static_cast<unsigned long long>(synthesized_property_storages_.size())
         << "}\n";
     out << "!70 = !{!\""
         << EscapeCStringLiteral(kObjc3RuntimeMemoryManagementApiContractId)
@@ -5036,8 +4993,6 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
         << "\", i64 "
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
-        << ", i64 "
-        << static_cast<unsigned long long>(synthesized_property_storages_.size())
         << "}\n";
     out << "!71 = !{!\""
         << EscapeCStringLiteral(
@@ -5067,8 +5022,6 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol)
         << "\", i64 "
         << static_cast<unsigned long long>(synthesized_property_accessor_count_)
-        << ", i64 "
-        << static_cast<unsigned long long>(synthesized_property_storages_.size())
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_.autoreleasepool_scope_lowering_scope_sites)
@@ -14350,8 +14303,7 @@ class Objc3IREmitter {
     if ((method_def.synthetic_method_kind !=
          SyntheticMethodKind::PropertyGetter &&
          method_def.synthetic_method_kind !=
-             SyntheticMethodKind::PropertySetter) ||
-        method_def.synthesized_storage_symbol.empty()) {
+             SyntheticMethodKind::PropertySetter)) {
       return;
     }
     const bool uses_weak_runtime_hooks =
@@ -14513,7 +14465,6 @@ class Objc3IREmitter {
   std::unordered_set<std::string> declared_pure_functions_;
   std::vector<const FunctionDecl *> function_definitions_;
   std::vector<MethodDefinition> method_definitions_;
-  std::vector<SynthesizedPropertyStorage> synthesized_property_storages_;
   std::size_t synthesized_property_accessor_count_ = 0;
   std::vector<Part10GlobalArtifact> part10_global_artifacts_;
   std::size_t part10_derived_method_count_ = 0;
