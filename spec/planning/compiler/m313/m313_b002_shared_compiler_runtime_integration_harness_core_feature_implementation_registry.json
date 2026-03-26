@@ -1,0 +1,50 @@
+{
+  "mode": "m313-b002-shared-compiler-runtime-harness-v1",
+  "contract_id": "objc3c-cleanup-shared-compiler-runtime-harness/m313-b002-v1",
+  "suite_registry": [
+    {
+      "suite_id": "runtime_bootstrap_dispatch",
+      "roots": [
+        "tests/tooling/runtime",
+        "tests/tooling/fixtures/native/execution"
+      ],
+      "migration_owner_issue": "M313-C002",
+      "ci_owner_issue": "M313-D002"
+    },
+    {
+      "suite_id": "frontend_split_recovery",
+      "roots": [
+        "tests/tooling/fixtures/native/lexer_split",
+        "tests/tooling/fixtures/native/parser_split",
+        "tests/tooling/fixtures/native/recovery",
+        "tests/tooling/fixtures/native/driver_split"
+      ],
+      "migration_owner_issue": "M313-B002",
+      "ci_owner_issue": "M313-D002"
+    },
+    {
+      "suite_id": "module_parity_packaging",
+      "roots": [
+        "tests/tooling/fixtures/native/library_cli_parity",
+        "tests/tooling/fixtures/native/parity_baseline"
+      ],
+      "migration_owner_issue": "M313-C002",
+      "ci_owner_issue": "M313-D002"
+    },
+    {
+      "suite_id": "native_fixture_corpus_and_runtime_probes",
+      "roots": [
+        "tests/tooling/runtime",
+        "tests/tooling/fixtures/native"
+      ],
+      "migration_owner_issue": "M313-B004",
+      "ci_owner_issue": "M313-E002"
+    }
+  ],
+  "cli_modes": [
+    "list-suites",
+    "show-suite",
+    "check-roots"
+  ],
+  "next_issue": "M313-B003"
+}
