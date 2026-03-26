@@ -39,6 +39,77 @@ std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph);
 std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
     const Objc3ExecutableMetadataSemanticConsistencyBoundary &boundary);
+
+std::size_t CountSubstringOccurrences(const std::string &text,
+                                      const std::string &needle) {
+  if (needle.empty()) {
+    return 0u;
+  }
+  std::size_t count = 0u;
+  std::size_t offset = 0u;
+  while ((offset = text.find(needle, offset)) != std::string::npos) {
+    ++count;
+    offset += needle.size();
+  }
+  return count;
+}
+
+bool HasRuntimeBearingExecutableSurface(
+    const Objc3Program &program,
+    const Objc3MessageSendSelectorLoweringContract &message_send_contract) {
+  if (message_send_contract.message_send_sites > 0u) {
+    return true;
+  }
+  for (const auto &implementation : program.implementations) {
+    if (!implementation.properties.empty()) {
+      return true;
+    }
+    for (const auto &method : implementation.methods) {
+      if (!method.body.empty()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool IsSuspiciousNativeIRTruthGap(
+    const std::string &ir_text,
+    const Objc3Program &program,
+    const Objc3MessageSendSelectorLoweringContract &message_send_contract) {
+  if (!HasRuntimeBearingExecutableSurface(program, message_send_contract)) {
+    return false;
+  }
+
+  const bool has_dispatch_surface =
+      ir_text.find("@objc3_runtime_dispatch_i32") != std::string::npos;
+  const bool has_property_runtime_surface =
+      ir_text.find("@objc3_runtime_read_current_property_i32") !=
+          std::string::npos ||
+      ir_text.find("@objc3_runtime_write_current_property_i32") !=
+          std::string::npos ||
+      ir_text.find("@objc3_runtime_exchange_current_property_i32") !=
+          std::string::npos ||
+      ir_text.find("@objc3_runtime_load_weak_current_property_i32") !=
+          std::string::npos ||
+      ir_text.find("@objc3_runtime_store_weak_current_property_i32") !=
+          std::string::npos;
+  const bool has_runtime_metadata_surface =
+      ir_text.find("__objc3_class_descriptor") != std::string::npos ||
+      ir_text.find("__objc3_method_entry") != std::string::npos ||
+      ir_text.find("__objc3_property_descriptor") != std::string::npos;
+
+  const std::size_t define_count =
+      CountSubstringOccurrences(ir_text, "\ndefine ") +
+      (ir_text.rfind("define ", 0) == 0 ? 1u : 0u);
+  const bool has_stub_main =
+      ir_text.find("define i32 @main()") != std::string::npos &&
+      ir_text.find("ret i32 0") != std::string::npos && define_count <= 1u;
+
+  return has_stub_main ||
+         (!has_dispatch_surface && !has_property_runtime_surface &&
+          !has_runtime_metadata_surface);
+}
 inline constexpr const char
     *kObjc3Part3OptionalKeypathLoweringSurfacePath =
         "frontend.pipeline.semantic_surface."
@@ -25708,6 +25779,18 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       Objc3RuntimeDispatchLoweringAbiBoundarySummary(
           runtime_dispatch_lowering_abi_contract) +
       "\n" + bundle.ir_text;
+
+  if (IsSuspiciousNativeIRTruthGap(bundle.ir_text, program,
+                                   message_send_selector_lowering_contract)) {
+    bundle.post_pipeline_diagnostics = {
+        MakeDiag(1, 1, "O3L330",
+                 "LLVM IR emission failed: emitted native IR is suspiciously trivial for runtime-bearing executable surface")};
+    bundle.diagnostics = bundle.post_pipeline_diagnostics;
+    bundle.manifest_json.clear();
+    bundle.runtime_metadata_binary.clear();
+    bundle.ir_text.clear();
+    return bundle;
+  }
 
   return bundle;
 }
