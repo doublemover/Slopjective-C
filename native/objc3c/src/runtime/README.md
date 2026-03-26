@@ -23,6 +23,14 @@ Current dispatch path:
 4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
 5. unresolved sends still fall back to the deterministic arithmetic path in `ComputeDispatchResult`
 
+Installation lifecycle:
+
+1. the compile path emits a coupled object, manifest, runtime registration manifest, and compile provenance set
+2. the loader or linked probe retains the emitted registration table roots
+3. `objc3_runtime_register_image` installs the emitted image descriptor and staged registration table into runtime-owned state
+4. lookup and dispatch consume only that installed runtime-owned state plus runtime builtins
+5. `objc3_runtime_reset_for_testing` is the deterministic lifecycle reset hook for acceptance and replay paths
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records
@@ -45,13 +53,20 @@ Authoritative code paths for the current tranche:
   - `native/objc3c/src/runtime/objc3_runtime.h`
 - message-send lowering:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- compile and artifact publication:
+  - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
 - runtime/lowering boundary comments:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
+- published architecture map:
+  - `docs/objc3c-native.md`
 
 Non-goals for the current corrective tranche:
 
 - no public runtime ABI widening beyond the existing header
 - no new compatibility-only dispatch path
+- no alternate loader lifecycle outside the existing register-image plus testing-reset surface
 - no milestone-specific proof sidecars or bookkeeping surfaces in the live product tree
 - no synthetic `.ll` or hand-authored artifact used as authoritative runtime proof
 

@@ -10,6 +10,7 @@ They describe the live native frontend, not historical milestone closeouts.
 - CLI and driver behavior
 - Grammar and parser surface
 - Semantic and lowering surface
+- Runtime execution architecture
 - Diagnostics
 - Artifacts and build outputs
 - Live validation surface
@@ -20,10 +21,11 @@ They describe the live native frontend, not historical milestone closeouts.
 1. `10-cli.md`
 2. `20-grammar.md`
 3. `30-semantics.md`
-4. `40-diagnostics.md`
-5. `50-artifacts.md`
-6. `60-tests.md`
-7. `library-api.md`
+4. `35-runtime-architecture.md`
+5. `40-diagnostics.md`
+6. `50-artifacts.md`
+7. `60-tests.md`
+8. `library-api.md`
 
 ## Include Rules
 

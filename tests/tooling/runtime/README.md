@@ -34,6 +34,10 @@ Representative live proof paths:
 
 - runtime library:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- compile and artifact publication:
+  - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
 - IR emission:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - runtime probes:
@@ -43,3 +47,6 @@ Representative live proof paths:
   - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
+
+The runtime execution architecture published in `docs/objc3c-native.md` is the
+operator-facing boundary for what these probes may claim.

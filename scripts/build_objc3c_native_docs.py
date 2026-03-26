@@ -19,6 +19,7 @@ FRAGMENT_ORDER: tuple[str, ...] = (
     "10-cli.md",
     "20-grammar.md",
     "30-semantics.md",
+    "35-runtime-architecture.md",
     "40-diagnostics.md",
     "50-artifacts.md",
     "60-tests.md",
