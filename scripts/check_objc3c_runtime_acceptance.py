@@ -22,6 +22,17 @@ COMPILE_PS1 = ROOT / "scripts" / "objc3c_native_compile.ps1"
 RUNTIME_LIB = ROOT / "artifacts" / "lib" / "objc3_runtime.lib"
 NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 PWSH = shutil.which("pwsh") or shutil.which("powershell") or "pwsh"
+RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
+RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
+RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
+PUBLIC_RUNTIME_ABI_BOUNDARY = [
+    "objc3_runtime_register_image",
+    "objc3_runtime_lookup_selector",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_reset_for_testing",
+]
+COMPILE_PROVENANCE_CONTRACT_ID = "objc3c.native.compile.output.provenance.v1"
+COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID = "objc3c.native.compile.output.truthfulness.v1"
 
 
 def run(command: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
@@ -106,12 +117,51 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     if not provenance_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {provenance_path}")
 
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
-    if provenance.get("contract_id") != "objc3c.native.compile.output.provenance.v1":
+    publication_surface = manifest.get("runtime_state_publication_surface")
+    if not isinstance(publication_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_state_publication_surface")
+    if publication_surface.get("contract_id") != RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID:
+        raise RuntimeError("compiled fixture manifest published the wrong runtime_state_publication_surface contract")
+    if publication_surface.get("publication_surface_kind") != RUNTIME_STATE_PUBLICATION_SURFACE_KIND:
+        raise RuntimeError("compiled fixture manifest published the wrong runtime_state_publication_surface kind")
+    if publication_surface.get("compile_manifest_artifact") != "module.manifest.json":
+        raise RuntimeError("runtime_state_publication_surface drifted from the compile manifest artifact path")
+    if publication_surface.get("registration_manifest_artifact") != "module.runtime-registration-manifest.json":
+        raise RuntimeError("runtime_state_publication_surface drifted from the runtime registration manifest artifact path")
+    if publication_surface.get("object_artifact") != "module.obj":
+        raise RuntimeError("runtime_state_publication_surface drifted from the emitted object artifact path")
+    if publication_surface.get("backend_artifact") != "module.ll":
+        raise RuntimeError("runtime_state_publication_surface drifted from the emitted LLVM IR artifact path")
+    if publication_surface.get("runtime_support_library_archive_relative_path") != registration_manifest.get("runtime_support_library_archive_relative_path"):
+        raise RuntimeError("runtime_state_publication_surface drifted from the runtime registration manifest archive path")
+    if publication_surface.get("registration_entrypoint_symbol") != registration_manifest.get("registration_entrypoint_symbol"):
+        raise RuntimeError("runtime_state_publication_surface drifted from the runtime registration entrypoint symbol")
+    if publication_surface.get("runtime_state_snapshot_symbol") != registration_manifest.get("runtime_state_snapshot_symbol"):
+        raise RuntimeError("runtime_state_publication_surface drifted from the runtime state snapshot symbol")
+    if publication_surface.get("public_runtime_abi_boundary") != PUBLIC_RUNTIME_ABI_BOUNDARY:
+        raise RuntimeError("runtime_state_publication_surface drifted from the public runtime ABI boundary")
+    for field in (
+        "class_descriptor_count",
+        "protocol_descriptor_count",
+        "category_descriptor_count",
+        "property_descriptor_count",
+        "ivar_descriptor_count",
+        "total_descriptor_count",
+    ):
+        if publication_surface.get(field) != registration_manifest.get(field):
+            raise RuntimeError(f"runtime_state_publication_surface drifted from registration manifest field {field}")
+    if publication_surface.get("publication_requires_coupled_registration_manifest") is not True:
+        raise RuntimeError("runtime_state_publication_surface must require the coupled runtime registration manifest")
+    if publication_surface.get("publication_requires_real_compile_output") is not True:
+        raise RuntimeError("runtime_state_publication_surface must require real compile output")
+
+    if provenance.get("contract_id") != COMPILE_PROVENANCE_CONTRACT_ID:
         raise RuntimeError("compiled fixture did not publish the native compile provenance contract")
     truthfulness = provenance.get("compile_output_truthfulness")
-    if not isinstance(truthfulness, dict) or truthfulness.get("contract_id") != "objc3c.native.compile.output.truthfulness.v1":
+    if not isinstance(truthfulness, dict) or truthfulness.get("contract_id") != COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID:
         raise RuntimeError("compiled fixture did not publish the compile output truthfulness contract")
     if truthfulness.get("truthful") is not True:
         raise RuntimeError("compiled fixture did not certify truthful compile output")
@@ -238,11 +288,52 @@ def build_claim_boundary() -> dict[str, Any]:
             "compatibility shims without a coupled emitted object and runtime probe",
             "comment-only or placeholder-only capability claims",
         ],
-        "public_runtime_abi_boundary": [
-            "objc3_runtime_register_image",
-            "objc3_runtime_lookup_selector",
-            "objc3_runtime_dispatch_i32",
-            "objc3_runtime_reset_for_testing",
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+    }
+
+
+def build_runtime_state_publication_surface() -> dict[str, Any]:
+    return {
+        "contract_id": RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+        "publication_surface_kind": RUNTIME_STATE_PUBLICATION_SURFACE_KIND,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "publication_requires_coupled_registration_manifest": True,
+        "publication_requires_real_compile_output": True,
+    }
+
+
+def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path) -> dict[str, Any]:
+    compile_coupled_case_ids = [result.case_id for result in results if result.fixture is not None]
+    linked_runtime_probe_case_ids = [
+        result.case_id for result in results if result.claim_class == "linked-runtime-probe"
+    ]
+    compile_coupled_inspection_case_ids = [
+        result.case_id for result in results if result.claim_class == "compile-coupled-inspection"
+    ]
+    return {
+        "contract_id": RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+        "suite_path": "scripts/check_objc3c_runtime_acceptance.py",
+        "report_path": str(report_path.relative_to(ROOT)).replace("\\", "/"),
+        "consumes_runtime_state_publication_surface_contract_id": RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+        "authoritative_claim_classes": [
+            "linked-runtime-probe",
+            "compile-coupled-inspection",
+        ],
+        "linked_runtime_probe_case_ids": linked_runtime_probe_case_ids,
+        "compile_coupled_case_ids": compile_coupled_case_ids,
+        "compile_coupled_inspection_case_ids": compile_coupled_inspection_case_ids,
+        "compile_output_provenance_contract_id": COMPILE_PROVENANCE_CONTRACT_ID,
+        "compile_output_truthfulness_contract_id": COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
+        "coupled_artifact_requirements": [
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.compile-provenance.json",
         ],
     }
 
@@ -1203,6 +1294,8 @@ def main() -> int:
             for result in results
         ],
         "claim_boundary": build_claim_boundary(),
+        "runtime_state_publication_surface": build_runtime_state_publication_surface(),
+        "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "dispatch_accessor_runtime_abi_surface": {
             "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
             "proof_cases": [

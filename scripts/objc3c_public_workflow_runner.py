@@ -143,6 +143,29 @@ def extract_report_paths(stdout: str) -> list[str]:
     return report_paths
 
 
+def load_surface_from_report(
+    steps: Sequence[dict[str, object]], surface_key: str
+) -> dict[str, object] | None:
+    for step in steps:
+        report_paths = step.get("report_paths", [])
+        if not isinstance(report_paths, list):
+            continue
+        for raw_path in report_paths:
+            if not isinstance(raw_path, str):
+                continue
+            candidate = ROOT / raw_path
+            if not candidate.is_file():
+                continue
+            try:
+                payload = json.loads(candidate.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            surface = payload.get(surface_key)
+            if isinstance(surface, dict):
+                return surface
+    return None
+
+
 def write_composite_validation_report(
     action: str,
     steps: list[dict[str, object]],
@@ -172,6 +195,14 @@ def write_composite_validation_report(
         },
         "steps": steps,
     }
+    runtime_state_publication_surface = load_surface_from_report(
+        steps, "runtime_state_publication_surface"
+    )
+    if runtime_state_publication_surface is not None:
+        payload["runtime_state_publication_surface"] = runtime_state_publication_surface
+    acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
+    if acceptance_suite_surface is not None:
+        payload["acceptance_suite_surface"] = acceptance_suite_surface
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return report_path
 

@@ -746,6 +746,8 @@ inline constexpr const char *kObjc3RuntimeMetadataSectionAbiContractId =
     "objc3c.runtime.metadata.section.abi.symbol.policy.freeze.v1";
 inline constexpr const char *kObjc3RuntimeMetadataSectionPublicationContractId =
     "objc3c.runtime.metadata.section.publication.v1";
+inline constexpr const char *kObjc3RuntimeStatePublicationSurfaceContractId =
+    "objc3c.runtime.state.publication.surface.v1";
 inline constexpr const char *kObjc3RuntimeMetadataObjectInspectionContractId =
     "objc3c.runtime.metadata.object.inspection.harness.v1";
 inline constexpr const char *kObjc3ExecutableMetadataDebugProjectionContractId =

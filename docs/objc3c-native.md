@@ -118,6 +118,42 @@ closure work must extend this path, not bypass it.
 5. Acceptance and replay proof only count when the emitted object, registration
    manifest, and linked probe all come from that same compile path.
 
+## State Publication Surface
+
+- front-door emitted surface:
+  - `<prefix>.manifest.json`
+  - key: `runtime_state_publication_surface`
+- coupled runtime-owned surface:
+  - `<prefix>.runtime-registration-manifest.json`
+- required compile-owned artifacts:
+  - `<prefix>.obj`
+  - `<prefix>.ll`
+- required public runtime ABI boundary:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_reset_for_testing`
+
+The compile manifest is the authoritative front-door runtime state publication
+surface. It must point at the coupled registration manifest, emitted object and
+IR artifacts, the runtime archive path, the registration entrypoint, the runtime
+state snapshot symbol, and the published descriptor counts.
+
+## Acceptance Suite Surface
+
+- authoritative suite:
+  - `scripts/check_objc3c_runtime_acceptance.py`
+- authoritative report:
+  - `tmp/reports/runtime/acceptance/summary.json`
+- machine-readable key:
+  - `acceptance_suite_surface`
+
+The acceptance suite surface defines which cases may claim published runtime
+state. It is authoritative only when the suite consumes the emitted compile
+manifest, the coupled registration manifest, and the linked runtime probe path
+together. The composite public workflow report carries this same surface
+forward when a composite action runs runtime acceptance.
+
 ## Claim Boundary
 
 - runnable:
