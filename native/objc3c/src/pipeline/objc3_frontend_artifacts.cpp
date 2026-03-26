@@ -22295,6 +22295,44 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "},\n";
+  manifest << "  \"dispatch_accessor_runtime_abi_surface\":{\"contract_id\":"
+           << "\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << ",\"abi_boundary_model\":"
+           << "\"public-dispatch-entrypoint-plus-private-testing-snapshot-and-property-helper-surface\""
+           << ",\"public_header_path\":\"native/objc3c/src/runtime/objc3_runtime.h\""
+           << ",\"private_header_path\":\"native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h\""
+           << ",\"runtime_dispatch_symbol\":\""
+           << runtime_shim_host_link_contract.runtime_dispatch_symbol
+           << "\",\"method_cache_state_snapshot_symbol\":\"objc3_runtime_copy_method_cache_state_for_testing\""
+           << ",\"method_cache_entry_snapshot_symbol\":\"objc3_runtime_copy_method_cache_entry_for_testing\""
+           << ",\"property_registry_state_snapshot_symbol\":\"objc3_runtime_copy_property_registry_state_for_testing\""
+           << ",\"property_entry_snapshot_symbol\":\"objc3_runtime_copy_property_entry_for_testing\""
+           << ",\"arc_debug_state_snapshot_symbol\":\"objc3_runtime_copy_arc_debug_state_for_testing\""
+           << ",\"current_property_read_symbol\":\""
+           << kObjc3RuntimeReadCurrentPropertyI32Symbol
+           << "\",\"current_property_write_symbol\":\""
+           << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+           << "\",\"current_property_exchange_symbol\":\""
+           << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+           << "\",\"bind_current_property_context_symbol\":\"objc3_runtime_bind_current_property_context_for_testing\""
+           << ",\"clear_current_property_context_symbol\":\"objc3_runtime_clear_current_property_context_for_testing\""
+           << ",\"weak_current_property_load_symbol\":\""
+           << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+           << "\",\"weak_current_property_store_symbol\":\""
+           << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+           << "\",\"retain_symbol\":\"" << kObjc3RuntimeRetainI32Symbol
+           << "\",\"release_symbol\":\"" << kObjc3RuntimeReleaseI32Symbol
+           << "\",\"autorelease_symbol\":\""
+           << kObjc3RuntimeAutoreleaseI32Symbol
+           << "\",\"private_testing_surface_only\":true"
+           << ",\"deterministic\":"
+           << ((property_synthesis_ivar_binding_contract.deterministic &&
+                dispatch_surface_classification_contract.deterministic &&
+                message_send_selector_lowering_contract.deterministic &&
+                runtime_shim_host_link_contract.deterministic)
+                   ? "true"
+                   : "false")
+           << "},\n";
   manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
            << id_class_sel_object_pointer_typecheck_replay_key
            << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract

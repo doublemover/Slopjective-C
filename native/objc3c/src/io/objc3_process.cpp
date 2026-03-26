@@ -1064,6 +1064,81 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "  \"execution_smoke_command_surface\": \""
       << EscapeJsonString(inputs.execution_smoke_command_surface)
       << "\",\n"
+      << "  \"dispatch_accessor_runtime_abi_surface\": {\n"
+      << "    \"contract_id\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_runtime_abi_contract_id)
+      << "\",\n"
+      << "    \"abi_boundary_model\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_runtime_abi_boundary_model)
+      << "\",\n"
+      << "    \"public_header_path\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_public_header_path)
+      << "\",\n"
+      << "    \"private_header_path\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_private_header_path)
+      << "\",\n"
+      << "    \"runtime_dispatch_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_runtime_dispatch_symbol)
+      << "\",\n"
+      << "    \"method_cache_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_method_cache_state_snapshot_symbol)
+      << "\",\n"
+      << "    \"method_cache_entry_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_method_cache_entry_snapshot_symbol)
+      << "\",\n"
+      << "    \"property_registry_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_property_registry_state_snapshot_symbol)
+      << "\",\n"
+      << "    \"property_entry_snapshot_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_property_entry_snapshot_symbol)
+      << "\",\n"
+      << "    \"arc_debug_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_arc_debug_state_snapshot_symbol)
+      << "\",\n"
+      << "    \"current_property_read_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_current_property_read_symbol)
+      << "\",\n"
+      << "    \"current_property_write_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_current_property_write_symbol)
+      << "\",\n"
+      << "    \"current_property_exchange_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_current_property_exchange_symbol)
+      << "\",\n"
+      << "    \"bind_current_property_context_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_bind_current_property_context_symbol)
+      << "\",\n"
+      << "    \"clear_current_property_context_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_clear_current_property_context_symbol)
+      << "\",\n"
+      << "    \"weak_current_property_load_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_weak_current_property_load_symbol)
+      << "\",\n"
+      << "    \"weak_current_property_store_symbol\": \""
+      << EscapeJsonString(
+             inputs.dispatch_accessor_weak_current_property_store_symbol)
+      << "\",\n"
+      << "    \"retain_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_retain_symbol) << "\",\n"
+      << "    \"release_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_release_symbol) << "\",\n"
+      << "    \"autorelease_symbol\": \""
+      << EscapeJsonString(inputs.dispatch_accessor_autorelease_symbol)
+      << "\",\n"
+      << "    \"private_testing_surface_only\": "
+      << (inputs.dispatch_accessor_private_testing_surface_only ? "true"
+                                                               : "false")
+      << ",\n"
+      << "    \"deterministic\": "
+      << (inputs.dispatch_accessor_deterministic ? "true" : "false") << "\n"
+      << "  },\n"
       << "  \"registration_descriptor_source_contract_id\": \""
       << EscapeJsonString(inputs.registration_descriptor_source_contract_id)
       << "\",\n"

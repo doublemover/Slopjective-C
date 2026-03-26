@@ -650,6 +650,53 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               registration_manifest_summary.compile_proof_command_surface;
           manifest_inputs.execution_smoke_command_surface =
               registration_manifest_summary.execution_smoke_command_surface;
+          manifest_inputs.dispatch_accessor_runtime_abi_contract_id =
+              "objc3c.runtime.dispatch_accessor.abi.surface.v1";
+          manifest_inputs.dispatch_accessor_runtime_abi_boundary_model =
+              "public-dispatch-entrypoint-plus-private-testing-snapshot-and-property-helper-surface";
+          manifest_inputs.dispatch_accessor_public_header_path =
+              "native/objc3c/src/runtime/objc3_runtime.h";
+          manifest_inputs.dispatch_accessor_private_header_path =
+              "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
+          manifest_inputs.dispatch_accessor_runtime_dispatch_symbol =
+              runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
+          manifest_inputs
+              .dispatch_accessor_method_cache_state_snapshot_symbol =
+              "objc3_runtime_copy_method_cache_state_for_testing";
+          manifest_inputs
+              .dispatch_accessor_method_cache_entry_snapshot_symbol =
+              "objc3_runtime_copy_method_cache_entry_for_testing";
+          manifest_inputs
+              .dispatch_accessor_property_registry_state_snapshot_symbol =
+              "objc3_runtime_copy_property_registry_state_for_testing";
+          manifest_inputs.dispatch_accessor_property_entry_snapshot_symbol =
+              "objc3_runtime_copy_property_entry_for_testing";
+          manifest_inputs.dispatch_accessor_arc_debug_state_snapshot_symbol =
+              "objc3_runtime_copy_arc_debug_state_for_testing";
+          manifest_inputs.dispatch_accessor_current_property_read_symbol =
+              kObjc3RuntimeReadCurrentPropertyI32Symbol;
+          manifest_inputs.dispatch_accessor_current_property_write_symbol =
+              kObjc3RuntimeWriteCurrentPropertyI32Symbol;
+          manifest_inputs.dispatch_accessor_current_property_exchange_symbol =
+              kObjc3RuntimeExchangeCurrentPropertyI32Symbol;
+          manifest_inputs
+              .dispatch_accessor_bind_current_property_context_symbol =
+              "objc3_runtime_bind_current_property_context_for_testing";
+          manifest_inputs
+              .dispatch_accessor_clear_current_property_context_symbol =
+              "objc3_runtime_clear_current_property_context_for_testing";
+          manifest_inputs.dispatch_accessor_weak_current_property_load_symbol =
+              kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol;
+          manifest_inputs.dispatch_accessor_weak_current_property_store_symbol =
+              kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+          manifest_inputs.dispatch_accessor_retain_symbol =
+              kObjc3RuntimeRetainI32Symbol;
+          manifest_inputs.dispatch_accessor_release_symbol =
+              kObjc3RuntimeReleaseI32Symbol;
+          manifest_inputs.dispatch_accessor_autorelease_symbol =
+              kObjc3RuntimeAutoreleaseI32Symbol;
+          manifest_inputs.dispatch_accessor_private_testing_surface_only = true;
+          manifest_inputs.dispatch_accessor_deterministic = true;
           manifest_inputs.registration_descriptor_source_contract_id =
               registration_descriptor_source_surface_summary.contract_id;
           manifest_inputs.registration_descriptor_source_surface_path =

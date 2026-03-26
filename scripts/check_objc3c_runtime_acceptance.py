@@ -314,6 +314,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
     payload = parse_key_value_output(run_probe(exe_path), "dispatch fast-path probe")
     ll_text = ll_path.read_text(encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
+    registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
 
     expect(payload.get("baseline_status") == 0, "expected baseline method-cache snapshot to succeed")
     expect(payload.get("dynamic_entry_status") == 0, "expected dynamic fast-path entry lookup to succeed")
@@ -408,6 +410,46 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected compile manifest lowering surface to keep dispatch symbols aligned")
     expect(lowering_surface.get("message_send_sites") == 6,
            "expected compile manifest lowering surface to publish six message send sites")
+    runtime_abi_surface = manifest.get("dispatch_accessor_runtime_abi_surface", {})
+    expect(isinstance(runtime_abi_surface, dict),
+           "expected compile manifest to publish dispatch/accessor runtime ABI surface")
+    expect(runtime_abi_surface.get("contract_id") == "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+           "expected dispatch/accessor runtime ABI surface contract id in compile manifest")
+    expect(runtime_abi_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
+           "expected runtime ABI surface to publish canonical runtime dispatch symbol")
+    expect(runtime_abi_surface.get("method_cache_state_snapshot_symbol") == "objc3_runtime_copy_method_cache_state_for_testing",
+           "expected runtime ABI surface to publish method cache state snapshot helper")
+    expect(runtime_abi_surface.get("property_registry_state_snapshot_symbol") == "objc3_runtime_copy_property_registry_state_for_testing",
+           "expected runtime ABI surface to publish property registry snapshot helper")
+    expect(runtime_abi_surface.get("arc_debug_state_snapshot_symbol") == "objc3_runtime_copy_arc_debug_state_for_testing",
+           "expected runtime ABI surface to publish ARC debug snapshot helper")
+    expect(runtime_abi_surface.get("bind_current_property_context_symbol") == "objc3_runtime_bind_current_property_context_for_testing",
+           "expected runtime ABI surface to publish property context bind helper")
+    expect(runtime_abi_surface.get("clear_current_property_context_symbol") == "objc3_runtime_clear_current_property_context_for_testing",
+           "expected runtime ABI surface to publish property context clear helper")
+    expect(runtime_abi_surface.get("private_testing_surface_only") is True,
+           "expected runtime ABI surface to remain on the private testing boundary")
+    expect(runtime_abi_surface.get("deterministic") is True,
+           "expected runtime ABI surface to report deterministic handoff")
+    registration_runtime_abi_surface = registration_manifest.get("dispatch_accessor_runtime_abi_surface", {})
+    expect(isinstance(registration_runtime_abi_surface, dict),
+           "expected runtime registration manifest to publish dispatch/accessor runtime ABI surface")
+    expect(registration_runtime_abi_surface.get("contract_id") == "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+           "expected dispatch/accessor runtime ABI surface contract id in runtime registration manifest")
+    expect(registration_runtime_abi_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
+           "expected runtime registration manifest to publish canonical runtime dispatch symbol")
+    expect(registration_runtime_abi_surface.get("current_property_read_symbol") == "objc3_runtime_read_current_property_i32",
+           "expected runtime registration manifest to publish current-property read helper")
+    expect(registration_runtime_abi_surface.get("current_property_exchange_symbol") == "objc3_runtime_exchange_current_property_i32",
+           "expected runtime registration manifest to publish current-property exchange helper")
+    expect(registration_runtime_abi_surface.get("weak_current_property_load_symbol") == "objc3_runtime_load_weak_current_property_i32",
+           "expected runtime registration manifest to publish weak current-property load helper")
+    expect(registration_runtime_abi_surface.get("autorelease_symbol") == "objc3_runtime_autorelease_i32",
+           "expected runtime registration manifest to publish autorelease helper")
+    expect(registration_runtime_abi_surface.get("private_testing_surface_only") is True,
+           "expected runtime registration manifest ABI surface to remain private-testing only")
+    expect(registration_runtime_abi_surface.get("deterministic") is True,
+           "expected runtime registration manifest ABI surface to report deterministic handoff")
 
     return CaseResult(
         case_id="dispatch-fast-path",
@@ -417,6 +459,7 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         summary={
             "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
             "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "registration_manifest": str(registration_manifest_path.relative_to(ROOT)).replace("\\", "/"),
             "baseline_cache_entry_count": payload.get("baseline_cache_entry_count"),
             "baseline_fast_path_seed_count": payload.get("baseline_fast_path_seed_count"),
             "mixed_first_live_dispatch_count": payload.get("mixed_first_state_live_dispatch_count"),
@@ -804,6 +847,29 @@ def main() -> int:
             }
             for result in results
         ],
+        "dispatch_accessor_runtime_abi_surface": {
+            "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+            "proof_cases": [
+                "dispatch-fast-path",
+                "property-execution",
+                "arc-property-helper-abi",
+            ],
+            "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+            "method_cache_state_snapshot_symbol": "objc3_runtime_copy_method_cache_state_for_testing",
+            "property_registry_state_snapshot_symbol": "objc3_runtime_copy_property_registry_state_for_testing",
+            "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+            "arc_debug_state_snapshot_symbol": "objc3_runtime_copy_arc_debug_state_for_testing",
+            "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+            "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+            "current_property_exchange_symbol": "objc3_runtime_exchange_current_property_i32",
+            "weak_current_property_load_symbol": "objc3_runtime_load_weak_current_property_i32",
+            "weak_current_property_store_symbol": "objc3_runtime_store_weak_current_property_i32",
+            "retain_symbol": "objc3_runtime_retain_i32",
+            "release_symbol": "objc3_runtime_release_i32",
+            "autorelease_symbol": "objc3_runtime_autorelease_i32",
+            "private_testing_surface_only": True,
+            "deterministic": True,
+        },
     }
     report_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(f"runtime-acceptance: PASS ({report_path})")
