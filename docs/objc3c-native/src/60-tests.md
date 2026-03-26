@@ -5,10 +5,13 @@
 From repo root:
 
 ```powershell
+python scripts/objc3c_public_workflow_runner.py test-fast
 python scripts/objc3c_public_workflow_runner.py test-recovery
 python scripts/objc3c_public_workflow_runner.py test-execution-smoke
 python scripts/objc3c_public_workflow_runner.py test-execution-replay
+python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance
 python scripts/objc3c_public_workflow_runner.py test-full
+python scripts/objc3c_public_workflow_runner.py test-nightly
 python scripts/objc3c_public_workflow_runner.py test-ci
 python scripts/objc3c_public_workflow_runner.py proof-objc3c
 python scripts/ci/check_task_hygiene.py
@@ -17,11 +20,11 @@ python scripts/check_objc3c_dependency_boundaries.py --strict
 
 ## What The Live Test Surface Covers
 
-- recovery and deterministic compile behavior
-- runnable execution smoke coverage
-- replay proof coverage
-- fixture-matrix execution
-- negative fixture expectations
+- `test-fast`: runtime acceptance and ABI/accessor proof
+- `test-smoke`: runnable execution smoke plus runtime acceptance
+- `test-recovery`: recovery compile success and deterministic diagnostics replay
+- `test-full`: smoke, recovery, and replay/native-truth proof
+- `test-nightly`: full validation plus fixture-matrix and negative-expectation sweeps
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols

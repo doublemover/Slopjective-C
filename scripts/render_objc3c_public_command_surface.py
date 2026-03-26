@@ -36,30 +36,31 @@ def runner_payload() -> dict[str, object]:
 
 def render_markdown() -> str:
     package = json.loads(PACKAGE_JSON.read_text(encoding="utf-8"))
-    surface = package["objc3cCommandSurface"]
-    workflow_api = surface["workflowApi"]
+    public_scripts = package["scripts"]
     payload = runner_payload()
     actions: list[dict[str, object]] = payload["actions"]  # type: ignore[assignment]
+    public_action_entries = [entry for entry in actions if entry["public_scripts"]]
 
     lines: list[str] = [
         "# Objective-C 3 Public Command Surface",
         "",
         "This runbook is generated from the live public workflow runner metadata.",
         "",
-        f"- Budget maximum: `{surface['budgetMaximum']}`",
-        f"- Current public script count: `{len(surface['publicScripts'])}`",
-        f"- Runner path: `{workflow_api['runnerPath']}`",
-        f"- Introspection command: `{workflow_api['introspectionCommand']}`",
+        f"- Current public script count: `{len(public_scripts)}`",
+        f"- Runner path: `{payload['runner_path']}`",
+        f"- Introspection command: `python {payload['runner_path']} --list-json`",
         "",
         "## Commands",
         "",
-        "| Package script | Runner action | Extra args | Backend |",
-        "| --- | --- | --- | --- |",
+        "| Package script | Runner action | Tier | Guarantee owner | Extra args | Backend |",
+        "| --- | --- | --- | --- | --- | --- |",
     ]
-    for entry in actions:
+    for entry in public_action_entries:
         package_script = ", ".join(entry["public_scripts"])
         extra_args = "pass-through" if entry["pass_through_args"] else "fixed-shape"
-        lines.append(f"| `{package_script}` | `{entry['action']}` | `{extra_args}` | `{entry['backend']}` |")
+        tier = entry.get("validation_tier", "") or "-"
+        owner = entry.get("guarantee_owner", "") or "-"
+        lines.append(f"| `{package_script}` | `{entry['action']}` | `{tier}` | `{owner}` | `{extra_args}` | `{entry['backend']}` |")
 
     lines.extend(
         [
