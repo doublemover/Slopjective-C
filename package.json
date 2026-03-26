@@ -7954,6 +7954,9 @@
     "check:objc3c:m315-b002-lane-b-readiness": "python scripts/run_m315_b002_lane_b_readiness.py",
     "check:objc3c:m315-b003-milestone-marker-removal-from-native-source-core-feature-implementation": "python scripts/check_m315_b003_milestone_marker_removal_from_native_source_core_feature_implementation.py",
     "test:tooling:m315-b003-milestone-marker-removal-from-native-source-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_b003_milestone_marker_removal_from_native_source_core_feature_implementation.py -q",
-    "check:objc3c:m315-b003-lane-b-readiness": "python scripts/run_m315_b003_lane_b_readiness.py"
+    "check:objc3c:m315-b003-lane-b-readiness": "python scripts/run_m315_b003_lane_b_readiness.py",
+    "check:objc3c:m315-b004-synthetic-versus-genuine-ir-fixture-compatibility-semantics-core-feature-implementation": "python scripts/check_m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation.py",
+    "test:tooling:m315-b004-synthetic-versus-genuine-ir-fixture-compatibility-semantics-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation.py -q",
+    "check:objc3c:m315-b004-lane-b-readiness": "python scripts/run_m315_b004_lane_b_readiness.py"
   }
 }
