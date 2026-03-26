@@ -86,3 +86,12 @@ Non-goals for the current corrective tranche:
 - no synthetic `.ll` or hand-authored artifact used as authoritative runtime proof
 
 The live runtime docs describe the current executable surface only. Historical milestone freeze text is archived under `tmp/archive/`.
+
+Integrated runtime architecture proof:
+
+- runner:
+  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+- public action:
+  - `python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture`
+- integrated packet:
+  - `tmp/reports/runtime/architecture-proof/summary.json`

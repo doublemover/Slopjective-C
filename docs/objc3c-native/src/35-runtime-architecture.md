@@ -128,6 +128,21 @@ reports to publish the runtime claim boundary, runtime state publication
 surface, and acceptance suite surface contracts, and then writes a shared
 summary that points back to those child executable reports.
 
+## Integrated Proof Packet
+
+- runner:
+  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+- public action:
+  - `python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture`
+- packet path:
+  - `tmp/reports/runtime/architecture-proof/summary.json`
+
+The integrated runtime architecture proof packet is a generic integration
+artifact over the shared harness, the public workflow report, and the direct
+runtime acceptance report. It only passes when all three agree on the runtime
+claim boundary, runtime state publication surface, acceptance suite surface,
+runtime installation ABI surface, and loader lifecycle surface.
+
 ## Claim Boundary
 
 - runnable:

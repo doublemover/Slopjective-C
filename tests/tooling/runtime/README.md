@@ -42,9 +42,14 @@ Representative live proof paths:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - runtime probes:
   - `tests/tooling/runtime/runtime_library_probe.cpp`
+  - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
   - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+- integrated runtime architecture packet:
+  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+  - `tmp/reports/runtime/architecture-proof/summary.json`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
 
