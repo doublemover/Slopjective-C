@@ -176,6 +176,8 @@ typedef struct objc3_runtime_dispatch_state_snapshot {
   uint64_t last_selector_stable_id;
   uint64_t last_normalized_receiver_identity;
   uint64_t last_resolved_parameter_count;
+  uint64_t last_property_base_identity;
+  uint64_t last_property_slot_index;
   int last_dispatch_used_cache;
   int last_dispatch_used_fast_path;
   int last_dispatch_resolved_live_method;
@@ -186,6 +188,7 @@ typedef struct objc3_runtime_dispatch_state_snapshot {
   const char *last_fast_path_reason;
   const char *last_dispatch_path;
   const char *last_implementation_kind;
+  const char *last_property_name;
   const char *last_resolved_class_name;
   const char *last_resolved_owner_identity;
 } objc3_runtime_dispatch_state_snapshot;

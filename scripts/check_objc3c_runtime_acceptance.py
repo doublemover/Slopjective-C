@@ -580,6 +580,13 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     enabled_method = payload.get("enabled_method", {})
     value_method = payload.get("value_method", {})
     token_method = payload.get("token_method", {})
+    set_count_dispatch = payload.get("set_count_dispatch", {})
+    count_dispatch = payload.get("count_dispatch", {})
+    set_enabled_dispatch = payload.get("set_enabled_dispatch", {})
+    enabled_dispatch = payload.get("enabled_dispatch", {})
+    set_value_dispatch = payload.get("set_value_dispatch", {})
+    value_dispatch = payload.get("value_dispatch", {})
+    token_dispatch = payload.get("token_dispatch", {})
 
     expect(payload.get("widget_instance", 0) != 0, "expected alloc to materialize a Widget instance")
     expect(payload.get("count_value") == 37, "expected synthesized count getter to return the stored value")
@@ -651,6 +658,112 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected currentValue getter cache ownership to match reflected property ownership")
     expect(token_method.get("resolved_owner_identity") == token_property.get("getter_owner_identity"),
            "expected tokenValue getter cache ownership to match reflected property ownership")
+    expect(set_count_dispatch.get("last_dispatch_path") == "slow-path-live",
+           "expected setCount: to execute through live synthesized accessor resolution")
+    expect(set_count_dispatch.get("last_implementation_kind") == "builtin-property-setter",
+           "expected setCount: to execute through the runtime property-setter builtin")
+    expect(set_count_dispatch.get("last_property_name") == count_property.get("property_name"),
+           "expected setCount: dispatch property name to match reflected property metadata")
+    expect(set_count_dispatch.get("last_property_base_identity") == count_property.get("base_identity"),
+           "expected setCount: dispatch base identity to match reflected property metadata")
+    expect(set_count_dispatch.get("last_property_slot_index") == count_property.get("slot_index"),
+           "expected setCount: dispatch slot index to match reflected property metadata")
+    expect(set_count_dispatch.get("last_selector") == count_property.get("effective_setter_selector"),
+           "expected setCount: dispatch selector to match reflected property metadata")
+    expect(set_count_dispatch.get("last_resolved_owner_identity") == count_property.get("setter_owner_identity"),
+           "expected setCount: dispatch ownership to match reflected property metadata")
+    expect(set_count_dispatch.get("last_used_builtin") == 1 and set_count_dispatch.get("last_effective_direct_dispatch") == 0,
+           "expected setCount: to remain builtin-backed and runtime-dispatched")
+    expect(set_count_dispatch.get("last_resolved_parameter_count") == 1,
+           "expected setCount: dispatch to report one setter parameter")
+    expect(count_dispatch.get("last_dispatch_path") == "slow-path-live",
+           "expected count getter to execute through live synthesized accessor resolution")
+    expect(count_dispatch.get("last_implementation_kind") == "builtin-property-getter",
+           "expected count getter to execute through the runtime property-getter builtin")
+    expect(count_dispatch.get("last_property_name") == count_property.get("property_name"),
+           "expected count getter dispatch property name to match reflected property metadata")
+    expect(count_dispatch.get("last_property_base_identity") == count_property.get("base_identity"),
+           "expected count getter dispatch base identity to match reflected property metadata")
+    expect(count_dispatch.get("last_property_slot_index") == count_property.get("slot_index"),
+           "expected count getter dispatch slot index to match reflected property metadata")
+    expect(count_dispatch.get("last_selector") == count_property.get("effective_getter_selector"),
+           "expected count getter dispatch selector to match reflected property metadata")
+    expect(count_dispatch.get("last_resolved_owner_identity") == count_property.get("getter_owner_identity"),
+           "expected count getter dispatch ownership to match reflected property metadata")
+    expect(count_dispatch.get("last_used_builtin") == 1 and count_dispatch.get("last_effective_direct_dispatch") == 0,
+           "expected count getter to remain builtin-backed and runtime-dispatched")
+    expect(count_dispatch.get("last_resolved_parameter_count") == 0,
+           "expected count getter dispatch to report zero getter parameters")
+    expect(set_enabled_dispatch.get("last_implementation_kind") == "builtin-property-setter",
+           "expected setEnabled: to execute through the runtime property-setter builtin")
+    expect(set_enabled_dispatch.get("last_property_name") == enabled_property.get("property_name"),
+           "expected setEnabled: dispatch property name to match reflected property metadata")
+    expect(set_enabled_dispatch.get("last_property_base_identity") == enabled_property.get("base_identity"),
+           "expected setEnabled: dispatch base identity to match reflected property metadata")
+    expect(set_enabled_dispatch.get("last_property_slot_index") == enabled_property.get("slot_index"),
+           "expected setEnabled: dispatch slot index to match reflected property metadata")
+    expect(set_enabled_dispatch.get("last_selector") == enabled_property.get("effective_setter_selector"),
+           "expected setEnabled: dispatch selector to match reflected property metadata")
+    expect(set_enabled_dispatch.get("last_resolved_owner_identity") == enabled_property.get("setter_owner_identity"),
+           "expected setEnabled: dispatch ownership to match reflected property metadata")
+    expect(set_enabled_dispatch.get("last_used_builtin") == 1 and set_enabled_dispatch.get("last_resolved_parameter_count") == 1,
+           "expected setEnabled: to remain builtin-backed and report one setter parameter")
+    expect(enabled_dispatch.get("last_implementation_kind") == "builtin-property-getter",
+           "expected enabled getter to execute through the runtime property-getter builtin")
+    expect(enabled_dispatch.get("last_property_name") == enabled_property.get("property_name"),
+           "expected enabled getter dispatch property name to match reflected property metadata")
+    expect(enabled_dispatch.get("last_property_base_identity") == enabled_property.get("base_identity"),
+           "expected enabled getter dispatch base identity to match reflected property metadata")
+    expect(enabled_dispatch.get("last_property_slot_index") == enabled_property.get("slot_index"),
+           "expected enabled getter dispatch slot index to match reflected property metadata")
+    expect(enabled_dispatch.get("last_selector") == enabled_property.get("effective_getter_selector"),
+           "expected enabled getter dispatch selector to match reflected property metadata")
+    expect(enabled_dispatch.get("last_resolved_owner_identity") == enabled_property.get("getter_owner_identity"),
+           "expected enabled getter dispatch ownership to match reflected property metadata")
+    expect(enabled_dispatch.get("last_used_builtin") == 1 and enabled_dispatch.get("last_resolved_parameter_count") == 0,
+           "expected enabled getter to remain builtin-backed and report zero getter parameters")
+    expect(set_value_dispatch.get("last_implementation_kind") == "builtin-property-setter",
+           "expected setCurrentValue: to execute through the runtime property-setter builtin")
+    expect(set_value_dispatch.get("last_property_name") == value_property.get("property_name"),
+           "expected setCurrentValue: dispatch property name to match reflected property metadata")
+    expect(set_value_dispatch.get("last_property_base_identity") == value_property.get("base_identity"),
+           "expected setCurrentValue: dispatch base identity to match reflected property metadata")
+    expect(set_value_dispatch.get("last_property_slot_index") == value_property.get("slot_index"),
+           "expected setCurrentValue: dispatch slot index to match reflected property metadata")
+    expect(set_value_dispatch.get("last_selector") == value_property.get("effective_setter_selector"),
+           "expected setCurrentValue: dispatch selector to match reflected property metadata")
+    expect(set_value_dispatch.get("last_resolved_owner_identity") == value_property.get("setter_owner_identity"),
+           "expected setCurrentValue: dispatch ownership to match reflected property metadata")
+    expect(set_value_dispatch.get("last_used_builtin") == 1 and set_value_dispatch.get("last_resolved_parameter_count") == 1,
+           "expected setCurrentValue: to remain builtin-backed and report one setter parameter")
+    expect(value_dispatch.get("last_implementation_kind") == "builtin-property-getter",
+           "expected currentValue getter to execute through the runtime property-getter builtin")
+    expect(value_dispatch.get("last_property_name") == value_property.get("property_name"),
+           "expected currentValue getter dispatch property name to match reflected property metadata")
+    expect(value_dispatch.get("last_property_base_identity") == value_property.get("base_identity"),
+           "expected currentValue getter dispatch base identity to match reflected property metadata")
+    expect(value_dispatch.get("last_property_slot_index") == value_property.get("slot_index"),
+           "expected currentValue getter dispatch slot index to match reflected property metadata")
+    expect(value_dispatch.get("last_selector") == value_property.get("effective_getter_selector"),
+           "expected currentValue getter dispatch selector to match reflected property metadata")
+    expect(value_dispatch.get("last_resolved_owner_identity") == value_property.get("getter_owner_identity"),
+           "expected currentValue getter dispatch ownership to match reflected property metadata")
+    expect(value_dispatch.get("last_used_builtin") == 1 and value_dispatch.get("last_resolved_parameter_count") == 0,
+           "expected currentValue getter to remain builtin-backed and report zero getter parameters")
+    expect(token_dispatch.get("last_implementation_kind") == "builtin-property-getter",
+           "expected tokenValue getter to execute through the runtime property-getter builtin")
+    expect(token_dispatch.get("last_property_name") == token_property.get("property_name"),
+           "expected tokenValue getter dispatch property name to match reflected property metadata")
+    expect(token_dispatch.get("last_property_base_identity") == token_property.get("base_identity"),
+           "expected tokenValue getter dispatch base identity to match reflected property metadata")
+    expect(token_dispatch.get("last_property_slot_index") == token_property.get("slot_index"),
+           "expected tokenValue getter dispatch slot index to match reflected property metadata")
+    expect(token_dispatch.get("last_selector") == token_property.get("effective_getter_selector"),
+           "expected tokenValue getter dispatch selector to match reflected property metadata")
+    expect(token_dispatch.get("last_resolved_owner_identity") == token_property.get("getter_owner_identity"),
+           "expected tokenValue getter dispatch ownership to match reflected property metadata")
+    expect(token_dispatch.get("last_used_builtin") == 1 and token_dispatch.get("last_resolved_parameter_count") == 0,
+           "expected tokenValue getter to remain builtin-backed and report zero getter parameters")
     return CaseResult(
         case_id="property-execution",
         probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
@@ -662,6 +775,9 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
             "value_result": payload.get("value_result"),
             "runtime_property_accessor_count": widget_entry.get("runtime_property_accessor_count"),
             "slot_backed_property_count": registry_state.get("slot_backed_property_count"),
+            "count_dispatch_kind": count_dispatch.get("last_implementation_kind"),
+            "value_dispatch_kind": value_dispatch.get("last_implementation_kind"),
+            "token_dispatch_kind": token_dispatch.get("last_implementation_kind"),
         },
     )
 

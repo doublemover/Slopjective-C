@@ -156,6 +156,34 @@ void StabilizeMethodCacheEntry(
                            snapshot.resolved_owner_identity);
 }
 
+void StabilizeDispatchState(
+    objc3_runtime_dispatch_state_snapshot &snapshot,
+    std::string &selector_storage, std::string &fast_path_reason_storage,
+    std::string &dispatch_path_storage,
+    std::string &implementation_kind_storage,
+    std::string &property_name_storage,
+    std::string &resolved_class_storage,
+    std::string &resolved_owner_storage) {
+  StabilizeNullableCString(snapshot.last_selector, selector_storage,
+                           snapshot.last_selector);
+  StabilizeNullableCString(snapshot.last_fast_path_reason,
+                           fast_path_reason_storage,
+                           snapshot.last_fast_path_reason);
+  StabilizeNullableCString(snapshot.last_dispatch_path, dispatch_path_storage,
+                           snapshot.last_dispatch_path);
+  StabilizeNullableCString(snapshot.last_implementation_kind,
+                           implementation_kind_storage,
+                           snapshot.last_implementation_kind);
+  StabilizeNullableCString(snapshot.last_property_name, property_name_storage,
+                           snapshot.last_property_name);
+  StabilizeNullableCString(snapshot.last_resolved_class_name,
+                           resolved_class_storage,
+                           snapshot.last_resolved_class_name);
+  StabilizeNullableCString(snapshot.last_resolved_owner_identity,
+                           resolved_owner_storage,
+                           snapshot.last_resolved_owner_identity);
+}
+
 void PrintPropertyRegistryState(
     const objc3_runtime_property_registry_state_snapshot &snapshot) {
   std::printf("{");
@@ -271,24 +299,174 @@ void PrintMethodCacheEntry(
   std::printf("}");
 }
 
+void PrintDispatchState(
+    const objc3_runtime_dispatch_state_snapshot &snapshot) {
+  std::printf("{");
+  std::printf("\"cache_entry_count\":%llu,",
+              static_cast<unsigned long long>(snapshot.cache_entry_count));
+  std::printf("\"fast_path_seed_count\":%llu,",
+              static_cast<unsigned long long>(snapshot.fast_path_seed_count));
+  std::printf("\"fast_path_hit_count\":%llu,",
+              static_cast<unsigned long long>(snapshot.fast_path_hit_count));
+  std::printf("\"live_dispatch_count\":%llu,",
+              static_cast<unsigned long long>(snapshot.live_dispatch_count));
+  std::printf("\"fallback_dispatch_count\":%llu,",
+              static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+  std::printf("\"last_resolved_parameter_count\":%llu,",
+              static_cast<unsigned long long>(
+                  snapshot.last_resolved_parameter_count));
+  std::printf("\"last_property_base_identity\":%llu,",
+              static_cast<unsigned long long>(
+                  snapshot.last_property_base_identity));
+  std::printf("\"last_property_slot_index\":%llu,",
+              static_cast<unsigned long long>(snapshot.last_property_slot_index));
+  std::printf("\"last_dispatch_used_cache\":%d,",
+              snapshot.last_dispatch_used_cache);
+  std::printf("\"last_dispatch_used_fast_path\":%d,",
+              snapshot.last_dispatch_used_fast_path);
+  std::printf("\"last_dispatch_resolved_live_method\":%d,",
+              snapshot.last_dispatch_resolved_live_method);
+  std::printf("\"last_dispatch_fell_back\":%d,",
+              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_effective_direct_dispatch\":%d,",
+              snapshot.last_effective_direct_dispatch);
+  std::printf("\"last_used_builtin\":%d,", snapshot.last_used_builtin);
+  std::printf("\"last_selector\":");
+  PrintJsonStringOrNull(snapshot.last_selector);
+  std::printf(",\"last_fast_path_reason\":");
+  PrintJsonStringOrNull(snapshot.last_fast_path_reason);
+  std::printf(",\"last_dispatch_path\":");
+  PrintJsonStringOrNull(snapshot.last_dispatch_path);
+  std::printf(",\"last_implementation_kind\":");
+  PrintJsonStringOrNull(snapshot.last_implementation_kind);
+  std::printf(",\"last_property_name\":");
+  PrintJsonStringOrNull(snapshot.last_property_name);
+  std::printf(",\"last_resolved_class_name\":");
+  PrintJsonStringOrNull(snapshot.last_resolved_class_name);
+  std::printf(",\"last_resolved_owner_identity\":");
+  PrintJsonStringOrNull(snapshot.last_resolved_owner_identity);
+  std::printf("}");
+}
+
 }  // namespace
 
 int main() {
+  std::string set_count_dispatch_selector;
+  std::string set_count_dispatch_fast_path_reason;
+  std::string set_count_dispatch_path;
+  std::string set_count_dispatch_implementation_kind;
+  std::string set_count_dispatch_property_name;
+  std::string set_count_dispatch_class_name;
+  std::string set_count_dispatch_owner_identity;
+  std::string count_dispatch_selector;
+  std::string count_dispatch_fast_path_reason;
+  std::string count_dispatch_path;
+  std::string count_dispatch_implementation_kind;
+  std::string count_dispatch_property_name;
+  std::string count_dispatch_class_name;
+  std::string count_dispatch_owner_identity;
+  std::string set_enabled_dispatch_selector;
+  std::string set_enabled_dispatch_fast_path_reason;
+  std::string set_enabled_dispatch_path;
+  std::string set_enabled_dispatch_implementation_kind;
+  std::string set_enabled_dispatch_property_name;
+  std::string set_enabled_dispatch_class_name;
+  std::string set_enabled_dispatch_owner_identity;
+  std::string enabled_dispatch_selector;
+  std::string enabled_dispatch_fast_path_reason;
+  std::string enabled_dispatch_path;
+  std::string enabled_dispatch_implementation_kind;
+  std::string enabled_dispatch_property_name;
+  std::string enabled_dispatch_class_name;
+  std::string enabled_dispatch_owner_identity;
+  std::string set_value_dispatch_selector;
+  std::string set_value_dispatch_fast_path_reason;
+  std::string set_value_dispatch_path;
+  std::string set_value_dispatch_implementation_kind;
+  std::string set_value_dispatch_property_name;
+  std::string set_value_dispatch_class_name;
+  std::string set_value_dispatch_owner_identity;
+  std::string value_dispatch_selector;
+  std::string value_dispatch_fast_path_reason;
+  std::string value_dispatch_path;
+  std::string value_dispatch_implementation_kind;
+  std::string value_dispatch_property_name;
+  std::string value_dispatch_class_name;
+  std::string value_dispatch_owner_identity;
+  std::string token_dispatch_selector;
+  std::string token_dispatch_fast_path_reason;
+  std::string token_dispatch_path;
+  std::string token_dispatch_implementation_kind;
+  std::string token_dispatch_property_name;
+  std::string token_dispatch_class_name;
+  std::string token_dispatch_owner_identity;
   const int widget_instance = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
+  objc3_runtime_dispatch_state_snapshot set_count_dispatch{};
   const int set_count_result =
       objc3_runtime_dispatch_i32(widget_instance, "setCount:", 37, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&set_count_dispatch);
+  StabilizeDispatchState(
+      set_count_dispatch, set_count_dispatch_selector,
+      set_count_dispatch_fast_path_reason, set_count_dispatch_path,
+      set_count_dispatch_implementation_kind,
+      set_count_dispatch_property_name, set_count_dispatch_class_name,
+      set_count_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot count_dispatch{};
   const int count_value =
       objc3_runtime_dispatch_i32(widget_instance, "count", 0, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&count_dispatch);
+  StabilizeDispatchState(
+      count_dispatch, count_dispatch_selector, count_dispatch_fast_path_reason,
+      count_dispatch_path, count_dispatch_implementation_kind,
+      count_dispatch_property_name, count_dispatch_class_name,
+      count_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot set_enabled_dispatch{};
   const int set_enabled_result =
       objc3_runtime_dispatch_i32(widget_instance, "setEnabled:", 1, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&set_enabled_dispatch);
+  StabilizeDispatchState(
+      set_enabled_dispatch, set_enabled_dispatch_selector,
+      set_enabled_dispatch_fast_path_reason, set_enabled_dispatch_path,
+      set_enabled_dispatch_implementation_kind,
+      set_enabled_dispatch_property_name, set_enabled_dispatch_class_name,
+      set_enabled_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot enabled_dispatch{};
   const int enabled_value =
       objc3_runtime_dispatch_i32(widget_instance, "enabled", 0, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&enabled_dispatch);
+  StabilizeDispatchState(
+      enabled_dispatch, enabled_dispatch_selector,
+      enabled_dispatch_fast_path_reason, enabled_dispatch_path,
+      enabled_dispatch_implementation_kind, enabled_dispatch_property_name,
+      enabled_dispatch_class_name, enabled_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot set_value_dispatch{};
   const int set_value_result =
       objc3_runtime_dispatch_i32(widget_instance, "setCurrentValue:", 55, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&set_value_dispatch);
+  StabilizeDispatchState(
+      set_value_dispatch, set_value_dispatch_selector,
+      set_value_dispatch_fast_path_reason, set_value_dispatch_path,
+      set_value_dispatch_implementation_kind,
+      set_value_dispatch_property_name, set_value_dispatch_class_name,
+      set_value_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot value_dispatch{};
   const int value_result =
       objc3_runtime_dispatch_i32(widget_instance, "currentValue", 0, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&value_dispatch);
+  StabilizeDispatchState(
+      value_dispatch, value_dispatch_selector, value_dispatch_fast_path_reason,
+      value_dispatch_path, value_dispatch_implementation_kind,
+      value_dispatch_property_name, value_dispatch_class_name,
+      value_dispatch_owner_identity);
+  objc3_runtime_dispatch_state_snapshot token_dispatch{};
   const int token_value =
       objc3_runtime_dispatch_i32(widget_instance, "tokenValue", 0, 0, 0, 0);
+  (void)objc3_runtime_copy_dispatch_state_for_testing(&token_dispatch);
+  StabilizeDispatchState(
+      token_dispatch, token_dispatch_selector, token_dispatch_fast_path_reason,
+      token_dispatch_path, token_dispatch_implementation_kind,
+      token_dispatch_property_name, token_dispatch_class_name,
+      token_dispatch_owner_identity);
 
   objc3_runtime_realized_class_entry_snapshot widget_entry{};
   (void)objc3_runtime_copy_realized_class_entry_for_testing("Widget", &widget_entry);
@@ -478,6 +656,20 @@ int main() {
   PrintMethodCacheEntry(value_method);
   std::printf(",\"token_method\":");
   PrintMethodCacheEntry(token_method);
+  std::printf(",\"set_count_dispatch\":");
+  PrintDispatchState(set_count_dispatch);
+  std::printf(",\"count_dispatch\":");
+  PrintDispatchState(count_dispatch);
+  std::printf(",\"set_enabled_dispatch\":");
+  PrintDispatchState(set_enabled_dispatch);
+  std::printf(",\"enabled_dispatch\":");
+  PrintDispatchState(enabled_dispatch);
+  std::printf(",\"set_value_dispatch\":");
+  PrintDispatchState(set_value_dispatch);
+  std::printf(",\"value_dispatch\":");
+  PrintDispatchState(value_dispatch);
+  std::printf(",\"token_dispatch\":");
+  PrintDispatchState(token_dispatch);
   std::printf("}");
   return 0;
 }

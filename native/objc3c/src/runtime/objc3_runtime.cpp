@@ -515,9 +515,12 @@ struct RuntimeState {
   std::string last_fast_path_reason;
   std::string last_dispatch_path;
   std::string last_dispatch_implementation_kind;
+  std::string last_dispatch_property_name;
   std::string last_resolved_class_name;
   std::string last_resolved_owner_identity;
   std::uint64_t last_dispatch_parameter_count = 0;
+  std::uint64_t last_dispatch_property_base_identity = 0;
+  std::uint64_t last_dispatch_property_slot_index = 0;
   const objc3_runtime_registration_table *staged_registration_table = nullptr;
   std::uint64_t walked_image_count = 0;
   std::uint64_t last_discovery_root_entry_count = 0;
@@ -737,9 +740,12 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.last_fast_path_reason.clear();
   state.last_dispatch_path.clear();
   state.last_dispatch_implementation_kind.clear();
+  state.last_dispatch_property_name.clear();
   state.last_resolved_class_name.clear();
   state.last_resolved_owner_identity.clear();
   state.last_dispatch_parameter_count = 0;
+  state.last_dispatch_property_base_identity = 0;
+  state.last_dispatch_property_slot_index = 0;
 }
 
 void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
@@ -1651,12 +1657,8 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
           resolution.selector_stable_id = selector_stable_id;
           resolution.parameter_count = 0;
           resolution.return_kind = accessor.getter_return_kind;
-          resolution.implementation =
-              accessor.property_descriptor->getter_implementation;
-          resolution.builtin_kind =
-              resolution.implementation != nullptr
-                  ? RuntimeBuiltinKind::None
-                  : RuntimeBuiltinKind::PropertyGetter;
+          resolution.implementation = nullptr;
+          resolution.builtin_kind = RuntimeBuiltinKind::PropertyGetter;
           resolution.runtime_property_accessor = &accessor;
           return true;
         }
@@ -1673,12 +1675,8 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
           resolution.selector_stable_id = selector_stable_id;
           resolution.parameter_count = 1;
           resolution.return_kind = RuntimeMethodReturnKind::Void;
-          resolution.implementation =
-              accessor.property_descriptor->setter_implementation;
-          resolution.builtin_kind =
-              resolution.implementation != nullptr
-                  ? RuntimeBuiltinKind::None
-                  : RuntimeBuiltinKind::PropertySetter;
+          resolution.implementation = nullptr;
+          resolution.builtin_kind = RuntimeBuiltinKind::PropertySetter;
           resolution.runtime_property_accessor = &accessor;
           return true;
         }
@@ -3992,6 +3990,9 @@ int objc3_runtime_copy_dispatch_state_for_testing(
   snapshot->last_normalized_receiver_identity =
       state.last_dispatch_normalized_receiver_identity;
   snapshot->last_resolved_parameter_count = state.last_dispatch_parameter_count;
+  snapshot->last_property_base_identity =
+      state.last_dispatch_property_base_identity;
+  snapshot->last_property_slot_index = state.last_dispatch_property_slot_index;
   snapshot->last_dispatch_used_cache = state.last_dispatch_used_cache ? 1 : 0;
   snapshot->last_dispatch_used_fast_path =
       state.last_dispatch_used_fast_path ? 1 : 0;
@@ -4006,6 +4007,8 @@ int objc3_runtime_copy_dispatch_state_for_testing(
   snapshot->last_dispatch_path = StableCString(state.last_dispatch_path);
   snapshot->last_implementation_kind =
       StableCString(state.last_dispatch_implementation_kind);
+  snapshot->last_property_name =
+      StableCString(state.last_dispatch_property_name);
   snapshot->last_resolved_class_name =
       StableCString(state.last_resolved_class_name);
   snapshot->last_resolved_owner_identity =
@@ -5486,9 +5489,12 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     state.last_fast_path_reason.clear();
     state.last_dispatch_path.clear();
     state.last_dispatch_implementation_kind.clear();
+    state.last_dispatch_property_name.clear();
     state.last_resolved_class_name.clear();
     state.last_resolved_owner_identity.clear();
     state.last_dispatch_parameter_count = 0;
+    state.last_dispatch_property_base_identity = 0;
+    state.last_dispatch_property_slot_index = 0;
 
     if (receiver != 0 && selector_handle != nullptr) {
       std::uint64_t base_identity = 0;
@@ -5517,6 +5523,21 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.last_resolved_class_name = entry.class_name;
           state.last_resolved_owner_identity = entry.owner_identity;
           state.last_dispatch_parameter_count = entry.parameter_count;
+          if (entry.runtime_property_accessor != nullptr &&
+              entry.runtime_property_accessor->property_descriptor != nullptr) {
+            state.last_dispatch_property_name =
+                entry.runtime_property_accessor->property_descriptor
+                        ->property_name != nullptr
+                    ? entry.runtime_property_accessor->property_descriptor
+                          ->property_name
+                    : "";
+            state.last_dispatch_property_base_identity = receiver_base_identity;
+            state.last_dispatch_property_slot_index =
+                entry.runtime_property_accessor->ivar_descriptor != nullptr
+                    ? entry.runtime_property_accessor->ivar_descriptor->slot_index
+                    : entry.runtime_property_accessor->property_descriptor
+                          ->ivar_layout_slot_index;
+          }
           if (entry.resolved) {
             resolved_live_method = true;
             resolved_builtin_kind = entry.builtin_kind;
@@ -5581,6 +5602,23 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           state.last_resolved_class_name = resolution.class_name;
           state.last_resolved_owner_identity = resolution.owner_identity;
           state.last_dispatch_parameter_count = resolution.parameter_count;
+          if (resolution.runtime_property_accessor != nullptr &&
+              resolution.runtime_property_accessor->property_descriptor !=
+                  nullptr) {
+            state.last_dispatch_property_name =
+                resolution.runtime_property_accessor->property_descriptor
+                        ->property_name != nullptr
+                    ? resolution.runtime_property_accessor->property_descriptor
+                          ->property_name
+                    : "";
+            state.last_dispatch_property_base_identity = receiver_base_identity;
+            state.last_dispatch_property_slot_index =
+                resolution.runtime_property_accessor->ivar_descriptor != nullptr
+                    ? resolution.runtime_property_accessor->ivar_descriptor
+                          ->slot_index
+                    : resolution.runtime_property_accessor->property_descriptor
+                          ->ivar_layout_slot_index;
+          }
           if (resolution.resolved) {
             resolved_live_method = true;
             resolved_builtin_kind = resolution.builtin_kind;
