@@ -4,14 +4,14 @@ Contract ID: `objc3c-cleanup-public-package-script-collapse/m314-b002-v1`
 
 ## Purpose
 
-Implement a compact public package-script surface without breaking the broader compatibility alias mass yet.
+Implement a compact public package-script surface and remove the broader compatibility alias mass from `package.json`.
 
 ## Required truths
 
 - `package.json` publishes one explicit machine-readable public command subset for operators.
 - That public subset contains at most `25` commands.
 - Public documentation prefers the explicit public subset over direct Python or PowerShell commands where a public wrapper already exists.
-- Legacy aliases remain present only as compatibility surfaces and are not part of the public command budget.
+- Legacy aliases are removed from `package.json` and are not part of the public command budget.
 
 ## Implemented public subset
 
@@ -25,9 +25,9 @@ Implement a compact public package-script surface without breaking the broader c
 
 ## Non-goals
 
-- Do not remove the compatibility alias mass yet.
-- Do not finalize alias-deprecation windows yet.
-- Do not retire the prototype compiler path yet.
+- Do not broaden the public command set beyond the frozen subset.
+- Do not reintroduce a compatibility alias window.
+- Do not retire the prototype compiler path here.
 
 ## Evidence
 

@@ -2,14 +2,14 @@
 
 ## Summary
 
-Implement the compatibility window for the legacy alias mass now that the public subset and unified runner are in place.
+Retire the compatibility window for the legacy alias mass now that the public subset and unified runner are in place.
 
 ## Implementation shape
 
-- Add one machine-readable compatibility registry to `package.json`.
-- Classify legacy alias families as temporary, non-public surfaces.
+- Remove the legacy alias families from `package.json`.
+- Publish one machine-readable retirement record for those removed families.
 - Freeze a no-new-growth policy over those families.
-- Point later cleanup work at the exact owners that must retire or stop documenting them.
+- Point later cleanup work at the exact owners that must not reintroduce or re-document them.
 
 ## Covered alias families
 
@@ -20,8 +20,8 @@ Implement the compatibility window for the legacy alias mass now that the public
 
 ## Non-goals
 
-- Do not remove compatibility aliases yet.
-- Do not rewrite all docs yet.
+- Do not reintroduce compatibility aliases.
+- Do not rewrite all historical docs yet.
 - Do not retire the prototype compiler path yet.
 
 ## Evidence

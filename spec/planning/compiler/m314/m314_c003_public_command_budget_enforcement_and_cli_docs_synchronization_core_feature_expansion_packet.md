@@ -17,7 +17,7 @@ sync the committed public command docs to that same live source.
 
 - Do not expand the public workflow API.
 - Do not rewrite broader maintainer onboarding docs yet.
-- Do not touch legacy compatibility aliases beyond budget accounting.
+- Do not reintroduce legacy compatibility aliases beyond the retired-surface metadata.
 
 ## Evidence
 

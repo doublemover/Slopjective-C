@@ -68,7 +68,8 @@ def render_markdown() -> str:
             "",
             "- Use the package scripts above for normal operator workflows.",
             "- `compile:objc3c` is the only public command that accepts pass-through arguments.",
-            "- All other package scripts remain compatibility or internal surfaces during cleanup and may change without notice.",
+            "- No additional package-script compatibility aliases remain supported.",
+            "- Maintainer-only package scripts are limited to repo hygiene and boundary checks.",
             "",
         ]
     )

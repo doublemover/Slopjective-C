@@ -17,7 +17,7 @@ implementation and command-budget work has one stable action vocabulary.
 ## Non-goals
 
 - Do not refactor the runner implementation into a registry yet.
-- Do not remove legacy compatibility aliases yet.
+- Do not reintroduce package-level alias families here.
 - Do not broaden operator docs beyond the public-surface note.
 
 ## Evidence

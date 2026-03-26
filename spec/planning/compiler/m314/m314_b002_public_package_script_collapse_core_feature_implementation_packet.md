@@ -2,7 +2,7 @@
 
 ## Summary
 
-Implement the compact public package-script surface promised by `M314-B001` without removing compatibility aliases prematurely.
+Implement the compact public package-script surface promised by `M314-B001` and remove the compatibility alias mass immediately.
 
 ## Implementation shape
 
@@ -11,7 +11,7 @@ Implement the compact public package-script surface promised by `M314-B001` with
 
 - Freeze the allowed public commands to a compact subset under the `25`-command budget.
 - Update README workflow guidance to use public wrappers where those wrappers already exist.
-- Leave the broader package alias mass in place as compatibility until `M314-B004`.
+- Remove the broader package alias mass instead of preserving it through `package.json`.
 
 ## Public subset scope
 
@@ -35,8 +35,8 @@ Implement the compact public package-script surface promised by `M314-B001` with
 
 ## Explicit non-goals
 
-- Do not remove milestone-local package aliases yet.
-- Do not remove historical compatibility scripts yet.
+- Do not broaden the public package surface beyond the frozen subset.
+- Do not reintroduce a package-level compatibility alias window.
 - Do not collapse README transitional `--check` docs-builder usage yet.
 
 ## Evidence

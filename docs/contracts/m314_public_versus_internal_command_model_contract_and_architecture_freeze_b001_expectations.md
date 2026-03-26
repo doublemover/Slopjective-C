@@ -4,7 +4,7 @@ Contract ID: `objc3c-cleanup-public-internal-command-model/m314-b001-v1`
 
 ## Purpose
 
-Freeze the command-model semantics for `M314`: what counts as a public operator command, what counts as an internal or implementation detail, what remains temporarily compatible, and what is prohibited from growing further.
+Freeze the command-model semantics for `M314`: what counts as a public operator command, what counts as an internal or implementation detail, what has been explicitly retired, and what is prohibited from growing further.
 
 ## Required truths
 
@@ -12,7 +12,7 @@ Freeze the command-model semantics for `M314`: what counts as a public operator 
 - Internal parameterized runners under `scripts/` remain allowed but are non-public.
 - PowerShell scripts remain implementation details and may only surface publicly through package-script wrappers.
 - GitHub workflows remain CI-only and must not become operator documentation.
-- Legacy milestone-local `check:*` and `test:tooling:*` aliases are compatibility surfaces only, not part of the long-term public interface.
+- Legacy milestone-local `check:*` and `test:tooling:*` aliases are removed from `package.json` and may survive only as archival references.
 - New public command families outside the frozen allow-list require explicit exception handling later in the cleanup program.
 
 ## Allowed public surface
@@ -25,9 +25,9 @@ Freeze the command-model semantics for `M314`: what counts as a public operator 
 - `tool`
 - `proof`
 
-## Temporary compatibility surface
+## Retired or transitional surface
 
-- legacy milestone-local package aliases
+- legacy milestone-local package aliases removed from `package.json`
 - existing direct Python README entries pending workflow-doc cleanup
 - existing direct PowerShell README smoke entry pending wrapper cleanup
 

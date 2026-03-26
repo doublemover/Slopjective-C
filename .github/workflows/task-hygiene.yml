@@ -95,7 +95,7 @@ jobs:
             Write-Host "Skipping live source parity: hosted runner does not provide llc --filetype=obj capability."
             exit 0
           }
-          npm run check:objc3c:library-cli-parity:source:m144
+          python scripts/check_objc3c_library_cli_parity.py --source tests/tooling/fixtures/native/hello.objc3 --cli-bin artifacts/bin/objc3c-native.exe --c-api-bin artifacts/bin/objc3c-frontend-c-api-runner.exe --work-dir tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/work --summary-out tmp/artifacts/compilation/objc3c-native/m144/library-cli-parity/summary.json --llvm-capabilities-summary tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json --route-cli-backend-from-capabilities
 
       - name: Run native execution smoke when llc is available
         shell: pwsh

@@ -16,3 +16,9 @@ def test_surface_marks_readme_check_migration_transitional() -> None:
     payload = json.loads(SURFACE_JSON.read_text(encoding="utf-8"))
     transitional = [entry for entry in payload["readme_migrations"] if entry["status"] == "transitional"]
     assert transitional == [{"from": "python scripts/build_site_index.py --check", "to": None, "status": "transitional"}]
+
+
+def test_surface_marks_legacy_alias_mass_removed() -> None:
+    payload = json.loads(SURFACE_JSON.read_text(encoding="utf-8"))
+    assert payload["compatibility_policy"]["legacy_alias_mass_retained"] is False
+    assert payload["compatibility_policy"]["package_surface_fully_trimmed"] is True

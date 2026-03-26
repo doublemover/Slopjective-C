@@ -34,7 +34,7 @@ Freeze the current command-surface inventory and a script-budget policy before `
 ## Non-goals
 
 - Do not collapse scripts yet.
-- Do not retire compatibility aliases yet.
+- Do not broaden the package surface while the inventory freeze is in force.
 - Do not rewrite README operator workflows yet.
 - Do not move or retire the dead prototype compiler path yet.
 

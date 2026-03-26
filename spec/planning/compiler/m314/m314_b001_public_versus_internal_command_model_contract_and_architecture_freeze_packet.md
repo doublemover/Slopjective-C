@@ -17,11 +17,11 @@ Freeze the semantic model for the command surface so `M314-B002` through `M314-D
 - CI-only layer:
   - `.github/workflows/*.yml`
 
-## Compatibility model
+## Retirement model
 
-- Legacy milestone-local package aliases remain temporary compatibility surfaces only.
+- Legacy milestone-local package aliases are removed from `package.json`.
 - README direct Python and PowerShell commands remain transitional documentation leaks only.
-- `M314-B004` owns compatibility-window policy.
+- `M314-B004` owns alias-retirement policy.
 - `M314-B005` owns the dead prototype compiler path retirement.
 
 ## Prohibited growth

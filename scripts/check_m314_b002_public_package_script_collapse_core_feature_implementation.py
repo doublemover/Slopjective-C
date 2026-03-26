@@ -18,6 +18,16 @@ SURFACE_JSON = ROOT / "spec" / "planning" / "compiler" / "m314" / "m314_b002_pub
 PACKAGE_JSON = ROOT / "package.json"
 README = ROOT / "README.md"
 
+REMOVED_PREFIXES = (
+    "check:objc3c:m",
+    "test:tooling:m",
+    "check:compiler-closeout:m",
+    "run:objc3c:",
+    "plan:compiler-dispatch:",
+    "refresh:compiler-dispatch:",
+    "dev:objc3c:",
+)
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -60,8 +70,8 @@ def main(argv: Sequence[str]) -> int:
 
     checks_total += 4
     checks_passed += require("Contract ID: `objc3c-cleanup-public-package-script-collapse/m314-b002-v1`" in expectations, str(EXPECTATIONS_DOC), "M314-B002-EXP-01", "expectations contract id missing", failures)
-    checks_passed += require("machine-readable public command subset" in expectations, str(EXPECTATIONS_DOC), "M314-B002-EXP-02", "expectations missing public subset rule", failures)
-    checks_passed += require("package.json public command surface block" in packet, str(PACKET_DOC), "M314-B002-PKT-01", "packet missing package-surface block", failures)
+    checks_passed += require("remove the broader compatibility alias mass" in expectations, str(EXPECTATIONS_DOC), "M314-B002-EXP-02", "expectations missing alias-removal rule", failures)
+    checks_passed += require("public command surface block" in packet, str(PACKET_DOC), "M314-B002-PKT-01", "packet missing package-surface block", failures)
     checks_passed += require("Next issue: `M314-B003`." in packet, str(PACKET_DOC), "M314-B002-PKT-02", "packet missing next issue", failures)
 
     checks_total += 10
@@ -71,28 +81,28 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(surface.get("package_json_public_surface_key") == "objc3cCommandSurface", str(SURFACE_JSON), "M314-B002-SUR-04", "package surface key drifted", failures)
     checks_passed += require(len(surface.get("public_scripts", [])) <= 25, str(SURFACE_JSON), "M314-B002-SUR-05", "public script count exceeds budget", failures)
     checks_passed += require(surface.get("public_script_budget_maximum") == 25, str(SURFACE_JSON), "M314-B002-SUR-06", "budget maximum drifted", failures)
-    checks_passed += require(surface.get("compatibility_policy", {}).get("legacy_alias_mass_retained") is True, str(SURFACE_JSON), "M314-B002-SUR-07", "compatibility retention drifted", failures)
-    checks_passed += require(surface.get("compatibility_policy", {}).get("deprecation_owner_issue") == "M314-B004", str(SURFACE_JSON), "M314-B002-SUR-08", "deprecation owner drifted", failures)
+    checks_passed += require(surface.get("compatibility_policy", {}).get("legacy_alias_mass_retained") is False, str(SURFACE_JSON), "M314-B002-SUR-07", "alias-retirement state drifted", failures)
+    checks_passed += require(surface.get("compatibility_policy", {}).get("package_surface_fully_trimmed") is True, str(SURFACE_JSON), "M314-B002-SUR-08", "trimmed-surface flag drifted", failures)
     checks_passed += require(any(entry.get("status") == "implemented" for entry in surface.get("readme_migrations", [])), str(SURFACE_JSON), "M314-B002-SUR-09", "implemented README migration missing", failures)
     checks_passed += require(surface.get("next_issue") == "M314-B003", str(SURFACE_JSON), "M314-B002-SUR-10", "next issue drifted", failures)
 
-    checks_total += 5
+    checks_total += 7
     checks_passed += require(package_surface.get("mode") == surface.get("mode"), str(PACKAGE_JSON), "M314-B002-PKG-01", "package public-surface mode drifted", failures)
     checks_passed += require(package_surface.get("contractId") == surface.get("contract_id"), str(PACKAGE_JSON), "M314-B002-PKG-02", "package public-surface contract drifted", failures)
     checks_passed += require(package_surface.get("publicScripts") == surface.get("public_scripts"), str(PACKAGE_JSON), "M314-B002-PKG-03", "package publicScripts drifted", failures)
     checks_passed += require(package_surface.get("budgetMaximum") == 25, str(PACKAGE_JSON), "M314-B002-PKG-04", "package budget maximum drifted", failures)
-    checks_passed += require(package_surface.get("compatibilityOwnerIssue") == "M314-B004", str(PACKAGE_JSON), "M314-B002-PKG-05", "package compatibility owner drifted", failures)
+    checks_passed += require(package_surface.get("totalScriptCount") == len(scripts), str(PACKAGE_JSON), "M314-B002-PKG-05", "package total script count drifted", failures)
+    checks_passed += require("objc3cCommandCompatibility" not in package, str(PACKAGE_JSON), "M314-B002-PKG-06", "compatibility block should be removed", failures)
+    checks_passed += require(len(scripts) <= 25, str(PACKAGE_JSON), "M314-B002-PKG-07", "trimmed package script surface exceeds budget", failures)
 
     for idx, script_name in enumerate(surface.get("public_scripts", []), start=1):
         checks_total += 1
-        checks_passed += require(script_name in scripts, str(PACKAGE_JSON), f"M314-B002-PKG-{idx+10:02d}", f"missing public script {script_name}", failures)
+        checks_passed += require(script_name in scripts, str(PACKAGE_JSON), f"M314-B002-PKG-{idx+20:02d}", f"missing public script {script_name}", failures)
 
-    checks_total += 5
-    checks_passed += require("## Public Command Surface" in readme, str(README), "M314-B002-RD-01", "README missing public command surface section", failures)
-    checks_passed += require("npm run build:spec" in readme, str(README), "M314-B002-RD-02", "README missing public build:spec command", failures)
-    checks_passed += require("npm run test:objc3c:execution-smoke" in readme, str(README), "M314-B002-RD-03", "README missing public smoke command", failures)
-    checks_passed += require("All other package scripts are compatibility or internal surfaces" in readme, str(README), "M314-B002-RD-04", "README missing compatibility note", failures)
-    checks_passed += require('"check:objc3c:m314-b002-public-package-script-collapse-core-feature-implementation"' in package_text, str(PACKAGE_JSON), "M314-B002-PKG-LAST-01", "package missing checker script", failures)
+    removed_hits = sorted(name for name in scripts if name.startswith(REMOVED_PREFIXES))
+    checks_total += 2
+    checks_passed += require(not removed_hits, str(PACKAGE_JSON), "M314-B002-PKG-REM-01", f"removed alias families still present: {removed_hits}", failures)
+    checks_passed += require("No additional package-script compatibility aliases remain supported." in readme, str(README), "M314-B002-RD-01", "README missing alias-removal note", failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -102,7 +112,7 @@ def main(argv: Sequence[str]) -> int:
         "checks_total": checks_total,
         "checks_passed": checks_passed,
         "public_scripts": surface["public_scripts"],
-        "readme_migrations": surface["readme_migrations"],
+        "total_scripts": len(scripts),
         "next_issue": "M314-B003",
         "failures": [finding.__dict__ for finding in failures],
     }

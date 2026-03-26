@@ -347,7 +347,8 @@ Use these package scripts for normal operator workflows:
 - `npm run package:objc3c-native:runnable-toolchain`
 - `npm run proof:objc3c`
 
-All other package scripts are compatibility or internal surfaces retained during cleanup and may change without notice.
+No additional package-script compatibility aliases remain supported.
+Maintainer-only package scripts are limited to repo hygiene, task hygiene, and boundary checks.
 Prefer the public package-script surface over direct Python or PowerShell invocations when a public wrapper already exists.
 `native/objc3c/` is the only supported compiler implementation root. The earlier
 prototype Python compiler surface has been retired into the governance archive

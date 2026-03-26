@@ -16,7 +16,7 @@ maintainers, operators, and future gates all point at the same workflow docs.
 ## Non-goals
 
 - Do not add new public commands.
-- Do not remove the remaining compatibility aliases here.
+- Do not reintroduce package-level compatibility aliases here.
 - Do not publish the milestone gate/matrix here.
 
 ## Evidence

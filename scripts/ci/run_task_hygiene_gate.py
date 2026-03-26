@@ -8,62 +8,51 @@ import sys
 from pathlib import Path
 
 
-def build_task_hygiene_sequence() -> list[str]:
-    closeout_ids = [135, 137, 138, 139, 140, 141, 142, 143, 144, 145, *range(153, 193)]
-    closeout_scripts = [f"check:compiler-closeout:m{milestone_id}" for milestone_id in closeout_ids]
-    return [
-        "check:planning-hygiene",
-        *closeout_scripts,
-        "check:catalog-status-integrity",
-        "check:catalog-status-metadata",
-        "check:open-blocker-audit:repo-root:fixtures",
-        "extract:open-issues",
-        "check:issue-drift",
-    ]
+ROOT = Path(__file__).resolve().parents[2]
+REGISTRY_PATH = ROOT / "spec" / "governance" / "objc3c_task_hygiene_registry.json"
 
 
-def load_declared_npm_scripts(repo_root: Path) -> set[str]:
-    package_json_path = repo_root / "package.json"
-    package_payload = json.loads(package_json_path.read_text(encoding="utf-8"))
-    scripts = package_payload.get("scripts", {})
-    if not isinstance(scripts, dict):
-        raise RuntimeError("package.json scripts field must be an object")
-    return set(str(key) for key in scripts.keys())
+def load_registry() -> list[dict[str, str]]:
+    payload = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    sequence = payload.get("sequence")
+    if not isinstance(sequence, list):
+        raise RuntimeError("task hygiene registry sequence must be a list")
+    normalized: list[dict[str, str]] = []
+    for entry in sequence:
+        if not isinstance(entry, dict):
+            raise RuntimeError("task hygiene registry entries must be objects")
+        source_script = entry.get("source_script")
+        command = entry.get("command")
+        if not isinstance(source_script, str) or not isinstance(command, str):
+            raise RuntimeError("task hygiene registry entries require source_script and command strings")
+        normalized.append({"source_script": source_script, "command": command})
+    return normalized
 
 
-def run_npm_script(repo_root: Path, script_name: str) -> int:
-    print(f"[check:task-hygiene] npm run {script_name}", flush=True)
-    completed = subprocess.run(["npm", "run", script_name], cwd=repo_root)
+def run_command(repo_root: Path, source_script: str, command: str) -> int:
+    print(f"[check:task-hygiene] {source_script}", flush=True)
+    completed = subprocess.run(command, cwd=repo_root, shell=True, check=False)
     return int(completed.returncode)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run check:task-hygiene gate scripts in deterministic order.")
-    parser.add_argument("--dry-run", action="store_true", help="Print planned script sequence without executing npm.")
+    parser = argparse.ArgumentParser(description="Run task-hygiene commands in deterministic order.")
+    parser.add_argument("--dry-run", action="store_true", help="Print planned direct commands without executing them.")
     args = parser.parse_args(argv)
 
-    repo_root = Path(__file__).resolve().parents[2]
-    sequence = build_task_hygiene_sequence()
-
-    declared_scripts = load_declared_npm_scripts(repo_root)
-    missing_scripts = [script_name for script_name in sequence if script_name not in declared_scripts]
-    if missing_scripts:
-        print("check:task-hygiene gate FAIL: missing npm scripts:", file=sys.stderr)
-        for script_name in missing_scripts:
-            print(f"- {script_name}", file=sys.stderr)
-        return 1
+    sequence = load_registry()
 
     if args.dry_run:
-        for script_name in sequence:
-            print(script_name)
+        for entry in sequence:
+            print(f"{entry['source_script']} => {entry['command']}")
         return 0
 
-    for script_name in sequence:
-        code = run_npm_script(repo_root, script_name)
+    for entry in sequence:
+        code = run_command(ROOT, entry["source_script"], entry["command"])
         if code != 0:
             return code
 
-    print(f"[check:task-hygiene] sequence complete ({len(sequence)} script(s))", flush=True)
+    print(f"[check:task-hygiene] sequence complete ({len(sequence)} command(s))", flush=True)
     return 0
 
 

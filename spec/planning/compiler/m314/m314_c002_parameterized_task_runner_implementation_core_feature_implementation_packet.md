@@ -17,7 +17,7 @@ registry with stable introspection output.
 ## Non-goals
 
 - Do not change the public action vocabulary.
-- Do not remove legacy compatibility aliases yet.
+- Do not reintroduce package-level alias families here.
 - Do not finish CLI docs synchronization; `M314-C003` owns that.
 
 ## Evidence

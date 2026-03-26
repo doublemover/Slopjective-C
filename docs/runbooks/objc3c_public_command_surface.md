@@ -21,11 +21,11 @@ This runbook is generated from the live public workflow runner metadata.
 | `lint:spec` | `lint-spec` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `fixed-shape` | `runner-internal` |
 | `test:smoke` | `test-smoke` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `fixed-shape` | `runner-internal + npm + pytest` |
+| `test:ci` | `test-ci` | `fixed-shape` | `runner-internal + direct task hygiene + acceptance-first CI` |
 | `test:objc3c` | `test-recovery` | `fixed-shape` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `fixed-shape` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `fixed-shape` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
-| `test:objc3c:full` | `test-full` | `fixed-shape` | `runner-internal + npm` |
+| `test:objc3c:full` | `test-full` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `proof:objc3c` | `proof-objc3c` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 
@@ -33,4 +33,5 @@ This runbook is generated from the live public workflow runner metadata.
 
 - Use the package scripts above for normal operator workflows.
 - `compile:objc3c` is the only public command that accepts pass-through arguments.
-- All other package scripts remain compatibility or internal surfaces during cleanup and may change without notice.
+- No additional package-script compatibility aliases remain supported.
+- Maintainer-only package scripts are limited to repo hygiene and boundary checks.

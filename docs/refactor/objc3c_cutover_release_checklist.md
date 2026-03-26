@@ -18,7 +18,7 @@ This checklist is the production-readiness gate for final ObjC3C modular cutover
 
 - [ ] `CR-M134-01` Ownership roster published with on-call contact and UTC window.
 - [ ] `CR-M134-02` Latest boundary gate passes: `python scripts/check_objc3c_dependency_boundaries.py --strict`.
-- [ ] `CR-M134-03` Subsystem entrypoint checks (`dev:objc3c:lex|parse|sema|lower|ir`) are green for touched module surfaces.
+- [ ] `CR-M134-03` Subsystem entrypoint checks (direct `scripts/check_objc3c_*` or `scripts/run_objc3c_*` commands for `lex|parse|sema|lower|ir`) are green for touched module surfaces.
 - [ ] `CR-M134-04` No open `Sev-1`/`Sev-2` regressions in cutover scope.
 - [ ] `CR-M134-05` Freeze window start/end UTC timestamps are published.
 - [ ] `CR-M134-06` Rollback owner and rollback command path are confirmed.

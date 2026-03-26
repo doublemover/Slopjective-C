@@ -65,15 +65,15 @@ Cross-lane rule:
 
 Start with the smallest deterministic command set that covers the changed subsystem.
 
-| subsystem focus                 | default command                   | additional command(s) when needed                   |
-| ------------------------------- | --------------------------------- | --------------------------------------------------- |
-| `lex`                           | `npm run dev:objc3c:lex`          | `npm run check:objc3c:boundaries`                   |
-| `parse`                         | `npm run dev:objc3c:parse`        | `npm run check:objc3c:boundaries`                   |
-| `sema`                          | `npm run dev:objc3c:sema`         | `npm run test:objc3c:execution-replay-proof`        |
-| `lower`                         | `npm run dev:objc3c:lower`        | `npm run test:objc3c:typed-abi-replay-proof`        |
-| `ir`                            | `npm run dev:objc3c:ir`           | `npm run test:objc3c:execution-smoke`               |
-| `pipeline`/`libobjc3c_frontend` | `npm run dev:objc3c:sema`         | `npm run dev:objc3c:lower`, `npm run dev:objc3c:ir` |
-| `driver`/`io`                   | `npm run check:objc3c:boundaries` | `npm run test:objc3c:execution-smoke`               |
+| subsystem focus                 | default command                                                                      | additional command(s) when needed                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| `lex`                           | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1` | `npm run check:objc3c:boundaries`                                                                  |
+| `parse`                         | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_parser_replay_proof.ps1`             | `npm run check:objc3c:boundaries`                                                                  |
+| `sema`                          | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1` | `npm run test:objc3c:execution-replay-proof`                                                       |
+| `lower`                         | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`         | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1`  |
+| `ir`                            | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1`          | `npm run test:objc3c:execution-smoke`                                                              |
+| `pipeline`/`libobjc3c_frontend` | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1` | `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1` |
+| `driver`/`io`                   | `npm run check:objc3c:boundaries`                                                    | `npm run test:objc3c:execution-smoke`                                                              |
 
 Selection policy:
 
@@ -107,7 +107,7 @@ Actions:
 1. Isolate failing fixture from summary output in `tmp/artifacts/objc3c-native/parser-replay-proof/*`.
 2. Confirm whether failure is lex tokenization or parse structure.
 3. Fix only the targeted subsystem path first.
-4. Re-run `dev:objc3c:lex` or `dev:objc3c:parse`.
+4. Re-run the relevant direct subsystem script for `lex` or `parse`.
 
 ### 6.3 sema workflow failures
 
@@ -117,7 +117,7 @@ Symptom:
 
 Actions:
 
-1. Re-run `npm run dev:objc3c:sema`.
+1. Re-run `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`.
 2. Compare diagnostics replay outputs under `tmp/artifacts/objc3c-native/diagnostics-replay-proof/*`.
 3. Verify deterministic code lists and expected fixture metadata.
 
@@ -129,7 +129,7 @@ Symptom:
 
 Actions:
 
-1. Re-run the relevant subsystem command (`dev:objc3c:lower` or `dev:objc3c:ir`).
+1. Re-run the relevant subsystem command (`scripts/run_objc3c_lowering_regression_suite.ps1` or `scripts/check_objc3c_typed_abi_replay_proof.ps1`).
 2. Inspect generated summaries under `tmp/artifacts/objc3c-native/lowering-regression/*` or `tmp/artifacts/objc3c-native/typed-abi-replay-proof/*`.
 3. Check that lowered output remains deterministic across replay runs.
 

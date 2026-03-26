@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checker for M314-B004 alias deprecation and compatibility window."""
+"""Checker for M314-B004 alias retirement and closed compatibility window."""
 
 from __future__ import annotations
 
@@ -52,39 +52,30 @@ def main(argv: Sequence[str]) -> int:
     expectations = read_text(EXPECTATIONS_DOC)
     packet = read_text(PACKET_DOC)
     registry = json.loads(read_text(REGISTRY_JSON))
-    package_text = read_text(PACKAGE_JSON)
-    package = json.loads(package_text)
-    compatibility = package.get("objc3cCommandCompatibility", {})
+    package = json.loads(read_text(PACKAGE_JSON))
     readme = read_text(README)
 
     checks_total += 4
     checks_passed += require("Contract ID: `objc3c-cleanup-alias-deprecation-compatibility-window/m314-b004-v1`" in expectations, str(EXPECTATIONS_DOC), "M314-B004-EXP-01", "expectations contract id missing", failures)
-    checks_passed += require("machine-readable in `package.json`" in expectations, str(EXPECTATIONS_DOC), "M314-B004-EXP-02", "expectations missing package rule", failures)
-    checks_passed += require("machine-readable compatibility registry" in packet, str(PACKET_DOC), "M314-B004-PKT-01", "packet missing compatibility registry", failures)
+    checks_passed += require("no longer remain supported through `package.json`" in expectations, str(EXPECTATIONS_DOC), "M314-B004-EXP-02", "expectations missing alias-removal rule", failures)
+    checks_passed += require("machine-readable retirement record" in packet, str(PACKET_DOC), "M314-B004-PKT-01", "packet missing retirement record", failures)
     checks_passed += require("Next issue: `M314-B005`." in packet, str(PACKET_DOC), "M314-B004-PKT-02", "packet missing next issue", failures)
 
-    checks_total += 9
+    checks_total += 10
     checks_passed += require(registry.get("mode") == "m314-b004-alias-deprecation-compatibility-window-v1", str(REGISTRY_JSON), "M314-B004-REG-01", "mode drifted", failures)
     checks_passed += require(registry.get("contract_id") == "objc3c-cleanup-alias-deprecation-compatibility-window/m314-b004-v1", str(REGISTRY_JSON), "M314-B004-REG-02", "contract id drifted", failures)
     checks_passed += require(registry.get("depends_on") == "M314-B003", str(REGISTRY_JSON), "M314-B004-REG-03", "dependency drifted", failures)
     checks_passed += require(registry.get("no_new_legacy_alias_families") is True, str(REGISTRY_JSON), "M314-B004-REG-04", "no-new-growth rule drifted", failures)
-    checks_passed += require(len(registry.get("compatibility_families", [])) == 4, str(REGISTRY_JSON), "M314-B004-REG-05", "family count drifted", failures)
-    checks_passed += require(registry.get("prototype_surface_owner_issue") == "M314-B005", str(REGISTRY_JSON), "M314-B004-REG-06", "prototype owner drifted", failures)
-    checks_passed += require(registry.get("gate_owner_issues") == ["M314-E001", "M314-E002"], str(REGISTRY_JSON), "M314-B004-REG-07", "gate owner set drifted", failures)
-    checks_passed += require(registry.get("next_issue") == "M314-B005", str(REGISTRY_JSON), "M314-B004-REG-08", "next issue drifted", failures)
-    checks_passed += require("must not promote compatibility aliases" in registry.get("public_documentation_rule", ""), str(REGISTRY_JSON), "M314-B004-REG-09", "documentation rule drifted", failures)
+    checks_passed += require(registry.get("compatibility_window_state") == "closed-removed", str(REGISTRY_JSON), "M314-B004-REG-05", "compatibility window state drifted", failures)
+    checks_passed += require(len(registry.get("retired_alias_families", [])) == 5, str(REGISTRY_JSON), "M314-B004-REG-06", "retired family count drifted", failures)
+    checks_passed += require(registry.get("package_retired_surface_path") == "objc3cRetiredSurfaces.packageScriptAliases", str(REGISTRY_JSON), "M314-B004-REG-07", "package retired-surface path drifted", failures)
+    checks_passed += require(registry.get("prototype_surface_owner_issue") == "M314-B005", str(REGISTRY_JSON), "M314-B004-REG-08", "prototype owner drifted", failures)
+    checks_passed += require(registry.get("gate_owner_issues") == ["M314-E001", "M314-E002"], str(REGISTRY_JSON), "M314-B004-REG-09", "gate owner set drifted", failures)
+    checks_passed += require(registry.get("next_issue") == "M314-B005", str(REGISTRY_JSON), "M314-B004-REG-10", "next issue drifted", failures)
 
-    checks_total += 5
-    checks_passed += require(compatibility.get("mode") == registry.get("mode"), str(PACKAGE_JSON), "M314-B004-PKG-01", "package compatibility mode drifted", failures)
-    checks_passed += require(compatibility.get("contractId") == registry.get("contract_id"), str(PACKAGE_JSON), "M314-B004-PKG-02", "package compatibility contract drifted", failures)
-    checks_passed += require(compatibility.get("noNewLegacyAliasFamilies") is True, str(PACKAGE_JSON), "M314-B004-PKG-03", "package no-new-growth drifted", failures)
-    checks_passed += require(len(compatibility.get("families", [])) == 4, str(PACKAGE_JSON), "M314-B004-PKG-04", "package compatibility family count drifted", failures)
-    checks_passed += require(compatibility.get("prototypeSurfaceOwnerIssue") == "M314-B005", str(PACKAGE_JSON), "M314-B004-PKG-05", "package prototype owner drifted", failures)
-
-    checks_total += 3
-    checks_passed += require("All other package scripts are compatibility or internal surfaces" in readme, str(README), "M314-B004-RD-01", "README missing compatibility note", failures)
-    checks_passed += require('"check:objc3c:m314-b004-alias-deprecation-and-compatibility-window-core-feature-implementation"' in package_text, str(PACKAGE_JSON), "M314-B004-PKG-LAST-01", "package missing checker script", failures)
-    checks_passed += require('"check:objc3c:m314-b004-lane-b-readiness"' in package_text, str(PACKAGE_JSON), "M314-B004-PKG-LAST-02", "package missing readiness script", failures)
+    checks_total += 2
+    checks_passed += require("objc3cCommandCompatibility" not in package, str(PACKAGE_JSON), "M314-B004-PKG-01", "compatibility block should not remain in package.json", failures)
+    checks_passed += require("No additional package-script compatibility aliases remain supported." in readme, str(README), "M314-B004-RD-01", "README missing alias-removal note", failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -93,7 +84,7 @@ def main(argv: Sequence[str]) -> int:
         "ok": not failures,
         "checks_total": checks_total,
         "checks_passed": checks_passed,
-        "compatibility_family_ids": [entry["family_id"] for entry in registry["compatibility_families"]],
+        "retired_alias_family_ids": [entry["family_id"] for entry in registry["retired_alias_families"]],
         "next_issue": "M314-B005",
         "failures": [finding.__dict__ for finding in failures],
     }
@@ -103,7 +94,7 @@ def main(argv: Sequence[str]) -> int:
         for finding in failures:
             print(f"[fail] {finding.artifact} {finding.check_id}: {finding.detail}", file=sys.stderr)
         return 1
-    print(f"[ok] M314-B004 alias compatibility checks passed ({checks_passed}/{checks_total})")
+    print(f"[ok] M314-B004 alias retirement checks passed ({checks_passed}/{checks_total})")
     return 0
 
 

@@ -9,7 +9,7 @@ Implement one Python workflow runner for the compact public package subset defin
 - Add `scripts/objc3c_public_workflow_runner.py`.
 - Route every `M314-B002` public package command through that runner.
 - Keep PowerShell and direct Python tools as implementation details behind the runner.
-- Leave non-public compatibility aliases untouched.
+- Leave historical direct scripts as implementation details only; do not reintroduce package aliases.
 
 ## Unified workflow coverage
 
@@ -24,7 +24,7 @@ Implement one Python workflow runner for the compact public package subset defin
 
 ## Non-goals
 
-- Do not retire legacy aliases yet.
+- Do not reintroduce legacy aliases.
 - Do not generalize the runner API beyond the public subset yet.
 - Do not finalize documentation cleanup yet.
 

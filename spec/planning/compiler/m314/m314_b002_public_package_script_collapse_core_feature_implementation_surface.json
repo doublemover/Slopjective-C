@@ -24,9 +24,10 @@
   ],
   "public_script_budget_maximum": 25,
   "compatibility_policy": {
-    "legacy_alias_mass_retained": true,
+    "legacy_alias_mass_retained": false,
     "legacy_aliases_are_public": false,
-    "deprecation_owner_issue": "M314-B004"
+    "package_surface_fully_trimmed": true,
+    "retirement_owner_issue": "M314-B004"
   },
   "readme_migrations": [
     {

@@ -94,10 +94,9 @@ def main(argv: Sequence[str]) -> int:
     expectations = read_text(EXPECTATIONS_DOC)
     packet = read_text(PACKET_DOC)
     registry = json.loads(read_text(REGISTRY_JSON))
-    package_text = read_text(PACKAGE_JSON)
-    package = json.loads(package_text)
-    compatibility = package.get("objc3cCommandCompatibility", {})
-    prototype_surface = compatibility.get("prototypeSurface", {})
+    package = json.loads(read_text(PACKAGE_JSON))
+    retired_surfaces = package.get("objc3cRetiredSurfaces", {})
+    prototype_surface = retired_surfaces.get("prototypeCompiler", {})
     readme = read_text(README)
     archive_path = ROOT / registry["retired_surface"]["archive_path"]
     archive_readme = ROOT / registry["retired_surface"]["archive_readme"]
@@ -169,13 +168,12 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(not disallowed_hits, "repo reference scan", "M314-B005-REF-01", f"disallowed references found: {disallowed_hits}", failures)
     checks_passed += require("python scripts/objc3c_public_workflow_runner.py" not in archive_readme_text, str(archive_readme), "M314-B005-ARC-06", "archive readme must not advertise active runner use", failures)
 
-    checks_total += 6
+    checks_total += 5
     checks_passed += require(prototype_surface.get("state") == "retired-archived-text", str(PACKAGE_JSON), "M314-B005-PKG-01", "package prototype state drifted", failures)
     checks_passed += require(prototype_surface.get("archivePath") == registry["retired_surface"]["archive_path"], str(PACKAGE_JSON), "M314-B005-PKG-02", "package archive path drifted", failures)
     checks_passed += require(prototype_surface.get("supportedCompilerRoot") == "native/objc3c", str(PACKAGE_JSON), "M314-B005-PKG-03", "package supported root drifted", failures)
     checks_passed += require("native/objc3c/" in readme, str(README), "M314-B005-RD-01", "README missing supported compiler root", failures)
     checks_passed += require("prototype Python compiler surface has been retired into the governance archive" in readme, str(README), "M314-B005-RD-02", "README missing retirement note", failures)
-    checks_passed += require('"check:objc3c:m314-b005-prototype-compiler-surface-retirement-edge-case-and-compatibility-completion"' in package_text and '"check:objc3c:m314-b005-lane-b-readiness"' in package_text, str(PACKAGE_JSON), "M314-B005-PKG-04", "package missing issue-local scripts", failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary = {

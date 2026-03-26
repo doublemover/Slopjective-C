@@ -13,7 +13,7 @@ Expected outcomes:
 - `README.md` states that `native/objc3c/` is the only supported compiler
   implementation root and that the earlier prototype surface is archival only.
 - `package.json` carries machine-readable retirement state and archive-path
-  metadata under `objc3cCommandCompatibility.prototypeSurface`.
+  metadata under `objc3cRetiredSurfaces.prototypeCompiler`.
 - Any residual references to `compiler/objc3c/semantic.py` are confined to
   historical planning, contract, checker, test, or archival materials.
 

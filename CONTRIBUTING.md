@@ -53,11 +53,11 @@ Use the modular guide when working inside a specific ObjC3C module or subsystem:
 
 Quick subsystem entrypoints:
 
-- `npm run dev:objc3c:lex`
-- `npm run dev:objc3c:parse`
-- `npm run dev:objc3c:sema`
-- `npm run dev:objc3c:lower`
-- `npm run dev:objc3c:ir`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_lexer_extraction_token_contract.ps1`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_parser_replay_proof.ps1`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_sema_pass_manager_diagnostics_bus_contract.ps1`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run_objc3c_lowering_regression_suite.ps1`
+- `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_typed_abi_replay_proof.ps1`
 
 Always run `npm run check:objc3c:boundaries` before opening or updating a PR that changes module boundaries.
 
@@ -66,15 +66,15 @@ Always run `npm run check:objc3c:boundaries` before opening or updating a PR tha
 Run these before committing:
 
 ```sh
-npm run lint:md:all
+npm run lint
 npm run check:md
 ```
 
-`lint:md:all` runs:
+`lint` runs:
 
+- task hygiene (`python scripts/ci/run_task_hygiene_gate.py`)
 - stitched spec rebuild (`npm run build:spec`)
-- spec structural lint (`python scripts/spec_lint.py`)
-- markdown lint (`markdownlint-cli2`)
+- generated-site freshness check (`npm run check:md`)
 
 ## Task hygiene checks
 
@@ -84,17 +84,9 @@ Run these when working on planning/task hygiene automation:
 npm run check:task-hygiene
 ```
 
-`check:task-hygiene` runs:
+`check:task-hygiene` runs the direct-command registry published in:
 
-- `python scripts/spec_lint.py`
-- `python scripts/extract_open_issues.py --format json`
-- `python scripts/check_issue_checkbox_drift.py`
-
-Release-evidence gate local check:
-
-```sh
-npm run check:release-evidence
-```
+- `spec/governance/objc3c_task_hygiene_registry.json`
 
 ## Issue templates and closeout evidence
 

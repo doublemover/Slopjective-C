@@ -86,7 +86,6 @@ def main(argv: Sequence[str]) -> int:
     packet = read_text(PACKET_DOC)
     registry = json.loads(read_text(REGISTRY_JSON))
     package = json.loads(read_text(PACKAGE_JSON))
-    package_text = read_text(PACKAGE_JSON)
     surface = package["objc3cCommandSurface"]
     readme = read_text(README)
     runbook = read_text(RUNBOOK)
@@ -118,7 +117,7 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(registry.get("runner_list_command") == "python scripts/objc3c_public_workflow_runner.py --list-json", str(REGISTRY_JSON), "M314-C003-REG-08", "runner list command drifted", failures)
     checks_passed += require(registry.get("next_issue") == "M314-D001", str(REGISTRY_JSON), "M314-C003-REG-09", "next issue drifted", failures)
 
-    checks_total += 11
+    checks_total += 10
     checks_passed += require(len(surface["publicScripts"]) <= registry["public_script_budget_maximum"], str(PACKAGE_JSON), "M314-C003-PKG-01", "public scripts exceed budget", failures)
     checks_passed += require(len(surface["publicScripts"]) == registry["public_script_count"], str(PACKAGE_JSON), "M314-C003-PKG-02", "public script count mismatches registry", failures)
     checks_passed += require(surface.get("publicDocumentationPath") == registry["runbook_path"], str(PACKAGE_JSON), "M314-C003-PKG-03", "package runbook path drifted", failures)
@@ -128,8 +127,7 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(readme_scripts == surface["publicScripts"], str(README), "M314-C003-RD-01", "README public scripts drift from package surface", failures)
     checks_passed += require("See `docs/runbooks/objc3c_public_command_surface.md`" in readme, str(README), "M314-C003-RD-02", "README missing runbook link", failures)
     checks_passed += require(render_check.returncode == 0, str(RENDERER), "M314-C003-DOC-01", f"runbook renderer check failed: {render_check.stderr.strip()}", failures)
-    checks_passed += require("Current public script count: `17`" in runbook and "| `compile:objc3c` | `compile-objc3c` | `pass-through` |" in runbook, str(RUNBOOK), "M314-C003-DOC-02", "runbook missing synchronized command rows", failures)
-    checks_passed += require('"check:objc3c:m314-c003-public-command-budget-enforcement-and-cli-docs-synchronization-core-feature-expansion"' in package_text and '"check:objc3c:m314-c003-lane-c-readiness"' in package_text, str(PACKAGE_JSON), "M314-C003-PKG-05", "package missing issue-local scripts", failures)
+    checks_passed += require("Current public script count: `17`" in runbook and "No additional package-script compatibility aliases remain supported." in runbook, str(RUNBOOK), "M314-C003-DOC-02", "runbook missing synchronized command rows", failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)
     summary = {

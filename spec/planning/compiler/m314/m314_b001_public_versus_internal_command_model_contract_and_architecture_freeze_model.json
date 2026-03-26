@@ -47,14 +47,19 @@
     "entrypoint_kind": ".github/workflows/*.yml",
     "workflow_count": 9
   },
-  "temporary_compatibility_surface": {
+  "retired_alias_surface": {
+    "state": "removed-from-package-surface",
     "categories": [
-      "legacy milestone-local package aliases",
+      "legacy milestone-local package aliases"
+    ],
+    "owner": "M314-B004"
+  },
+  "transitional_documentation_leaks": {
+    "categories": [
       "README direct Python workflow leaks",
       "README direct PowerShell smoke leak"
     ],
     "owners": {
-      "legacy milestone-local package aliases": "M314-B004",
       "README direct Python workflow leaks": "M314-D001",
       "README direct PowerShell smoke leak": "M314-D001"
     }

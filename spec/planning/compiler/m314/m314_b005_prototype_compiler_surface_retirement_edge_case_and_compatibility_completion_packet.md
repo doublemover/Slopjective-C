@@ -3,7 +3,7 @@
 ## Summary
 
 Retire the dead Python prototype compiler surface now that the public command
-surface, unified runner, and compatibility-window registry are in place.
+surface, unified runner, and alias-retirement registry are in place.
 
 ## Implementation shape
 
@@ -19,7 +19,7 @@ surface, unified runner, and compatibility-window registry are in place.
 ## Non-goals
 
 - Do not erase historical planning evidence that froze the original path.
-- Do not remove compatibility aliases yet.
+- Do not reintroduce compatibility aliases here.
 - Do not rewrite the broader workflow/API contract; `M314-C001` owns that.
 
 ## Evidence

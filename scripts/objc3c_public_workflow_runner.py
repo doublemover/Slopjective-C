@@ -14,17 +14,20 @@ from typing import Callable, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
-NPM = shutil.which("npm.cmd") or shutil.which("npm") or "npm"
 
 BUILD_PS1 = ROOT / "scripts" / "build_objc3c_native.ps1"
 COMPILE_PS1 = ROOT / "scripts" / "objc3c_native_compile.ps1"
 SMOKE_PS1 = ROOT / "scripts" / "check_objc3c_native_execution_smoke.ps1"
 REPLAY_PS1 = ROOT / "scripts" / "check_objc3c_execution_replay_proof.ps1"
 RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
+MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
+NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
 PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 SITE_PY = ROOT / "scripts" / "build_site_index.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
+TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
+ACCEPTANCE_FIRST_CI_PY = ROOT / "scripts" / "m313_acceptance_first_ci_runner.py"
 
 
 @dataclass(frozen=True)
@@ -99,13 +102,13 @@ def action_test_smoke(_: list[str]) -> int:
 
 
 def action_test_ci(_: list[str]) -> int:
-    rc = run([NPM, "run", "check:task-hygiene"])
+    rc = run([sys.executable, str(TASK_HYGIENE_PY)])
     if rc != 0:
         return rc
     rc = run_steps(["test-full"])
     if rc != 0:
         return rc
-    return run([sys.executable, "-m", "pytest", "tests/tooling", "-q"])
+    return run([sys.executable, str(ACCEPTANCE_FIRST_CI_PY), "--stage", "topology"])
 
 
 def action_test_recovery(_: list[str]) -> int:
@@ -124,10 +127,10 @@ def action_test_full(_: list[str]) -> int:
     rc = run_steps(["test-recovery"])
     if rc != 0:
         return rc
-    rc = run([NPM, "run", "test:objc3c:matrix"])
+    rc = pwsh_file(MATRIX_PS1)
     if rc != 0:
         return rc
-    return run([NPM, "run", "test:objc3c:negative-expectations"])
+    return pwsh_file(NEGATIVE_EXPECTATIONS_PS1)
 
 
 def action_package_runnable_toolchain(_: list[str]) -> int:
@@ -149,11 +152,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-smoke": ActionSpec("test-smoke", "public smoke test entrypoint", "runner-internal", ("test:smoke",)),
-    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + npm + pytest", ("test:ci",)),
+    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene + acceptance-first CI", ("test:ci",)),
     "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",)),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",)),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",)),
-    "test-full": ActionSpec("test-full", "full public native validation entrypoint", "runner-internal + npm", ("test:objc3c:full",)),
+    "test-full": ActionSpec("test-full", "full public native validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",)),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1", ("proof:objc3c",)),
 }

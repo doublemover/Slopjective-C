@@ -4,16 +4,16 @@ Contract ID: `objc3c-cleanup-alias-deprecation-compatibility-window/m314-b004-v1
 
 ## Purpose
 
-Define one explicit compatibility window for the legacy alias mass so command-surface cleanup can proceed without pretending those aliases are still public.
+Close the compatibility window entirely by removing the legacy alias mass from `package.json` and freezing only machine-readable retirement metadata.
 
 ## Required truths
 
-- Legacy package aliases remain temporarily supported but non-public.
-- The compatibility window is machine-readable in `package.json` and names concrete alias families.
+- Legacy package aliases no longer remain supported through `package.json`.
+- The retired alias families are machine-readable through repo metadata instead of package-script wrappers.
 - No new legacy alias families may be added during the compatibility window.
-- Public docs must not present compatibility aliases as preferred workflows.
+- Public docs must not present removed alias families as workflows.
 
-## Covered compatibility families
+## Removed alias families
 
 - milestone-local validation aliases
 - historical release-replay aliases
@@ -22,8 +22,8 @@ Define one explicit compatibility window for the legacy alias mass so command-su
 
 ## Ownership
 
-- `M314-C003` owns public-doc synchronization away from compatibility aliases.
-- `M314-B005` owns the prototype-path retirement side of compatibility cleanup.
+- `M314-C003` owns public-doc synchronization away from removed aliases.
+- `M314-B005` owns the prototype-path retirement side of the same cleanup tranche.
 - `M314-E001` and `M314-E002` own final gate and closeout enforcement.
 
 ## Evidence
