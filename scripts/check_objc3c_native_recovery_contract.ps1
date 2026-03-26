@@ -5,6 +5,8 @@ $runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $outRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/contract_check"
 $outDir = Join-Path $outRoot $runId
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
+$compileWrapperScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
+$pwsh = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } elseif (Get-Command powershell -ErrorAction SilentlyContinue) { "powershell" } else { "pwsh" }
 
 & $buildScript
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -20,6 +22,9 @@ function Invoke-Objc3cNativeWithRecovery {
     [string[]]$Arguments
   )
 
+  $firstArgument = if ($Arguments.Count -gt 0) { [string]$Arguments[0] } else { "" }
+  $useCompileWrapper = $firstArgument.EndsWith(".objc3", [System.StringComparison]::OrdinalIgnoreCase)
+
   for ($attempt = 1; $attempt -le 2; $attempt++) {
     if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
       & $buildScript
@@ -32,8 +37,12 @@ function Invoke-Objc3cNativeWithRecovery {
     }
 
     try {
-      & $exe @Arguments
-      return $LASTEXITCODE
+      if ($useCompileWrapper) {
+        $null = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compileWrapperScript @Arguments
+      } else {
+        $null = & $exe @Arguments
+      }
+      return [int]$LASTEXITCODE
     } catch {
       if ($attempt -ge 2) {
         throw
@@ -216,6 +225,7 @@ function Invoke-ContractCase {
     [string]$Source,
     [string]$CaseName,
     [switch]$RequireLl,
+    [switch]$RequireCompileProvenance,
     [string[]]$ExtraArgs = @(),
     [string[]]$RequiredLlTokens = @("define i32 @objc3c_entry"),
     [string[]]$ForbiddenLlTokens = @(),
@@ -248,6 +258,11 @@ function Invoke-ContractCase {
 
   if ($manifest1 -ne $manifest2) { throw "contract FAIL: manifest drift across replay for $CaseName" }
   if ($diag1 -ne $diag2) { throw "contract FAIL: diagnostics drift across replay for $CaseName" }
+  if ($RequireCompileProvenance) {
+    $provenance1 = Assert-CompileOutputProvenance -CaseName "$CaseName run1" -RunDir $run1
+    $provenance2 = Assert-CompileOutputProvenance -CaseName "$CaseName run2" -RunDir $run2
+    if ($provenance1 -ne $provenance2) { throw "contract FAIL: compile provenance drift across replay for $CaseName" }
+  }
   foreach ($token in $RequiredManifestTokens) {
     if ([string]::IsNullOrWhiteSpace($token)) {
       continue
@@ -303,6 +318,9 @@ function Invoke-ContractCase {
   }
 
   Write-Output "$CaseName`_deterministic_manifest=true"
+  if ($RequireCompileProvenance) {
+    Write-Output "$CaseName`_deterministic_compile_provenance=true"
+  }
   Write-Output "$CaseName`_deterministic_diagnostics=true"
   Write-Output "$CaseName`_object_size=$objSize"
 }
@@ -354,6 +372,98 @@ function Get-FixtureCaseName {
   return "$Prefix`_$leaf`_$hash"
 }
 
+function Get-FileSha256Hex {
+  param([string]$Path)
+
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  $stream = [System.IO.File]::OpenRead($Path)
+  try {
+    $hashBytes = $sha256.ComputeHash($stream)
+    return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+  } finally {
+    $stream.Dispose()
+    $sha256.Dispose()
+  }
+}
+
+function Get-Sha256HexFromBytes {
+  param([byte[]]$Bytes)
+
+  $sha256 = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $hashBytes = $sha256.ComputeHash($Bytes)
+    return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+  } finally {
+    $sha256.Dispose()
+  }
+}
+
+function Read-JsonHashtable {
+  param([string]$Path)
+
+  return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable)
+}
+
+function Assert-CompileOutputProvenance {
+  param(
+    [string]$CaseName,
+    [string]$RunDir
+  )
+
+  $provenancePath = Join-Path $RunDir "module.compile-provenance.json"
+  if (!(Test-Path -LiteralPath $provenancePath -PathType Leaf)) {
+    throw "contract FAIL: missing compile provenance artifact for $CaseName"
+  }
+  $registrationManifestPath = Join-Path $RunDir "module.runtime-registration-manifest.json"
+  $hasRegistrationManifest = Test-Path -LiteralPath $registrationManifestPath -PathType Leaf
+
+  $provenanceText = Get-Content -LiteralPath $provenancePath -Raw
+  if ([string]::IsNullOrWhiteSpace($provenanceText)) {
+    throw "contract FAIL: empty compile provenance artifact for $CaseName"
+  }
+  $provenance = Read-JsonHashtable -Path $provenancePath
+  $registrationManifest = if ($hasRegistrationManifest) { Read-JsonHashtable -Path $registrationManifestPath } else { $null }
+
+  if ([string]$provenance["contract_id"] -ne "objc3c.native.compile.output.provenance.v1") {
+    throw "contract FAIL: unexpected compile provenance contract id for $CaseName"
+  }
+  if ($hasRegistrationManifest -and [string]$registrationManifest["compile_output_provenance_artifact"] -ne "module.compile-provenance.json") {
+    throw "contract FAIL: runtime registration manifest missing compile provenance binding for $CaseName"
+  }
+
+  $artifactEntries = @($provenance["emitted_artifacts"])
+  if ($artifactEntries.Count -lt 4) {
+    throw "contract FAIL: compile provenance emitted_artifacts too small for $CaseName"
+  }
+
+  $digestLines = New-Object System.Collections.Generic.List[string]
+  foreach ($entry in $artifactEntries) {
+    $artifactPath = Join-Path $RunDir ([string]$entry["path"])
+    if (!(Test-Path -LiteralPath $artifactPath -PathType Leaf)) {
+      throw "contract FAIL: compile provenance referenced missing artifact '$artifactPath' for $CaseName"
+    }
+    $actualHash = Get-FileSha256Hex -Path $artifactPath
+    if ($actualHash -ne ([string]$entry["sha256"]).ToLowerInvariant()) {
+      throw "contract FAIL: compile provenance sha256 mismatch for '$artifactPath' in $CaseName"
+    }
+    $actualSize = (Get-Item -LiteralPath $artifactPath).Length
+    if ([long]$actualSize -ne [long]$entry["byte_count"]) {
+      throw "contract FAIL: compile provenance byte_count mismatch for '$artifactPath' in $CaseName"
+    }
+    $digestLines.Add(("{0}|{1}|{2}" -f [string]$entry["path"], [string]$entry["byte_count"], [string]$entry["sha256"]))
+  }
+
+  $actualArtifactSetDigest = Get-Sha256HexFromBytes -Bytes ([System.Text.Encoding]::UTF8.GetBytes(($digestLines -join "`n")))
+  if ($actualArtifactSetDigest -ne ([string]$provenance["artifact_set_digest_sha256"]).ToLowerInvariant()) {
+    throw "contract FAIL: compile provenance artifact set digest mismatch for $CaseName"
+  }
+  if ($hasRegistrationManifest -and $actualArtifactSetDigest -ne ([string]$registrationManifest["compile_output_artifact_set_digest_sha256"]).ToLowerInvariant()) {
+    throw "contract FAIL: runtime registration manifest compile output digest mismatch for $CaseName"
+  }
+
+  return $provenanceText
+}
+
 function Assert-RecoveryFixtureClass {
   param(
     [object[]]$Fixtures,
@@ -376,7 +486,7 @@ function Assert-RecoveryFixtureClass {
 }
 
 Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.m" -CaseName "objc_baseline"
-Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.objc3" -CaseName "objc3_frontend" -RequireLl -RequireObjc3ManifestSurface
+Invoke-ContractCase -Source "tests/tooling/fixtures/native/hello.objc3" -CaseName "objc3_frontend" -RequireLl -RequireCompileProvenance -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/function_return_annotation_bool.objc3" `
   -CaseName "objc3_typed_signature_bool_return" `
@@ -718,9 +828,11 @@ foreach ($fixture in $positiveFixtures) {
     throw "contract FAIL: empty manifest artifact for positive fixture $source"
   }
   Assert-Objc3ManifestPipelineSurface -ManifestText $manifest -CaseName $source
+  [void](Assert-CompileOutputProvenance -CaseName $source -RunDir $caseOutDir)
 
   Write-Output "$caseName`_compiled=true"
   Write-Output "$caseName`_object_size=$objSize"
+  Write-Output "$caseName`_compile_provenance=true"
 }
 
 $negativeFixtures = Get-RecoveryFixtures -Directory $negativeFixtureDir -FixtureKind "negative native recovery" -Extensions @(".objc3")

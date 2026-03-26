@@ -197,15 +197,133 @@ function Get-FileSha256Hex {
 }
 
 function Get-OptionalFileHash {
-  param([string]$Path)
+  param($Path)
+
+  $pathText = if ($null -eq $Path) { "" } else { [string]$Path }
+
+  if ([string]::IsNullOrWhiteSpace($pathText)) {
+    return ""
+  }
+  if (!(Test-Path -LiteralPath $pathText -PathType Leaf)) {
+    return ""
+  }
+  return Get-FileSha256Hex -Path $pathText
+}
+
+function Get-RepoRelativeDisplayPath {
+  param(
+    [string]$RepoRoot,
+    [string]$Path
+  )
 
   if ([string]::IsNullOrWhiteSpace($Path)) {
     return ""
   }
-  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
-    return ""
+
+  $resolvedRoot = [System.IO.Path]::GetFullPath($RepoRoot).TrimEnd('\', '/')
+  $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+  $rootPrefix = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+  if ($resolvedPath -eq $resolvedRoot) {
+    return "."
   }
-  return Get-FileSha256Hex -Path $Path
+  if ($resolvedPath.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    return [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedPath).Replace('\', '/')
+  }
+  return $resolvedPath.Replace('\', '/')
+}
+
+function Write-CompileOutputProvenance {
+  param(
+    [string]$RepoRoot,
+    [string]$CompileDir,
+    [string]$EmitPrefix,
+    $InputPath,
+    $CompilerBinaryPath,
+    $RuntimeLibraryPath,
+    $WrapperScriptPath
+  )
+
+  if ([string]::IsNullOrWhiteSpace($CompileDir) -or !(Test-Path -LiteralPath $CompileDir -PathType Container)) {
+    return
+  }
+  if ([string]::IsNullOrWhiteSpace($EmitPrefix)) {
+    $EmitPrefix = "module"
+  }
+  $inputPathText = if ($null -eq $InputPath) { "" } else { [string]$InputPath }
+  $compilerBinaryPathText = if ($null -eq $CompilerBinaryPath) { "" } else { [string]$CompilerBinaryPath }
+  $runtimeLibraryPathText = if ($null -eq $RuntimeLibraryPath) { "" } else { [string]$RuntimeLibraryPath }
+  $wrapperScriptPathText = if ($null -eq $WrapperScriptPath) { "" } else { [string]$WrapperScriptPath }
+  $inputSourceDisplay = Get-RepoRelativeDisplayPath -RepoRoot $RepoRoot -Path $inputPathText
+  $inputSourceHash = Get-OptionalFileHash -Path $inputPathText
+  $compilerBinaryDisplay = Get-RepoRelativeDisplayPath -RepoRoot $RepoRoot -Path $compilerBinaryPathText
+  $compilerBinaryHash = Get-OptionalFileHash -Path $compilerBinaryPathText
+  $runtimeLibraryDisplay = Get-RepoRelativeDisplayPath -RepoRoot $RepoRoot -Path $runtimeLibraryPathText
+  $runtimeLibraryHash = Get-OptionalFileHash -Path $runtimeLibraryPathText
+  $wrapperScriptDisplay = Get-RepoRelativeDisplayPath -RepoRoot $RepoRoot -Path $wrapperScriptPathText
+  $wrapperScriptHash = Get-OptionalFileHash -Path $wrapperScriptPathText
+
+  $provenanceFileName = "$EmitPrefix.compile-provenance.json"
+  $provenancePath = Join-Path $CompileDir $provenanceFileName
+  $artifactFiles = @(
+    Get-ChildItem -LiteralPath $CompileDir -File |
+      Where-Object {
+        $_.Name -ne $provenanceFileName -and
+        $_.Name -ne ($EmitPrefix + ".runtime-registration-manifest.json") -and
+        (
+          $_.Name.Equals($EmitPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+          $_.Name.StartsWith($EmitPrefix + ".", [System.StringComparison]::OrdinalIgnoreCase) -or
+          $_.Name.StartsWith($EmitPrefix + "-", [System.StringComparison]::OrdinalIgnoreCase)
+        )
+      } |
+      Sort-Object Name
+  )
+
+  $artifactEntries = New-Object System.Collections.Generic.List[object]
+  foreach ($artifact in $artifactFiles) {
+    $artifactEntries.Add([ordered]@{
+      path = $artifact.Name
+      byte_count = [long]$artifact.Length
+      sha256 = Get-FileSha256Hex -Path $artifact.FullName
+    })
+  }
+
+  $digestLines = New-Object System.Collections.Generic.List[string]
+  foreach ($entry in $artifactEntries) {
+    $digestLines.Add(("{0}|{1}|{2}" -f [string]$entry.path, [string]$entry.byte_count, [string]$entry.sha256))
+  }
+  $artifactSetDigest = Get-Sha256HexFromBytes -Bytes ([System.Text.Encoding]::UTF8.GetBytes(($digestLines -join "`n")))
+
+  $artifactEntryArray = @($artifactEntries.ToArray())
+  $payload = [ordered]@{}
+  $payload["contract_id"] = "objc3c.native.compile.output.provenance.v1"
+  $payload["provenance_artifact"] = $provenanceFileName
+  $payload["manifest_artifact"] = "$EmitPrefix.manifest.json"
+  $payload["registration_manifest_artifact"] = "$EmitPrefix.runtime-registration-manifest.json"
+  $payload["input_source"] = $inputSourceDisplay
+  $payload["input_source_sha256"] = $inputSourceHash
+  $payload["compiler_binary"] = $compilerBinaryDisplay
+  $payload["compiler_binary_sha256"] = $compilerBinaryHash
+  $payload["runtime_support_library"] = $runtimeLibraryDisplay
+  $payload["runtime_support_library_sha256"] = $runtimeLibraryHash
+  $payload["compile_wrapper_script"] = $wrapperScriptDisplay
+  $payload["compile_wrapper_script_sha256"] = $wrapperScriptHash
+  $payload["replay_verification_model"] = "artifact-set-digest-plus-per-file-sha256-over-real-emitted-compile-outputs"
+  $payload["artifact_count"] = $artifactEntryArray.Count
+  $payload["artifact_set_digest_sha256"] = $artifactSetDigest
+  $payload["emitted_artifacts"] = $artifactEntryArray
+  Set-Content -LiteralPath $provenancePath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+
+  $registrationManifestPath = Join-Path $CompileDir ($EmitPrefix + ".runtime-registration-manifest.json")
+  if (Test-Path -LiteralPath $registrationManifestPath -PathType Leaf) {
+    $registrationManifest =
+      Get-Content -LiteralPath $registrationManifestPath -Raw |
+      ConvertFrom-Json -AsHashtable
+    $registrationManifest["compile_output_provenance_contract_id"] = "objc3c.native.compile.output.provenance.v1"
+    $registrationManifest["compile_output_provenance_artifact"] = $provenanceFileName
+    $registrationManifest["compile_output_artifact_count"] = $artifactEntries.Count
+    $registrationManifest["compile_output_artifact_set_digest_sha256"] = $artifactSetDigest
+    Set-Content -LiteralPath $registrationManifestPath -Value ($registrationManifest | ConvertTo-Json -Depth 64) -Encoding utf8
+  }
 }
 
 function Resolve-RepoBoundPath {
@@ -2344,6 +2462,14 @@ if ($parsed.use_cache -and $null -ne $cacheKey) {
     -ExpectedEntryContractId $cacheEntryContractId
   if ($cacheRestore.restored) {
     Assert-Objc3cRuntimeLaunchContract -CompileDir $parsed.out_dir -RepoRoot $repoRoot -EmitPrefix $parsed.emit_prefix
+    Write-CompileOutputProvenance `
+      -RepoRoot $repoRoot `
+      -CompileDir $parsed.out_dir `
+      -EmitPrefix $parsed.emit_prefix `
+      -InputPath $inputPath `
+      -CompilerBinaryPath $exe `
+      -RuntimeLibraryPath (Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib") `
+      -WrapperScriptPath $PSCommandPath
     Write-Output "cache_hit=true"
     exit ([int]$cacheRestore.exit_code)
   }
@@ -2353,6 +2479,14 @@ $compileExit = Invoke-NativeCompiler -ExePath $exe -Arguments $effectiveCompileA
 
 if ($compileExit -eq 0) {
   Assert-Objc3cRuntimeLaunchContract -CompileDir $parsed.out_dir -RepoRoot $repoRoot -EmitPrefix $parsed.emit_prefix
+  Write-CompileOutputProvenance `
+    -RepoRoot $repoRoot `
+    -CompileDir $parsed.out_dir `
+    -EmitPrefix $parsed.emit_prefix `
+    -InputPath $inputPath `
+    -CompilerBinaryPath $exe `
+    -RuntimeLibraryPath (Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib") `
+    -WrapperScriptPath $PSCommandPath
 }
 
 if ($parsed.use_cache -and $null -ne $cacheKey) {

@@ -133,6 +133,27 @@ function Write-BuildStep {
   Write-Host ("[build:objc3c-native] " + $Message)
 }
 
+function Write-JsonArtifactFile {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    $Payload,
+    [int]$Depth = 8
+  )
+
+  $parent = Split-Path -Parent $OutputPath
+  if (![string]::IsNullOrWhiteSpace($parent)) {
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+  }
+
+  $leaf = Split-Path -Leaf $OutputPath
+  $tempPath = Join-Path $parent ('.' + $leaf + '.' + [Guid]::NewGuid().ToString('N') + '.tmp')
+  $json = $Payload | ConvertTo-Json -Depth $Depth
+  Set-Content -LiteralPath $tempPath -Value $json -Encoding utf8
+  Move-Item -LiteralPath $tempPath -Destination $OutputPath -Force
+}
+
 function Test-ExecutionModeRunsNativeBuild {
   param([Parameter(Mandatory = $true)][string]$Mode)
 
@@ -702,11 +723,7 @@ function Write-FrontendModuleScaffoldArtifact {
     binary_targets = $BinaryTargets
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Get-FileSha256Hex {
@@ -787,11 +804,7 @@ function Write-FrontendInvocationLockArtifact {
     )
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendCoreFeatureExpansionArtifact {
@@ -887,11 +900,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
     }
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendEdgeCompatibilityArtifact {
@@ -970,11 +979,7 @@ function Write-FrontendEdgeCompatibilityArtifact {
     }
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendEdgeRobustnessArtifact {
@@ -1031,11 +1036,7 @@ function Write-FrontendEdgeRobustnessArtifact {
     }
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendDiagnosticsHardeningArtifact {
@@ -1086,11 +1087,7 @@ function Write-FrontendDiagnosticsHardeningArtifact {
     }
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendRecoveryDeterminismHardeningArtifact {
@@ -1150,11 +1147,7 @@ function Write-FrontendRecoveryDeterminismHardeningArtifact {
     }
   }
 
-  $parent = Split-Path -Parent $OutputPath
-  if (![string]::IsNullOrWhiteSpace($parent)) {
-    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-  }
-  Set-Content -LiteralPath $OutputPath -Value ($payload | ConvertTo-Json -Depth 8) -Encoding utf8
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
 }
 
 function Write-FrontendConformanceMatrixArtifact {
