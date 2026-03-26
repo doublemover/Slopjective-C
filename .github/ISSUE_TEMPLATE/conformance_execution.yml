@@ -1,72 +1,81 @@
 name: Conformance Execution Task
-description: Track conformance/tooling work with test and evidence requirements.
-title: "[CONFORMANCE] <short objective>"
+description: Create a lean conformance/validation issue aligned to the simplified cleanup-era authoring contract.
+title: "[CONFORMANCE] <title core>"
 labels:
   - priority:P1
   - area:conformance
-  - type:tooling
+  - type:roadmap
 body:
   - type: markdown
     attributes:
       value: |
-        Use this template for conformance schemas, generators, checklists, and release gates.
-        Include evidence and test requirements up front.
+        Use this template for conformance, validation, and reporting work.
+        Prefer shared validation surfaces over new per-issue scaffolds.
   - type: input
-    id: objective
+    id: outcome_summary
     attributes:
-      label: Objective
-      description: One sentence describing the expected conformance outcome.
-      placeholder: Define machine-readable conformance evidence bundle schema.
+      label: Outcome Summary
+      description: One sentence describing the expected conformance or validation outcome.
+      placeholder: Freeze a machine-readable stability-score contract for public reporting.
     validations:
       required: true
   - type: textarea
-    id: artifacts
+    id: why_it_matters
     attributes:
-      label: Required Artifacts
-      description: Files to add or update.
-      placeholder: |
-        - schemas/<bundle>.schema.json
-        - reports/conformance/<sample>.json
-        - spec/conformance/<guidance>.md
+      label: Why It Matters
+      description: Explain the trust, reporting, or validation gap this issue closes.
     validations:
       required: true
   - type: textarea
-    id: required_keys
+    id: acceptance_criteria
     attributes:
-      label: Required Keys / Enums
-      description: Required fields, enum values, and constraints.
+      label: Acceptance Criteria
+      description: Concrete completion conditions.
       placeholder: |
-        - schema_id, release_id, profiles, manifests, tests, known_deviations
-        - enum: core|strict|strict-concurrency|strict-system
+        - Evidence is deterministic.
+        - Coverage/reporting scope is explicit.
+        - Public claims stay inside the proof boundary.
     validations:
       required: true
   - type: textarea
-    id: test_plan
+    id: implementation_surfaces
     attributes:
-      label: Validation and Test Plan
-      description: Commands and expected pass criteria.
+      label: Primary Implementation Surfaces
+      description: Files, corpora, reports, or workflows most likely to change.
       placeholder: |
-        - python scripts/<tool>.py --help
-        - python -c "<schema validation command>"
-        - npm run check:task-hygiene
+        - tests/tooling/<suite>
+        - docs/<reporting-surface>.md
+        - scripts/<report-generator>.py
     validations:
       required: true
   - type: textarea
-    id: done_criteria
+    id: dependencies
     attributes:
-      label: Done Criteria
-      description: Explicit acceptance conditions.
+      label: Dependencies
+      description: Prerequisite issues or milestones, or state `None`.
       placeholder: |
-        - Schema validates sample payload.
-        - Output is deterministic and CI-consumable.
-        - Conformance docs link to artifacts.
+        - #7684
+        - M301-E001
     validations:
       required: true
-  - type: input
-    id: parent_epic
+  - type: dropdown
+    id: validation_posture
     attributes:
-      label: Parent Epic
-      description: Epic issue number.
-      placeholder: "#112"
+      label: Validation Posture
+      description: Pick the default validation class for this issue.
+      options:
+        - shared_acceptance_harness
+        - static_policy_guard
+        - migration_bridge
+        - generator_contract_only
     validations:
       required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Optional Notes
+      description: Include only bounded ambiguity-reducing context.
+      placeholder: |
+        - Optional. Omit if unnecessary.
+    validations:
+      required: false

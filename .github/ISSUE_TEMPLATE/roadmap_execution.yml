@@ -1,68 +1,79 @@
 name: Roadmap Execution Task
-description: Track a roadmap/process/governance task with explicit delivery criteria.
-title: "[ROADMAP] <short objective>"
+description: Create a lean roadmap issue aligned to the simplified cleanup-era authoring contract.
+title: "[ROADMAP] <title core>"
 labels:
   - priority:P1
-  - type:process
+  - type:roadmap
 body:
   - type: markdown
     attributes:
       value: |
-        Use this template for roadmap/process/governance execution tasks.
-        Keep scope concrete and machine-verifiable.
+        Use this template for roadmap/process/governance tasks.
+        Keep the issue body lean, concrete, and executable.
   - type: input
-    id: objective
+    id: outcome_summary
     attributes:
-      label: Objective
+      label: Outcome Summary
       description: One sentence describing the required outcome.
-      placeholder: Define a stable ownership/dependency model for 4 parallel lanes.
+      placeholder: Freeze a compact ownership/dependency model for 4 parallel lanes.
     validations:
       required: true
   - type: textarea
-    id: artifacts
+    id: why_it_matters
     attributes:
-      label: Required Artifacts
-      description: List files, docs, or workflows that must be delivered.
+      label: Why It Matters
+      description: Explain the repo problem this issue resolves and how it supports the milestone exit gate.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Concrete completion conditions.
       placeholder: |
-        - spec/planning/<file>.md
-        - .github/workflows/<file>.yml
+        - Ownership boundaries are explicit.
+        - Handoff rules are machine-auditable.
+        - No parallel scaffolds are introduced.
+    validations:
+      required: true
+  - type: textarea
+    id: implementation_surfaces
+    attributes:
+      label: Primary Implementation Surfaces
+      description: Files, generators, templates, or workflows most likely to change.
+      placeholder: |
+        - .github/ISSUE_TEMPLATE/roadmap_execution.yml
+        - tmp/planning/<generator>.py
     validations:
       required: true
   - type: textarea
     id: dependencies
     attributes:
       label: Dependencies
-      description: List prerequisite issues or state “None”.
+      description: Prerequisite issues or milestones, or state `None`.
       placeholder: |
-        - #111
-        - #112
+        - #7830
+        - M317-C001
+    validations:
+      required: true
+  - type: dropdown
+    id: validation_posture
+    attributes:
+      label: Validation Posture
+      description: Pick the default validation class for this issue.
+      options:
+        - shared_acceptance_harness
+        - static_policy_guard
+        - migration_bridge
+        - generator_contract_only
     validations:
       required: true
   - type: textarea
-    id: done_criteria
+    id: notes
     attributes:
-      label: Done Criteria
-      description: Explicit acceptance conditions.
+      label: Optional Notes
+      description: Include only bounded ambiguity-reducing context.
       placeholder: |
-        - Lane boundaries and handoff rules are explicit.
-        - Governance model is referenced in roadmap docs.
+        - Optional. Omit if unnecessary.
     validations:
-      required: true
-  - type: textarea
-    id: validation
-    attributes:
-      label: Validation Plan
-      description: Commands/checks to verify completion.
-      placeholder: |
-        - python scripts/spec_lint.py
-        - npm run check:task-hygiene
-    validations:
-      required: true
-  - type: input
-    id: parent_epic
-    attributes:
-      label: Parent Epic
-      description: Epic issue number.
-      placeholder: "#114"
-    validations:
-      required: true
+      required: false
