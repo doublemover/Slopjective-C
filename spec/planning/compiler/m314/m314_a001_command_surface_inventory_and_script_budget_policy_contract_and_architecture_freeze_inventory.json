@@ -1,0 +1,82 @@
+{
+  "mode": "m314-a001-command-surface-inventory-budget-v1",
+  "contract_id": "objc3c-cleanup-command-surface-inventory-budget/m314-a001-v1",
+  "measured_counts": {
+    "package_scripts": 7815,
+    "workflow_files": 9,
+    "prototype_compiler_source_files": 1,
+    "milestone_local_scripts": 7496,
+    "build_compile_scripts": 7,
+    "dev_scripts": 5,
+    "lint_scripts": 6,
+    "plan_scripts": 25,
+    "refresh_scripts": 24,
+    "run_scripts": 10,
+    "other_scripts": 242
+  },
+  "namespace_leaders": {
+    "check": 5235,
+    "test": 2498,
+    "plan": 25,
+    "refresh": 24,
+    "run": 10,
+    "build": 6
+  },
+  "documented_operator_commands": [
+    "npm run build:objc3c-native",
+    "npm run build:objc3c-native:contracts",
+    "npm run build:objc3c-native:full",
+    "npm run build:objc3c-native:reconfigure",
+    "python scripts/build_site_index.py",
+    "python scripts/build_site_index.py --check",
+    "npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module",
+    "pwsh -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\check_objc3c_native_execution_smoke.ps1",
+    "npm run build:spec"
+  ],
+  "workflow_files": [
+    ".github/workflows/compiler-closeout.yml",
+    ".github/workflows/conformance-evidence-gate.yml",
+    ".github/workflows/conformance-minima.yml",
+    ".github/workflows/m313-validation-acceptance-first.yml",
+    ".github/workflows/planning-lint.yml",
+    ".github/workflows/publish-pages.yml",
+    ".github/workflows/spec-quality.yml",
+    ".github/workflows/task-hygiene-live-drift.yml",
+    ".github/workflows/task-hygiene.yml"
+  ],
+  "prototype_surface": {
+    "source_files": [
+      "compiler/objc3c/semantic.py"
+    ],
+    "notes": [
+      "No README/docs/workflow references to compiler/objc3c were found outside cleanup-planning checks.",
+      "The prototype compiler surface is operationally ambiguous because the native compiler lives under native/objc3c/."
+    ]
+  },
+  "public_command_budget": {
+    "maximum_total_public_entrypoints": 25,
+    "allowed_public_families": [
+      "build",
+      "compile",
+      "lint",
+      "test",
+      "package",
+      "tool",
+      "proof"
+    ],
+    "prohibited_public_families": [
+      "plan",
+      "refresh",
+      "run",
+      "milestone-local check aliases",
+      "milestone-local pytest aliases"
+    ]
+  },
+  "orchestration_layers": {
+    "public_operator_layer": "package.json scripts",
+    "internal_parameterized_layer": "Python runners under scripts/",
+    "platform_specific_layer": "PowerShell helper scripts and wrappers",
+    "ci_only_layer": ".github/workflows/*.yml"
+  },
+  "next_issue": "M314-A002"
+}
