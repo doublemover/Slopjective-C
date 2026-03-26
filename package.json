@@ -7960,6 +7960,9 @@
     "check:objc3c:m315-b004-lane-b-readiness": "python scripts/run_m315_b004_lane_b_readiness.py",
     "check:objc3c:m315-b005-comment-constexpr-and-contract-string-decontamination-sweep-edge-case-and-compatibility-completion": "python scripts/check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py",
     "test:tooling:m315-b005-comment-constexpr-and-contract-string-decontamination-sweep-edge-case-and-compatibility-completion": "python -m pytest tests/tooling/test_check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py -q",
-    "check:objc3c:m315-b005-lane-b-readiness": "python scripts/run_m315_b005_lane_b_readiness.py"
+    "check:objc3c:m315-b005-lane-b-readiness": "python scripts/run_m315_b005_lane_b_readiness.py",
+    "check:objc3c:m315-c001-source-of-truth-and-generated-artifact-contract-and-architecture-freeze": "python scripts/check_m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze.py",
+    "test:tooling:m315-c001-source-of-truth-and-generated-artifact-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-c001-lane-c-readiness": "python scripts/run_m315_c001_lane_c_readiness.py"
   }
 }
