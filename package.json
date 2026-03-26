@@ -7939,6 +7939,9 @@
     "check:objc3c:m314-e002-lane-e-readiness": "python scripts/run_m314_e002_lane_e_readiness.py",
     "check:objc3c:m315-a001-repo-wide-milestone-residue-inventory-contract-and-architecture-freeze": "python scripts/check_m315_a001_repo_wide_milestone_residue_inventory_contract_and_architecture_freeze.py",
     "test:tooling:m315-a001-repo-wide-milestone-residue-inventory-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_a001_repo_wide_milestone_residue_inventory_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-a001-lane-a-readiness": "python scripts/run_m315_a001_lane_a_readiness.py"
+    "check:objc3c:m315-a001-lane-a-readiness": "python scripts/run_m315_a001_lane_a_readiness.py",
+    "check:objc3c:m315-a002-native-source-milestone-residue-inventory-source-completion": "python scripts/check_m315_a002_native_source_milestone_residue_inventory_source_completion.py",
+    "test:tooling:m315-a002-native-source-milestone-residue-inventory-source-completion": "python -m pytest tests/tooling/test_check_m315_a002_native_source_milestone_residue_inventory_source_completion.py -q",
+    "check:objc3c:m315-a002-lane-a-readiness": "python scripts/run_m315_a002_lane_a_readiness.py"
   }
 }

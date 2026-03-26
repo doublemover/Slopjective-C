@@ -1,0 +1,137 @@
+{
+  "mode": "m315-a002-native-source-milestone-residue-inventory-v1",
+  "contract_id": "objc3c-cleanup-native-source-milestone-residue-inventory/m315-a002-v1",
+  "scan_root": "native/objc3c/src",
+  "match_pattern": "m[0-9]{3}-[a-z][0-9]{3}",
+  "totals": {
+    "match_count": 3182,
+    "file_count_with_matches": 32
+  },
+  "kind_counts": {
+    "embedded_docs": 1744,
+    "interface_headers": 542,
+    "implementation_sources": 896
+  },
+  "subdirectory_counts": {
+    ".": 1691,
+    "adr": 6,
+    "ast": 74,
+    "driver": 61,
+    "io": 105,
+    "ir": 153,
+    "lex": 19,
+    "libobjc3c_frontend": 41,
+    "lower": 383,
+    "parse": 86,
+    "pipeline": 136,
+    "runtime": 189,
+    "sema": 214,
+    "token": 24
+  },
+  "top_hotspot_files": [
+    {
+      "path": "ARCHITECTURE.md",
+      "match_count": 1691,
+      "kind": "embedded_docs"
+    },
+    {
+      "path": "lower/objc3_lowering_contract.h",
+      "match_count": 234,
+      "kind": "interface_headers"
+    },
+    {
+      "path": "ir/objc3_ir_emitter.cpp",
+      "match_count": 153,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "lower/objc3_lowering_contract.cpp",
+      "match_count": 149,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "sema/objc3_semantic_passes.cpp",
+      "match_count": 107,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "parse/objc3_parser.cpp",
+      "match_count": 86,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "pipeline/objc3_frontend_artifacts.cpp",
+      "match_count": 80,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "sema/objc3_sema_contract.h",
+      "match_count": 77,
+      "kind": "interface_headers"
+    },
+    {
+      "path": "ast/objc3_ast.h",
+      "match_count": 74,
+      "kind": "interface_headers"
+    },
+    {
+      "path": "runtime/objc3_runtime.cpp",
+      "match_count": 74,
+      "kind": "implementation_sources"
+    }
+  ],
+  "top_code_hotspot_files": [
+    {
+      "path": "lower/objc3_lowering_contract.h",
+      "match_count": 234
+    },
+    {
+      "path": "ir/objc3_ir_emitter.cpp",
+      "match_count": 153
+    },
+    {
+      "path": "lower/objc3_lowering_contract.cpp",
+      "match_count": 149
+    },
+    {
+      "path": "sema/objc3_semantic_passes.cpp",
+      "match_count": 107
+    },
+    {
+      "path": "parse/objc3_parser.cpp",
+      "match_count": 86
+    },
+    {
+      "path": "pipeline/objc3_frontend_artifacts.cpp",
+      "match_count": 80
+    },
+    {
+      "path": "sema/objc3_sema_contract.h",
+      "match_count": 77
+    },
+    {
+      "path": "ast/objc3_ast.h",
+      "match_count": 74
+    },
+    {
+      "path": "runtime/objc3_runtime.cpp",
+      "match_count": 74
+    },
+    {
+      "path": "io/objc3_process.cpp",
+      "match_count": 68
+    }
+  ],
+  "downstream_ownership": {
+    "stable_identifier_policy": "M315-B001",
+    "annotation_and_provenance_policy": "M315-B002",
+    "native_source_marker_removal": "M315-B003",
+    "native_source_decontamination_sweep": "M315-B005"
+  },
+  "notes": [
+    "Embedded docs inside native/objc3c/src dominate the raw native-source residue count.",
+    "Even after discounting embedded docs, several code files still carry large milestone-coded residue counts and need direct cleanup.",
+    "This inventory is the detailed native baseline for the later lane-B removal work."
+  ],
+  "next_issue": "M315-A003"
+}
