@@ -7975,6 +7975,9 @@
     "check:objc3c:m315-c004-lane-c-readiness": "python scripts/run_m315_c004_lane_c_readiness.py",
     "check:objc3c:m315-d001-source-hygiene-and-proof-policy-enforcement-contract-and-architecture-freeze": "python scripts/check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py",
     "test:tooling:m315-d001-source-hygiene-and-proof-policy-enforcement-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-d001-lane-d-readiness": "python scripts/run_m315_d001_lane_d_readiness.py"
+    "check:objc3c:m315-d001-lane-d-readiness": "python scripts/run_m315_d001_lane_d_readiness.py",
+    "check:objc3c:m315-d002-anti-noise-enforcement-implementation-core-feature-implementation": "python scripts/check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py",
+    "test:tooling:m315-d002-anti-noise-enforcement-implementation-core-feature-implementation": "python -m pytest tests/tooling/test_check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py -q",
+    "check:objc3c:m315-d002-lane-d-readiness": "python scripts/run_m315_d002_lane_d_readiness.py"
   }
 }

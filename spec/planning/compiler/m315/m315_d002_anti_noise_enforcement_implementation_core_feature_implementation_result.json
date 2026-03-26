@@ -1,0 +1,20 @@
+{
+  "mode": "m315-d002-anti-noise-enforcement-v1",
+  "contract_id": "objc3c.cleanup.anti-noise.enforcement/m315-d002-v1",
+  "stable_identifier_family": "advanced_integration_closeout_signoff",
+  "zero_target_classes_removed": [
+    "transitional_source_model",
+    "legacy_m248_surface_identifier"
+  ],
+  "post_cleanup_native_source_milestone_token_lines": 57,
+  "remaining_quarantined_residual_classes": {
+    "legacy_fixture_path_reference": 6,
+    "dependency_issue_array": 3,
+    "next_issue_schema_field": 40,
+    "issue_key_schema_field": 8
+  },
+  "tracked_compiler_python_sources": 0,
+  "synthetic_fixture_root": "tests/tooling/fixtures/native/library_cli_parity",
+  "workflow_path": ".github/workflows/m315-source-hygiene-proof-policy-enforcement.yml",
+  "next_issue": "M315-E001"
+}

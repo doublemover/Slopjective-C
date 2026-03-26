@@ -32,12 +32,7 @@ def classify(rel_path: str, line: str) -> str | None:
         "tests/tooling/fixtures/" in line or "tests/tooling/runtime/" in line
     ):
         return "legacy_fixture_path_reference"
-    if (
-        "m248_integration_closeout_signoff" in line
-        or "M248IntegrationCloseoutSignoff" in line
-        or "m248-integration-closeout-signoff" in line
-    ):
-        return "legacy_m248_surface_identifier"
+
     if rel_path == "native/objc3c/src/pipeline/objc3_frontend_types.h" and (
         "portability_dependency_issue_ids" in line
         or "M264-E002" in line
@@ -59,11 +54,7 @@ def classify(rel_path: str, line: str) -> str | None:
         return "next_issue_schema_field"
     if "_issue=" in line:
         return "issue_key_schema_field"
-    if rel_path in (
-        "native/objc3c/src/lower/objc3_lowering_contract.h",
-        "native/objc3c/src/lower/objc3_lowering_contract.cpp",
-    ):
-        return "transitional_source_model"
+
     return None
 
 

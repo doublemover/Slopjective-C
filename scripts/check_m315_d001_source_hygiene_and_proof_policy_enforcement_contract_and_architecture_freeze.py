@@ -87,9 +87,11 @@ def main(argv: Sequence[str]) -> int:
     quarantined_residual_classes = contract.get("quarantined_residual_classes", {})
     b005_residual_classes = b005.get("allowed_residual_classes", {})
 
-    checks_total += 7
-    checks_passed += require(d002_zero_target_classes.get("transitional_source_model", {}).get("count") == b005_residual_classes.get("transitional_source_model", {}).get("count") == 12, str(CONTRACT_JSON), "M315-D001-CON-03", "transitional source-model target count drifted", failures)
-    checks_passed += require(d002_zero_target_classes.get("legacy_m248_surface_identifier", {}).get("count") == b005_residual_classes.get("legacy_m248_surface_identifier", {}).get("count") == 34, str(CONTRACT_JSON), "M315-D001-CON-04", "m248 target count drifted", failures)
+    checks_total += 9
+    checks_passed += require(d002_zero_target_classes.get("transitional_source_model", {}).get("count") == 12, str(CONTRACT_JSON), "M315-D001-CON-03", "transitional source-model target count drifted", failures)
+    checks_passed += require(d002_zero_target_classes.get("legacy_m248_surface_identifier", {}).get("count") == 34, str(CONTRACT_JSON), "M315-D001-CON-04", "m248 target count drifted", failures)
+    checks_passed += require(b005_residual_classes.get("transitional_source_model", 0) == 0, str(B005_RESULT), "M315-D001-CON-03A", "current B005 result still carries transitional source-model residue", failures)
+    checks_passed += require(b005_residual_classes.get("legacy_m248_surface_identifier", 0) == 0, str(B005_RESULT), "M315-D001-CON-04A", "current B005 result still carries legacy m248 residue", failures)
     checks_passed += require(quarantined_residual_classes.get("legacy_fixture_path_reference", {}).get("count") == b005_residual_classes.get("legacy_fixture_path_reference", {}).get("count") == 6, str(CONTRACT_JSON), "M315-D001-CON-05", "legacy fixture quarantine count drifted", failures)
     checks_passed += require(quarantined_residual_classes.get("dependency_issue_array", {}).get("count") == b005_residual_classes.get("dependency_issue_array", {}).get("count") == 3, str(CONTRACT_JSON), "M315-D001-CON-06", "dependency issue-array quarantine count drifted", failures)
     checks_passed += require(quarantined_residual_classes.get("next_issue_schema_field", {}).get("count") == b005_residual_classes.get("next_issue_schema_field", {}).get("count") == 40, str(CONTRACT_JSON), "M315-D001-CON-07", "next_issue quarantine count drifted", failures)
@@ -111,6 +113,9 @@ def main(argv: Sequence[str]) -> int:
         "checks_passed": checks_passed,
         "d002_zero_target_classes": {
             key: value["count"] for key, value in d002_zero_target_classes.items()
+        },
+        "current_b005_zero_target_residuals": {
+            key: b005_residual_classes.get(key, 0) for key in d002_zero_target_classes
         },
         "quarantined_residual_classes": {
             key: value["count"] for key, value in quarantined_residual_classes.items()

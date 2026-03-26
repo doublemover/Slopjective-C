@@ -807,7 +807,7 @@ inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringSourceModel 
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringAbiModel =
     "native-lowering-emits-hidden-error-out-abi-propagation-operators-and-do-catch-control-flow-through-real-ir-and-object-artifacts";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel =
-    "generalized-foreign-exception-abi-and-runtime-bridge-helper-contract-remain-deferred-to-m267-d001";
+    "generalized-foreign-exception-abi-and-runtime-bridge-helper-contract-remain-deferred-to-the-part6-error-runtime-bridge-helper-boundary";
 inline constexpr const char *kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel =
     "no-generalized-foreign-exception-abi-no-stable-cross-module-replay-claim-yet";
 std::string Objc3Part6ThrowsAbiPropagationLoweringSummary();
@@ -968,7 +968,7 @@ std::string Objc3RuntimeArcHelperApiSurfaceSummary();
 inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportContractId =
     "objc3c.runtime.arc.helper.runtime.support.v1";
 inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportDependencyModel =
-    "m260-d002-runtime-baseline-plus-m262-c004-lowering-plus-m262-d001-private-helper-surface";
+    "runtime-baseline-plus-runnable-arc-lowering-plus-private-helper-surface";
 inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportWeakModel =
     "arc-generated-weak-current-property-access-lowers-and-links-through-private-runtime-helper-entrypoints";
 inline constexpr const char *kObjc3RuntimeArcHelperRuntimeSupportAutoreleaseReturnModel =
@@ -981,7 +981,7 @@ std::string Objc3RuntimeArcHelperRuntimeSupportSummary();
 inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationContractId =
     "objc3c.runtime.arc.debug.instrumentation.v1";
 inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationDependencyModel =
-    "m262-d002-live-helper-runtime-plus-private-bootstrap-internal-debug-snapshots";
+    "live-helper-runtime-plus-private-bootstrap-internal-debug-snapshots";
 inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationCoverageModel =
     "retain-release-autorelease-weak-current-property-and-autoreleasepool-helper-traffic-publishes-deterministic-debug-counters-and-last-value-context";
 inline constexpr const char *kObjc3RuntimeArcDebugInstrumentationValidationModel =
@@ -996,7 +996,7 @@ inline constexpr const char *kObjc3RunnableArcRuntimeGateEvidenceModel =
 inline constexpr const char *kObjc3RunnableArcRuntimeGateActiveModel =
     "runnable-arc-gate-consumes-arc-mode-semantics-lowering-and-runtime-proofs-rather-than-parser-only-or-metadata-only-claims";
 inline constexpr const char *kObjc3RunnableArcRuntimeGateNonGoalModel =
-    "no-runnable-arc-closeout-matrix-no-public-runtime-abi-widening-no-cross-module-arc-claims-before-m262-e002";
+    "no-runnable-arc-closeout-matrix-no-public-runtime-abi-widening-no-cross-module-arc-claims-before-the-runnable-arc-closeout";
 inline constexpr const char *kObjc3RunnableArcRuntimeGateFailClosedModel =
     "fail-closed-on-runnable-arc-runtime-evidence-drift";
 std::string Objc3RunnableArcRuntimeGateSummary();
@@ -1049,7 +1049,7 @@ inline constexpr const char *kObjc3OwnershipRuntimeGateContractId =
 inline constexpr const char *kObjc3OwnershipRuntimeGateSupportedModel =
     "runtime-backed-object-baseline-proves-strong-weak-and-autoreleasepool-behavior-through-private-runtime-hooks";
 inline constexpr const char *kObjc3OwnershipRuntimeGateEvidenceModel =
-    "gate-consumes-m260-c002-d001-d002-contract-summaries-and-runtime-probe-evidence";
+    "gate-consumes-ownership-runtime-contract-summaries-and-runtime-probe-evidence";
 inline constexpr const char *kObjc3OwnershipRuntimeGateNonGoalModel =
     "no-arc-automation-no-block-ownership-runtime-no-public-ownership-api-widening";
 inline constexpr const char *kObjc3OwnershipRuntimeGateFailClosedModel =
@@ -1565,7 +1565,7 @@ inline constexpr const char *kObjc3Part7ActorLoweringMetadataSurfacePath =
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataModel =
     "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataDeferredModel =
-    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-m270-c002-and-m270-c003-work";
+    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-actor-lowering-and-replay-runtime-work";
 inline constexpr const char *kObjc3Part7ActorLoweringMetadataLaneContract =
     "objc3c.actor.lowering.metadata.contract.v1";
 // lowering-freeze anchor: Part 8 now freezes one explicit emitted
@@ -1587,7 +1587,7 @@ inline constexpr const char *kObjc3Part8SystemExtensionLoweringSurfacePath =
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringModel =
     "cleanup-resource-borrowed-and-retainable-family-sema-packets-now-feed-one-deterministic-part8-lowering-contract-for-manifest-and-ir-carriage";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringDeferredModel =
-    "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-m271-lane-d-work";
+    "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-system-extension-runtime-work";
 inline constexpr const char *kObjc3Part8SystemExtensionLoweringLaneContract =
     "objc3c.part8.system.extension.lowering.contract.v1";
 // lowering-freeze anchor: Part 9 now freezes one explicit emitted
@@ -1603,7 +1603,7 @@ inline constexpr const char *kObjc3Part9DispatchControlLoweringSurfacePath =
 inline constexpr const char *kObjc3Part9DispatchControlLoweringModel =
     "part9-direct-call-candidates-final-sealed-boundaries-and-dynamism-intent-metadata-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
 inline constexpr const char *kObjc3Part9DispatchControlLoweringDeferredModel =
-    "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-m272-lane-c-and-lane-d-work";
+    "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-dispatch-control-runtime-work";
 inline constexpr const char *kObjc3Part9DispatchControlLoweringLaneContract =
     "objc3c.part9.dispatch.control.lowering.contract.v1";
 // expansion/lowering freeze anchor: lane-C freezes one deterministic
@@ -1619,7 +1619,7 @@ inline constexpr const char *kObjc3Part10ExpansionLoweringSurfacePath =
 inline constexpr const char *kObjc3Part10ExpansionLoweringModel =
     "part10-derived-selector-inventory-macro-replay-visibility-and-synthesized-property-metadata-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
 inline constexpr const char *kObjc3Part10ExpansionLoweringDeferredModel =
-    "runnable-derive-body-emission-macro-execution-and-property-behavior-runtime-materialization-remain-later-m273-lane-c-and-lane-d-work";
+    "runnable-derive-body-emission-macro-execution-and-property-behavior-runtime-materialization-remain-later-expansion-runtime-work";
 inline constexpr const char *kObjc3Part10ExpansionLoweringLaneContract =
     "objc3c.part10.expansion.lowering.contract.v1";
 inline constexpr const char *kObjc3Part10SynthesizedArtifactEmissionContractId =
@@ -1721,7 +1721,7 @@ inline constexpr const char *kObjc3Part11InteropLoweringSurfacePath =
 inline constexpr const char *kObjc3Part11InteropLoweringModel =
     "part11-foreign-callable-sema-runtime-parity-cpp-interaction-swift-isolation-and-interface-preservation-packets-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
 inline constexpr const char *kObjc3Part11InteropLoweringDeferredModel =
-    "live-ffi-call-lowering-ownership-bridge-helper-emission-error-runtime-integration-and-cross-module-runtime-consumption-remain-later-m274-lane-c-and-lane-d-work";
+    "live-ffi-call-lowering-ownership-bridge-helper-emission-error-runtime-integration-and-cross-module-runtime-consumption-remain-later-interop-runtime-work";
 inline constexpr const char *kObjc3Part11InteropLoweringLaneContract =
     "objc3c.part11.interop.lowering.abi.contract.v1";
 // lowering-implementation anchor: lane-C now materializes a second
@@ -1738,7 +1738,7 @@ inline constexpr const char *kObjc3Part11ForeignCallLifetimeLoweringModel =
     "foreign-calls-and-cpp-swift-facing-free-functions-now-lower-through-one-deterministic-part11-call-boundary-that-preserves-ownership-lifetime-and-annotation-facts-in-manifest-and-ir";
 inline constexpr const char
     *kObjc3Part11ForeignCallLifetimeLoweringDeferredModel =
-        "cross-module-runtime-consumption-live-foreign-linking-and-runnable-host-language-integration-remain-later-m274-lane-d-and-lane-e-work";
+        "cross-module-runtime-consumption-live-foreign-linking-and-runnable-host-language-integration-remain-later-interop-closeout-work";
 inline constexpr const char
     *kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId =
         kObjc3Part11InteropLoweringContractId;

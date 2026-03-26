@@ -1,0 +1,31 @@
+name: M315 Source Hygiene Proof Policy Enforcement
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/m315-source-hygiene-proof-policy-enforcement.yml'
+      - 'native/objc3c/src/lower/objc3_lowering_contract.h'
+      - 'native/objc3c/src/lower/objc3_lowering_contract.cpp'
+      - 'native/objc3c/src/pipeline/objc3_frontend_types.h'
+      - 'native/objc3c/src/pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h'
+      - 'tests/tooling/fixtures/native/library_cli_parity/**'
+      - 'scripts/check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py'
+      - 'scripts/check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py'
+      - 'scripts/check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py'
+      - 'scripts/run_m315_d002_lane_d_readiness.py'
+      - 'spec/planning/compiler/m315/**'
+      - 'docs/contracts/m315_*'
+
+jobs:
+  enforce:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run M315 D002 anti-noise checker
+        run: python scripts/check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py
+      - name: Run M315 D002 readiness
+        run: python scripts/run_m315_d002_lane_d_readiness.py

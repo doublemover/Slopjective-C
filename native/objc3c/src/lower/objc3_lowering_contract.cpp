@@ -1085,7 +1085,7 @@ std::string Objc3RuntimeBlockApiObjectLayoutSummary() {
       << ";invoke_abi=i32-handle-plus-four-i32-arguments-returning-i32"
       << ";runtime_record_model=private-runtime-record-copies-emitted-block-storage-bytes-and-invoke-pointer"
       << ";object_layout_model=runtime-block-records-are-private-runtime-state-not-public-object-abi"
-      << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-next-runtime-phase-and-m261-d003"
+      << ";fail_closed_model=byref-forwarding-and-owned-capture-escaping-block-lifetimes-remain-deferred-until-the-next-runtime-hardening-phase"
       << ";non_goals=no-public-block-object-abi-no-generalized-runtime-copy-dispose-allocation-surface";
   return out.str();
 }

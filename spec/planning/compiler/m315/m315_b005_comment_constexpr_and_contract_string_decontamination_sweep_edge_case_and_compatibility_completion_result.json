@@ -9,8 +9,8 @@
     ]
   },
   "baseline_after_b004_milestone_token_lines": 289,
-  "post_sweep_milestone_token_lines": 103,
-  "removed_milestone_token_lines": 186,
+  "post_sweep_milestone_token_lines": 57,
+  "removed_milestone_token_lines": 232,
   "disallowed_residual_lines": 0,
   "allowed_residual_classes": {
     "legacy_fixture_path_reference": {
@@ -18,14 +18,6 @@
       "owner_issue": "M315-C004",
       "surfaces": [
         "native/objc3c/src/ast/objc3_ast.h"
-      ]
-    },
-    "legacy_m248_surface_identifier": {
-      "count": 34,
-      "owner_issue": "M315-C001",
-      "surfaces": [
-        "native/objc3c/src/pipeline/objc3_final_readiness_gate_core_feature_implementation_surface.h",
-        "native/objc3c/src/pipeline/objc3_frontend_types.h"
       ]
     },
     "dependency_issue_array": {
@@ -50,14 +42,6 @@
       "owner_issue": "M315-C001",
       "surfaces": [
         "native/objc3c/src/ir/objc3_ir_emitter.cpp"
-      ]
-    },
-    "transitional_source_model": {
-      "count": 12,
-      "owner_issue": "M315-C001",
-      "surfaces": [
-        "native/objc3c/src/lower/objc3_lowering_contract.h",
-        "native/objc3c/src/lower/objc3_lowering_contract.cpp"
       ]
     }
   }

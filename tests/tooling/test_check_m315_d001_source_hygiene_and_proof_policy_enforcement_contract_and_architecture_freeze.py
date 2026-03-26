@@ -36,6 +36,10 @@ def test_m315_d001_checker_passes_and_writes_expected_summary() -> None:
         "transitional_source_model": 12,
         "legacy_m248_surface_identifier": 34,
     }
+    assert summary["current_b005_zero_target_residuals"] == {
+        "transitional_source_model": 0,
+        "legacy_m248_surface_identifier": 0,
+    }
     assert summary["tracked_compiler_python_sources"] == []
     assert summary["synthetic_fixture_root"] == "tests/tooling/fixtures/native/library_cli_parity"
     assert summary["ok"] is True
