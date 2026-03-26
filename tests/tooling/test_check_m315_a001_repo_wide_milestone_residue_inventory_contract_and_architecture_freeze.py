@@ -9,7 +9,7 @@ INVENTORY_JSON = ROOT / "spec" / "planning" / "compiler" / "m315" / "m315_a001_r
 
 def test_inventory_freezes_repo_wide_match_count() -> None:
     payload = json.loads(INVENTORY_JSON.read_text(encoding="utf-8"))
-    assert payload["repo_wide_totals"]["match_count"] == 277347
+    assert payload["repo_wide_totals"]["match_count"] == 276758
 
 
 def test_inventory_hands_native_slice_to_a002() -> None:

@@ -115,34 +115,34 @@ def main(argv: Sequence[str]) -> int:
     checks_total += 5
     checks_passed += require(inventory.get("mode") == "m315-a002-native-source-milestone-residue-inventory-v1", str(INVENTORY_JSON), "M315-A002-INV-01", "mode drifted", failures)
     checks_passed += require(inventory.get("contract_id") == "objc3c-cleanup-native-source-milestone-residue-inventory/m315-a002-v1", str(INVENTORY_JSON), "M315-A002-INV-02", "contract id drifted", failures)
-    checks_passed += require(inventory.get("totals", {}).get("match_count") == measured["total"] == 3182, str(INVENTORY_JSON), "M315-A002-INV-03", "native match count drifted", failures)
-    checks_passed += require(inventory.get("totals", {}).get("file_count_with_matches") == measured["file_count"] == 32, str(INVENTORY_JSON), "M315-A002-INV-04", "native file count drifted", failures)
+    checks_passed += require(inventory.get("totals", {}).get("match_count") == measured["total"] == 1809, str(INVENTORY_JSON), "M315-A002-INV-03", "native match count drifted", failures)
+    checks_passed += require(inventory.get("totals", {}).get("file_count_with_matches") == measured["file_count"] == 11, str(INVENTORY_JSON), "M315-A002-INV-04", "native file count drifted", failures)
     checks_passed += require(inventory.get("next_issue") == "M315-A003", str(INVENTORY_JSON), "M315-A002-INV-05", "next issue drifted", failures)
 
     for key, expected in {
         "embedded_docs": 1744,
-        "interface_headers": 542,
-        "implementation_sources": 896,
+        "interface_headers": 18,
+        "implementation_sources": 47,
     }.items():
         checks_total += 1
         checks_passed += require(inventory.get("kind_counts", {}).get(key) == measured["kind_counts"].get(key) == expected, str(INVENTORY_JSON), f"M315-A002-KIND-{key}", f"kind count drifted for {key}", failures)
 
     for key, expected in {
         ".": 1691,
-        "lower": 383,
-        "sema": 214,
-        "runtime": 189,
-        "ir": 153,
-        "pipeline": 136,
-        "io": 105,
+        "lower": 34,
+        "sema": 0,
+        "runtime": 47,
+        "ir": 10,
+        "pipeline": 15,
+        "io": 6,
     }.items():
         checks_total += 1
-        checks_passed += require(inventory.get("subdirectory_counts", {}).get(key) == measured["subdir_counts"].get(key) == expected, str(INVENTORY_JSON), f"M315-A002-SUBDIR-{key}", f"subdir count drifted for {key}", failures)
+        checks_passed += require(inventory.get("subdirectory_counts", {}).get(key, 0) == measured["subdir_counts"].get(key, 0) == expected, str(INVENTORY_JSON), f"M315-A002-SUBDIR-{key}", f"subdir count drifted for {key}", failures)
 
     checks_total += 5
     checks_passed += require(inventory.get("top_hotspot_files", [])[0]["path"] == "ARCHITECTURE.md" and inventory.get("top_hotspot_files", [])[0]["match_count"] == 1691, str(INVENTORY_JSON), "M315-A002-HOT-01", "top native hotspot drifted", failures)
-    checks_passed += require(inventory.get("top_hotspot_files", [])[1]["path"] == "lower/objc3_lowering_contract.h", str(INVENTORY_JSON), "M315-A002-HOT-02", "second native hotspot drifted", failures)
-    checks_passed += require(inventory.get("top_code_hotspot_files", [])[0]["path"] == "lower/objc3_lowering_contract.h" and inventory.get("top_code_hotspot_files", [])[0]["match_count"] == 234, str(INVENTORY_JSON), "M315-A002-HOT-03", "top code hotspot drifted", failures)
+    checks_passed += require(inventory.get("top_hotspot_files", [])[1]["path"] == "runtime/README.md", str(INVENTORY_JSON), "M315-A002-HOT-02", "second native hotspot drifted", failures)
+    checks_passed += require(inventory.get("top_code_hotspot_files", [])[0]["path"] == "lower/objc3_lowering_contract.cpp" and inventory.get("top_code_hotspot_files", [])[0]["match_count"] == 33, str(INVENTORY_JSON), "M315-A002-HOT-03", "top code hotspot drifted", failures)
     checks_passed += require(inventory.get("downstream_ownership", {}).get("native_source_marker_removal") == "M315-B003", str(INVENTORY_JSON), "M315-A002-HOT-04", "downstream owner drifted", failures)
     checks_passed += require(inventory.get("downstream_ownership", {}).get("native_source_decontamination_sweep") == "M315-B005", str(INVENTORY_JSON), "M315-A002-HOT-05", "downstream sweep owner drifted", failures)
 

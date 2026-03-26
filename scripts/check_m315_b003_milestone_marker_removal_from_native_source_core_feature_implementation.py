@@ -122,7 +122,7 @@ def main(argv: Sequence[str]) -> int:
 
     checks_total += 5
     checks_passed += require(result.get("post_state", {}).get("leading_comment_markers_remaining") == measured["leading_comment_markers"] == 0, str(RESULT_JSON), "M315-B003-POST-01", "leading comment markers remain", failures)
-    checks_passed += require(result.get("post_state", {}).get("native_code_match_count_remaining") == measured["total_code_matches"] == 495, str(RESULT_JSON), "M315-B003-POST-02", "remaining code match count drifted", failures)
+    checks_passed += require(result.get("post_state", {}).get("native_code_match_count_remaining") == measured["total_code_matches"] == 65, str(RESULT_JSON), "M315-B003-POST-02", "remaining code match count drifted", failures)
     checks_passed += require(result.get("post_state", {}).get("rewritten_file_count") == len(EXPECTED_REWRITTEN_FILES) == 24, str(RESULT_JSON), "M315-B003-POST-03", "rewritten file count drifted", failures)
     checks_passed += require(result.get("rewritten_files") == EXPECTED_REWRITTEN_FILES, str(RESULT_JSON), "M315-B003-POST-04", "rewritten file list drifted", failures)
     checks_passed += require(measured["rewritten_files_without_leading_markers"] == EXPECTED_REWRITTEN_FILES, str(RESULT_JSON), "M315-B003-POST-05", "expected rewritten files still contain leading markers", failures)

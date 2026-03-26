@@ -173,7 +173,7 @@
   },
   "baseline_alignment": {
     "a003_class_totals": {
-      "schema_policy_contract": 62,
+      "schema_policy_contract": 66,
       "generated_or_report_artifact": 25,
       "sample_or_example_artifact": 62,
       "synthetic_fixture": 2209,

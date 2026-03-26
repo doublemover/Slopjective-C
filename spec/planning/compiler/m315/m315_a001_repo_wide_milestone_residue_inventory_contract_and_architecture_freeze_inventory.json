@@ -9,20 +9,20 @@
     ]
   },
   "repo_wide_totals": {
-    "match_count": 277347,
-    "distinct_milestone_issue_ids": 3024,
-    "distinct_milestone_families": 122
+    "match_count": 276758,
+    "distinct_milestone_issue_ids": 3032,
+    "distinct_milestone_families": 123
   },
   "scope_counts": {
-    "package_surface": 13297,
+    "package_surface": 13342,
     "operator_docs": 277,
     "generated_docs": 2224,
-    "planning_specs": 28564,
-    "tooling_scripts": 178092,
-    "tests_surface": 27290,
-    "native_source": 3182,
-    "github_meta": 2,
-    "other": 24419
+    "tooling_scripts": 178482,
+    "planning_specs": 28801,
+    "tests_surface": 27307,
+    "other": 24514,
+    "native_source": 1809,
+    "github_meta": 2
   },
   "scope_file_counts": {
     "package_surface": 1,
@@ -38,7 +38,7 @@
   "top_hotspot_files": [
     {
       "path": "package.json",
-      "match_count": 13294,
+      "match_count": 13342,
       "scope": "package_surface"
     },
     {
@@ -77,20 +77,20 @@
       "scope": "tooling_scripts"
     },
     {
-      "path": "native/objc3c/src/lower/objc3_lowering_contract.h",
-      "match_count": 234,
-      "scope": "native_source"
-    },
-    {
       "path": "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md",
       "match_count": 208,
       "scope": "planning_specs"
+    },
+    {
+      "path": "scripts/check_m246_e015_optimization_gate_and_perf_evidence_advanced_core_workpack_shard_1_contract.py",
+      "match_count": 196,
+      "scope": "tooling_scripts"
     }
   ],
   "top_milestone_families": [
     {
       "milestone": "m228",
-      "match_count": 17368
+      "match_count": 17369
     },
     {
       "milestone": "m227",
@@ -110,7 +110,7 @@
     },
     {
       "milestone": "m243",
-      "match_count": 11654
+      "match_count": 11652
     },
     {
       "milestone": "m235",

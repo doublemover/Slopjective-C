@@ -38,11 +38,9 @@
     }
   },
   "residual_class_expectations": {
-    "legacy_m248_surface_identifier": 34,
     "dependency_issue_array": 3,
     "next_issue_schema_field": 40,
-    "issue_key_schema_field": 8,
-    "transitional_source_model": 12
+    "issue_key_schema_field": 8
   },
   "replacement_contracts": {
     "legacy_m248_surface_identifier": {

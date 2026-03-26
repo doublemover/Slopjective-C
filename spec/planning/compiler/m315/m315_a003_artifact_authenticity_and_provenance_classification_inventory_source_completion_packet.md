@@ -20,11 +20,11 @@ stable identifiers, explicit provenance rules, and reproducible regeneration pat
 
 ## Frozen baseline
 
-- Artifact candidates: `2501`
+- Artifact candidates: `2514`
 - `.ll` files: `78`
-- `.json` files: `2423`
+- `.json` files: `2436`
 - Authenticity classes:
-  - `schema_policy_contract`: `53`
+  - `schema_policy_contract`: `66`
   - `generated_or_report_artifact`: `25`
   - `sample_or_example_artifact`: `62`
   - `synthetic_fixture`: `2209`

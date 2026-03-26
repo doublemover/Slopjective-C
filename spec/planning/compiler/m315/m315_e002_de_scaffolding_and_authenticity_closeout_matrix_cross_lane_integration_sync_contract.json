@@ -1,0 +1,35 @@
+{
+  "mode": "m315-e002-de-scaffolding-authenticity-closeout-matrix-v1",
+  "contract_id": "objc3c.cleanup.de-scaffolding.authenticity.closeout.matrix/m315-e002-v1",
+  "predecessor_checkers": [
+    "scripts/check_m315_a001_repo_wide_milestone_residue_inventory_contract_and_architecture_freeze.py",
+    "scripts/check_m315_a002_native_source_milestone_residue_inventory_source_completion.py",
+    "scripts/check_m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion.py",
+    "scripts/check_m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze.py",
+    "scripts/check_m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze.py",
+    "scripts/check_m315_b003_milestone_marker_removal_from_native_source_core_feature_implementation.py",
+    "scripts/check_m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation.py",
+    "scripts/check_m315_b005_comment_constexpr_and_contract_string_decontamination_sweep_edge_case_and_compatibility_completion.py",
+    "scripts/check_m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze.py",
+    "scripts/check_m315_c002_artifact_authenticity_schema_and_evidence_contract_and_architecture_freeze.py",
+    "scripts/check_m315_c003_genuine_replay_artifact_regeneration_and_provenance_capture_core_feature_implementation.py",
+    "scripts/check_m315_c004_synthetic_fixture_relocation_labeling_and_parity_test_updates_core_feature_expansion.py",
+    "scripts/check_m315_d001_source_hygiene_and_proof_policy_enforcement_contract_and_architecture_freeze.py",
+    "scripts/check_m315_d002_anti_noise_enforcement_implementation_core_feature_implementation.py",
+    "scripts/check_m315_e001_source_hygiene_and_proof_hygiene_gate_contract_and_architecture_freeze.py"
+  ],
+  "required_b005_match_count": 57,
+  "required_remaining_residual_classes": {
+    "legacy_fixture_path_reference": 6,
+    "dependency_issue_array": 3,
+    "next_issue_schema_field": 40,
+    "issue_key_schema_field": 8
+  },
+  "required_current_zero_target_residuals": {
+    "transitional_source_model": 0,
+    "legacy_m248_surface_identifier": 0
+  },
+  "required_stable_identifier_family": "advanced_integration_closeout_signoff",
+  "next_milestone": "M318",
+  "next_issue": "M318-A001"
+}

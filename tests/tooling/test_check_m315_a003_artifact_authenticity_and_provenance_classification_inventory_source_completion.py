@@ -9,7 +9,7 @@ INVENTORY_JSON = ROOT / "spec" / "planning" / "compiler" / "m315" / "m315_a003_a
 
 def test_inventory_freezes_artifact_candidate_total() -> None:
     payload = json.loads(INVENTORY_JSON.read_text(encoding="utf-8"))
-    assert payload["totals"]["tracked_artifact_candidates"] == 2510
+    assert payload["totals"]["tracked_artifact_candidates"] == 2514
 
 
 def test_inventory_hands_replay_capture_to_c003() -> None:

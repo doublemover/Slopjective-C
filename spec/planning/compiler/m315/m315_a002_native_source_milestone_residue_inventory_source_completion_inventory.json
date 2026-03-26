@@ -4,29 +4,22 @@
   "scan_root": "native/objc3c/src",
   "match_pattern": "m[0-9]{3}-[a-z][0-9]{3}",
   "totals": {
-    "match_count": 3182,
-    "file_count_with_matches": 32
+    "match_count": 1809,
+    "file_count_with_matches": 11
   },
   "kind_counts": {
     "embedded_docs": 1744,
-    "interface_headers": 542,
-    "implementation_sources": 896
+    "interface_headers": 18,
+    "implementation_sources": 47
   },
   "subdirectory_counts": {
     ".": 1691,
     "adr": 6,
-    "ast": 74,
-    "driver": 61,
-    "io": 105,
-    "ir": 153,
-    "lex": 19,
-    "libobjc3c_frontend": 41,
-    "lower": 383,
-    "parse": 86,
-    "pipeline": 136,
-    "runtime": 189,
-    "sema": 214,
-    "token": 24
+    "io": 6,
+    "ir": 10,
+    "lower": 34,
+    "pipeline": 15,
+    "runtime": 47
   },
   "top_hotspot_files": [
     {
@@ -35,91 +28,75 @@
       "kind": "embedded_docs"
     },
     {
-      "path": "lower/objc3_lowering_contract.h",
-      "match_count": 234,
+      "path": "runtime/README.md",
+      "match_count": 47,
+      "kind": "embedded_docs"
+    },
+    {
+      "path": "lower/objc3_lowering_contract.cpp",
+      "match_count": 33,
+      "kind": "implementation_sources"
+    },
+    {
+      "path": "pipeline/objc3_frontend_types.h",
+      "match_count": 11,
       "kind": "interface_headers"
     },
     {
       "path": "ir/objc3_ir_emitter.cpp",
-      "match_count": 153,
+      "match_count": 10,
       "kind": "implementation_sources"
     },
     {
-      "path": "lower/objc3_lowering_contract.cpp",
-      "match_count": 149,
-      "kind": "implementation_sources"
-    },
-    {
-      "path": "sema/objc3_semantic_passes.cpp",
-      "match_count": 107,
-      "kind": "implementation_sources"
-    },
-    {
-      "path": "parse/objc3_parser.cpp",
-      "match_count": 86,
-      "kind": "implementation_sources"
+      "path": "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h",
+      "match_count": 6,
+      "kind": "interface_headers"
     },
     {
       "path": "pipeline/objc3_frontend_artifacts.cpp",
-      "match_count": 80,
+      "match_count": 4,
       "kind": "implementation_sources"
     },
     {
-      "path": "sema/objc3_sema_contract.h",
-      "match_count": 77,
-      "kind": "interface_headers"
+      "path": "adr/ADR-0003-diagnostics-determinism-contract.md",
+      "match_count": 3,
+      "kind": "embedded_docs"
     },
     {
-      "path": "ast/objc3_ast.h",
-      "match_count": 74,
-      "kind": "interface_headers"
+      "path": "adr/ADR-0002-cli-vs-library-separation.md",
+      "match_count": 2,
+      "kind": "embedded_docs"
     },
     {
-      "path": "runtime/objc3_runtime.cpp",
-      "match_count": 74,
-      "kind": "implementation_sources"
+      "path": "adr/ADR-0001-layered-frontend-boundaries.md",
+      "match_count": 1,
+      "kind": "embedded_docs"
     }
   ],
   "top_code_hotspot_files": [
     {
-      "path": "lower/objc3_lowering_contract.h",
-      "match_count": 234
+      "path": "lower/objc3_lowering_contract.cpp",
+      "match_count": 33
+    },
+    {
+      "path": "pipeline/objc3_frontend_types.h",
+      "match_count": 11
     },
     {
       "path": "ir/objc3_ir_emitter.cpp",
-      "match_count": 153
+      "match_count": 10
     },
     {
-      "path": "lower/objc3_lowering_contract.cpp",
-      "match_count": 149
-    },
-    {
-      "path": "sema/objc3_semantic_passes.cpp",
-      "match_count": 107
-    },
-    {
-      "path": "parse/objc3_parser.cpp",
-      "match_count": 86
+      "path": "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h",
+      "match_count": 6
     },
     {
       "path": "pipeline/objc3_frontend_artifacts.cpp",
-      "match_count": 80
+      "match_count": 4
     },
     {
-      "path": "sema/objc3_sema_contract.h",
-      "match_count": 77
-    },
-    {
-      "path": "ast/objc3_ast.h",
-      "match_count": 74
-    },
-    {
-      "path": "runtime/objc3_runtime.cpp",
-      "match_count": 74
-    },
-    {
-      "path": "io/objc3_process.cpp",
-      "match_count": 68
+      "path": "lower/objc3_lowering_contract.h",
+      "match_count": 1
     }
   ],
   "downstream_ownership": {

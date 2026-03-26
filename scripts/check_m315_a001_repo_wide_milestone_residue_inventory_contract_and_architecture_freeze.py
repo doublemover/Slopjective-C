@@ -127,19 +127,19 @@ def main(argv: Sequence[str]) -> int:
     checks_total += 5
     checks_passed += require(inventory.get("mode") == "m315-a001-repo-wide-milestone-residue-inventory-v1", str(INVENTORY_JSON), "M315-A001-INV-01", "mode drifted", failures)
     checks_passed += require(inventory.get("contract_id") == "objc3c-cleanup-repo-wide-milestone-residue-inventory/m315-a001-v1", str(INVENTORY_JSON), "M315-A001-INV-02", "contract id drifted", failures)
-    checks_passed += require(inventory.get("repo_wide_totals", {}).get("match_count") == measured["total"] == 277347, str(INVENTORY_JSON), "M315-A001-INV-03", "repo-wide match count drifted", failures)
-    checks_passed += require(inventory.get("repo_wide_totals", {}).get("distinct_milestone_issue_ids") == measured["distinct_issue_ids"] == 3024, str(INVENTORY_JSON), "M315-A001-INV-04", "distinct milestone issue id count drifted", failures)
-    checks_passed += require(inventory.get("repo_wide_totals", {}).get("distinct_milestone_families") == measured["distinct_milestones"] == 122, str(INVENTORY_JSON), "M315-A001-INV-05", "distinct milestone family count drifted", failures)
+    checks_passed += require(inventory.get("repo_wide_totals", {}).get("match_count") == measured["total"] == 276758, str(INVENTORY_JSON), "M315-A001-INV-03", "repo-wide match count drifted", failures)
+    checks_passed += require(inventory.get("repo_wide_totals", {}).get("distinct_milestone_issue_ids") == measured["distinct_issue_ids"] == 3032, str(INVENTORY_JSON), "M315-A001-INV-04", "distinct milestone issue id count drifted", failures)
+    checks_passed += require(inventory.get("repo_wide_totals", {}).get("distinct_milestone_families") == measured["distinct_milestones"] == 123, str(INVENTORY_JSON), "M315-A001-INV-05", "distinct milestone family count drifted", failures)
     for key, expected in {
-        "package_surface": 13297,
+        "package_surface": 13342,
         "operator_docs": 277,
         "generated_docs": 2224,
-        "planning_specs": 28564,
-        "tooling_scripts": 178092,
-        "tests_surface": 27290,
-        "native_source": 3182,
+        "planning_specs": 28801,
+        "tooling_scripts": 178482,
+        "tests_surface": 27307,
+        "native_source": 1809,
         "github_meta": 2,
-        "other": 24419,
+        "other": 24514,
     }.items():
         checks_total += 1
         checks_passed += require(inventory.get("scope_counts", {}).get(key) == measured["scope_counts"].get(key) == expected, str(INVENTORY_JSON), f"M315-A001-INV-SCOPE-{key}", f"scope count drifted for {key}", failures)
@@ -148,7 +148,7 @@ def main(argv: Sequence[str]) -> int:
     checks_passed += require(inventory.get("top_hotspot_files", [])[0]["path"] == "package.json", str(INVENTORY_JSON), "M315-A001-HOT-01", "top hotspot file drifted", failures)
     checks_passed += require(inventory.get("top_hotspot_files", [])[3]["path"] == "native/objc3c/src/ARCHITECTURE.md", str(INVENTORY_JSON), "M315-A001-HOT-02", "native hotspot drifted", failures)
     checks_passed += require(inventory.get("top_hotspot_files", [])[3]["match_count"] == 1691, str(INVENTORY_JSON), "M315-A001-HOT-03", "native hotspot count drifted", failures)
-    checks_passed += require(inventory.get("top_milestone_families", [])[0]["milestone"] == "m228" and inventory.get("top_milestone_families", [])[0]["match_count"] == 17368, str(INVENTORY_JSON), "M315-A001-HOT-04", "top milestone family drifted", failures)
+    checks_passed += require(inventory.get("top_milestone_families", [])[0]["milestone"] == "m228" and inventory.get("top_milestone_families", [])[0]["match_count"] == 17369, str(INVENTORY_JSON), "M315-A001-HOT-04", "top milestone family drifted", failures)
     checks_passed += require(inventory.get("next_issue") == "M315-A002", str(INVENTORY_JSON), "M315-A001-INV-06", "next issue drifted", failures)
 
     args.summary_out.parent.mkdir(parents=True, exist_ok=True)

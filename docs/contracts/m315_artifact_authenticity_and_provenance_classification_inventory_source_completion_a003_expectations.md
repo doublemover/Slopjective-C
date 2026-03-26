@@ -17,8 +17,8 @@ The inventory must:
   labeling work.
 
 The frozen baseline for this issue is:
-- `2501` tracked artifact candidates total;
-- `78` tracked `.ll` files and `2423` authenticity-sensitive tracked `.json` files;
+- `2514` tracked artifact candidates total;
+- `78` tracked `.ll` files and `2436` authenticity-sensitive tracked `.json` files;
 - `152` replay candidates missing embedded provenance;
 - `46` replay `.ll` files without even the `objc3c native frontend IR` header;
 - `2` explicit synthetic stub `.ll` parity fixtures;

@@ -190,18 +190,11 @@ def main() -> int:
     if observed_issue_key_fields != expected_issue_fields:
         errors.append("observed *_issue field names drifted from frozen contract inventory")
 
-    expected_m248_keys = sorted(
-        contract["replacement_contracts"]["legacy_m248_surface_identifier"]["legacy_to_replacement"].keys()
-    )
-    if observed_m248_legacy_hits != expected_m248_keys:
-        errors.append("observed legacy m248 identifiers drifted from frozen contract inventory")
+    if observed_m248_legacy_hits:
+        errors.append("observed legacy m248 identifiers remain live in product code")
 
-    expected_transitional_literals = sorted(
-        entry["legacy"]
-        for entry in contract["replacement_contracts"]["transitional_source_model"]["legacy_literals"]
-    )
-    if observed_transitional_literals != expected_transitional_literals:
-        errors.append("observed transitional source-model literals drifted from frozen contract inventory")
+    if observed_transitional_literals:
+        errors.append("observed transitional source-model literals remain live in product code")
 
     replacement_fields = [
         contract["replacement_contracts"]["dependency_issue_array"]["replacement_field"],

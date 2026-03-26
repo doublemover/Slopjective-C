@@ -35,12 +35,10 @@ def test_m315_c001_checker_passes_and_writes_expected_summary() -> None:
     assert summary["observed_next_issue_ref_count"] == 37
     assert summary["observed_issue_key_field_count"] == 8
     assert summary["observed_dependency_ref_count"] == 11
-    assert summary["observed_m248_identifier_count"] == 7
-    assert summary["observed_transitional_literal_count"] == 12
+    assert summary["observed_m248_identifier_count"] == 0
+    assert summary["observed_transitional_literal_count"] == 0
     assert summary["residual_class_expectations"] == {
         "dependency_issue_array": 3,
         "issue_key_schema_field": 8,
-        "legacy_m248_surface_identifier": 34,
         "next_issue_schema_field": 40,
-        "transitional_source_model": 12,
     }
