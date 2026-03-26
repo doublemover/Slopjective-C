@@ -1,0 +1,95 @@
+{
+  "mode": "m315-b002-product-code-annotation-provenance-policy-v1",
+  "contract_id": "objc3c-cleanup-product-code-annotation-provenance-policy/m315-b002-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m315/m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze_policy.json",
+    "spec/planning/compiler/m315/m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion_inventory.json"
+  ],
+  "allowed_annotation_families": [
+    {
+      "family_id": "surface_id",
+      "allowed_locations": [
+        "native/objc3c/src/** comments when identifying durable implementation surfaces",
+        "constexpr labels that survive into emitted/runtime-facing identifiers",
+        "generated manifests and reports"
+      ],
+      "prohibited_locations": [
+        "planning-only comments",
+        "temporary migration notes",
+        "issue-local narrative prose"
+      ]
+    },
+    {
+      "family_id": "artifact_family_id",
+      "allowed_locations": [
+        "generated manifests",
+        "replay/proof envelopes",
+        "fixture relocation registries"
+      ]
+    },
+    {
+      "family_id": "provenance_class",
+      "allowed_locations": [
+        "generated manifests",
+        "fixture metadata",
+        "source-of-truth registries"
+      ]
+    },
+    {
+      "family_id": "provenance_mode",
+      "allowed_locations": [
+        "generated manifests",
+        "regeneration records",
+        "artifact authenticity envelopes"
+      ]
+    }
+  ],
+  "archival_only_family": {
+    "family_id": "historical_ref",
+    "allowed_locations": [
+      "docs/contracts/**",
+      "spec/planning/**",
+      "archival notes moved outside durable product identifiers"
+    ],
+    "prohibited_locations": [
+      "native/objc3c/src/** durable identifiers",
+      "constexpr strings emitted or consumed as product/runtime truth",
+      "generated manifests and report identifiers"
+    ]
+  },
+  "prohibited_annotation_tokens": [
+    "mNNN",
+    "mNNN-lNNN",
+    "lane-a through lane-e",
+    "issueNNNN"
+  ],
+  "provenance_classes": [
+    "synthetic_fixture",
+    "sample_or_example",
+    "generated_report",
+    "generated_replay",
+    "schema_policy_contract",
+    "historical_archive"
+  ],
+  "generated_truth_requirements": {
+    "must_not_embed_historical_ref": true,
+    "must_use_stable_identifier_families": true,
+    "generated_replay_requires_followup_owner_issue": "M315-C003",
+    "authenticity_schema_owner_issue": "M315-C002"
+  },
+  "native_source_comment_policy": {
+    "allow_brief_surface_marker_comments": true,
+    "allow_planning_narrative": false,
+    "allow_milestone_strings": false,
+    "allow_issue_ids": false
+  },
+  "downstream_ownership": {
+    "native_source_marker_removal": "M315-B003",
+    "ir_fixture_compatibility_semantics": "M315-B004",
+    "decontamination_sweep": "M315-B005",
+    "source_of_truth_contract": "M315-C001",
+    "authenticity_schema": "M315-C002",
+    "replay_regeneration": "M315-C003"
+  },
+  "next_issue": "M315-B003"
+}

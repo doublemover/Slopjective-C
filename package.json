@@ -7948,6 +7948,9 @@
     "check:objc3c:m315-a003-lane-a-readiness": "python scripts/run_m315_a003_lane_a_readiness.py",
     "check:objc3c:m315-b001-stable-feature-surface-identifier-and-annotation-policy-contract-and-architecture-freeze": "python scripts/check_m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze.py",
     "test:tooling:m315-b001-stable-feature-surface-identifier-and-annotation-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_b001_stable_feature_surface_identifier_and_annotation_policy_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-b001-lane-b-readiness": "python scripts/run_m315_b001_lane_b_readiness.py"
+    "check:objc3c:m315-b001-lane-b-readiness": "python scripts/run_m315_b001_lane_b_readiness.py",
+    "check:objc3c:m315-b002-product-code-annotation-and-provenance-policy-contract-and-architecture-freeze": "python scripts/check_m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze.py",
+    "test:tooling:m315-b002-product-code-annotation-and-provenance-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_b002_product_code_annotation_and_provenance_policy_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-b002-lane-b-readiness": "python scripts/run_m315_b002_lane_b_readiness.py"
   }
 }
