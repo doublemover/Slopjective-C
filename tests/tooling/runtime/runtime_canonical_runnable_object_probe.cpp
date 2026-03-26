@@ -244,6 +244,8 @@ void PrintMethodCacheState(
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf("\"fallback_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+  std::printf("\"last_selector_stable_id\":%llu,",
+              static_cast<unsigned long long>(snapshot.last_selector_stable_id));
   std::printf("\"last_dispatch_used_cache\":%d,",
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
@@ -269,6 +271,8 @@ void PrintMethodCacheEntry(
   std::printf("\"normalized_receiver_identity\":%llu,",
               static_cast<unsigned long long>(
                   snapshot.normalized_receiver_identity));
+  std::printf("\"selector_stable_id\":%llu,",
+              static_cast<unsigned long long>(snapshot.selector_stable_id));
   std::printf("\"selector\":");
   PrintJsonStringOrNull(snapshot.selector);
   std::printf(",\"resolved_class_name\":");
@@ -302,6 +306,18 @@ int main() {
   const int widget_class_receiver =
       widget_entry.found != 0 ? static_cast<int>(widget_entry.base_identity + 2U)
                               : 0;
+  const objc3_runtime_selector_handle *alloc_selector =
+      objc3_runtime_lookup_selector("alloc");
+  const objc3_runtime_selector_handle *init_selector =
+      objc3_runtime_lookup_selector("init");
+  const objc3_runtime_selector_handle *new_selector =
+      objc3_runtime_lookup_selector("new");
+  const objc3_runtime_selector_handle *traced_selector =
+      objc3_runtime_lookup_selector("tracedValue");
+  const objc3_runtime_selector_handle *inherited_selector =
+      objc3_runtime_lookup_selector("inheritedValue");
+  const objc3_runtime_selector_handle *class_selector =
+      objc3_runtime_lookup_selector("classValue");
 
   const int alloc_value =
       objc3_runtime_dispatch_i32(widget_class_receiver, "alloc", 0, 0, 0, 0);
@@ -423,6 +439,19 @@ int main() {
   std::printf("\"class_value\":%d,", class_value);
   std::printf("\"widget_instance_receiver\":%d,", widget_instance_receiver);
   std::printf("\"widget_class_receiver\":%d,", widget_class_receiver);
+  std::printf("\"selector_handles\":{");
+  std::printf("\"alloc\":%llu,",
+              static_cast<unsigned long long>(alloc_selector != nullptr ? alloc_selector->stable_id : 0));
+  std::printf("\"init\":%llu,",
+              static_cast<unsigned long long>(init_selector != nullptr ? init_selector->stable_id : 0));
+  std::printf("\"new\":%llu,",
+              static_cast<unsigned long long>(new_selector != nullptr ? new_selector->stable_id : 0));
+  std::printf("\"tracedValue\":%llu,",
+              static_cast<unsigned long long>(traced_selector != nullptr ? traced_selector->stable_id : 0));
+  std::printf("\"inheritedValue\":%llu,",
+              static_cast<unsigned long long>(inherited_selector != nullptr ? inherited_selector->stable_id : 0));
+  std::printf("\"classValue\":%llu},",
+              static_cast<unsigned long long>(class_selector != nullptr ? class_selector->stable_id : 0));
   std::printf("\"graph_state\":");
   PrintGraphState(graph_state);
   std::printf(",\"widget_entry\":");

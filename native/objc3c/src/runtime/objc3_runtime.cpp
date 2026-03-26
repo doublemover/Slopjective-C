@@ -579,6 +579,8 @@ RuntimeState &State() {
   return state;
 }
 
+const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
+
 struct RuntimeDispatchFrame {
   int receiver = 0;
   std::uint64_t base_identity = 0;
@@ -1119,26 +1121,26 @@ const EmittedMethodListRef *SelectMethodListRef(const EmittedCategoryRecord &rec
                                          : record.instance_method_list_ref;
 }
 
-bool SelectorMatchesMethodEntryUnlocked(const RuntimeState &state,
+bool SelectorMatchesMethodEntryUnlocked(RuntimeState &state,
                                         const char *entry_selector,
                                         std::uint64_t selector_stable_id,
                                         const char *selector_spelling) {
   if (entry_selector == nullptr) {
     return false;
   }
-  bool selector_matches = false;
-  if (selector_stable_id != 0) {
-    const auto selector_it = state.selector_index_by_name.find(entry_selector);
-    if (selector_it != state.selector_index_by_name.end()) {
-      selector_matches =
-          state.selector_slots[selector_it->second].handle.stable_id ==
-          selector_stable_id;
-    }
+  if (selector_stable_id == 0 && selector_spelling != nullptr &&
+      selector_spelling[0] != '\0') {
+    const objc3_runtime_selector_handle *lookup_handle =
+        LookupSelectorUnlocked(selector_spelling);
+    selector_stable_id = lookup_handle != nullptr ? lookup_handle->stable_id : 0;
   }
-  if (!selector_matches && selector_spelling != nullptr) {
-    selector_matches = std::string(entry_selector) == selector_spelling;
+  if (selector_stable_id == 0) {
+    return false;
   }
-  return selector_matches;
+  const objc3_runtime_selector_handle *entry_handle =
+      LookupSelectorUnlocked(entry_selector);
+  return entry_handle != nullptr &&
+         entry_handle->stable_id == selector_stable_id;
 }
 
 bool TryResolveMethodFromMethodListRefUnlocked(

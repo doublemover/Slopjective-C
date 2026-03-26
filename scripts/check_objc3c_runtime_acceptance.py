@@ -194,14 +194,34 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     worker_query = payload.get("worker_query", {})
     tracer_query = payload.get("tracer_query", {})
     method_state = payload.get("method_state", {})
+    selector_handles = payload.get("selector_handles", {})
     traced_entry = payload.get("traced_entry", {})
     inherited_entry = payload.get("inherited_entry", {})
     class_entry = payload.get("class_entry", {})
+    alloc_entry = payload.get("alloc_entry", {})
+    init_entry = payload.get("init_entry", {})
+    new_entry = payload.get("new_entry", {})
 
     expect(worker_query.get("conforms") == 1, "expected Widget to conform to Worker at runtime")
     expect(tracer_query.get("conforms") == 1, "expected Widget category attachment to satisfy Tracer at runtime")
     expect(method_state.get("live_dispatch_count", 0) >= 6, "expected live dispatch count to cover alloc/init/new/traced/inherited/class")
     expect(method_state.get("fallback_dispatch_count", 0) == 0, "did not expect canonical dispatch workload to use fallback dispatch")
+    expect(method_state.get("last_selector_stable_id", 0) == selector_handles.get("classValue", 0),
+           "expected last dispatch selector stable id to match the selector pool handle for classValue")
+    expect(selector_handles.get("alloc", 0) != 0 and selector_handles.get("tracedValue", 0) != 0,
+           "expected canonical dispatch selectors to be interned in the runtime selector pool")
+    expect(alloc_entry.get("selector_stable_id", 0) == selector_handles.get("alloc", 0),
+           "expected alloc cache entry to be keyed by the selector pool stable id")
+    expect(init_entry.get("selector_stable_id", 0) == selector_handles.get("init", 0),
+           "expected init cache entry to be keyed by the selector pool stable id")
+    expect(new_entry.get("selector_stable_id", 0) == selector_handles.get("new", 0),
+           "expected new cache entry to be keyed by the selector pool stable id")
+    expect(traced_entry.get("selector_stable_id", 0) == selector_handles.get("tracedValue", 0),
+           "expected tracedValue cache entry to be keyed by the selector pool stable id")
+    expect(inherited_entry.get("selector_stable_id", 0) == selector_handles.get("inheritedValue", 0),
+           "expected inheritedValue cache entry to be keyed by the selector pool stable id")
+    expect(class_entry.get("selector_stable_id", 0) == selector_handles.get("classValue", 0),
+           "expected classValue cache entry to be keyed by the selector pool stable id")
     expect(traced_entry.get("resolved") == 1, "expected tracedValue cache entry to resolve live")
     expect(inherited_entry.get("resolved") == 1, "expected inheritedValue cache entry to resolve live")
     expect(class_entry.get("resolved") == 1, "expected classValue cache entry to resolve live")
