@@ -139,6 +139,29 @@ surface. It must point at the coupled registration manifest, emitted object and
 IR artifacts, the runtime archive path, the registration entrypoint, the runtime
 state snapshot symbol, and the published descriptor counts.
 
+## Installation ABI And Loader Lifecycle
+
+- public installation ABI:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- private loader lifecycle testing boundary:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- authoritative acceptance case:
+  - `installation-lifecycle`
+- machine-readable keys:
+  - `runtime_installation_abi_surface`
+  - `loader_lifecycle_surface`
+
+The installation ABI is the stable front door for ingesting emitted runtime
+images and reading installation state. Loader lifecycle proof remains on the
+private testing boundary, where runtime acceptance verifies startup
+installation, reset retention of the bootstrap catalog, and deterministic
+replay of registered images from the retained catalog.
+
 ## Acceptance Suite Surface
 
 - authoritative suite:

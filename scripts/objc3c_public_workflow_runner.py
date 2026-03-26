@@ -203,6 +203,14 @@ def write_composite_validation_report(
     acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
     if acceptance_suite_surface is not None:
         payload["acceptance_suite_surface"] = acceptance_suite_surface
+    runtime_installation_abi_surface = load_surface_from_report(
+        steps, "runtime_installation_abi_surface"
+    )
+    if runtime_installation_abi_surface is not None:
+        payload["runtime_installation_abi_surface"] = runtime_installation_abi_surface
+    loader_lifecycle_surface = load_surface_from_report(steps, "loader_lifecycle_surface")
+    if loader_lifecycle_surface is not None:
+        payload["loader_lifecycle_surface"] = loader_lifecycle_surface
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return report_path
 

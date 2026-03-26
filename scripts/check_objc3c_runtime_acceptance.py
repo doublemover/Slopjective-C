@@ -25,6 +25,8 @@ PWSH = shutil.which("pwsh") or shutil.which("powershell") or "pwsh"
 RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
 RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
+RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
+RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
 PUBLIC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_register_image",
     "objc3_runtime_lookup_selector",
@@ -338,6 +340,45 @@ def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path)
     }
 
 
+def build_runtime_installation_abi_surface() -> dict[str, Any]:
+    return {
+        "contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
+        "public_installation_abi_boundary": [
+            "objc3_runtime_register_image",
+            "objc3_runtime_copy_registration_state_for_testing",
+            "objc3_runtime_reset_for_testing",
+        ],
+        "private_loader_testing_boundary": [
+            "objc3_runtime_stage_registration_table_for_bootstrap",
+            "objc3_runtime_copy_image_walk_state_for_testing",
+            "objc3_runtime_replay_registered_images_for_testing",
+            "objc3_runtime_copy_reset_replay_state_for_testing",
+        ],
+        "installation_requires_coupled_registration_manifest": True,
+        "register_image_consumes_staged_registration_table_once": True,
+        "deterministic_reset_replay_supported": True,
+    }
+
+
+def build_loader_lifecycle_surface(results: list[CaseResult]) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id for result in results if result.case_id == "installation-lifecycle"
+    ]
+    return {
+        "contract_id": RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID,
+        "runtime_installation_abi_surface_contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
+        "authoritative_case_ids": authoritative_case_ids,
+        "lifecycle_phases": [
+            "startup-installed-runtime-state",
+            "reset-retained-bootstrap-catalog",
+            "replay-restored-installed-runtime-state",
+        ],
+        "retained_bootstrap_catalog_required": True,
+        "deterministic_replay_required": True,
+        "requires_linked_fixture_or_loader_retained_roots": True,
+    }
+
+
 def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "runtime-library"
     probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_library_probe.cpp"
@@ -351,6 +392,80 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
         claim_class="linked-runtime-probe",
         passed=True,
         summary={"kind": "standalone-runtime-probe"},
+    )
+
+
+def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "installation-lifecycle"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "runtime_canonical_runnable_object_runtime_library.objc3"
+    )
+    obj_path = compile_fixture(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_installation_loader_lifecycle_probe.cpp"
+    exe_path = case_dir / "runtime_installation_loader_lifecycle_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "runtime installation loader lifecycle probe")
+
+    expect(payload.get("startup_registration_copy_status") == 0, "expected startup registration snapshot copy to succeed")
+    expect(payload.get("startup_image_walk_copy_status") == 0, "expected startup image walk snapshot copy to succeed")
+    expect(payload.get("startup_reset_replay_copy_status") == 0, "expected startup reset/replay snapshot copy to succeed")
+    expect(payload.get("startup_registered_image_count") == 1, "expected startup runtime installation state to contain one registered image")
+    expect(payload.get("startup_next_expected_registration_order_ordinal") == 2, "expected startup installation state to advance the next registration ordinal")
+    expect(payload.get("startup_walked_image_count") == 1, "expected startup image walk state to publish one walked image")
+    expect(payload.get("startup_last_discovery_root_entry_count", 0) > 0, "expected startup image walk state to publish a non-empty discovery root")
+    expect(payload.get("startup_last_registration_used_staged_table") == 1, "expected startup installation state to consume the staged registration table")
+    expect(payload.get("startup_retained_bootstrap_image_count") == 1, "expected startup reset/replay state to retain one bootstrap image")
+
+    startup_module_name = payload.get("startup_last_registered_module_name")
+    startup_identity_key = payload.get("startup_last_registered_translation_unit_identity_key")
+    expect(isinstance(startup_module_name, str) and startup_module_name != "", "expected startup installation state to publish a registered module name")
+    expect(isinstance(startup_identity_key, str) and startup_identity_key != "", "expected startup installation state to publish a registered translation unit identity key")
+
+    expect(payload.get("post_reset_registration_copy_status") == 0, "expected post-reset registration snapshot copy to succeed")
+    expect(payload.get("post_reset_reset_replay_copy_status") == 0, "expected post-reset reset/replay snapshot copy to succeed")
+    expect(payload.get("post_reset_registered_image_count") == 0, "expected reset to clear installed runtime images")
+    expect(payload.get("post_reset_next_expected_registration_order_ordinal") == 1, "expected reset to restore the initial registration ordinal")
+    expect(payload.get("post_reset_retained_bootstrap_image_count") == 1, "expected reset to retain one bootstrap image for replay")
+    expect(payload.get("post_reset_last_reset_cleared_image_local_init_state_count") == 1, "expected reset to clear one image-local initialization state record")
+
+    expect(payload.get("replay_status") == 0, "expected replay_registered_images_for_testing to succeed")
+    expect(payload.get("post_replay_registration_copy_status") == 0, "expected post-replay registration snapshot copy to succeed")
+    expect(payload.get("post_replay_image_walk_copy_status") == 0, "expected post-replay image walk snapshot copy to succeed")
+    expect(payload.get("post_replay_reset_replay_copy_status") == 0, "expected post-replay reset/replay snapshot copy to succeed")
+    expect(payload.get("post_replay_registered_image_count") == 1, "expected replay to restore one registered runtime image")
+    expect(payload.get("post_replay_next_expected_registration_order_ordinal") == 2, "expected replay to restore the next registration ordinal")
+    expect(payload.get("post_replay_walked_image_count") == 1, "expected replay to restore one walked image")
+    expect(payload.get("post_replay_last_discovery_root_entry_count") == payload.get("startup_last_discovery_root_entry_count"), "expected replay to preserve discovery root entry count")
+    expect(payload.get("post_replay_last_registration_used_staged_table") == 1, "expected replay registration to consume the staged registration table")
+    expect(payload.get("post_replay_retained_bootstrap_image_count") == 1, "expected replay to preserve the retained bootstrap catalog")
+    expect(payload.get("post_replay_last_replayed_image_count") == 1, "expected replay state to publish one replayed image")
+    expect(payload.get("post_replay_replay_generation", 0) >= 1, "expected replay state to advance the replay generation")
+    expect(payload.get("post_replay_last_replay_status") == 0, "expected replay state to publish a successful replay status")
+    expect(payload.get("post_replay_last_registered_module_name") == startup_module_name, "expected replay to restore the registered module name")
+    expect(payload.get("post_replay_last_walked_module_name") == startup_module_name, "expected replay image walk state to publish the registered module name")
+    expect(payload.get("post_replay_last_replayed_module_name") == startup_module_name, "expected replay state to publish the replayed module name")
+    expect(payload.get("post_replay_last_registered_translation_unit_identity_key") == startup_identity_key, "expected replay to restore the registered translation unit identity key")
+    expect(payload.get("post_replay_last_walked_translation_unit_identity_key") == startup_identity_key, "expected replay image walk state to publish the translation unit identity key")
+    expect(payload.get("post_replay_last_replayed_translation_unit_identity_key") == startup_identity_key, "expected replay state to publish the replayed translation unit identity key")
+
+    return CaseResult(
+        case_id="installation-lifecycle",
+        probe="tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+        fixture="tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "startup_registered_image_count": payload["startup_registered_image_count"],
+            "post_reset_registered_image_count": payload["post_reset_registered_image_count"],
+            "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
+            "retained_bootstrap_image_count": payload["post_replay_retained_bootstrap_image_count"],
+            "replay_generation": payload["post_replay_replay_generation"],
+        },
     )
 
 
@@ -1267,6 +1382,7 @@ def main() -> int:
 
     results = [
         check_runtime_library_case(clangxx, run_dir),
+        check_installation_lifecycle_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
@@ -1296,6 +1412,8 @@ def main() -> int:
         "claim_boundary": build_claim_boundary(),
         "runtime_state_publication_surface": build_runtime_state_publication_surface(),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
+        "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),
+        "loader_lifecycle_surface": build_loader_lifecycle_surface(results),
         "dispatch_accessor_runtime_abi_surface": {
             "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
             "proof_cases": [

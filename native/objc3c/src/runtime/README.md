@@ -31,6 +31,20 @@ Installation lifecycle:
 4. lookup and dispatch consume only that installed runtime-owned state plus runtime builtins
 5. `objc3_runtime_reset_for_testing` is the deterministic lifecycle reset hook for acceptance and replay paths
 
+Installation ABI and loader lifecycle surface:
+
+- public installation ABI:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_copy_registration_state_for_testing`
+  - `objc3_runtime_reset_for_testing`
+- private loader lifecycle testing boundary:
+  - `objc3_runtime_stage_registration_table_for_bootstrap`
+  - `objc3_runtime_copy_image_walk_state_for_testing`
+  - `objc3_runtime_replay_registered_images_for_testing`
+  - `objc3_runtime_copy_reset_replay_state_for_testing`
+- authoritative executable probe:
+  - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records

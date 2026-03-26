@@ -266,6 +266,13 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "runtime_state_publication_surface": surfaces["runtime_state_publication_surface"],
         "acceptance_suite_surface": surfaces["acceptance_suite_surface"],
     }
+    for optional_surface_key in (
+        "runtime_installation_abi_surface",
+        "loader_lifecycle_surface",
+    ):
+        optional_surface = report.get(optional_surface_key)
+        if isinstance(optional_surface, dict):
+            payload[optional_surface_key] = optional_surface
     if entry.suite_id == "runtime-acceptance":
         payload["case_count"] = report.get("case_count", 0)
     else:
