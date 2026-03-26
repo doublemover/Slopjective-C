@@ -539,6 +539,29 @@ function Assert-CompileOutputProvenance {
     throw "contract FAIL: runtime registration manifest missing compile provenance binding for $CaseName"
   }
 
+  $truthfulness = $provenance["compile_output_truthfulness"]
+  if ($null -eq $truthfulness -or [string]$truthfulness["contract_id"] -ne "objc3c.native.compile.output.truthfulness.v1") {
+    throw "contract FAIL: missing compile output truthfulness envelope for $CaseName"
+  }
+  if (-not [bool]$truthfulness["truthful"]) {
+    throw "contract FAIL: compile output truthfulness envelope did not certify emitted artifacts for $CaseName"
+  }
+  if ($hasRegistrationManifest -and [string]$registrationManifest["compile_output_truthfulness_contract_id"] -ne "objc3c.native.compile.output.truthfulness.v1") {
+    throw "contract FAIL: runtime registration manifest missing compile output truthfulness contract id for $CaseName"
+  }
+  if ($hasRegistrationManifest -and -not [bool]$registrationManifest["compile_output_truthful"]) {
+    throw "contract FAIL: runtime registration manifest did not certify truthful compile output for $CaseName"
+  }
+  if ($hasRegistrationManifest -and [string]$truthfulness["runtime_dispatch_symbol"] -ne [string]$registrationManifest["compile_output_truthfulness_runtime_dispatch_symbol"]) {
+    throw "contract FAIL: runtime registration manifest compile output truthfulness dispatch symbol mismatch for $CaseName"
+  }
+  if ($hasRegistrationManifest -and [int]$truthfulness["property_descriptor_definition_count"] -ne [int]$registrationManifest["compile_output_truthfulness_property_descriptor_count"]) {
+    throw "contract FAIL: runtime registration manifest compile output truthfulness property descriptor count mismatch for $CaseName"
+  }
+  if ($hasRegistrationManifest -and [int]$truthfulness["ivar_descriptor_definition_count"] -ne [int]$registrationManifest["compile_output_truthfulness_ivar_descriptor_count"]) {
+    throw "contract FAIL: runtime registration manifest compile output truthfulness ivar descriptor count mismatch for $CaseName"
+  }
+
   $artifactEntries = @($provenance["emitted_artifacts"])
   if ($artifactEntries.Count -lt 4) {
     throw "contract FAIL: compile provenance emitted_artifacts too small for $CaseName"
