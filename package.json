@@ -7942,6 +7942,9 @@
     "check:objc3c:m315-a001-lane-a-readiness": "python scripts/run_m315_a001_lane_a_readiness.py",
     "check:objc3c:m315-a002-native-source-milestone-residue-inventory-source-completion": "python scripts/check_m315_a002_native_source_milestone_residue_inventory_source_completion.py",
     "test:tooling:m315-a002-native-source-milestone-residue-inventory-source-completion": "python -m pytest tests/tooling/test_check_m315_a002_native_source_milestone_residue_inventory_source_completion.py -q",
-    "check:objc3c:m315-a002-lane-a-readiness": "python scripts/run_m315_a002_lane_a_readiness.py"
+    "check:objc3c:m315-a002-lane-a-readiness": "python scripts/run_m315_a002_lane_a_readiness.py",
+    "check:objc3c:m315-a003-artifact-authenticity-and-provenance-classification-inventory-source-completion": "python scripts/check_m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion.py",
+    "test:tooling:m315-a003-artifact-authenticity-and-provenance-classification-inventory-source-completion": "python -m pytest tests/tooling/test_check_m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion.py -q",
+    "check:objc3c:m315-a003-lane-a-readiness": "python scripts/run_m315_a003_lane_a_readiness.py"
   }
 }

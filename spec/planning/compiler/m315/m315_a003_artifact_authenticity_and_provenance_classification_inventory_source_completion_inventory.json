@@ -1,0 +1,146 @@
+{
+  "mode": "m315-a003-artifact-authenticity-inventory-v1",
+  "contract_id": "objc3c-cleanup-artifact-authenticity-inventory/m315-a003-v1",
+  "candidate_scope": {
+    "included_extensions": [
+      ".ll",
+      ".json"
+    ],
+    "excluded_configuration_json": [
+      ".prettierrc.json",
+      "package-lock.json",
+      "package.json"
+    ]
+  },
+  "totals": {
+    "tracked_artifact_candidates": 2501,
+    "ll_files": 78,
+    "json_files": 2423
+  },
+  "authenticity_class_counts": {
+    "schema_policy_contract": 53,
+    "generated_or_report_artifact": 25,
+    "sample_or_example_artifact": 62,
+    "synthetic_fixture": 2209,
+    "replay_candidate_missing_provenance": 152
+  },
+  "provenance_signal_counts": {
+    "schema_or_contract_label": 6,
+    "none": 2150,
+    "embedded_generation_metadata": 49,
+    "non_json_or_invalid": 3,
+    "fixture_or_status_label": 183,
+    "explicit_fixture_label": 2,
+    "artifact_header_only": 108
+  },
+  "root_counts": {
+    "registries": 1,
+    "reports": 28,
+    "schemas": 4,
+    "site/src": 1,
+    "spec/planning": 47,
+    "tests/conformance": 1601,
+    "tests/conformance/examples": 59,
+    "tests/tooling/fixtures": 760
+  },
+  "synthetic_fixture_breakdown": {
+    "tests/conformance": 1601,
+    "tests/tooling/fixtures": 608
+  },
+  "sample_or_example_breakdown": {
+    "reports": 3,
+    "tests/conformance/examples": 59
+  },
+  "generated_report_breakdown": {
+    "reports": 25
+  },
+  "replay_candidate_breakdown": {
+    "ll_files": 76,
+    "manifest_json_files": 76,
+    "ll_with_frontend_header": 30,
+    "ll_without_frontend_header": 46
+  },
+  "class_by_provenance": {
+    "schema_policy_contract": {
+      "schema_or_contract_label": 6,
+      "none": 47
+    },
+    "generated_or_report_artifact": {
+      "none": 17,
+      "embedded_generation_metadata": 8
+    },
+    "sample_or_example_artifact": {
+      "embedded_generation_metadata": 3,
+      "none": 59
+    },
+    "synthetic_fixture": {
+      "none": 1981,
+      "embedded_generation_metadata": 38,
+      "non_json_or_invalid": 3,
+      "fixture_or_status_label": 183,
+      "explicit_fixture_label": 2,
+      "artifact_header_only": 2
+    },
+    "replay_candidate_missing_provenance": {
+      "artifact_header_only": 106,
+      "none": 46
+    }
+  },
+  "flagged_examples": {
+    "explicit_synthetic_stub_ir": [
+      "tests/tooling/fixtures/native/library_cli_parity/cli/module.ll",
+      "tests/tooling/fixtures/native/library_cli_parity/library/module.ll"
+    ],
+    "replay_without_frontend_header": [
+      "tests/tooling/fixtures/objc3c/m170_validation_block_determinism_perf_baseline_contract/replay_run_1/module.ll",
+      "tests/tooling/fixtures/objc3c/m170_validation_block_determinism_perf_baseline_contract/replay_run_2/module.ll",
+      "tests/tooling/fixtures/objc3c/m171_validation_lightweight_generics_constraints_contract/replay_run_1/module.ll",
+      "tests/tooling/fixtures/objc3c/m171_validation_lightweight_generics_constraints_contract/replay_run_2/module.ll",
+      "tests/tooling/fixtures/objc3c/m172_validation_nullability_flow_warning_precision_contract/replay_run_1/module.ll",
+      "tests/tooling/fixtures/objc3c/m172_validation_nullability_flow_warning_precision_contract/replay_run_2/module.ll",
+      "tests/tooling/fixtures/objc3c/m173_validation_protocol_qualified_object_type_contract/replay_run_1/module.ll",
+      "tests/tooling/fixtures/objc3c/m173_validation_protocol_qualified_object_type_contract/replay_run_2/module.ll",
+      "tests/tooling/fixtures/objc3c/m174_validation_variance_bridge_cast_contract/replay_run_1/module.ll",
+      "tests/tooling/fixtures/objc3c/m174_validation_variance_bridge_cast_contract/replay_run_2/module.ll"
+    ],
+    "generated_reports_without_embedded_metadata": [
+      "reports/activation_preflight/v015_activation_execution_hardening_w1_dispatch_20260224/activation_preflight_summary.json",
+      "reports/activation_preflight/v015_activation_execution_hardening_w1_dispatch_20260224/check_activation_triggers.json",
+      "reports/activation_preflight/v015_activation_execution_hardening_w2_dispatch_20260224/activation_preflight_summary.json",
+      "reports/activation_preflight/v015_activation_execution_hardening_w2_dispatch_20260224/check_activation_triggers.json",
+      "reports/activation_preflight/v015_activation_seed_dispatch_20260224/activation_preflight_summary.json",
+      "reports/activation_preflight/v015_activation_seed_dispatch_20260224/check_activation_triggers.json",
+      "reports/activation_preflight/v015_activation_seed_hardening_w2_dispatch_20260224/activation_preflight_summary.json",
+      "reports/activation_preflight/v015_activation_seed_hardening_w2_dispatch_20260224/check_activation_triggers.json",
+      "reports/activation_preflight/v015_activation_seed_hardening_w3_dispatch_20260224/activation_preflight_summary.json",
+      "reports/activation_preflight/v015_activation_seed_hardening_w3_dispatch_20260224/check_activation_triggers.json"
+    ],
+    "sample_artifacts_without_embedded_metadata": [
+      "tests/conformance/examples/borrowed_pointer_punctuation/EC-BORROW-01.json",
+      "tests/conformance/examples/borrowed_pointer_punctuation/EC-BORROW-02.json",
+      "tests/conformance/examples/borrowed_pointer_punctuation/EC-BORROW-03.json",
+      "tests/conformance/examples/borrowed_pointer_punctuation/EC-BORROW-04.json",
+      "tests/conformance/examples/borrowed_pointer_punctuation/EC-BORROW-05.json",
+      "tests/conformance/examples/capture_lists/EC-CAPTURE-01.json",
+      "tests/conformance/examples/capture_lists/EC-CAPTURE-02.json",
+      "tests/conformance/examples/capture_lists/EC-CAPTURE-03.json",
+      "tests/conformance/examples/capture_lists/EC-CAPTURE-04.json",
+      "tests/conformance/examples/capture_lists/EC-CAPTURE-05.json"
+    ]
+  },
+  "downstream_ownership": {
+    "stable_identifier_and_annotation_policy": "M315-B001",
+    "product_code_annotation_and_provenance_policy": "M315-B002",
+    "ir_fixture_compatibility_semantics": "M315-B004",
+    "source_of_truth_contract": "M315-C001",
+    "authenticity_schema": "M315-C002",
+    "replay_regeneration_and_provenance_capture": "M315-C003",
+    "synthetic_fixture_relocation_and_labeling": "M315-C004"
+  },
+  "notes": [
+    "This inventory is intentionally broader than replay-only files so later policy work can separate proof artifacts, samples, schemas, and hand-authored fixtures cleanly.",
+    "The replay candidate class is the highest-risk authenticity slice because the files look like generated compiler outputs but currently do not carry embedded provenance strong enough for later closeout claims.",
+    "Configuration JSON is excluded because it is not part of the authenticity-sensitive artifact surface."
+  ],
+  "next_issue": "M315-B001"
+}
