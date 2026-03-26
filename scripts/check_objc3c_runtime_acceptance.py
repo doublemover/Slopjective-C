@@ -160,6 +160,31 @@ def parse_json_output(result: subprocess.CompletedProcess[str], label: str) -> d
     return payload
 
 
+def parse_key_value_output(
+    result: subprocess.CompletedProcess[str], label: str
+) -> dict[str, Any]:
+    stdout = result.stdout.strip()
+    if not stdout:
+        raise RuntimeError(f"{label} produced no key/value output")
+    payload: dict[str, Any] = {}
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if "=" not in line:
+            raise RuntimeError(f"{label} produced malformed line: {line}")
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if value and (value.lstrip("-").isdigit()):
+            payload[key] = int(value)
+        else:
+            payload[key] = value
+    if not payload:
+        raise RuntimeError(f"{label} produced no parseable key/value output")
+    return payload
+
+
 @dataclass(frozen=True)
 class CaseResult:
     case_id: str
@@ -246,6 +271,99 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
             "class_value": payload["class_value"],
             "live_dispatch_count": method_state["live_dispatch_count"],
             "attached_category_count": payload.get("graph_state", {}).get("attached_category_count"),
+        },
+    )
+
+
+def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "dispatch-fast-path"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m272_d002_live_dispatch_fast_path_positive.objc3"
+    )
+    obj_path = compile_fixture(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m272_d002_live_dispatch_fast_path_probe.cpp"
+    exe_path = case_dir / "m272_d002_live_dispatch_fast_path_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_key_value_output(run_probe(exe_path), "dispatch fast-path probe")
+
+    expect(payload.get("baseline_status") == 0, "expected baseline method-cache snapshot to succeed")
+    expect(payload.get("dynamic_entry_status") == 0, "expected dynamic fast-path entry lookup to succeed")
+    expect(payload.get("explicit_entry_status") == 0, "expected explicit fast-path entry lookup to succeed")
+    expect(payload.get("fallback_entry_status") == 0, "expected fallback method-cache entry lookup to succeed")
+    expect(payload.get("implicit_value") == 3, "expected implicit direct call to remain direct")
+    expect(payload.get("explicit_value") == 5, "expected explicit direct call to remain direct")
+    expect(payload.get("mixed_first") == 12 and payload.get("mixed_second") == 12,
+           "expected mixed dispatch fixture to execute through the live runtime")
+    expect(payload.get("fallback_first") == payload.get("fallback_expected") == payload.get("fallback_second"),
+           "expected fallback dispatch to stay deterministic across cache miss/hit")
+    expect(payload.get("baseline_cache_entry_count") == 4,
+           "expected realized dispatch runtime to seed four method-cache entries")
+    expect(payload.get("baseline_fast_path_seed_count") == 4,
+           "expected realized dispatch runtime to publish seeded fast-path entries")
+    expect(payload.get("dynamic_entry_found") == 1 and payload.get("dynamic_entry_resolved") == 1,
+           "expected dynamicEscape entry to resolve live")
+    expect(payload.get("dynamic_entry_fast_path_seeded") == 1,
+           "expected dynamicEscape entry to be seeded for fast-path dispatch")
+    expect(payload.get("dynamic_entry_effective_direct_dispatch") == 0,
+           "expected dynamicEscape entry to stay runtime-dispatched")
+    expect(payload.get("dynamic_entry_fast_path_reason") == "class-final",
+           "expected dynamicEscape fast-path reason to remain class-final")
+    expect(payload.get("explicit_entry_found") == 1 and payload.get("explicit_entry_resolved") == 1,
+           "expected explicitDirect entry to resolve live")
+    expect(payload.get("explicit_entry_fast_path_seeded") == 1,
+           "expected explicitDirect entry to be seeded for direct dispatch")
+    expect(payload.get("explicit_entry_effective_direct_dispatch") == 1,
+           "expected explicitDirect entry to preserve direct dispatch semantics")
+    expect(payload.get("explicit_entry_fast_path_reason") == "direct",
+           "expected explicitDirect fast-path reason to remain direct")
+    expect(payload.get("mixed_first_state_last_dispatch_used_cache") == 1,
+           "expected first mixed dispatch runtime call to hit the seeded cache")
+    expect(payload.get("mixed_first_state_last_dispatch_used_fast_path") == 1,
+           "expected first mixed dispatch runtime call to use the seeded fast path")
+    expect(payload.get("mixed_first_state_last_dispatch_resolved_live_method") == 1,
+           "expected first mixed dispatch runtime call to resolve a live method")
+    expect(payload.get("mixed_first_state_last_dispatch_fell_back") == 0,
+           "did not expect first mixed dispatch runtime call to fall back")
+    expect(payload.get("mixed_first_state_last_selector") == "dynamicEscape",
+           "expected first mixed dispatch runtime call to target dynamicEscape")
+    expect(payload.get("mixed_second_state_last_dispatch_used_cache") == 1,
+           "expected repeated mixed dispatch runtime call to remain cached")
+    expect(payload.get("mixed_second_state_last_dispatch_used_fast_path") == 1,
+           "expected repeated mixed dispatch runtime call to remain on the fast path")
+    expect(payload.get("mixed_second_state_last_dispatch_fell_back") == 0,
+           "did not expect repeated mixed dispatch runtime call to fall back")
+    expect(payload.get("fallback_first_state_last_dispatch_used_cache") == 0,
+           "expected first missingDispatch: call to miss the cache")
+    expect(payload.get("fallback_first_state_last_dispatch_used_fast_path") == 0,
+           "expected first missingDispatch: call to avoid the fast path")
+    expect(payload.get("fallback_first_state_last_dispatch_resolved_live_method") == 0,
+           "did not expect first missingDispatch: call to resolve live")
+    expect(payload.get("fallback_first_state_last_dispatch_fell_back") == 1,
+           "expected first missingDispatch: call to fall back")
+    expect(payload.get("fallback_second_state_last_dispatch_used_cache") == 1,
+           "expected repeated missingDispatch: call to hit the fallback cache entry")
+    expect(payload.get("fallback_second_state_last_dispatch_used_fast_path") == 0,
+           "expected repeated missingDispatch: call to stay off the fast path")
+    expect(payload.get("fallback_second_state_last_dispatch_fell_back") == 1,
+           "expected repeated missingDispatch: call to remain a fallback dispatch")
+
+    return CaseResult(
+        case_id="dispatch-fast-path",
+        probe="tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+        passed=True,
+        summary={
+            "baseline_cache_entry_count": payload.get("baseline_cache_entry_count"),
+            "baseline_fast_path_seed_count": payload.get("baseline_fast_path_seed_count"),
+            "mixed_first_live_dispatch_count": payload.get("mixed_first_state_live_dispatch_count"),
+            "mixed_second_live_dispatch_count": payload.get("mixed_second_state_live_dispatch_count"),
+            "fallback_first_fallback_dispatch_count": payload.get("fallback_first_state_fallback_dispatch_count"),
+            "fallback_second_fallback_dispatch_count": payload.get("fallback_second_state_fallback_dispatch_count"),
         },
     )
 
@@ -505,6 +623,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
+        check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
