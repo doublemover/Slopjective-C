@@ -342,7 +342,6 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected currentValue getter dispatch to resolve live through the runtime cache")
     expect(token_method.get("resolved") == 1 and token_method.get("parameter_count") == 0,
            "expected tokenValue getter dispatch to resolve live through the runtime cache")
-
     return CaseResult(
         case_id="property-execution",
         probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
@@ -354,6 +353,82 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
             "value_result": payload.get("value_result"),
             "runtime_property_accessor_count": widget_entry.get("runtime_property_accessor_count"),
             "slot_backed_property_count": registry_state.get("slot_backed_property_count"),
+        },
+    )
+
+
+def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "arc-property-helper-abi"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_property_interaction_positive.objc3"
+    )
+    obj_path = compile_fixture(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "m262_d003_arc_debug_instrumentation_probe.cpp"
+    exe_path = case_dir / "m262_d003_arc_debug_instrumentation_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "arc property helper probe")
+
+    inside = payload.get("inside", {})
+    after = payload.get("after", {})
+
+    expect(payload.get("parent", 0) != 0 and payload.get("child", 0) != 0,
+           "expected ArcBox runtime helper probe to allocate live receivers")
+    expect(payload.get("bind_current_status") == 0,
+           "expected strong-property current context binding to succeed")
+    expect(payload.get("bind_weak_status") == 0,
+           "expected weak-property current context binding to succeed")
+    expect(payload.get("rebind_current_status") == 0 and payload.get("rebind_weak_status") == 0,
+           "expected current-property helper rebinds to succeed")
+    expect(payload.get("getter_value") == payload.get("child"),
+           "expected current-property getter helper to read the stored child value")
+    expect(payload.get("weak_set_result") == payload.get("child"),
+           "expected weak-property helper write to preserve the child value")
+    expect(payload.get("weak_inside_pool") == payload.get("child"),
+           "expected weak-property helper read inside the pool to preserve the child value")
+    expect(payload.get("weak_after_pool") == payload.get("child"),
+           "expected weak-property helper read after pool pop to stay coherent")
+    expect(payload.get("strong_set_result") == 0,
+           "expected first strong-property exchange to replace an empty slot")
+    expect(payload.get("clear_strong_result") == payload.get("child"),
+           "expected clearing the strong property to return the previous child value")
+    expect(inside.get("current_property_read_count", 0) >= 2,
+           "expected live current-property reads to execute through the runtime helper ABI")
+    expect(inside.get("current_property_write_count", 0) >= 1,
+           "expected live current-property writes to execute through the runtime helper ABI")
+    expect(inside.get("current_property_exchange_count", 0) >= 2,
+           "expected strong ownership accessors to execute through exchange helper traffic")
+    expect(inside.get("weak_current_property_load_count", 0) >= 1,
+           "expected weak-property loads to execute through the runtime helper ABI")
+    expect(inside.get("weak_current_property_store_count", 0) >= 1,
+           "expected weak-property stores to execute through the runtime helper ABI")
+    expect(inside.get("last_property_receiver") == payload.get("parent"),
+           "expected helper ABI debug state to preserve the bound receiver")
+    expect(inside.get("last_property_name") == "weakValue",
+           "expected helper ABI debug state to report the bound weak property")
+    expect(inside.get("last_property_owner_identity") == "implementation:ArcBox",
+           "expected helper ABI debug state to report the ArcBox owner identity")
+    expect(after.get("autoreleasepool_pop_count", 0) >= 1,
+           "expected helper ABI probe to pop an autorelease pool")
+    expect(after.get("release_call_count", 0) >= 3,
+           "expected helper ABI probe to release the child, retained value, and parent")
+
+    return CaseResult(
+        case_id="arc-property-helper-abi",
+        probe="tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        passed=True,
+        summary={
+            "parent": payload.get("parent"),
+            "child": payload.get("child"),
+            "getter_value": payload.get("getter_value"),
+            "weak_after_pool": payload.get("weak_after_pool"),
+            "inside_current_property_exchange_count": inside.get("current_property_exchange_count"),
+            "after_release_call_count": after.get("release_call_count"),
         },
     )
 
@@ -433,6 +508,7 @@ def main() -> int:
         check_synthesized_accessor_codegen_case(run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
+        check_arc_property_helper_case(clangxx, run_dir),
     ]
 
     summary = {
