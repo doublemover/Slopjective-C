@@ -140,8 +140,7 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
   "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
-  "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-  "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
+  "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -168,7 +167,6 @@ $manifestPayload = [ordered]@{
   execution_replay_script = "scripts/check_objc3c_execution_replay_proof.ps1"
   canonical_runnable_fixture = "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
-  compatibility_runtime_shim = "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
     "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",

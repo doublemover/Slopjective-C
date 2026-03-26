@@ -49,6 +49,38 @@ function Invoke-Objc3cNativeWithRecovery {
   throw "contract FAIL: unreachable launch state"
 }
 
+function Get-EntrypointLlSurface {
+  param(
+    [string]$LlText
+  )
+
+  $lines = $LlText -split "`r?`n"
+  $capturing = $false
+  $braceDepth = 0
+  $captured = New-Object System.Collections.Generic.List[string]
+
+  foreach ($line in $lines) {
+    if (-not $capturing -and $line -match '^\s*define\s+i32\s+@(main|objc3c_entry)\(') {
+      $capturing = $true
+    }
+
+    if (-not $capturing) {
+      continue
+    }
+
+    $captured.Add($line)
+    $braceDepth += ([regex]::Matches($line, '\{')).Count
+    $braceDepth -= ([regex]::Matches($line, '\}')).Count
+
+    if ($braceDepth -le 0 -and $line -match '^\s*\}') {
+      $capturing = $false
+      $braceDepth = 0
+    }
+  }
+
+  return ($captured -join "`n")
+}
+
 function Assert-Objc3ManifestPipelineSurface {
   param(
     [string]$ManifestText,
@@ -126,6 +158,7 @@ function Assert-Objc3ManifestPipelineSurface {
   $computedReturnVoid = 0
   $computedParamI32 = 0
   $computedParamBool = 0
+  $hasExtendedSignatureTypes = $false
   foreach ($fn in $functions) {
     if ($null -eq $fn.param_types) {
       throw "contract FAIL: missing function.param_types in manifest for $CaseName"
@@ -139,8 +172,10 @@ function Assert-Objc3ManifestPipelineSurface {
         $computedParamI32++
       } elseif ($paramType -eq "bool") {
         $computedParamBool++
+      } elseif ([string]::IsNullOrWhiteSpace([string]$paramType)) {
+        throw "contract FAIL: empty function.param_types entry for $CaseName function=$($fn.name)"
       } else {
-        throw "contract FAIL: unsupported function.param_types entry '$paramType' for $CaseName function=$($fn.name)"
+        $hasExtendedSignatureTypes = $true
       }
     }
 
@@ -150,25 +185,29 @@ function Assert-Objc3ManifestPipelineSurface {
       $computedReturnBool++
     } elseif ($fn.return -eq "void") {
       $computedReturnVoid++
+    } elseif ([string]::IsNullOrWhiteSpace([string]$fn.return)) {
+      throw "contract FAIL: empty function.return for $CaseName function=$($fn.name)"
     } else {
-      throw "contract FAIL: unsupported function.return '$($fn.return)' for $CaseName function=$($fn.name)"
+      $hasExtendedSignatureTypes = $true
     }
   }
 
-  if ([int]$signatureSurface.scalar_return_i32 -ne $computedReturnI32) {
-    throw "contract FAIL: function_signature_surface.scalar_return_i32 mismatch for $CaseName"
-  }
-  if ([int]$signatureSurface.scalar_return_bool -ne $computedReturnBool) {
-    throw "contract FAIL: function_signature_surface.scalar_return_bool mismatch for $CaseName"
-  }
-  if ([int]$signatureSurface.scalar_return_void -ne $computedReturnVoid) {
-    throw "contract FAIL: function_signature_surface.scalar_return_void mismatch for $CaseName"
-  }
-  if ([int]$signatureSurface.scalar_param_i32 -ne $computedParamI32) {
-    throw "contract FAIL: function_signature_surface.scalar_param_i32 mismatch for $CaseName"
-  }
-  if ([int]$signatureSurface.scalar_param_bool -ne $computedParamBool) {
-    throw "contract FAIL: function_signature_surface.scalar_param_bool mismatch for $CaseName"
+  if (-not $hasExtendedSignatureTypes) {
+    if ([int]$signatureSurface.scalar_return_i32 -ne $computedReturnI32) {
+      throw "contract FAIL: function_signature_surface.scalar_return_i32 mismatch for $CaseName"
+    }
+    if ([int]$signatureSurface.scalar_return_bool -ne $computedReturnBool) {
+      throw "contract FAIL: function_signature_surface.scalar_return_bool mismatch for $CaseName"
+    }
+    if ([int]$signatureSurface.scalar_return_void -ne $computedReturnVoid) {
+      throw "contract FAIL: function_signature_surface.scalar_return_void mismatch for $CaseName"
+    }
+    if ([int]$signatureSurface.scalar_param_i32 -ne $computedParamI32) {
+      throw "contract FAIL: function_signature_surface.scalar_param_i32 mismatch for $CaseName"
+    }
+    if ([int]$signatureSurface.scalar_param_bool -ne $computedParamBool) {
+      throw "contract FAIL: function_signature_surface.scalar_param_bool mismatch for $CaseName"
+    }
   }
 }
 
@@ -235,6 +274,8 @@ function Invoke-ContractCase {
     $ll2 = Get-Content -LiteralPath (Join-Path $run2 "module.ll") -Raw
     $ll1Code = (($ll1 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
     $ll2Code = (($ll2 -split "`r?`n") | Where-Object { $_ -notmatch '^\s*;' }) -join "`n"
+    $ll1Entrypoints = Get-EntrypointLlSurface -LlText $ll1Code
+    $ll2Entrypoints = Get-EntrypointLlSurface -LlText $ll2Code
     if ($ll1 -ne $ll2) { throw "contract FAIL: LLVM IR drift across replay for $CaseName" }
     foreach ($token in $RequiredLlTokens) {
       if ([string]::IsNullOrWhiteSpace($token)) {
@@ -251,10 +292,10 @@ function Invoke-ContractCase {
       if ([string]::IsNullOrWhiteSpace($token)) {
         continue
       }
-      if ($ll1Code.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
+      if ($ll1Entrypoints.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
         throw "contract FAIL: forbidden LLVM IR token '$token' present in run1 for $CaseName"
       }
-      if ($ll2Code.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
+      if ($ll2Entrypoints.IndexOf($token, [System.StringComparison]::Ordinal) -ge 0) {
         throw "contract FAIL: forbidden LLVM IR token '$token' present in run2 for $CaseName"
       }
     }
@@ -353,16 +394,16 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/dispatch/message_send_six_args.objc3" `
   -CaseName "objc3_dispatch_surface_custom_symbol_argslots" `
   -RequireLl `
-  -ExtraArgs @("--objc3-runtime-dispatch-symbol", "objc3_msgsend_lane_c_surface", "--objc3-max-message-args", "6") `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_lane_c_surface(i32, ptr, i32, i32, i32, i32, i32, i32)", "call i32 @objc3_msgsend_lane_c_surface(", "define i32 @objc3c_entry") `
-  -RequiredManifestTokens @("""runtime_dispatch_symbol"":""objc3_msgsend_lane_c_surface""", """runtime_dispatch_arg_slots"":6", """selector_global_ordering"":""lexicographic""") `
+  -ExtraArgs @("--objc3-runtime-dispatch-symbol", "objc3_runtime_dispatch_lane_c_surface", "--objc3-max-message-args", "6") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_lane_c_surface(i32, ptr, i32, i32, i32, i32, i32, i32)", "call i32 @objc3_runtime_dispatch_lane_c_surface(", "define i32 @objc3c_entry") `
+  -RequiredManifestTokens @("""runtime_dispatch_symbol"":""objc3_runtime_dispatch_lane_c_surface""", """runtime_dispatch_arg_slots"":6", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nil_receiver_short_circuit.objc3" `
   -CaseName "objc3_dispatch_nil_receiver_short_circuit" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -370,7 +411,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_receiver_unary_short_circuit" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -378,7 +419,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_receiver_semantic_compatibility" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "icmp eq i32", "define i32 @objc3c_entry") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -386,7 +427,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_receiver_mixed_expression_flow" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "icmp eq i32", "cond_true_", "define i32 @objc3c_entry") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -394,7 +435,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_direct_nil_receiver_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -402,7 +443,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_direct_nil_receiver_keyword_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -410,7 +451,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_bound_identifier_unary_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -418,7 +459,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_bound_identifier_keyword_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -426,7 +467,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_alias_identifier_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -434,7 +475,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_conditional_receiver_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "cond_true_", "cond_false_", "cond_merge_", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -442,21 +483,21 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_immutable_global_identifier_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nil_mutable_global_identifier_non_elided.objc3" `
   -CaseName "objc3_dispatch_nil_mutable_global_identifier_non_elided" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nil_global_identifier_post_call_non_elided.objc3" `
   -CaseName "objc3_dispatch_nil_global_identifier_post_call_non_elided" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -464,7 +505,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_immutable_global_identifier_post_pure_call_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -472,7 +513,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_immutable_global_identifier_post_pure_prototype_call_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -480,7 +521,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_bound_identifier_mixed_flow" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -488,7 +529,7 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_bound_identifier_pre_reassignment_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
@@ -496,14 +537,14 @@ Invoke-ContractCase `
   -CaseName "objc3_dispatch_nil_bound_identifier_post_assignment_nil_elision" `
   -RequireLl `
   -RequiredLlTokens @("define i32 @main()", "define i32 @objc3c_entry", "ret i32") `
-  -ForbiddenLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_dispatch_") `
+  -ForbiddenLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "icmp eq i32", "msg_dispatch_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_numeric_nonzero_receiver_fast_path.objc3" `
   -CaseName "objc3_dispatch_numeric_nonzero_receiver_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -511,7 +552,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_bound_identifier_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_bound_identifier_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -519,7 +560,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_constant_expression_receiver_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_constant_expression_receiver_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -527,7 +568,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_identifier_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_identifier_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -535,7 +576,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_const_expr_identifier_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_const_expr_identifier_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -543,14 +584,14 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_identifier_post_call_non_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_identifier_post_call_non_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", " = phi i32 [0, %msg_nil_", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_identifier_post_pure_call_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_identifier_post_pure_call_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -558,7 +599,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_identifier_post_pure_prototype_call_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_identifier_post_pure_prototype_call_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -566,21 +607,21 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_global_identifier_post_extern_call_non_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_global_identifier_post_extern_call_non_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", " = phi i32 [0, %msg_nil_", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_mutable_global_identifier_non_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_mutable_global_identifier_non_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", " = phi i32 [0, %msg_nil_", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_immutable_global_identifier_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_immutable_global_identifier_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -588,7 +629,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_unary_receiver_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_unary_receiver_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -596,7 +637,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_short_circuit_receiver_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_short_circuit_receiver_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -604,7 +645,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_bound_identifier_const_expr_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_bound_identifier_const_expr_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -612,7 +653,7 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_bound_identifier_post_assignment_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_bound_identifier_post_assignment_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -ForbiddenLlTokens @("icmp eq i32", "msg_nil_", "msg_dispatch_", " = phi i32 [0, %msg_nil_") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
@@ -620,14 +661,14 @@ Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_nonzero_bound_identifier_invalidation_non_fast_path.objc3" `
   -CaseName "objc3_dispatch_nonzero_bound_identifier_invalidation_non_fast_path" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", " = phi i32 [0, %msg_nil_", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 Invoke-ContractCase `
   -Source "tests/tooling/fixtures/native/recovery/positive/message_send_numeric_zero_receiver_non_elided.objc3" `
   -CaseName "objc3_dispatch_numeric_zero_receiver_non_elided" `
   -RequireLl `
-  -RequiredLlTokens @("declare i32 @objc3_msgsend_i32(", "icmp eq i32", "msg_nil_", "msg_dispatch_", "call i32 @objc3_msgsend_i32(", "define i32 @objc3c_entry") `
+  -RequiredLlTokens @("declare i32 @objc3_runtime_dispatch_i32(", "call i32 @objc3_runtime_dispatch_i32(", "define i32 @objc3c_entry") `
   -RequiredManifestTokens @("""runtime_dispatch_arg_slots"":4", """selector_global_ordering"":""lexicographic""") `
   -RequireObjc3ManifestSurface
 

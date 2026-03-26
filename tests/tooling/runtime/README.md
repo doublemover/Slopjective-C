@@ -20,7 +20,6 @@ What the live probes should cover:
 
 What does not count as proof:
 
-- `objc3_msgsend_i32` compatibility-shim behavior by itself
 - hand-authored `.ll` files or placeholder object artifacts
 - sidecar-only evidence with no matching executable compile or probe path
 

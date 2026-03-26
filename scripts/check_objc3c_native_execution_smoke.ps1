@@ -7,7 +7,6 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $positiveFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/positive"
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/execution/negative"
-$compatibilityRuntimeShimSource = Join-Path $repoRoot "tests/tooling/runtime/objc3_msgsend_i32_shim.c"
 $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # M259-A001 runnable-sample-surface anchor: execution smoke remains the
@@ -731,7 +730,6 @@ try {
     runtime_launch_contract_script = Get-RepoRelativePath -Path $runtimeLaunchContractScript -Root $repoRoot
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
     runtime_library = if (Test-Path -LiteralPath $defaultRuntimeLibrary -PathType Leaf) { Get-RepoRelativePath -Path $defaultRuntimeLibrary -Root $repoRoot } else { "" }
-    compatibility_runtime_shim = if (Test-Path -LiteralPath $compatibilityRuntimeShimSource -PathType Leaf) { Get-RepoRelativePath -Path $compatibilityRuntimeShimSource -Root $repoRoot } else { "" }
     live_runtime_dispatch_default_symbol = "objc3_runtime_dispatch_i32"
     clang = $clangCommand
     llc = $llcCommand

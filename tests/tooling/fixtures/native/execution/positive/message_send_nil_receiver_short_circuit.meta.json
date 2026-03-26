@@ -1,7 +1,7 @@
 {
   "execution": {
     "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
-    "requires_live_runtime_dispatch": true
+    "requires_live_runtime_dispatch": false
   },
   "fixture": "message_send_nil_receiver_short_circuit.objc3"
 }

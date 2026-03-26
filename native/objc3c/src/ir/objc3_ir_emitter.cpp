@@ -369,6 +369,7 @@ class Objc3IREmitter {
 
   bool Emit(std::string &ir, std::string &error) {
     runtime_dispatch_call_emitted_ = false;
+    runtime_dispatch_symbols_used_.clear();
     fail_open_fallback_triggered_ = false;
     fail_open_fallback_reason_.clear();
     block_function_definitions_.clear();
@@ -442,6 +443,7 @@ class Objc3IREmitter {
     }
 
     EmitEntryPoint(body);
+    EmitRuntimeDispatchDeclarations(body);
 
     if (fail_open_fallback_triggered_) {
       error = "lowering encountered unsupported fail-closed path: " + fail_open_fallback_reason_;
@@ -12558,8 +12560,11 @@ class Objc3IREmitter {
     lowered.dispatch_surface_entrypoint_family =
         expr->dispatch_surface_entrypoint_family_symbol;
     lowered.dispatch_symbol =
-        Objc3DispatchSurfaceRuntimeEntrypointSymbol(
-            lowered.dispatch_surface_family);
+        UsesCanonicalObjc3RuntimeDispatchEntrypoint(
+            lowered.dispatch_surface_family)
+            ? lowering_ir_boundary_.runtime_dispatch_symbol
+            : Objc3DispatchSurfaceRuntimeEntrypointSymbol(
+                  lowered.dispatch_surface_family);
     lowered.direct_call_symbol = TryResolveDirectDispatchSymbol(expr, ctx);
     return lowered;
   }
@@ -12642,8 +12647,7 @@ class Objc3IREmitter {
     const bool uses_canonical_runtime_entrypoint =
         UsesCanonicalObjc3RuntimeDispatchEntrypoint(
             lowered.dispatch_surface_family);
-    if (lowered.receiver_is_compile_time_zero &&
-        !uses_canonical_runtime_entrypoint) {
+    if (lowered.receiver_is_compile_time_zero) {
       return "0";
     }
 
@@ -12708,6 +12712,7 @@ class Objc3IREmitter {
       }
       call << ")";
       runtime_dispatch_call_emitted_ = true;
+      runtime_dispatch_symbols_used_.insert(lowered.dispatch_symbol);
       ctx.code_lines.push_back(call.str());
     };
 
@@ -13825,25 +13830,6 @@ class Objc3IREmitter {
                   .runtime_bootstrap_lowering_registration_entrypoint_symbol +
               "(ptr)\n");
     }
-    if (!selector_pool_globals_.empty()) {
-      const auto emit_runtime_dispatch_declaration =
-          [&](const std::string &symbol) {
-            if (symbol.empty() ||
-                !declared_symbols.insert(symbol).second) {
-              return false;
-            }
-            out << "declare i32 @" << symbol << "(i32, ptr";
-            for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots;
-                 ++i) {
-              out << ", i32";
-            }
-            out << ")\n";
-            emitted = true;
-            return true;
-          };
-      emit_runtime_dispatch_declaration(
-          kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol);
-    }
     if (synthesized_property_accessor_count_ > 0u ||
         requires_arc_helper_declarations() ||
         !frontend_metadata_.lowering_part6_throws_abi_propagation_replay_key
@@ -14107,6 +14093,24 @@ class Objc3IREmitter {
     out << "  call void " << init_stub_symbol << "()\n";
     out << "  ret void\n";
     out << "}\n\n";
+  }
+
+  void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
+    if (runtime_dispatch_symbols_used_.empty()) {
+      return;
+    }
+    for (const std::string &symbol : runtime_dispatch_symbols_used_) {
+      if (symbol.empty()) {
+        continue;
+      }
+      out << "declare i32 @" << symbol << "(i32, ptr";
+      for (std::size_t i = 0; i < lowering_ir_boundary_.runtime_dispatch_arg_slots;
+           ++i) {
+        out << ", i32";
+      }
+      out << ")\n";
+    }
+    out << "\n";
   }
 
   void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {
@@ -14482,6 +14486,7 @@ class Objc3IREmitter {
   mutable std::unordered_set<std::string> emitted_block_invoke_symbols_;
   mutable std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
   mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
+  mutable std::set<std::string> runtime_dispatch_symbols_used_;
   mutable bool runtime_dispatch_call_emitted_ = false;
   mutable bool fail_open_fallback_triggered_ = false;
   mutable std::string fail_open_fallback_reason_;

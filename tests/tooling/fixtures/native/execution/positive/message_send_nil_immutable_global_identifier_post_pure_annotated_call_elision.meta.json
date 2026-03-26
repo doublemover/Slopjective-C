@@ -2,6 +2,6 @@
   "fixture": "message_send_nil_immutable_global_identifier_post_pure_annotated_call_elision.objc3",
   "execution": {
     "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
-    "requires_live_runtime_dispatch": true
+    "requires_live_runtime_dispatch": false
   }
 }
