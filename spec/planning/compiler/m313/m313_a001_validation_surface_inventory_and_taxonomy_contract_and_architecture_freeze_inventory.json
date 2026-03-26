@@ -1,0 +1,67 @@
+{
+  "mode": "m313-a001-validation-surface-inventory-taxonomy-v1",
+  "contract_id": "objc3c-cleanup-validation-surface-inventory-taxonomy/m313-a001-v1",
+  "measured_counts": {
+    "check_scripts": 2790,
+    "readiness_runners": 599,
+    "pytest_check_files": 2777,
+    "runtime_probe_cpp": 59,
+    "native_fixture_objc3": 999
+  },
+  "acceptance_suite_roots": [
+    "tests/tooling/runtime",
+    "tests/tooling/fixtures/native"
+  ],
+  "taxonomy": [
+    {
+      "name": "static_policy_checker",
+      "path_glob": "scripts/check_*.py",
+      "current_count_key": "check_scripts",
+      "replacement_target": "retained only where a shared acceptance harness cannot express the policy truthfully"
+    },
+    {
+      "name": "readiness_runner",
+      "path_glob": "scripts/run_*_readiness.py",
+      "current_count_key": "readiness_runners",
+      "replacement_target": "shared acceptance suites and compact operator-facing replay chains"
+    },
+    {
+      "name": "issue_local_pytest_wrapper",
+      "path_glob": "tests/tooling/test_check_*.py",
+      "current_count_key": "pytest_check_files",
+      "replacement_target": "subsystem acceptance suites and a small retained static-policy wrapper layer"
+    },
+    {
+      "name": "runtime_probe",
+      "path_glob": "tests/tooling/runtime/*.cpp",
+      "current_count_key": "runtime_probe_cpp",
+      "replacement_target": "kept as executable proof inputs for runtime-facing acceptance suites"
+    },
+    {
+      "name": "native_fixture_input",
+      "path_glob": "tests/tooling/fixtures/native/**/*.objc3",
+      "current_count_key": "native_fixture_objc3",
+      "replacement_target": "kept as canonical executable fixture inputs consumed by shared suites"
+    },
+    {
+      "name": "acceptance_suite_root",
+      "path_glob": "tests/tooling/{runtime,fixtures/native}",
+      "current_count_key": null,
+      "replacement_target": "preferred home for executable compiler/runtime validation"
+    }
+  ],
+  "namespace_policy": {
+    "active": [
+      "tests/tooling/runtime",
+      "tests/tooling/fixtures/native",
+      "tmp/reports"
+    ],
+    "migration_only": [
+      "scripts/check_*.py",
+      "scripts/run_*_readiness.py",
+      "tests/tooling/test_check_*.py"
+    ],
+    "archival": []
+  },
+  "next_issue": "M313-A002"
+}
