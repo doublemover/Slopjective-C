@@ -452,6 +452,43 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected value property to execute through runtime-backed synthesized accessors")
     expect(token_property.get("has_runtime_getter") == 1 and token_property.get("setter_available") == 0,
            "expected readonly token property to expose only the synthesized getter")
+    expect(count_property.get("property_name") == "count",
+           "expected count property reflection to stay coherent")
+    expect(count_property.get("effective_getter_selector") == "count",
+           "expected count getter selector reflection to stay coherent")
+    expect(count_property.get("effective_setter_selector") == "setCount:",
+           "expected count setter selector reflection to stay coherent")
+    expect(enabled_property.get("effective_getter_selector") == "enabled",
+           "expected enabled getter selector reflection to stay coherent")
+    expect(enabled_property.get("effective_setter_selector") == "setEnabled:",
+           "expected enabled setter selector reflection to stay coherent")
+    expect(value_property.get("effective_getter_selector") == "currentValue",
+           "expected value getter selector reflection to stay coherent")
+    expect(value_property.get("effective_setter_selector") == "setCurrentValue:",
+           "expected value setter selector reflection to stay coherent")
+    expect(token_property.get("effective_getter_selector") == "tokenValue",
+           "expected token getter selector reflection to stay coherent")
+    expect(count_property.get("getter_owner_identity"), "expected count getter owner identity to be published")
+    expect(count_property.get("setter_owner_identity"), "expected count setter owner identity to be published")
+    expect(enabled_property.get("getter_owner_identity"), "expected enabled getter owner identity to be published")
+    expect(enabled_property.get("setter_owner_identity"), "expected enabled setter owner identity to be published")
+    expect(value_property.get("getter_owner_identity"), "expected value getter owner identity to be published")
+    expect(value_property.get("setter_owner_identity"), "expected value setter owner identity to be published")
+    expect(token_property.get("getter_owner_identity"), "expected token getter owner identity to be published")
+    expect(token_property.get("setter_owner_identity") is None,
+           "did not expect readonly token property to publish a setter owner identity")
+    expect(count_property.get("base_identity") == widget_entry.get("base_identity"),
+           "expected count property base identity to match the realized Widget class")
+    expect(enabled_property.get("base_identity") == widget_entry.get("base_identity"),
+           "expected enabled property base identity to match the realized Widget class")
+    expect(value_property.get("base_identity") == widget_entry.get("base_identity"),
+           "expected value property base identity to match the realized Widget class")
+    expect(token_property.get("base_identity") == widget_entry.get("base_identity"),
+           "expected token property base identity to match the realized Widget class")
+    expect(registry_state.get("last_resolved_class_name") == "Widget",
+           "expected property registry to resolve Widget during live accessor execution")
+    expect(registry_state.get("last_resolved_owner_identity"),
+           "expected property registry to publish the resolved owner identity")
     expect(count_method.get("resolved") == 1 and count_method.get("parameter_count") == 0,
            "expected count getter dispatch to resolve live through the runtime cache")
     expect(enabled_method.get("resolved") == 1 and enabled_method.get("parameter_count") == 0,
@@ -460,6 +497,14 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected currentValue getter dispatch to resolve live through the runtime cache")
     expect(token_method.get("resolved") == 1 and token_method.get("parameter_count") == 0,
            "expected tokenValue getter dispatch to resolve live through the runtime cache")
+    expect(count_method.get("resolved_owner_identity") == count_property.get("getter_owner_identity"),
+           "expected count getter cache ownership to match reflected property ownership")
+    expect(enabled_method.get("resolved_owner_identity") == enabled_property.get("getter_owner_identity"),
+           "expected enabled getter cache ownership to match reflected property ownership")
+    expect(value_method.get("resolved_owner_identity") == value_property.get("getter_owner_identity"),
+           "expected currentValue getter cache ownership to match reflected property ownership")
+    expect(token_method.get("resolved_owner_identity") == token_property.get("getter_owner_identity"),
+           "expected tokenValue getter cache ownership to match reflected property ownership")
     return CaseResult(
         case_id="property-execution",
         probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
