@@ -464,8 +464,9 @@ class Objc3IREmitter {
       // publish the completed property attribute/accessor ownership/layout
       // handoff without reopening the legacy descriptor shapes from the earlier runtime step.
       // property-ivar executable semantics anchor:
-      // runtime-meaningful synthesis/accessor/storage semantics stay frozen on
-      // this replay marker until accessor bodies and storage realization land.
+      // runtime-meaningful synthesis/accessor/layout semantics now flow
+      // through emitted getter/setter bodies plus realized runtime slot
+      // allocation instead of remaining metadata-only.
       // property-synthesis implementation anchor:
       // sema now resolves authoritative default ivar bindings from
       // interface-declared class properties even when the implementation does
@@ -478,9 +479,9 @@ class Objc3IREmitter {
           << frontend_metadata_.executable_property_ivar_source_model_replay_key
           << "\n";
       // accessor/layout lowering freeze anchor:
-      // lane-C now republishes the current property descriptor, ivar layout,
-      // and synthesized binding handoff directly in emitted IR without yet
-      // synthesizing accessor bodies or realizing runtime storage/layout.
+      // emitted IR now carries the current property descriptor, ivar layout,
+      // and synthesized binding handoff together with real synthesized
+      // accessor bodies on the runtime current-property helper path.
       out << "; executable_property_accessor_layout_lowering = "
           << Objc3ExecutablePropertyAccessorLayoutLoweringSummary()
           << ";property_metadata_entries="
@@ -538,10 +539,10 @@ class Objc3IREmitter {
           << frontend_metadata_.executable_accessor_ownership_profile_entries
           << "\n";
       if (frontend_metadata_.executable_ivar_layout_emission_ready) {
-        // ivar offset/layout emission anchor: lane-C now materializes
-        // real retained offset globals and per-owner layout tables inside the
-        // ivar descriptor section, but runtime allocation and accessor
-        // execution remain deferred to later issues.
+        // ivar offset/layout emission anchor: lane-C materializes
+        // retained offset globals and per-owner layout tables inside the ivar
+        // descriptor section, and the live runtime consumes those records for
+        // per-instance slot allocation.
         out << "; executable_ivar_layout_emission = "
             << Objc3ExecutableIvarLayoutEmissionSummary()
             << ";offset_global_entries="
@@ -560,12 +561,11 @@ class Objc3IREmitter {
             << Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary()
             << ";synthesized_accessor_entries="
             << synthesized_property_accessor_count_ << "\n";
-        // runtime property/layout consumption freeze anchor: lane-D
-        // now freezes the truthful runtime surface above C003. Runtime
-        // consumes emitted accessor implementation pointers and
-        // property/layout attachment identities, but repeated alloc/new still
-        // normalize onto one canonical realized instance identity per class
-        // until D002 introduces per-instance slot allocation.
+        // runtime property/layout consumption freeze anchor: the live
+        // runtime consumes emitted accessor implementation pointers and
+        // property/layout attachment identities, hands alloc/new through the
+        // realized class graph, and executes accessors against per-instance
+        // slot storage rather than synthetic lowering-era globals.
         out << "; runtime_property_layout_consumption = "
             << Objc3RuntimePropertyLayoutConsumptionSummary()
             << ";property_descriptor_entries="

@@ -452,13 +452,13 @@ inline constexpr const char
         "implementation-owned-properties-synthesize-missing-effective-instance-accessors-into-emitted-method-lists";
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel =
-        "one-private-i32-storage-global-per-synthesized-binding-symbol-pending-runtime-instance-layout";
+        "synthesized-getter-setter-bodies-lower-directly-to-runtime-current-property-helper-calls-without-storage-globals";
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel =
         "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
-        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-runtime-layout-rederivation";
+        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-fallbacks";
 // runtime property/layout consumption freeze anchor: lane-D now
 // freezes the truthful runtime boundary above C003. Runtime consumes emitted
 // synthesized accessor implementation pointers plus property/layout attachment
@@ -473,13 +473,13 @@ inline constexpr const char
         "runtime-consumes-emitted-property-descriptor-accessor-pointers-binding-symbols-and-layout-identities-without-source-rediscovery";
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionAllocatorModel =
-        "alloc-new-return-one-canonical-realized-instance-identity-per-class-before-true-instance-slot-allocation";
+        "alloc-new-consume-realized-class-layout-and-handoff-directly-to-runtime-owned-instance-slot-allocation";
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionStorageModel =
-        "synthesized-accessor-execution-uses-lane-c-storage-globals-pending-runtime-instance-slots";
+        "synthesized-accessor-execution-consumes-runtime-owned-per-instance-slots-selected-by-the-dispatch-frame-property-context";
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
-        "no-layout-rederivation-no-reflective-property-registration-no-per-instance-allocation-yet";
+        "no-layout-rederivation-no-storage-global-fallbacks-no-reflective-property-registration";
 // instance-allocation-layout-runtime anchor: lane-D upgrades the
 // frozen D001 runtime-consumption boundary into true per-instance allocation
 // backed by realized class layout, emitted ivar offsets, and runtime-owned slot

@@ -562,8 +562,9 @@ std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
   // accessor/layout lowering freeze anchor: lane-C begins from the
   // already-emitted property/ivar descriptor surface and the sema-approved
   // source-model completion packet. This freeze is explicit that accessor
-  // bodies and runtime storage/layout realization remain deferred; lowering
-  // only republishes the property table, ivar layout, and synthesized binding
+  // bodies are emitted on the live runtime-helper path while layout facts stay
+  // source-owned and runtime consumption remains downstream; lowering
+  // republishes the property table, ivar layout, and synthesized binding
   // handoff into emitted IR/object artifacts.
   out << "contract=" << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
       << ";property_table_model="
@@ -576,7 +577,7 @@ std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary() {
       << kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel
       << ";fail_closed_model="
       << kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel
-      << ";non_goals=no-synthesized-accessor-body-emission-no-runtime-storage-allocation-no-instance-layout-realization";
+      << ";non_goals=no-layout-rederivation-no-reflective-property-registration";
   return out.str();
 }
 
@@ -602,8 +603,8 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
   std::ostringstream out;
   // synthesized accessor/property lowering anchor: lane-C promotes
   // sema-approved effective property accessors into executable method entries
-  // and deterministic storage globals without reopening true runtime instance
-  // allocation or reflective property registration.
+  // and direct runtime-helper-backed getter/setter bodies without reopening
+  // source-driven layout recovery or reflective property registration.
   out << "contract="
       << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
       << ";source_model="
@@ -614,7 +615,7 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
       << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
       << ";fail_closed_model="
       << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
-      << ";non_goals=no-runtime-instance-allocation-no-runtime-property-registration";
+      << ";non_goals=no-storage-global-fallbacks-no-source-layout-rederivation-no-runtime-property-registration";
   return out.str();
 }
 
@@ -623,9 +624,9 @@ std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
   // runtime property/layout consumption freeze anchor: the current
   // runtime consumes emitted accessor implementation pointers and
   // property/layout attachment identities through the existing lookup/dispatch
-  // ABI, but alloc/new still collapse onto one canonical realized instance
-  // identity per class and synthesized accessors still execute against the
-  // lane-C storage globals until D002 introduces true instance slots.
+  // ABI, hands alloc/new off to realized-layout-backed instance allocation,
+  // and executes synthesized accessors against runtime-owned per-instance slot
+  // storage selected by the active dispatch frame.
   out << "contract=" << kObjc3RuntimePropertyLayoutConsumptionContractId
       << ";descriptor_model="
       << kObjc3RuntimePropertyLayoutConsumptionDescriptorModel
@@ -635,7 +636,7 @@ std::string Objc3RuntimePropertyLayoutConsumptionSummary() {
       << kObjc3RuntimePropertyLayoutConsumptionStorageModel
       << ";fail_closed_model="
       << kObjc3RuntimePropertyLayoutConsumptionFailClosedModel
-      << ";non_goals=no-true-instance-allocation-no-per-instance-slot-storage-no-reflective-property-registration";
+      << ";non_goals=no-source-layout-rederivation-no-reflective-property-registration";
   return out.str();
 }
 
