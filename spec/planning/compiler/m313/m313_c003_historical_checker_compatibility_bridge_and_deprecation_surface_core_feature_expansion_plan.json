@@ -1,0 +1,54 @@
+{
+  "mode": "m313-c003-historical-checker-compatibility-bridge-v1",
+  "contract_id": "objc3c-cleanup-historical-checker-compatibility-bridge/m313-c003-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m313/m313_b003_checker_consolidation_and_migration_policy_core_feature_implementation_policy.json",
+    "spec/planning/compiler/m313/m313_b004_legacy_validation_quarantine_and_namespace_policy_core_feature_implementation_policy.json",
+    "spec/planning/compiler/m313/m313_c001_acceptance_artifact_schema_and_replay_contract_contract_and_architecture_freeze_schema.json",
+    "spec/planning/compiler/m313/m313_c002_subsystem_executable_acceptance_suites_core_feature_implementation_plan.json"
+  ],
+  "default_report_root": "tmp/reports/m313/compatibility/<bridge_id>/summary.json",
+  "bridge_families": [
+    {
+      "bridge_id": "frontend_split_recovery_bridge",
+      "suite_id": "frontend_split_recovery",
+      "wrapper_globs": [
+        "scripts/check_m22*_*.py",
+        "scripts/run_m22*_lane_*_readiness.py",
+        "tests/tooling/test_check_m22*_*.py"
+      ],
+      "deprecation_owner_issue": "M313-E001"
+    },
+    {
+      "bridge_id": "runtime_bootstrap_dispatch_bridge",
+      "suite_id": "runtime_bootstrap_dispatch",
+      "wrapper_globs": [
+        "scripts/check_m25*_*.py",
+        "scripts/run_m25*_lane_*_readiness.py",
+        "tests/tooling/test_check_m25*_*.py"
+      ],
+      "deprecation_owner_issue": "M313-E001"
+    },
+    {
+      "bridge_id": "module_parity_packaging_bridge",
+      "suite_id": "module_parity_packaging",
+      "wrapper_globs": [
+        "scripts/check_m26*_*.py",
+        "scripts/run_m26*_lane_*_readiness.py",
+        "tests/tooling/test_check_m26*_*.py"
+      ],
+      "deprecation_owner_issue": "M313-E001"
+    },
+    {
+      "bridge_id": "native_fixture_corpus_and_runtime_probes_bridge",
+      "suite_id": "native_fixture_corpus_and_runtime_probes",
+      "wrapper_globs": [
+        "scripts/check_*.py",
+        "scripts/run_*_readiness.py",
+        "tests/tooling/test_check_*.py"
+      ],
+      "deprecation_owner_issue": "M313-E002"
+    }
+  ],
+  "next_issue": "M313-D001"
+}
