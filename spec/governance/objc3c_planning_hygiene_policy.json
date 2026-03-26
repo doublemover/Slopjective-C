@@ -1,0 +1,35 @@
+{
+  "mode": "m318-b002-planning-hygiene-policy-v1",
+  "contract_id": "objc3c-governance-planning-hygiene-policy/m318-b002-v1",
+  "budget_policy_contract_id": "objc3c-governance-anti-noise-budget-policy/m318-b001-v1",
+  "governance_owner_issue": "M318-B002",
+  "required_issue_fields": [
+    "outcome_summary",
+    "why_it_matters",
+    "acceptance_criteria",
+    "implementation_surfaces",
+    "dependencies",
+    "validation_posture",
+    "budget_impact"
+  ],
+  "budget_impact_options": [
+    "no_budget_growth",
+    "within_existing_budget",
+    "requires_exception_record"
+  ],
+  "exception_reference_required_when": [
+    "requires_exception_record"
+  ],
+  "authoring_rules": {
+    "prefer_shared_validation_surfaces": true,
+    "bounded_notes_only": true,
+    "avoid_required_deliverables_boilerplate": true,
+    "explicit_dependency_or_none_required": true
+  },
+  "template_paths": [
+    ".github/ISSUE_TEMPLATE/roadmap_execution.yml",
+    ".github/ISSUE_TEMPLATE/conformance_execution.yml"
+  ],
+  "runbook_path": "docs/runbooks/objc3c_planning_hygiene.md",
+  "next_issue": "M318-B003"
+}

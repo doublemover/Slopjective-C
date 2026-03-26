@@ -68,6 +68,30 @@ body:
         - generator_contract_only
     validations:
       required: true
+  - type: dropdown
+    id: budget_impact
+    attributes:
+      label: Budget Impact
+      description: Declare whether this issue grows any governed budget family.
+      options:
+        - no_budget_growth
+        - within_existing_budget
+        - requires_exception_record
+    validations:
+      required: true
+  - type: input
+    id: exception_record
+    attributes:
+      label: Exception Record
+      description: Required when budget impact is `requires_exception_record`; otherwise leave blank.
+      placeholder: EXC-ANTI-NOISE-001
+    validations:
+      required: false
+  - type: markdown
+    attributes:
+      value: |
+        Planning hygiene: prefer shared validation and runner surfaces, keep notes bounded,
+        and cite an exception record whenever the issue exceeds an anti-noise budget.
   - type: textarea
     id: notes
     attributes:

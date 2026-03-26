@@ -91,8 +91,11 @@
     "antiNoiseExceptionProcessPath": "spec/governance/objc3c_anti_noise_exception_process.json",
     "antiNoiseExceptionRegistryPath": "spec/governance/objc3c_anti_noise_exception_registry.json",
     "antiNoiseBudgetPolicyPath": "spec/governance/objc3c_anti_noise_budget_policy.json",
+    "planningHygienePolicyPath": "spec/governance/objc3c_planning_hygiene_policy.json",
+    "planningHygieneRunbookPath": "docs/runbooks/objc3c_planning_hygiene.md",
     "governanceOwnerIssue": "M318-A002",
-    "budgetPolicyOwnerIssue": "M318-B001"
+    "budgetPolicyOwnerIssue": "M318-B001",
+    "planningHygieneOwnerIssue": "M318-B002"
   },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
@@ -8002,6 +8005,9 @@
     "check:objc3c:m318-a002-lane-a-readiness": "python scripts/run_m318_a002_lane_a_readiness.py",
     "check:objc3c:m318-b001-governance-and-budget-enforcement-policy-contract-and-architecture-freeze": "python scripts/check_m318_b001_governance_and_budget_enforcement_policy_contract_and_architecture_freeze.py",
     "test:tooling:m318-b001-governance-and-budget-enforcement-policy-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m318_b001_governance_and_budget_enforcement_policy_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m318-b001-lane-b-readiness": "python scripts/run_m318_b001_lane_b_readiness.py"
+    "check:objc3c:m318-b001-lane-b-readiness": "python scripts/run_m318_b001_lane_b_readiness.py",
+    "check:objc3c:m318-b002-sustainable-planning-hygiene-policy-core-feature-implementation": "python scripts/check_m318_b002_sustainable_planning_hygiene_policy_core_feature_implementation.py",
+    "test:tooling:m318-b002-sustainable-planning-hygiene-policy-core-feature-implementation": "python -m pytest tests/tooling/test_check_m318_b002_sustainable_planning_hygiene_policy_core_feature_implementation.py -q",
+    "check:objc3c:m318-b002-lane-b-readiness": "python scripts/run_m318_b002_lane_b_readiness.py"
   }
 }
