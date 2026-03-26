@@ -27,6 +27,7 @@ PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 SITE_PY = ROOT / "scripts" / "build_site_index.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
+RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,10 @@ def action_test_full(_: list[str]) -> int:
     rc = pwsh_file(MATRIX_PS1)
     if rc != 0:
         return rc
-    return pwsh_file(NEGATIVE_EXPECTATIONS_PS1)
+    rc = pwsh_file(NEGATIVE_EXPECTATIONS_PS1)
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY)])
 
 
 def action_package_runnable_toolchain(_: list[str]) -> int:

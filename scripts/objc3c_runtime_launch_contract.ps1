@@ -1,4 +1,4 @@
-$script:Objc3cRuntimeLaunchIntegrationContractId = "objc3c-runtime-launch-integration/m254-d004-v1"
+$script:Objc3cRuntimeLaunchIntegrationContractId = "objc3c.runtime.launch.integration.v1"
 $script:Objc3cRuntimeLaunchCompileWrapperCommandSurface = "scripts/objc3c_native_compile.ps1"
 $script:Objc3cRuntimeLaunchCompileProofCommandSurface = "scripts/run_objc3c_native_compile_proof.ps1"
 $script:Objc3cRuntimeLaunchExecutionSmokeCommandSurface = "scripts/check_objc3c_native_execution_smoke.ps1"
