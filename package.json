@@ -7963,6 +7963,9 @@
     "check:objc3c:m315-b005-lane-b-readiness": "python scripts/run_m315_b005_lane_b_readiness.py",
     "check:objc3c:m315-c001-source-of-truth-and-generated-artifact-contract-and-architecture-freeze": "python scripts/check_m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze.py",
     "test:tooling:m315-c001-source-of-truth-and-generated-artifact-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze.py -q",
-    "check:objc3c:m315-c001-lane-c-readiness": "python scripts/run_m315_c001_lane_c_readiness.py"
+    "check:objc3c:m315-c001-lane-c-readiness": "python scripts/run_m315_c001_lane_c_readiness.py",
+    "check:objc3c:m315-c002-artifact-authenticity-schema-and-evidence-contract-and-architecture-freeze": "python scripts/check_m315_c002_artifact_authenticity_schema_and_evidence_contract_and_architecture_freeze.py",
+    "test:tooling:m315-c002-artifact-authenticity-schema-and-evidence-contract-and-architecture-freeze": "python -m pytest tests/tooling/test_check_m315_c002_artifact_authenticity_schema_and_evidence_contract_and_architecture_freeze.py -q",
+    "check:objc3c:m315-c002-lane-c-readiness": "python scripts/run_m315_c002_lane_c_readiness.py"
   }
 }

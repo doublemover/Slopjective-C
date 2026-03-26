@@ -1,0 +1,226 @@
+{
+  "mode": "m315-c002-artifact-authenticity-schema-v1",
+  "contract_id": "objc3c-cleanup-artifact-authenticity-schema/m315-c002-v1",
+  "baseline_sources": [
+    "spec/planning/compiler/m315/m315_a003_artifact_authenticity_and_provenance_classification_inventory_source_completion_inventory.json",
+    "spec/planning/compiler/m315/m315_b004_synthetic_versus_genuine_ir_fixture_compatibility_semantics_core_feature_implementation_registry.json",
+    "spec/planning/compiler/m315/m315_c001_source_of_truth_and_generated_artifact_contract_and_architecture_freeze_contract.json"
+  ],
+  "legacy_class_aliases": {
+    "generated_or_report_artifact": "generated_report",
+    "replay_candidate_missing_provenance": "legacy_generated_replay_bridge"
+  },
+  "provenance_modes": [
+    "hand_authored",
+    "fixture_curated",
+    "tool_generated_regenerable",
+    "legacy_generated_bridge",
+    "report_generated",
+    "sample_curated",
+    "schema_contract",
+    "archival_snapshot"
+  ],
+  "authenticity_classes": {
+    "synthetic_fixture": {
+      "allowed_provenance_modes": [
+        "hand_authored",
+        "fixture_curated"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "fixture_family_id",
+        "synthetic_reason",
+        "explicit_fixture_label"
+      ]
+    },
+    "sample_or_example_artifact": {
+      "allowed_provenance_modes": [
+        "hand_authored",
+        "sample_curated"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "sample_group",
+        "non_proof_notice"
+      ]
+    },
+    "generated_report": {
+      "allowed_provenance_modes": [
+        "report_generated"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "generator_surface_id",
+        "input_artifact_family_ids"
+      ]
+    },
+    "generated_replay": {
+      "allowed_provenance_modes": [
+        "tool_generated_regenerable"
+      ],
+      "proof_eligible": true,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "generator_surface_id",
+        "regeneration_recipe",
+        "input_artifact_paths",
+        "output_path"
+      ]
+    },
+    "legacy_generated_replay_bridge": {
+      "allowed_provenance_modes": [
+        "legacy_generated_bridge"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "migration_owner_issue",
+        "bridge_reason",
+        "allowed_root_glob"
+      ]
+    },
+    "schema_policy_contract": {
+      "allowed_provenance_modes": [
+        "schema_contract"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "contract_id"
+      ]
+    },
+    "historical_archive": {
+      "allowed_provenance_modes": [
+        "archival_snapshot"
+      ],
+      "proof_eligible": false,
+      "required_fields": [
+        "authenticity_schema_id",
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "content_role",
+        "historical_ref"
+      ]
+    }
+  },
+  "transport_contract": {
+    "json_root_field": "artifact_authenticity",
+    "ll_comment_prefix": "; ",
+    "ll_required_keys": {
+      "generated_replay": [
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "generator_surface_id",
+        "regeneration_recipe"
+      ],
+      "legacy_generated_replay_bridge": [
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "migration_owner_issue",
+        "bridge_reason"
+      ],
+      "synthetic_fixture": [
+        "artifact_family_id",
+        "provenance_class",
+        "provenance_mode",
+        "fixture_family_id",
+        "explicit_fixture_label"
+      ]
+    }
+  },
+  "proof_rules": {
+    "proof_eligible_classes": [
+      "generated_replay"
+    ],
+    "proof_required_mode": "tool_generated_regenerable",
+    "proof_requires_generator_surface_id": true,
+    "proof_requires_regeneration_recipe": true,
+    "bridge_classes_must_not_claim_genuine_generation": [
+      "legacy_generated_replay_bridge",
+      "synthetic_fixture",
+      "sample_or_example_artifact"
+    ]
+  },
+  "baseline_alignment": {
+    "a003_class_totals": {
+      "schema_policy_contract": 53,
+      "generated_or_report_artifact": 25,
+      "sample_or_example_artifact": 62,
+      "synthetic_fixture": 2209,
+      "replay_candidate_missing_provenance": 152
+    },
+    "b004_ll_fixture_totals": {
+      "tracked_ll_files": 78,
+      "synthetic_fixture_files": 2,
+      "generated_replay_candidate_files": 76,
+      "replay_with_frontend_header": 30,
+      "replay_without_frontend_header": 46
+    }
+  },
+  "example_envelopes": {
+    "generated_replay": {
+      "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+      "artifact_family_id": "objc3c.artifact.replay.ir.native.v1",
+      "provenance_class": "generated_replay",
+      "provenance_mode": "tool_generated_regenerable",
+      "content_role": "native_ir_replay",
+      "generator_surface_id": "objc3c.runtime.replay.capture.v1",
+      "regeneration_recipe": "python scripts/run_native_replay_capture.py --module sample",
+      "input_artifact_paths": [
+        "tests/tooling/fixtures/native/sample.objc3"
+      ],
+      "output_path": "tmp/reports/sample/module.ll"
+    },
+    "legacy_generated_replay_bridge": {
+      "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+      "artifact_family_id": "objc3c.artifact.replay.ir.native.v1",
+      "provenance_class": "legacy_generated_replay_bridge",
+      "provenance_mode": "legacy_generated_bridge",
+      "content_role": "native_ir_replay",
+      "migration_owner_issue": "M315-C003",
+      "bridge_reason": "legacy replay artifact lacks embedded provenance header",
+      "allowed_root_glob": "tests/tooling/fixtures/objc3c/**/replay_run_*/module.ll"
+    },
+    "synthetic_fixture": {
+      "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+      "artifact_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+      "provenance_class": "synthetic_fixture",
+      "provenance_mode": "fixture_curated",
+      "content_role": "fixture_parity_ir",
+      "fixture_family_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+      "synthetic_reason": "fixture parity IR for CLI versus library behavior",
+      "explicit_fixture_label": "fixture parity IR"
+    }
+  },
+  "next_issue": "M315-C003"
+}
