@@ -7,7 +7,6 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $recoveryRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery"
 $positiveDir = Join-Path $recoveryRoot "positive"
-$negativeDir = Join-Path $recoveryRoot "negative"
 $runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $matrixRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/fixture-matrix"
 $runDir = Join-Path $matrixRoot $runId
@@ -106,7 +105,6 @@ try {
   }
 
   $positiveFixtures = Get-Fixtures -Directory $positiveDir -FixtureKind "positive recovery"
-  $negativeFixtures = Get-Fixtures -Directory $negativeDir -FixtureKind "negative recovery"
 
   foreach ($fixture in $positiveFixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
@@ -146,47 +144,6 @@ try {
 
     $statusToken = if ($passed) { "PASS" } else { "FAIL" }
     Write-Output ("[{0}] positive {1} ({2})" -f $statusToken, $fixtureRel, $detail)
-  }
-
-  foreach ($fixture in $negativeFixtures) {
-    $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
-    $hash = Get-ShortHash -Value $fixtureRel
-    $caseDir = Join-Path $runDir ("negative_{0}_{1}" -f $hash, $fixture.BaseName)
-    $compileLog = Join-Path $caseDir "compile.log"
-    New-Item -ItemType Directory -Force -Path $caseDir | Out-Null
-
-    $exitCode = Invoke-LoggedNativeCommand `
-      -Command $exe `
-      -Arguments @($fixture.FullName, "--out-dir", $caseDir, "--emit-prefix", "module") `
-      -LogPath $compileLog
-
-    $diagPath = Join-Path $caseDir "module.diagnostics.txt"
-    $diagExists = Test-Path -LiteralPath $diagPath -PathType Leaf
-    $diagText = if ($diagExists) { Get-Content -LiteralPath $diagPath -Raw } else { "" }
-    $diagPopulated = -not [string]::IsNullOrWhiteSpace($diagText)
-
-    $passed = ($exitCode -ne 0) -and $diagExists -and $diagPopulated
-    $detail = if ($passed) {
-      "exit=$exitCode diagnostics=present"
-    } elseif ($exitCode -eq 0) {
-      "expected nonzero exit got exit=0"
-    } elseif (!$diagExists) {
-      "missing module.diagnostics.txt"
-    } else {
-      "empty module.diagnostics.txt"
-    }
-
-    $results += [pscustomobject]@{
-      kind = "negative"
-      fixture = $fixtureRel
-      passed = $passed
-      detail = $detail
-      exit_code = $exitCode
-      out_dir = (Get-RepoRelativePath -Path $caseDir -Root $repoRoot)
-    }
-
-    $statusToken = if ($passed) { "PASS" } else { "FAIL" }
-    Write-Output ("[{0}] negative {1} ({2})" -f $statusToken, $fixtureRel, $detail)
   }
 } catch {
   $hadFatalError = $true

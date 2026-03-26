@@ -24,7 +24,7 @@ python scripts/check_objc3c_dependency_boundaries.py --strict
 - `test-smoke`: runnable execution smoke plus runtime acceptance
 - `test-recovery`: recovery compile success and deterministic diagnostics replay
 - `test-full`: smoke, recovery, and replay/native-truth proof
-- `test-nightly`: full validation plus fixture-matrix and negative-expectation sweeps
+- `test-nightly`: full validation plus positive fixture-matrix and static negative-expectation sweeps
 - dependency-boundary enforcement
 - compact task-hygiene enforcement
 - runtime dispatch over realized classes/categories/protocols
