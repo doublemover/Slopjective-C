@@ -518,7 +518,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     if (!IsObjc3ToolchainRuntimeGaOperationsScaffoldReady(
             toolchain_runtime_ga_operations_scaffold,
             toolchain_runtime_scaffold_reason)) {
-      std::cerr << "toolchain/runtime readiness scaffold fail-closed: "
+      std::cerr << "toolchain/runtime readiness contract fail-closed: "
                 << toolchain_runtime_scaffold_reason << "\n";
       return 3;
     }
@@ -1344,3 +1344,4 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     return 3;
   }
 }
+

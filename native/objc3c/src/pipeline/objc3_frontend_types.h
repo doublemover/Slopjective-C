@@ -3726,10 +3726,10 @@ inline bool IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
          summary.failure_reason.empty();
 }
 
-struct Objc3RuntimeMetadataSectionScaffoldSummary {
-  std::string contract_id = kObjc3RuntimeMetadataSectionScaffoldContractId;
+struct Objc3RuntimeMetadataSectionPublicationSummary {
+  std::string contract_id = kObjc3RuntimeMetadataSectionPublicationContractId;
   std::string abi_contract_id = kObjc3RuntimeMetadataSectionAbiContractId;
-  bool scaffold_emitted = false;
+  bool publication_emitted = false;
   bool fail_closed = false;
   bool uses_llvm_used = false;
   bool image_info_emitted = false;
@@ -3754,11 +3754,11 @@ struct Objc3RuntimeMetadataSectionScaffoldSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
-    const Objc3RuntimeMetadataSectionScaffoldSummary &summary) {
+inline bool IsReadyObjc3RuntimeMetadataSectionPublicationSummary(
+    const Objc3RuntimeMetadataSectionPublicationSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.abi_contract_id.empty() &&
-         summary.scaffold_emitted &&
+         summary.publication_emitted &&
          summary.fail_closed &&
          summary.uses_llvm_used &&
          summary.image_info_emitted &&
@@ -3781,7 +3781,7 @@ inline bool IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
 
 struct Objc3RuntimeMetadataObjectInspectionHarnessSummary {
   std::string contract_id = kObjc3RuntimeMetadataObjectInspectionContractId;
-  std::string scaffold_contract_id = kObjc3RuntimeMetadataSectionScaffoldContractId;
+  std::string publication_contract_id = kObjc3RuntimeMetadataSectionPublicationContractId;
   bool matrix_published = false;
   bool fail_closed = false;
   bool uses_llvm_readobj = false;
@@ -3805,7 +3805,7 @@ struct Objc3RuntimeMetadataObjectInspectionHarnessSummary {
 inline bool IsReadyObjc3RuntimeMetadataObjectInspectionHarnessSummary(
     const Objc3RuntimeMetadataObjectInspectionHarnessSummary &summary) {
   return !summary.contract_id.empty() &&
-         !summary.scaffold_contract_id.empty() &&
+         !summary.publication_contract_id.empty() &&
          summary.matrix_published &&
          summary.fail_closed &&
          summary.uses_llvm_readobj &&
@@ -3841,8 +3841,8 @@ struct Objc3RuntimeMetadataSourceToSectionMatrixSummary {
   std::string source_graph_contract_id =
       kObjc3ExecutableMetadataSourceGraphContractId;
   std::string section_abi_contract_id = kObjc3RuntimeMetadataSectionAbiContractId;
-  std::string section_scaffold_contract_id =
-      kObjc3RuntimeMetadataSectionScaffoldContractId;
+  std::string section_publication_contract_id =
+      kObjc3RuntimeMetadataSectionPublicationContractId;
   std::string object_inspection_contract_id =
       kObjc3RuntimeMetadataObjectInspectionContractId;
   std::string manifest_surface_path =
@@ -3853,7 +3853,7 @@ struct Objc3RuntimeMetadataSourceToSectionMatrixSummary {
   bool fail_closed = false;
   bool source_graph_ready = false;
   bool section_abi_ready = false;
-  bool section_scaffold_ready = false;
+  bool section_publication_ready = false;
   bool object_inspection_ready = false;
   bool supported_node_coverage_complete = false;
   bool explicit_non_goals_published = false;
@@ -3868,12 +3868,12 @@ inline bool IsReadyObjc3RuntimeMetadataSourceToSectionMatrixSummary(
     const Objc3RuntimeMetadataSourceToSectionMatrixSummary &summary) {
   if (summary.contract_id.empty() || summary.source_graph_contract_id.empty() ||
       summary.section_abi_contract_id.empty() ||
-      summary.section_scaffold_contract_id.empty() ||
+      summary.section_publication_contract_id.empty() ||
       summary.object_inspection_contract_id.empty() ||
       summary.manifest_surface_path.empty() ||
       summary.row_ordering_model.empty() || !summary.matrix_published ||
       !summary.fail_closed || !summary.source_graph_ready ||
-      !summary.section_abi_ready || !summary.section_scaffold_ready ||
+      !summary.section_abi_ready || !summary.section_publication_ready ||
       !summary.object_inspection_ready ||
       !summary.supported_node_coverage_complete ||
       !summary.explicit_non_goals_published || !summary.row_ordering_frozen ||
@@ -4094,8 +4094,8 @@ inline bool IsReadyObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary(
 
 struct Objc3RuntimeSupportLibraryContractSummary {
   std::string contract_id = kObjc3RuntimeSupportLibraryContractId;
-  std::string metadata_scaffold_contract_id =
-      kObjc3RuntimeMetadataSectionScaffoldContractId;
+  std::string metadata_publication_contract_id =
+      kObjc3RuntimeMetadataSectionPublicationContractId;
   bool boundary_frozen = false;
   bool fail_closed = false;
   bool target_name_frozen = false;
@@ -4130,7 +4130,7 @@ struct Objc3RuntimeSupportLibraryContractSummary {
 inline bool IsReadyObjc3RuntimeSupportLibraryContractSummary(
     const Objc3RuntimeSupportLibraryContractSummary &summary) {
   return !summary.contract_id.empty() &&
-         !summary.metadata_scaffold_contract_id.empty() &&
+         !summary.metadata_publication_contract_id.empty() &&
          summary.boundary_frozen &&
          summary.fail_closed &&
          summary.target_name_frozen &&
@@ -4159,8 +4159,8 @@ inline bool IsReadyObjc3RuntimeSupportLibraryContractSummary(
 struct Objc3RuntimeSupportLibraryCoreFeatureSummary {
   std::string contract_id = kObjc3RuntimeSupportLibraryCoreFeatureContractId;
   std::string support_library_contract_id = kObjc3RuntimeSupportLibraryContractId;
-  std::string metadata_scaffold_contract_id =
-      kObjc3RuntimeMetadataSectionScaffoldContractId;
+  std::string metadata_publication_contract_id =
+      kObjc3RuntimeMetadataSectionPublicationContractId;
   bool fail_closed = false;
   bool native_runtime_library_sources_present = false;
   bool native_runtime_library_header_present = false;
@@ -4198,7 +4198,7 @@ inline bool IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
     const Objc3RuntimeSupportLibraryCoreFeatureSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.support_library_contract_id.empty() &&
-         !summary.metadata_scaffold_contract_id.empty() &&
+         !summary.metadata_publication_contract_id.empty() &&
          summary.fail_closed &&
          summary.native_runtime_library_sources_present &&
          summary.native_runtime_library_header_present &&
@@ -5947,3 +5947,4 @@ struct Objc3FrontendPipelineResult {
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;
 };
+

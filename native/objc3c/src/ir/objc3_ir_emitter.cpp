@@ -503,9 +503,9 @@ class Objc3IREmitter {
           << ";ivar_binding_resolved="
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_resolved
           << ";property_descriptor_count="
-          << frontend_metadata_.runtime_metadata_section_scaffold_property_descriptor_count
+          << frontend_metadata_.runtime_metadata_section_publication_property_descriptor_count
           << ";ivar_descriptor_count="
-          << frontend_metadata_.runtime_metadata_section_scaffold_ivar_descriptor_count
+          << frontend_metadata_.runtime_metadata_section_publication_ivar_descriptor_count
           << ";member_table_emission_ready="
           << (frontend_metadata_.runtime_metadata_member_table_emission_ready ? "true"
                                                                               : "false")
@@ -687,9 +687,9 @@ class Objc3IREmitter {
           << frontend_metadata_.runtime_metadata_section_abi_contract_id
           << "\n";
     }
-    if (!frontend_metadata_.runtime_metadata_section_scaffold_contract_id.empty()) {
-      out << "; runtime_metadata_section_scaffold = "
-          << frontend_metadata_.runtime_metadata_section_scaffold_contract_id
+    if (!frontend_metadata_.runtime_metadata_section_publication_contract_id.empty()) {
+      out << "; runtime_metadata_section_publication = "
+          << frontend_metadata_.runtime_metadata_section_publication_contract_id
           << "\n";
     }
     if (!frontend_metadata_.runtime_metadata_object_inspection_contract_id.empty()) {
@@ -3851,7 +3851,7 @@ class Objc3IREmitter {
     out << "!objc3.objc_runtime_export_legality = !{!46}\n";
     out << "!objc3.objc_runtime_export_enforcement = !{!47}\n";
     out << "!objc3.objc_runtime_metadata_section_abi = !{!48}\n";
-    out << "!objc3.objc_runtime_metadata_section_scaffold = !{!49}\n";
+    out << "!objc3.objc_runtime_metadata_section_publication = !{!49}\n";
     out << "!objc3.objc_runtime_metadata_layout_policy = !{!55}\n";
     out << "!objc3.objc_runtime_class_metaclass_emission = !{!56}\n";
     out << "!objc3.objc_runtime_protocol_category_emission = !{!57}\n";
@@ -4137,79 +4137,79 @@ class Objc3IREmitter {
         << "\"}\n";
     out << "!49 = !{!\""
         << EscapeCStringLiteral(
-               frontend_metadata_.runtime_metadata_section_scaffold_contract_id)
+               frontend_metadata_.runtime_metadata_section_publication_contract_id)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_abi_contract_id)
+                   .runtime_metadata_section_publication_abi_contract_id)
         << "\", i1 "
-        << (frontend_metadata_.runtime_metadata_section_scaffold_emitted ? 1
+        << (frontend_metadata_.runtime_metadata_section_publication_emitted ? 1
                                                                          : 0)
         << ", i1 "
-        << (frontend_metadata_.runtime_metadata_section_scaffold_fail_closed
+        << (frontend_metadata_.runtime_metadata_section_publication_fail_closed
                 ? 1
                 : 0)
         << ", i1 "
-        << (frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used
+        << (frontend_metadata_.runtime_metadata_section_publication_uses_llvm_used
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_metadata_section_scaffold_image_info_emitted
+                    .runtime_metadata_section_publication_image_info_emitted
                 ? 1
                 : 0)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_class_descriptor_count)
+                   .runtime_metadata_section_publication_class_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_protocol_descriptor_count)
+                   .runtime_metadata_section_publication_protocol_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_category_descriptor_count)
+                   .runtime_metadata_section_publication_category_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_property_descriptor_count)
+                   .runtime_metadata_section_publication_property_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_ivar_descriptor_count)
+                   .runtime_metadata_section_publication_ivar_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_total_descriptor_count)
+                   .runtime_metadata_section_publication_total_descriptor_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_total_retained_global_count)
+                   .runtime_metadata_section_publication_total_retained_global_count)
         << ", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_image_info_symbol)
+                   .runtime_metadata_section_publication_image_info_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_class_aggregate_symbol)
+                   .runtime_metadata_section_publication_class_aggregate_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_protocol_aggregate_symbol)
+                   .runtime_metadata_section_publication_protocol_aggregate_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_category_aggregate_symbol)
+                   .runtime_metadata_section_publication_category_aggregate_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_property_aggregate_symbol)
+                   .runtime_metadata_section_publication_property_aggregate_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_section_scaffold_ivar_aggregate_symbol)
+                   .runtime_metadata_section_publication_ivar_aggregate_symbol)
         << "\"}\n";
     Objc3RuntimeMetadataLayoutPolicy runtime_metadata_layout_policy;
     std::string runtime_metadata_layout_policy_error;
@@ -4225,7 +4225,7 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_metadata_object_inspection_scaffold_contract_id)
+                   .runtime_metadata_object_inspection_publication_contract_id)
         << "\", i1 "
         << (frontend_metadata_.runtime_metadata_object_inspection_matrix_published
                 ? 1
@@ -4279,7 +4279,7 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_support_library_metadata_scaffold_contract_id)
+                   .runtime_support_library_metadata_publication_contract_id)
         << "\", i1 "
         << (frontend_metadata_.runtime_support_library_boundary_frozen ? 1 : 0)
         << ", i1 "
@@ -4363,7 +4363,7 @@ class Objc3IREmitter {
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .runtime_support_library_core_feature_metadata_scaffold_contract_id)
+                   .runtime_support_library_core_feature_metadata_publication_contract_id)
         << "\", i1 "
         << (frontend_metadata_.runtime_support_library_core_feature_fail_closed
                 ? 1
@@ -8042,10 +8042,10 @@ class Objc3IREmitter {
     // until later work extend the inventory model.
     return frontend_metadata_.runtime_metadata_section_ready_for_scaffold &&
            frontend_metadata_.runtime_export_ready_for_runtime_export &&
-           frontend_metadata_.runtime_metadata_section_scaffold_emitted &&
-           frontend_metadata_.runtime_metadata_section_scaffold_fail_closed &&
-           frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used &&
-           frontend_metadata_.runtime_metadata_section_scaffold_image_info_emitted;
+           frontend_metadata_.runtime_metadata_section_publication_emitted &&
+           frontend_metadata_.runtime_metadata_section_publication_fail_closed &&
+           frontend_metadata_.runtime_metadata_section_publication_uses_llvm_used &&
+           frontend_metadata_.runtime_metadata_section_publication_image_info_emitted;
   }
 
   static std::string FormatRuntimeMetadataDescriptorOrdinal(std::size_t ordinal) {
@@ -8074,21 +8074,21 @@ class Objc3IREmitter {
     input.abi_contract_id =
         frontend_metadata_.runtime_metadata_section_abi_contract_id;
     input.scaffold_contract_id =
-        frontend_metadata_.runtime_metadata_section_scaffold_contract_id;
+        frontend_metadata_.runtime_metadata_section_publication_contract_id;
     input.section_boundary_ready =
         frontend_metadata_.runtime_metadata_section_ready_for_scaffold;
     input.runtime_export_ready =
         frontend_metadata_.runtime_export_ready_for_runtime_export;
     input.scaffold_emitted =
-        frontend_metadata_.runtime_metadata_section_scaffold_emitted;
+        frontend_metadata_.runtime_metadata_section_publication_emitted;
     input.scaffold_fail_closed =
-        frontend_metadata_.runtime_metadata_section_scaffold_fail_closed;
+        frontend_metadata_.runtime_metadata_section_publication_fail_closed;
     input.uses_llvm_used =
-        frontend_metadata_.runtime_metadata_section_scaffold_uses_llvm_used;
+        frontend_metadata_.runtime_metadata_section_publication_uses_llvm_used;
     input.image_info_emitted =
-        frontend_metadata_.runtime_metadata_section_scaffold_image_info_emitted;
+        frontend_metadata_.runtime_metadata_section_publication_image_info_emitted;
     input.image_info_symbol =
-        frontend_metadata_.runtime_metadata_section_scaffold_image_info_symbol;
+        frontend_metadata_.runtime_metadata_section_publication_image_info_symbol;
     input.image_info_section =
         frontend_metadata_.runtime_metadata_section_logical_image_info_section;
     input.descriptor_symbol_prefix =
@@ -8103,42 +8103,42 @@ class Objc3IREmitter {
         frontend_metadata_.runtime_metadata_section_retention_root;
     input.total_retained_global_count =
         frontend_metadata_
-            .runtime_metadata_section_scaffold_total_retained_global_count;
+            .runtime_metadata_section_publication_total_retained_global_count;
     input.families = {{
         {kObjc3RuntimeMetadataLayoutPolicyClassFamily,
          frontend_metadata_
              .runtime_metadata_section_logical_class_descriptor_section,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_class_aggregate_symbol,
+             .runtime_metadata_section_publication_class_aggregate_symbol,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_class_descriptor_count},
+             .runtime_metadata_section_publication_class_descriptor_count},
         {kObjc3RuntimeMetadataLayoutPolicyProtocolFamily,
          frontend_metadata_
              .runtime_metadata_section_logical_protocol_descriptor_section,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_protocol_aggregate_symbol,
+             .runtime_metadata_section_publication_protocol_aggregate_symbol,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_protocol_descriptor_count},
+             .runtime_metadata_section_publication_protocol_descriptor_count},
         {kObjc3RuntimeMetadataLayoutPolicyCategoryFamily,
          frontend_metadata_
              .runtime_metadata_section_logical_category_descriptor_section,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_category_aggregate_symbol,
+             .runtime_metadata_section_publication_category_aggregate_symbol,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_category_descriptor_count},
+             .runtime_metadata_section_publication_category_descriptor_count},
         {kObjc3RuntimeMetadataLayoutPolicyPropertyFamily,
          frontend_metadata_
              .runtime_metadata_section_logical_property_descriptor_section,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_property_aggregate_symbol,
+             .runtime_metadata_section_publication_property_aggregate_symbol,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_property_descriptor_count},
+             .runtime_metadata_section_publication_property_descriptor_count},
         {kObjc3RuntimeMetadataLayoutPolicyIvarFamily,
          frontend_metadata_.runtime_metadata_section_logical_ivar_descriptor_section,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_ivar_aggregate_symbol,
+             .runtime_metadata_section_publication_ivar_aggregate_symbol,
          frontend_metadata_
-             .runtime_metadata_section_scaffold_ivar_descriptor_count},
+             .runtime_metadata_section_publication_ivar_descriptor_count},
     }};
     return ::TryBuildObjc3RuntimeMetadataLayoutPolicy(input, policy, error);
   }
@@ -8661,7 +8661,7 @@ class Objc3IREmitter {
         << ";binary_object_case_issue=M253-C006"
         << ";linker_fanin_issue=M253-D003"
         << "\n";
-    out << "; runtime metadata section scaffold globals\n";
+    out << "; runtime metadata section publication globals\n";
 
     std::vector<std::string> retained_globals;
     retained_globals.reserve(layout_policy.total_retained_global_count);
@@ -10457,19 +10457,19 @@ class Objc3IREmitter {
           << " x i8], ptr " << translation_unit_identity_symbol
           << ", i32 0, i32 0)"
           << ", i64 " << registration_order_ordinal << ", i64 "
-          << frontend_metadata_.runtime_metadata_section_scaffold_class_descriptor_count
+          << frontend_metadata_.runtime_metadata_section_publication_class_descriptor_count
           << ", i64 "
           << frontend_metadata_
-                 .runtime_metadata_section_scaffold_protocol_descriptor_count
+                 .runtime_metadata_section_publication_protocol_descriptor_count
           << ", i64 "
           << frontend_metadata_
-                 .runtime_metadata_section_scaffold_category_descriptor_count
+                 .runtime_metadata_section_publication_category_descriptor_count
           << ", i64 "
           << frontend_metadata_
-                 .runtime_metadata_section_scaffold_property_descriptor_count
+                 .runtime_metadata_section_publication_property_descriptor_count
           << ", i64 "
           << frontend_metadata_
-                 .runtime_metadata_section_scaffold_ivar_descriptor_count
+                 .runtime_metadata_section_publication_ivar_descriptor_count
           << " }, align 8\n";
       out << image_local_init_state_symbol
           << " = internal global i8 0, align 1\n";
@@ -14624,3 +14624,4 @@ bool EmitObjc3IRText(const Objc3Program &program,
   Objc3IREmitter emitter(program, lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }
+

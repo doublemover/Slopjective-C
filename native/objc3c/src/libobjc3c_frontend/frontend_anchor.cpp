@@ -938,7 +938,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
         result->process_exit_code = 125;
         result->success = 0;
         const std::string emit_error =
-            "error:1:1: LLVM object emission failed: toolchain/runtime readiness scaffold fail-closed: " +
+            "error:1:1: LLVM object emission failed: toolchain/runtime readiness contract fail-closed: " +
             toolchain_runtime_scaffold_reason + " [O3E002]";
         emit_diagnostics.push_back(emit_error);
         objc3c_frontend_set_error(context, emit_error.c_str());
@@ -1589,3 +1589,4 @@ extern "C" OBJC3C_FRONTEND_API size_t objc3c_frontend_copy_last_error(
   buffer[bytes_to_copy] = '\0';
   return required;
 }
+

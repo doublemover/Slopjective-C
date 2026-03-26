@@ -272,25 +272,25 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_metadata_section_aggregate_linkage;
   std::string runtime_metadata_section_visibility;
   std::string runtime_metadata_section_retention_root;
-  std::string runtime_metadata_section_scaffold_contract_id;
-  std::string runtime_metadata_section_scaffold_abi_contract_id;
-  bool runtime_metadata_section_scaffold_emitted = false;
-  bool runtime_metadata_section_scaffold_fail_closed = false;
-  bool runtime_metadata_section_scaffold_uses_llvm_used = false;
-  bool runtime_metadata_section_scaffold_image_info_emitted = false;
-  std::size_t runtime_metadata_section_scaffold_class_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_protocol_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_category_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_property_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_ivar_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_total_descriptor_count = 0;
-  std::size_t runtime_metadata_section_scaffold_total_retained_global_count = 0;
-  std::string runtime_metadata_section_scaffold_image_info_symbol;
-  std::string runtime_metadata_section_scaffold_class_aggregate_symbol;
-  std::string runtime_metadata_section_scaffold_protocol_aggregate_symbol;
-  std::string runtime_metadata_section_scaffold_category_aggregate_symbol;
-  std::string runtime_metadata_section_scaffold_property_aggregate_symbol;
-  std::string runtime_metadata_section_scaffold_ivar_aggregate_symbol;
+  std::string runtime_metadata_section_publication_contract_id;
+  std::string runtime_metadata_section_publication_abi_contract_id;
+  bool runtime_metadata_section_publication_emitted = false;
+  bool runtime_metadata_section_publication_fail_closed = false;
+  bool runtime_metadata_section_publication_uses_llvm_used = false;
+  bool runtime_metadata_section_publication_image_info_emitted = false;
+  std::size_t runtime_metadata_section_publication_class_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_protocol_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_category_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_property_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_ivar_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_total_descriptor_count = 0;
+  std::size_t runtime_metadata_section_publication_total_retained_global_count = 0;
+  std::string runtime_metadata_section_publication_image_info_symbol;
+  std::string runtime_metadata_section_publication_class_aggregate_symbol;
+  std::string runtime_metadata_section_publication_protocol_aggregate_symbol;
+  std::string runtime_metadata_section_publication_category_aggregate_symbol;
+  std::string runtime_metadata_section_publication_property_aggregate_symbol;
+  std::string runtime_metadata_section_publication_ivar_aggregate_symbol;
   std::string runtime_metadata_class_metaclass_emission_contract_id;
   std::string runtime_metadata_class_metaclass_payload_model;
   std::string runtime_metadata_class_metaclass_name_model;
@@ -396,7 +396,7 @@ struct Objc3IRFrontendMetadata {
   bool runtime_bootstrap_lowering_ready = false;
   bool runtime_bootstrap_lowering_fail_closed = false;
   std::string runtime_metadata_object_inspection_contract_id;
-  std::string runtime_metadata_object_inspection_scaffold_contract_id;
+  std::string runtime_metadata_object_inspection_publication_contract_id;
   bool runtime_metadata_object_inspection_matrix_published = false;
   bool runtime_metadata_object_inspection_fail_closed = false;
   bool runtime_metadata_object_inspection_uses_llvm_readobj = false;
@@ -430,7 +430,7 @@ struct Objc3IRFrontendMetadata {
   std::string executable_metadata_debug_projection_row1_descriptor;
   std::string executable_metadata_debug_projection_row2_descriptor;
   std::string runtime_support_library_contract_id;
-  std::string runtime_support_library_metadata_scaffold_contract_id;
+  std::string runtime_support_library_metadata_publication_contract_id;
   bool runtime_support_library_boundary_frozen = false;
   bool runtime_support_library_fail_closed = false;
   bool runtime_support_library_target_name_frozen = false;
@@ -455,7 +455,7 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_support_library_runtime_ownership_boundary;
   std::string runtime_support_library_core_feature_contract_id;
   std::string runtime_support_library_core_feature_support_library_contract_id;
-  std::string runtime_support_library_core_feature_metadata_scaffold_contract_id;
+  std::string runtime_support_library_core_feature_metadata_publication_contract_id;
   bool runtime_support_library_core_feature_fail_closed = false;
   bool runtime_support_library_core_feature_sources_present = false;
   bool runtime_support_library_core_feature_header_present = false;
@@ -1220,3 +1220,4 @@ bool EmitObjc3IRText(const Objc3Program &program,
                      const Objc3IRFrontendMetadata &frontend_metadata,
                      std::string &ir,
                      std::string &error);
+

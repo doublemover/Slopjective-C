@@ -4,73 +4,15 @@
 /*
 Deterministic Objective-C 3 runtime shim for test harness calls.
 All arithmetic is reduced modulo kModulus to avoid signed overflow UB.
-M251-A001 freeze: this shim remains test-only evidence and is not the native
-runtime library, metadata registration path, or executable object model.
-M251-C001 freeze: this shim does not define metadata section inventory,
-symbol retention roots, or native object-file symbol policy.
-M251-C002 scaffold: the native driver now emits retained metadata placeholder
-globals, but this shim still is not the runtime registration, lookup, or executable object-model implementation.
-M251-C003 object inspection harness: emitted objects are now inspected with
-llvm-readobj/llvm-objdump evidence, but that harness still validates compiler layout and retention rather than pretending the shim is a native runtime.
-M251-D001 freeze: the canonical native runtime-library surface is reserved for
-`objc3_runtime` / `objc3_runtime_register_image` / `objc3_runtime_lookup_selector` /
-`objc3_runtime_dispatch_i32` / `objc3_runtime_reset_for_testing`; this shim remains
-separate test-only evidence until M251-D002 and M251-D003 land.
-M251-D002 core feature: the in-tree native runtime library now exists and the
-native `objc3_runtime_dispatch_i32` entrypoint intentionally mirrors this
-deterministic formula, but the driver/link path still targets this shim until
-M251-D003 wires the real library into executable builds.
-M251-D003 link wiring: emitted objects now link against
-`artifacts/lib/objc3_runtime.lib`, and this shim remains explicit test-only
-compatibility evidence for negative unresolved-symbol coverage and formula
-parity documentation.
-M255-A001 dispatch-classification freeze: instance/class/super/dynamic dispatch families all remain routed through the live runtime compatibility family while direct dispatch remains a reserved non-goal.
-M255-A002 dispatch-site modeling: frontend/sema/lowering now materialize non-zero receiver identities for implicit self/super and known class-name sites so the same compatibility family remains reachable through native LLVM emission.
-M255-B001 dispatch legality/selector-resolution freeze: the shim consumes one already-normalized selector string and explicit receiver value only; it does not resolve ambiguity, recover missing selector forms, or simulate direct dispatch.
-M255-B002 selector-resolution implementation: concrete self/super/known-class
-receivers are now resolved and type-checked before this shim is called; the
-shim still does not perform selector lookup, ambiguity recovery, or overload
-selection itself.
-M255-B003 super/direct/dynamic legality expansion: admitted super and dynamic
-sites still reach this runtime compatibility entrypoint with preserved
-method-family accounting, while illegal `super` sites fail closed before the
-shim and direct dispatch remains reserved/non-goal.
-M255-C001 dispatch lowering ABI freeze: `objc3_msgsend_i32` remained the
-default lowering target only as a compatibility bridge while lane-C froze
-`objc3_runtime_dispatch_i32`, `objc3_runtime_lookup_selector`,
-`objc3_runtime_selector_handle`, and the fixed `i32[4]` argument ABI for the
-later live-runtime cutover.
-M255-C002 runtime call ABI generation: normalized instance/class sends now
-lower directly to `objc3_runtime_dispatch_i32`.
-M255-C003 runtime call ABI generation: normalized super and canonical nil
-surfaces now also lower to `objc3_runtime_dispatch_i32`.
-M255-C004 live-dispatch cutover: normalized dynamic sends now also lower to
-`objc3_runtime_dispatch_i32`; this shim remains exported only as explicit
-formula-parity / compatibility evidence and is no longer a live lowering
-target.
-M255-D001 lookup/dispatch runtime freeze: selector interning, metadata-backed
-lookup tables, method caches, and runtime slow paths remain owned by the native
-`objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface. This
-shim stays test-only compatibility evidence and is not the authoritative live
-runtime lookup/dispatch implementation.
-M255-D002 selector lookup table boundary: metadata-backed selector interning
-and metadata-backed lookup tables now live behind the native
-`objc3_runtime_lookup_selector` / `objc3_runtime_dispatch_i32` surface, while
-method caches and other slow-path runtime behavior remain there for later
-issues.
-M255-D003 method-cache / slow-path lookup: positive and negative method-cache
-entries plus emitted class/metaclass slow-path resolution now live behind the
-native `objc3_runtime_dispatch_i32` surface. This shim remains explicit
-compatibility evidence only and does not own live cache behavior.
-M255-E001 live-dispatch gate: lane-E now freezes one fail-closed evidence
-boundary over A002/B003/C004/D004 proving supported sends execute through the
-live runtime path rather than this shim. This shim remains exported only for
-formula-parity / compatibility evidence and must not be treated as
-authoritative live-dispatch proof.
-M255-E002 smoke/replay closeout: execution smoke and replay now publish
-canonical live runtime dispatch evidence (`requires_live_runtime_dispatch`,
-`objc3_runtime_dispatch_i32`, and the runtime library path). This shim remains
-non-authoritative evidence for live smoke/replay proof.
+This shim is explicit compatibility evidence only.
+It is not the live runtime library, not a metadata-registration path, and not
+authoritative proof of runtime execution.
+The canonical live runtime surface is the emitted-object path linked against
+`artifacts/lib/objc3_runtime.lib` through
+`objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
+`objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`.
+Keep this file only for deterministic formula-parity and unresolved-symbol
+coverage where the real runtime path is intentionally not under test.
 */
 int objc3_msgsend_i32(int receiver, const char *selector, int a0, int a1, int a2, int a3) {
     static const int64_t kModulus = 2147483629LL;

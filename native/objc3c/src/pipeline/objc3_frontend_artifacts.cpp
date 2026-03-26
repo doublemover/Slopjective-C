@@ -10735,23 +10735,23 @@ BuildRuntimeMetadataSectionAbiFreezeSummary(
   return summary;
 }
 
-Objc3RuntimeMetadataSectionScaffoldSummary
-BuildRuntimeMetadataSectionScaffoldSummary(
+Objc3RuntimeMetadataSectionPublicationSummary
+BuildRuntimeMetadataSectionPublicationSummary(
     const Objc3RuntimeMetadataSectionAbiFreezeSummary &runtime_metadata_section_abi,
     const Objc3RuntimeExportLegalityBoundary &runtime_export_legality,
     const Objc3RuntimeExportEnforcementSummary &runtime_export_enforcement) {
-  Objc3RuntimeMetadataSectionScaffoldSummary summary;
+  Objc3RuntimeMetadataSectionPublicationSummary summary;
   summary.fail_closed = true;
   if (!IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
           runtime_metadata_section_abi) ||
       !IsReadyObjc3RuntimeExportEnforcementSummary(
           runtime_export_enforcement)) {
     summary.failure_reason =
-        "runtime metadata section scaffold prerequisites are not ready";
+        "runtime metadata section publication prerequisites are not ready";
     return summary;
   }
 
-  summary.scaffold_emitted = true;
+  summary.publication_emitted = true;
   summary.uses_llvm_used = true;
   summary.image_info_emitted = true;
   summary.class_descriptor_count = runtime_export_legality.class_record_count;
@@ -10773,13 +10773,13 @@ BuildRuntimeMetadataSectionScaffoldSummary(
 Objc3RuntimeMetadataObjectInspectionHarnessSummary
 BuildRuntimeMetadataObjectInspectionHarnessSummary(
     const Objc3RuntimeMetadataSectionAbiFreezeSummary &runtime_metadata_section_abi,
-    const Objc3RuntimeMetadataSectionScaffoldSummary &runtime_metadata_section_scaffold) {
+    const Objc3RuntimeMetadataSectionPublicationSummary &runtime_metadata_section_publication) {
   Objc3RuntimeMetadataObjectInspectionHarnessSummary summary;
   summary.fail_closed = true;
   if (!IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
           runtime_metadata_section_abi) ||
-      !IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
-          runtime_metadata_section_scaffold)) {
+      !IsReadyObjc3RuntimeMetadataSectionPublicationSummary(
+          runtime_metadata_section_publication)) {
     summary.failure_reason =
         "runtime metadata object inspection harness prerequisites are not ready";
     return summary;
@@ -10798,7 +10798,7 @@ std::string BuildRuntimeMetadataSourceToSectionMatrixReplayKey(
   out << summary.contract_id
       << ";source_graph_contract=" << summary.source_graph_contract_id
       << ";section_abi_contract=" << summary.section_abi_contract_id
-      << ";section_scaffold_contract=" << summary.section_scaffold_contract_id
+      << ";section_publication_contract=" << summary.section_publication_contract_id
       << ";object_inspection_contract=" << summary.object_inspection_contract_id
       << ";surface_path=" << summary.manifest_surface_path
       << ";row_ordering=" << summary.row_ordering_model
@@ -10818,7 +10818,7 @@ Objc3RuntimeMetadataSourceToSectionMatrixSummary
 BuildRuntimeMetadataSourceToSectionMatrixSummary(
     const Objc3ExecutableMetadataSourceGraph &executable_metadata_source_graph,
     const Objc3RuntimeMetadataSectionAbiFreezeSummary &runtime_metadata_section_abi,
-    const Objc3RuntimeMetadataSectionScaffoldSummary &runtime_metadata_section_scaffold,
+    const Objc3RuntimeMetadataSectionPublicationSummary &runtime_metadata_section_publication,
     const Objc3RuntimeMetadataObjectInspectionHarnessSummary
         &runtime_metadata_object_inspection) {
   Objc3RuntimeMetadataSourceToSectionMatrixSummary summary;
@@ -10829,9 +10829,9 @@ BuildRuntimeMetadataSourceToSectionMatrixSummary(
   summary.section_abi_ready =
       IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
           runtime_metadata_section_abi);
-  summary.section_scaffold_ready =
-      IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
-          runtime_metadata_section_scaffold);
+  summary.section_publication_ready =
+      IsReadyObjc3RuntimeMetadataSectionPublicationSummary(
+          runtime_metadata_section_publication);
   summary.object_inspection_ready =
       IsReadyObjc3RuntimeMetadataObjectInspectionHarnessSummary(
           runtime_metadata_object_inspection);
@@ -10973,8 +10973,8 @@ std::string BuildRuntimeMetadataSourceToSectionMatrixSummaryJson(
       << EscapeJsonString(summary.source_graph_contract_id)
       << "\",\"section_abi_contract_id\":\""
       << EscapeJsonString(summary.section_abi_contract_id)
-      << "\",\"section_scaffold_contract_id\":\""
-      << EscapeJsonString(summary.section_scaffold_contract_id)
+      << "\",\"section_publication_contract_id\":\""
+      << EscapeJsonString(summary.section_publication_contract_id)
       << "\",\"object_inspection_contract_id\":\""
       << EscapeJsonString(summary.object_inspection_contract_id)
       << "\",\"manifest_surface_path\":\""
@@ -10992,8 +10992,8 @@ std::string BuildRuntimeMetadataSourceToSectionMatrixSummaryJson(
       << (summary.source_graph_ready ? "true" : "false")
       << ",\"section_abi_ready\":"
       << (summary.section_abi_ready ? "true" : "false")
-      << ",\"section_scaffold_ready\":"
-      << (summary.section_scaffold_ready ? "true" : "false")
+      << ",\"section_publication_ready\":"
+      << (summary.section_publication_ready ? "true" : "false")
       << ",\"object_inspection_ready\":"
       << (summary.object_inspection_ready ? "true" : "false")
       << ",\"supported_node_coverage_complete\":"
@@ -11060,8 +11060,8 @@ BuildRuntimeSupportLibraryCoreFeatureSummary(
     const Objc3RuntimeSupportLibraryContractSummary &runtime_support_library) {
   Objc3RuntimeSupportLibraryCoreFeatureSummary summary;
   summary.support_library_contract_id = runtime_support_library.contract_id;
-  summary.metadata_scaffold_contract_id =
-      runtime_support_library.metadata_scaffold_contract_id;
+  summary.metadata_publication_contract_id =
+      runtime_support_library.metadata_publication_contract_id;
   summary.fail_closed = true;
   summary.native_runtime_library_sources_present = true;
   summary.native_runtime_library_header_present = true;
@@ -11321,8 +11321,8 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
         &registration_contract,
     const Objc3RuntimeSupportLibraryLinkWiringSummary
         &runtime_support_library_link_wiring,
-    const Objc3RuntimeMetadataSectionScaffoldSummary
-        &runtime_metadata_section_scaffold,
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        &runtime_metadata_section_publication,
     std::uint64_t translation_unit_registration_order_ordinal) {
   Objc3RuntimeTranslationUnitRegistrationManifestSummary summary;
   summary.fail_closed = true;
@@ -11340,17 +11340,17 @@ BuildRuntimeTranslationUnitRegistrationManifestSummary(
   summary.runtime_owned_payload_artifact_count =
       summary.runtime_owned_payload_artifacts.size();
   summary.class_descriptor_count =
-      runtime_metadata_section_scaffold.class_descriptor_count;
+      runtime_metadata_section_publication.class_descriptor_count;
   summary.protocol_descriptor_count =
-      runtime_metadata_section_scaffold.protocol_descriptor_count;
+      runtime_metadata_section_publication.protocol_descriptor_count;
   summary.category_descriptor_count =
-      runtime_metadata_section_scaffold.category_descriptor_count;
+      runtime_metadata_section_publication.category_descriptor_count;
   summary.property_descriptor_count =
-      runtime_metadata_section_scaffold.property_descriptor_count;
+      runtime_metadata_section_publication.property_descriptor_count;
   summary.ivar_descriptor_count =
-      runtime_metadata_section_scaffold.ivar_descriptor_count;
+      runtime_metadata_section_publication.ivar_descriptor_count;
   summary.total_descriptor_count =
-      runtime_metadata_section_scaffold.total_descriptor_count;
+      runtime_metadata_section_publication.total_descriptor_count;
   if (translation_unit_registration_order_ordinal > 0) {
     summary.translation_unit_registration_order_ordinal =
         translation_unit_registration_order_ordinal;
@@ -15304,9 +15304,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             runtime_metadata_source_ownership,
             runtime_export_legality,
             runtime_export_enforcement);
-    const Objc3RuntimeMetadataSectionScaffoldSummary
-        runtime_metadata_section_scaffold =
-            BuildRuntimeMetadataSectionScaffoldSummary(
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        runtime_metadata_section_publication =
+            BuildRuntimeMetadataSectionPublicationSummary(
                 runtime_metadata_section_abi,
                 runtime_export_legality,
                 runtime_export_enforcement);
@@ -15314,13 +15314,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         runtime_metadata_object_inspection =
             BuildRuntimeMetadataObjectInspectionHarnessSummary(
                 runtime_metadata_section_abi,
-                runtime_metadata_section_scaffold);
+                runtime_metadata_section_publication);
     const Objc3RuntimeMetadataSourceToSectionMatrixSummary
         runtime_metadata_source_to_section_matrix =
             BuildRuntimeMetadataSourceToSectionMatrixSummary(
                 executable_metadata_source_graph,
                 runtime_metadata_section_abi,
-                runtime_metadata_section_scaffold,
+                runtime_metadata_section_publication,
                 runtime_metadata_object_inspection);
     const Objc3ExecutableMetadataDebugProjectionSummary
         executable_metadata_debug_projection =
@@ -15352,8 +15352,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                runtime_export_enforcement) &&
            IsReadyObjc3RuntimeMetadataSectionAbiFreezeSummary(
                runtime_metadata_section_abi) &&
-           IsReadyObjc3RuntimeMetadataSectionScaffoldSummary(
-               runtime_metadata_section_scaffold) &&
+           IsReadyObjc3RuntimeMetadataSectionPublicationSummary(
+               runtime_metadata_section_publication) &&
            IsReadyObjc3RuntimeMetadataSourceToSectionMatrixSummary(
                runtime_metadata_source_to_section_matrix) &&
            IsReadyObjc3ExecutableMetadataDebugProjectionSummary(
@@ -15362,7 +15362,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                executable_metadata_runtime_ingest_packaging_contract) &&
            IsReadyObjc3ExecutableMetadataRuntimeIngestBinaryBoundarySummary(
                executable_metadata_runtime_ingest_binary_boundary) &&
-           runtime_metadata_section_scaffold.class_descriptor_count > 0u;
+           runtime_metadata_section_publication.class_descriptor_count > 0u;
   }();
   std::string post_pipeline_failure_code;
   std::string post_pipeline_failure_message;
@@ -16090,9 +16090,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           runtime_metadata_source_ownership,
           runtime_export_legality,
           runtime_export_enforcement);
-  const Objc3RuntimeMetadataSectionScaffoldSummary
-      runtime_metadata_section_scaffold =
-          BuildRuntimeMetadataSectionScaffoldSummary(
+  const Objc3RuntimeMetadataSectionPublicationSummary
+      runtime_metadata_section_publication =
+          BuildRuntimeMetadataSectionPublicationSummary(
               runtime_metadata_section_abi,
               runtime_export_legality,
               runtime_export_enforcement);
@@ -16100,13 +16100,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_object_inspection =
           BuildRuntimeMetadataObjectInspectionHarnessSummary(
               runtime_metadata_section_abi,
-              runtime_metadata_section_scaffold);
+              runtime_metadata_section_publication);
   const Objc3RuntimeMetadataSourceToSectionMatrixSummary
       runtime_metadata_source_to_section_matrix =
           BuildRuntimeMetadataSourceToSectionMatrixSummary(
               executable_metadata_source_graph,
               runtime_metadata_section_abi,
-              runtime_metadata_section_scaffold,
+              runtime_metadata_section_publication,
               runtime_metadata_object_inspection);
   const Objc3ExecutableMetadataDebugProjectionSummary
       executable_metadata_debug_projection =
@@ -16148,7 +16148,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           BuildRuntimeTranslationUnitRegistrationManifestSummary(
               runtime_translation_unit_registration_contract,
               runtime_support_library_link_wiring,
-              runtime_metadata_section_scaffold,
+              runtime_metadata_section_publication,
               options.bootstrap_registration_order_ordinal);
   const Objc3RuntimeRegistrationDescriptorImageRootSourceSurfaceSummary
       runtime_registration_descriptor_image_root_source_surface =
@@ -17916,53 +17916,53 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"runtime_metadata_section_failure_reason\":\""
            << runtime_metadata_section_abi.failure_reason
            << "\""
-           << ",\"runtime_metadata_section_scaffold_contract_id\":\""
-           << runtime_metadata_section_scaffold.contract_id
-           << "\",\"runtime_metadata_section_scaffold_abi_contract_id\":\""
-           << runtime_metadata_section_scaffold.abi_contract_id
-           << "\",\"runtime_metadata_section_scaffold_emitted\":"
-           << (runtime_metadata_section_scaffold.scaffold_emitted ? "true"
+           << ",\"runtime_metadata_section_publication_contract_id\":\""
+           << runtime_metadata_section_publication.contract_id
+           << "\",\"runtime_metadata_section_publication_abi_contract_id\":\""
+           << runtime_metadata_section_publication.abi_contract_id
+           << "\",\"runtime_metadata_section_publication_emitted\":"
+           << (runtime_metadata_section_publication.publication_emitted ? "true"
                                                                   : "false")
-           << ",\"runtime_metadata_section_scaffold_fail_closed\":"
-           << (runtime_metadata_section_scaffold.fail_closed ? "true" : "false")
-           << ",\"runtime_metadata_section_scaffold_uses_llvm_used\":"
-           << (runtime_metadata_section_scaffold.uses_llvm_used ? "true"
+           << ",\"runtime_metadata_section_publication_fail_closed\":"
+           << (runtime_metadata_section_publication.fail_closed ? "true" : "false")
+           << ",\"runtime_metadata_section_publication_uses_llvm_used\":"
+           << (runtime_metadata_section_publication.uses_llvm_used ? "true"
                                                                 : "false")
-           << ",\"runtime_metadata_section_scaffold_image_info_emitted\":"
-           << (runtime_metadata_section_scaffold.image_info_emitted ? "true"
+           << ",\"runtime_metadata_section_publication_image_info_emitted\":"
+           << (runtime_metadata_section_publication.image_info_emitted ? "true"
                                                                     : "false")
-           << ",\"runtime_metadata_section_scaffold_class_descriptor_count\":"
-           << runtime_metadata_section_scaffold.class_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_protocol_descriptor_count\":"
-           << runtime_metadata_section_scaffold.protocol_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_category_descriptor_count\":"
-           << runtime_metadata_section_scaffold.category_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_property_descriptor_count\":"
-           << runtime_metadata_section_scaffold.property_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_ivar_descriptor_count\":"
-           << runtime_metadata_section_scaffold.ivar_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_total_descriptor_count\":"
-           << runtime_metadata_section_scaffold.total_descriptor_count
-           << ",\"runtime_metadata_section_scaffold_total_retained_global_count\":"
-           << runtime_metadata_section_scaffold.total_retained_global_count
-           << ",\"runtime_metadata_section_scaffold_image_info_symbol\":\""
-           << runtime_metadata_section_scaffold.image_info_symbol
-           << "\",\"runtime_metadata_section_scaffold_class_aggregate_symbol\":\""
-           << runtime_metadata_section_scaffold.class_aggregate_symbol
-           << "\",\"runtime_metadata_section_scaffold_protocol_aggregate_symbol\":\""
-           << runtime_metadata_section_scaffold.protocol_aggregate_symbol
-           << "\",\"runtime_metadata_section_scaffold_category_aggregate_symbol\":\""
-           << runtime_metadata_section_scaffold.category_aggregate_symbol
-           << "\",\"runtime_metadata_section_scaffold_property_aggregate_symbol\":\""
-           << runtime_metadata_section_scaffold.property_aggregate_symbol
-           << "\",\"runtime_metadata_section_scaffold_ivar_aggregate_symbol\":\""
-           << runtime_metadata_section_scaffold.ivar_aggregate_symbol
-           << "\",\"runtime_metadata_section_scaffold_failure_reason\":\""
-           << runtime_metadata_section_scaffold.failure_reason
+           << ",\"runtime_metadata_section_publication_class_descriptor_count\":"
+           << runtime_metadata_section_publication.class_descriptor_count
+           << ",\"runtime_metadata_section_publication_protocol_descriptor_count\":"
+           << runtime_metadata_section_publication.protocol_descriptor_count
+           << ",\"runtime_metadata_section_publication_category_descriptor_count\":"
+           << runtime_metadata_section_publication.category_descriptor_count
+           << ",\"runtime_metadata_section_publication_property_descriptor_count\":"
+           << runtime_metadata_section_publication.property_descriptor_count
+           << ",\"runtime_metadata_section_publication_ivar_descriptor_count\":"
+           << runtime_metadata_section_publication.ivar_descriptor_count
+           << ",\"runtime_metadata_section_publication_total_descriptor_count\":"
+           << runtime_metadata_section_publication.total_descriptor_count
+           << ",\"runtime_metadata_section_publication_total_retained_global_count\":"
+           << runtime_metadata_section_publication.total_retained_global_count
+           << ",\"runtime_metadata_section_publication_image_info_symbol\":\""
+           << runtime_metadata_section_publication.image_info_symbol
+           << "\",\"runtime_metadata_section_publication_class_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.class_aggregate_symbol
+           << "\",\"runtime_metadata_section_publication_protocol_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.protocol_aggregate_symbol
+           << "\",\"runtime_metadata_section_publication_category_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.category_aggregate_symbol
+           << "\",\"runtime_metadata_section_publication_property_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.property_aggregate_symbol
+           << "\",\"runtime_metadata_section_publication_ivar_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.ivar_aggregate_symbol
+           << "\",\"runtime_metadata_section_publication_failure_reason\":\""
+           << runtime_metadata_section_publication.failure_reason
            << "\",\"runtime_metadata_object_inspection_contract_id\":\""
            << runtime_metadata_object_inspection.contract_id
-           << "\",\"runtime_metadata_object_inspection_scaffold_contract_id\":\""
-           << runtime_metadata_object_inspection.scaffold_contract_id
+           << "\",\"runtime_metadata_object_inspection_publication_contract_id\":\""
+           << runtime_metadata_object_inspection.publication_contract_id
            << "\",\"runtime_metadata_object_inspection_matrix_published\":"
            << (runtime_metadata_object_inspection.matrix_published ? "true"
                                                                    : "false")
@@ -18222,8 +18222,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                       .failure_reason)
            << "\",\"runtime_support_library_contract_id\":\""
            << runtime_support_library.contract_id
-           << "\",\"runtime_support_library_metadata_scaffold_contract_id\":\""
-           << runtime_support_library.metadata_scaffold_contract_id
+           << "\",\"runtime_support_library_metadata_publication_contract_id\":\""
+           << runtime_support_library.metadata_publication_contract_id
            << "\",\"runtime_support_library_boundary_frozen\":"
            << (runtime_support_library.boundary_frozen ? "true" : "false")
            << ",\"runtime_support_library_fail_closed\":"
@@ -18282,8 +18282,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_support_library_core_feature.contract_id
            << "\",\"runtime_support_library_core_feature_support_library_contract_id\":\""
            << runtime_support_library_core_feature.support_library_contract_id
-           << "\",\"runtime_support_library_core_feature_metadata_scaffold_contract_id\":\""
-           << runtime_support_library_core_feature.metadata_scaffold_contract_id
+           << "\",\"runtime_support_library_core_feature_metadata_publication_contract_id\":\""
+           << runtime_support_library_core_feature.metadata_publication_contract_id
            << "\",\"runtime_support_library_core_feature_fail_closed\":"
            << (runtime_support_library_core_feature.fail_closed ? "true"
                                                                 : "false")
@@ -22284,9 +22284,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"ivar_binding_resolved\":"
            << property_synthesis_ivar_binding_contract.ivar_binding_resolved
            << ",\"property_descriptor_count\":"
-           << runtime_metadata_section_scaffold.property_descriptor_count
+           << runtime_metadata_section_publication.property_descriptor_count
            << ",\"ivar_descriptor_count\":"
-           << runtime_metadata_section_scaffold.ivar_descriptor_count
+           << runtime_metadata_section_publication.ivar_descriptor_count
            << ",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic &&
                        dispatch_surface_classification_contract.deterministic &&
@@ -24400,51 +24400,51 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_metadata_section_abi.metadata_visibility;
   ir_frontend_metadata.runtime_metadata_section_retention_root =
       runtime_metadata_section_abi.retention_root;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_contract_id =
-      runtime_metadata_section_scaffold.contract_id;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_abi_contract_id =
-      runtime_metadata_section_scaffold.abi_contract_id;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_emitted =
-      runtime_metadata_section_scaffold.scaffold_emitted;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_fail_closed =
-      runtime_metadata_section_scaffold.fail_closed;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_uses_llvm_used =
-      runtime_metadata_section_scaffold.uses_llvm_used;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_image_info_emitted =
-      runtime_metadata_section_scaffold.image_info_emitted;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_class_descriptor_count =
-      runtime_metadata_section_scaffold.class_descriptor_count;
+  ir_frontend_metadata.runtime_metadata_section_publication_contract_id =
+      runtime_metadata_section_publication.contract_id;
+  ir_frontend_metadata.runtime_metadata_section_publication_abi_contract_id =
+      runtime_metadata_section_publication.abi_contract_id;
+  ir_frontend_metadata.runtime_metadata_section_publication_emitted =
+      runtime_metadata_section_publication.publication_emitted;
+  ir_frontend_metadata.runtime_metadata_section_publication_fail_closed =
+      runtime_metadata_section_publication.fail_closed;
+  ir_frontend_metadata.runtime_metadata_section_publication_uses_llvm_used =
+      runtime_metadata_section_publication.uses_llvm_used;
+  ir_frontend_metadata.runtime_metadata_section_publication_image_info_emitted =
+      runtime_metadata_section_publication.image_info_emitted;
+  ir_frontend_metadata.runtime_metadata_section_publication_class_descriptor_count =
+      runtime_metadata_section_publication.class_descriptor_count;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_protocol_descriptor_count =
-      runtime_metadata_section_scaffold.protocol_descriptor_count;
+      .runtime_metadata_section_publication_protocol_descriptor_count =
+      runtime_metadata_section_publication.protocol_descriptor_count;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_category_descriptor_count =
-      runtime_metadata_section_scaffold.category_descriptor_count;
+      .runtime_metadata_section_publication_category_descriptor_count =
+      runtime_metadata_section_publication.category_descriptor_count;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_property_descriptor_count =
-      runtime_metadata_section_scaffold.property_descriptor_count;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_descriptor_count =
-      runtime_metadata_section_scaffold.ivar_descriptor_count;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_total_descriptor_count =
-      runtime_metadata_section_scaffold.total_descriptor_count;
+      .runtime_metadata_section_publication_property_descriptor_count =
+      runtime_metadata_section_publication.property_descriptor_count;
+  ir_frontend_metadata.runtime_metadata_section_publication_ivar_descriptor_count =
+      runtime_metadata_section_publication.ivar_descriptor_count;
+  ir_frontend_metadata.runtime_metadata_section_publication_total_descriptor_count =
+      runtime_metadata_section_publication.total_descriptor_count;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_total_retained_global_count =
-      runtime_metadata_section_scaffold.total_retained_global_count;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_image_info_symbol =
-      runtime_metadata_section_scaffold.image_info_symbol;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_class_aggregate_symbol =
-      runtime_metadata_section_scaffold.class_aggregate_symbol;
+      .runtime_metadata_section_publication_total_retained_global_count =
+      runtime_metadata_section_publication.total_retained_global_count;
+  ir_frontend_metadata.runtime_metadata_section_publication_image_info_symbol =
+      runtime_metadata_section_publication.image_info_symbol;
+  ir_frontend_metadata.runtime_metadata_section_publication_class_aggregate_symbol =
+      runtime_metadata_section_publication.class_aggregate_symbol;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_protocol_aggregate_symbol =
-      runtime_metadata_section_scaffold.protocol_aggregate_symbol;
+      .runtime_metadata_section_publication_protocol_aggregate_symbol =
+      runtime_metadata_section_publication.protocol_aggregate_symbol;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_category_aggregate_symbol =
-      runtime_metadata_section_scaffold.category_aggregate_symbol;
+      .runtime_metadata_section_publication_category_aggregate_symbol =
+      runtime_metadata_section_publication.category_aggregate_symbol;
   ir_frontend_metadata
-      .runtime_metadata_section_scaffold_property_aggregate_symbol =
-      runtime_metadata_section_scaffold.property_aggregate_symbol;
-  ir_frontend_metadata.runtime_metadata_section_scaffold_ivar_aggregate_symbol =
-      runtime_metadata_section_scaffold.ivar_aggregate_symbol;
+      .runtime_metadata_section_publication_property_aggregate_symbol =
+      runtime_metadata_section_publication.property_aggregate_symbol;
+  ir_frontend_metadata.runtime_metadata_section_publication_ivar_aggregate_symbol =
+      runtime_metadata_section_publication.ivar_aggregate_symbol;
   ir_frontend_metadata.runtime_metadata_class_metaclass_emission_contract_id =
       kObjc3RuntimeClassMetaclassEmissionContractId;
   ir_frontend_metadata.runtime_metadata_class_metaclass_payload_model =
@@ -24803,7 +24803,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       bundle_payload_complete =
           bundle_payload_complete &&
           bundles.size() ==
-              runtime_metadata_section_scaffold.class_descriptor_count;
+              runtime_metadata_section_publication.class_descriptor_count;
       if (bundle_payload_complete) {
         ir_frontend_metadata.runtime_metadata_class_metaclass_bundles_lexicographic =
             std::move(bundles);
@@ -24856,7 +24856,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       category_bundles.reserve(source_graph.category_nodes_lexicographic.size());
       std::unordered_set<std::string> category_owner_identities;
       category_owner_identities.reserve(
-          runtime_metadata_section_scaffold.category_descriptor_count);
+          runtime_metadata_section_publication.category_descriptor_count);
       if (protocol_category_payload_complete) {
         for (const auto &category_node :
              source_graph.category_nodes_lexicographic) {
@@ -24948,9 +24948,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       protocol_category_payload_complete =
           protocol_category_payload_complete &&
           protocol_bundles.size() ==
-              runtime_metadata_section_scaffold.protocol_descriptor_count &&
+              runtime_metadata_section_publication.protocol_descriptor_count &&
           category_bundles.size() ==
-              runtime_metadata_section_scaffold.category_descriptor_count;
+              runtime_metadata_section_publication.category_descriptor_count;
       if (protocol_category_payload_complete) {
         ir_frontend_metadata.runtime_metadata_protocol_bundles_lexicographic =
             std::move(protocol_bundles);
@@ -25363,9 +25363,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       member_table_payload_complete =
           member_table_payload_complete &&
           property_bundles.size() ==
-              runtime_metadata_section_scaffold.property_descriptor_count &&
+              runtime_metadata_section_publication.property_descriptor_count &&
           ivar_bundles.size() ==
-              runtime_metadata_section_scaffold.ivar_descriptor_count;
+              runtime_metadata_section_publication.ivar_descriptor_count;
       if (member_table_payload_complete) {
         std::size_t property_attribute_profiles = 0;
         std::size_t accessor_ownership_profiles = 0;
@@ -25459,8 +25459,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   }
   ir_frontend_metadata.runtime_metadata_object_inspection_contract_id =
       runtime_metadata_object_inspection.contract_id;
-  ir_frontend_metadata.runtime_metadata_object_inspection_scaffold_contract_id =
-      runtime_metadata_object_inspection.scaffold_contract_id;
+  ir_frontend_metadata.runtime_metadata_object_inspection_publication_contract_id =
+      runtime_metadata_object_inspection.publication_contract_id;
   ir_frontend_metadata.runtime_metadata_object_inspection_matrix_published =
       runtime_metadata_object_inspection.matrix_published;
   ir_frontend_metadata.runtime_metadata_object_inspection_fail_closed =
@@ -25538,8 +25538,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           executable_metadata_debug_projection.rows[2]);
   ir_frontend_metadata.runtime_support_library_contract_id =
       runtime_support_library.contract_id;
-  ir_frontend_metadata.runtime_support_library_metadata_scaffold_contract_id =
-      runtime_support_library.metadata_scaffold_contract_id;
+  ir_frontend_metadata.runtime_support_library_metadata_publication_contract_id =
+      runtime_support_library.metadata_publication_contract_id;
   ir_frontend_metadata.runtime_support_library_boundary_frozen =
       runtime_support_library.boundary_frozen;
   ir_frontend_metadata.runtime_support_library_fail_closed =
@@ -25590,8 +25590,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       .runtime_support_library_core_feature_support_library_contract_id =
       runtime_support_library_core_feature.support_library_contract_id;
   ir_frontend_metadata
-      .runtime_support_library_core_feature_metadata_scaffold_contract_id =
-      runtime_support_library_core_feature.metadata_scaffold_contract_id;
+      .runtime_support_library_core_feature_metadata_publication_contract_id =
+      runtime_support_library_core_feature.metadata_publication_contract_id;
   ir_frontend_metadata.runtime_support_library_core_feature_fail_closed =
       runtime_support_library_core_feature.fail_closed;
   ir_frontend_metadata.runtime_support_library_core_feature_sources_present =
@@ -25887,3 +25887,5 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   return bundle;
 }
+
+
