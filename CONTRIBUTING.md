@@ -103,6 +103,16 @@ When opening execution tasks, use one of:
 - `.github/ISSUE_TEMPLATE/roadmap_execution.yml`
 - `.github/ISSUE_TEMPLATE/conformance_execution.yml`
 
+New execution issues must declare budget impact and, when required, the exception
+record defined by the anti-noise governance process. Follow:
+
+- `docs/runbooks/objc3c_planning_hygiene.md`
+
+Use the PR review checklist for governed budget changes:
+
+- `docs/runbooks/objc3c_review_checklist.md`
+- `.github/PULL_REQUEST_TEMPLATE.md`
+
 When closing execution tasks, follow:
 
 - `spec/planning/ISSUE_CLOSEOUT_EVIDENCE_TEMPLATE.md`

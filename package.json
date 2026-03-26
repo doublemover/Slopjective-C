@@ -93,9 +93,12 @@
     "antiNoiseBudgetPolicyPath": "spec/governance/objc3c_anti_noise_budget_policy.json",
     "planningHygienePolicyPath": "spec/governance/objc3c_planning_hygiene_policy.json",
     "planningHygieneRunbookPath": "docs/runbooks/objc3c_planning_hygiene.md",
+    "reviewRegressionModelPath": "spec/governance/objc3c_review_and_regression_model.json",
+    "reviewChecklistRunbookPath": "docs/runbooks/objc3c_review_checklist.md",
     "governanceOwnerIssue": "M318-A002",
     "budgetPolicyOwnerIssue": "M318-B001",
-    "planningHygieneOwnerIssue": "M318-B002"
+    "planningHygieneOwnerIssue": "M318-B002",
+    "reviewChecklistOwnerIssue": "M318-B003"
   },
   "scripts": {
     "lint": "npm run check:task-hygiene && npm run check:md:all",
@@ -8008,6 +8011,9 @@
     "check:objc3c:m318-b001-lane-b-readiness": "python scripts/run_m318_b001_lane_b_readiness.py",
     "check:objc3c:m318-b002-sustainable-planning-hygiene-policy-core-feature-implementation": "python scripts/check_m318_b002_sustainable_planning_hygiene_policy_core_feature_implementation.py",
     "test:tooling:m318-b002-sustainable-planning-hygiene-policy-core-feature-implementation": "python -m pytest tests/tooling/test_check_m318_b002_sustainable_planning_hygiene_policy_core_feature_implementation.py -q",
-    "check:objc3c:m318-b002-lane-b-readiness": "python scripts/run_m318_b002_lane_b_readiness.py"
+    "check:objc3c:m318-b002-lane-b-readiness": "python scripts/run_m318_b002_lane_b_readiness.py",
+    "check:objc3c:m318-b003-maintainer-review-checklist-and-regression-handling-model-edge-case-and-compatibility-completion": "python scripts/check_m318_b003_maintainer_review_checklist_and_regression_handling_model_edge_case_and_compatibility_completion.py",
+    "test:tooling:m318-b003-maintainer-review-checklist-and-regression-handling-model-edge-case-and-compatibility-completion": "python -m pytest tests/tooling/test_check_m318_b003_maintainer_review_checklist_and_regression_handling_model_edge_case_and_compatibility_completion.py -q",
+    "check:objc3c:m318-b003-lane-b-readiness": "python scripts/run_m318_b003_lane_b_readiness.py"
   }
 }

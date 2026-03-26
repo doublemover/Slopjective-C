@@ -1,0 +1,21 @@
+{
+  "mode": "m318-b003-review-and-regression-model-v1",
+  "contract_id": "objc3c-governance-review-and-regression-model/m318-b003-v1",
+  "planning_hygiene_contract_id": "objc3c-governance-planning-hygiene-policy/m318-b002-v1",
+  "governance_owner_issue": "M318-B003",
+  "required_review_questions": [
+    "budget_family_changed",
+    "exception_record_if_required",
+    "validation_posture_and_evidence",
+    "rollback_or_regression_path"
+  ],
+  "regression_handling": {
+    "budget_alarm_requires_triage": true,
+    "expired_exception_blocks_merge": true,
+    "missing_exception_reference_blocks_merge_when_required": true,
+    "rollback_path_required_for_budget_affecting_changes": true
+  },
+  "runbook_path": "docs/runbooks/objc3c_review_checklist.md",
+  "pr_template_path": ".github/PULL_REQUEST_TEMPLATE.md",
+  "next_issue": "M318-C001"
+}
