@@ -372,6 +372,16 @@ class Objc3IREmitter {
     direct_dispatch_call_sites_emitted_ = 0;
     runtime_dispatch_call_sites_emitted_ = 0;
     selector_pool_gep_sites_emitted_ = 0;
+    synthesized_getter_definition_count_ = 0;
+    synthesized_setter_definition_count_ = 0;
+    current_property_read_helper_call_count_ = 0;
+    current_property_write_helper_call_count_ = 0;
+    current_property_exchange_helper_call_count_ = 0;
+    weak_current_property_load_helper_call_count_ = 0;
+    weak_current_property_store_helper_call_count_ = 0;
+    retain_helper_call_count_ = 0;
+    release_helper_call_count_ = 0;
+    autorelease_helper_call_count_ = 0;
     runtime_dispatch_symbols_used_.clear();
     fail_open_fallback_triggered_ = false;
     fail_open_fallback_reason_.clear();
@@ -2922,6 +2932,27 @@ class Objc3IREmitter {
       out << "; runtime_dispatch_call_decl = "
           << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_)
           << "\n\n";
+    }
+    if (synthesized_getter_definition_count_ > 0 ||
+        synthesized_setter_definition_count_ > 0) {
+      out << "; synthesized_getter_setter_llvm_ir_generation_surface = "
+          << "contract_id=objc3c.synthesized.getter.setter.llvm.ir.generation.v1"
+          << ";getter_definitions=" << synthesized_getter_definition_count_
+          << ";setter_definitions=" << synthesized_setter_definition_count_
+          << ";read_current_property_calls="
+          << current_property_read_helper_call_count_
+          << ";write_current_property_calls="
+          << current_property_write_helper_call_count_
+          << ";exchange_current_property_calls="
+          << current_property_exchange_helper_call_count_
+          << ";weak_load_current_property_calls="
+          << weak_current_property_load_helper_call_count_
+          << ";weak_store_current_property_calls="
+          << weak_current_property_store_helper_call_count_
+          << ";retain_calls=" << retain_helper_call_count_
+          << ";release_calls=" << release_helper_call_count_
+          << ";autorelease_calls=" << autorelease_helper_call_count_
+          << "\n";
     }
     if (runtime_dispatch_call_emitted_ || direct_dispatch_call_sites_emitted_ > 0) {
       out << "; method_dispatch_and_selector_thunk_lowering_surface = "
@@ -14386,6 +14417,7 @@ class Objc3IREmitter {
     const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
     if (method_def.synthetic_method_kind ==
         SyntheticMethodKind::PropertyGetter) {
+      ++synthesized_getter_definition_count_;
       out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
       out << "entry:\n";
       const std::string loaded_value = "%objc3_property_slot";
@@ -14393,6 +14425,11 @@ class Objc3IREmitter {
           << (uses_weak_runtime_hooks ? kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
                                       : kObjc3RuntimeReadCurrentPropertyI32Symbol)
           << "()\n";
+      if (uses_weak_runtime_hooks) {
+        ++weak_current_property_load_helper_call_count_;
+      } else {
+        ++current_property_read_helper_call_count_;
+      }
       std::string returned_value = loaded_value;
       if (uses_strong_runtime_hooks) {
         const std::string retained_value = "%objc3_property_retained";
@@ -14402,6 +14439,8 @@ class Objc3IREmitter {
         out << "  " << autoreleased_value << " = call i32 @"
             << kObjc3RuntimeAutoreleaseI32Symbol << "(i32 " << retained_value
             << ")\n";
+        ++retain_helper_call_count_;
+        ++autorelease_helper_call_count_;
         returned_value = autoreleased_value;
       }
       if (method_def.synthesized_value_type == ValueType::Bool) {
@@ -14414,6 +14453,7 @@ class Objc3IREmitter {
       return;
     }
 
+    ++synthesized_setter_definition_count_;
     out << "define void @" << method_def.symbol << "(" << llvm_value_type
         << " %arg0) {\n";
     out << "entry:\n";
@@ -14425,6 +14465,7 @@ class Objc3IREmitter {
     if (uses_weak_runtime_hooks) {
       out << "  call void @" << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
           << "(i32 " << stored_value << ")\n";
+      ++weak_current_property_store_helper_call_count_;
     } else if (uses_strong_runtime_hooks) {
       out << "  %objc3_property_retained = call i32 @"
           << kObjc3RuntimeRetainI32Symbol << "(i32 " << stored_value << ")\n";
@@ -14433,9 +14474,13 @@ class Objc3IREmitter {
       out << "  %objc3_property_release = call i32 @"
           << kObjc3RuntimeReleaseI32Symbol
           << "(i32 %objc3_property_previous)\n";
+      ++retain_helper_call_count_;
+      ++current_property_exchange_helper_call_count_;
+      ++release_helper_call_count_;
     } else {
       out << "  call void @" << kObjc3RuntimeWriteCurrentPropertyI32Symbol
           << "(i32 " << stored_value << ")\n";
+      ++current_property_write_helper_call_count_;
     }
     out << "  ret void\n";
     out << "}\n";
@@ -14557,6 +14602,16 @@ class Objc3IREmitter {
   mutable std::size_t direct_dispatch_call_sites_emitted_ = 0;
   mutable std::size_t runtime_dispatch_call_sites_emitted_ = 0;
   mutable std::size_t selector_pool_gep_sites_emitted_ = 0;
+  mutable std::size_t synthesized_getter_definition_count_ = 0;
+  mutable std::size_t synthesized_setter_definition_count_ = 0;
+  mutable std::size_t current_property_read_helper_call_count_ = 0;
+  mutable std::size_t current_property_write_helper_call_count_ = 0;
+  mutable std::size_t current_property_exchange_helper_call_count_ = 0;
+  mutable std::size_t weak_current_property_load_helper_call_count_ = 0;
+  mutable std::size_t weak_current_property_store_helper_call_count_ = 0;
+  mutable std::size_t retain_helper_call_count_ = 0;
+  mutable std::size_t release_helper_call_count_ = 0;
+  mutable std::size_t autorelease_helper_call_count_ = 0;
   mutable bool fail_open_fallback_triggered_ = false;
   mutable std::string fail_open_fallback_reason_;
 };

@@ -709,6 +709,28 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
            "expected LLVM IR banner to report synthesized property descriptor count")
     expect("member_table_emission_ready=true" in ll_text,
            "expected LLVM IR banner to report member table emission readiness")
+    expect(
+        "; synthesized_getter_setter_llvm_ir_generation_surface = "
+        "contract_id=objc3c.synthesized.getter.setter.llvm.ir.generation.v1"
+        in ll_text,
+        "expected LLVM IR to publish synthesized getter/setter generation surface",
+    )
+    expect("getter_definitions=3" in ll_text,
+           "expected synthesized accessor fixture to emit three getter definitions")
+    expect("setter_definitions=3" in ll_text,
+           "expected synthesized accessor fixture to emit three setter definitions")
+    expect("read_current_property_calls=3" in ll_text,
+           "expected synthesized accessor fixture to emit three current-property reads")
+    expect("write_current_property_calls=2" in ll_text,
+           "expected synthesized accessor fixture to emit two current-property writes")
+    expect("exchange_current_property_calls=1" in ll_text,
+           "expected synthesized accessor fixture to emit one strong current-property exchange")
+    expect("retain_calls=2" in ll_text,
+           "expected synthesized accessor fixture to emit two retain helper calls")
+    expect("release_calls=1" in ll_text,
+           "expected synthesized accessor fixture to emit one release helper call")
+    expect("autorelease_calls=1" in ll_text,
+           "expected synthesized accessor fixture to emit one autorelease helper call")
 
     return CaseResult(
         case_id="property-codegen",
