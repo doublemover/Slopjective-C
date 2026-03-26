@@ -87,6 +87,24 @@ manifest, the coupled registration manifest, and the linked runtime probe path
 together. The composite public workflow report carries this same surface
 forward when a composite action runs runtime acceptance.
 
+## Shared Executable Acceptance Harness
+
+- harness:
+  - `scripts/shared_compiler_runtime_acceptance_harness.py`
+- live executable suites:
+  - `runtime-acceptance`
+  - `public-test-fast`
+  - `public-test-full`
+- harness summary root:
+  - `tmp/reports/runtime/shared-executable-acceptance-harness`
+
+The shared executable acceptance harness is an integration runner over the live
+runtime acceptance and public workflow entrypoints. It does not create a new
+proof surface. Instead, it executes those suites, requires their emitted
+reports to publish the runtime claim boundary, runtime state publication
+surface, and acceptance suite surface contracts, and then writes a shared
+summary that points back to those child executable reports.
+
 ## Claim Boundary
 
 - runnable:
