@@ -1,0 +1,101 @@
+{
+  "mode": "m317-b002-existing-milestone-issue-amendments-implementation-v1",
+  "contract_id": "objc3c-cleanup-existing-milestone-issue-amendments-implementation/m317-b002-v1",
+  "dependency_contract_id": "objc3c-cleanup-immediate-backlog-surgery-supersession-model/m317-b001-v1",
+  "milestone_targets": [
+    {
+      "number": 373,
+      "code": "M288",
+      "required_description_snippets": [
+        "Boundary preservation:",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    }
+  ],
+  "issue_targets": [
+    {
+      "number": 7529,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7530,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7531,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7532,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7533,
+      "required_body_snippets": [
+        "## Boundary note",
+        "This issue may clean up public-facing or human-readable residue, but structural source de-scaffolding stays in `M313-M318`."
+      ]
+    },
+    {
+      "number": 7534,
+      "required_body_snippets": [
+        "## Boundary note",
+        "This issue is limited to human-facing generated artifact and source-of-truth clarity. Artifact-authenticity and proof-hygiene policy stay in `M315` and `M318`."
+      ]
+    },
+    {
+      "number": 7535,
+      "required_body_snippets": [
+        "## Boundary note",
+        "This issue may automate repo superclean workflows, but command-surface reduction and governance enforcement stay in `M314` and `M318`."
+      ]
+    },
+    {
+      "number": 7536,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7537,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    },
+    {
+      "number": 7538,
+      "required_body_snippets": [
+        "## Boundary note",
+        "Structural cleanup, validation collapse, command-surface reduction, proof hygiene, and anti-noise governance belong to `M313-M318`, not to `M288`."
+      ]
+    }
+  ],
+  "preserved_issue_targets": [
+    7399,
+    7421,
+    7425,
+    7428,
+    7434,
+    7438,
+    7441
+  ],
+  "metadata_targets": {
+    "expected_open_issue_unlabeled": 0,
+    "expected_open_issue_missing_execution_order": 0
+  },
+  "next_issue": "M317-B003"
+}
