@@ -7255,6 +7255,63 @@ BuildAccessorStorageLoweringMetadataSummary(
   return summary;
 }
 
+struct Objc3ExecutableAccessorLayoutLoweringSummary {
+  std::size_t property_metadata_entries = 0;
+  std::size_t ivar_metadata_entries = 0;
+  std::size_t property_attribute_profile_entries = 0;
+  std::size_t accessor_ownership_profile_entries = 0;
+  std::size_t synthesized_binding_entries = 0;
+  std::size_t implementation_owned_property_entries = 0;
+  std::size_t synthesized_getter_entries = 0;
+  std::size_t synthesized_setter_entries = 0;
+  std::size_t synthesized_accessor_entries = 0;
+  std::size_t ivar_layout_entries = 0;
+  std::size_t ivar_layout_owner_entries = 0;
+  bool deterministic = false;
+};
+
+Objc3ExecutableAccessorLayoutLoweringSummary
+BuildExecutableAccessorLayoutLoweringSummary(
+    const Objc3ExecutableMetadataSourceGraph &source_graph) {
+  Objc3ExecutableAccessorLayoutLoweringSummary summary;
+  summary.deterministic = source_graph.deterministic;
+  std::set<std::string> ivar_layout_owner_identities;
+  for (const auto &property_node : source_graph.property_nodes_lexicographic) {
+    ++summary.property_metadata_entries;
+    if (!property_node.property_attribute_profile.empty()) {
+      ++summary.property_attribute_profile_entries;
+    }
+    if (!property_node.accessor_ownership_profile.empty()) {
+      ++summary.accessor_ownership_profile_entries;
+    }
+    if (!property_node.executable_synthesized_binding_kind.empty()) {
+      ++summary.synthesized_binding_entries;
+    }
+    if (property_node.owner_kind == "class-implementation" &&
+        property_node.synthesizes_executable_accessors) {
+      ++summary.implementation_owned_property_entries;
+      if (!property_node.effective_getter_selector.empty()) {
+        ++summary.synthesized_getter_entries;
+        ++summary.synthesized_accessor_entries;
+      }
+      if (property_node.effective_setter_available &&
+          !property_node.effective_setter_selector.empty()) {
+        ++summary.synthesized_setter_entries;
+        ++summary.synthesized_accessor_entries;
+      }
+    }
+  }
+  for (const auto &ivar_node : source_graph.ivar_nodes_lexicographic) {
+    ++summary.ivar_metadata_entries;
+    ++summary.ivar_layout_entries;
+    if (!ivar_node.declaration_owner_identity.empty()) {
+      ivar_layout_owner_identities.insert(ivar_node.declaration_owner_identity);
+    }
+  }
+  summary.ivar_layout_owner_entries = ivar_layout_owner_identities.size();
+  return summary;
+}
+
 template <typename RecordT, typename KeyFn>
 std::vector<RecordT> BuildMergedRuntimeMetadataRecordVector(
     const std::vector<const std::vector<RecordT> *> &imported_record_vectors,
@@ -22344,6 +22401,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "},\n";
   const auto accessor_storage_lowering_metadata_summary =
       BuildAccessorStorageLoweringMetadataSummary(runtime_metadata_source_records);
+  const auto executable_accessor_layout_lowering_summary =
+      BuildExecutableAccessorLayoutLoweringSummary(
+          executable_metadata_source_graph);
   manifest << "  \"dispatch_and_synthesized_accessor_lowering_surface\":{\"contract_id\":"
            << "\"" << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId << "\""
            << ",\"runtime_dispatch_symbol\":\""
@@ -22805,6 +22865,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"setter_runtime_helper_field\":\"Objc3RuntimeMetadataPropertySourceRecord.setter_storage_runtime_helper_symbol\""
            << ",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
            << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << "\",\"executable_property_accessor_layout_lowering_contract_id\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << "\",\"executable_ivar_layout_emission_contract_id\":\""
+           << kObjc3ExecutableIvarLayoutEmissionContractId
+           << "\",\"executable_synthesized_accessor_property_lowering_contract_id\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
            << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
            << ",\"accessor_storage_lowering_metadata_model\":\""
            << kObjc3AccessorStorageLoweringMetadataModel
@@ -22820,6 +22886,135 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
+  manifest << "  \"executable_property_accessor_layout_lowering_surface\":{\"contract_id\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""
+           << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
+           << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
+           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << "\",\"property_table_model\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringPropertyTableModel
+           << "\",\"ivar_layout_model\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel
+           << "\",\"accessor_binding_model\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel
+           << "\",\"scope_model\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringScopeModel
+           << "\",\"fail_closed_model\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringFailClosedModel
+           << "\",\"property_metadata_entries\":"
+           << executable_accessor_layout_lowering_summary.property_metadata_entries
+           << ",\"ivar_metadata_entries\":"
+           << executable_accessor_layout_lowering_summary.ivar_metadata_entries
+           << ",\"property_descriptor_entries\":"
+           << runtime_metadata_section_publication.property_descriptor_count
+           << ",\"ivar_descriptor_entries\":"
+           << runtime_metadata_section_publication.ivar_descriptor_count
+           << ",\"property_attribute_profile_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .property_attribute_profile_entries
+           << ",\"accessor_ownership_profile_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .accessor_ownership_profile_entries
+           << ",\"synthesized_binding_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .synthesized_binding_entries
+           << ",\"ivar_layout_entries\":"
+           << executable_accessor_layout_lowering_summary.ivar_layout_entries
+           << ",\"ivar_layout_owner_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .ivar_layout_owner_entries
+           << ",\"descriptor_counts_match_source_graph\":"
+           << ((executable_accessor_layout_lowering_summary.property_metadata_entries ==
+                        runtime_metadata_section_publication.property_descriptor_count &&
+                executable_accessor_layout_lowering_summary.ivar_metadata_entries ==
+                        runtime_metadata_section_publication.ivar_descriptor_count)
+                   ? "true"
+                   : "false")
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << "},\n";
+  manifest << "  \"executable_ivar_layout_emission_surface\":{\"contract_id\":\""
+           << kObjc3ExecutableIvarLayoutEmissionContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << "\",\"descriptor_model\":\""
+           << kObjc3ExecutableIvarLayoutDescriptorModel
+           << "\",\"offset_global_model\":\""
+           << kObjc3ExecutableIvarOffsetGlobalModel
+           << "\",\"layout_table_model\":\""
+           << kObjc3ExecutableIvarLayoutTableModel
+           << "\",\"scope_model\":\""
+           << kObjc3ExecutableIvarLayoutEmissionScopeModel
+           << "\",\"fail_closed_model\":\""
+           << kObjc3ExecutableIvarLayoutEmissionFailClosedModel
+           << "\",\"offset_global_entries\":"
+           << executable_accessor_layout_lowering_summary.ivar_layout_entries
+           << ",\"layout_table_entries\":"
+           << executable_accessor_layout_lowering_summary.ivar_layout_owner_entries
+           << ",\"layout_owner_entries\":"
+           << executable_accessor_layout_lowering_summary.ivar_layout_owner_entries
+           << ",\"ivar_descriptor_entries\":"
+           << runtime_metadata_section_publication.ivar_descriptor_count
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << "},\n";
+  manifest << "  \"executable_synthesized_accessor_property_lowering_surface\":{\"contract_id\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"executable_property_accessor_layout_lowering_surface_contract_id\":\""
+           << kObjc3ExecutablePropertyAccessorLayoutLoweringContractId
+           << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
+           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << "\",\"source_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringSourceModel
+           << "\",\"storage_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringStorageModel
+           << "\",\"property_descriptor_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
+           << "\",\"fail_closed_model\":\""
+           << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
+           << "\",\"implementation_owned_property_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .implementation_owned_property_entries
+           << ",\"synthesized_getter_entries\":"
+           << executable_accessor_layout_lowering_summary.synthesized_getter_entries
+           << ",\"synthesized_setter_entries\":"
+           << executable_accessor_layout_lowering_summary.synthesized_setter_entries
+           << ",\"synthesized_accessor_entries\":"
+           << executable_accessor_layout_lowering_summary
+                  .synthesized_accessor_entries
+           << ",\"property_descriptor_entries\":"
+           << runtime_metadata_section_publication.property_descriptor_count
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
            << "},\n";
   manifest << "  \"runtime_property_atomicity_synthesis_reflection_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId
