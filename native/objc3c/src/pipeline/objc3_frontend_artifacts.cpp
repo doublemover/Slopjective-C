@@ -23225,7 +23225,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel
            << "\",\"reflection_boundary_model\":\""
            << kObjc3RuntimePropertyAtomicityReflectionBoundaryModel
-           << "\",\"requires_coupled_registration_manifest\":true"
+           << "\",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3\""
+           << ",\"tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3\""
+           << ",\"tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3\""
+           << ",\"tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3\"]"
+           << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp\""
+           << ",\"tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp\""
+           << ",\"tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp\"]"
+           << ",\"explicit_non_goals\":[\"no-public-atomic-property-runtime-abi-widening\""
+           << ",\"no-runtime-managed-atomic-storage-semantics-before-lane-b-and-lane-d-implementation\""
+           << ",\"no-milestone-specific-scaffolding\"]"
+           << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
            << "},\n";

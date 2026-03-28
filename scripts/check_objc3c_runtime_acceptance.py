@@ -1190,6 +1190,49 @@ def compile_fixture_with_args(
             raise RuntimeError(
                 f"runtime_property_atomicity_synthesis_reflection_source_surface drifted from {field}"
             )
+    expected_atomicity_authoritative_fixture_paths = [
+        "tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3",
+        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+    ]
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get(
+            "authoritative_fixture_paths"
+        )
+        != expected_atomicity_authoritative_fixture_paths
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from authoritative_fixture_paths"
+        )
+    expected_atomicity_authoritative_probe_paths = [
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+    ]
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get(
+            "authoritative_probe_paths"
+        )
+        != expected_atomicity_authoritative_probe_paths
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from authoritative_probe_paths"
+        )
+    expected_atomicity_explicit_non_goals = [
+        "no-public-atomic-property-runtime-abi-widening",
+        "no-runtime-managed-atomic-storage-semantics-before-lane-b-and-lane-d-implementation",
+        "no-milestone-specific-scaffolding",
+    ]
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("explicit_non_goals")
+        != expected_atomicity_explicit_non_goals
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from explicit_non_goals"
+        )
     if (
         property_atomicity_synthesis_reflection_source_surface.get(
             "requires_coupled_registration_manifest"
