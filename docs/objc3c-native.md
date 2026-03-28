@@ -316,10 +316,13 @@ sidecars, stale milestone notes, or synthetic probes.
   - fixtures:
     - `tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3`
     - `tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_bad_call.objc3`
+    - `tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_missing_capture.objc3`
     - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
-    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3`
-    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3`
     - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
@@ -363,6 +366,7 @@ scaffolding.
     - `tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3`
     - `tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3`
     - `tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3`

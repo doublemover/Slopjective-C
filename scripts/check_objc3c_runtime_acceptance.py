@@ -1621,7 +1621,7 @@ def compile_fixture_with_args(
             "block-arc-unified-source-surface-freezes-live-frontend-sema-ir-and-runtime-entrypoints-before-generalized-ownership-automation-or-public-abi-widening"
         ),
         "block_runtime_boundary_model": (
-            "source-only-sema-rejects-weak-or-unowned-byref-mutation-before-runnable-block-ownership-lowering"
+            "source-only-sema-rejects-escaping-byref-and-owned-object-captures-before-runnable-block-ownership-lowering"
         ),
         "arc_runtime_boundary_model": (
             "weak-properties-and-nonowning-captures-stay-nonretaining-autorelease-returns-stay-profiled-and-synthesized-property-accessors-publish-owned-lifetime-packets-under-arc"
@@ -1698,10 +1698,13 @@ def compile_fixture_with_args(
     expected_block_arc_authoritative_fixture_paths = [
         "tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3",
         "tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3",
+        "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_bad_call.objc3",
+        "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_missing_capture.objc3",
         "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
         "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -1866,6 +1869,7 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
         "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
         "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
         "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
@@ -3714,6 +3718,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
         for result in results
         if result.case_id
         in {
+            "escaping-block-capture-legality",
             "block-storage-arc-automation-semantics",
             "arc-property-helper-abi",
         }
@@ -3771,7 +3776,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
         ],
         "block_runtime_boundary_model": (
-            "source-only-sema-rejects-weak-or-unowned-byref-mutation-before-runnable-block-ownership-lowering"
+            "source-only-sema-rejects-escaping-byref-and-owned-object-captures-before-runnable-block-ownership-lowering"
         ),
         "arc_runtime_boundary_model": (
             "weak-properties-and-nonowning-captures-stay-nonretaining-autorelease-returns-stay-profiled-and-synthesized-property-accessors-publish-owned-lifetime-packets-under-arc"
@@ -3780,10 +3785,13 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3",
             "tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3",
+            "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_bad_call.objc3",
+            "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_missing_capture.objc3",
             "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
             "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -3813,7 +3821,12 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id in {"block-storage-arc-automation-semantics", "arc-property-helper-abi"}
+        if result.case_id
+        in {
+            "escaping-block-capture-legality",
+            "block-storage-arc-automation-semantics",
+            "arc-property-helper-abi",
+        }
     ]
     return {
         "contract_id": (
@@ -3872,6 +3885,7 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
             "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
             "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
             "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
@@ -6925,6 +6939,158 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "escaping-block-capture-legality"
+
+    argument_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_escaping_block_runtime_hook_argument_positive.objc3"
+    )
+    _, _, argument_manifest_path = compile_fixture_outputs(
+        argument_fixture, case_dir / "argument-positive"
+    )
+    argument_manifest = json.loads(argument_manifest_path.read_text(encoding="utf-8"))
+    argument_escape_surface = (
+        argument_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_storage_escape_lowering_surface", {})
+    )
+    argument_copy_dispose_surface = (
+        argument_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_copy_dispose_lowering_surface", {})
+    )
+
+    return_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_escaping_block_runtime_hook_return_positive.objc3"
+    )
+    _, _, return_manifest_path = compile_fixture_outputs(
+        return_fixture, case_dir / "return-positive"
+    )
+    return_manifest = json.loads(return_manifest_path.read_text(encoding="utf-8"))
+    return_escape_surface = (
+        return_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_storage_escape_lowering_surface", {})
+    )
+    return_copy_dispose_surface = (
+        return_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_copy_dispose_lowering_surface", {})
+    )
+
+    bad_call_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_capture_legality_escape_invocation_bad_call.objc3",
+        case_dir / "bad-call-negative",
+        expected_snippets=[
+            "type mismatch: expected 'i32' argument for parameter 0 of callable 'closure', got 'bool'"
+        ],
+        expected_codes=["O3S206"],
+    )
+    missing_capture_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_capture_legality_escape_invocation_missing_capture.objc3",
+        case_dir / "missing-capture-negative",
+        expected_snippets=["undefined capture 'seed' in block literal"],
+        expected_codes=["O3S202"],
+    )
+    byref_escape_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_escaping_block_runtime_hook_byref_negative.objc3",
+        case_dir / "byref-escape-negative",
+        expected_snippets=[
+            "capture-list legality failed: escaping block cannot capture mutable local 'seed' by reference before live byref forwarding support lands"
+        ],
+        expected_codes=["O3S206"],
+    )
+    owned_escape_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
+        case_dir / "owned-escape-negative",
+        expected_snippets=[
+            "capture-list legality failed: escaping block cannot capture owned Objective-C reference 'ownedValue' before live block ownership transfer support lands"
+        ],
+        expected_codes=["O3S206"],
+    )
+
+    expect(
+        argument_escape_surface.get("escape_to_heap_sites") == 1
+        and argument_escape_surface.get("requires_byref_cells_sites") == 0,
+        "expected escaping argument fixture to publish one heap-promotion candidate without byref cells",
+    )
+    expect(
+        argument_copy_dispose_surface.get("copy_helper_required_sites") == 0
+        and argument_copy_dispose_surface.get("dispose_helper_required_sites") == 0,
+        "expected escaping argument fixture to keep copy/dispose helpers elided",
+    )
+    expect(
+        return_escape_surface.get("escape_to_heap_sites") == 1
+        and return_escape_surface.get("requires_byref_cells_sites") == 0,
+        "expected escaping return fixture to publish one heap-promotion candidate without byref cells",
+    )
+    expect(
+        return_copy_dispose_surface.get("copy_helper_required_sites") == 0
+        and return_copy_dispose_surface.get("dispose_helper_required_sites") == 0,
+        "expected escaping return fixture to keep copy/dispose helpers elided",
+    )
+
+    return CaseResult(
+        case_id="escaping-block-capture-legality",
+        probe="compile-manifest-diagnostics-and-llvm-ir",
+        fixture="tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "argument_escape_to_heap_sites": argument_escape_surface.get(
+                "escape_to_heap_sites"
+            ),
+            "return_escape_to_heap_sites": return_escape_surface.get(
+                "escape_to_heap_sites"
+            ),
+            "bad_call_diagnostic_count": bad_call_negative["diagnostic_count"],
+            "missing_capture_diagnostic_count": missing_capture_negative[
+                "diagnostic_count"
+            ],
+            "byref_escape_diagnostic_count": byref_escape_negative[
+                "diagnostic_count"
+            ],
+            "owned_escape_diagnostic_count": owned_escape_negative[
+                "diagnostic_count"
+            ],
+        },
+    )
+
+
 def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "block-storage-arc-automation-semantics"
 
@@ -9149,6 +9315,7 @@ def main() -> int:
         check_property_layout_case(clangxx, run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
+        check_escaping_block_capture_legality_case(run_dir),
         check_block_storage_arc_automation_semantics_case(run_dir),
         check_arc_property_helper_case(clangxx, run_dir),
     ]

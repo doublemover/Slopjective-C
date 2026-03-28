@@ -112,7 +112,7 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId =
       "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1";
   static inline constexpr const char *kObjc3ExecutableBlockByrefMutationOwnershipModel =
-      "source-only-sema-rejects-weak-or-unowned-byref-mutation-before-runnable-block-ownership-lowering";
+      "source-only-sema-rejects-escaping-byref-and-owned-object-captures-before-runnable-block-ownership-lowering";
   static inline constexpr const char *kObjc3ExecutableBlockCopyDisposeEligibilityModel =
       "owned-object-captures-promote-copy-dispose-helper-eligibility-even-without-byref-cells";
   static inline constexpr const char *kObjc3ExecutableBlockObjectCaptureOwnershipModel =

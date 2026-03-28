@@ -75,6 +75,11 @@ struct SemanticTypeInfo {
   bool is_callable = false;
   std::vector<ValueType> callable_param_types;
   ValueType callable_return_type = ValueType::Unknown;
+  bool callable_block_runtime_handle_candidate = false;
+  bool callable_block_runtime_handle_has_byref_capture = false;
+  bool callable_block_runtime_handle_has_owned_object_capture = false;
+  std::string callable_block_runtime_first_byref_capture_name;
+  std::string callable_block_runtime_first_owned_capture_name;
   SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
   bool has_nullability_suffix = false;
   bool is_refined_nonnull_reference = false;
@@ -313,7 +318,23 @@ static SemanticTypeInfo MakeCallableSemanticTypeFromBlockLiteral(const Expr &exp
   if (param_types.size() < expr.block_parameter_count) {
     param_types.resize(expr.block_parameter_count, ValueType::Unknown);
   }
-  return MakeCallableSemanticType(std::move(param_types), ValueType::Unknown);
+  SemanticTypeInfo info =
+      MakeCallableSemanticType(std::move(param_types), ValueType::Unknown);
+  info.callable_block_runtime_handle_candidate =
+      expr.block_escape_shape_promotes_to_heap_candidate;
+  info.callable_block_runtime_handle_has_byref_capture =
+      expr.block_byref_capture_count > 0u;
+  info.callable_block_runtime_handle_has_owned_object_capture =
+      expr.block_runtime_owned_object_capture_count > 0u;
+  if (!expr.block_byref_capture_names_lexicographic.empty()) {
+    info.callable_block_runtime_first_byref_capture_name =
+        expr.block_byref_capture_names_lexicographic.front();
+  }
+  if (!expr.block_runtime_owned_object_capture_names_lexicographic.empty()) {
+    info.callable_block_runtime_first_owned_capture_name =
+        expr.block_runtime_owned_object_capture_names_lexicographic.front();
+  }
+  return info;
 }
 
 static bool IsUnknownSemanticType(const SemanticTypeInfo &info) {
@@ -837,6 +858,36 @@ static bool IsEscapingBlockRuntimeHandleCompatible(
   return expected.type == ValueType::I32 ||
          expected.type == ValueType::ObjCId ||
          expected.type == ValueType::ObjCObjectPtr;
+}
+
+static void DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
+    unsigned line, unsigned column, const SemanticTypeInfo &value,
+    std::vector<std::string> &diagnostics) {
+  if (!value.callable_block_runtime_handle_candidate) {
+    return;
+  }
+  if (value.callable_block_runtime_handle_has_byref_capture) {
+    const std::string capture_name =
+        value.callable_block_runtime_first_byref_capture_name.empty()
+            ? std::string("capture")
+            : value.callable_block_runtime_first_byref_capture_name;
+    diagnostics.push_back(
+        MakeDiag(line, column, "O3S206",
+                 "capture-list legality failed: escaping block cannot capture mutable local '" +
+                     capture_name +
+                     "' by reference before live byref forwarding support lands"));
+  }
+  if (value.callable_block_runtime_handle_has_owned_object_capture) {
+    const std::string capture_name =
+        value.callable_block_runtime_first_owned_capture_name.empty()
+            ? std::string("capture")
+            : value.callable_block_runtime_first_owned_capture_name;
+    diagnostics.push_back(
+        MakeDiag(line, column, "O3S206",
+                 "capture-list legality failed: escaping block cannot capture owned Objective-C reference '" +
+                     capture_name +
+                     "' before live block ownership transfer support lands"));
+  }
 }
 
 static std::string SemanticTypeName(const SemanticTypeInfo &info) {
@@ -7004,6 +7055,11 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                 AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
             const bool block_handle_coercion =
                 IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
+            if (block_handle_coercion) {
+              DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
+                  expr->args[i]->line, expr->args[i]->column, arg_type,
+                  diagnostics);
+            }
             if (!IsUnknownSemanticType(expected) &&
                 !IsUnknownSemanticType(arg_type) &&
                 !IsSameSemanticType(arg_type, expected) &&
@@ -7058,6 +7114,11 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
               AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
           const bool block_handle_coercion =
               IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
+          if (block_handle_coercion) {
+            DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
+                expr->args[i]->line, expr->args[i]->column, arg_type,
+                diagnostics);
+          }
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
               !IsSameSemanticType(arg_type, expected) &&
               !bool_coercion &&
@@ -7329,6 +7390,10 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
         (target_known_objc_ref && value_known_objc_ref &&
          AreObjCReferenceTypesAssignmentCompatible(target_type, value_type)) ||
         IsEscapingBlockRuntimeHandleCompatible(target_type, value_type);
+    if (IsEscapingBlockRuntimeHandleCompatible(target_type, value_type)) {
+      DiagnoseEscapingBlockRuntimeHandleCaptureLegality(line, column, value_type,
+                                                        diagnostics);
+    }
     if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) &&
         !value_known_scalar && !assign_matches) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
@@ -7757,6 +7822,11 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
         const SemanticTypeInfo return_type = ValidateExpr(
             ret->value.get(), scopes, globals, functions, diagnostics,
             max_message_send_args, message_send_context);
+        if (IsEscapingBlockRuntimeHandleCompatible(expected_return_type,
+                                                   return_type)) {
+          DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
+              ret->line, ret->column, return_type, diagnostics);
+        }
         const bool return_matches = IsSameSemanticType(return_type, expected_return_type) ||
             AreScalarI32AliasCompatible(expected_return_type, return_type) ||
             (IsScalarSemanticType(expected_return_type) && IsScalarSemanticType(return_type) &&
