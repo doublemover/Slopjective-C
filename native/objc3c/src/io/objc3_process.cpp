@@ -1440,6 +1440,7 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
   if (inputs.contract_id.empty() ||
       inputs.registration_manifest_contract_id.empty() ||
       inputs.source_surface_contract_id.empty() ||
+      inputs.bootstrap_lowering_contract_id.empty() ||
       inputs.payload_model.empty() ||
       inputs.artifact_relative_path.empty() || inputs.authority_model.empty() ||
       inputs.translation_unit_identity_model.empty() ||
@@ -1457,6 +1458,13 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       inputs.constructor_init_stub_symbol_prefix.empty() ||
       inputs.bootstrap_registration_table_symbol_prefix.empty() ||
       inputs.bootstrap_image_local_init_state_symbol_prefix.empty() ||
+      inputs.bootstrap_registration_table_layout_model.empty() ||
+      inputs.bootstrap_image_local_initialization_model.empty() ||
+      inputs.bootstrap_constructor_root_emission_state.empty() ||
+      inputs.bootstrap_init_stub_emission_state.empty() ||
+      inputs.bootstrap_registration_table_emission_state.empty() ||
+      inputs.bootstrap_registration_table_abi_version == 0 ||
+      inputs.bootstrap_registration_table_pointer_field_count == 0 ||
       inputs.total_descriptor_count !=
           inputs.class_descriptor_count + inputs.protocol_descriptor_count +
               inputs.category_descriptor_count +
@@ -1492,6 +1500,8 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       << "\",\n"
       << "  \"source_surface_contract_id\": \""
       << EscapeJsonString(inputs.source_surface_contract_id) << "\",\n"
+      << "  \"bootstrap_lowering_contract_id\": \""
+      << EscapeJsonString(inputs.bootstrap_lowering_contract_id) << "\",\n"
       << "  \"payload_model\": \""
       << EscapeJsonString(inputs.payload_model) << "\",\n"
       << "  \"artifact\": \""
@@ -1539,6 +1549,25 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       << "  \"bootstrap_image_local_init_state_symbol\": \""
       << EscapeJsonString(bootstrap_image_local_init_state_symbol)
       << "\",\n"
+      << "  \"bootstrap_registration_table_layout_model\": \""
+      << EscapeJsonString(inputs.bootstrap_registration_table_layout_model)
+      << "\",\n"
+      << "  \"bootstrap_image_local_initialization_model\": \""
+      << EscapeJsonString(inputs.bootstrap_image_local_initialization_model)
+      << "\",\n"
+      << "  \"bootstrap_constructor_root_emission_state\": \""
+      << EscapeJsonString(inputs.bootstrap_constructor_root_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_init_stub_emission_state\": \""
+      << EscapeJsonString(inputs.bootstrap_init_stub_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_registration_table_emission_state\": \""
+      << EscapeJsonString(inputs.bootstrap_registration_table_emission_state)
+      << "\",\n"
+      << "  \"bootstrap_registration_table_abi_version\": "
+      << inputs.bootstrap_registration_table_abi_version << ",\n"
+      << "  \"bootstrap_registration_table_pointer_field_count\": "
+      << inputs.bootstrap_registration_table_pointer_field_count << ",\n"
       << "  \"class_descriptor_count\": "
       << inputs.class_descriptor_count << ",\n"
       << "  \"protocol_descriptor_count\": "
@@ -1567,7 +1596,8 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
       << EscapeJsonString(linker_retention_artifacts.discovery_root_symbol)
       << "\",\n"
       << "  \"ready_for_descriptor_artifact_emission\": true,\n"
-      << "  \"ready_for_registration_descriptor_lowering\": true\n"
+      << "  \"ready_for_registration_descriptor_lowering\": true,\n"
+      << "  \"ready_for_loader_table_lowering\": true\n"
       << "}\n";
   descriptor_json = out.str();
   return true;

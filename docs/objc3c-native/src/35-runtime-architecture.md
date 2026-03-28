@@ -111,6 +111,15 @@ fragments.
   - `<prefix>.runtime-registration-descriptor.json`
   - `<prefix>.obj`
   - `<prefix>.ll`
+- authoritative lowered registration-descriptor fields:
+  - `constructor_init_stub_symbol`
+  - `bootstrap_registration_table_symbol`
+  - `bootstrap_image_local_init_state_symbol`
+  - `bootstrap_registration_table_layout_model`
+  - `bootstrap_image_local_initialization_model`
+  - `bootstrap_registration_table_abi_version`
+  - `bootstrap_registration_table_pointer_field_count`
+  - `translation_unit_registration_order_ordinal`
 - authoritative lowered symbol fields:
   - `constructor_root_symbol`
   - `init_stub_symbol_prefix`
@@ -132,7 +141,10 @@ This is the authoritative bootstrap lowering and registration artifact
 boundary. It freezes the lowered constructor-root/init-stub/registration-table
 symbol family and loader-table ABI facts against the emitted manifest, object,
 and IR artifacts instead of leaving later loader-table work to infer those
-details from the semantic packet alone.
+details from the semantic packet alone. The registration descriptor must now
+carry the exact derived loader-table symbols/layout that appear in the emitted
+LLVM IR, and acceptance must fail if the coupled `module.ll` stops lowering the
+constructor-root to loader-table edge.
 
 ## Multi-Image Startup Ordering Source Surface
 

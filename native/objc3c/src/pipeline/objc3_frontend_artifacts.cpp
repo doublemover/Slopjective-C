@@ -22493,7 +22493,23 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_bootstrap_lowering.init_stub_emission_state
            << "\",\"registration_table_emission_state\":\""
            << runtime_bootstrap_lowering.registration_table_emission_state
-           << "\",\"bootstrap_ir_materialization_landed\":"
+           << "\",\"lowered_registration_descriptor_fields\":["
+           << "\"constructor_init_stub_symbol\","
+           << "\"bootstrap_registration_table_symbol\","
+           << "\"bootstrap_image_local_init_state_symbol\","
+           << "\"bootstrap_registration_table_layout_model\","
+           << "\"bootstrap_image_local_initialization_model\","
+           << "\"bootstrap_registration_table_abi_version\","
+           << "\"bootstrap_registration_table_pointer_field_count\","
+           << "\"translation_unit_registration_order_ordinal\""
+           << "],\"loader_table_ir_proof_fields\":["
+           << "\"constructor_root_symbol\","
+           << "\"constructor_init_stub_symbol\","
+           << "\"bootstrap_registration_table_symbol\","
+           << "\"bootstrap_image_local_init_state_symbol\","
+           << "\"translation_unit_registration_order_ordinal\""
+           << "]"
+           << ",\"bootstrap_ir_materialization_landed\":"
            << (runtime_bootstrap_lowering.bootstrap_ir_materialization_landed
                    ? "true"
                    : "false")
@@ -22504,6 +22520,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_coupled_registration_descriptor_artifact\":true"
            << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
+           << ",\"requires_emitted_loader_table_ir\":true"
            << "},\n";
   manifest << "  \"runtime_multi_image_startup_ordering_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimeMultiImageStartupOrderingSourceSurfaceContractId

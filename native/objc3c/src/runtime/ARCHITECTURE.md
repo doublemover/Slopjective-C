@@ -68,10 +68,15 @@ Bootstrap lowering and registration artifact source of truth:
 - that surface must point at the live lowering contract, registration manifest,
   bootstrap semantics, registration-descriptor frontend closure, emitted
   manifest/object/IR artifacts, ctor/init-stub/registration-table symbol
-  family, and loader-table ABI/version facts
+  family, loader-table ABI/version facts, and the lowered registration
+  descriptor fields that name the exact derived init-stub/registration-table/
+  image-local-init-state globals
 - later loader-table realization, imported-image replay, and packaging work
   must consume that emitted surface rather than reconstructing lowering truth
   from the semantic packet alone
+- the emitted registration descriptor and `module.ll` must agree on the exact
+  lowered constructor-root, init-stub, registration-table, and image-local
+  init-state symbols; drift is a compile-coupled acceptance failure
 
 Multi-image startup ordering source of truth:
 

@@ -925,6 +925,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             descriptor_inputs.source_surface_contract_id =
                 registration_descriptor_frontend_closure_summary
                     .source_surface_contract_id;
+            descriptor_inputs.bootstrap_lowering_contract_id =
+                runtime_bootstrap_lowering_summary.contract_id;
             descriptor_inputs.payload_model =
                 registration_descriptor_frontend_closure_summary.payload_model;
             descriptor_inputs.artifact_relative_path =
@@ -975,6 +977,26 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             descriptor_inputs.bootstrap_image_local_init_state_symbol_prefix =
                 runtime_bootstrap_lowering_summary
                     .image_local_init_state_symbol_prefix;
+            descriptor_inputs.bootstrap_registration_table_layout_model =
+                runtime_bootstrap_lowering_summary
+                    .registration_table_layout_model;
+            descriptor_inputs.bootstrap_image_local_initialization_model =
+                runtime_bootstrap_lowering_summary
+                    .image_local_initialization_model;
+            descriptor_inputs.bootstrap_constructor_root_emission_state =
+                runtime_bootstrap_lowering_summary
+                    .constructor_root_emission_state;
+            descriptor_inputs.bootstrap_init_stub_emission_state =
+                runtime_bootstrap_lowering_summary.init_stub_emission_state;
+            descriptor_inputs.bootstrap_registration_table_emission_state =
+                runtime_bootstrap_lowering_summary
+                    .registration_table_emission_state;
+            descriptor_inputs.bootstrap_registration_table_abi_version =
+                runtime_bootstrap_lowering_summary
+                    .registration_table_abi_version;
+            descriptor_inputs.bootstrap_registration_table_pointer_field_count =
+                runtime_bootstrap_lowering_summary
+                    .registration_table_pointer_field_count;
             descriptor_inputs.class_descriptor_count =
                 registration_descriptor_frontend_closure_summary
                     .class_descriptor_count;

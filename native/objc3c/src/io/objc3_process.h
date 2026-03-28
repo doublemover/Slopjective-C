@@ -145,6 +145,7 @@ struct Objc3RuntimeRegistrationDescriptorArtifactInputs {
   std::string contract_id;
   std::string registration_manifest_contract_id;
   std::string source_surface_contract_id;
+  std::string bootstrap_lowering_contract_id;
   std::string payload_model;
   std::string artifact_relative_path;
   std::string authority_model;
@@ -164,6 +165,13 @@ struct Objc3RuntimeRegistrationDescriptorArtifactInputs {
   std::string constructor_init_stub_symbol_prefix;
   std::string bootstrap_registration_table_symbol_prefix;
   std::string bootstrap_image_local_init_state_symbol_prefix;
+  std::string bootstrap_registration_table_layout_model;
+  std::string bootstrap_image_local_initialization_model;
+  std::string bootstrap_constructor_root_emission_state;
+  std::string bootstrap_init_stub_emission_state;
+  std::string bootstrap_registration_table_emission_state;
+  std::uint64_t bootstrap_registration_table_abi_version = 0;
+  std::uint64_t bootstrap_registration_table_pointer_field_count = 0;
   std::size_t class_descriptor_count = 0;
   std::size_t protocol_descriptor_count = 0;
   std::size_t category_descriptor_count = 0;

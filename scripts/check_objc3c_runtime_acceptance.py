@@ -138,6 +138,7 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     manifest_path = out_dir / "module.manifest.json"
     registration_manifest_path = out_dir / "module.runtime-registration-manifest.json"
     registration_descriptor_path = out_dir / "module.runtime-registration-descriptor.json"
+    ll_path = out_dir / "module.ll"
     provenance_path = out_dir / "module.compile-provenance.json"
     if not obj_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {obj_path}")
@@ -147,12 +148,16 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
     if not registration_descriptor_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {registration_descriptor_path}")
+    if not ll_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {ll_path}")
     if not provenance_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {provenance_path}")
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+    registration_descriptor = json.loads(registration_descriptor_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
     frontend = manifest.get("frontend", {})
     pipeline = frontend.get("pipeline", {}) if isinstance(frontend, dict) else {}
     semantic_surface = pipeline.get("semantic_surface", {}) if isinstance(pipeline, dict) else {}
@@ -414,6 +419,101 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     if bootstrap_lowering_registration_artifact_surface.get("requires_real_compile_output") is not True:
         raise RuntimeError(
             "runtime_bootstrap_lowering_registration_artifact_surface must require real compile output"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "lowered_registration_descriptor_fields"
+        )
+        != [
+            "constructor_init_stub_symbol",
+            "bootstrap_registration_table_symbol",
+            "bootstrap_image_local_init_state_symbol",
+            "bootstrap_registration_table_layout_model",
+            "bootstrap_image_local_initialization_model",
+            "bootstrap_registration_table_abi_version",
+            "bootstrap_registration_table_pointer_field_count",
+            "translation_unit_registration_order_ordinal",
+        ]
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the lowered registration descriptor field set"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "loader_table_ir_proof_fields"
+        )
+        != [
+            "constructor_root_symbol",
+            "constructor_init_stub_symbol",
+            "bootstrap_registration_table_symbol",
+            "bootstrap_image_local_init_state_symbol",
+            "translation_unit_registration_order_ordinal",
+        ]
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the loader-table IR proof field set"
+        )
+    if bootstrap_lowering_registration_artifact_surface.get("requires_emitted_loader_table_ir") is not True:
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface must require emitted loader-table IR"
+        )
+    if registration_descriptor.get("bootstrap_lowering_contract_id") != runtime_bootstrap_lowering.get(
+        "contract_id"
+    ):
+        raise RuntimeError(
+            "runtime registration descriptor drifted from the bootstrap lowering contract"
+        )
+    for descriptor_field, lowering_field in (
+        ("bootstrap_registration_table_layout_model", "registration_table_layout_model"),
+        ("bootstrap_image_local_initialization_model", "image_local_initialization_model"),
+        ("bootstrap_constructor_root_emission_state", "constructor_root_emission_state"),
+        ("bootstrap_init_stub_emission_state", "init_stub_emission_state"),
+        ("bootstrap_registration_table_emission_state", "registration_table_emission_state"),
+        ("bootstrap_registration_table_abi_version", "registration_table_abi_version"),
+        ("bootstrap_registration_table_pointer_field_count", "registration_table_pointer_field_count"),
+    ):
+        if registration_descriptor.get(descriptor_field) != runtime_bootstrap_lowering.get(
+            lowering_field
+        ):
+            raise RuntimeError(
+                f"runtime registration descriptor drifted from bootstrap lowering field {lowering_field}"
+            )
+    for descriptor_field, manifest_field in (
+        ("constructor_root_symbol", "constructor_root_symbol"),
+        ("registration_entrypoint_symbol", "registration_entrypoint_symbol"),
+        ("constructor_init_stub_symbol", "constructor_init_stub_symbol"),
+        ("bootstrap_registration_table_symbol", "bootstrap_registration_table_symbol"),
+        ("bootstrap_image_local_init_state_symbol", "bootstrap_image_local_init_state_symbol"),
+        ("translation_unit_registration_order_ordinal", "translation_unit_registration_order_ordinal"),
+    ):
+        if registration_descriptor.get(descriptor_field) != registration_manifest.get(manifest_field):
+            raise RuntimeError(
+                f"runtime registration descriptor drifted from registration manifest field {manifest_field}"
+            )
+    if registration_descriptor.get("ready_for_loader_table_lowering") is not True:
+        raise RuntimeError(
+            "runtime registration descriptor must be ready for loader-table lowering"
+        )
+    for symbol_field in (
+        "constructor_root_symbol",
+        "constructor_init_stub_symbol",
+        "bootstrap_registration_table_symbol",
+        "bootstrap_image_local_init_state_symbol",
+    ):
+        symbol = registration_descriptor.get(symbol_field)
+        if not isinstance(symbol, str) or not symbol:
+            raise RuntimeError(f"runtime registration descriptor omitted {symbol_field}")
+        if f"@{symbol}" not in ll_text:
+            raise RuntimeError(
+                f"emitted LLVM IR did not lower runtime bootstrap symbol {symbol_field}"
+            )
+    ctor_loader_table_edge = (
+        f"ptr @{registration_descriptor['constructor_root_symbol']}, ptr "
+        f"@{registration_descriptor['bootstrap_registration_table_symbol']}"
+    )
+    if ctor_loader_table_edge not in ll_text:
+        raise RuntimeError(
+            "emitted LLVM IR did not lower the constructor-root to loader-table global ctor edge"
         )
     if not isinstance(multi_image_startup_ordering_source_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_multi_image_startup_ordering_source_surface")
@@ -823,9 +923,27 @@ def build_runtime_bootstrap_lowering_registration_artifact_surface() -> dict[str
             "bootstrap_ir_materialization_landed",
             "image_local_initialization_landed",
         ],
+        "lowered_registration_descriptor_fields": [
+            "constructor_init_stub_symbol",
+            "bootstrap_registration_table_symbol",
+            "bootstrap_image_local_init_state_symbol",
+            "bootstrap_registration_table_layout_model",
+            "bootstrap_image_local_initialization_model",
+            "bootstrap_registration_table_abi_version",
+            "bootstrap_registration_table_pointer_field_count",
+            "translation_unit_registration_order_ordinal",
+        ],
+        "loader_table_ir_proof_fields": [
+            "constructor_root_symbol",
+            "constructor_init_stub_symbol",
+            "bootstrap_registration_table_symbol",
+            "bootstrap_image_local_init_state_symbol",
+            "translation_unit_registration_order_ordinal",
+        ],
         "requires_coupled_registration_descriptor_artifact": True,
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
+        "requires_emitted_loader_table_ir": True,
     }
 
 
