@@ -630,6 +630,44 @@ private testing snapshot boundary used by the live runtime probes. Downstream
 work must consume this emitted surface instead of widening the public ABI or
 reconstructing query truth from milestone-local probe assumptions.
 
+## Realization Lookup And Reflection Implementation
+
+- machine-readable key:
+  - `runtime_realization_lookup_reflection_implementation_surface`
+- authoritative source contracts:
+  - `objc3c.runtime.object.model.abi.query.surface.v1`
+  - `objc3c.runtime.reflection.query.surface.v1`
+  - `objc3c.runtime.realization.lookup.semantics.v1`
+  - `objc3c.runtime.class.metaclass.protocol.realization.v1`
+  - `objc3c.runtime.category.attachment.merged.dispatch.surface.v1`
+  - `objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1`
+- aggregate runtime query symbol:
+  - `objc3_runtime_copy_object_model_query_state_for_testing`
+- supporting live query symbols:
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `objc3_runtime_copy_dispatch_state_for_testing`
+- authoritative proof path:
+  - fixture:
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - probes:
+    - `tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+
+This is the authoritative live implementation boundary for realization lookup
+and reflection. It freezes the fact that the runtime publishes one aggregate
+object-model query snapshot over the same class/property/protocol/method-cache
+state already exercised by the canonical object-model probes. Downstream work
+must consume that aggregate query surface instead of reconstructing lookup and
+reflection truth from disconnected probe-local reads.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

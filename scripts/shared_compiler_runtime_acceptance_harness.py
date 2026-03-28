@@ -23,6 +23,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
+    RUNTIME_REALIZATION_LOOKUP_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
@@ -120,6 +121,15 @@ COMMON_SURFACES = (
         (
             "source_contract_ids",
             "private_object_model_query_boundary",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_realization_lookup_reflection_implementation_surface",
+        RUNTIME_REALIZATION_LOOKUP_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "object_model_query_state_snapshot_symbol",
             "authoritative_case_ids",
         ),
     ),
@@ -388,6 +398,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_object_model_abi_query_surface": surfaces[
             "runtime_object_model_abi_query_surface"
+        ],
+        "runtime_realization_lookup_reflection_implementation_surface": surfaces[
+            "runtime_realization_lookup_reflection_implementation_surface"
         ],
         "runtime_reflection_query_surface": surfaces["runtime_reflection_query_surface"],
         "runtime_realization_lookup_semantics_surface": surfaces[

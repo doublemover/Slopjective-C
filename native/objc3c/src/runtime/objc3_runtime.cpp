@@ -559,10 +559,17 @@ struct RuntimeState {
   std::string last_realized_metaclass_owner_identity;
   std::string last_attached_category_owner_identity;
   std::string last_attached_category_name;
+  std::string last_queried_class_name;
+  std::string last_resolved_class_query_name;
+  std::string last_resolved_class_query_owner_identity;
+  bool last_class_query_found = false;
   std::string last_protocol_conformance_class_name;
   std::string last_protocol_conformance_protocol_name;
   std::string last_protocol_conformance_owner_identity;
   std::string last_protocol_conformance_attachment_owner_identity;
+  bool last_protocol_query_class_found = false;
+  bool last_protocol_query_protocol_found = false;
+  bool last_protocol_query_conforms = false;
   std::unordered_map<int, RuntimeInstanceRecord> runtime_instances_by_receiver;
   std::unordered_map<int, RuntimeBlockRecord> runtime_blocks_by_handle;
   std::unordered_map<int, std::vector<RuntimeWeakSlotRef>>
@@ -763,10 +770,17 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_realized_metaclass_owner_identity.clear();
   state.last_attached_category_owner_identity.clear();
   state.last_attached_category_name.clear();
+  state.last_queried_class_name.clear();
+  state.last_resolved_class_query_name.clear();
+  state.last_resolved_class_query_owner_identity.clear();
+  state.last_class_query_found = false;
   state.last_protocol_conformance_class_name.clear();
   state.last_protocol_conformance_protocol_name.clear();
   state.last_protocol_conformance_owner_identity.clear();
   state.last_protocol_conformance_attachment_owner_identity.clear();
+  state.last_protocol_query_class_found = false;
+  state.last_protocol_query_protocol_found = false;
+  state.last_protocol_query_conforms = false;
   state.last_queried_property_class_name.clear();
   state.last_queried_property_name.clear();
   state.last_reflected_property_class_name.clear();
@@ -4156,6 +4170,10 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
 
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  state.last_queried_class_name = class_name != nullptr ? class_name : "";
+  state.last_resolved_class_query_name.clear();
+  state.last_resolved_class_query_owner_identity.clear();
+  state.last_class_query_found = false;
   const auto found = state.realized_class_node_indices_by_name.find(class_name);
   if (found == state.realized_class_node_indices_by_name.end() ||
       found->second.empty()) {
@@ -4166,6 +4184,9 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   }
   const RealizedClassNode &node = state.realized_class_nodes[node_index];
+  state.last_class_query_found = true;
+  state.last_resolved_class_query_name = node.class_name;
+  state.last_resolved_class_query_owner_identity = node.class_owner_identity;
   snapshot->found = 1;
   snapshot->base_identity = node.base_identity;
   snapshot->registration_order_ordinal = node.registration_order_ordinal;
@@ -4453,10 +4474,14 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
   state.last_protocol_conformance_protocol_name = protocol_name;
   state.last_protocol_conformance_owner_identity.clear();
   state.last_protocol_conformance_attachment_owner_identity.clear();
+  state.last_protocol_query_class_found = false;
+  state.last_protocol_query_protocol_found = false;
+  state.last_protocol_query_conforms = false;
   snapshot->class_name = StableCString(state.last_protocol_conformance_class_name);
   snapshot->protocol_name =
       StableCString(state.last_protocol_conformance_protocol_name);
   snapshot->protocol_found = ProtocolExistsByNameUnlocked(state, protocol_name) ? 1 : 0;
+  state.last_protocol_query_protocol_found = snapshot->protocol_found != 0;
 
   const auto found = state.realized_class_node_indices_by_name.find(class_name);
   if (found == state.realized_class_node_indices_by_name.end() ||
@@ -4470,6 +4495,7 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
 
   const RealizedClassNode &node = state.realized_class_nodes[node_index];
   snapshot->class_found = 1;
+  state.last_protocol_query_class_found = true;
   snapshot->attached_category_count =
       static_cast<std::uint64_t>(node.attached_category_records.size());
 
@@ -4479,6 +4505,7 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
           state, &node, protocol_name, snapshot->visited_protocol_count,
           matched_protocol_owner_identity, matched_attachment_owner_identity)) {
     snapshot->conforms = 1;
+    state.last_protocol_query_conforms = true;
     state.last_protocol_conformance_owner_identity = matched_protocol_owner_identity;
     state.last_protocol_conformance_attachment_owner_identity =
         matched_attachment_owner_identity;
@@ -4487,6 +4514,81 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
     snapshot->matched_attachment_owner_identity =
         StableCString(state.last_protocol_conformance_attachment_owner_identity);
   }
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
+int objc3_runtime_copy_object_model_query_state_for_testing(
+    objc3_runtime_object_model_query_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->realized_class_count = 0;
+  snapshot->reflectable_property_count = 0;
+  snapshot->attached_category_count = 0;
+  snapshot->protocol_conformance_edge_count = 0;
+  snapshot->method_cache_entry_count = 0;
+  snapshot->last_class_query_found = 0;
+  snapshot->last_property_query_found = 0;
+  snapshot->last_property_query_inherited = 0;
+  snapshot->last_protocol_query_class_found = 0;
+  snapshot->last_protocol_query_protocol_found = 0;
+  snapshot->last_protocol_query_conforms = 0;
+  snapshot->last_queried_class_name = nullptr;
+  snapshot->last_resolved_class_name = nullptr;
+  snapshot->last_resolved_class_owner_identity = nullptr;
+  snapshot->last_queried_property_name = nullptr;
+  snapshot->last_resolved_property_class_name = nullptr;
+  snapshot->last_resolved_property_owner_identity = nullptr;
+  snapshot->last_queried_protocol_class_name = nullptr;
+  snapshot->last_queried_protocol_name = nullptr;
+  snapshot->last_matched_protocol_owner_identity = nullptr;
+  snapshot->last_matched_attachment_owner_identity = nullptr;
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->realized_class_count =
+      static_cast<std::uint64_t>(state.realized_class_nodes.size());
+  snapshot->protocol_conformance_edge_count =
+      state.realized_protocol_conformance_edge_count;
+  snapshot->method_cache_entry_count =
+      static_cast<std::uint64_t>(state.method_cache.size());
+  snapshot->last_class_query_found = state.last_class_query_found ? 1 : 0;
+  snapshot->last_property_query_found = state.last_property_query_found ? 1 : 0;
+  snapshot->last_property_query_inherited =
+      state.last_property_query_inherited ? 1 : 0;
+  snapshot->last_protocol_query_class_found =
+      state.last_protocol_query_class_found ? 1 : 0;
+  snapshot->last_protocol_query_protocol_found =
+      state.last_protocol_query_protocol_found ? 1 : 0;
+  snapshot->last_protocol_query_conforms =
+      state.last_protocol_query_conforms ? 1 : 0;
+  for (const RealizedClassNode &node : state.realized_class_nodes) {
+    snapshot->attached_category_count +=
+        static_cast<std::uint64_t>(node.attached_category_records.size());
+    snapshot->reflectable_property_count +=
+        static_cast<std::uint64_t>(node.runtime_property_accessors.size());
+  }
+  snapshot->last_queried_class_name =
+      StableCString(state.last_queried_class_name);
+  snapshot->last_resolved_class_name =
+      StableCString(state.last_resolved_class_query_name);
+  snapshot->last_resolved_class_owner_identity =
+      StableCString(state.last_resolved_class_query_owner_identity);
+  snapshot->last_queried_property_name =
+      StableCString(state.last_queried_property_name);
+  snapshot->last_resolved_property_class_name =
+      StableCString(state.last_reflected_property_class_name);
+  snapshot->last_resolved_property_owner_identity =
+      StableCString(state.last_reflected_property_owner_identity);
+  snapshot->last_queried_protocol_class_name =
+      StableCString(state.last_protocol_conformance_class_name);
+  snapshot->last_queried_protocol_name =
+      StableCString(state.last_protocol_conformance_protocol_name);
+  snapshot->last_matched_protocol_owner_identity =
+      StableCString(state.last_protocol_conformance_owner_identity);
+  snapshot->last_matched_attachment_owner_identity =
+      StableCString(state.last_protocol_conformance_attachment_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

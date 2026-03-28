@@ -251,6 +251,13 @@ def write_composite_validation_report(
         payload["runtime_object_model_abi_query_surface"] = (
             runtime_object_model_abi_query_surface
         )
+    runtime_realization_lookup_reflection_implementation_surface = load_surface_from_report(
+        steps, "runtime_realization_lookup_reflection_implementation_surface"
+    )
+    if runtime_realization_lookup_reflection_implementation_surface is not None:
+        payload["runtime_realization_lookup_reflection_implementation_surface"] = (
+            runtime_realization_lookup_reflection_implementation_surface
+        )
     runtime_reflection_query_surface = load_surface_from_report(
         steps, "runtime_reflection_query_surface"
     )

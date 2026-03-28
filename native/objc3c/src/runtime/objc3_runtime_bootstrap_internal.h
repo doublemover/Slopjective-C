@@ -291,6 +291,30 @@ typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   const char *matched_attachment_owner_identity;
 } objc3_runtime_protocol_conformance_query_snapshot;
 
+typedef struct objc3_runtime_object_model_query_state_snapshot {
+  uint64_t realized_class_count;
+  uint64_t reflectable_property_count;
+  uint64_t attached_category_count;
+  uint64_t protocol_conformance_edge_count;
+  uint64_t method_cache_entry_count;
+  int last_class_query_found;
+  int last_property_query_found;
+  int last_property_query_inherited;
+  int last_protocol_query_class_found;
+  int last_protocol_query_protocol_found;
+  int last_protocol_query_conforms;
+  const char *last_queried_class_name;
+  const char *last_resolved_class_name;
+  const char *last_resolved_class_owner_identity;
+  const char *last_queried_property_name;
+  const char *last_resolved_property_class_name;
+  const char *last_resolved_property_owner_identity;
+  const char *last_queried_protocol_class_name;
+  const char *last_queried_protocol_name;
+  const char *last_matched_protocol_owner_identity;
+  const char *last_matched_attachment_owner_identity;
+} objc3_runtime_object_model_query_state_snapshot;
+
 typedef struct objc3_runtime_memory_management_state_snapshot {
   uint64_t live_runtime_instance_count;
   uint64_t weak_target_count;
@@ -523,6 +547,8 @@ int objc3_runtime_copy_property_entry_for_testing(
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);
+int objc3_runtime_copy_object_model_query_state_for_testing(
+    objc3_runtime_object_model_query_state_snapshot *snapshot);
 // optional/key-path runtime-helper freeze anchor: the current Part 3
 // runtime boundary does not add a new public helper API. Optional sends remain
 // routed through the public selector lookup/dispatch entrypoints, while the

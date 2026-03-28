@@ -42,6 +42,7 @@ SURFACE_KEYS = (
     "runtime_dispatch_table_reflection_record_lowering_surface",
     "runtime_cross_module_realized_metadata_replay_preservation_surface",
     "runtime_object_model_abi_query_surface",
+    "runtime_realization_lookup_reflection_implementation_surface",
     "runtime_reflection_query_surface",
     "runtime_realization_lookup_semantics_surface",
     "runtime_class_metaclass_protocol_realization_surface",
@@ -270,6 +271,9 @@ def main() -> int:
         ],
         "runtime_object_model_abi_query_surface": public_workflow_report[
             "runtime_object_model_abi_query_surface"
+        ],
+        "runtime_realization_lookup_reflection_implementation_surface": public_workflow_report[
+            "runtime_realization_lookup_reflection_implementation_surface"
         ],
         "runtime_reflection_query_surface": public_workflow_report[
             "runtime_reflection_query_surface"

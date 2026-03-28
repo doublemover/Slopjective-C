@@ -167,6 +167,25 @@ Object-model runtime ABI and query surface:
   - object-model lookup and reflection proof stays on the private testing
     snapshot boundary consumed by the live executable probes
 
+Realization lookup and reflection implementation surface:
+
+- emitted compile-manifest key:
+  - `runtime_realization_lookup_reflection_implementation_surface`
+- aggregate runtime query snapshot:
+  - `objc3_runtime_copy_object_model_query_state_for_testing`
+- supporting live query symbols:
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `objc3_runtime_copy_dispatch_state_for_testing`
+- authoritative executable probe:
+  - `tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp`
+
 Reflection query surface:
 
 - emitted compile-manifest key:

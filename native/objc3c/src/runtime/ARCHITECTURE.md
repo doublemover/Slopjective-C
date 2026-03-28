@@ -164,6 +164,19 @@ Object-model runtime ABI and query surface source of truth:
   extend that surface rather than widening the public runtime ABI or
   reconstructing object-model query truth from probe-specific assumptions
 
+Realization lookup and reflection implementation source of truth:
+
+- compile publication exposes the live implementation boundary through the
+  emitted compile-manifest key
+  `runtime_realization_lookup_reflection_implementation_surface`
+- that surface must point at the object-model ABI/query surface, the
+  reflection/lookup/category/coherence surfaces, the private runtime internal
+  header, and the aggregate object-model query snapshot symbol consumed by the
+  live executable probe
+- later conformance work must validate the runtime-owned aggregate query state
+  through that same emitted surface instead of reconstructing lookup/reflection
+  truth from separate probe-local reads
+
 Reflection query source of truth:
 
 - compile publication exposes the coupled reflection boundary through the

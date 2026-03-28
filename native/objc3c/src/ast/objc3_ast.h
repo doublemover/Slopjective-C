@@ -978,6 +978,9 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeObjectModelAbiQuerySurfaceContractId =
         "objc3c.runtime.object.model.abi.query.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeRealizationLookupReflectionImplementationSurfaceContractId =
+        "objc3c.runtime.realization.lookup.reflection.implementation.surface.v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanPayloadModel =
     "cross-module-runtime-link-plan-json-v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix =
@@ -1148,6 +1151,9 @@ inline constexpr const char
         "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1";
 inline constexpr const char *kObjc3RuntimeObjectModelQueryBoundaryModel =
     "public-runtime-header-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface-without-widening-the-public-abi";
+inline constexpr const char
+    *kObjc3RuntimeRealizationLookupReflectionImplementationModel =
+        "runtime-owned-class-property-protocol-and-method-cache-query-snapshots-publish-coherent-last-query-state-and-live-object-model-counts";
 inline constexpr const char *kObjc3RuntimeReflectionQuerySurfaceContractId =
     "objc3c.runtime.reflection.query.surface.v1";
 inline constexpr const char *kObjc3RuntimeRealizationLookupSemanticsSurfaceContractId =
