@@ -1709,7 +1709,8 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
     ]
     if (
@@ -1871,7 +1872,9 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
         "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
     ]
     if (
@@ -3796,7 +3799,8 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
@@ -3887,7 +3891,10 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
             "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
         ],
         "authoritative_probe_paths": [
@@ -7194,6 +7201,81 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         "pipeline", {}
     ).get("sema_pass_manager", {})
 
+    arc_cleanup_scope_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_cleanup_scope_positive.objc3"
+    )
+    compile_fixture_with_args(
+        arc_cleanup_scope_fixture,
+        case_dir / "arc-cleanup-scope-positive",
+        extra_args=["-fobjc-arc"],
+    )
+    arc_cleanup_scope_manifest_path = (
+        case_dir / "arc-cleanup-scope-positive" / "module.manifest.json"
+    )
+    arc_cleanup_scope_manifest = json.loads(
+        arc_cleanup_scope_manifest_path.read_text(encoding="utf-8")
+    )
+    arc_cleanup_scope_sema = arc_cleanup_scope_manifest.get("frontend", {}).get(
+        "pipeline", {}
+    ).get("sema_pass_manager", {})
+
+    arc_implicit_cleanup_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_implicit_cleanup_void_positive.objc3"
+    )
+    compile_fixture_with_args(
+        arc_implicit_cleanup_fixture,
+        case_dir / "arc-implicit-cleanup-positive",
+        extra_args=["-fobjc-arc"],
+    )
+    arc_implicit_cleanup_manifest_path = (
+        case_dir / "arc-implicit-cleanup-positive" / "module.manifest.json"
+    )
+    arc_implicit_cleanup_manifest = json.loads(
+        arc_implicit_cleanup_manifest_path.read_text(encoding="utf-8")
+    )
+    arc_implicit_cleanup_sema = arc_implicit_cleanup_manifest.get(
+        "frontend", {}
+    ).get("pipeline", {}).get("sema_pass_manager", {})
+
+    arc_autorelease_return_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_autorelease_return_positive.objc3"
+    )
+    compile_fixture_with_args(
+        arc_autorelease_return_fixture,
+        case_dir / "arc-autorelease-return-positive",
+        extra_args=["-fobjc-arc"],
+    )
+    arc_autorelease_return_ll_path = (
+        case_dir / "arc-autorelease-return-positive" / "module.ll"
+    )
+    arc_autorelease_return_manifest_path = (
+        case_dir / "arc-autorelease-return-positive" / "module.manifest.json"
+    )
+    arc_autorelease_return_manifest = json.loads(
+        arc_autorelease_return_manifest_path.read_text(encoding="utf-8")
+    )
+    arc_autorelease_return_ll = arc_autorelease_return_ll_path.read_text(
+        encoding="utf-8"
+    )
+    arc_autorelease_return_sema = arc_autorelease_return_manifest.get(
+        "frontend", {}
+    ).get("pipeline", {}).get("sema_pass_manager", {})
+
     weak_negative = compile_fixture_expect_failure(
         ROOT
         / "tests"
@@ -7335,6 +7417,55 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         "contract=objc3c.arc.cleanup.weak.lifetime.hooks.v1" in arc_inference_ll,
         "expected arc inference fixture LLVM IR to publish the ARC cleanup/weak lifetime hooks surface",
     )
+    expect(
+        arc_cleanup_scope_sema.get(
+            "retain_release_operation_lowering_retain_insertion_sites"
+        )
+        == 1
+        and arc_cleanup_scope_sema.get(
+            "retain_release_operation_lowering_release_insertion_sites"
+        )
+        == 1
+        and arc_cleanup_scope_sema.get(
+            "retain_release_operation_lowering_autorelease_insertion_sites"
+        )
+        == 0,
+        "expected ARC cleanup scope fixture to publish one retain/release transfer pair without autorelease insertion",
+    )
+    expect(
+        arc_implicit_cleanup_sema.get(
+            "retain_release_operation_lowering_retain_insertion_sites"
+        )
+        == 1
+        and arc_implicit_cleanup_sema.get(
+            "retain_release_operation_lowering_release_insertion_sites"
+        )
+        == 1
+        and arc_implicit_cleanup_sema.get(
+            "retain_release_operation_lowering_autorelease_insertion_sites"
+        )
+        == 0,
+        "expected ARC implicit cleanup fixture to publish one retain/release cleanup pair without autorelease insertion",
+    )
+    expect(
+        arc_autorelease_return_sema.get(
+            "retain_release_operation_lowering_retain_insertion_sites"
+        )
+        == 0
+        and arc_autorelease_return_sema.get(
+            "retain_release_operation_lowering_release_insertion_sites"
+        )
+        == 0
+        and arc_autorelease_return_sema.get(
+            "retain_release_operation_lowering_autorelease_insertion_sites"
+        )
+        == 2,
+        "expected ARC autorelease-return fixture to publish two autorelease insertions without retain/release insertion",
+    )
+    expect(
+        "; arc_block_autorelease_return_lowering = " in arc_autorelease_return_ll,
+        "expected ARC autorelease-return fixture LLVM IR to publish the ARC block/autorelease-return lowering summary",
+    )
 
     return CaseResult(
         case_id="block-storage-arc-automation-semantics",
@@ -7354,6 +7485,15 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
             ),
             "arc_inference_retain_insertions": arc_inference_sema.get(
                 "retain_release_operation_lowering_retain_insertion_sites"
+            ),
+            "arc_cleanup_scope_release_insertions": arc_cleanup_scope_sema.get(
+                "retain_release_operation_lowering_release_insertion_sites"
+            ),
+            "arc_implicit_cleanup_release_insertions": arc_implicit_cleanup_sema.get(
+                "retain_release_operation_lowering_release_insertion_sites"
+            ),
+            "arc_autorelease_return_autorelease_insertions": arc_autorelease_return_sema.get(
+                "retain_release_operation_lowering_autorelease_insertion_sites"
             ),
             "weak_negative_diagnostic_count": weak_negative["diagnostic_count"],
             "unowned_negative_diagnostic_count": unowned_negative["diagnostic_count"],

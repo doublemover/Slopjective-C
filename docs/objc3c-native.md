@@ -327,7 +327,8 @@ sidecars, stale milestone notes, or synthetic probes.
     - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3`
-    - `tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3`
   - probes:
     - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
@@ -368,7 +369,9 @@ scaffolding.
     - `tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
-    - `tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3`
     - `tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3`
   - probes:
     - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
