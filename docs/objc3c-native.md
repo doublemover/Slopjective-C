@@ -450,6 +450,43 @@ current executable block/ARC lowering story. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
 lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
 
+## Cross-Module Block Ownership Artifact Preservation
+
+- authoritative runtime-import-surface key:
+  - `objc_runtime_block_ownership_artifact_preservation`
+- authoritative cross-module link-plan keys:
+  - `runtime_cross_module_block_ownership_artifact_preservation_surface_contract_id`
+  - `block_ownership_cross_module_preservation_ready`
+- authoritative source contracts:
+  - `objc3c.runtime.block.ownership.artifact.preservation.v1`
+  - `objc3c.runtime.block.arc.lowering.helper.surface.v1`
+  - `objc3c.executable.block.object.and.invoke.thunk.lowering.v1`
+  - `objc3c.executable.block.byref.helper.lowering.v1`
+  - `objc3c.executable.block.escape.runtime.hook.lowering.v1`
+  - `objc3c.runtime.support.library.link.wiring.v1`
+- preserved cross-module facts:
+  - local/imported/transitive block literal counts
+  - invoke-thunk symbolized-site counts
+  - copy/dispose helper required-site counts
+  - copy/dispose helper symbolized-site counts
+  - escape-to-heap site counts
+  - byref-layout symbolized-site counts
+  - runtime-support-library link-wiring readiness
+  - deterministic replay key
+- authoritative proof path:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - emitted artifacts:
+    - `module.runtime-import-surface.json`
+    - `module.cross-module-runtime-link-plan.json`
+
+This is the authoritative cross-module block-ownership preservation boundary.
+It freezes the fact that emitted runtime-import surfaces and the emitted
+cross-module link plan, not milestone-local notes or ad hoc LLVM inspection,
+carry the preserved invoke-thunk, byref-helper, copy/dispose, escape, and
+runtime-link facts for imported block-heavy modules.
+
 ## Property/Ivar/Storage/Accessor Source Surface
 
 - authoritative compile-manifest key:

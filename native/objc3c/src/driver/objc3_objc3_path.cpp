@@ -1177,6 +1177,29 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           link_plan_inputs.local_total_descriptor_count =
               artifacts.runtime_translation_unit_registration_manifest_summary
                   .total_descriptor_count;
+          const auto local_block_ownership_summary =
+              artifacts.runtime_block_ownership_artifact_preservation_summary;
+          link_plan_inputs.local_block_ownership_block_literal_sites =
+              local_block_ownership_summary.local_block_literal_sites;
+          link_plan_inputs
+              .local_block_ownership_invoke_trampoline_symbolized_sites =
+              local_block_ownership_summary
+                  .local_invoke_trampoline_symbolized_sites;
+          link_plan_inputs.local_block_ownership_copy_helper_required_sites =
+              local_block_ownership_summary.local_copy_helper_required_sites;
+          link_plan_inputs.local_block_ownership_dispose_helper_required_sites =
+              local_block_ownership_summary.local_dispose_helper_required_sites;
+          link_plan_inputs.local_block_ownership_copy_helper_symbolized_sites =
+              local_block_ownership_summary.local_copy_helper_symbolized_sites;
+          link_plan_inputs
+              .local_block_ownership_dispose_helper_symbolized_sites =
+              local_block_ownership_summary
+                  .local_dispose_helper_symbolized_sites;
+          link_plan_inputs.local_block_ownership_escape_to_heap_sites =
+              local_block_ownership_summary.local_escape_to_heap_sites;
+          link_plan_inputs.local_block_ownership_byref_layout_symbolized_sites =
+              local_block_ownership_summary
+                  .local_byref_layout_symbolized_sites;
           const auto local_storage_reflection_summary =
               artifacts.runtime_storage_reflection_artifact_preservation_summary;
           link_plan_inputs
@@ -1253,6 +1276,22 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
           link_plan_inputs.expected_part10_host_cache_root_relative_path =
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
+          link_plan_inputs.expected_block_ownership_contract_id =
+              kObjc3RuntimeBlockOwnershipArtifactPreservationContractId;
+          link_plan_inputs.expected_block_ownership_source_contract_id =
+              kObjc3RuntimeBlockArcLoweringHelperSurfaceContractId;
+          link_plan_inputs
+              .expected_block_ownership_object_invoke_thunk_lowering_contract_id =
+              Expr::kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId;
+          link_plan_inputs
+              .expected_block_ownership_byref_helper_lowering_contract_id =
+              Expr::kObjc3ExecutableBlockByrefHelperLoweringContractId;
+          link_plan_inputs
+              .expected_block_ownership_escape_runtime_hook_lowering_contract_id =
+              Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId;
+          link_plan_inputs
+              .expected_block_ownership_runtime_support_library_link_wiring_contract_id =
+              kObjc3RuntimeSupportLibraryLinkWiringContractId;
           link_plan_inputs.expected_storage_reflection_contract_id =
               kObjc3RuntimeStorageReflectionArtifactPreservationContractId;
           link_plan_inputs.expected_storage_reflection_source_contract_id =
@@ -1469,6 +1508,62 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             imported_input.part10_macro_host_process_cache_root_relative_path =
                 imported_surface
                     .part10_macro_host_process_cache_root_relative_path;
+            imported_input.block_ownership_artifact_preservation_present =
+                imported_surface.block_ownership_artifact_preservation_present;
+            imported_input.block_ownership_runtime_import_artifact_ready =
+                imported_surface.block_ownership_runtime_import_artifact_ready;
+            imported_input
+                .block_ownership_separate_compilation_preservation_ready =
+                imported_surface
+                    .block_ownership_separate_compilation_preservation_ready;
+            imported_input
+                .block_ownership_runtime_support_library_link_wiring_ready =
+                imported_surface
+                    .block_ownership_runtime_support_library_link_wiring_ready;
+            imported_input.block_ownership_deterministic =
+                imported_surface.block_ownership_deterministic;
+            imported_input.block_ownership_contract_id =
+                imported_surface.block_ownership_contract_id;
+            imported_input.block_ownership_source_contract_id =
+                imported_surface.block_ownership_source_contract_id;
+            imported_input.block_ownership_object_invoke_thunk_lowering_contract_id =
+                imported_surface
+                    .block_ownership_object_invoke_thunk_lowering_contract_id;
+            imported_input.block_ownership_byref_helper_lowering_contract_id =
+                imported_surface
+                    .block_ownership_byref_helper_lowering_contract_id;
+            imported_input.block_ownership_escape_runtime_hook_lowering_contract_id =
+                imported_surface
+                    .block_ownership_escape_runtime_hook_lowering_contract_id;
+            imported_input
+                .block_ownership_runtime_support_library_link_wiring_contract_id =
+                imported_surface
+                    .block_ownership_runtime_support_library_link_wiring_contract_id;
+            imported_input.block_ownership_replay_key =
+                imported_surface.block_ownership_replay_key;
+            imported_input.block_ownership_local_block_literal_sites =
+                imported_surface.block_ownership_local_block_literal_sites;
+            imported_input
+                .block_ownership_local_invoke_trampoline_symbolized_sites =
+                imported_surface
+                    .block_ownership_local_invoke_trampoline_symbolized_sites;
+            imported_input.block_ownership_local_copy_helper_required_sites =
+                imported_surface
+                    .block_ownership_local_copy_helper_required_sites;
+            imported_input.block_ownership_local_dispose_helper_required_sites =
+                imported_surface
+                    .block_ownership_local_dispose_helper_required_sites;
+            imported_input.block_ownership_local_copy_helper_symbolized_sites =
+                imported_surface
+                    .block_ownership_local_copy_helper_symbolized_sites;
+            imported_input.block_ownership_local_dispose_helper_symbolized_sites =
+                imported_surface
+                    .block_ownership_local_dispose_helper_symbolized_sites;
+            imported_input.block_ownership_local_escape_to_heap_sites =
+                imported_surface.block_ownership_local_escape_to_heap_sites;
+            imported_input.block_ownership_local_byref_layout_symbolized_sites =
+                imported_surface
+                    .block_ownership_local_byref_layout_symbolized_sites;
             imported_input.storage_reflection_artifact_preservation_present =
                 imported_surface
                     .storage_reflection_artifact_preservation_present;

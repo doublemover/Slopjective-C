@@ -1839,6 +1839,18 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part10_host_cache_source_contract_id.empty() ||
       inputs.expected_part10_host_cache_executable_relative_path.empty() ||
       inputs.expected_part10_host_cache_root_relative_path.empty() ||
+      inputs.expected_block_ownership_contract_id.empty() ||
+      inputs.expected_block_ownership_source_contract_id.empty() ||
+      inputs
+          .expected_block_ownership_object_invoke_thunk_lowering_contract_id
+          .empty() ||
+      inputs.expected_block_ownership_byref_helper_lowering_contract_id
+          .empty() ||
+      inputs.expected_block_ownership_escape_runtime_hook_lowering_contract_id
+          .empty() ||
+      inputs
+          .expected_block_ownership_runtime_support_library_link_wiring_contract_id
+          .empty() ||
       inputs.expected_storage_reflection_contract_id.empty() ||
       inputs.expected_storage_reflection_source_contract_id.empty() ||
       inputs
@@ -1888,6 +1900,18 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         "cross-module runtime link-plan local storage/reflection preservation summary drifted from descriptor counts";
     return false;
   }
+  if (inputs.local_block_ownership_invoke_trampoline_symbolized_sites >
+          inputs.local_block_ownership_block_literal_sites ||
+      inputs.local_block_ownership_copy_helper_symbolized_sites >
+          inputs.local_block_ownership_copy_helper_required_sites ||
+      inputs.local_block_ownership_dispose_helper_symbolized_sites >
+          inputs.local_block_ownership_dispose_helper_required_sites ||
+      inputs.local_block_ownership_escape_to_heap_sites >
+          inputs.local_block_ownership_block_literal_sites) {
+    error =
+        "cross-module runtime link-plan local block-ownership preservation summary drifted from lowering counts";
+    return false;
+  }
 
   std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs =
       inputs.imported_inputs;
@@ -1928,6 +1952,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::size_t imported_property_descriptor_count = 0;
   std::size_t imported_ivar_descriptor_count = 0;
   std::size_t imported_total_descriptor_count = 0;
+  std::size_t imported_block_ownership_block_literal_sites = 0;
+  std::size_t imported_block_ownership_invoke_trampoline_symbolized_sites = 0;
+  std::size_t imported_block_ownership_copy_helper_required_sites = 0;
+  std::size_t imported_block_ownership_dispose_helper_required_sites = 0;
+  std::size_t imported_block_ownership_copy_helper_symbolized_sites = 0;
+  std::size_t imported_block_ownership_dispose_helper_symbolized_sites = 0;
+  std::size_t imported_block_ownership_escape_to_heap_sites = 0;
+  std::size_t imported_block_ownership_byref_layout_symbolized_sites = 0;
   std::size_t imported_storage_reflection_implementation_owned_property_entries =
       0;
   std::size_t imported_storage_reflection_synthesized_accessor_owner_entries =
@@ -2344,6 +2376,50 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part10_host_cache_module_names.push_back(imported_input.module_name);
     }
+    if (!imported_input.block_ownership_artifact_preservation_present ||
+        imported_input.block_ownership_contract_id !=
+            inputs.expected_block_ownership_contract_id ||
+        imported_input.block_ownership_source_contract_id !=
+            inputs.expected_block_ownership_source_contract_id ||
+        imported_input
+                .block_ownership_object_invoke_thunk_lowering_contract_id !=
+            inputs
+                .expected_block_ownership_object_invoke_thunk_lowering_contract_id ||
+        imported_input.block_ownership_byref_helper_lowering_contract_id !=
+            inputs.expected_block_ownership_byref_helper_lowering_contract_id ||
+        imported_input
+                .block_ownership_escape_runtime_hook_lowering_contract_id !=
+            inputs
+                .expected_block_ownership_escape_runtime_hook_lowering_contract_id ||
+        imported_input
+                .block_ownership_runtime_support_library_link_wiring_contract_id !=
+            inputs
+                .expected_block_ownership_runtime_support_library_link_wiring_contract_id) {
+      error =
+          "cross-module runtime link-plan block-ownership preservation contract mismatch for " +
+          imported_input.module_name;
+      return false;
+    }
+    if (!imported_input.block_ownership_runtime_import_artifact_ready ||
+        !imported_input
+             .block_ownership_separate_compilation_preservation_ready ||
+        !imported_input
+             .block_ownership_runtime_support_library_link_wiring_ready ||
+        !imported_input.block_ownership_deterministic ||
+        imported_input.block_ownership_replay_key.empty() ||
+        imported_input.block_ownership_local_invoke_trampoline_symbolized_sites >
+            imported_input.block_ownership_local_block_literal_sites ||
+        imported_input.block_ownership_local_copy_helper_symbolized_sites >
+            imported_input.block_ownership_local_copy_helper_required_sites ||
+        imported_input.block_ownership_local_dispose_helper_symbolized_sites >
+            imported_input.block_ownership_local_dispose_helper_required_sites ||
+        imported_input.block_ownership_local_escape_to_heap_sites >
+            imported_input.block_ownership_local_block_literal_sites) {
+      error =
+          "cross-module runtime link-plan block-ownership preservation surface incomplete for " +
+          imported_input.module_name;
+      return false;
+    }
     if (!imported_input.storage_reflection_artifact_preservation_present ||
         imported_input.storage_reflection_contract_id !=
             inputs.expected_storage_reflection_contract_id ||
@@ -2404,6 +2480,22 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         imported_input.property_descriptor_count;
     imported_ivar_descriptor_count += imported_input.ivar_descriptor_count;
     imported_total_descriptor_count += imported_input.total_descriptor_count;
+    imported_block_ownership_block_literal_sites +=
+        imported_input.block_ownership_local_block_literal_sites;
+    imported_block_ownership_invoke_trampoline_symbolized_sites +=
+        imported_input.block_ownership_local_invoke_trampoline_symbolized_sites;
+    imported_block_ownership_copy_helper_required_sites +=
+        imported_input.block_ownership_local_copy_helper_required_sites;
+    imported_block_ownership_dispose_helper_required_sites +=
+        imported_input.block_ownership_local_dispose_helper_required_sites;
+    imported_block_ownership_copy_helper_symbolized_sites +=
+        imported_input.block_ownership_local_copy_helper_symbolized_sites;
+    imported_block_ownership_dispose_helper_symbolized_sites +=
+        imported_input.block_ownership_local_dispose_helper_symbolized_sites;
+    imported_block_ownership_escape_to_heap_sites +=
+        imported_input.block_ownership_local_escape_to_heap_sites;
+    imported_block_ownership_byref_layout_symbolized_sites +=
+        imported_input.block_ownership_local_byref_layout_symbolized_sites;
     imported_storage_reflection_implementation_owned_property_entries +=
         imported_input.storage_reflection_implementation_owned_property_entries;
     imported_storage_reflection_synthesized_accessor_owner_entries +=
@@ -2756,6 +2848,84 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "      \"part10_macro_host_process_cache_root_relative_path\": \""
         << EscapeJsonString(imported_input.part10_macro_host_process_cache_root_relative_path)
         << "\",\n"
+        << "      \"block_ownership_artifact_preservation_present\": "
+        << (imported_input.block_ownership_artifact_preservation_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"block_ownership_runtime_import_artifact_ready\": "
+        << (imported_input.block_ownership_runtime_import_artifact_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"block_ownership_separate_compilation_preservation_ready\": "
+        << (imported_input
+                    .block_ownership_separate_compilation_preservation_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"block_ownership_runtime_support_library_link_wiring_ready\": "
+        << (imported_input
+                    .block_ownership_runtime_support_library_link_wiring_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"block_ownership_deterministic\": "
+        << (imported_input.block_ownership_deterministic ? "true"
+                                                         : "false")
+        << ",\n"
+        << "      \"block_ownership_contract_id\": \""
+        << EscapeJsonString(imported_input.block_ownership_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_source_contract_id\": \""
+        << EscapeJsonString(imported_input.block_ownership_source_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_object_invoke_thunk_lowering_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .block_ownership_object_invoke_thunk_lowering_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_byref_helper_lowering_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .block_ownership_byref_helper_lowering_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_escape_runtime_hook_lowering_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .block_ownership_escape_runtime_hook_lowering_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_runtime_support_library_link_wiring_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .block_ownership_runtime_support_library_link_wiring_contract_id)
+        << "\",\n"
+        << "      \"block_ownership_replay_key\": \""
+        << EscapeJsonString(imported_input.block_ownership_replay_key)
+        << "\",\n"
+        << "      \"block_ownership_local_block_literal_sites\": "
+        << imported_input.block_ownership_local_block_literal_sites << ",\n"
+        << "      \"block_ownership_local_invoke_trampoline_symbolized_sites\": "
+        << imported_input
+               .block_ownership_local_invoke_trampoline_symbolized_sites
+        << ",\n"
+        << "      \"block_ownership_local_copy_helper_required_sites\": "
+        << imported_input.block_ownership_local_copy_helper_required_sites
+        << ",\n"
+        << "      \"block_ownership_local_dispose_helper_required_sites\": "
+        << imported_input.block_ownership_local_dispose_helper_required_sites
+        << ",\n"
+        << "      \"block_ownership_local_copy_helper_symbolized_sites\": "
+        << imported_input.block_ownership_local_copy_helper_symbolized_sites
+        << ",\n"
+        << "      \"block_ownership_local_dispose_helper_symbolized_sites\": "
+        << imported_input.block_ownership_local_dispose_helper_symbolized_sites
+        << ",\n"
+        << "      \"block_ownership_local_escape_to_heap_sites\": "
+        << imported_input.block_ownership_local_escape_to_heap_sites << ",\n"
+        << "      \"block_ownership_local_byref_layout_symbolized_sites\": "
+        << imported_input.block_ownership_local_byref_layout_symbolized_sites
+        << ",\n"
         << "      \"storage_reflection_artifact_preservation_present\": "
         << (imported_input.storage_reflection_artifact_preservation_present
                 ? "true"
@@ -2950,6 +3120,31 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"expected_part10_host_cache_root_relative_path\": \""
       << EscapeJsonString(inputs.expected_part10_host_cache_root_relative_path)
       << "\",\n"
+      << "  \"expected_block_ownership_contract_id\": \""
+      << EscapeJsonString(inputs.expected_block_ownership_contract_id)
+      << "\",\n"
+      << "  \"expected_block_ownership_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_block_ownership_source_contract_id)
+      << "\",\n"
+      << "  \"expected_block_ownership_object_invoke_thunk_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_object_invoke_thunk_lowering_contract_id)
+      << "\",\n"
+      << "  \"expected_block_ownership_byref_helper_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_block_ownership_byref_helper_lowering_contract_id)
+      << "\",\n"
+      << "  \"expected_block_ownership_escape_runtime_hook_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_escape_runtime_hook_lowering_contract_id)
+      << "\",\n"
+      << "  \"expected_block_ownership_runtime_support_library_link_wiring_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_runtime_support_library_link_wiring_contract_id)
+      << "\",\n"
       << "  \"module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(module_names_lexicographic, "    ")
       << ",\n"
@@ -3032,6 +3227,31 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"runtime_dispatch_table_reflection_record_lowering_surface_contract_id\": \""
       << "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1"
       << "\",\n"
+      << "  \"runtime_cross_module_block_ownership_artifact_preservation_surface_contract_id\": \""
+      << EscapeJsonString(inputs.expected_block_ownership_contract_id)
+      << "\",\n"
+      << "  \"runtime_block_arc_lowering_helper_surface_contract_id\": \""
+      << EscapeJsonString(inputs.expected_block_ownership_source_contract_id)
+      << "\",\n"
+      << "  \"block_object_invoke_thunk_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_object_invoke_thunk_lowering_contract_id)
+      << "\",\n"
+      << "  \"block_byref_helper_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_block_ownership_byref_helper_lowering_contract_id)
+      << "\",\n"
+      << "  \"block_escape_runtime_hook_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_escape_runtime_hook_lowering_contract_id)
+      << "\",\n"
+      << "  \"block_runtime_support_library_link_wiring_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_block_ownership_runtime_support_library_link_wiring_contract_id)
+      << "\",\n"
       << "  \"runtime_cross_module_storage_reflection_artifact_preservation_surface_contract_id\": \""
       << EscapeJsonString(inputs.expected_storage_reflection_contract_id)
       << "\",\n"
@@ -3061,11 +3281,15 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"realized_metadata_replay_preservation_model\": \""
       << "cross-module-link-plan-preserves-local-and-imported-realized-metadata-descriptor-counts-identities-and-reset-replay-readiness-from-runtime-registration-manifests"
       << "\",\n"
+      << "  \"block_ownership_artifact_preservation_model\": \""
+      << "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-and-runtime-link-facts-beyond-local-ir-object-emission"
+      << "\",\n"
       << "  \"storage_reflection_artifact_preservation_model\": \""
       << "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-property-ivar-accessor-layout-and-runtime-helper-facts-beyond-local-ir-object-emission"
       << "\",\n"
       << "  \"imported_live_registration_replay_ready\": true,\n"
       << "  \"imported_live_restart_hardening_ready\": true,\n"
+      << "  \"block_ownership_cross_module_preservation_ready\": true,\n"
       << "  \"storage_reflection_cross_module_preservation_ready\": true,\n"
       << "  \"module_image_count\": " << imported_inputs.size() + 1 << ",\n"
       << "  \"direct_import_input_count\": " << imported_inputs.size() << ",\n"
@@ -3113,6 +3337,74 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << ",\n"
       << "  \"transitive_total_descriptor_count\": "
       << inputs.local_total_descriptor_count + imported_total_descriptor_count
+      << ",\n"
+      << "  \"local_block_ownership_block_literal_sites\": "
+      << inputs.local_block_ownership_block_literal_sites << ",\n"
+      << "  \"local_block_ownership_invoke_trampoline_symbolized_sites\": "
+      << inputs.local_block_ownership_invoke_trampoline_symbolized_sites
+      << ",\n"
+      << "  \"local_block_ownership_copy_helper_required_sites\": "
+      << inputs.local_block_ownership_copy_helper_required_sites << ",\n"
+      << "  \"local_block_ownership_dispose_helper_required_sites\": "
+      << inputs.local_block_ownership_dispose_helper_required_sites << ",\n"
+      << "  \"local_block_ownership_copy_helper_symbolized_sites\": "
+      << inputs.local_block_ownership_copy_helper_symbolized_sites << ",\n"
+      << "  \"local_block_ownership_dispose_helper_symbolized_sites\": "
+      << inputs.local_block_ownership_dispose_helper_symbolized_sites
+      << ",\n"
+      << "  \"local_block_ownership_escape_to_heap_sites\": "
+      << inputs.local_block_ownership_escape_to_heap_sites << ",\n"
+      << "  \"local_block_ownership_byref_layout_symbolized_sites\": "
+      << inputs.local_block_ownership_byref_layout_symbolized_sites
+      << ",\n"
+      << "  \"imported_block_ownership_block_literal_sites\": "
+      << imported_block_ownership_block_literal_sites << ",\n"
+      << "  \"imported_block_ownership_invoke_trampoline_symbolized_sites\": "
+      << imported_block_ownership_invoke_trampoline_symbolized_sites
+      << ",\n"
+      << "  \"imported_block_ownership_copy_helper_required_sites\": "
+      << imported_block_ownership_copy_helper_required_sites << ",\n"
+      << "  \"imported_block_ownership_dispose_helper_required_sites\": "
+      << imported_block_ownership_dispose_helper_required_sites << ",\n"
+      << "  \"imported_block_ownership_copy_helper_symbolized_sites\": "
+      << imported_block_ownership_copy_helper_symbolized_sites << ",\n"
+      << "  \"imported_block_ownership_dispose_helper_symbolized_sites\": "
+      << imported_block_ownership_dispose_helper_symbolized_sites << ",\n"
+      << "  \"imported_block_ownership_escape_to_heap_sites\": "
+      << imported_block_ownership_escape_to_heap_sites << ",\n"
+      << "  \"imported_block_ownership_byref_layout_symbolized_sites\": "
+      << imported_block_ownership_byref_layout_symbolized_sites << ",\n"
+      << "  \"transitive_block_ownership_block_literal_sites\": "
+      << inputs.local_block_ownership_block_literal_sites +
+             imported_block_ownership_block_literal_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_invoke_trampoline_symbolized_sites\": "
+      << inputs.local_block_ownership_invoke_trampoline_symbolized_sites +
+             imported_block_ownership_invoke_trampoline_symbolized_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_copy_helper_required_sites\": "
+      << inputs.local_block_ownership_copy_helper_required_sites +
+             imported_block_ownership_copy_helper_required_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_dispose_helper_required_sites\": "
+      << inputs.local_block_ownership_dispose_helper_required_sites +
+             imported_block_ownership_dispose_helper_required_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_copy_helper_symbolized_sites\": "
+      << inputs.local_block_ownership_copy_helper_symbolized_sites +
+             imported_block_ownership_copy_helper_symbolized_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_dispose_helper_symbolized_sites\": "
+      << inputs.local_block_ownership_dispose_helper_symbolized_sites +
+             imported_block_ownership_dispose_helper_symbolized_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_escape_to_heap_sites\": "
+      << inputs.local_block_ownership_escape_to_heap_sites +
+             imported_block_ownership_escape_to_heap_sites
+      << ",\n"
+      << "  \"transitive_block_ownership_byref_layout_symbolized_sites\": "
+      << inputs.local_block_ownership_byref_layout_symbolized_sites +
+             imported_block_ownership_byref_layout_symbolized_sites
       << ",\n"
       << "  \"local_storage_reflection_implementation_owned_property_entries\": "
       << inputs.local_storage_reflection_implementation_owned_property_entries

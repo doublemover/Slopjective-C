@@ -1667,6 +1667,25 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeStorageReflectionArtifactPreservationFailClosedModel =
         "missing-or-drifted-storage-reflection-preservation-packets-disable-cross-module-storage-reflection-claims";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationContractId =
+        "objc3c.runtime.block.ownership.artifact.preservation.v1";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationSurfacePath =
+        "frontend.pipeline.semantic_surface."
+        "objc_runtime_block_ownership_artifact_preservation";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationImportArtifactMemberName =
+        "objc_runtime_block_ownership_artifact_preservation";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationSourceModel =
+        "runtime-block-lowering-helper-surfaces-preserve-invoke-thunk-byref-copy-dispose-escape-and-runtime-link-facts-for-separate-compilation";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationModel =
+        "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-block-ownership-lowering-helper-and-runtime-link-facts-beyond-local-ir-object-emission";
+inline constexpr const char
+    *kObjc3RuntimeBlockOwnershipArtifactPreservationFailClosedModel =
+        "missing-or-drifted-block-ownership-preservation-packets-disable-cross-module-block-ownership-claims";
 
 struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
@@ -2414,6 +2433,10 @@ inline bool IsReadyObjc3RuntimeMetadataSourceRecordSet(
   return records.deterministic;
 }
 
+struct Objc3RuntimeSupportLibraryLinkWiringSummary;
+bool IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
+    const Objc3RuntimeSupportLibraryLinkWiringSummary &summary);
+
 struct Objc3RuntimeStorageReflectionArtifactPreservationSummary {
   std::string contract_id =
       kObjc3RuntimeStorageReflectionArtifactPreservationContractId;
@@ -2550,6 +2573,129 @@ BuildObjc3RuntimeStorageReflectionArtifactPreservationSummary(
              << "|weak_stores=" << summary.weak_current_property_store_entries
              << "|layouts=" << summary.ivar_layout_entries
              << "|layout_owners=" << summary.ivar_layout_owner_entries;
+  summary.replay_key = replay_key.str();
+  return summary;
+}
+
+struct Objc3RuntimeBlockOwnershipArtifactPreservationSummary {
+  std::string contract_id =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationContractId;
+  std::string source_contract_id =
+      kObjc3RuntimeBlockArcLoweringHelperSurfaceContractId;
+  std::string block_object_invoke_thunk_lowering_contract_id =
+      Expr::kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId;
+  std::string block_byref_helper_lowering_contract_id =
+      Expr::kObjc3ExecutableBlockByrefHelperLoweringContractId;
+  std::string block_escape_runtime_hook_lowering_contract_id =
+      Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId;
+  std::string runtime_support_library_link_wiring_contract_id =
+      kObjc3RuntimeSupportLibraryLinkWiringContractId;
+  std::string surface_path =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationSurfacePath;
+  std::string import_artifact_member_name =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationImportArtifactMemberName;
+  std::string source_model =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationSourceModel;
+  std::string preservation_model =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationModel;
+  std::string fail_closed_model =
+      kObjc3RuntimeBlockOwnershipArtifactPreservationFailClosedModel;
+  std::size_t local_block_literal_sites = 0;
+  std::size_t local_invoke_trampoline_symbolized_sites = 0;
+  std::size_t local_copy_helper_required_sites = 0;
+  std::size_t local_dispose_helper_required_sites = 0;
+  std::size_t local_copy_helper_symbolized_sites = 0;
+  std::size_t local_dispose_helper_symbolized_sites = 0;
+  std::size_t local_escape_to_heap_sites = 0;
+  std::size_t local_byref_layout_symbolized_sites = 0;
+  bool runtime_import_artifact_ready = false;
+  bool separate_compilation_preservation_ready = false;
+  bool runtime_support_library_link_wiring_ready = false;
+  bool deterministic = false;
+  std::string replay_key;
+};
+
+inline Objc3RuntimeBlockOwnershipArtifactPreservationSummary
+BuildObjc3RuntimeBlockOwnershipArtifactPreservationSummary(
+    const Objc3BlockAbiInvokeTrampolineLoweringContract
+        &block_abi_invoke_trampoline_lowering_contract,
+    const Objc3BlockStorageEscapeLoweringContract
+        &block_storage_escape_lowering_contract,
+    const Objc3BlockCopyDisposeLoweringContract
+        &block_copy_dispose_lowering_contract,
+    const Objc3RuntimeSupportLibraryLinkWiringSummary
+        &runtime_support_library_link_wiring) {
+  Objc3RuntimeBlockOwnershipArtifactPreservationSummary summary;
+  summary.local_block_literal_sites =
+      block_abi_invoke_trampoline_lowering_contract.block_literal_sites;
+  summary.local_invoke_trampoline_symbolized_sites =
+      block_abi_invoke_trampoline_lowering_contract
+          .invoke_trampoline_symbolized_sites;
+  summary.local_copy_helper_required_sites =
+      block_copy_dispose_lowering_contract.copy_helper_required_sites;
+  summary.local_dispose_helper_required_sites =
+      block_copy_dispose_lowering_contract.dispose_helper_required_sites;
+  summary.local_copy_helper_symbolized_sites =
+      block_copy_dispose_lowering_contract.copy_helper_symbolized_sites;
+  summary.local_dispose_helper_symbolized_sites =
+      block_copy_dispose_lowering_contract.dispose_helper_symbolized_sites;
+  summary.local_escape_to_heap_sites =
+      block_storage_escape_lowering_contract.escape_to_heap_sites;
+  summary.local_byref_layout_symbolized_sites =
+      block_storage_escape_lowering_contract.byref_layout_symbolized_sites;
+  summary.runtime_support_library_link_wiring_ready =
+      IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
+          runtime_support_library_link_wiring);
+  summary.deterministic =
+      block_abi_invoke_trampoline_lowering_contract.deterministic &&
+      block_storage_escape_lowering_contract.deterministic &&
+      block_copy_dispose_lowering_contract.deterministic;
+
+  const bool invoke_sites_complete =
+      summary.local_invoke_trampoline_symbolized_sites <=
+      summary.local_block_literal_sites;
+  const bool helper_sites_complete =
+      summary.local_copy_helper_symbolized_sites <=
+          summary.local_copy_helper_required_sites &&
+      summary.local_dispose_helper_symbolized_sites <=
+          summary.local_dispose_helper_required_sites;
+  const bool byref_sites_complete =
+      summary.local_byref_layout_symbolized_sites <=
+      block_storage_escape_lowering_contract.byref_slot_count_total;
+  const bool escape_sites_complete =
+      summary.local_escape_to_heap_sites <=
+      block_storage_escape_lowering_contract.block_literal_sites;
+  summary.runtime_import_artifact_ready =
+      summary.deterministic && !summary.contract_id.empty() &&
+      !summary.source_contract_id.empty() &&
+      !summary.block_object_invoke_thunk_lowering_contract_id.empty() &&
+      !summary.block_byref_helper_lowering_contract_id.empty() &&
+      !summary.block_escape_runtime_hook_lowering_contract_id.empty() &&
+      !summary.runtime_support_library_link_wiring_contract_id.empty() &&
+      !summary.surface_path.empty() &&
+      !summary.import_artifact_member_name.empty() &&
+      !summary.source_model.empty() && !summary.preservation_model.empty() &&
+      !summary.fail_closed_model.empty() &&
+      summary.runtime_support_library_link_wiring_ready &&
+      invoke_sites_complete && helper_sites_complete && byref_sites_complete &&
+      escape_sites_complete;
+  summary.separate_compilation_preservation_ready =
+      summary.runtime_import_artifact_ready;
+
+  std::ostringstream replay_key;
+  replay_key << summary.contract_id
+             << "|blocks=" << summary.local_block_literal_sites
+             << "|invoke=" << summary.local_invoke_trampoline_symbolized_sites
+             << "|copy_required=" << summary.local_copy_helper_required_sites
+             << "|dispose_required="
+             << summary.local_dispose_helper_required_sites
+             << "|copy_symbolized="
+             << summary.local_copy_helper_symbolized_sites
+             << "|dispose_symbolized="
+             << summary.local_dispose_helper_symbolized_sites
+             << "|escape=" << summary.local_escape_to_heap_sites
+             << "|byref_layout="
+             << summary.local_byref_layout_symbolized_sites;
   summary.replay_key = replay_key.str();
   return summary;
 }
