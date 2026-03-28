@@ -50,6 +50,30 @@ RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID = (
 RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.block.arc.runtime.abi.surface.v1"
 )
+RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.error.execution.cleanup.source.surface.v1"
+)
+RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.catch.filter.finalization.source.surface.v1"
+)
+RUNTIME_ERROR_PROPAGATION_CLEANUP_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.error.propagation.cleanup.semantics.surface.v1"
+)
+RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.bridging.filter.unwind.diagnostics.surface.v1"
+)
+RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.error.lowering.unwind.bridge.helper.surface.v1"
+)
+RUNTIME_CROSS_MODULE_ERROR_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.cross.module.error.metadata.replay.preservation.surface.v1"
+)
+RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.error.runtime.abi.cleanup.surface.v1"
+)
+RUNTIME_ERROR_PROPAGATION_CATCH_CLEANUP_RUNTIME_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.error.propagation.catch.cleanup.runtime.implementation.surface.v1"
+)
 DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID = (
     "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
 )
@@ -3911,6 +3935,50 @@ def build_runtime_multi_image_startup_ordering_source_surface(
     }
 
 
+def build_runtime_error_execution_cleanup_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id == "error-execution-cleanup-source"
+    ]
+    return {
+        "contract_id": RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.part6.error.source.closure.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/parse/objc3_parser.cpp",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/m267_try_expression_fail_closed_negative.objc3",
+            "tests/tooling/fixtures/native/m267_throw_statement_fail_closed_negative.objc3",
+            "tests/tooling/fixtures/native/m267_do_catch_fail_closed_negative.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-proof",
+            "no-public-runtime-abi-widening",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": False,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -5667,6 +5735,82 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
             "retained_bootstrap_image_count": payload["post_replay_retained_bootstrap_image_count"],
             "replay_generation": payload["post_replay_replay_generation"],
+        },
+    )
+
+
+def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "error-execution-cleanup-source"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_part6_error_source_closure_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    surface = (
+        manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_error_source_closure", {})
+    )
+    expect(
+        isinstance(surface, dict),
+        "expected error source closure fixture to publish objc_part6_error_source_closure",
+    )
+    expected_fields = {
+        "contract_id": "objc3c.part6.error.source.closure.v1",
+        "frontend_surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_source_closure",
+        "throws_declaration_source_supported": True,
+        "result_carrier_source_supported": True,
+        "ns_error_bridging_source_supported": True,
+        "error_bridge_marker_source_supported": True,
+        "try_keyword_reserved": True,
+        "throw_keyword_reserved": True,
+        "catch_keyword_reserved": True,
+        "try_fail_closed": True,
+        "throw_fail_closed": True,
+        "do_catch_fail_closed": True,
+        "deterministic_handoff": True,
+        "ready_for_semantic_expansion": True,
+    }
+    for field_name, expected_value in expected_fields.items():
+        expect(
+            surface.get(field_name) == expected_value,
+            f"expected error source closure surface to preserve {field_name}",
+        )
+    expect(
+        surface.get("function_throws_declaration_sites") == 1,
+        "expected error source closure surface to publish one function throws declaration site",
+    )
+    expect(
+        surface.get("result_like_sites") == 7
+        and surface.get("result_success_sites") == 1
+        and surface.get("result_failure_sites") == 2
+        and surface.get("result_branch_sites") == 4
+        and surface.get("result_payload_sites") == 3,
+        "expected error source closure surface to preserve the result carrier source counts",
+    )
+    expect(
+        surface.get("ns_error_bridging_sites") == 3
+        and surface.get("ns_error_out_parameter_sites") == 1
+        and surface.get("ns_error_bridge_path_sites") == 1,
+        "expected error source closure surface to preserve the NSError bridge source counts",
+    )
+    return CaseResult(
+        case_id="error-execution-cleanup-source",
+        probe="compile-manifest-source-surface",
+        fixture="tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "throws_declaration_sites": surface.get("function_throws_declaration_sites"),
+            "result_like_sites": surface.get("result_like_sites"),
+            "ns_error_bridging_sites": surface.get("ns_error_bridging_sites"),
+            "ready_for_semantic_expansion": surface.get("ready_for_semantic_expansion"),
         },
     )
 
@@ -10809,6 +10953,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
+        check_error_execution_cleanup_source_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -10860,6 +11005,9 @@ def main() -> int:
         ),
         "runtime_multi_image_startup_ordering_source_surface": (
             build_runtime_multi_image_startup_ordering_source_surface(results)
+        ),
+        "runtime_error_execution_cleanup_source_surface": (
+            build_runtime_error_execution_cleanup_source_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

@@ -182,6 +182,32 @@ header paths, and the live installation lifecycle proof command surface as one
 coupled artifact instead of leaving later bootstrap work to infer ordering
 truth from scattered semantic and runtime-side reports.
 
+## Error Execution And Cleanup Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_error_execution_cleanup_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.part6.error.source.closure.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/parse/objc3_parser.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_try_expression_fail_closed_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_throw_statement_fail_closed_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_do_catch_fail_closed_negative.objc3`
+
+This is the authoritative error execution and cleanup source boundary. It
+freezes the live frontend-owned throws declarations, result-carrier profiles,
+NSError bridge markers, and reserved `try`/`throw`/`catch` parse boundary as
+one coupled compile surface instead of leaving later error-runtime work to
+reconstruct source truth from deleted milestone scripts or stale planning
+packets.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:

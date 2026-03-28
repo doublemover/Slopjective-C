@@ -37,6 +37,7 @@ CLAIM_BOUNDARY_CONTRACT_ID = "objc3c.runtime.execution.claim.boundary.v1"
 SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
+    "runtime_error_execution_cleanup_source_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",
@@ -265,6 +266,9 @@ def main() -> int:
         "runtime_acceptance_claim_boundary": runtime_claim_boundary,
         "runtime_state_publication_surface": public_workflow_report["runtime_state_publication_surface"],
         "acceptance_suite_surface": public_workflow_report["acceptance_suite_surface"],
+        "runtime_error_execution_cleanup_source_surface": public_workflow_report[
+            "runtime_error_execution_cleanup_source_surface"
+        ],
         "runtime_object_model_realization_source_surface": public_workflow_report[
             "runtime_object_model_realization_source_surface"
         ],

@@ -19,6 +19,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,
     RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
@@ -85,6 +86,15 @@ COMMON_SURFACES = (
             "authoritative_claim_classes",
             "compile_output_provenance_contract_id",
             "compile_output_truthfulness_contract_id",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_error_execution_cleanup_source_surface",
+        RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
         ),
     ),
     SurfaceRequirement(
@@ -401,6 +411,7 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             CLAIM_BOUNDARY_CONTRACT_ID,
             RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
             RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+            RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
@@ -468,6 +479,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "claim_boundary": surfaces["claim_boundary"],
         "runtime_state_publication_surface": surfaces["runtime_state_publication_surface"],
         "acceptance_suite_surface": surfaces["acceptance_suite_surface"],
+        "runtime_error_execution_cleanup_source_surface": surfaces[
+            "runtime_error_execution_cleanup_source_surface"
+        ],
         "runtime_object_model_realization_source_surface": surfaces[
             "runtime_object_model_realization_source_surface"
         ],

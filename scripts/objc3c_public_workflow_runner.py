@@ -209,6 +209,13 @@ def write_composite_validation_report(
     )
     if runtime_state_publication_surface is not None:
         payload["runtime_state_publication_surface"] = runtime_state_publication_surface
+    runtime_error_execution_cleanup_source_surface = load_surface_from_report(
+        steps, "runtime_error_execution_cleanup_source_surface"
+    )
+    if runtime_error_execution_cleanup_source_surface is not None:
+        payload["runtime_error_execution_cleanup_source_surface"] = (
+            runtime_error_execution_cleanup_source_surface
+        )
     acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
     if acceptance_suite_surface is not None:
         payload["acceptance_suite_surface"] = acceptance_suite_surface

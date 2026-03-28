@@ -30,6 +30,7 @@ PROOF_PACKET_SURFACE_CONTRACT_ID = "objc3c.runtime.architecture.proof.packet.sur
 SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
+    "runtime_error_execution_cleanup_source_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",
@@ -193,6 +194,9 @@ def main() -> int:
         "runtime_acceptance_claim_boundary": runtime_acceptance_report["claim_boundary"],
         "runtime_state_publication_surface": runtime_acceptance_report["runtime_state_publication_surface"],
         "acceptance_suite_surface": runtime_acceptance_report["acceptance_suite_surface"],
+        "runtime_error_execution_cleanup_source_surface": runtime_acceptance_report[
+            "runtime_error_execution_cleanup_source_surface"
+        ],
         "runtime_object_model_realization_source_surface": runtime_acceptance_report[
             "runtime_object_model_realization_source_surface"
         ],
