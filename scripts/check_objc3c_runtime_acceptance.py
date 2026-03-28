@@ -4069,6 +4069,56 @@ def build_runtime_error_propagation_cleanup_semantics_surface(
     }
 
 
+def build_runtime_bridging_filter_unwind_diagnostics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id == "bridging-filter-unwind-compatibility-diagnostics"
+    ]
+    return {
+        "contract_id": RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.part6.error.bridge.legality.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/sema/objc3_sema_contract.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/sema/objc3_semantic_passes.h",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_native_fail_closed.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_nserror_bad_return_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_marker_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_bad_error_type_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_missing_mapping_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_bad_mapping_signature_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_bad_status_return_negative.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-proof",
+            "no-runtime-abi-claims-before-lane-d",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": False,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6221,6 +6271,169 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
             "try_expression_sites": surface.get("try_expression_sites"),
             "catch_clause_sites": surface.get("catch_clause_sites"),
             "bridged_callable_try_sites": surface.get("bridged_callable_try_sites"),
+            "native_fail_closed_fixture": {
+                "fixture": str(native_fail_closed_fixture.relative_to(ROOT)).replace("\\", "/"),
+                "native_emit_remains_fail_closed": native_surface.get(
+                    "native_emit_remains_fail_closed"
+                ),
+            },
+            "negative_fixtures": negative_summaries,
+        },
+    )
+
+
+def check_bridging_filter_unwind_compatibility_diagnostics_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "bridging-filter-unwind-compatibility-diagnostics"
+    positive_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_bridge_legality_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(positive_fixture, case_dir / "positive")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    surface = (
+        manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_error_bridge_legality", {})
+    )
+    expect(
+        isinstance(surface, dict),
+        "expected bridge legality positive fixture to publish objc_part6_error_bridge_legality",
+    )
+    expected_fields = {
+        "contract_id": "objc3c.part6.error.bridge.legality.v1",
+        "dependency_contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality",
+        "bridge_legality_landed": True,
+        "try_bridge_filter_landed": True,
+        "unsupported_combinations_fail_closed": True,
+        "native_emit_remains_fail_closed": True,
+        "deterministic": True,
+        "ready_for_lowering_and_runtime": False,
+    }
+    for field_name, expected_value in expected_fields.items():
+        expect(
+            surface.get(field_name) == expected_value,
+            f"expected bridge legality diagnostics to preserve {field_name}",
+        )
+    expect(
+        surface.get("bridge_callable_sites") == 2
+        and surface.get("objc_nserror_callable_sites") == 1
+        and surface.get("objc_status_code_callable_sites") == 1
+        and surface.get("semantically_valid_bridge_callable_sites") == 2
+        and surface.get("try_eligible_bridge_callable_sites") == 2
+        and surface.get("unsupported_combination_sites") == 0
+        and surface.get("contract_violation_sites") == 0,
+        "expected bridge legality diagnostics to preserve the positive bridge counts",
+    )
+
+    native_fail_closed_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_bridge_legality_native_fail_closed.objc3"
+    )
+    _, _, native_manifest_path = compile_fixture_outputs(
+        native_fail_closed_fixture, case_dir / "native-fail-closed"
+    )
+    native_manifest = json.loads(native_manifest_path.read_text(encoding="utf-8"))
+    native_surface = (
+        native_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_error_bridge_legality", {})
+    )
+    expect(
+        isinstance(native_surface, dict),
+        "expected bridge native fail-closed fixture to publish objc_part6_error_bridge_legality",
+    )
+    expect(
+        native_surface.get("native_emit_remains_fail_closed") is True
+        and native_surface.get("bridge_callable_sites") == 1
+        and native_surface.get("objc_status_code_callable_sites") == 1
+        and native_surface.get("try_eligible_bridge_callable_sites") == 1,
+        "expected bridge native fail-closed fixture to preserve the lowered bridge boundary",
+    )
+
+    negatives = [
+        (
+            "m267_bridge_legality_nserror_missing_out_negative.objc3",
+            ["objc_nserror requires an NSError out parameter"],
+            ["O3S275"],
+        ),
+        (
+            "m267_bridge_legality_nserror_bad_return_negative.objc3",
+            ["objc_nserror currently requires a BOOL-like success return"],
+            ["O3S276"],
+        ),
+        (
+            "m267_bridge_legality_throws_conflict_negative.objc3",
+            ["NSError/status bridge markers cannot currently be combined with throws"],
+            ["O3S277"],
+        ),
+        (
+            "m267_bridge_legality_marker_conflict_negative.objc3",
+            ["objc_nserror and objc_status_code cannot appear on the same callable"],
+            ["O3S278"],
+        ),
+        (
+            "m267_bridge_legality_bad_error_type_negative.objc3",
+            ["objc_status_code currently requires error_type: NSError"],
+            ["O3S280"],
+        ),
+        (
+            "m267_bridge_legality_missing_mapping_negative.objc3",
+            ["objc_status_code mapping symbol must resolve to a declared function"],
+            ["O3S282"],
+        ),
+        (
+            "m267_bridge_legality_bad_mapping_signature_negative.objc3",
+            ["objc_status_code mapping function must accept one matching status parameter and return NSError"],
+            ["O3S283"],
+        ),
+        (
+            "m267_bridge_legality_bad_status_return_negative.objc3",
+            ["objc_status_code requires a BOOL-like or integer status return"],
+            ["O3S281"],
+        ),
+    ]
+    negative_summaries: list[dict[str, Any]] = []
+    for fixture_name, expected_snippets, expected_codes in negatives:
+        negative_fixture = (
+            ROOT / "tests" / "tooling" / "fixtures" / "native" / fixture_name
+        )
+        negative_summary = compile_fixture_expect_failure(
+            negative_fixture,
+            case_dir / negative_fixture.stem,
+            expected_snippets=expected_snippets,
+            expected_codes=expected_codes,
+        )
+        negative_summaries.append(
+            {
+                "fixture": str(negative_fixture.relative_to(ROOT)).replace("\\", "/"),
+                "diagnostic_codes": negative_summary["diagnostic_codes"],
+            }
+        )
+
+    return CaseResult(
+        case_id="bridging-filter-unwind-compatibility-diagnostics",
+        probe="compile-manifest-semantic-surface-plus-compatibility-diagnostics",
+        fixture="tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "bridge_callable_sites": surface.get("bridge_callable_sites"),
+            "try_eligible_bridge_callable_sites": surface.get(
+                "try_eligible_bridge_callable_sites"
+            ),
             "native_fail_closed_fixture": {
                 "fixture": str(native_fail_closed_fixture.relative_to(ROOT)).replace("\\", "/"),
                 "native_emit_remains_fail_closed": native_surface.get(
@@ -11374,6 +11587,7 @@ def main() -> int:
         check_catch_filter_finalization_source_case(run_dir),
         check_error_propagation_cleanup_semantics_case(run_dir),
         check_executable_try_throw_do_catch_semantics_case(run_dir),
+        check_bridging_filter_unwind_compatibility_diagnostics_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -11434,6 +11648,9 @@ def main() -> int:
         ),
         "runtime_error_propagation_cleanup_semantics_surface": (
             build_runtime_error_propagation_cleanup_semantics_surface(results)
+        ),
+        "runtime_bridging_filter_unwind_diagnostics_surface": (
+            build_runtime_bridging_filter_unwind_diagnostics_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

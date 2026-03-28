@@ -327,6 +327,37 @@ bridge semantics together with the explicit deferred runtime/ABI flags, so the
 next lowering and runtime issues inherit one concrete semantic contract instead
 of hand-waving over what is already enforced in the compiler.
 
+## Bridging Filter And Unwind Diagnostics Surface
+
+- authoritative compile-manifest key:
+  - `runtime_bridging_filter_unwind_diagnostics_surface`
+- authoritative composed source inputs:
+  - `objc3c.part6.error.bridge.legality.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes.h`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_native_fail_closed.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_nserror_missing_out_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_nserror_bad_return_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_marker_conflict_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_bad_error_type_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_missing_mapping_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_bad_mapping_signature_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_bad_status_return_negative.objc3`
+
+This is the authoritative diagnostics boundary for bridged error callables and
+their unwind compatibility rules. It freezes the live legality model, the
+native fail-closed lowering boundary, and the exact negative diagnostic corpus
+so later lowering and runtime work cannot silently relax or reinterpret the
+compiler contract.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:
