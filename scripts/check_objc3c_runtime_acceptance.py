@@ -32,6 +32,12 @@ RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
+RUNTIME_DUPLICATE_INSTALL_DIAGNOSTIC_MODEL = (
+    "duplicate-install-rejections-publish-the-rejected-module-identity-and-registration-ordinal-without-advancing-runtime-installation-state"
+)
+RUNTIME_OUT_OF_ORDER_INSTALL_DIAGNOSTIC_MODEL = (
+    "out-of-order-install-rejections-publish-the-rejected-module-identity-and-registration-ordinal-without-advancing-runtime-installation-state"
+)
 RUNTIME_PUBLIC_HEADER_PATH = "native/objc3c/src/runtime/objc3_runtime.h"
 RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH = (
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
@@ -400,6 +406,48 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError(
             "runtime_multi_image_startup_ordering_source_surface drifted from the translation unit registration order ordinal"
         )
+    if (
+        multi_image_startup_ordering_source_surface.get("duplicate_registration_status_code")
+        != runtime_bootstrap_semantics.get("duplicate_registration_status_code")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the duplicate registration status code"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("out_of_order_status_code")
+        != runtime_bootstrap_semantics.get("out_of_order_status_code")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the out-of-order registration status code"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("duplicate_install_diagnostic_model")
+        != RUNTIME_DUPLICATE_INSTALL_DIAGNOSTIC_MODEL
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the duplicate-install diagnostic model"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("out_of_order_install_diagnostic_model")
+        != RUNTIME_OUT_OF_ORDER_INSTALL_DIAGNOSTIC_MODEL
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the out-of-order-install diagnostic model"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("last_rejected_module_name_field")
+        != "last_rejected_module_name"
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the rejected module-name field"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("last_rejected_translation_unit_identity_key_field")
+        != "last_rejected_translation_unit_identity_key"
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the rejected translation-unit identity field"
+        )
     if runtime_bootstrap_semantics.get("invalid_registration_roots_status_code") != -4:
         raise RuntimeError(
             "objc_runtime_startup_bootstrap_semantics drifted from the invalid registration roots status code"
@@ -620,6 +668,7 @@ def build_runtime_multi_image_startup_ordering_source_surface(
         (result for result in results if result.case_id == "installation-lifecycle"),
         None,
     )
+    latest_summary = installation_lifecycle.summary if installation_lifecycle is not None else {}
     return {
         "contract_id": RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID,
         "runtime_installation_abi_surface_contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
@@ -642,6 +691,19 @@ def build_runtime_multi_image_startup_ordering_source_surface(
             "objc3_runtime_replay_registered_images_for_testing",
             "objc3_runtime_copy_reset_replay_state_for_testing",
         ],
+        "diagnostic_status_codes": {
+            "duplicate_registration": -2,
+            "out_of_order_registration": -3,
+        },
+        "diagnostic_models": {
+            "duplicate_install": RUNTIME_DUPLICATE_INSTALL_DIAGNOSTIC_MODEL,
+            "out_of_order_install": RUNTIME_OUT_OF_ORDER_INSTALL_DIAGNOSTIC_MODEL,
+        },
+        "rejected_registration_fields": [
+            "last_rejected_module_name",
+            "last_rejected_translation_unit_identity_key",
+            "last_rejected_registration_order_ordinal",
+        ],
         "ordering_snapshot_fields": [
             "next_expected_registration_order_ordinal",
             "last_successful_registration_order_ordinal",
@@ -653,9 +715,27 @@ def build_runtime_multi_image_startup_ordering_source_surface(
             "probe_run_ms",
             "case_total_ms",
         ],
-        "latest_installation_lifecycle_measurements": (
-            installation_lifecycle.summary if installation_lifecycle is not None else {}
-        ),
+        "latest_installation_lifecycle_measurements": latest_summary,
+        "latest_duplicate_install_diagnostic": {
+            "status": latest_summary.get("duplicate_status"),
+            "rejected_module_name": latest_summary.get("duplicate_rejected_module_name"),
+            "rejected_translation_unit_identity_key": latest_summary.get(
+                "duplicate_rejected_translation_unit_identity_key"
+            ),
+            "rejected_registration_order_ordinal": latest_summary.get(
+                "duplicate_rejected_registration_order_ordinal"
+            ),
+        },
+        "latest_out_of_order_install_diagnostic": {
+            "status": latest_summary.get("out_of_order_status"),
+            "rejected_module_name": latest_summary.get("out_of_order_rejected_module_name"),
+            "rejected_translation_unit_identity_key": latest_summary.get(
+                "out_of_order_rejected_translation_unit_identity_key"
+            ),
+            "rejected_registration_order_ordinal": latest_summary.get(
+                "out_of_order_rejected_registration_order_ordinal"
+            ),
+        },
     }
 
 
@@ -898,7 +978,23 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "probe_run_ms": probe_run_ms,
             "case_total_ms": case_total_ms,
             "duplicate_status": payload["duplicate_status"],
+            "duplicate_rejected_module_name": payload["after_duplicate_last_rejected_module_name"],
+            "duplicate_rejected_translation_unit_identity_key": payload[
+                "after_duplicate_last_rejected_translation_unit_identity_key"
+            ],
+            "duplicate_rejected_registration_order_ordinal": payload[
+                "after_duplicate_last_rejected_registration_order_ordinal"
+            ],
             "out_of_order_status": payload["out_of_order_status"],
+            "out_of_order_rejected_module_name": payload[
+                "after_out_of_order_last_rejected_module_name"
+            ],
+            "out_of_order_rejected_translation_unit_identity_key": payload[
+                "after_out_of_order_last_rejected_translation_unit_identity_key"
+            ],
+            "out_of_order_rejected_registration_order_ordinal": payload[
+                "after_out_of_order_last_rejected_registration_order_ordinal"
+            ],
             "invalid_anchor_status": payload["post_reset_invalid_anchor_status"],
             "invalid_discovery_root_status": payload["post_reset_invalid_discovery_root_status"],
             "startup_registered_image_count": payload["startup_registered_image_count"],

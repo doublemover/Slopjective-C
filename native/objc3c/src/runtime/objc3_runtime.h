@@ -34,11 +34,15 @@ typedef struct objc3_runtime_selector_handle {
 typedef struct objc3_runtime_registration_state_snapshot {
   uint64_t registered_image_count;
   uint64_t registered_descriptor_total;
+  // Installation diagnostics freeze these ordinals as the authoritative
+  // state-advance proof for duplicate and out-of-order registration failures.
   uint64_t next_expected_registration_order_ordinal;
   uint64_t last_successful_registration_order_ordinal;
   int last_registration_status;
   const char *last_registered_module_name;
   const char *last_registered_translation_unit_identity_key;
+  // Rejected registrations publish the attempted module, translation-unit
+  // identity key, and registration ordinal without partially committing state.
   const char *last_rejected_module_name;
   const char *last_rejected_translation_unit_identity_key;
   uint64_t last_rejected_registration_order_ordinal;

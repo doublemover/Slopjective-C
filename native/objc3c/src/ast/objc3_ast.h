@@ -1068,6 +1068,27 @@ inline constexpr const char
         "strictly-monotonic-positive-registration-order-ordinal";
 inline constexpr const char *kObjc3RuntimeBootstrapStateSnapshotSymbol =
     "objc3_runtime_copy_registration_state_for_testing";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapDuplicateInstallDiagnosticModel =
+        "duplicate-install-rejections-publish-the-rejected-module-identity-and-registration-ordinal-without-advancing-runtime-installation-state";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapOutOfOrderDiagnosticModel =
+        "out-of-order-install-rejections-publish-the-rejected-module-identity-and-registration-ordinal-without-advancing-runtime-installation-state";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRejectedModuleNameField =
+        "last_rejected_module_name";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRejectedTranslationUnitIdentityKeyField =
+        "last_rejected_translation_unit_identity_key";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapNextExpectedRegistrationOrderField =
+        "next_expected_registration_order_ordinal";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapLastSuccessfulRegistrationOrderField =
+        "last_successful_registration_order_ordinal";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapLastRejectedRegistrationOrderField =
+        "last_rejected_registration_order_ordinal";
 inline constexpr int kObjc3RuntimeBootstrapSuccessStatusCode = 0;
 inline constexpr int kObjc3RuntimeBootstrapInvalidDescriptorStatusCode = -1;
 inline constexpr int

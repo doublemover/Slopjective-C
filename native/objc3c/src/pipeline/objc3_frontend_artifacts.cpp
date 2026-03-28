@@ -22484,12 +22484,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"translation_unit_registration_order_ordinal\":"
            << runtime_bootstrap_legality_semantics
                   .translation_unit_registration_order_ordinal
-           << ",\"next_expected_registration_order_field\":\""
-           << "next_expected_registration_order_ordinal"
+           << ",\"duplicate_registration_status_code\":"
+           << runtime_bootstrap_semantics.duplicate_registration_status_code
+           << ",\"out_of_order_status_code\":"
+           << runtime_bootstrap_semantics.out_of_order_status_code
+           << ",\"duplicate_install_diagnostic_model\":\""
+           << kObjc3RuntimeBootstrapDuplicateInstallDiagnosticModel
+           << "\",\"out_of_order_install_diagnostic_model\":\""
+           << kObjc3RuntimeBootstrapOutOfOrderDiagnosticModel
+           << "\",\"last_rejected_module_name_field\":\""
+           << kObjc3RuntimeBootstrapRejectedModuleNameField
+           << "\",\"last_rejected_translation_unit_identity_key_field\":\""
+           << kObjc3RuntimeBootstrapRejectedTranslationUnitIdentityKeyField
+           << "\",\"next_expected_registration_order_field\":\""
+           << kObjc3RuntimeBootstrapNextExpectedRegistrationOrderField
            << "\",\"last_successful_registration_order_field\":\""
-           << "last_successful_registration_order_ordinal"
+           << kObjc3RuntimeBootstrapLastSuccessfulRegistrationOrderField
            << "\",\"last_rejected_registration_order_field\":\""
-           << "last_rejected_registration_order_ordinal"
+           << kObjc3RuntimeBootstrapLastRejectedRegistrationOrderField
            << "\",\"requires_linked_runtime_probe\":true"
            << ",\"requires_real_compile_output\":true"
            << "},\n";

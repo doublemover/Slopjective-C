@@ -180,16 +180,24 @@ fragments.
   - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
   - public workflow command: `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
 - authoritative runtime fields:
+  - `last_rejected_module_name`
+  - `last_rejected_translation_unit_identity_key`
   - `next_expected_registration_order_ordinal`
   - `last_successful_registration_order_ordinal`
   - `last_rejected_registration_order_ordinal`
+- fail-closed diagnostic statuses:
+  - duplicate translation-unit identity key: `-2`
+  - out-of-order registration ordinal: `-3`
+- diagnostic models:
+  - duplicate install rejection publishes rejected module, identity key, and ordinal without advancing runtime state
+  - out-of-order install rejection publishes rejected module, identity key, and ordinal without advancing runtime state
 
 This is the authoritative multi-image startup ordering source boundary. It
 freezes the duplicate-registration policy, monotonic registration-order model,
-restart/replay symbols, runtime header paths, and the live installation
-lifecycle proof command surface as one coupled artifact instead of leaving
-later bootstrap work to infer ordering truth from scattered semantic and
-runtime-side reports.
+restart/replay symbols, duplicate/out-of-order rejection diagnostics, runtime
+header paths, and the live installation lifecycle proof command surface as one
+coupled artifact instead of leaving later bootstrap work to infer ordering
+truth from scattered semantic and runtime-side reports.
 
 ## Installation ABI And Loader Lifecycle
 

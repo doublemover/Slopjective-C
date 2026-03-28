@@ -68,7 +68,8 @@ Multi-image startup ordering source of truth:
 - that surface must point at the live legality semantics, restart/replay
   semantics, bootstrap API/reset/registrar contracts, archive static-link
   replay corpus contract, runtime header paths, and the installation-lifecycle
-  proof symbols and registration-order snapshot fields
+  proof symbols, duplicate/out-of-order diagnostic status codes, and
+  registration-order snapshot fields
 - later image-walk, duplicate-install rejection, and reset/replay expansion work
   must consume that emitted surface plus the
   `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp` proof
@@ -81,9 +82,17 @@ Bootstrap legality and installation semantics:
   `OBJC3_RUNTIME_REGISTRATION_STATUS_DUPLICATE_TRANSLATION_UNIT_IDENTITY_KEY`
   and must not advance installed-image counts or next-expected registration
   ordinals
+- duplicate-install diagnostics must publish `last_rejected_module_name`,
+  `last_rejected_translation_unit_identity_key`, and
+  `last_rejected_registration_order_ordinal` without partially committing
+  runtime installation state
 - out-of-order registration ordinals must fail closed with
   `OBJC3_RUNTIME_REGISTRATION_STATUS_OUT_OF_ORDER_REGISTRATION` and must not
   advance installed-image counts or next-expected registration ordinals
+- out-of-order diagnostics must publish `last_rejected_module_name`,
+  `last_rejected_translation_unit_identity_key`, and
+  `last_rejected_registration_order_ordinal` without partially committing
+  runtime installation state
 - malformed staged registration roots must fail closed with
   `OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS`; the linker
   anchor must point at the discovery root, and the discovery root must close
