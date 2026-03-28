@@ -574,6 +574,62 @@ runtime images. Downstream work must consume that emitted artifact and its
 reported surface instead of reconstructing cross-image replay truth from source
 text or sidecar-only summaries.
 
+## Object-Model Runtime ABI And Query Surface
+
+- machine-readable key:
+  - `runtime_object_model_abi_query_surface`
+- authoritative source contracts:
+  - `objc3c.runtime.object.model.realization.source.surface.v1`
+  - `objc3c.runtime.realization.lowering.reflection.artifact.surface.v1`
+  - `objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1`
+  - `objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1`
+  - `objc3c.runtime.reflection.query.surface.v1`
+  - `objc3c.runtime.realization.lookup.semantics.v1`
+  - `objc3c.runtime.class.metaclass.protocol.realization.v1`
+  - `objc3c.runtime.category.attachment.merged.dispatch.surface.v1`
+  - `objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1`
+- public runtime ABI boundary:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_reset_for_testing`
+- private object-model query boundary:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `objc3_runtime_copy_dispatch_state_for_testing`
+- authoritative proof path:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+This is the authoritative object-model runtime ABI/query boundary. It freezes
+the fact that the public runtime header stays at registration, selector lookup,
+dispatch, and reset, while object-model lookup/reflection proof remains on the
+private testing snapshot boundary used by the live runtime probes. Downstream
+work must consume this emitted surface instead of widening the public ABI or
+reconstructing query truth from milestone-local probe assumptions.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

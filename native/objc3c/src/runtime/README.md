@@ -141,6 +141,32 @@ Cross-module realized-metadata replay preservation surface:
     replay symbols so runnable replay proof stays coupled to emitted packaging
     artifacts
 
+Object-model runtime ABI and query surface:
+
+- emitted compile-manifest key:
+  - `runtime_object_model_abi_query_surface`
+- public runtime ABI boundary:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_reset_for_testing`
+- private object-model query boundary:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `objc3_runtime_copy_dispatch_state_for_testing`
+- semantic boundary:
+  - the public runtime header stays frozen at registration, lookup, dispatch,
+    and reset
+  - object-model lookup and reflection proof stays on the private testing
+    snapshot boundary consumed by the live executable probes
+
 Reflection query surface:
 
 - emitted compile-manifest key:

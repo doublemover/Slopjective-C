@@ -150,6 +150,20 @@ Cross-module realized-metadata replay preservation source of truth:
   emitted link-plan boundary instead of reconstructing cross-image replay truth
   from ad hoc probe payloads or milestone-local notes
 
+Object-model runtime ABI and query surface source of truth:
+
+- compile publication exposes the coupled object-model ABI/query boundary
+  through the emitted compile-manifest key
+  `runtime_object_model_abi_query_surface`
+- that surface must point at the realization source surface, realization/
+  reflection lowering surfaces, cross-module replay preservation surface, the
+  realization/lookup/category/coherence surfaces, the stable public runtime
+  header path, and the private object-model query symbols the current
+  executable probes consume
+- later realization lookup implementation and runnable conformance work must
+  extend that surface rather than widening the public runtime ABI or
+  reconstructing object-model query truth from probe-specific assumptions
+
 Reflection query source of truth:
 
 - compile publication exposes the coupled reflection boundary through the

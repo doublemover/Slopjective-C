@@ -244,6 +244,13 @@ def write_composite_validation_report(
         payload["runtime_cross_module_realized_metadata_replay_preservation_surface"] = (
             runtime_cross_module_realized_metadata_replay_preservation_surface
         )
+    runtime_object_model_abi_query_surface = load_surface_from_report(
+        steps, "runtime_object_model_abi_query_surface"
+    )
+    if runtime_object_model_abi_query_surface is not None:
+        payload["runtime_object_model_abi_query_surface"] = (
+            runtime_object_model_abi_query_surface
+        )
     runtime_reflection_query_surface = load_surface_from_report(
         steps, "runtime_reflection_query_surface"
     )

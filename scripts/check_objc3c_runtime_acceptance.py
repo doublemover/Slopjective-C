@@ -44,6 +44,9 @@ RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID = (
 RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1"
 )
+RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.object.model.abi.query.surface.v1"
+)
 RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.reflection.query.surface.v1"
 )
@@ -227,6 +230,7 @@ def compile_fixture_with_args(
     dispatch_table_reflection_record_lowering_surface = manifest.get(
         "runtime_dispatch_table_reflection_record_lowering_surface"
     )
+    object_model_abi_query_surface = manifest.get("runtime_object_model_abi_query_surface")
     reflection_query_surface = manifest.get("runtime_reflection_query_surface")
     realization_lookup_semantics_surface = manifest.get(
         "runtime_realization_lookup_semantics_surface"
@@ -1100,6 +1104,113 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_dispatch_table_reflection_record_lowering_surface must require compile output truthfulness"
+        )
+    if not isinstance(object_model_abi_query_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_object_model_abi_query_surface"
+        )
+    if (
+        object_model_abi_query_surface.get("contract_id")
+        != RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_object_model_abi_query_surface contract"
+        )
+    if object_model_abi_query_surface.get("compile_manifest_artifact") != manifest_path.name:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        object_model_abi_query_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        object_model_abi_query_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if object_model_abi_query_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the emitted object artifact path"
+        )
+    if object_model_abi_query_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_object_model_abi_query_surface_fields = {
+        "runtime_object_model_realization_source_surface_contract_id": (
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "runtime_realization_lowering_reflection_artifact_surface_contract_id": (
+            RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID
+        ),
+        "runtime_dispatch_table_reflection_record_lowering_surface_contract_id": (
+            RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
+        ),
+        "runtime_cross_module_realized_metadata_replay_preservation_surface_contract_id": (
+            RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID
+        ),
+        "runtime_reflection_query_surface_contract_id": (
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID
+        ),
+        "runtime_realization_lookup_semantics_surface_contract_id": (
+            RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID
+        ),
+        "runtime_class_metaclass_protocol_realization_surface_contract_id": (
+            RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID
+        ),
+        "runtime_category_attachment_merged_dispatch_surface_contract_id": (
+            RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID
+        ),
+        "runtime_reflection_visibility_coherence_diagnostics_surface_contract_id": (
+            RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "object_model_query_boundary_model": (
+            "public-runtime-header-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface-without-widening-the-public-abi"
+        ),
+    }
+    for field, expected_value in expected_object_model_abi_query_surface_fields.items():
+        if object_model_abi_query_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_object_model_abi_query_surface drifted from {field}"
+            )
+    if object_model_abi_query_surface.get("public_runtime_abi_boundary") != PUBLIC_RUNTIME_ABI_BOUNDARY:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the public runtime ABI boundary"
+        )
+    if object_model_abi_query_surface.get("private_object_model_query_boundary") != [
+        "objc3_runtime_copy_realized_class_graph_state_for_testing",
+        "objc3_runtime_copy_realized_class_entry_for_testing",
+        "objc3_runtime_copy_property_registry_state_for_testing",
+        "objc3_runtime_copy_property_entry_for_testing",
+        "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+        "objc3_runtime_copy_selector_lookup_entry_for_testing",
+        "objc3_runtime_copy_method_cache_state_for_testing",
+        "objc3_runtime_copy_method_cache_entry_for_testing",
+        "objc3_runtime_copy_dispatch_state_for_testing",
+    ]:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface drifted from the private object-model query boundary"
+        )
+    if object_model_abi_query_surface.get("requires_coupled_registration_manifest") is not True:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface must require the coupled runtime registration manifest"
+        )
+    if object_model_abi_query_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface must require real compile output"
+        )
+    if object_model_abi_query_surface.get("requires_linked_runtime_probe") is not True:
+        raise RuntimeError(
+            "runtime_object_model_abi_query_surface must require a linked runtime probe"
         )
     if not isinstance(reflection_query_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_reflection_query_surface")
@@ -2224,6 +2335,87 @@ def build_runtime_cross_module_realized_metadata_replay_preservation_surface(
         "authoritative_probe_paths": [IMPORTED_RUNTIME_PACKAGING_PROBE],
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_object_model_abi_query_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "imported-runtime-packaging-replay",
+            "canonical-dispatch",
+            "canonical-sample-set",
+            "dispatch-fast-path",
+            "property-reflection",
+            "property-execution",
+            "storage-ownership-reflection",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
+            RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
+            RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
+            RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
+            RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+        ],
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_object_model_query_boundary": [
+            "objc3_runtime_copy_realized_class_graph_state_for_testing",
+            "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_property_registry_state_for_testing",
+            "objc3_runtime_copy_property_entry_for_testing",
+            "objc3_runtime_copy_protocol_conformance_query_for_testing",
+            "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+            "objc3_runtime_copy_selector_lookup_entry_for_testing",
+            "objc3_runtime_copy_method_cache_state_for_testing",
+            "objc3_runtime_copy_method_cache_entry_for_testing",
+            "objc3_runtime_copy_dispatch_state_for_testing",
+        ],
+        "object_model_query_boundary_model": (
+            "public-runtime-header-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface-without-widening-the-public-abi"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+            IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        ],
+        "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
     }
@@ -4679,6 +4871,9 @@ def main() -> int:
         ),
         "runtime_cross_module_realized_metadata_replay_preservation_surface": (
             build_runtime_cross_module_realized_metadata_replay_preservation_surface(results)
+        ),
+        "runtime_object_model_abi_query_surface": (
+            build_runtime_object_model_abi_query_surface(results)
         ),
         "runtime_reflection_query_surface": build_runtime_reflection_query_surface(results),
         "runtime_realization_lookup_semantics_surface": (

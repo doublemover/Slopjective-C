@@ -22731,6 +22731,67 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_compile_output_truthfulness\":true"
            << "},\n";
+  manifest << "  \"runtime_object_model_abi_query_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeObjectModelAbiQuerySurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"runtime_object_model_realization_source_surface_contract_id\":\""
+           << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
+           << "\",\"runtime_realization_lowering_reflection_artifact_surface_contract_id\":\""
+           << kObjc3RuntimeRealizationLoweringReflectionArtifactSurfaceContractId
+           << "\",\"runtime_dispatch_table_reflection_record_lowering_surface_contract_id\":\""
+           << kObjc3RuntimeDispatchTableReflectionRecordLoweringSurfaceContractId
+           << "\",\"runtime_cross_module_realized_metadata_replay_preservation_surface_contract_id\":\""
+           << kObjc3RuntimeCrossModuleRealizedMetadataReplayPreservationSurfaceContractId
+           << "\",\"runtime_reflection_query_surface_contract_id\":\""
+           << kObjc3RuntimeReflectionQuerySurfaceContractId
+           << "\",\"runtime_realization_lookup_semantics_surface_contract_id\":\""
+           << kObjc3RuntimeRealizationLookupSemanticsSurfaceContractId
+           << "\",\"runtime_class_metaclass_protocol_realization_surface_contract_id\":\""
+           << kObjc3RuntimeClassMetaclassProtocolRealizationSurfaceContractId
+           << "\",\"runtime_category_attachment_merged_dispatch_surface_contract_id\":\""
+           << kObjc3RuntimeCategoryAttachmentMergedDispatchSurfaceContractId
+           << "\",\"runtime_reflection_visibility_coherence_diagnostics_surface_contract_id\":\""
+           << kObjc3RuntimeReflectionVisibilityCoherenceDiagnosticsSurfaceContractId
+           << "\",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"internal_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"public_runtime_abi_boundary\":[\""
+           << kObjc3RuntimeSupportLibraryRegisterImageSymbol
+           << "\",\""
+           << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
+           << "\",\""
+           << kObjc3RuntimeSupportLibraryDispatchI32Symbol
+           << "\",\""
+           << kObjc3RuntimeSupportLibraryResetForTestingSymbol
+           << "\"]"
+           << ",\"private_object_model_query_boundary\":[\"objc3_runtime_copy_realized_class_graph_state_for_testing\""
+           << ",\"objc3_runtime_copy_realized_class_entry_for_testing\""
+           << ",\"objc3_runtime_copy_property_registry_state_for_testing\""
+           << ",\"objc3_runtime_copy_property_entry_for_testing\""
+           << ",\"objc3_runtime_copy_protocol_conformance_query_for_testing\""
+           << ",\"objc3_runtime_copy_selector_lookup_table_state_for_testing\""
+           << ",\"objc3_runtime_copy_selector_lookup_entry_for_testing\""
+           << ",\"objc3_runtime_copy_method_cache_state_for_testing\""
+           << ",\"objc3_runtime_copy_method_cache_entry_for_testing\""
+           << ",\"objc3_runtime_copy_dispatch_state_for_testing\"]"
+           << ",\"object_model_query_boundary_model\":\""
+           << kObjc3RuntimeObjectModelQueryBoundaryModel
+           << "\""
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
   manifest << "  \"runtime_reflection_query_surface\":{\"contract_id\":\""
            << kObjc3RuntimeReflectionQuerySurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
